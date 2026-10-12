@@ -193,8 +193,8 @@ from G14 and the budget run of G15: **~170–270 h** one agent, ~50–80 h wall 
 
 ## G12 Preferences and panels that don't act yet
 
+- **Missing:** ~14 Preferences options stored but not acted on (#394: Open
 - **Done:** quick Image Trace presets reveal Threshold and Advanced controls (Paths, Corners, Noise); Properties can reopen them. Other context-specific Properties gaps remain.
-
 - **Missing:** ~15 Preferences options stored but not acted on (#394: Highlight Alternate Glyphs, Open
   Documents As Tabs, Real-time Drawing, hyphenation language, devices…), Properties panel per
   context, context menus beyond the canvas, Layers panel row menus and Collect for Export, SVG Interactivity.
