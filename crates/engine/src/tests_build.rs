@@ -783,6 +783,19 @@ fn image_trace_gradients_fills_with_a_gradient() {
     assert!((a.x - 50.0).abs() < 3.0 && (b.x - 250.0).abs() < 3.0 && (a.y - b.y).abs() < 2.0, "{geom:?}");
     let flat = make(false);
     assert!(flat.len() > 1 && flat.iter().all(|n| matches!(n.appearance.fill_paint(), Paint::Solid { .. })));
+    // Colours going out from a point: a radial gradient, its middle where the image has it.
+    let round = vectorcraft_trace::Raster::from_fn(120, 100, |x, y| {
+        let t = ((f64::from(x) + 0.5 - 50.0).hypot(f64::from(y) + 0.5 - 40.0) / 90.0).min(1.0);
+        [(250.0 - 200.0 * t) as u8, (230.0 - 150.0 * t) as u8, 90, 255]
+    });
+    let mut s = session();
+    add_image(&mut s, &round, Affine::translate((10.0, 20.0)));
+    let r = s.execute("imageTrace.make", &json!({"preset": "6 Colors", "params": {"gradients": true}})).unwrap();
+    let paths = traced_paths(&node(&s, NodeId(r["id"].as_u64().unwrap())));
+    let Paint::Gradient(g) = paths[0].appearance.fill_paint() else { panic!("{:?}", paths[0].appearance.fill_paint()) };
+    assert_eq!((paths.len(), g.gradient.kind), (1, vectorcraft_color::GradientKind::Radial));
+    let middle = g.geom.as_ref().unwrap().start;
+    assert!((middle.x - 60.0).abs() < 1.5 && (middle.y - 60.0).abs() < 1.5, "{middle:?}");
 }
 
 /// A preset's enhanced version: the preset with Auto Grouping and Shapes, under the preset's name.

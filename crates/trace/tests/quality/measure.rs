@@ -251,12 +251,19 @@ pub fn measure(input: &Input, variant: Variant, size: u32, src: &Raster, params:
     let (mut ramp_found, mut ramp_angle, mut ramp_off) = (f64::NAN, f64::NAN, f64::NAN);
     if let Some(ramp) = &input.ramp {
         let k = f64::from(size) / 256.0;
-        let found = res.paths.iter().filter(|tp| tp.gradient.is_some()).max_by_key(|tp| tp.pixels).and_then(|tp| tp.gradient.as_ref());
+        // (Of the input's kind: a linear gradient found in a radial one is not it.)
+        let found = res
+            .paths
+            .iter()
+            .filter(|tp| tp.gradient.as_ref().is_some_and(|g| g.radial == ramp.radial))
+            .max_by_key(|tp| tp.pixels)
+            .and_then(|tp| tp.gradient.as_ref());
         ramp_found = if found.is_some() { 100.0 } else { 0.0 };
         if let Some(g) = found {
             let (truth, own) = (ramp.end - ramp.start, g.end - g.start);
             let between = (truth.atan2() - own.atan2()).to_degrees().rem_euclid(180.0);
-            ramp_angle = between.min(180.0 - between);
+            // (A radial gradient has no direction: its middle shows in the colours along the line.)
+            ramp_angle = if ramp.radial { f64::NAN } else { between.min(180.0 - between) };
             ramp_off = (0..=16)
                 .map(|j| {
                     let p = ramp.start + truth * (f64::from(j) / 16.0);
@@ -281,7 +288,7 @@ pub fn measure(input: &Input, variant: Variant, size: u32, src: &Raster, params:
     let nan = f64::NAN;
     let (mut geo_mean, mut geo_max, mut miss_max, mut corners, mut kinks, mut slivers, mut sliver_area) = (nan, nan, nan, nan, nan, nan, nan);
     let mut false_shapes = if params.shapes { 0.0 } else { nan };
-    if !matches!(input.class, Class::Tone | Class::Ramp) {
+    if !matches!(input.class, Class::Tone | Class::Ramp | Class::Round) {
         let truth_shapes = input.scaled(size);
         let truth = Outline::new(truth_shapes.iter().map(|(p, _)| p), None);
         let traced = Outline::new(shapes.iter().map(|(p, _)| p), Some(f64::from(size)));

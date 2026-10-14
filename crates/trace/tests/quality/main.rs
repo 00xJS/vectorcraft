@@ -75,7 +75,7 @@ fn target(preset: &str, input: &Input) -> bool {
         "3 Colors" => return input.name == "two touching halves",
         "6 Colors" | "16 Colors" | "Flat Logo" | "Auto Color" | "6 Colors with Auto Grouping" => &[Class::Flat],
         "Default with Shapes" | "6 Colors with Shapes" => &[Class::Plain],
-        name if name.ends_with("Gradients") => &[Class::Ramp],
+        name if name.ends_with("Gradients") => &[Class::Ramp, Class::Round],
         "Sketched Art" => &[Class::Shape, Class::Lines],
         "Silhouettes" => &[Class::Shape],
         "Line Art" | "Outline" => &[Class::Lines],
@@ -359,7 +359,7 @@ fn quality_report() {
     let inputs = inputs();
     for (name, _) in presets().iter().filter(|(_, p)| p.mode != vectorcraft_trace::Mode::BlackAndWhite && p.mode != vectorcraft_trace::Mode::Logo) {
         let params = TraceParams { gradients: true, ..vectorcraft_trace::preset(name).unwrap() };
-        for (input, size, variant, img) in draw_all(&inputs).iter().filter(|d| !matches!(d.0.class, Class::Tone | Class::Ramp)) {
+        for (input, size, variant, img) in draw_all(&inputs).iter().filter(|d| !matches!(d.0.class, Class::Tone | Class::Ramp | Class::Round)) {
             let found = trace_within(img, &params, MAX_ANCHORS).map_or(0, |res| res.paths.iter().filter(|p| p.gradient.is_some()).count());
             assert_eq!(found, 0, "{name} with Gradients on {} at {size} px, {variant:?}", input.name);
         }

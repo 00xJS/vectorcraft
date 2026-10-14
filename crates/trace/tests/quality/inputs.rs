@@ -26,9 +26,12 @@ pub enum Class {
     Tone,
     /// Linear gradients whose line and stops are known: one over the whole image, one in a disc.
     Ramp,
+    /// A radial gradient whose middle and stops are known.
+    Round,
 }
 
-pub const CLASSES: [Class; 8] = [Class::Shape, Class::Poly, Class::Lines, Class::Askew, Class::Plain, Class::Flat, Class::Tone, Class::Ramp];
+pub const CLASSES: [Class; 9] =
+    [Class::Shape, Class::Poly, Class::Lines, Class::Askew, Class::Plain, Class::Flat, Class::Tone, Class::Ramp, Class::Round];
 
 impl Class {
     pub fn name(self) -> &'static str {
@@ -41,6 +44,7 @@ impl Class {
             Class::Flat => "flat colour art",
             Class::Tone => "gradient, photo",
             Class::Ramp => "linear gradients",
+            Class::Round => "radial gradient",
         }
     }
 }
@@ -97,9 +101,11 @@ pub struct Input {
     tone: Option<Tone>,
 }
 
-/// A linear gradient: its line (256-unit coordinates) and its stops along it (0 to 1).
+/// A gradient: its line (256-unit coordinates) and its stops along it (0 to 1); or, radial, its
+/// middle, a point on its outermost circle, and its stops outwards.
 #[derive(Clone)]
 pub struct Ramp {
+    pub radial: bool,
     pub start: Point,
     pub end: Point,
     pub stops: Vec<(f64, [f64; 3])>,
@@ -108,7 +114,7 @@ pub struct Ramp {
 impl Ramp {
     pub fn color_at(&self, p: Point) -> [f64; 3] {
         let d = self.end - self.start;
-        let t = ((p - self.start).dot(d) / d.hypot2()).clamp(0.0, 1.0);
+        let t = if self.radial { (p - self.start).hypot() / d.hypot() } else { (p - self.start).dot(d) / d.hypot2() }.clamp(0.0, 1.0);
         let after = self.stops.iter().position(|s| s.0 >= t).unwrap().max(1);
         let (a, b) = (self.stops[after - 1], self.stops[after]);
         let k = (t - a.0) / (b.0 - a.0);
@@ -121,7 +127,12 @@ fn two_stop_ramp() -> Ramp {
     let dir = kurbo::Vec2::from_angle(25f64.to_radians());
     let reach = kurbo::Vec2::new(128.0, 128.0).dot(dir);
     let centre = Point::new(128.0, 128.0);
-    Ramp { start: centre - dir * reach, end: centre + dir * reach, stops: vec![(0.0, [24.0, 40.0, 150.0]), (1.0, [250.0, 215.0, 60.0])] }
+    Ramp {
+        radial: false,
+        start: centre - dir * reach,
+        end: centre + dir * reach,
+        stops: vec![(0.0, [24.0, 40.0, 150.0]), (1.0, [250.0, 215.0, 60.0])],
+    }
 }
 
 /// Red through white to green across a disc, 110° from level.
@@ -129,10 +140,26 @@ fn three_stop_ramp() -> Ramp {
     let dir = kurbo::Vec2::from_angle(110f64.to_radians());
     let centre = Point::new(128.0, 128.0);
     Ramp {
+        radial: false,
         start: centre - dir * DISC,
         end: centre + dir * DISC,
         stops: vec![(0.0, [200.0, 30.0, 40.0]), (0.4, [245.0, 240.0, 230.0]), (1.0, [20.0, 120.0, 70.0])],
     }
+}
+
+/// Pale yellow at (100, 150) out to deep blue 200 units away, over the whole image.
+fn radial_ramp() -> Ramp {
+    let middle = Point::new(100.0, 150.0);
+    Ramp {
+        radial: true,
+        start: middle,
+        end: middle + kurbo::Vec2::new(200.0, 0.0),
+        stops: vec![(0.0, [250.0, 240.0, 150.0]), (1.0, [20.0, 40.0, 130.0])],
+    }
+}
+
+fn radial(u: f64, v: f64, _: u32, _: u32) -> [f64; 3] {
+    radial_ramp().color_at(Point::new(u * 256.0, v * 256.0))
 }
 
 /// The radius of the disc the three-stop gradient fills.
@@ -364,6 +391,7 @@ pub fn inputs() -> Vec<Input> {
         tone("photo-like", photo),
         Input { class: Class::Ramp, ramp: Some(two_stop_ramp()), ..tone("two-stop gradient", two_stop) },
         Input { class: Class::Ramp, ramp: Some(three_stop_ramp()), ..tone("three-stop gradient in a disc", three_stop) },
+        Input { class: Class::Round, ramp: Some(radial_ramp()), ..tone("radial gradient", radial) },
     ];
     if let Some(input) = all.iter_mut().find(|i| i.name == "plain shapes") {
         input.plain = plain;
