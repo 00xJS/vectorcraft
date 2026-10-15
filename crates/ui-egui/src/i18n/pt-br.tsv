@@ -4040,6 +4040,16 @@ axis	Both	Ambos
 	Delete Design	Excluir Design
 	Paste Design	Colar Design
 	Select Unused	Selecionar Não Utilizados
+	Graph Column	Coluna do Gráfico
+	Column Type:	Tipo de Coluna:
+	Vertically Scaled	Em Escala Vertical
+	Uniformly Scaled	Em Escala Uniforme
+	Repeating	Repetido
+	Sliding	Deslizante
+	Each Design Represents:	Cada Design Representa:
+	For Fractions:	Para Frações:
+	Chop Design	Cortar Design
+	Scale Design	Redimensionar Design
 	Import Data…	Importar Dados…
 	Transpose	Transpor
 	Switch x/y	Alternar x/y

@@ -247,6 +247,7 @@ registry! {
     NewColorGroup: [new_color_group::KIND] => new_color_group::SPEC,
     GraphData: [graph_data::KIND] => graph_data::SPEC,
     GraphDesign: [graph_design::DESIGN] => graph_design::DESIGN_SPEC,
+    GraphColumn: [graph_design::COLUMN] => graph_design::COLUMN_SPEC,
     GraphMarker: [graph_design::MARKER] => graph_design::MARKER_SPEC,
     GradientStop: ["gradientStop"] => gradient_stop::SPEC,
     ColorPicker: [color_picker::KIND] => color_picker::SPEC,

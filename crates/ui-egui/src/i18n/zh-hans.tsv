@@ -1195,6 +1195,16 @@ file-filter	Templates	模板
 	Delete Design	删除设计
 	Paste Design	粘贴设计
 	Select Unused	选择未使用项
+	Graph Column	图表柱形
+	Column Type:	柱形类型：
+	Vertically Scaled	垂直缩放
+	Uniformly Scaled	等比缩放
+	Repeating	重复
+	Sliding	滑动
+	Each Design Represents:	每个设计表示：
+	For Fractions:	对于小数部分：
+	Chop Design	截断设计
+	Scale Design	缩放设计
 	Import Data…	导入数据…
 	Transpose	转置
 	Switch x/y	切换 x/y

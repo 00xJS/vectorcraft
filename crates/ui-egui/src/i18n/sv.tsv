@@ -1216,6 +1216,16 @@
 	Delete Design	Radera design
 	Paste Design	Klistra in design
 	Select Unused	Markera oanvända
+	Graph Column	Diagramkolumn
+	Column Type:	Kolumntyp:
+	Vertically Scaled	Vertikalt skalad
+	Uniformly Scaled	Likformigt skalad
+	Repeating	Upprepad
+	Sliding	Glidande
+	Each Design Represents:	Varje design motsvarar:
+	For Fractions:	För bråkdelar:
+	Chop Design	Kapa design
+	Scale Design	Skala design
 	Import Data…	Importera data…
 	Transpose	Transponera
 	Switch x/y	Växla x/y

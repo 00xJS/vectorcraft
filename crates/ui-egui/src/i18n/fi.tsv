@@ -20,6 +20,16 @@
 	Delete Design	Poista malli
 	Paste Design	Liitä malli
 	Select Unused	Valitse käyttämättömät
+	Graph Column	Kaavion pylväs
+	Column Type:	Pylvään tyyppi:
+	Vertically Scaled	Skaalattu pystysuunnassa
+	Uniformly Scaled	Skaalattu tasaisesti
+	Repeating	Toistuva
+	Sliding	Liukuva
+	Each Design Represents:	Kukin malli vastaa:
+	For Fractions:	Murto-osille:
+	Chop Design	Leikkaa malli
+	Scale Design	Skaalaa malli
 	Glowing Edges…	Hehkuvat reunat…
 	About VectorCraft	Tietoja VectorCraftista
 	Align to Path	Tasaa polkuun

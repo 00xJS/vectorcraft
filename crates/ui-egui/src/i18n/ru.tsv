@@ -1246,6 +1246,16 @@ file-filter	Templates	Шаблоны
 	Delete Design	Удалить дизайн
 	Paste Design	Вставить дизайн
 	Select Unused	Выбрать неиспользуемые
+	Graph Column	Столбец диаграммы
+	Column Type:	Тип столбца:
+	Vertically Scaled	Масштабирование по вертикали
+	Uniformly Scaled	Равномерное масштабирование
+	Repeating	Повторение
+	Sliding	Скольжение
+	Each Design Represents:	Каждый дизайн означает:
+	For Fractions:	Для дробных частей:
+	Chop Design	Обрезать дизайн
+	Scale Design	Масштабировать дизайн
 	Import Data…	Импорт данных…
 	Transpose	Транспонировать
 	Switch x/y	Поменять x/y

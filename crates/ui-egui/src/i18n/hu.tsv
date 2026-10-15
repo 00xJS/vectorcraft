@@ -1564,6 +1564,16 @@ file-filter	Templates	Sablonok
 	Delete Design	Minta törlése
 	Paste Design	Minta beillesztése
 	Select Unused	Nem használtak kijelölése
+	Graph Column	Diagramoszlop
+	Column Type:	Oszloptípus:
+	Vertically Scaled	Függőleges méretezés
+	Uniformly Scaled	Egyenletes méretezés
+	Repeating	Ismétlődő
+	Sliding	Csúszó
+	Each Design Represents:	Egy minta értéke:
+	For Fractions:	Törtrészeknél:
+	Chop Design	Minta levágása
+	Scale Design	Minta méretezése
 	Import Data…	Adatok importálása…
 	Transpose	Transzponálás
 	Switch x/y	x/y felcserélése

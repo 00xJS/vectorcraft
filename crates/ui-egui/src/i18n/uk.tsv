@@ -1242,6 +1242,16 @@ file-filter	Templates	Шаблони
 	Delete Design	Видалити дизайн
 	Paste Design	Вставити дизайн
 	Select Unused	Вибрати невикористані
+	Graph Column	Стовпець діаграми
+	Column Type:	Тип стовпця:
+	Vertically Scaled	Масштабування по вертикалі
+	Uniformly Scaled	Рівномірне масштабування
+	Repeating	Повторення
+	Sliding	Ковзання
+	Each Design Represents:	Кожен дизайн означає:
+	For Fractions:	Для дробових частин:
+	Chop Design	Обрізати дизайн
+	Scale Design	Масштабувати дизайн
 	Import Data…	Імпорт даних…
 	Transpose	Транспонувати
 	Switch x/y	Поміняти x/y
