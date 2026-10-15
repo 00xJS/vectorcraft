@@ -705,6 +705,37 @@ fn convert_to_artboards_and_rearrange() {
     assert_eq!(bounds(&s, b), Rect::new(50.0, 675.0, 60.0, 685.0));
 }
 
+/// Fit to Artwork Bounds fits each artboard it is given to the art on it, in one undo step: an
+/// object partly on an artboard counts for each artboard it overlaps, art flush with an edge from
+/// outside or on no artboard doesn't count, and an artboard with no art stays as it is.
+#[test]
+fn fit_to_artwork_bounds_fits_each_artboard_to_its_own_art() {
+    let mut s = session();
+    s.execute("artboard.new", &json!({"x": 1000, "y": 0, "width": 400, "height": 300})).unwrap();
+    s.execute("artboard.new", &json!({"x": 0, "y": 1000, "width": 300, "height": 300})).unwrap();
+    rect(&mut s, 100.0, 100.0, 50.0, 50.0);
+    rect(&mut s, 1100.0, 50.0, 100.0, 100.0);
+    // Across the gap between artboards 1 and 2.
+    rect(&mut s, 700.0, 250.0, 350.0, 30.0);
+    // Flush with artboard 1's right edge, and on no artboard.
+    rect(&mut s, 800.0, 500.0, 100.0, 50.0);
+    rect(&mut s, 3000.0, 3000.0, 10.0, 10.0);
+    s.execute("select.all", &json!({})).unwrap();
+    s.execute("paint.setStroke", &json!({"none": true})).unwrap();
+    let boards = |s: &Session| s.doc().unwrap().doc.artboards.iter().map(|a| a.rect).collect::<Vec<_>>();
+    let was = boards(&s);
+    let n = undo_len(&s);
+    s.execute("artboard.fitToArt", &json!({"indices": [0, 1, 2]})).unwrap();
+    assert_eq!(boards(&s), [Rect::new(100.0, 100.0, 1050.0, 280.0), Rect::new(700.0, 50.0, 1200.0, 280.0), was[2]]);
+    assert_eq!(undo_len(&s), n + 1);
+    s.execute("edit.undo", &json!({})).unwrap();
+    assert_eq!(boards(&s), was);
+    assert!(s.execute("artboard.fitToArt", &json!({"index": 2})).is_err(), "no art on artboard 3");
+    assert_eq!(boards(&s), was);
+    s.execute("artboard.fitToArt", &json!({})).unwrap();
+    assert_eq!(boards(&s), [Rect::new(100.0, 100.0, 1050.0, 280.0), was[1], was[2]], "the first artboard by default");
+}
+
 // ---------- Edit Colors ----------
 
 #[test]

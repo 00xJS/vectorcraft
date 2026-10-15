@@ -198,6 +198,24 @@ pub fn art_bounds(doc: &Document) -> Option<Rect> {
     doc.layers.iter().fold(None, |acc, l| vectorcraft_geom::union_opt(acc, drawn_bounds(&symbols, l)))
 }
 
+/// Bounds of the art an export draws ([`art_bounds`]) that is on artboard rectangle `rect`: each
+/// object of a layer or sublayer whose drawn bounds overlap `rect`, with all of its bounds; a group
+/// or a clipping layer counts as one object. `None` when no object overlaps `rect`.
+pub fn art_bounds_on(doc: &Document, rect: Rect) -> Option<Rect> {
+    // Art flush with an edge from outside can overlap it by a rounding error (#1295).
+    let rect = rect.inflate(-1e-6, -1e-6);
+    fn on(symbols: &SymbolBoxes, n: &Node, rect: Rect) -> Option<Rect> {
+        match &n.kind {
+            NodeKind::Layer { template: false, clip: false, children, .. } if n.visible => {
+                children.iter().fold(None, |acc, c| vectorcraft_geom::union_opt(acc, on(symbols, c, rect)))
+            }
+            _ => drawn_bounds(symbols, n).filter(|b| b.x0 < rect.x1 && b.x1 > rect.x0 && b.y0 < rect.y1 && b.y1 > rect.y0),
+        }
+    }
+    let symbols = doc.symbol_boxes();
+    doc.layers.iter().fold(None, |acc, l| vectorcraft_geom::union_opt(acc, on(&symbols, l, rect)))
+}
+
 fn drawn_bounds(symbols: &SymbolBoxes, n: &Node) -> Option<Rect> {
     if !n.visible {
         return None;

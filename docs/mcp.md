@@ -1835,13 +1835,20 @@ Direct Selection or Group Selection tool inside an artboard makes that artboard 
 tool, a Shift-click on an empty spot inside an artboard makes it active and keeps the selection. Choosing the Artboard
 tool (`tool.select {tool: "artboard"}`) starts it on the active artboard: its `active` option is that artboard's index.
 
-`artboard.fitToArt {index?}` (Object › Artboards › Fit to Artwork Bounds) and `artboard.fitToSelection {index?}`
-(Object › Artboards › Fit to Selected Art) resize artboard `index` (a 0-based index), or the first artboard when the
-call gives none. The desktop app adds its active artboard as `index` to the calls of these two commands that it runs
-without `index`, MCP's `run_command` calls in remote mode included. A batch passes its `artboard` on to each of their
-steps that names no `index`, as the step's `index`. When the document a step runs in has no artboard at that index,
-the step gets that document's last artboard. An action recorded in the Actions panel leaves `index` out of these
-steps, and they resize the artboard that is active when the action plays.
+`artboard.fitToArt {index? | indices?}` (Object › Artboards › Fit to Artwork Bounds) fits each artboard it names to
+the art on that artboard, in one undo step. The art is what an export draws, measured with its strokes and with the
+effects on paths, compound paths and symbol instances. An object counts for every artboard its bounds overlap, also
+when it reaches past the artboard's edge, and a group or a clipping layer counts whole. An artboard with no art on it
+keeps its size and place, and the call fails with `no artwork` when none of its artboards has art.
+`artboard.fitToSelection {index?}` (Object › Artboards › Fit to Selected Art) fits artboard `index` to the selected
+art. Both commands take 0-based indexes and resize the first artboard when the call names none. The desktop app adds
+the selected artboards (those the Artboard tool has selected, else the active one) as `indices` to the
+`artboard.fitToArt` calls it runs without `index` or `indices`. It adds its active artboard as `index` to the
+`artboard.fitToSelection` calls it runs without `index`. Both include MCP's `run_command` calls in remote mode. The
+Artboards panel menu's Fit to Artwork Bounds also passes the selected artboards. A batch passes its `artboard` on to
+each of their steps that names no `index`, as the step's `index`. When the document a step runs in has no artboard at
+that index, the step gets that document's last artboard. An action recorded in the Actions panel leaves `index` and
+`indices` out of these steps, and they resize the artboard that is active when the action plays.
 
 ```json
 {"name":"run_command","arguments":{"command":"object.align","params":{"horizontal":"left","to":"artboard","artboard":1}}}
