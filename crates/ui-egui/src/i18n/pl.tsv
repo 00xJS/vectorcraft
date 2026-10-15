@@ -1523,6 +1523,14 @@ lighting	Light	Światło
 	Every-line Composer	Kompozytor wielowierszowy
 	First-line Left Indent	Wcięcie pierwszego wiersza
 	Hyphenation…	Dzielenie wyrazów…
+	Words Longer Than:	Wyrazy dłuższe niż:
+	After First:	Po pierwszych:
+	Before Last:	Przed ostatnimi:
+	Hyphen Limit:	Limit łączników:
+	Hyphenation Zone:	Strefa dzielenia:
+	letters	liter
+	hyphens	łączników
+	Hyphenate Capitalized Words	Dziel wyrazy pisane wielką literą
 	Justification…	Justowanie…
 	Justify with last line aligned center	Justuj z ostatnim wierszem do środka
 	Justify with last line aligned right	Justuj z ostatnim wierszem do prawej

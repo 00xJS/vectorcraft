@@ -1286,6 +1286,14 @@
 	Hyphenate	使用連字號
 	Hyphenation	連字號
 	Hyphenation…	連字號…
+	Words Longer Than:	單字長度超過：
+	After First:	斷開前至少：
+	Before Last:	斷開後至少：
+	Hyphen Limit:	連字號限制：
+	Hyphenation Zone:	連字區：
+	letters	個字母
+	hyphens	個連字號
+	Hyphenate Capitalized Words	大寫單字使用連字號
 	ICC Profile	ICC 描述檔
 	Identify Objects By	識別物件依據
 	Ignore	略過

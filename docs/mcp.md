@@ -3148,6 +3148,32 @@ Type and Convert To Point Type. Either keeps the text and its styles and is one 
 {"name":"run_command","arguments":{"command":"type.convertToAreaType","params":{"ids":[42]}}}
 ```
 
+## Hyphenation options
+
+`text.setFormat` sets the Paragraph panel menu's Hyphenation… options of the selected type (or `ids`, or the
+paragraphs a `start` / `end` range touches), which apply while `hyphenate` is on:
+
+- `wordsLongerThan` (letters, 1 to 25, default 5): only words with more letters than this are hyphenated.
+- `afterFirst` and `beforeLast` (letters, 1 to 15, default 3): the fewest letters a word keeps before and after the
+  hyphen.
+- `hyphenLimit` (lines, 0 to 25, default 0): the most consecutive lines that may end with a hyphen; 0 sets no limit. A
+  line that ends at a soft hyphen counts, and a soft hyphen still breaks a line past the limit.
+- `hyphenationZone` (pt, 0 to 1296, default 0): with the Single-line Composer, a line whose text before the next word
+  already ends within this distance of the right edge breaks before that word instead of hyphenating it. The Every-line
+  Composer does not use it.
+- `hyphenateCapitalized` (default `true`): `false` leaves words that start with a capital letter whole. Words in
+  capitals only are never hyphenated.
+
+The letter and line counts are rounded, and every value is clamped to its range. Preferences › Hyphenation › Exceptions still decide the breaks of a
+listed word. The options are saved with the paragraph (`hyphenation` in `para`) only when they differ from the
+defaults, and paragraph styles carry them (`paraStyle.new {attrs: {hyphenation: {words_longer_than: 8}}}`). One undo
+step. `ui.hyphenation` opens the Hyphenation dialog on the values the Paragraph panel shows; OK sends the values that
+changed.
+
+```json
+{"name":"run_command","arguments":{"command":"text.setFormat","params":{"hyphenate":true,"wordsLongerThan":8,"hyphenLimit":2}}}
+```
+
 ## Kinsoku Set
 
 `text.setFormat {kinsoku: "hard"|"soft"|"none"}` sets the Paragraph panel's Kinsoku Set of the selected type (or `ids`):

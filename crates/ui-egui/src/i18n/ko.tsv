@@ -1552,6 +1552,14 @@
 	Hyphenate	하이픈 넣기
 	Hyphenation	하이픈 넣기
 	Hyphenation…	하이픈 넣기…
+	Words Longer Than:	다음보다 긴 단어:
+	After First:	앞부분 최소:
+	Before Last:	뒷부분 최소:
+	Hyphen Limit:	연속 하이픈 제한:
+	Hyphenation Zone:	하이픈 넣기 영역:
+	letters	글자
+	hyphens	개
+	Hyphenate Capitalized Words	대문자로 시작하는 단어에 하이픈 넣기
 	ICC Profile	ICC 프로파일
 	Identify Objects By	개체 식별 기준
 	Ignore	무시

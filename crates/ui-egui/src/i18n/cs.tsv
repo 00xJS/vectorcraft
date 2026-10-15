@@ -1610,6 +1610,14 @@ lighting	Light	Světlo
 	Every-line Composer	Sazba všech řádků
 	First-line Left Indent	Odsazení prvního řádku zleva
 	Hyphenation…	Dělení slov…
+	Words Longer Than:	Slova delší než:
+	After First:	Po prvních:
+	Before Last:	Před posledními:
+	Hyphen Limit:	Limit spojovníků:
+	Hyphenation Zone:	Zóna dělení slov:
+	letters	písmen
+	hyphens	spojovníků
+	Hyphenate Capitalized Words	Dělit slova s velkým počátečním písmenem
 	Justification…	Zarovnání do bloku…
 	Justify with last line aligned center	Do bloku, poslední řádek na střed
 	Justify with last line aligned right	Do bloku, poslední řádek vpravo

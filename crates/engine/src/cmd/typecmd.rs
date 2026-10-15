@@ -888,6 +888,48 @@ mod area_tests {
         assert_eq!(old.burasagari, Burasagari::None);
     }
 
+    /// Paragraph panel menu › Hyphenation…: `text.setFormat` sets each paragraph's hyphenation
+    /// options, rounded and clamped, in one undo step; they are saved only when not the defaults,
+    /// and paragraph styles carry them.
+    #[test]
+    fn hyphenation_options_are_set_per_paragraph_and_saved_only_when_not_default() {
+        use vectorcraft_doc::HyphenationOptions;
+        let mut s = Session::new();
+        s.execute("file.new", &json!({"width": 400, "height": 400})).unwrap();
+        let id = s.execute("text.create", &json!({"x": 10, "y": 10, "text": "One\nTwo", "area": {"width": 200, "height": 100}})).unwrap()["id"]
+            .as_u64()
+            .unwrap();
+        let paras = |s: &Session| match &s.doc().unwrap().doc.node(NodeId(id)).unwrap().kind {
+            NodeKind::Text(t) => (t.para_at(0).clone(), t.para_at(1).clone()),
+            _ => panic!("text"),
+        };
+        assert_eq!(paras(&s).0.hyphenation, HyphenationOptions::default());
+        assert!(serde_json::to_value(paras(&s).0).unwrap().get("hyphenation").is_none());
+        s.execute("select.set", &json!({"ids": [id]})).unwrap();
+        s.execute(
+            "text.setFormat",
+            &json!({"wordsLongerThan": 7.6, "afterFirst": 0, "beforeLast": 40, "hyphenLimit": 2, "hyphenationZone": 18, "hyphenateCapitalized": false, "start": 5, "end": 5}),
+        )
+        .unwrap();
+        let want = HyphenationOptions { words_longer_than: 8, after_first: 1, before_last: 15, hyphen_limit: 2, zone: 18.0, capitalized: false };
+        let (first, second) = paras(&s);
+        assert_eq!((first.hyphenation, &second.hyphenation), (HyphenationOptions::default(), &want), "only the paragraph the caret is in");
+        assert_eq!(serde_json::to_value(&second).unwrap()["hyphenation"]["hyphen_limit"], 2);
+        let back: vectorcraft_doc::ParaStyle = serde_json::from_value(serde_json::to_value(&second).unwrap()).unwrap();
+        assert_eq!(back.hyphenation, want);
+        s.execute("text.setFormat", &json!({"hyphenLimit": -3, "hyphenationZone": 5000})).unwrap();
+        assert_eq!((paras(&s).0.hyphenation.hyphen_limit, paras(&s).1.hyphenation.zone), (0, 1296.0));
+        s.execute("edit.undo", &json!({})).unwrap();
+        s.execute("edit.undo", &json!({})).unwrap();
+        assert_eq!(paras(&s).1.hyphenation, HyphenationOptions::default());
+        // A paragraph style carries them; an older file's paragraph reads the defaults.
+        s.execute("paraStyle.new", &json!({"name": "Loose", "attrs": {"hyphenation": {"words_longer_than": 9}}})).unwrap();
+        s.execute("paraStyle.apply", &json!({"name": "Loose", "id": id})).unwrap();
+        assert_eq!(paras(&s).0.hyphenation, HyphenationOptions { words_longer_than: 9, ..HyphenationOptions::default() });
+        let old: vectorcraft_doc::ParaStyle = serde_json::from_value(json!({"justify": "Left", "hyphenate": true})).unwrap();
+        assert_eq!(old.hyphenation, HyphenationOptions::default());
+    }
+
     /// #432: while the interface is in Japanese, new type (text.create, text.createInPath) starts
     /// with em box top-to-top leading and em box centre alignment, and new styles made from nothing
     /// carry them; params override; the values are journaled; imported text keeps the Roman
