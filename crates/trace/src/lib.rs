@@ -865,6 +865,35 @@ impl Layers<'_> {
         first.is_some()
     }
 
+    /// Shapes, Abutting: the shape the outline `sp` (fitted from the loop `l`, `hard` as that
+    /// loop is) is, where it may be one. The edge is shared by the regions on its two sides, so
+    /// both must become that same shape or neither: only a closed edge between two regions, a
+    /// region whose whole outline is the hole of one other (no junction on it, not on the image's
+    /// border), and only a shape inside the image. The shape is read from the outline run one way
+    /// from one start, so the region and the hole it fills get the very same one.
+    fn shared_shape(&self, l: &Loop, sp: &vectorcraft_geom::SubPath, hard: bool) -> Option<TracedShape> {
+        let (w, h) = (i32::try_from(self.w).ok()?, i32::try_from(self.h).ok()?);
+        if l.pts.iter().any(|&(x, y)| x <= 0 || y <= 0 || x >= w || y >= h || self.junction(x, y).is_some()) {
+            return None;
+        }
+        let mut one_way = sp.clone();
+        if one_way.signed_area() < 0.0 {
+            one_way.reverse();
+        }
+        let first = one_way.anchors.iter().enumerate().min_by(|a, b| a.1.p.x.total_cmp(&b.1.p.x).then(a.1.p.y.total_cmp(&b.1.p.y)))?.0;
+        one_way.anchors.rotate_left(first);
+        let shape = shapes::recognise(&one_way, hard)?;
+        let (wf, hf) = (self.w as f64, self.h as f64);
+        let inside = shape
+            .path()
+            .subpaths
+            .iter()
+            .flat_map(|s| &s.anchors)
+            .flat_map(|a| [a.p, a.h_in, a.h_out])
+            .all(|p| (0.0..=wf).contains(&p.x) && (0.0..=hf).contains(&p.y));
+        inside.then_some(shape)
+    }
+
     /// The paths of layer `r` (palette entry `ci`), or `None` once the anchors made pass the
     /// maximum.
     fn layer(&self, r: usize, ci: usize) -> Option<Vec<TracedPath>> {
@@ -923,26 +952,32 @@ impl Layers<'_> {
         for comp in comps {
             // (`hard`: some of the outline has no anti-aliasing, and is known less exactly.)
             let hard = std::cell::Cell::new(false);
+            // (Each loop fitted, and whether its own outline is hard.)
             let fit = |l: &Loop| {
                 let (sp, is_hard) = fit::fit_loop(l, w, h, &|c| (self.shift(c), self.neighbour(c)), &|x, y| self.junction(x, y), &self.style)?;
                 hard.set(hard.get() || is_hard);
-                Some(sp)
+                Some((sp, is_hard))
             };
-            let Some(outer) = fit(&comp.outer) else { continue };
+            let Some((outer, _)) = fit(&comp.outer) else { continue };
             let mut subs = vec![outer];
             for hole in &comp.holes {
                 if hole.area2.abs() / 2 < min_hole && params.noise > 0 {
                     continue;
                 }
-                let Some(mut sp) = fit(hole) else { continue };
+                let Some((mut sp, own_hard)) = fit(hole) else { continue };
                 // Shapes: a hole that is a shape is that shape, as what fills it is (the two are
                 // one outline: they stay one). Only where one colour fills it: the parts of
-                // several are not that shape, and would no longer meet it.
-                if params.shapes
-                    && area_stroke.is_none()
-                    && self.one_colour_within(hole)
-                    && let Some(exact) = shapes::recognise(&sp, hard.get()).and_then(|shape| shape.path().subpaths.into_iter().next())
-                {
+                // several are not that shape, and would no longer meet it. Abutting, only where the
+                // region that fills it is that shape too (see `shared_shape`).
+                let exact = if !params.shapes || area_stroke.is_some() || !self.one_colour_within(hole) {
+                    None
+                } else if overlapping {
+                    shapes::recognise(&sp, hard.get())
+                } else {
+                    // (As hard as this outline is, as the region that fills it reads it.)
+                    self.shared_shape(hole, &sp, own_hard)
+                };
+                if let Some(exact) = exact.and_then(|shape| shape.path().subpaths.into_iter().next()) {
                     // (Which way round each goes: by the area of the polygon through points along it.)
                     let turn = |sp: &vectorcraft_geom::SubPath| {
                         use vectorcraft_geom::ParamCurve;
@@ -960,7 +995,9 @@ impl Layers<'_> {
             }
             // Shapes: a filled outline without holes that is a shape becomes that shape.
             let shape = match subs.as_slice() {
-                [only] if params.shapes && area_stroke.is_none() => shapes::recognise(only, hard.get()),
+                [only] if params.shapes && area_stroke.is_none() && overlapping => shapes::recognise(only, hard.get()),
+                // Abutting: only an island in one other region, whose hole it is (see `shared_shape`).
+                [only] if params.shapes && area_stroke.is_none() && comp.holes.is_empty() => self.shared_shape(&comp.outer, only, hard.get()),
                 _ => None,
             };
             let path = shape.map_or_else(|| PathData::new(subs), |s| s.path());

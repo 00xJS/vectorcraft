@@ -1410,3 +1410,119 @@ fn grayscale_gradients_are_grey() {
     }
     assert!(res.palette.iter().all(|&c| grey(c)), "{:?}", res.palette);
 }
+
+/// `w × h` art of `colours`, anti-aliased: each pixel the mean of the 8 × 8 samples `at` colours.
+fn soft_colours(w: u32, h: u32, colours: &[[u8; 3]], at: impl Fn(f64, f64) -> usize) -> Raster {
+    Raster::from_fn(w, h, |x, y| {
+        let mut sum = [0.0f64; 3];
+        for i in 0..64 {
+            let c = colours[at(f64::from(x) + (f64::from(i % 8) + 0.5) / 8.0, f64::from(y) + (f64::from(i / 8) + 0.5) / 8.0)];
+            for k in 0..3 {
+                sum[k] += f64::from(c[k]) / 64.0;
+            }
+        }
+        [sum[0].round() as u8, sum[1].round() as u8, sum[2].round() as u8, 255]
+    })
+}
+
+/// Abutting paths: how far (px), at worst, a point along one path's outline lies from every other
+/// path's outline (the image's frame aside), and how many points of a 4 × 4 grid per pixel no path
+/// or more than one path covers.
+fn seams(res: &TraceResult, w: u32, h: u32) -> (f64, usize) {
+    use kurbo::{ParamCurve, ParamCurveNearest, Shape};
+    let (wf, hf) = (f64::from(w), f64::from(h));
+    let segs: Vec<Vec<kurbo::CubicBez>> =
+        res.paths.iter().map(|p| p.path.subpaths.iter().flat_map(|sp| (0..sp.segment_count()).map(move |i| sp.segment(i))).collect()).collect();
+    let mut gap = 0.0f64;
+    for (i, own) in segs.iter().enumerate() {
+        for c in own {
+            for k in 0..16 {
+                let p = c.eval(f64::from(k) / 16.0);
+                if p.x.abs() < 1e-9 || p.y.abs() < 1e-9 || (p.x - wf).abs() < 1e-9 || (p.y - hf).abs() < 1e-9 {
+                    continue;
+                }
+                let near = segs.iter().enumerate().filter(|(j, _)| *j != i).flat_map(|(_, o)| o).map(|o| o.nearest(p, 1e-12).distance_sq);
+                gap = gap.max(near.fold(f64::INFINITY, f64::min).sqrt());
+            }
+        }
+    }
+    let beziers: Vec<kurbo::BezPath> = res.paths.iter().map(|p| p.path.to_bezpath()).collect();
+    let mut wrong = 0;
+    for yi in 0..h * 4 {
+        for xi in 0..w * 4 {
+            // (Off the half and quarter pixels, where hard edges lie.)
+            let p = kurbo::Point::new(0.1093 + f64::from(xi) * 0.25, 0.1371 + f64::from(yi) * 0.25);
+            wrong += usize::from(beziers.iter().filter(|b| b.winding(p) != 0).count() != 1);
+        }
+    }
+    (gap, wrong)
+}
+
+/// Shapes, Abutting: a region that is a shape is that shape on both of its sides, or on neither.
+#[test]
+fn shapes_keep_abutting_neighbours_watertight() {
+    let colours = [[255, 255, 255], [200, 40, 50], [30, 90, 200], [40, 160, 70], [240, 200, 40]];
+    let disc = |x: f64, y: f64, cx: f64, cy: f64, r: f64| (x - cx).hypot(y - cy) <= r;
+    let tile = |x: f64, y: f64, cx: f64, cy: f64, half: f64, deg: f64| {
+        let (s, c) = deg.to_radians().sin_cos();
+        let (dx, dy) = (x - cx, y - cy);
+        (dx * c + dy * s).abs() <= half && (dy * c - dx * s).abs() <= half
+    };
+    let arts: Vec<(&str, Raster)> = vec![
+        // A disc in a square in the background, and a disc across the square's edge.
+        (
+            "nested",
+            soft_colours(120, 100, &colours, |x, y| {
+                if disc(x, y, 50.3, 50.6, 14.2) {
+                    2
+                } else if disc(x, y, 90.4, 30.2, 13.1) {
+                    3
+                } else if (20.4..80.6).contains(&x) && (20.3..80.7).contains(&y) {
+                    1
+                } else {
+                    0
+                }
+            }),
+        ),
+        // A square on the frame, a disc on the frame, and a square away from it.
+        (
+            "on the frame",
+            soft_colours(100, 80, &colours, |x, y| {
+                if (0.0..30.6).contains(&x) && (20.3..50.4).contains(&y) {
+                    1
+                } else if disc(x, y, 70.3, 12.0, 18.4) {
+                    2
+                } else if (55.3..85.6).contains(&x) && (40.4..70.7).contains(&y) {
+                    3
+                } else {
+                    0
+                }
+            }),
+        ),
+        // Tilted tiles, some touching, some apart.
+        (
+            "tiles",
+            soft_colours(120, 120, &colours, |x, y| {
+                for (k, (cx, cy)) in [(30.3, 30.4), (52.0, 30.4), (90.2, 32.1), (30.6, 88.7), (60.4, 62.3), (92.1, 90.6)].into_iter().enumerate() {
+                    if tile(x, y, cx, cy, 11.2, 15.0 + 7.0 * k as f64) {
+                        return 1 + k % 4;
+                    }
+                }
+                0
+            }),
+        ),
+    ];
+    let mut wrong = vec![];
+    for (name, img) in &arts {
+        let params = TraceParams { mode: Mode::Color, colors: 5, noise: 4, ignore_white: false, shapes: true, ..TraceParams::default() };
+        let res = trace(img, &params);
+        let (gap, bad) = seams(&res, img.width, img.height);
+        let shapes = res.paths.iter().filter(|p| p.shape.is_some()).count();
+        let line = format!("{name}: {} paths, {shapes} shapes, gap {gap:.6} px, {bad} points covered other than once", res.paths.len());
+        eprintln!("{line}");
+        if gap > 1e-3 || bad > 0 {
+            wrong.push(line);
+        }
+    }
+    assert!(wrong.is_empty(), "{}", wrong.join("\n"));
+}
