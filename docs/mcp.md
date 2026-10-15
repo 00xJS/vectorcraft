@@ -1323,12 +1323,14 @@ groups naming items that aren't there dropped. Files written before groups load 
 
 ## Strokes on type
 
-`stroke.set` without an `item` gives type its characters' stroke: weight, cap, join, miter limit and the dash
-options go to every run (the object keeps no stroke of its own); an `item` still edits an object-level stroke added
+`stroke.set` without an `item` gives type its characters' stroke: weight, cap, join, miter limit, `align` and the
+dash options go to every run (the object keeps no stroke of its own); an `item` still edits an object-level stroke added
 with `appearance.addStroke`, which takes every stroke option (dashes, profile, opacity, blend) like a path's and paints under or over the
 characters as its place relative to the Characters row says. To stroke
-some characters, use `text.setRangeStyle {id, start, end, strokeOptions: {weight?, cap?, join?, miterLimit?, dash?,
-dashOffset?, alignDashes?}}`. `inspect_document` reports each object's stroke as `strokeOptions` (type: its first
+some characters, use `text.setRangeStyle {id, start, end, strokeOptions: {weight?, cap?, join?, miterLimit?, align?,
+dash?, dashOffset?, alignDashes?}}`. `align: "inside"|"outside"` keeps the characters' stroke on that side of the
+glyph outlines, drawn at twice the weight and clipped, while the type stays editable (beyond Illustrator); SVG export
+writes the text live and that stroke as glyph outlines over it. `inspect_document` reports each object's stroke as `strokeOptions` (type: its first
 run's) in `stroke.set` terms. `stroke.set` on a group leaves the images and symbol instances in it alone.
 
 ## Inline graphics in type

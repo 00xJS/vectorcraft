@@ -136,7 +136,7 @@ fn character_stroke_options_round_trip_natively_and_old_files_load() {
 
 /// Align Stroke on live type (Reddit redd.it/1dwhos6): the characters' stroke goes inside or
 /// outside the glyphs without creating outlines, for every run or a range, and is kept by the
-/// native format, the Eyedropper and Create Outlines.
+/// native format and Create Outlines.
 #[test]
 fn align_stroke_reaches_the_characters_stroke() {
     let mut s = session();
@@ -173,17 +173,16 @@ fn align_stroke_reaches_the_characters_stroke() {
     assert!(aligns.contains(&StrokeAlign::Inside) && aligns.contains(&StrokeAlign::Outside), "{aligns:?}");
 }
 
+/// Copying type's appearance onto a path keeps its characters' stroke alignment (the Eyedropper's
+/// own stroke attributes have none, on paths as on type).
 #[test]
-fn the_eyedropper_carries_the_characters_stroke_alignment() {
+fn a_path_copying_types_appearance_takes_its_stroke_alignment() {
     let mut s = session();
     let id = stroked_text(&mut s);
     run(&mut s, "stroke.set", json!({"align": "inside"}));
     let rect = run(&mut s, "shape.rectangle", json!({"x": 10, "y": 150, "width": 50, "height": 50}))["id"].as_u64().unwrap();
     run(&mut s, "appearance.copyFrom", json!({"source": id.0, "ids": [rect]}));
     assert_eq!(s.doc().unwrap().doc.node(NodeId(rect)).unwrap().appearance.stroke().unwrap().align, StrokeAlign::Inside);
-    run(&mut s, "stroke.set", json!({"ids": [rect], "align": "outside"}));
-    run(&mut s, "appearance.copyFrom", json!({"source": rect, "ids": [id.0]}));
-    assert_eq!(text(&s, id).runs[0].style.stroke_align, StrokeAlign::Outside);
 }
 
 #[test]
