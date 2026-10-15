@@ -502,7 +502,9 @@ Draw, look, export:
 
 Export As goes through `options` too: for PNG, JPEG and WebP `useArtboards: true` writes one file per artboard (all,
 or `range`), named `<file>-<artboard>.<ext>`, and returns `{path, files}` (a PDF keeps them as pages of one file; an
-SVG writes one file per artboard of a `range`); `useArtboards: false` exports the bounds of the visible art.
+SVG writes one file per artboard of a `range`); `useArtboards: false` exports the bounds of the visible art with what
+its effects paint, the effects of groups, type and images included. `artboard.fitToArt` measures the art the same
+way.
 
 Raster exports take more options in `options`: `ppi` (72, 150, 300…; stored in the file), `background`
 (`transparent`, `white`, `black` or `"#rrggbb"`), `antiAlias` (`none`, `art`, `type`: text snapped to pixels) and,
@@ -1581,8 +1583,8 @@ its symbol is missing, when its symbol or a symbol nested in its art holds an in
 nest 32 deep in its art. PDF and EPS export and the SVG of an artboard leave out art outside the page or artboard, and
 Skip Blank Artboards skips an artboard with no art on it. For both, the box of an instance whose art holds brushed
 strokes grows by 16 times the widest stroke (at least 1 pt) of the objects in its art that have a brushed stroke,
-plus 8 pt. The SVG of an artboard also keeps an object that holds an instance when the effects in the symbol's art, or
-the instance's own, paint onto the artboard.
+plus 8 pt. The SVG of an artboard also keeps an object whose effects paint onto the artboard, and an object that holds
+an instance when the effects in the symbol's art, or the instance's own, paint onto it.
 
 ## Expand
 
