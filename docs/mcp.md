@@ -377,6 +377,10 @@ stroke instead of the whole object: `run_command effect.apply {"effect": "path.o
 `effect.remove`, `effect.setParams` (`visible` toggles one) and `effect.duplicate` address that item's effects;
 `apply_effect` uses the active item. `effect.list` reports each object's item effects under `applied[].items`.
 
+`effect.apply {"effect": "path.outlineObject"}` (Effect › Path › Outline Object) takes no parameters. Type that carries
+it is drawn, exported and expanded as its glyph outlines and stays editable type, and the effects after it reshape
+those outlines. On paths, compound paths and images it does not change what is drawn.
+
 Errors (unknown tool, bad arguments, a disabled or failing command) come back as a normal result with
 `isError: true` and a message. The model can read the message and retry.
 
@@ -1479,8 +1483,10 @@ fill alone and each stroke its outline filled with its paint (a brushed stroke: 
 under the object's id; each piece takes its fill's or stroke's opacity and blend mode, and the group keeps the
 object's transparency and opacity mask. Geometry effects are baked; raster effects become an embedded image at the
 document's raster effects resolution (shadows and outer glows under the art; a blur, feather or inner glow replaces
-the object with the image). Type with effects or fills and strokes of its own is outlined. A group's or layer's own
-fills and strokes become objects among its members, and its members are expanded too.
+the object with the image). Type with a geometry effect (Outline Object included) or with fills and strokes of its own
+is outlined; type that has no fills or strokes of its own and whose only effects are shadows or outer glows stays
+type, with the image under it. A group's or layer's own fills and strokes become objects among its members, and its
+members are expanded too.
 
 ```json
 {"name":"run_command","arguments":{"command":"effect.expandAppearance","params":{"ids":[12]}}}
