@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 use vectorcraft_color::{Color, Paint};
 use vectorcraft_geom::{Affine, PathData, Point, Rect, Vec2};
 
-use crate::appearance::{Appearance, AppearanceItem, Dash, FillLayer, LineCap, LineJoin, StrokeLayer};
+use crate::appearance::{Appearance, AppearanceItem, Dash, FillLayer, LineCap, LineJoin, StrokeAlign, StrokeLayer};
 
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub enum Justify {
@@ -84,6 +84,10 @@ pub struct CharStyle {
     pub stroke_miter_limit: f64,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub stroke_dash: Option<Dash>,
+    /// Align Stroke of the character stroke (Stroke panel, with type selected): centred on the
+    /// glyph outlines, inside or outside them, as for object strokes; the type stays live.
+    #[serde(default, skip_serializing_if = "crate::skip::is_default")]
+    pub stroke_align: StrokeAlign,
     /// Superscript or subscript (Character panel).
     #[serde(default, skip_serializing_if = "crate::skip::is_default")]
     pub position: CharPosition,
@@ -249,6 +253,7 @@ impl Default for CharStyle {
             stroke_join: LineJoin::Miter,
             stroke_miter_limit: 10.0,
             stroke_dash: None,
+            stroke_align: StrokeAlign::Center,
             position: CharPosition::Normal,
             char_align: CharAlign::RomanBaseline,
             proportional_metrics: false,
@@ -266,8 +271,9 @@ impl CharStyle {
     pub fn has_stroke(&self) -> bool {
         !self.stroke.is_none() && self.stroke_width > 0.0
     }
-    /// The character stroke as a stroke layer (paint, weight, cap, join, miter limit, dashes and
-    /// overprint), so type strokes share the object strokes' geometry, rendering and export.
+    /// The character stroke as a stroke layer (paint, weight, cap, join, miter limit, dashes,
+    /// alignment and overprint), so type strokes share the object strokes' geometry, rendering
+    /// and export.
     pub fn stroke_layer(&self) -> StrokeLayer {
         StrokeLayer {
             overprint: self.overprint_stroke,
@@ -275,11 +281,13 @@ impl CharStyle {
             join: self.stroke_join,
             miter_limit: self.stroke_miter_limit,
             dash: self.stroke_dash.clone(),
+            align: self.stroke_align,
             ..StrokeLayer::new(self.stroke.clone(), self.stroke_width)
         }
     }
-    /// Take the paint, weight, cap, join, miter limit and dashes of `st` as the character stroke
-    /// (the options characters have no use for, such as alignment and arrowheads, are dropped).
+    /// Take the paint, weight, cap, join, miter limit, dashes and alignment of `st` as the
+    /// character stroke (the options characters have no use for, such as arrowheads and width
+    /// profiles, are dropped).
     pub fn set_stroke_layer(&mut self, st: &StrokeLayer) {
         self.stroke = st.paint.clone();
         self.stroke_width = st.width;
@@ -287,6 +295,19 @@ impl CharStyle {
         self.stroke_join = st.join;
         self.stroke_miter_limit = st.miter_limit;
         self.stroke_dash = st.dash.clone();
+        self.stroke_align = st.align;
+    }
+    /// How far the character stroke paints past the glyph outlines (text space): half the weight
+    /// centred, the whole weight outside, nothing inside (miter spikes aside).
+    pub fn stroke_outset(&self) -> f64 {
+        if !self.has_stroke() {
+            return 0.0;
+        }
+        match self.stroke_align {
+            StrokeAlign::Center => self.stroke_width / 2.0,
+            StrokeAlign::Outside => self.stroke_width,
+            StrokeAlign::Inside => 0.0,
+        }
     }
     /// The character fill as a fill layer, overprinting as the characters do.
     fn fill_layer(&self) -> FillLayer {
