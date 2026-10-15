@@ -318,7 +318,12 @@ pub const UI_COMMANDS: &[(&str, &str, &str, &str)] = &[
         "{pinned?: bool} keep the Contextual Task Bar where it is instead of following the selection (true), let it follow the selection again from where it is (false) or toggle (omitted), as the bar's More Options menu does; returns the new state",
     ),
     ("window.taskBar.reset", "Reset Bar Position", "", "{} unpin the Contextual Task Bar and put it back under the selection"),
-    ("window.dock", "Panels", "Tab", "{} show/hide all panels"),
+    (
+        "window.dock",
+        "Panels",
+        "Tab",
+        "{} hide the panels, the toolbar and the Control bar, or show again the ones the last Tab hid (all three when none of them shows and Tab hid none); returns whether it showed them",
+    ),
     (
         "window.panels",
         "Panels Except Tools and Control",
@@ -1288,13 +1293,29 @@ pub fn run_ui_command(app: &mut VectorcraftApp, id: &str, p: &Value) -> Option<R
             Ok(Value::Null)
         }
         "window.dock" => {
-            let on = !(app.ui.dock && app.ui.toolbar);
-            app.ui.dock = on;
-            app.ui.toolbar = on;
-            app.ui.control_bar = on;
-            if !on {
-                app.ui.open_panel = None;
-            }
+            let ui = &mut app.ui;
+            // The bars the last Tab hid show again, unless the toolbar or the Control bar was shown
+            // another way since then (Window › Tools, Window › Control). Panels shown with Shift+Tab
+            // in between stay shown. Switching workspaces clears the record (`workspaces::apply`).
+            let hid = ui.tab_hid.take().filter(|h| (h.dock || h.toolbar || h.control_bar) && !ui.toolbar && !ui.control_bar);
+            let on = if let Some(h) = hid {
+                ui.dock |= h.dock;
+                ui.toolbar = h.toolbar;
+                ui.control_bar = h.control_bar;
+                true
+            } else if ui.dock || ui.toolbar || ui.control_bar {
+                ui.tab_hid = Some(crate::state::TabHid { dock: ui.dock, toolbar: ui.toolbar, control_bar: ui.control_bar });
+                ui.dock = false;
+                ui.toolbar = false;
+                ui.control_bar = false;
+                ui.open_panel = None;
+                false
+            } else {
+                ui.dock = true;
+                ui.toolbar = true;
+                ui.control_bar = true;
+                true
+            };
             Ok(json!(on))
         }
         "window.panels" => {

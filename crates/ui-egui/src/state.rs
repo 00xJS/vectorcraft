@@ -325,6 +325,10 @@ pub struct UiState {
     pub toolbar_pos: Option<[f32; 2]>,
     pub status_bar: bool,
     pub dock: bool,
+    /// The bars that Tab (`window.dock`) hid, which the next Tab shows again; none when Tab has not
+    /// hidden them since it last showed them, or a workspace was applied since.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tab_hid: Option<TabHid>,
     pub view: ViewFlags,
     pub dialog: Option<Dialog>,
     /// Messages to show in a dialog once the open one is closed (`dialogs::confirm::tell`), in
@@ -581,6 +585,15 @@ pub struct TaskBarPlace {
     pub offset: Option<(u64, egui::Vec2)>,
 }
 
+/// Which of the panels, the toolbar and the Control bar showed when Tab (`window.dock`) hid them.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(default)]
+pub struct TabHid {
+    pub dock: bool,
+    pub toolbar: bool,
+    pub control_bar: bool,
+}
+
 /// A group of panels dragged out of the dock: it floats as a stack of tabs, one panel shown.
 ///
 /// Groups sharing a `column` float as one set, stacked top to bottom in list order, like the panel
@@ -720,6 +733,7 @@ impl Default for UiState {
             toolbar_pos: None,
             status_bar: true,
             dock: true,
+            tab_hid: None,
             view: ViewFlags::default(),
             dialog: None,
             told: vec![],

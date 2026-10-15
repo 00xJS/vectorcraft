@@ -861,6 +861,79 @@ mod tests {
         }
     }
 
+    /// The second Tab shows again only the bars the first Tab hid: a Control bar that was off stays
+    /// off, and a toolbar hidden with Window › Tools stays hidden, after a restart too. Shift+Tab
+    /// between two Tabs, and Tab between two Shift+Tabs, leave a state the same key goes back from.
+    /// After a switch of workspace, Tab hides and shows that workspace's bars.
+    #[test]
+    fn tab_shows_again_only_the_bars_it_hid() {
+        let mut app = VectorcraftApp::new(vectorcraft_engine::Session::new(), Default::default());
+        app.session.execute("file.new", &json!({"width": 200, "height": 200})).unwrap();
+        let ctx = egui::Context::default();
+        let screen = egui::Rect::from_min_size(egui::Pos2::ZERO, egui::vec2(1600.0, 850.0));
+        let run = |app: &mut VectorcraftApp, events: Vec<egui::Event>| {
+            let mut out = ctx.run_ui(egui::RawInput { events, screen_rect: Some(screen), ..Default::default() }, |ui| {
+                app.logic(ui.ctx());
+                app.ui(ui);
+            });
+            out.textures_delta.clear();
+        };
+        let press = |modifiers| egui::Event::Key { key: Key::Tab, physical_key: None, pressed: true, repeat: false, modifiers };
+        let tab = |app: &mut VectorcraftApp, modifiers| {
+            run(app, vec![press(modifiers)]);
+            run(app, vec![]);
+            (app.ui.dock, app.ui.toolbar, app.ui.control_bar)
+        };
+        for _ in 0..3 {
+            run(&mut app, vec![]);
+        }
+        assert_eq!((app.ui.dock, app.ui.toolbar, app.ui.control_bar), (true, true, false), "the Control bar starts off");
+        assert_eq!(tab(&mut app, Modifiers::NONE), (false, false, false));
+        assert_eq!(tab(&mut app, Modifiers::NONE), (true, true, false), "the second Tab leaves the Control bar off");
+        app.run("window.toolbar", json!({})).unwrap();
+        assert_eq!(tab(&mut app, Modifiers::NONE), (false, false, false));
+        assert_eq!(tab(&mut app, Modifiers::NONE), (true, false, false), "a toolbar hidden with Window › Tools stays hidden");
+        app.run("window.toolbar", json!({})).unwrap();
+        // Hidden by Tab when the app quits: the next Tab after a restart shows the same bars.
+        assert_eq!(tab(&mut app, Modifiers::NONE), (false, false, false));
+        app.ui = serde_json::from_slice(&serde_json::to_vec(&app.ui).unwrap()).unwrap();
+        assert_eq!(tab(&mut app, Modifiers::NONE), (true, true, false), "after a restart");
+        // Shift+Tab after Tab shows the panels, and a second Shift+Tab hides them again; Tab then
+        // shows what the first Tab hid.
+        assert_eq!(tab(&mut app, Modifiers::NONE), (false, false, false));
+        assert_eq!(tab(&mut app, Modifiers::SHIFT), (true, false, false));
+        assert_eq!(tab(&mut app, Modifiers::SHIFT), (false, false, false));
+        assert_eq!(tab(&mut app, Modifiers::SHIFT), (true, false, false));
+        assert_eq!(tab(&mut app, Modifiers::NONE), (true, true, false), "Tab after Shift+Tab");
+        // Tab after Shift+Tab hides the toolbar, and a second Tab goes back to Shift+Tab's state.
+        assert_eq!(tab(&mut app, Modifiers::SHIFT), (false, true, false));
+        assert_eq!(tab(&mut app, Modifiers::NONE), (false, false, false));
+        assert_eq!(tab(&mut app, Modifiers::NONE), (false, true, false), "Shift+Tab's state");
+        // Panels shown with Shift+Tab between two Tabs stay shown.
+        assert_eq!(tab(&mut app, Modifiers::NONE), (false, false, false));
+        assert_eq!(tab(&mut app, Modifiers::SHIFT), (true, false, false));
+        assert_eq!(tab(&mut app, Modifiers::NONE), (true, true, false), "the panels Shift+Tab showed");
+        // A bar shown another way after Tab: the next Tab hides it, and the Tab after that shows it again.
+        assert_eq!(tab(&mut app, Modifiers::NONE), (false, false, false));
+        app.run("window.control", json!({})).unwrap();
+        assert_eq!(tab(&mut app, Modifiers::NONE), (false, false, false));
+        assert_eq!(tab(&mut app, Modifiers::NONE), (false, false, true), "only the Control bar");
+        // Nothing shows and Tab hid nothing: Tab shows all three.
+        app.run("window.control", json!({})).unwrap();
+        assert_eq!((app.ui.dock, app.ui.toolbar, app.ui.control_bar), (false, false, false));
+        assert_eq!(tab(&mut app, Modifiers::NONE), (true, true, true));
+        // After a switch of workspace, Tab hides that workspace's bars and shows them again.
+        app.run("window.toolbar", json!({})).unwrap();
+        app.run("window.control", json!({})).unwrap();
+        app.run("window.workspace.new", json!({"name": "Panels Only"})).unwrap();
+        app.run("window.workspace", json!({"name": "Essentials"})).unwrap();
+        assert_eq!(tab(&mut app, Modifiers::NONE), (false, false, false));
+        app.run("window.workspace", json!({"name": "Panels Only"})).unwrap();
+        assert_eq!((app.ui.dock, app.ui.toolbar, app.ui.control_bar), (true, false, false));
+        assert_eq!(tab(&mut app, Modifiers::NONE), (false, false, false), "Tab after a switch of workspace");
+        assert_eq!(tab(&mut app, Modifiers::NONE), (true, false, false));
+    }
+
     #[test]
     fn copy_and_paste_events_use_the_system_clipboard() {
         let mut app = VectorcraftApp::new(vectorcraft_engine::Session::new(), Default::default());
