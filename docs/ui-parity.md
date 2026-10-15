@@ -92,7 +92,7 @@ tools, never checked side by side) isn't captured row by row.
 | Anchor/Path labels ("anchor", "center", "path", "align") | done | |
 | "intersect" label and snapping to path intersections | partial | #1658 (part of #1602): a point drawn with the Pen, the shape tools or the other drawing tools and an anchor dragged with Direct Selection snap to where paths and ruler guides cross; a moved selection's own anchors and the Width tool don't |
 | Construction guides at preference angles while drawing | done | #506 |
-| Line extension: the dragged end of a straight segment snaps to the segment's own direction at any angle, past its other end or short of it, with the guide along it | done | #2120; Direct Selection, one anchor dragged (with several, the move has no single direction); horizontal and vertical segments keep lining up with their other end ("align") |
+| Line extension: the dragged end of a straight segment snaps to the segment's own direction at any angle, past its other end or short of it, with the guide along it | done | #2120; Direct Selection and Curvature, one anchor dragged (with several, the move has no single direction); nearer the horizontal or vertical through the other end, the point lines up with it ("align"), so a nearly level segment can still be straightened |
 | Measurement labels while drawing, moving and resizing | partial | sizes and offsets; angle and distance readouts while drawing missing |
 | Spacing guides (equal distances) | partial | for moves (#394); not for resizing or drawing |
 | Snapping tolerance preference | done | |

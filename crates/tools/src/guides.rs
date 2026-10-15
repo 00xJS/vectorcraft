@@ -514,14 +514,16 @@ impl Targets {
     }
 
     /// The segment extension nearest `p`, within `tol` of it (and `p` farther than that from the
-    /// end it starts at): that end, its direction and where `p` lands on it.
+    /// end it starts at): that end, its direction and where `p` lands on it. Where `p` is nearer
+    /// the horizontal or the vertical through that end there is none: lining up with it ("align")
+    /// is what straightens a segment that is nearly level or upright.
     fn extension(&self, p: Point, tol: f64) -> Option<(Point, Vec2, Point)> {
         self.extensions
             .iter()
             .filter(|(at, _)| at.distance(p) > tol)
             .map(|&(at, d)| (at, d, at + d * (p - at).dot(d)))
             .map(|(at, d, q)| (at, d, q, q.distance(p)))
-            .filter(|(.., dist)| *dist <= tol)
+            .filter(|(at, .., dist)| *dist <= tol && (p.x - at.x).abs().min((p.y - at.y).abs()) > *dist)
             .min_by(|a, b| a.3.total_cmp(&b.3))
             .map(|(at, d, q, _)| (at, d, q))
     }
@@ -1462,6 +1464,31 @@ mod tests {
         s.anchors.insert(id, [(0, 0), (0, 2)].into_iter().collect());
         let t = Targets::for_anchor_drag(&d, &s);
         assert_eq!(t.snap_point(Point::new(421.5, 312.0), 4.0), (Point::new(421.5, 312.0), vec![]));
+    }
+
+    /// A segment nearly level (0.3°) is still straightened by dragging its end into line with
+    /// the other one; along its own direction, farther from level, it keeps to its extension.
+    #[test]
+    fn a_nearly_level_segment_still_lines_up_with_its_other_end() {
+        use vectorcraft_doc::{Appearance, Node};
+        let (mut d, _) = doc_with_rect();
+        let l = d.layers[0].id;
+        let id = d.alloc_id();
+        d.insert(
+            Some(l),
+            1,
+            Node::path(id, vectorcraft_geom::shapes::line(Point::new(100.0, 300.0), Point::new(300.0, 301.0)), Appearance::default_art()),
+        )
+        .unwrap();
+        let (mut s, p) = (Selection::default(), paint());
+        s.set([id]);
+        s.anchors.insert(id, [(0, 1)].into_iter().collect());
+        let t = Targets::for_anchor_drag(&d, &s).styled(&cx(&d, &s, &p));
+        let (q, ov) = t.snap_point(Point::new(300.0, 300.0), 4.0);
+        assert_eq!((q, labels(&ov)), (Point::new(300.0, 300.0), vec!["align"]));
+        let (q, ov) = t.snap_point(Point::new(400.0, 301.5), 4.0);
+        assert!((q - Point::new(400.0, 301.5)).hypot() < 1e-9, "{q:?}");
+        assert_eq!(lines(&ov), vec![(Point::new(100.0, 300.0), q)]);
     }
 
     fn labels(ov: &[Overlay]) -> Vec<&str> {
