@@ -1528,6 +1528,29 @@ mod tests {
         assert_eq!(drag(&mut t, &c, (300.0, 300.0), (201.0, 199.0), none).0, json!({"dx": -99.0, "dy": -101.0}));
     }
 
+    /// #2120: the end of a slanted straight line, dragged roughly along it, stays on its direction
+    /// (Line Extension) and the guide runs along it from the other end.
+    #[test]
+    fn dragged_end_of_a_slanted_line_stays_on_its_direction() {
+        let (mut d, _) = doc_with_rect();
+        let l = d.layers[0].id;
+        let id = d.alloc_id();
+        let line = vectorcraft_geom::shapes::line(Point::new(300.0, 400.0), Point::new(380.0, 340.0));
+        d.insert(Some(l), 1, vectorcraft_doc::Node::path(id, line, vectorcraft_doc::Appearance::default_art())).unwrap();
+        let p = paint();
+        let end = anchors_of(id, &[(0, 1)]);
+        let c = cx(&d, &end, &p);
+        let mut t = DirectSelectionTool::new(false);
+        t.pointer(&c, &PointerEvent::new(PointerKind::Down, 380.0, 340.0));
+        let a = t.pointer(&c, &PointerEvent::new(PointerKind::Drag, 421.5, 312.0));
+        let Some(Action::Preview(_, v)) = a.last() else { panic!("{a:?}") };
+        let (dx, dy) = (v["dx"].as_f64().unwrap(), v["dy"].as_f64().unwrap());
+        assert!((dx - 40.0).abs() < 1e-9 && (dy + 30.0).abs() < 1e-9, "{v}");
+        let guides: Vec<(Point, Point)> =
+            t.overlays(&c).into_iter().filter_map(|o| if let Overlay::Line { a, b, .. } = o { Some((a, b)) } else { None }).collect();
+        assert!(matches!(guides[..], [(a, b)] if a == Point::new(300.0, 400.0) && (b - Point::new(420.0, 310.0)).hypot() < 1e-9), "{guides:?}");
+    }
+
     /// Group Selection (and Direct Selection on a whole path) moves objects snapping as the
     /// Selection tool does: B's left side lines up with A's right one.
     #[test]
