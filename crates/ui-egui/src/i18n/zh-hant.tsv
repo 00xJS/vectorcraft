@@ -2441,6 +2441,7 @@ file-filter	Templates	範本
 	Load Text into Clipboard	將文字載入剪貼簿
 	Local Libraries	本機資料庫
 	Locate Object	尋找物件
+	Locate Selected Objects	尋找選取的物件
 	Location	位置
 	Location:	位置：
 	Lock	鎖定
