@@ -2350,6 +2350,24 @@ fills or strokes carry effects is written as one piece per fill and stroke, so o
 {"name":"run_command","arguments":{"command":"document.rasterEffectsSettings","params":{"resolution":"high","background":"white","addAround":36}}}
 ```
 
+`effect.apply {effect: "rasterize"}` (Effect › Rasterize…) draws an object as an image of square pixels while its
+paths, type and other art stay editable. It takes the options of Object › Rasterize under these names: `colorModel`
+(`document`, `grayscale` or `bitmap`), `useDocumentResolution` (true by default: the resolution above) or
+`resolution` (1 to 2400 ppi), `background` (`transparent` by default, or `white`), `antiAlias` (`art`, `type` or
+`none`), `clippingMask` and `addAround` (points). The image covers the object's bounds and the room around them,
+its first pixel at their top-left corner. Both `object.rasterize` and the effect measure the art as drawn: with its
+geometry effects, its brush art and its raster effects. The effects above Rasterize in the stack, shadows included,
+are part of the image, and the shadows and glows below it are cast by the image. The canvas draws an image of up to
+8.4 million pixels, at most 32,768 a side, on its own grid and then at the view's zoom: an image pixel wider than a
+screen pixel shows as one flat square, and smaller ones are averaged. A larger image is made from the art drawn at the canvas's resolution
+(lower for very large art), and its pixels no wider than a pixel of that drawing show the art as drawn.
+When Rasterize is an object's only raster effect, Expand Appearance and PDF and SVG export replace the object with the
+image `object.rasterize` makes with the same options.
+
+```json
+{"name":"run_command","arguments":{"command":"effect.apply","params":{"effect":"rasterize","params":{"useDocumentResolution":false,"resolution":150,"background":"white"}}}}
+```
+
 ## Glass textures
 
 Glass (`distort.glass`) takes an image file as its surface in `params.textureImage`, as `{path}` or

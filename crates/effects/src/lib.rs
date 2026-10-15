@@ -5,7 +5,7 @@
 //!
 //! - **Geometry effects** (Distort & Transform, Path, Convert to Shape, Round Corners, Scribble,
 //!   Warp) rewrite a path: [`apply_geometry`] evaluates them in stack order.
-//! - **Raster effects** (Drop Shadow, Inner/Outer Glow, Feather, Gaussian Blur, and the
+//! - **Raster effects** (Drop Shadow, Inner/Outer Glow, Feather, Gaussian Blur, Rasterize, and the
 //!   Photoshop-style filters of [`pixel`]: Radial Blur, Smart Blur, Color Halftone, Crystallize, Mezzotint, Pointillize, Halftone Pattern,
 //!   Unsharp Mask and Glowing Edges) are described by
 //!   [`raster_effects`] and painted by the renderer; [`outset`] says how far they reach beyond
@@ -68,7 +68,7 @@ pub use group::{
 pub use live::{expand_live, expand_live_deep, expanded_live_group, text_outliner};
 pub use marks::{CROP_MARKS, crop_marks_art, has_crop_marks};
 pub use pixel::{PIXEL_EFFECTS, PixelFx, PixelSpace};
-pub use raster::{RasterFx, outset, raster_effects};
+pub use raster::{RASTERIZE, RasterFx, Rasterize, outset, raster_effects};
 pub use reshape::{expand_outlined, has_item_geometry, needs_outline, outline_art, outline_text, reshape};
 pub use revolve::{REVOLVE, has_revolve, revolve_art, revolve_options, validate_revolve};
 pub use solids::{
@@ -150,6 +150,7 @@ fn lengths_of(id: &str) -> Lengths {
         "texture.patchwork" => always(&["squareSize"]),
         "texture.stainedGlass" => always(&["cellSize"]),
         "sketch.halftonePattern" => always(&["size"]),
+        RASTERIZE => always(&["addAround"]),
         _ => Lengths::default(),
     }
 }
@@ -614,6 +615,13 @@ pub fn effect_catalog() -> Vec<EffectInfo> {
         "{style?: \"roman\"|\"japanese\" (default: the japaneseCropMarks preference when applied)} trim marks in [Registration] around the object's bounds, following it",
         json!({}),
     ));
+    v.push(r(
+        RASTERIZE,
+        "Rasterize…",
+        &["Effect"],
+        "{colorModel: \"document\" (the document's mode, RGB or CMYK)|\"grayscale\"|\"bitmap\" (\"document\"), useDocumentResolution: bool (true: Document Raster Effects Settings › Resolution), resolution: ppi 1..2400 (72; with useDocumentResolution false), background: \"white\"|\"transparent\" (\"transparent\"), antiAlias: \"none\"|\"art\"|\"type\" (\"art\"; none: hard edges), clippingMask: bool (false; the image clipped to the art's outline), addAround: pt 0..1000 (0; room around the art)} draws the object as an image of square pixels over its bounds and the room around them, leaving its paths, type and other art as they are; when it is the object's only raster effect, Expand Appearance makes the image Object › Rasterize makes",
+        json!({"colorModel": "document", "useDocumentResolution": true, "resolution": 72.0, "background": "transparent", "antiAlias": "art", "clippingMask": false, "addAround": 0.0}),
+    ));
     v
 }
 
@@ -763,7 +771,7 @@ pub fn scale_effect(e: &mut Effect, s: f64) {
 
 /// Is `id` a raster (painted) effect?
 pub fn is_raster(id: &str) -> bool {
-    matches!(id, "stylize.dropShadow" | "stylize.innerGlow" | "stylize.outerGlow" | "stylize.feather" | "blur.gaussian")
+    matches!(id, "stylize.dropShadow" | "stylize.innerGlow" | "stylize.outerGlow" | "stylize.feather" | "blur.gaussian" | RASTERIZE)
         || PIXEL_EFFECTS.contains(&id)
 }
 

@@ -158,6 +158,10 @@ fn body(app: &mut VectorcraftApp, ui: &mut egui::Ui, d: &mut Dialog) -> bool {
             free_distort::fields(app, ui, d);
             values_changed(d)
         }
+        None if id == vectorcraft_effects::RASTERIZE => {
+            super::raster_effects::effect_fields(app, ui, d);
+            values_changed(d)
+        }
         None => {
             let doc = vectorcraft_effects::effect_info(&id).map(|e| e.params).unwrap_or_default();
             let unit = app.session.general_unit();
