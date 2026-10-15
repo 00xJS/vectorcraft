@@ -978,6 +978,12 @@ pub const UI_COMMANDS: &[(&str, &str, &str, &str)] = &[
         "{} open Blend Options (Object › Blend › Blend Options…, the Blend tool's double-click, Alt-click and toolbar button; dialog `blendOptions`: spacing smooth|steps|distance, steps, distance (pt), orientation page|path, preview) on the selected blend's options, previewed live: OK runs object.blend.options as one undo step; with no blend selected it sets what new blends start with",
     ),
     (
+        "ui.livePaintGapOptions",
+        "Gap Options…",
+        "",
+        "{} open Gap Options (Object › Live Paint › Gap Options…; dialog `livePaintGapOptions`: detect, size small|medium|large|custom, custom (pt), color (#rrggbb or a layer color's name), closeGaps, preview) on the selected Live Paint groups, filled in from the first; with preview on, the options apply live and the gaps found draw on the canvas in the preview color: OK runs livePaint.gapOptions as one undo step",
+    ),
+    (
         "ui.perspectivePlane",
         "Perspective Plane Options…",
         "",
@@ -1647,6 +1653,7 @@ pub fn run_ui_command(app: &mut VectorcraftApp, id: &str, p: &Value) -> Option<R
             None => Err("no such perspective grid preset".into()),
         },
         "ui.blendOptions" => crate::dialogs::blend_options::open(app),
+        "ui.livePaintGapOptions" => crate::dialogs::live_paint_gaps::open(app),
         "ui.perspectivePlane" => crate::dialogs::perspective_plane::open(app, p),
         _ => return None,
     };
@@ -2559,7 +2566,7 @@ pub fn menu_tree_named(english_names: bool) -> Vec<(&'static str, Vec<Item>)> {
                         c("Merge", "livePaint.merge"),
                         c("Release", "livePaint.release"),
                         Sep,
-                        todo("Gap Options…"),
+                        c("Gap Options…", "ui.livePaintGapOptions"),
                         Sep,
                         c("Expand", "livePaint.expand"),
                     ],

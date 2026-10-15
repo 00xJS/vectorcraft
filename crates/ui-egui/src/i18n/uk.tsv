@@ -1189,6 +1189,14 @@ file-filter	Templates	Шаблони
 	Gamut Warning	Попередження про колірне охоплення
 	gap	зазор
 	Gap Options…	Параметри проміжків…
+	Gap Options	Параметри проміжків
+	Gap Detection	Виявлення проміжків
+	Paint Stops At:	Заливка зупиняється на:
+	Small Gaps	Малі проміжки
+	Medium Gaps	Середні проміжки
+	Large Gaps	Великі проміжки
+	Gap Preview Color:	Колір перегляду проміжків:
+	Close Gaps With Paths	Закрити проміжки контурами
 	Gaussian Blur…	Розмиття за Гауссом…
 	General	Загальні
 	General › Placement › X	Загальні › Розміщення › X

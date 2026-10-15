@@ -49,6 +49,7 @@ pub mod javascript_files;
 pub mod layer_options;
 pub mod layers_panel_options;
 pub mod liquify;
+pub mod live_paint_gaps;
 pub mod missing_fonts;
 pub mod missing_links;
 pub(crate) mod modal;
@@ -314,6 +315,7 @@ registry! {
     PerspectiveGridPresets: [perspective_presets::KIND] => perspective_presets::SPEC,
     PerspectiveGridOptions: [perspective_options::KIND] => perspective_options::SPEC,
     BlendOptions: [blend_options::KIND] => blend_options::SPEC,
+    LivePaintGaps: [live_paint_gaps::KIND] => live_paint_gaps::SPEC,
     BrushOptions: [brush_options::KIND] => brush_options::SPEC,
     EditSelection: [edit_selection::KIND] => edit_selection::SPEC,
     PerspectivePlane: [perspective_plane::KIND] => perspective_plane::SPEC,

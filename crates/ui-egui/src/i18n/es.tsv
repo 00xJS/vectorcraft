@@ -1186,6 +1186,14 @@
 	Gamut Warning	Aviso de gama
 	gap	hueco
 	Gap Options…	Opciones de huecos…
+	Gap Options	Opciones de huecos
+	Gap Detection	Detección de huecos
+	Paint Stops At:	La pintura se detiene en:
+	Small Gaps	Huecos pequeños
+	Medium Gaps	Huecos medianos
+	Large Gaps	Huecos grandes
+	Gap Preview Color:	Color de previsualización de huecos:
+	Close Gaps With Paths	Cerrar huecos con trazados
 	Gaussian Blur…	Desenfoque gaussiano…
 	General	General
 	General › Placement › X	General › Colocación › X

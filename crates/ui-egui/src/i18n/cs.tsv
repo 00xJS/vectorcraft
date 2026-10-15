@@ -255,6 +255,14 @@
 	Live Paint	Živá malba
 	Merge	Sloučit
 	Gap Options…	Možnosti mezer…
+	Gap Options	Možnosti mezer
+	Gap Detection	Detekce mezer
+	Paint Stops At:	Barva se zastaví u:
+	Small Gaps	Malé mezery
+	Medium Gaps	Střední mezery
+	Large Gaps	Velké mezery
+	Gap Preview Color:	Barva náhledu mezer:
+	Close Gaps With Paths	Uzavřít mezery cestami
 	Image Trace	Vektorizace obrazu
 	Image Trace (Make and Expand)	Vektorizace obrazu (vytvořit a rozložit)
 	Release Image Trace	Uvolnit vektorizaci obrazu

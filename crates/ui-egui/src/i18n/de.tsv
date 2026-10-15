@@ -1179,6 +1179,14 @@ file-filter	Templates	Vorlagen
 	Gamut Warning	Farbumfang-Warnung
 	gap	Lücke
 	Gap Options…	Lückenoptionen…
+	Gap Options	Lückenoptionen
+	Gap Detection	Lückenerkennung
+	Paint Stops At:	Farbe stoppt bei:
+	Small Gaps	Kleine Lücken
+	Medium Gaps	Mittlere Lücken
+	Large Gaps	Große Lücken
+	Gap Preview Color:	Vorschaufarbe für Lücken:
+	Close Gaps With Paths	Lücken mit Pfaden schließen
 	Gaussian Blur…	Gaußscher Weichzeichner…
 	General	Allgemein
 	General › Placement › X	Allgemein › Platzierung › X

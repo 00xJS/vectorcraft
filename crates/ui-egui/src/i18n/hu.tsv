@@ -1491,6 +1491,14 @@ file-filter	Templates	Sablonok
 	Gamut Warning	Színtartomány-figyelmeztetés
 	gap	hézag
 	Gap Options…	Hézagbeállítások…
+	Gap Options	Hézagbeállítások
+	Gap Detection	Hézagészlelés
+	Paint Stops At:	Festés határa:
+	Small Gaps	Kis hézagok
+	Medium Gaps	Közepes hézagok
+	Large Gaps	Nagy hézagok
+	Gap Preview Color:	Hézagok előnézeti színe:
+	Close Gaps With Paths	Hézagok lezárása útvonalakkal
 	Gaussian Blur	Gauss-elmosás
 	Gaussian Blur…	Gauss-elmosás…
 	General	Általános

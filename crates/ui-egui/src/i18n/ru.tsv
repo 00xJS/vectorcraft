@@ -1193,6 +1193,14 @@ file-filter	Templates	Шаблоны
 	Gamut Warning	Предупреждение о цветовом охвате
 	gap	зазор
 	Gap Options…	Параметры зазоров…
+	Gap Options	Параметры зазоров
+	Gap Detection	Обнаружение зазоров
+	Paint Stops At:	Заливка останавливается на:
+	Small Gaps	Малые зазоры
+	Medium Gaps	Средние зазоры
+	Large Gaps	Большие зазоры
+	Gap Preview Color:	Цвет просмотра зазоров:
+	Close Gaps With Paths	Закрыть зазоры контурами
 	Gaussian Blur…	Размытие по Гауссу…
 	General	Общие
 	General › Placement › X	Общие › Размещение › X
