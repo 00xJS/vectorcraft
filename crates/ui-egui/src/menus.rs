@@ -1883,6 +1883,18 @@ fn effect_item_label(id: &str, p: &Value) -> Option<String> {
     (!shown.is_empty()).then(|| shown.to_string())
 }
 
+/// The label of an item of the canvas context menu's Unlock submenu (`layer.setProps` with one id
+/// and `locked: false`): the object's name as the Layers panel shows it in `lang`
+/// ([`crate::panels::layers::shown_name`]). `None` for any other item, or when the object is gone.
+fn unlock_item_label(app: &VectorcraftApp, id: &str, p: &Value, lang: crate::i18n::Lang) -> Option<String> {
+    if id != "layer.setProps" || p.get("locked") != Some(&Value::Bool(false)) {
+        return None;
+    }
+    let [one] = p.get("ids")?.as_array()?.as_slice() else { return None };
+    let n = app.session.active()?.doc.node(vectorcraft_doc::NodeId(one.as_u64()?))?;
+    Some(crate::panels::layers::shown_name(app, n, lang))
+}
+
 /// Menu slots that are left out while they have nothing to show (unused saved views, recent files,
 /// User Defined swatch and graphic style libraries).
 fn hidden_when_disabled(id: &str) -> bool {
@@ -2015,7 +2027,10 @@ pub fn entry<'a>(app: &VectorcraftApp, it: &'a Item) -> Option<Entry<'a>> {
             Entry::Item(Row {
                 command: Some((id, p)),
                 source: label,
-                label: effect_item_label(id, p).unwrap_or_else(|| display_label(app, id, label)).into(),
+                label: effect_item_label(id, p)
+                    .or_else(|| unlock_item_label(app, id, p, crate::i18n::current()))
+                    .unwrap_or_else(|| display_label(app, id, label))
+                    .into(),
                 shortcut: item_shortcut(id, p),
                 enabled,
                 checked,
@@ -2923,6 +2938,20 @@ pub fn context_items(app: &VectorcraftApp) -> Vec<Item> {
     if st.isolation.is_some() {
         v.extend([c("Exit Isolation Mode", "object.exitIsolation"), Sep]);
     }
+    // The locked objects under the pointer at the right-click, each unlocked as the Layers panel's
+    // lock column does. `unlock_item_label` shows each object's name.
+    let unlock: Vec<Item> = app
+        .ui
+        .context_locked
+        .iter()
+        .filter(|(uid, _)| *uid == st.uid)
+        .flat_map(|(_, ids)| ids)
+        .filter(|id| st.doc.node(**id).is_some_and(|n| n.locked))
+        .map(|id| cp("Unlock", "layer.setProps", json!({ "ids": [id.0], "locked": false })))
+        .collect();
+    if !unlock.is_empty() {
+        v.extend([sub("Unlock", unlock), Sep]);
+    }
     if roots.is_empty() {
         v.extend([
             c("Paste", "edit.paste"),
@@ -3521,7 +3550,7 @@ fn flatten(app: &VectorcraftApp, path: Vec<String>, items: &[Item], out: &mut Ve
                 let Some((enabled, _)) = shown_state(app, id, p) else { continue };
                 out.push(MenuEntry {
                     path: path.clone(),
-                    label: dynamic_label(app, id, l),
+                    label: unlock_item_label(app, id, p, crate::i18n::Lang::EN).unwrap_or_else(|| dynamic_label(app, id, l)),
                     command: Some(id.to_string()),
                     params: p.clone(),
                     enabled,
@@ -3768,6 +3797,7 @@ pub fn item_shortcut(id: &str, p: &Value) -> Option<&'static str> {
 pub const CONTEXT_LABELS: &[&str] = &[
     "Isolate Selected Group",
     "Exit Isolation Mode",
+    "Unlock",
     "Make Clipping Mask",
     "Release Clipping Mask",
     "Make Compound Path",

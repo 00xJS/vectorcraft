@@ -1473,9 +1473,20 @@ fn walk_drawn<'a>(n: &'a Node, f: &mut impl FnMut(&'a Node)) {
 }
 
 /// The topmost editable object under document point `p` at `zoom`, as the selection tools pick it
-/// (Selection & Anchor Display › Tolerance and Object Selection by Path Only, Type › Type Object
-/// Selection by Path Only).
+/// ([`hit_with`]).
 fn hit_at(app: &VectorcraftApp, p: Point, zoom: f64) -> Option<vectorcraft_doc::hit::Hit> {
+    hit_with(app, p, zoom, vectorcraft_doc::hit::hit_test)
+}
+
+/// `test` on the active document at document point `p`, with the options the selection tools hit
+/// objects with at `zoom` (Selection & Anchor Display › Tolerance and Object Selection by Path Only,
+/// Type › Type Object Selection by Path Only, isolation mode).
+fn hit_with<T>(
+    app: &VectorcraftApp,
+    p: Point,
+    zoom: f64,
+    test: impl FnOnce(&vectorcraft_doc::Document, Point, vectorcraft_doc::hit::HitOptions) -> Option<T>,
+) -> Option<T> {
     let prefs = &app.session.prefs;
     let opt = vectorcraft_doc::hit::HitOptions {
         tol: prefs.selection_tolerance / zoom,
@@ -1484,23 +1495,32 @@ fn hit_at(app: &VectorcraftApp, p: Point, zoom: f64) -> Option<vectorcraft_doc::
         type_path_only: prefs.type_selection_by_path_only,
         scope: app.session.active().and_then(|st| st.isolation),
     };
-    vectorcraft_doc::hit::hit_test(&app.session.active()?.doc, p, opt)
+    test(&app.session.active()?.doc, p, opt)
 }
 
 /// Right-click: the object under the pointer is selected first unless it already is, then the
-/// context menu lists what applies to the selection ([`crate::menus::context_items`]).
+/// context menu lists what applies to the selection ([`crate::menus::context_items`]). The locked
+/// objects under the pointer ([`vectorcraft_doc::hit::locked_objects_at`]) are kept in
+/// `ui.context_locked` while the menu is open, for its Unlock submenu.
 fn context_menu(app: &mut VectorcraftApp, resp: &egui::Response, xf: &Xf) {
     if resp.secondary_clicked()
         && let Some(p) = resp.interact_pointer_pos()
-        && let Some(st) = app.session.active()
-        && let Some(top) = hit_at(app, xf.to_doc(p), xf.zoom).map(|h| h.top_object(st.isolation))
-        && !st.selection.contains(top)
     {
-        // A locked or hidden object can't be selected; the menu is then for the selection as is.
-        let _ = app.run("select.set", json!({ "ids": [top.0] }));
+        let p = xf.to_doc(p);
+        let locked = hit_with(app, p, xf.zoom, |doc, p, opt| Some(vectorcraft_doc::hit::locked_objects_at(doc, p, opt)));
+        app.ui.context_locked = app.session.active().map(|st| st.uid).zip(locked);
+        if let Some(st) = app.session.active()
+            && let Some(top) = hit_at(app, p, xf.zoom).map(|h| h.top_object(st.isolation))
+            && !st.selection.contains(top)
+        {
+            // A locked or hidden object can't be selected; the menu is then for the selection as is.
+            let _ = app.run("select.set", json!({ "ids": [top.0] }));
+        }
     }
     let mut clicked = None;
-    resp.context_menu(|ui| crate::menus::context_menu_body(app, ui, &mut clicked));
+    if resp.context_menu(|ui| crate::menus::context_menu_body(app, ui, &mut clicked)).is_none() {
+        app.ui.context_locked = None;
+    }
     if let Some((id, p)) = clicked {
         crate::menus::invoke(app, &id, p);
     }
