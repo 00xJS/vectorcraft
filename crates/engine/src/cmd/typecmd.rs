@@ -269,6 +269,17 @@ pub(crate) fn with_overflow(s: &Session, ids: &[NodeId], mut result: Value) -> V
     result
 }
 
+/// Adds `bounds` to the result of a command that made the type object `id`: the same
+/// `{x, y, width, height}` box `document.inspect` reports for it (after `justify`, so a script can
+/// place the new type without a helper object); `null` when it has none.
+pub(crate) fn with_bounds(s: &Session, id: Option<NodeId>, mut result: Value) -> Value {
+    let Ok(st) = s.doc() else { return result };
+    let symbols = st.doc.symbol_boxes();
+    let b = id.and_then(|i| st.doc.node(i)).and_then(|n| n.geometric_bounds_with(&symbols));
+    result["bounds"] = crate::inspect::rect_json(b);
+    result
+}
+
 /// The warning that Print gives for `ids`, area type and type on a path whose text doesn't fit
 /// (as [`with_overflow`] finds it): the text past the end of their frames doesn't print. It names
 /// the first 20 ids and counts the rest; `None` when `ids` is empty.
@@ -782,6 +793,30 @@ fn reshape_area(s: &mut Session, p: &Value) -> Result<Value> {
 #[cfg(test)]
 mod area_tests {
     use super::*;
+
+    /// #2413: `text.create` and `text.createInPath` return the new type's `bounds`, the box
+    /// `document.inspect` reports for it, so a script can place it without a helper object.
+    #[test]
+    fn text_create_returns_the_inspect_bounds() {
+        let mut s = Session::new();
+        s.execute("file.new", &json!({"width": 600, "height": 400})).unwrap();
+        let inspected = |s: &mut Session, id: &Value| {
+            let doc = s.execute("document.inspect", &json!({})).unwrap();
+            fn find(v: &Value, id: &Value) -> Option<Value> {
+                if &v["id"] == id {
+                    return Some(v["bounds"].clone());
+                }
+                v.get("children").or_else(|| v.get("layers"))?.as_array()?.iter().find_map(|c| find(c, id))
+            }
+            find(&doc, id).unwrap()
+        };
+        let made = s.execute("text.create", &json!({"x": 300, "y": 100, "text": "Hello", "size": 24, "justify": "center"})).unwrap();
+        assert!(made["bounds"]["width"].as_f64().unwrap() > 10.0, "{made}");
+        assert_eq!(made["bounds"], inspected(&mut s, &made["id"]));
+        let rect = s.execute("shape.rectangle", &json!({"x": 10, "y": 200, "width": 100, "height": 50})).unwrap();
+        let area = s.execute("text.createInPath", &json!({"path": rect["id"], "mode": "area", "text": "Boxed"})).unwrap();
+        assert_eq!(area["bounds"], inspected(&mut s, &area["id"]));
+    }
 
     /// #1748: `text.create` takes `justify`; point type then lines up on its point (centred on
     /// it, or ending there), and `text.setStyle` moves it the same way afterwards.
