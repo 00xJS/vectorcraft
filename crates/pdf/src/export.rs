@@ -1087,8 +1087,13 @@ impl Exporter<'_> {
             }
             pushes += 1;
         }
-        if let Some(m) = n.extras().mask.as_deref()
-            && !m.disabled
+        let mask = n.extras().mask.as_deref().filter(|m| !m.disabled);
+        let alpha = match (&n.kind, mask) {
+            (NodeKind::Image(im), Some(m)) => self.masked_image(im, m),
+            _ => None,
+        };
+        if let Some(m) = mask
+            && alpha.is_none()
         {
             let mask = self.soft_mask(s, m, page);
             s.push_mask(mask);
@@ -1129,7 +1134,7 @@ impl Exporter<'_> {
                 self.shape(s, n, &bp, *rule, page);
             }
             NodeKind::Text(t) => self.text(s, n, t, page),
-            NodeKind::Image(im) => self.image(s, im),
+            NodeKind::Image(im) => self.image(s, im, alpha),
             NodeKind::SymbolInstance { symbol, xf } => {
                 if let Some(sym) = self.doc.symbols.iter().find(|x| &x.name == symbol) {
                     let mut art = (*sym.art).clone();
@@ -1708,7 +1713,7 @@ impl Exporter<'_> {
                 self.rgb_in_cmyk.images.insert(key.to_string());
             }
             let r = if cmyk_image {
-                crate::images::recode_cmyk(blob, size, c, interpolate, out.cmyk_pixels())
+                crate::images::recode_cmyk(blob, size, c, interpolate, out.cmyk_pixels(), None)
             } else {
                 crate::images::recode(&blob.bytes, size, c, interpolate, out.pixels())
             };
@@ -1724,20 +1729,55 @@ impl Exporter<'_> {
         img
     }
 
-    fn image(&mut self, s: &mut Surface, im: &vectorcraft_doc::ImageObject) {
+    /// CMYK image `im` with the alpha of its opacity mask `m`, when the mask is a greyscale image
+    /// on the image's own pixel grid (an image's soft mask as it opens): the alpha is written as the
+    /// image's soft mask, as an RGBA image's is, rather than as a luminosity soft mask over it,
+    /// through which CoreGraphics draws CMYK images on black boxes (#2159). `None` for other
+    /// images and masks; cached like [`Self::load_image`].
+    fn masked_image(&mut self, im: &vectorcraft_doc::ImageObject, m: &vectorcraft_doc::OpacityMask) -> Option<Image> {
+        let art = &m.art;
+        let NodeKind::Image(mi) = &art.kind else { return None };
+        let plain =
+            art.opacity >= 1.0 && art.blend == BlendMode::Normal && art.extras().mask.is_none() && !art.appearance.effects.iter().any(|e| e.visible);
+        if m.invert || !plain || (mi.xf, mi.width, mi.height) != (im.xf, im.width, im.height) {
+            return None;
+        }
+        let size = placed_size(im);
+        let cache = format!("{}\u{0}{}\u{0}{}\u{0}{:.3}x{:.3}", im.key, mi.key, m.clip, size.0, size.1);
+        if let Some(i) = self.images.get(&cache) {
+            return i.clone();
+        }
+        let doc = self.doc;
+        let img = doc.images.get(&im.key).filter(|b| b.is_cmyk()).and_then(|blob| {
+            let alpha = crate::images::mask_alpha(doc.images.get(&mi.key)?, im.width, im.height, m.clip)?;
+            let r = crate::images::recode_cmyk(blob, size, self.compression, self.interpolate, self.out.cmyk_pixels(), Some(alpha));
+            if let (Some(w), Some(_)) = (r.warning, &r.image) {
+                self.warn(w);
+            }
+            r.image
+        });
+        self.images.insert(cache, img.clone());
+        img
+    }
+
+    /// Draw image `im`: `img` when given (its pixels already written), else as it is loaded.
+    fn image(&mut self, s: &mut Surface, im: &vectorcraft_doc::ImageObject, img: Option<Image>) {
         // An image placed or sized beyond [`MAX_COORD`] is left out.
         if !writable(s, im.xf, Rect::new(0.0, 0.0, im.width.max(1).into(), im.height.max(1).into())) {
             return;
         }
-        // The size it is placed at: its pixel grid's sides through its transform.
-        let [a, b, c, d, ..] = im.xf.as_coeffs();
-        let size = (im.width as f64 * a.hypot(b), im.height as f64 * c.hypot(d));
-        let Some(img) = self.load_image(&im.key, size) else { return };
+        let Some(img) = img.or_else(|| self.load_image(&im.key, placed_size(im))) else { return };
         let Some(size) = Size::from_wh(im.width.max(1) as f32, im.height.max(1) as f32) else { return };
         s.push_transform(&xf(im.xf));
         s.draw_image(img, size);
         s.pop();
     }
+}
+
+/// The size image `im` is placed at: its pixel grid's sides through its transform.
+fn placed_size(im: &vectorcraft_doc::ImageObject) -> (f64, f64) {
+    let [a, b, c, d, ..] = im.xf.as_coeffs();
+    (im.width as f64 * a.hypot(b), im.height as f64 * c.hypot(d))
 }
 
 /// Image `blob` as it is: PNG, JPEG, GIF and WebP through the PDF writer (JPEG data unchanged),
