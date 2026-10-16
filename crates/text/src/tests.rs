@@ -502,6 +502,24 @@ fn a_leading_tab_takes_its_width_in_the_line_and_the_justification() {
 }
 
 #[test]
+fn a_centred_or_right_aligned_line_sets_its_tabs_as_if_it_started_at_the_left() {
+    use vectorcraft_doc::{TabAlign, TabStop};
+    // "A<tab>B" with a stop at 100 pt is 100 pt plus B wide whatever the alignment: the whole line
+    // moves, the gap between A and B stays 100 pt, and a right aligned line ends on the edge (#2457).
+    for justify in [Justify::Center, Justify::Right, Justify::JustifyCenter, Justify::JustifyRight] {
+        let mut t = area("A\tB", style(12.0), Rect::new(0.0, 0.0, 200.0, 100.0), justify);
+        t.para.tabs = vec![TabStop { position: 100.0, align: TabAlign::Left, leader: String::new(), align_on: '.' }];
+        let lay = layout(db(), &t);
+        let at = |byte: usize| lay.glyphs.iter().find(|g| g.byte == byte).map(|g| g.origin.x).unwrap();
+        assert!((at(2) - at(0) - 100.0).abs() < 1e-6, "{justify:?}: A at {}, B at {}", at(0), at(2));
+        if matches!(justify, Justify::Right | Justify::JustifyRight) {
+            let b = lay.glyphs.iter().find(|g| g.byte == 2).unwrap();
+            assert!((b.origin.x + b.advance - 200.0).abs() < 1e-6, "{justify:?}: the line ends at {}", b.origin.x + b.advance);
+        }
+    }
+}
+
+#[test]
 fn tab_leaders_line_up_from_line_to_line_and_stop_short_of_the_stop() {
     use vectorcraft_doc::{TabAlign, TabStop};
     let mut t = point("A\t1\nAAAAA\t2", style(12.0));

@@ -1837,6 +1837,9 @@ fn flow(cx: &mut Ctx<'_>, paras: &[Range<usize>], t: &TextObject, regions: Optio
             let mut x_end = start_x;
             // Tab stops are measured from the frame's left edge (point type: the origin).
             let tab_origin = if regions.is_some() { x0 } else { 0.0 };
+            // A line with tabs is measured as if it started at the left (see `set_width`), then
+            // aligned as a whole: its tabs stop where they were measured, however it is aligned.
+            let tab_shift = start_x - if regions.is_some() { ax0 } else { ind_l };
             let line_start = sg.get(i).map_or(pr.start, |g| g.byte);
             let line_end = sg.get(end).map_or(pr.end, |g| g.byte);
             let order = visual_order(bidi.as_ref().filter(|_| !cx.vertical), pr.start, line_start..line_end, &sg[i..end]);
@@ -1854,7 +1857,7 @@ fn flow(cx: &mut Ctx<'_>, paras: &[Range<usize>], t: &TextObject, regions: Optio
                 }
                 let mut leader = "";
                 if g.ch == '\t' {
-                    (adv, leader) = tab_advance(&para.tabs, tab_origin, x, &sg[j + 1..trimmed.max(j + 1)]);
+                    (adv, leader) = tab_advance(&para.tabs, tab_origin, x - tab_shift, &sg[j + 1..trimmed.max(j + 1)]);
                 } else if j < body {
                     if g.is_space() {
                         adv += per_space;
