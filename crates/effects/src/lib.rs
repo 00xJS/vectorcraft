@@ -292,6 +292,13 @@ pub fn effect_catalog() -> Vec<EffectInfo> {
             json!({"offset": 10.0, "joins": "miter", "miterLimit": 4.0}),
         ),
         g(
+            "path.outlineObject",
+            "Outline Object",
+            PATH,
+            "{} type is drawn, exported and expanded as its glyph outlines and stays editable, and the effects after it reshape those outlines; paths and images do not change",
+            json!({}),
+        ),
+        g(
             "path.outlineStroke",
             "Outline Stroke",
             PATH,
@@ -874,6 +881,9 @@ pub(crate) fn apply_one(id: &str, p: &Value, path: &PathData, b: Rect, ctx: &Geo
             }
             vectorcraft_pathops::offset_path(path, off, join(p, "joins"), num(p, "miterLimit", 4.0).clamp(1.0, 500.0))
         }
+        // Outline Object returns the geometry unchanged. Type reaches every geometry effect as its
+        // glyph outlines (`reshape::reshape`), so type that carries it is drawn as those outlines.
+        "path.outlineObject" => path.clone(),
         "path.outlineStroke" => {
             let fallback;
             let base = match ctx.stroke {

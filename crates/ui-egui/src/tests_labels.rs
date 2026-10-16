@@ -1,7 +1,7 @@
 //! Neutral wording in menus and panels: what users read names VectorCraft's own features.
 
 use egui::epaint::Shape;
-use serde_json::json;
+use serde_json::{Value, json};
 use vectorcraft_engine::Session;
 
 use crate::VectorcraftApp;
@@ -48,6 +48,24 @@ fn effect_menu_has_a_vector_effects_section() {
     let tree = menus::menu_tree();
     let (_, effect) = tree.iter().find(|(t, _)| *t == "Effect").expect("Effect menu");
     assert!(effect.iter().any(|i| matches!(i, Item::Header("Vector Effects"))));
+}
+
+/// Effect › Path: Offset Path… opens its dialog; Outline Object and Outline Stroke (no options)
+/// apply.
+#[test]
+fn effect_menu_lists_outline_object_between_offset_path_and_outline_stroke() {
+    let app = app();
+    let entries = menus::menu_entries(&app);
+    let items: Vec<(&str, Option<&str>, &Value)> =
+        entries.iter().filter(|e| e.path == ["Effect", "Path"]).map(|e| (e.label.as_str(), e.command.as_deref(), &e.params)).collect();
+    assert_eq!(
+        items,
+        [
+            ("Offset Path…", Some("effect.dialog"), &json!({"effect": "path.offsetPath"})),
+            ("Outline Object", Some("effect.apply"), &json!({"effect": "path.outlineObject"})),
+            ("Outline Stroke", Some("effect.apply"), &json!({"effect": "path.outlineStroke"})),
+        ]
+    );
 }
 
 #[test]
