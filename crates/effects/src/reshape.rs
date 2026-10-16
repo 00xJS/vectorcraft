@@ -198,10 +198,15 @@ pub fn reshape(n: &Node, symbol_art: Option<&Node>) -> Option<Node> {
     as_art(n, symbol_art)
 }
 
-/// `n` (see [`needs_outline`]) as plain art for Expand Appearance: [`reshape`]d when it has
+/// `n` (see [`needs_outline`], or a path with [`has_gradient_copies`]) as plain art for Expand
+/// Appearance: [`reshape`]d when it has
 /// geometry effects, else type with fills or strokes of its own outlined, in the same form. `None`
 /// when it has neither.
 pub fn expand_outlined(n: &Node, symbol_art: Option<&Node>) -> Option<Node> {
+    // A path whose Transform effect copies it with a gradient: each copy an object of its own.
+    if has_gradient_copies(n) {
+        return as_art(n, symbol_art);
+    }
     let own_paint = matches!(n.kind, NodeKind::Text(_)) && !n.appearance.items.is_empty();
     if !needs_outline(n) || (geometry_effects(n).is_empty() && !own_paint) {
         return None;

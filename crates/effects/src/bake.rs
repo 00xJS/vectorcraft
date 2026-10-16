@@ -120,6 +120,13 @@ fn bake_node(d: &mut Document, n: &Node) -> Option<Node> {
         let m = reshape(n, symbol.as_deref())?;
         return Some(bake_node(d, &m).unwrap_or(m));
     }
+    // A path whose Transform effect copies it with a gradient: each copy an object of its own, so
+    // its gradient fits it rather than spanning every copy.
+    if crate::has_gradient_copies(n)
+        && let Some(m) = reshape(n, None)
+    {
+        return Some(bake_pieces(d, m));
+    }
     // Groups and layers: Pathfinder, geometry effects and their own fills and strokes (type that
     // Transform effects only move stays type). The new pieces (results, outlines, copies, the
     // fills' and strokes' art) get ids of their own.
@@ -967,5 +974,37 @@ mod tests {
         assert!(transform_offsets(&[json!({"moveH": 1.0e7, "copies": 100})], &square).is_none());
         // An effect that also scales.
         assert!(transform_offsets(&[json!({"moveH": 10, "scaleH": 50})], &square).is_none());
+    }
+    /// A 10 pt square painted with a red to blue gradient and a Transform effect with 2 copies.
+    fn gradient_copies(id: u64) -> Node {
+        use vectorcraft_color::{Gradient, GradientKind, GradientPaint, GradientStop};
+        let stops = vec![GradientStop::new(0.0, Color::rgb(1.0, 0.0, 0.0)), GradientStop::new(1.0, Color::rgb(0.0, 0.0, 1.0))];
+        let paint = Paint::Gradient(Box::new(GradientPaint::new(Gradient { kind: GradientKind::Linear, stops })));
+        let mut n = Node::path(NodeId(id), shapes::rectangle(Rect::new(0.0, 0.0, 10.0, 10.0)), Appearance::basic(paint, Paint::None, 0.0));
+        n.appearance.effects.push(fx("distort.transform", json!({"moveH": 30, "copies": 2})));
+        n
+    }
+
+    /// The paths under `n` that paint a gradient fitted to their own 10 pt box, left to right.
+    fn gradient_pieces(n: &Node) -> Vec<f64> {
+        let mut out = vec![];
+        let mut walk = vec![n];
+        while let Some(n) = walk.pop() {
+            match n.children() {
+                Some(ch) if !matches!(n.kind, NodeKind::Compound { .. }) => walk.extend(ch.iter().map(|c| &**c)),
+                _ => {
+                    assert!(matches!(n.appearance.fill_paint(), Paint::Gradient(_)), "{n:?}");
+                    out.extend(n.geometric_bounds().map(|b| b.width()));
+                }
+            }
+        }
+        out
+    }
+
+    #[test]
+    fn exporting_a_path_with_a_transform_gives_each_copy_its_own_gradient() {
+        let d = bake_document(&doc_with(gradient_copies(50))).unwrap();
+        // Three squares of their own, not one path spanning all three.
+        assert_eq!(gradient_pieces(d.node(NodeId(50)).unwrap()), vec![10.0; 3]);
     }
 }
