@@ -529,11 +529,14 @@ fn datasets_csv_bytes(p: &Value, cmd: &str) -> Result<Vec<u8>> {
 
 /// Parse a datasets CSV into rows of cells (no header interpretation yet): commas between cells,
 /// `"` quotes a cell (doubled inside), which may then hold commas and line breaks, as
-/// [`csv_escape`] writes them. Blank lines are skipped.
+/// [`csv_escape`] writes them. An unquoted cell is trimmed. A quoted cell keeps what its quotes
+/// hold as written, spaces included, and drops white space after the closing quote at the end
+/// of the cell. Blank lines are skipped.
 fn parse_datasets_csv(text: &str, cmd: &str) -> Result<Vec<Vec<String>>> {
     let text = text.strip_prefix('\u{feff}').unwrap_or(text);
     let (mut rows, mut row, mut cur) = (Vec::new(), Vec::<String>::new(), String::new());
-    let (mut in_quotes, mut line) = (false, 1usize);
+    // `closed`: where the closing quote of a quoted cell falls in `cur`.
+    let (mut in_quotes, mut closed, mut line) = (false, None, 1usize);
     let mut chars = text.chars().peekable();
     loop {
         let c = chars.next();
@@ -544,13 +547,14 @@ fn parse_datasets_csv(text: &str, cmd: &str) -> Result<Vec<Vec<String>>> {
                     chars.next();
                 } else {
                     in_quotes = false;
+                    closed = Some(cur.len());
                 }
             }
             Some('"') if cur.is_empty() => in_quotes = true,
-            Some(',') if !in_quotes => row.push(std::mem::take(&mut cur)),
+            Some(',') if !in_quotes => row.push(end_csv_cell(&mut cur, &mut closed)),
             Some('\r') if !in_quotes => {}
             Some('\n') | None if !in_quotes => {
-                row.push(std::mem::take(&mut cur));
+                row.push(end_csv_cell(&mut cur, &mut closed));
                 if row.iter().any(|c| !c.trim().is_empty()) {
                     rows.push(std::mem::take(&mut row));
                     // +1 for the header.
@@ -576,6 +580,20 @@ fn parse_datasets_csv(text: &str, cmd: &str) -> Result<Vec<Vec<String>>> {
     }
 }
 
+/// Take the cell read so far out of `cur`. Without a closing quote (`closed` is `None`) the cell
+/// is trimmed; with one, the text before it is kept as written and the text after it is
+/// trimmed at the end.
+fn end_csv_cell(cur: &mut String, closed: &mut Option<usize>) -> String {
+    let cell = std::mem::take(cur);
+    match closed.take() {
+        Some(at) => match cell.split_at_checked(at) {
+            Some((quoted, after)) => format!("{quoted}{}", after.trim_end()),
+            None => cell,
+        },
+        None => cell.trim().to_string(),
+    }
+}
+
 fn csv_escape(s: &str) -> String {
     if s.contains([',', '"', '\n', '\r']) || s != s.trim() { format!("\"{}\"", s.replace('"', "\"\"")) } else { s.to_string() }
 }
@@ -590,7 +608,9 @@ fn parse_visible_cell(s: &str, var: &str, cmd: &str) -> Result<bool> {
 }
 
 fn cell_to_value(kind: VariableKind, cell: &str, var: &str, cmd: &str) -> Result<Option<DataValue>> {
-    let t = cell.trim();
+    // A text cell is not trimmed here (the parser trims unquoted cells); image, graph and
+    // visibility cells are trimmed.
+    let t = if kind == VariableKind::Text { cell } else { cell.trim() };
     if t.is_empty() {
         return Ok(None);
     }
