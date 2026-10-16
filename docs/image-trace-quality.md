@@ -1,5 +1,6 @@
 # Image Trace quality
 
+> **Last reviewed:** 2026-10-14 · **Last updated:** 2026-10-16 · **Change:** minor (Image Trace: a higher Paths never gives fewer segments on collapsed loops)
 > **Last reviewed:** 2026-10-14 · **Last updated:** 2026-10-16 · **Change:** minor (Image Trace: the notch rule reads only its own piece)
 > **Last reviewed:** 2026-10-14 · **Last updated:** 2026-10-16 · **Change:** minor (Image Trace: an edge's sub-pixel shift is the same from either side)
 > **Last reviewed:** 2026-10-14 · **Last updated:** 2026-10-16 · **Change:** minor (Image Trace: a simpler contour walk with no precomputed direction table)
@@ -9,8 +10,26 @@ compared with the numbers before each change. Nothing here is a judgement by eye
 with any other product except the open tracer named under [Yardstick](#4-yardstick).
 
 
-## Notches read only their own piece
+## Collapsed loops keep few segments
 
+A small closed loop (or a piece that returns to its own junction) whose fit collapsed to a single
+cubic cannot stay as one, so it kept every positioned point as a straight segment. A looser Paths
+collapses more loops, so it could give more segments than a tighter one. Such a loop now tries the
+fewest segments that still hold it, each only if the result keeps an area (more than 0.25 px²) and
+stays within 1.5 × max(tolerance, 0.5 px) of the points both ways: the fit at up to three somewhat
+tighter tolerances (what a slightly higher Paths gives); for a closed loop then two cubics split at
+its start and its farthest point, then the outline simplified at the tolerance and finer; the
+positioned points last, as before.
+
+Test on code-drawn images: `a_higher_paths_never_gives_fewer_segments` (32 seeded 48 px images of
+soft blobs in four colours plus pixel noise, Color and Black and White, Noise 1 and 3, segments at
+Paths 0, 25, 50, 75 and 100 must not fall). Before, six runs fell, e.g. 125 → 79 segments from
+Paths 0 to 25 (seed 21, Color, Noise 1) and 71 → 63 → 52 from Paths 0 to 50 (seed 3, Black and
+White, Noise 3); now they are 75 → 79 and 41 → 48 → 52. One image (seed 16 in Black and White) still
+falls from 140 to 136 segments between Paths 0 and 25, before and after this change; that fall has
+another cause, still open, and the image is left out of the test. The crate's other tests pass unchanged.
+
+## Notches read only their own piece
 Where the pixel at a sharp corner falls to the other colour, the outline cuts the corner in two
 one-pixel steps, and between two straight edges of three cracks or more those two steps become one
 point, where the two edges meet (a notch). Whether the edges were long enough was measured on the
@@ -19,13 +38,10 @@ whose loop turns at that junction, sees a shorter edge: one side made the notch 
 not, the shared piece got different points on each side, and the abutting curves left a gap. The
 rule in `subpixel::outline` now also requires the three cracks of each edge next to the notch to lie
 in the piece (no junction among them), as the corner-pixel correction above it already did.
-
 Test on code-drawn images: `noisy_colour_images_leave_no_sample_uncovered` (20 seeded 36 px images
 of soft overlapping blobs in four colours plus pixel noise; Color, 5 colours, Noise 1 and 2, Paths
 0, 50 and 100; five sample points per pixel must each lie in some path). Without the condition 93
 sample points were uncovered (seeds 9, 11 and 13); with it none are. The crate's other tests pass
-unchanged.
-
 ## Same sub-pixel shift from either side of an edge
 Each crack between two regions is moved by a sub-pixel shift read from the image. The reading
 looked for a thin run (one to three pixels) on the crack's inside before one on its outside, so where
@@ -1058,6 +1074,7 @@ One trace at a time on this machine (all cores); memory is the peak allocated ab
 
 | date | change |
 |:--|:--|
+| 2026-10-16 | Image Trace: a loop or junction-returning piece whose fit collapsed to one cubic keeps the fewest segments that hold its area and course instead of every positioned point, so a higher Paths no longer gives fewer segments on code-drawn noisy images (six falling runs to none; one other cause remains). |
 | 2026-10-16 | Image Trace: a notch corner is cut only when the straight edges beside it lie in the shared piece, so both regions of the piece get the same points (code-drawn noisy colour images: 93 uncovered sample points to 0). |
 | 2026-10-16 | Image Trace: a crack's sub-pixel shift is the mean of the readings from its two sides, exactly antisymmetric, so abutting regions get the same points on thin slivers (a code-drawn noisy ripple went from 482–1,228 uncovered sample points per trace to 0). |
 | 2026-10-16 | Image Trace: the contour walk works out each turn from the pixels as it goes instead of following a precomputed table of per-corner directions; identical loops on all 65,536 4 × 4 masks and 400 seeded masks, and no slower (whole 1 MP traces 1–5% faster). |
