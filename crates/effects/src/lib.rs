@@ -69,7 +69,7 @@ pub use live::{expand_live, expand_live_deep, expanded_live_group, text_outliner
 pub use marks::{CROP_MARKS, crop_marks_art, has_crop_marks};
 pub use pixel::{PIXEL_EFFECTS, PixelFx, PixelSpace};
 pub use raster::{RasterFx, outset, raster_effects};
-pub use reshape::{expand_outlined, needs_outline, outline_art, outline_text, reshape};
+pub use reshape::{expand_outlined, has_item_geometry, needs_outline, outline_art, outline_text, reshape};
 pub use revolve::{REVOLVE, has_revolve, revolve_art, revolve_options, validate_revolve};
 pub use solids::{
     EXTRUDE, INFLATE, ROTATE, ROTATION_PRESETS, SOLIDS, extrude_options, has_solid, inflate_options, is_three_d, solid_art, validate_solid,
