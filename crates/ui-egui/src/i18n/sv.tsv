@@ -5024,6 +5024,7 @@ theme	Appearance	Utseende
 	Movie Clip	Filmklipp
 @msg	name is empty	namnet är tomt
 @msg	no symbol named `{n}`	ingen symbol med namnet `{n}`
+	Enable Guides for 9-Slice Scaling	Aktivera hjälplinjer för 9-slice-skalning
 @msg	a mask has more than one art block	en mask innehåller mer än ett grafikblock
 @msg	mask art ends outside a mask dictionary	maskens grafik slutar utanför en maskordlista
 @msg	cancelled; nothing was changed	avbrutet; inget ändrades

@@ -4663,6 +4663,7 @@ lighting	Light	Свет
 	Movie Clip	Видеоклип
 @msg	name is empty	имя пустое
 @msg	no symbol named `{n}`	нет символа с именем `{n}`
+	Enable Guides for 9-Slice Scaling	Включить направляющие для 9-slice масштабирования
 @msg	a mask has more than one art block	маска содержит более одного блока графики
 @msg	mask art ends outside a mask dictionary	графика маски заканчивается за пределами словаря маски
 @msg	cancelled; nothing was changed	отменено; ничего не изменено

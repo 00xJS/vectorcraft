@@ -5032,6 +5032,7 @@ mark-style	Japanese	Japanilainen
 	Movie Clip	Elokuvaleike
 @msg	name is empty	nimi on tyhjä
 @msg	no symbol named `{n}`	symbolia nimeltä `{n}` ei ole
+	Enable Guides for 9-Slice Scaling	Ota käyttöön 9-slice-skaalauksen apuviivat
 @msg	a mask has more than one art block	maskissa on useampi kuin yksi grafiikkalohko
 @msg	mask art ends outside a mask dictionary	maskin grafiikka päättyy maskin sanakirjan ulkopuolelle
 @msg	cancelled; nothing was changed	peruutettu; mitään ei muutettu

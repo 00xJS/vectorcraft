@@ -5010,6 +5010,7 @@ mark-style	Japanese	Japonesas
 	Movie Clip	Clip de película
 @msg	name is empty	el nombre está vacío
 @msg	no symbol named `{n}`	no hay ningún símbolo llamado `{n}`
+	Enable Guides for 9-Slice Scaling	Activar guías para escalado de 9 sectores
 @msg	a mask has more than one art block	una máscara tiene más de un bloque de ilustración
 @msg	mask art ends outside a mask dictionary	la ilustración de la máscara termina fuera de un diccionario de máscara
 @msg	cancelled; nothing was changed	cancelado; no se ha cambiado nada

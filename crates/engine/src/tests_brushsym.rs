@@ -702,3 +702,26 @@ fn symbol_registration_places_the_chosen_point_on_xy() {
     assert!(close(bounds(&s, p), Rect::new(300.0, 200.0, 380.0, 240.0), 1e-9), "{:?}", bounds(&s, p));
     assert!(s.execute("symbol.new", &json!({"registration": 9})).is_err());
 }
+
+/// Symbol Options › 9-slice guides: off by default, stored per symbol, follow rename/duplicate, validated.
+#[test]
+fn symbol_nine_slice_guides_round_trip() {
+    let mut s = session();
+    let (_, name, _) = make_symbol(&mut s);
+    assert!(s.execute("symbol.list", &json!({})).unwrap()["symbols"][0]["nineSlice"].is_null());
+    assert!(s.doc().unwrap().doc.unknown.get(vectorcraft_doc::SYMBOL_NINE_SLICE).is_none());
+    assert!(s.execute("symbol.options", &json!({"name": name, "nineSliceGuides": [0.6, 0.2, 0.6, 0.2]})).is_err());
+    assert!(s.execute("symbol.options", &json!({"name": name, "nineSlice": "yes"})).is_err());
+    let r = s.execute("symbol.options", &json!({"name": name, "nineSlice": true})).unwrap();
+    assert_eq!(r["nineSlice"].as_array().unwrap().len(), 4);
+    s.execute("symbol.options", &json!({"name": name, "nineSliceGuides": [0.25, 0.1, 0.25, 0.1]})).unwrap();
+    let copy = s.execute("symbol.duplicate", &json!({"name": name})).unwrap();
+    assert_eq!(copy["nineSlice"], json!([0.25, 0.1, 0.25, 0.1]));
+    s.execute("symbol.options", &json!({"name": name, "newName": "Panel"})).unwrap();
+    let g = s.doc().unwrap().doc.symbol_nine_slice("Panel").unwrap();
+    assert_eq!((g.left, g.top), (0.25, 0.1));
+    assert!(s.doc().unwrap().doc.symbol_nine_slice(&name).is_none());
+    s.execute("symbol.options", &json!({"name": "Panel", "nineSlice": false})).unwrap();
+    s.execute("symbol.delete", &json!({"name": "Box copy"})).unwrap();
+    assert!(s.doc().unwrap().doc.unknown.get(vectorcraft_doc::SYMBOL_NINE_SLICE).is_none());
+}
