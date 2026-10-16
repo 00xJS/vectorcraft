@@ -169,6 +169,7 @@ pub(crate) fn merge(base: &mut Value, over: &Value) {
 pub(crate) fn pdf_error(cmd: &str, e: PdfError) -> EngineError {
     match e {
         PdfError::BadSetting(_) | PdfError::Unsupported(_) => bad(cmd, e.to_string()),
+        PdfError::Cancelled => EngineError::Cancelled,
         e => EngineError::Other(e.to_string()),
     }
 }
@@ -273,7 +274,11 @@ pub(super) fn encode_carrying(cmd: &str, doc: &Document, p: &Value, native: impl
         }
     }
     let set = &opts.settings;
+    if set.pdf13() {
+        vectorcraft_doc::cancel::progress(0, 0, "Flattening transparency");
+    }
     let flat = flatten_for(cmd, doc, set, p)?;
+    vectorcraft_doc::cancel::check()?;
     if flat.is_some() {
         let kind = if set.standard.flattens() { set.standard.label() } else { set.compatibility.label() };
         warnings.push(format!("transparency is flattened into opaque art and images ({kind} files have none): see the flattener preset"));

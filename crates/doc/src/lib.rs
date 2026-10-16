@@ -8,6 +8,7 @@
 pub mod appearance;
 pub mod assets;
 pub mod blend;
+pub mod cancel;
 pub mod clipnest;
 pub mod cmyk;
 pub mod corners;

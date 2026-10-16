@@ -34,6 +34,7 @@ pub use cmd::{CommandInfo, CommandSpec, command_specs, find_command};
 pub use journal::Journal;
 pub use tooling::{UiRequest, ViewInfo};
 pub use vectorcraft_doc as doc;
+pub use vectorcraft_doc::cancel;
 pub use vectorcraft_tools as tools;
 
 #[derive(Debug, thiserror::Error)]
@@ -50,9 +51,18 @@ pub enum EngineError {
     NoNode(NodeId),
     #[error("{0}")]
     Other(String),
+    /// The caller asked for the command to stop ([`cancel`]). It changed nothing.
+    #[error("cancelled; nothing was changed")]
+    Cancelled,
     /// A bug: the command panicked. The document was rolled back to its state before the command.
     #[error("internal error in `{cmd}`: {msg} (the document was left as it was before; please report this bug)")]
     Internal { cmd: String, msg: String },
+}
+
+impl From<cancel::Cancelled> for EngineError {
+    fn from(_: cancel::Cancelled) -> Self {
+        EngineError::Cancelled
+    }
 }
 
 impl From<vectorcraft_doc::DocError> for EngineError {
@@ -1891,6 +1901,8 @@ mod tests_blendspine;
 mod tests_brushsym;
 #[cfg(test)]
 mod tests_build;
+#[cfg(test)]
+mod tests_cancel;
 #[cfg(test)]
 mod tests_charstroke;
 #[cfg(test)]

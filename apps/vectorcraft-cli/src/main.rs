@@ -213,8 +213,8 @@ fn mcp(args: &[String]) -> Result<(), String> {
     // uses `vectorcraft_mcp` free to bring its own. Silent until a client sends logging/setLevel.
     vectorcraft_mcp::logging::install();
     let stdin = std::io::stdin();
-    let stdout = std::io::stdout();
-    Server::new(backend).serve(stdin.lock(), stdout.lock()).map_err(|e| e.to_string())
+    // The server reads and writes from threads of its own, so it takes the handles, not locks held here.
+    Server::new(backend).serve(std::io::BufReader::new(stdin), std::io::stdout()).map_err(|e| e.to_string())
 }
 
 fn commands() -> Result<(), String> {

@@ -440,6 +440,10 @@ fn walk_mask(out: &mut Document, n: &mut Node, report: &mut FlattenReport) {
 /// has none. An object whose effects all paint below it keeps its vector art over an image of
 /// them; one whose effects change it (blur, feather, inner glow) becomes the image.
 fn walk(out: &mut Document, n: &Node, report: &mut FlattenReport) -> Option<Node> {
+    // A cancelled export leaves the rest of the document as it is: the caller drops the result.
+    if vectorcraft_doc::cancel::is_cancelled() {
+        return None;
+    }
     let checkpoint = report.checkpoint();
     let result = walk_inner(out, n, report);
     report.attribute_since(checkpoint, n);
@@ -558,6 +562,8 @@ pub fn export_pdf_with_report(
 ) -> std::result::Result<vectorcraft_pdf::ExportReport, vectorcraft_pdf::PdfError> {
     let mut report = FlattenReport::new(Which::All, doc);
     let flat = flatten(doc, &mut report);
+    // Flattening stops early when cancelled, leaving a half-flattened copy that must not be written.
+    vectorcraft_doc::cancel::check().map_err(|_| vectorcraft_pdf::PdfError::Cancelled)?;
     let mut exported = vectorcraft_pdf::export_with_report(flat.as_ref().unwrap_or(doc), opts)?;
     exported.warnings.extend(report.warnings());
     Ok(exported)

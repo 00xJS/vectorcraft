@@ -89,7 +89,8 @@ fn path_kind(d: &mut Document, path: PathData, rule: FillRule) -> NodeKind {
 
 /// `n` with its geometry effects evaluated (`None` = unchanged).
 fn bake_node(d: &mut Document, n: &Node) -> Option<Node> {
-    if !needs_bake(n) {
+    // A cancelled export leaves the rest of the document as it is: the caller drops the result.
+    if !needs_bake(n) || vectorcraft_doc::cancel::is_cancelled() {
         return None;
     }
     // Colour adjustments: the object recoloured (inside it too), then baked as it is.

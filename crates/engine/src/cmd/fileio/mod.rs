@@ -861,6 +861,8 @@ pub(crate) fn read_file_head(path: &str, max: usize) -> Result<Vec<u8>> {
 
 #[cfg(not(target_arch = "wasm32"))]
 pub(crate) fn write_file(path: &str, bytes: &[u8]) -> Result<()> {
+    // Work that stops early for a cancel can leave a truncated result: none of it is written.
+    vectorcraft_doc::cancel::check()?;
     may_write(path)?;
     // Never a half-written file: see [`write_atomic`].
     write_atomic(std::path::Path::new(path), bytes).map_err(|e| EngineError::Other(format!("{path}: {e}")))
@@ -869,6 +871,7 @@ pub(crate) fn write_file(path: &str, bytes: &[u8]) -> Result<()> {
 /// [`write_file`] with what `fill` writes into the file (a save streamed into it).
 #[cfg(not(target_arch = "wasm32"))]
 pub fn write_file_with(path: &str, fill: &mut dyn FnMut(&mut dyn std::io::Write) -> std::io::Result<()>) -> Result<()> {
+    vectorcraft_doc::cancel::check()?;
     may_write(path)?;
     vectorcraft_format::write_atomic_with(std::path::Path::new(path), |f| fill(f)).map_err(|e| EngineError::Other(format!("{path}: {e}")))
 }
