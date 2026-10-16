@@ -635,7 +635,7 @@ pub const FORMATS: &[Format] = &[
     Format {
         id: "eps",
         label: "EPS",
-        extensions: &["eps"],
+        extensions: &["eps", "epsf"],
         mime: "application/postscript",
         read: true,
         write: true,
@@ -651,6 +651,8 @@ pub const FORMATS: &[Format] = &[
     reader("affinity", "Affinity", &["af", "afdesign", "afpub"], "application/vnd.affinity", false),
     // Photoshop's large document format: read like a PSD (its merged image), never written.
     reader("psb", "PSB", &["psb"], "image/x-psb", true),
+    // PostScript programs, read as EPS files are; Print to PostScript writes them, exports don't.
+    reader("ps", "PostScript", &["ps"], "application/postscript", false),
 ];
 
 /// Every extension `document.open` reads (the "All readable files" filter of open dialogs).
@@ -677,6 +679,8 @@ pub const OPEN_EXTS: &[&str] = &[
     "emf",
     "wmf",
     "eps",
+    "epsf",
+    "ps",
     "af",
     "afdesign",
     "afpub",
@@ -684,8 +688,9 @@ pub const OPEN_EXTS: &[&str] = &[
 
 /// Extensions in [`OPEN_EXTS`] the desktop packaging doesn't associate with VectorCraft: Photoshop
 /// documents belong to raster editors, so Finder and file managers don't offer a vector app for
-/// them (File › Open and Place still read them).
-pub const UNASSOCIATED_EXTS: &[&str] = &["psd", "psb"];
+/// them, and the packaging declares no `.epsf` or `.ps` type (File › Open and Place still read
+/// them all).
+pub const UNASSOCIATED_EXTS: &[&str] = &["psd", "psb", "epsf", "ps"];
 
 /// The extension that picks each writable format when exporting (the format's first; PNG-8 shares
 /// `.png` with PNG, so `.png` comes once), in [`FORMATS`] order.
@@ -726,6 +731,8 @@ pub const PLACE_EXTS: &[&str] = &[
     "emf",
     "wmf",
     "eps",
+    "epsf",
+    "ps",
     "af",
     "afdesign",
     "afpub",
