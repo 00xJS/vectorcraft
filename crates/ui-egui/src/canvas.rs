@@ -4402,6 +4402,108 @@ mod tests {
         assert_eq!(widgets(&mut app), 0);
     }
 
+    /// View › Hide Edges hides a live rectangle's corner widgets, and the Selection tool then
+    /// neither shows the corner cursor over one's place nor rounds the corners from it. With
+    /// edges shown, a drag from the same widget rounds them.
+    #[test]
+    fn hidden_corner_widgets_do_not_answer_the_pointer() {
+        let mut app = VectorcraftApp::new(Session::new(), Default::default());
+        app.session.execute("file.new", &json!({"width": 400, "height": 300})).unwrap();
+        let id = app.session.execute("shape.rectangle", &json!({"x": 100, "y": 100, "width": 100, "height": 100})).unwrap()["id"].as_u64().unwrap();
+        let id = vectorcraft_doc::NodeId(id);
+        let ctx = egui::Context::default();
+        frame(&mut app, &ctx, vec![]);
+        app.select_tool("selection");
+        let widget = |app: &VectorcraftApp| {
+            let st = app.session.active().unwrap();
+            vectorcraft_tools::corners::CornerWidgets::of(&st.doc, &st.selection, app.view_info().zoom, false).unwrap().visible().next().unwrap()
+        };
+        let radius = |app: &VectorcraftApp| {
+            let c = vectorcraft_doc::LiveCorners::of(app.session.active().unwrap().doc.node(id).unwrap()).unwrap();
+            c.style(&c.all()).0
+        };
+        let drag = |app: &mut VectorcraftApp, from: Point| {
+            let (view, to) = (app.view_info(), from + vectorcraft_geom::Vec2::new(10.0, 10.0));
+            for (kind, at) in [(PointerKind::Down, from), (PointerKind::Drag, to), (PointerKind::Up, to)] {
+                app.session.pointer(&PointerEvent::new(kind, at.x, at.y), view).unwrap();
+            }
+        };
+        app.ui.view.edges = false;
+        let at = widget(&app);
+        let view = app.view_info();
+        assert_ne!(app.session.cursor(at, Mods::default(), view), Cursor::CornerRadius);
+        drag(&mut app, at);
+        assert_eq!(radius(&app), Some(0.0), "a press on a hidden widget does not round the corners");
+        app.ui.view.edges = true;
+        let at = widget(&app);
+        let view = app.view_info();
+        assert_eq!(app.session.cursor(at, Mods::default(), view), Cursor::CornerRadius);
+        drag(&mut app, at);
+        assert!(radius(&app).is_some_and(|r| r > 0.0), "{:?}", radius(&app));
+    }
+
+    /// View › Hide Edges hides the bounding box and the type widget beside it, and the Selection
+    /// tool then answers neither: a double-click on the widget's place leaves point type as it is,
+    /// and a drag from a corner handle's place does not scale. With edges shown, both answer.
+    #[test]
+    fn a_hidden_bounding_box_and_type_widget_do_not_answer_the_pointer() {
+        let mut app = VectorcraftApp::new(Session::new(), Default::default());
+        app.session.execute("file.new", &json!({"width": 400, "height": 300})).unwrap();
+        let id = app.session.execute("text.create", &json!({"x": 100, "y": 100, "text": "Type"})).unwrap()["id"].as_u64().unwrap();
+        let id = vectorcraft_doc::NodeId(id);
+        app.session.execute("select.set", &json!({"ids": [id.0]})).unwrap();
+        let ctx = egui::Context::default();
+        frame(&mut app, &ctx, vec![]);
+        app.select_tool("selection");
+        let bx = |app: &VectorcraftApp| {
+            let st = app.session.active().unwrap();
+            st.doc.oriented_bounds(&st.selection.objects, app.session.prefs.use_preview_bounds).unwrap()
+        };
+        let widget = |app: &VectorcraftApp| {
+            let st = app.session.active().unwrap();
+            vectorcraft_tools::typewidget::TypeWidget::of(&st.doc, &st.selection, &bx(app), app.view_info().zoom).unwrap()
+        };
+        let area = |app: &VectorcraftApp| match &app.session.active().unwrap().doc.node(id).unwrap().kind {
+            NodeKind::Text(t) => matches!(t.kind, vectorcraft_doc::TextKind::Area { .. }),
+            k => panic!("not type: {k:?}"),
+        };
+        let double_click = |app: &mut VectorcraftApp, at: Point| {
+            let view = app.view_info();
+            for kind in [PointerKind::Down, PointerKind::Up, PointerKind::Down, PointerKind::Up, PointerKind::DoubleClick] {
+                app.session.pointer(&PointerEvent::new(kind, at.x, at.y), view).unwrap();
+            }
+        };
+        let width = |app: &VectorcraftApp| bx(app).rect.width();
+        let scale = |app: &mut VectorcraftApp| {
+            let b = bx(app);
+            let corner = b.to_doc() * Point::new(b.rect.x1, b.rect.y1);
+            let (view, to) = (app.view_info(), corner + vectorcraft_geom::Vec2::new(30.0, 0.0));
+            for (kind, at) in [(PointerKind::Down, corner), (PointerKind::Drag, to), (PointerKind::Up, to)] {
+                app.session.pointer(&PointerEvent::new(kind, at.x, at.y), view).unwrap();
+            }
+            app.session.execute("select.set", &json!({"ids": [id.0]})).unwrap();
+        };
+        let w = widget(&app);
+        app.ui.view.edges = false;
+        let view = app.view_info();
+        assert_ne!(app.session.cursor(w.at, Mods::default(), view), Cursor::TypeWidget);
+        double_click(&mut app, w.at);
+        assert!(!area(&app), "a double-click on the hidden widget leaves point type");
+        app.session.execute("select.set", &json!({"ids": [id.0]})).unwrap();
+        let before = width(&app);
+        scale(&mut app);
+        assert!((width(&app) - before).abs() < 1e-6, "a drag from a hidden handle does not scale: {before} -> {}", width(&app));
+        app.ui.view.edges = true;
+        let w = widget(&app);
+        let view = app.view_info();
+        assert_eq!(app.session.cursor(w.at, Mods::default(), view), Cursor::TypeWidget);
+        scale(&mut app);
+        assert!(width(&app) > before + 1.0, "a drag from the handle scales: {before} -> {}", width(&app));
+        let w = widget(&app);
+        double_click(&mut app, w.at);
+        assert!(area(&app), "a double-click on the widget converts to area type");
+    }
+
     /// #511: a star shows a widget in each of its ten corners with Direct Selection (none with
     /// the Selection tool: it isn't a live shape); View → Hide Corner Widget hides them.
     #[test]

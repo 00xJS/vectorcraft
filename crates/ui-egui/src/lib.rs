@@ -637,9 +637,11 @@ impl VectorcraftApp {
             guides: self.ui.view.guides,
             snap_to_grid: self.ui.view.snap_to_grid,
             snap_to_pixel: self.ui.view.snap_to_pixel,
-            show_bbox: self.ui.view.bounding_box,
+            // View › Hide Edges: the canvas draws neither the bounding box (with the type widget)
+            // nor the Live Corners widgets, and the tools do not answer the pointer on them.
+            show_bbox: self.ui.view.bounding_box && self.ui.view.edges,
             snap_to_point: self.ui.view.snap_to_point,
-            corner_widgets: self.ui.view.corner_widgets,
+            corner_widgets: self.ui.view.corner_widgets && self.ui.view.edges,
             screen: self.screen_frame(),
         }
     }
