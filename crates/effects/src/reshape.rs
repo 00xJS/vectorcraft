@@ -32,6 +32,17 @@ pub fn needs_outline(n: &Node) -> bool {
     )
 }
 
+/// Is `n` a path or compound path with a visible Transform effect that makes copies and a gradient
+/// in a fill or stroke? Such an object is drawn through its art ([`outline_art`]) so that each copy
+/// paints its gradient by itself ([`copy_with_gradients`]), as a group's copies do.
+pub fn has_gradient_copies(n: &Node) -> bool {
+    matches!(n.kind, NodeKind::Path { guide: false, clipping: false, .. } | NodeKind::Compound { .. })
+        && (n.appearance.has_unplaced_gradient() || n.appearance.has_placed_gradient())
+        && geometry_effects(n)
+            .iter()
+            .any(|e| e.id == "distort.transform" && crate::distort::transform_map(Rect::ZERO, &merged_params(&e.id, &e.params), 0).1 > 0)
+}
+
 /// Is `n` type without inline graphics that has a fill or stroke of its own that paints and has a
 /// visible geometry effect? Such an effect reshapes the whole outline that its fill or stroke
 /// paints ([`outline_text`], which leaves inline graphics out).
@@ -127,6 +138,16 @@ pub fn outline_art(n: &Node, symbol_art: Option<&Node>) -> Option<Node> {
             a.transform(*xf, false);
             Node::group(n.id, vec![Arc::new(a)])
         }
+        // The object as the one piece the copies of its Transform effect are made from.
+        _ if has_gradient_copies(n) => {
+            let mut one = n.clone();
+            one.opacity = 1.0;
+            one.blend = Default::default();
+            one.isolate = false;
+            one.extras_mut().mask = None;
+            one.appearance.effects.clear();
+            Node::group(n.id, vec![Arc::new(one)])
+        }
         _ if vectorcraft_doc::live::is_live(n) => vectorcraft_doc::live::expand_deep(n, Some(hook)),
         _ => return None,
     };
@@ -171,7 +192,7 @@ pub(crate) fn outline_nested_text(n: &mut Node, clipping: bool) {
 /// a geometry effect on a fill or stroke of its own ([`has_item_geometry`]), or has no art (a
 /// symbol instance without `symbol_art`).
 pub fn reshape(n: &Node, symbol_art: Option<&Node>) -> Option<Node> {
-    if (geometry_effects(n).is_empty() && n.projection().is_none() && !has_item_geometry(n)) || !needs_outline(n) {
+    if (geometry_effects(n).is_empty() && n.projection().is_none() && !has_item_geometry(n)) || !(needs_outline(n) || has_gradient_copies(n)) {
         return None;
     }
     as_art(n, symbol_art)
