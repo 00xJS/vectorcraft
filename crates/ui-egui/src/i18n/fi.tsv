@@ -603,6 +603,16 @@
 	Separations Preview	Erottelujen esikatselu
 	Stroke	Viiva
 	SVG Interactivity	SVG-vuorovaikutteisuus
+	Event:	Tapahtuma:
+	JavaScript:	JavaScript:
+	Add Event	Lisää tapahtuma
+	Remove Selected Entry	Poista valittu merkintä
+	Clear Events	Tyhjennä tapahtumat
+	Link JavaScript Files…	Linkitä JavaScript-tiedostoja…
+	JavaScript Files	JavaScript-tiedostot
+	File or URL:	Tiedosto tai URL:
+	Add JavaScript File	Lisää JavaScript-tiedosto
+	Remove JavaScript File	Poista JavaScript-tiedosto
 	Swatches	Värimallit
 	Symbols	Symbolit
 	Transparency	Läpinäkyvyys

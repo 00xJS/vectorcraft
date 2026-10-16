@@ -3006,6 +3006,16 @@ effect	Points	Точки
 	Superscript:	Верхній індекс:
 	SVG Filters	Фільтри SVG
 	SVG Interactivity	Інтерактивність SVG
+	Event:	Подія:
+	JavaScript:	JavaScript:
+	Add Event	Додати подію
+	Remove Selected Entry	Прибрати вибраний запис
+	Clear Events	Очистити події
+	Link JavaScript Files…	Зв’язати файли JavaScript…
+	JavaScript Files	Файли JavaScript
+	File or URL:	Файл або URL:
+	Add JavaScript File	Додати файл JavaScript
+	Remove JavaScript File	Прибрати файл JavaScript
 	SVG Options	Параметри SVG
 	SVG Profile:	Профіль SVG:
 	Swap Fill and Stroke	Поміняти заливку та обведення

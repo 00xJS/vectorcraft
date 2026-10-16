@@ -2963,6 +2963,16 @@ effect	Points	Punkte
 	Superscript:	Hochgestellt:
 	SVG Filters	SVG-Filter
 	SVG Interactivity	SVG-Interaktivität
+	Event:	Ereignis:
+	JavaScript:	JavaScript:
+	Add Event	Ereignis hinzufügen
+	Remove Selected Entry	Ausgewählten Eintrag entfernen
+	Clear Events	Ereignisse löschen
+	Link JavaScript Files…	JavaScript-Dateien verknüpfen…
+	JavaScript Files	JavaScript-Dateien
+	File or URL:	Datei oder URL:
+	Add JavaScript File	JavaScript-Datei hinzufügen
+	Remove JavaScript File	JavaScript-Datei entfernen
 	SVG Options	SVG-Optionen
 	SVG Profile:	SVG-Profil:
 	Swap Fill and Stroke	Fläche und Kontur vertauschen

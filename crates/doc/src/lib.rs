@@ -100,7 +100,7 @@ pub use metadata::{CopyrightStatus, DocMetadata};
 pub use node::Knockout;
 pub use node::Scaling;
 pub use node::{Extras, ExtrasMut, ImageObject, LAYER_COLORS, LayerColor, LiveShape, Node, NodeExtras, NodeId, NodeKind, OpacityMask};
-pub use node::{ImageMap, ObjectAttributes};
+pub use node::{ImageMap, MAX_SVG_SCRIPTS, ObjectAttributes, SVG_EVENTS};
 pub use orient::OrientedBox;
 pub use pattern::{Overlap, PatternDef, PatternEdit, RepeatKind, RepeatSpec, TileType};
 pub use perspective::PerspectiveAttachment;
@@ -731,6 +731,10 @@ pub struct Document {
     /// export settings are Export for Screens' ([`Document::export_settings`]).
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub assets: Vec<ExportAsset>,
+    /// Window › SVG Interactivity › Link JavaScript Files: the JavaScript files (paths or URLs, as
+    /// given) SVG export links with `<script>` elements, in order.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub svg_scripts: Vec<String>,
     /// Puppet Warp pins on the selected artwork while the tool edits it ([`PuppetPins`]): editing
     /// state, never saved.
     #[serde(skip)]
@@ -826,6 +830,7 @@ impl Document {
             slices_clip_to_artboard: true,
             print_setup: None,
             assets: vec![],
+            svg_scripts: vec![],
             puppet: None,
             dimensions: false,
             index: Default::default(),

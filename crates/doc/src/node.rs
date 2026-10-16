@@ -1706,7 +1706,40 @@ pub struct ObjectAttributes {
     /// `("pivot", "100,180")`), kept from import to export (`object.setProps {data}`).
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub data: Vec<(String, String)>,
+    /// Window › SVG Interactivity: the JavaScript each event runs, in the panel's order
+    /// (`("onclick", "alert(1)")`, one entry per event of [`SVG_EVENTS`]). SVG export writes them as
+    /// the element's event attributes; nothing in VectorCraft runs them.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub events: Vec<(String, String)>,
 }
+
+/// The events the SVG Interactivity panel attaches JavaScript to, by the names of the SVG event
+/// attributes that run it.
+pub const SVG_EVENTS: [&str; 19] = [
+    "onfocusin",
+    "onfocusout",
+    "onactivate",
+    "onmousedown",
+    "onmouseup",
+    "onclick",
+    "onmouseover",
+    "onmousemove",
+    "onmouseout",
+    "onkeydown",
+    "onkeypress",
+    "onkeyup",
+    "onload",
+    "onerror",
+    "onabort",
+    "onunload",
+    "onzoom",
+    "onresize",
+    "onscroll",
+];
+
+/// The most JavaScript files a document links (`Document::svg_scripts`): SVG import keeps the
+/// first ones and warns about the rest, and `svgInteractivity.addFile` refuses another.
+pub const MAX_SVG_SCRIPTS: usize = 64;
 
 /// The Attributes panel's Image Map shapes.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]

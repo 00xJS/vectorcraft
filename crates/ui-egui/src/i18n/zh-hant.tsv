@@ -2986,6 +2986,16 @@ mark-style	Japanese	日式
 	Superscript:	上標：
 	SVG Filters	SVG 濾鏡
 	SVG Interactivity	SVG 互動性
+	Event:	事件：
+	JavaScript:	JavaScript：
+	Add Event	新增事件
+	Remove Selected Entry	移除選取的項目
+	Clear Events	清除事件
+	Link JavaScript Files…	連結 JavaScript 檔案…
+	JavaScript Files	JavaScript 檔案
+	File or URL:	檔案或 URL：
+	Add JavaScript File	新增 JavaScript 檔案
+	Remove JavaScript File	移除 JavaScript 檔案
 	SVG Options	SVG 選項
 	SVG Profile:	SVG 描述檔：
 	Swap Fill and Stroke	對調填色和筆畫

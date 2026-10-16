@@ -1997,6 +1997,8 @@ mod tests_ids_without_selection;
 #[cfg(test)]
 mod tests_inline;
 #[cfg(test)]
+mod tests_interactivity;
+#[cfg(test)]
 mod tests_intertwine;
 #[cfg(test)]
 mod tests_journal;

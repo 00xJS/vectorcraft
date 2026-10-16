@@ -37,6 +37,7 @@ pub mod pattern_options;
 pub mod properties;
 pub mod separations;
 pub mod stroke;
+pub mod svg_interactivity;
 pub mod swatches;
 pub mod symbols;
 pub mod tabs;
@@ -171,6 +172,7 @@ pub fn show_icon_panel(app: &mut VectorcraftApp, ui: &mut Ui, id: &str) {
         "tabs" => tabs::show(app, ui),
         flattener_preview::ID => flattener_preview::show(app, ui),
         "attributes" => attributes::show(app, ui),
+        svg_interactivity::ID => svg_interactivity::show(app, ui),
         variables::ID => variables::show(app, ui),
         "colorThemes" => color_themes::show(app, ui),
         links::ID => links::show(app, ui),
@@ -218,6 +220,7 @@ pub fn panel_menu_items(app: &mut VectorcraftApp, ui: &mut Ui, id: &str) -> bool
         "libraries" => libraries::menu(app, ui),
         flattener_preview::ID => flattener_preview::menu(app, ui),
         "attributes" => attributes::menu(app, ui),
+        svg_interactivity::ID => svg_interactivity::menu(app, ui),
         "colorThemes" => color_themes::menu(app, ui),
         "layers" => layers::menu(app, ui),
         links::ID => links::menu(app, ui),

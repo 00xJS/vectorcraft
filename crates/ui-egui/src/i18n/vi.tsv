@@ -3349,6 +3349,16 @@ mark-style	Japanese	Kiểu Nhật
 	Superscript:	Chỉ số trên:
 	SVG Filters	Bộ lọc SVG
 	SVG Interactivity	Tương tác SVG
+	Event:	Sự kiện:
+	JavaScript:	JavaScript:
+	Add Event	Thêm sự kiện
+	Remove Selected Entry	Gỡ mục đã chọn
+	Clear Events	Xóa sự kiện
+	Link JavaScript Files…	Liên kết tệp JavaScript…
+	JavaScript Files	Tệp JavaScript
+	File or URL:	Tệp hoặc URL:
+	Add JavaScript File	Thêm tệp JavaScript
+	Remove JavaScript File	Gỡ tệp JavaScript
 	SVG Options	Tùy chọn SVG
 	SVG Profile:	Hồ sơ SVG:
 	Swap Fill and Stroke	Đổi màu tô và nét

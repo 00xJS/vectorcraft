@@ -409,6 +409,12 @@ Attributes panel: `window.panel {panel: "attributes"}` (Cmd+F11) shows it; its c
 `path.reverse {reversed}` and `path.setFillRule {rule}`, and its Browser button runs the UI command
 `attributes.openUrl {url?}`, which opens the URL (default: the selection's) in the web browser and answers `{url}`.
 
+SVG Interactivity panel: `window.panel {panel: "svgInteractivity"}` shows it; its controls run
+`svgInteractivity.setEvent`, `svgInteractivity.removeEvent` and `svgInteractivity.clearEvents`, and its Link JavaScript
+Files… button runs the UI command `ui.javascriptFilesDialog`, which opens the `javascriptFiles` dialog (fields `file`
+and `selected`). The dialog's Add and Remove buttons run `svgInteractivity.addFile {file}` and
+`svgInteractivity.removeFile {file}` at once, and `ui.dialog.confirm` closes it.
+
 Spot Colors: the Swatches panel menu's Spot Colors… (`ui.spotColors`) opens the `spotColors` dialog (field `useLab`:
 true shows and separates spot colours defined in Lab from their Lab values, false from their working-CMYK
 equivalents); `ui.dialog.confirm` runs `swatch.spotOptions {useLab}` as one undo step.

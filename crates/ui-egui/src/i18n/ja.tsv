@@ -585,6 +585,16 @@
 	Separations Preview	分版プレビュー
 	Stroke	線
 	SVG Interactivity	SVG インタラクティビティ
+	Event:	イベント:
+	JavaScript:	JavaScript:
+	Add Event	イベントを追加
+	Remove Selected Entry	選択した項目を削除
+	Clear Events	イベントを消去
+	Link JavaScript Files…	JavaScript ファイルをリンク…
+	JavaScript Files	JavaScript ファイル
+	File or URL:	ファイルまたは URL:
+	Add JavaScript File	JavaScript ファイルを追加
+	Remove JavaScript File	JavaScript ファイルを削除
 	Swatches	スウォッチ
 	Symbols	シンボル
 	Transparency	透明

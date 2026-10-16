@@ -3646,6 +3646,16 @@ mark-style	Japanese	Japán
 	SVG 1.1	SVG 1.1
 	SVG Filters	SVG-szűrők
 	SVG Interactivity	SVG-interaktivitás
+	Event:	Esemény:
+	JavaScript:	JavaScript:
+	Add Event	Esemény hozzáadása
+	Remove Selected Entry	Kijelölt bejegyzés eltávolítása
+	Clear Events	Események törlése
+	Link JavaScript Files…	JavaScript-fájlok csatolása…
+	JavaScript Files	JavaScript-fájlok
+	File or URL:	Fájl vagy URL:
+	Add JavaScript File	JavaScript-fájl hozzáadása
+	Remove JavaScript File	JavaScript-fájl eltávolítása
 	SVG Options	SVG-beállítások
 	SVG Profile:	SVG-profil:
 	Swallowtail	Fecskefarok

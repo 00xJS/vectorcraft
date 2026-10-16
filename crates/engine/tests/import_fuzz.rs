@@ -389,6 +389,9 @@ fn arb_svg_attr() -> impl Strategy<Value = String> {
         "preserveAspectRatio",
         "overflow",
         "data-vc-blend",
+        // SVG Interactivity: event attributes, kept as text.
+        "onclick",
+        "onload",
     ]);
     let value = prop_oneof![
         arb_num(),
@@ -460,6 +463,7 @@ fn arb_svg_element(depth: u32) -> BoxedStrategy<String> {
         "feDropShadow",
         "feComponentTransfer",
         "feFuncA",
+        "script",
     ]);
     let attrs = || prop::collection::vec(arb_svg_attr(), 0..6).prop_map(|v| v.concat());
     let leaf = (tag.clone(), attrs(), "[a-z ]{0,6}").prop_map(|(t, a, txt)| format!("<{t} id=\"e\"{a} href=\"#e\">{txt}</{t}>"));

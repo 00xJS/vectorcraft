@@ -2103,6 +2103,16 @@
 	SAVED	SALVO
 	SVG Filters	Filtros SVG
 	SVG Interactivity	Interatividade SVG
+	Event:	Evento:
+	JavaScript:	JavaScript:
+	Add Event	Adicionar Evento
+	Remove Selected Entry	Remover Entrada Selecionada
+	Clear Events	Limpar Eventos
+	Link JavaScript Files…	Vincular Arquivos JavaScript…
+	JavaScript Files	Arquivos JavaScript
+	File or URL:	Arquivo ou URL:
+	Add JavaScript File	Adicionar Arquivo JavaScript
+	Remove JavaScript File	Remover Arquivo JavaScript
 	SVG Options	Opções SVG
 	SVG Profile:	Perfil SVG:
 	Same	Igual
