@@ -746,6 +746,9 @@ pub struct Prefs {
     pub ui_brightness: String,
     /// User Interface › Accent Color: the colour of what is on, chosen or focused.
     pub ui_accent: String,
+    /// User Interface › Color Scheme: "modern" (with the accent above) or "classic" (neutral
+    /// greys and a blue accent).
+    pub ui_color_scheme: String,
     pub canvas_color: String,
     pub auto_collapse_icon_panels: bool,
     /// User Interface › Show Tool Group Labels: the toolbar's group names (Select, Shapes, Draw…);
@@ -979,6 +982,7 @@ impl Default for Prefs {
             scratch_secondary: s("None"),
             ui_brightness: s("mediumDark"),
             ui_accent: s("coral"),
+            ui_color_scheme: s("modern"),
             canvas_color: s("matchUi"),
             auto_collapse_icon_panels: false,
             tool_group_labels: false,
