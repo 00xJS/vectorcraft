@@ -13,7 +13,8 @@ use vectorcraft_geom::{Anchor, AnchorKind, BezPath, FillRule, PathData, Point, R
 use vectorcraft_pathops as po;
 use vectorcraft_pathops::{BoolOp, Cap, Join, SimplifyOptions};
 
-use super::create::{add_look, add_node, insert_look};
+use super::create::{add_look, insert_look};
+use super::newart::NewArt;
 use super::pathops::{Beside, remove_each};
 use super::*;
 use crate::EngineError;
@@ -142,7 +143,7 @@ pub fn specs() -> Vec<CommandSpec> {
             "Blob Brush",
             [],
             None,
-            "{points: [[x,y]…], size?: pt (10), merge?: true} filled brush shape, merged with touching same-colour blobs → {id}",
+            "{points: [[x,y]…], size?: pt (10), merge?: true, mergeOnlySelection?: bool (false: merge with any touching same-color blob; true: only with selected ones), keepSelected?: bool (false: the drawn or merged path is not selected, and the rest of the selection stays; true: it is selected)} filled brush shape, merged with touching same-colour blobs → {id}",
             has_doc,
             blob
         ),
@@ -1346,11 +1347,14 @@ fn blob(s: &mut Session, p: &Value) -> Result<Value> {
     } else {
         Paint::solid(Color::BLACK)
     };
+    let keep_selected = bool_or(p, "keepSelected", false);
+    let only_selection = bool_or(p, "mergeOnlySelection", false);
     let st = s.doc()?;
     let mut merge_ids = vec![];
-    if bool_or(p, "merge", true) {
+    if bool_or(p, "merge", true) && !(only_selection && st.selection.is_empty()) {
         let all = Selection::default();
-        for id in target_paths(&st.doc, &all, poly_bounds(&pts, size)) {
+        let from = if only_selection { &st.selection } else { &all };
+        for id in target_paths(&st.doc, from, poly_bounds(&pts, size)) {
             let Some(n) = st.doc.node(id) else { continue };
             if n.appearance.fill_paint() != paint || !n.appearance.stroke_paint().is_none() {
                 continue;
@@ -1361,20 +1365,26 @@ fn blob(s: &mut Session, p: &Value) -> Result<Value> {
             }
         }
     }
-    let ap = Appearance::basic(paint, Paint::None, 1.0);
+    let ap = NewArt::plain(Appearance::basic(paint, Paint::None, 1.0));
     if merge_ids.is_empty() {
-        return add_node(s, "Blob Brush", path_kind(region), ap, None);
+        return insert_look(s, "Blob Brush", path_kind(region), ap, None, keep_selected);
     }
     let mut inputs: Vec<(&PathData, FillRule)> = vec![(&region, FillRule::NonZero)];
     inputs.extend(merge_ids.iter().map(|(_, pd, r)| (pd, *r)));
     let merged = po::unite_all(&inputs);
-    let Some(((keep, _, _), rest)) = merge_ids.split_last() else { return add_node(s, "Blob Brush", path_kind(region), ap, None) };
+    let Some(((keep, _, _), rest)) = merge_ids.split_last() else {
+        return insert_look(s, "Blob Brush", path_kind(region), ap, None, keep_selected);
+    };
     let keep = *keep;
     let others: Vec<NodeId> = rest.iter().map(|m| m.0).collect();
     s.edit("Blob Brush", |d, sel| {
         *path_mut(d, keep)? = merged;
         remove_each(d, &others)?;
-        sel.set([keep]);
+        if keep_selected {
+            sel.set([keep]);
+        } else {
+            sel.remove(keep);
+        }
         Ok(())
     })?;
     Ok(json!({ "id": keep.0 }))
