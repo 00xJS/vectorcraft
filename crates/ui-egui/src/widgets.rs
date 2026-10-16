@@ -1979,9 +1979,9 @@ fn wheel_shape(c: Pos2, r: f32, v: f32) -> egui::Shape {
 pub struct WheelResponse {
     /// The colour whose marker was pressed (it becomes the selected one).
     pub pressed: Option<usize>,
-    /// A colour moved to a new hue, saturation and brightness (`[h°, s, v]`), by dragging its
-    /// marker or (the selected colour) the brightness slider.
-    pub moved: Option<(usize, [f32; 3])>,
+    /// A colour moved by dragging its marker (a new hue and saturation) or, the selected colour,
+    /// the brightness slider (a new brightness): `[h°, s, v]`, `None` where the control kept it.
+    pub moved: Option<(usize, [Option<f32>; 3])>,
 }
 
 /// The harmony wheel of Recolor Artwork's Edit tab and the Color Themes panel: a hue and saturation
@@ -2021,11 +2021,11 @@ pub fn harmony_wheel(ui: &mut Ui, id: &str, size: f32, colors: &[Color], base: O
         }
         if resp.dragged()
             && let (Some(i), Some(p)) = (ui.data(|m| m.get_temp::<Option<usize>>(drag)).flatten(), resp.interact_pointer_pos())
-            && let Some(old) = colors.get(i)
+            && i < colors.len()
         {
             let dv = p - c;
             let h = (-dv.y).atan2(dv.x).to_degrees().rem_euclid(360.0);
-            out.moved = Some((i, [h, (dv.length() / r).clamp(0.0, 1.0), old.to_hsb()[2]]));
+            out.moved = Some((i, [Some(h), Some((dv.length() / r).clamp(0.0, 1.0)), None]));
         }
         resp.widget_info(|| egui::WidgetInfo::labeled(egui::WidgetType::Slider, ui.is_enabled(), tl!("Color wheel")));
     });
@@ -2037,7 +2037,7 @@ pub fn harmony_wheel(ui: &mut Ui, id: &str, size: f32, colors: &[Color], base: O
             && let (Some(nv), _) =
                 color_slider_named(ui, (id, "brightness"), tl!("Brightness"), v, size, &|x| crate::panels::c32(&Color::from_hsb(h, s, x)))
         {
-            out.moved = Some((b, [h, s, nv]));
+            out.moved = Some((b, [None, None, Some(nv)]));
         }
     });
     out
