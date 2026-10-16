@@ -2042,6 +2042,65 @@ fn document_inspect_slices_the_layer_tree() {
     assert!(s.execute("document.inspect", &json!({"depth": "deep"})).is_err());
 }
 
+/// `document.inspect` scoped by `ids`, `kind`, `limit` and `offset`: each entry is the node as
+/// the full tree lists it, bad input is an error, and the unscoped reply keeps its shape.
+#[test]
+fn document_inspect_scopes_by_ids_kind_and_page() {
+    let mut s = session();
+    let a = rect(&mut s, 0.0, 0.0, 10.0, 10.0).0;
+    let b = rect(&mut s, 20.0, 0.0, 10.0, 10.0).0;
+    s.execute("select.all", &json!({})).unwrap();
+    let group = s.execute("object.group", &json!({})).unwrap()["id"].as_u64().unwrap();
+    let c = rect(&mut s, 40.0, 0.0, 10.0, 10.0).0;
+    let mut ins = |p: Value| s.execute("document.inspect", &p).unwrap();
+
+    let full = ins(json!({}));
+    assert!(full.get("nodes").is_none() && full.get("total").is_none(), "{full}");
+    let layer = full["layers"][0].clone();
+    let layer_id = layer["id"].as_u64().unwrap();
+    let find = |tree: &Value, id: u64| -> Value {
+        fn walk(n: &Value, id: u64) -> Option<Value> {
+            if n["id"] == id {
+                return Some(n.clone());
+            }
+            n["children"].as_array()?.iter().find_map(|c| walk(c, id))
+        }
+        walk(tree, id).unwrap()
+    };
+
+    // ids: just those nodes, in the order given, equal to their part of the full tree.
+    let some = ins(json!({"ids": [c, group]}));
+    assert!(some.get("layers").is_none());
+    assert_eq!(some["nodes"], json!([find(&layer, c), find(&layer, group)]));
+    assert_eq!(some["total"], 2);
+    assert_eq!(some["artboards"], full["artboards"]);
+    assert_eq!(ins(json!({"ids": [group], "depth": 0}))["nodes"][0].get("children"), None);
+
+    // kind: every match with its ancestor path, top of the stack first; paged.
+    let paths = ins(json!({"kind": "rectangle"}));
+    let ids: Vec<u64> = paths["nodes"].as_array().unwrap().iter().map(|n| n["id"].as_u64().unwrap()).collect();
+    assert_eq!(ids, [c, b, a]);
+    assert_eq!(paths["nodes"][1]["path"], json!([layer_id, group]));
+    assert_eq!(paths["total"], 3);
+    let page = ins(json!({"kind": "Rectangle", "offset": 1, "limit": 1}));
+    assert_eq!(page["nodes"].as_array().map(Vec::len), Some(1));
+    assert_eq!(page["nodes"][0]["id"], b);
+    assert_eq!(page["total"], 3);
+    assert_eq!(ins(json!({"kind": "Rectangle", "offset": 99}))["nodes"], json!([]));
+    assert_eq!(ins(json!({"kind": "Rectangle", "ids": [group]}))["total"], 2);
+
+    // limit/offset alone page the top layers.
+    let paged = ins(json!({"limit": 0}));
+    assert_eq!(paged["layers"], json!([]));
+    assert_eq!(paged["total"], 1);
+
+    for bad in
+        [json!({"ids": [999_999]}), json!({"ids": "all"}), json!({"ids": [-1]}), json!({"kind": 3}), json!({"limit": -1}), json!({"offset": 1.5})]
+    {
+        assert!(s.execute("document.inspect", &bad).is_err(), "{bad}");
+    }
+}
+
 /// `document.find` searches names, kinds and type content across the whole tree and
 /// answers ids with ancestor paths plus the total, so capped replies stay explicit.
 #[test]

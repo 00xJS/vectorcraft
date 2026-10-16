@@ -24,7 +24,7 @@ pub fn specs() -> Vec<CommandSpec> {
         ),
         cmd!("file.close", "Close", ["File"], Some("Cmd+W"), "{index?}", has_doc, file_close),
         cmd!("document.activate", "Activate Document", [], None, "{index}", always, doc_activate),
-        cmd!(query "document.inspect", "Inspect Document", [], None, "{depth?, childLimit?} → layer tree (each node: id, name, kind, visible, locked, bounds, opacity when below 1, blend when not Normal, fill, stroke and strokeWidth of objects and compound paths; a compound path's members have compoundMember: true instead of paint, which is the compound's), artboards, selection, history (a sliced tree reports childCount)", has_doc, |s, p| Ok(inspect::document_opts(s, slice_opts(p, "document.inspect")?))),
+        cmd!(query "document.inspect", "Inspect Document", [], None, "{depth?, childLimit?, ids?: [id…] (list just these nodes, of any level, in this order, under `nodes` in place of `layers`; an unknown id is an error; at most 10000), kind?: panel label such as Layer; Group; Path; Type or Image (exact, ignoring case; list every such node under `nodes`, each with `path`, its ancestor ids with the layer first, searching the subtrees of `ids` when given), limit?: at most this many entries of the list, offset?: entries skipped first (default 0; with `ids`, `kind`, `limit` or `offset` the reply adds `total`, the entries before paging)} → layer tree (each node: id, name, kind, visible, locked, bounds, opacity when below 1, blend when not Normal, fill, stroke and strokeWidth of objects and compound paths; a compound path's members have compoundMember: true instead of paint, which is the compound's), artboards, selection, history (a sliced tree reports childCount); without the scope options the reply is the whole layer tree", has_doc, doc_inspect),
         cmd!(query "document.node", "Inspect Object", [], None, "{id, summary?: compact summary, depth?: child levels in the summary (default all), childLimit?: children shown per node (default all; a level that shows fewer reports childCount)} → one object", has_doc, doc_node),
         cmd!(query "document.find", "Find Objects", [], None, "{name?: substring of the Layers panel name, kind?: panel label such as Group; Path; Type or Image (exact), text?: substring of type content, limit?: max matches (default 100, 0 counts only)} → {matches: [{id, name, kind, path}], total}", has_doc, doc_find),
         cmd!(query "document.json", "Document JSON", [], None, "{} → complete document model", has_doc, |s, _| Ok(serde_json::to_value(&*s.doc()?.doc).unwrap_or(Value::Null))),
@@ -170,6 +170,26 @@ fn doc_node(s: &mut Session, p: &Value) -> Result<Value> {
     let n = doc.node(id).ok_or(EngineError::NoNode(id))?;
     opts.compound_member = doc.parent_of(id).and_then(|p| doc.node(p)).is_some_and(|p| matches!(p.kind, vectorcraft_doc::NodeKind::Compound { .. }));
     if summary { Ok(inspect::node_summary_opts(n, opts, &doc.symbol_boxes())) } else { Ok(serde_json::to_value(n).unwrap_or(Value::Null)) }
+}
+
+/// Most node ids `document.inspect {ids}` takes.
+const MAX_INSPECT_IDS: usize = 10_000;
+
+fn doc_inspect(s: &mut Session, p: &Value) -> Result<Value> {
+    const C: &str = "document.inspect";
+    let opts = slice_opts(p, C)?;
+    let ids = match p.get("ids") {
+        None | Some(Value::Null) => None,
+        Some(Value::Array(a)) if a.len() > MAX_INSPECT_IDS => return Err(bad(C, format!("`ids` takes at most {MAX_INSPECT_IDS} ids"))),
+        Some(_) => Some(checked_ids_param(s, p, "ids", C)?),
+    };
+    let kind = match p.get("kind") {
+        None | Some(Value::Null) => None,
+        Some(Value::String(k)) => Some(k.clone()),
+        Some(_) => return Err(bad(C, "`kind` must be a string")),
+    };
+    let scope = inspect::Scope { ids, kind, limit: opt_u64(p, C, "limit")?, offset: opt_u64(p, C, "offset")?.unwrap_or(0) };
+    Ok(inspect::document_scoped(s, opts, &scope))
 }
 
 /// `depth` / `childLimit` for a summary read: absent (or null) means no limit.

@@ -275,6 +275,8 @@ fn structured_junk() {
         ("stroke.set", json!({"weight": -5, "dash": [0, 0, 0], "miterLimit": -1})),
         ("stroke.set", json!({"weight": 1e308, "dash": [-1, -2], "dashOffset": 1e308})),
         ("stroke.set", json!({"dash": [1e-12]})),
+        ("document.inspect", json!({"ids": [u64::MAX, 0, 1e308], "kind": "", "limit": u64::MAX, "offset": u64::MAX})),
+        ("document.inspect", json!({"ids": null, "kind": {"a": 1}, "limit": -1, "offset": "x", "depth": u64::MAX})),
         ("transparency.set", json!({"opacity": -50})),
         ("transparency.set", json!({"opacity": 1e308, "blend": "NoSuchBlend"})),
         ("perspective.move", json!({"from": [0, 0], "to": [1e308, -1e308], "perpendicular": true, "copy": true, "plane": "ground"})),
