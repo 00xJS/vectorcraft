@@ -4483,3 +4483,9 @@ theme	Appearance	Erscheinungsbild
 # User Interface › Color Scheme
 	Color Scheme	Farbschema
 	Modern	Modern
+
+# Symbol Options › Export Type
+	Export Type:	Exporttyp:
+	Movie Clip	Movieclip
+@msg	name is empty	Name ist leer
+@msg	no symbol named `{n}`	kein Symbol namens `{n}`

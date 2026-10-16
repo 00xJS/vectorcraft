@@ -4898,3 +4898,9 @@ effect	Points	Σημεία
 # User Interface › Color Scheme
 	Color Scheme	Χρωματικός συνδυασμός
 	Modern	Σύγχρονο
+
+# Symbol Options › Export Type
+	Export Type:	Τύπος εξαγωγής:
+	Movie Clip	Κλιπ ταινίας
+@msg	name is empty	το όνομα είναι κενό
+@msg	no symbol named `{n}`	κανένα σύμβολο με όνομα `{n}`

@@ -4888,3 +4888,9 @@ mark-style	Japanese	Japonesas
 # User Interface › Color Scheme
 	Color Scheme	Esquema de color
 	Modern	Moderno
+
+# Symbol Options › Export Type
+	Export Type:	Tipo de exportación:
+	Movie Clip	Clip de película
+@msg	name is empty	el nombre está vacío
+@msg	no symbol named `{n}`	no hay ningún símbolo llamado `{n}`

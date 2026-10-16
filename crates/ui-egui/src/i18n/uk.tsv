@@ -4503,3 +4503,9 @@ lighting	Light	Світло
 # User Interface › Color Scheme
 	Color Scheme	Колірна схема
 	Modern	Сучасна
+
+# Symbol Options › Export Type
+	Export Type:	Тип експорту:
+	Movie Clip	Кліп
+@msg	name is empty	ім’я порожнє
+@msg	no symbol named `{n}`	немає символу з назвою `{n}`

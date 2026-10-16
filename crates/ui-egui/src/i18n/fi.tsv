@@ -4910,3 +4910,9 @@ mark-style	Japanese	Japanilainen
 # User Interface › Color Scheme
 	Color Scheme	Värimalli
 	Modern	Moderni
+
+# Symbol Options › Export Type
+	Export Type:	Vientityyppi:
+	Movie Clip	Elokuvaleike
+@msg	name is empty	nimi on tyhjä
+@msg	no symbol named `{n}`	symbolia nimeltä `{n}` ei ole

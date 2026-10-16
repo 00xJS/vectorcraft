@@ -4928,3 +4928,9 @@ theme	Appearance	Външен вид
 # User Interface › Color Scheme
 	Color Scheme	Цветова схема
 	Modern	Модерна
+
+# Symbol Options › Export Type
+	Export Type:	Тип на експортиране:
+	Movie Clip	Филмов клип
+@msg	name is empty	името е празно
+@msg	no symbol named `{n}`	няма символ с име `{n}`

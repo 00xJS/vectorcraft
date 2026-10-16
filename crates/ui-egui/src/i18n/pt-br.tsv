@@ -1046,6 +1046,9 @@
 	Graphic Style Options…	Opções de Estilo Gráfico…
 	Symbol Options	Opções de Símbolo
 	Symbol Options…	Opções de Símbolo…
+	Export Type:	Tipo de exportação:
+	Movie Clip	Clipe de filme
+	Graphic	Gráfico
 	Graphic Styles	Estilos Gráficos
 	Graphic Styles Options	Opções de Estilos Gráficos
 	Graphics Processor	Processador Gráfico
@@ -4211,7 +4214,6 @@ axis	Both	Ambos
 	Delete Group	Excluir Grupo
 	Import Library…	Importar Biblioteca…
 	Export Library…	Exportar Biblioteca…
-	Graphic	Gráfico
 	System Layout	Layout do Sistema
 	Tabular Lining	Alinhado Tabular
 	Tabular Oldstyle	Antigo Tabular
@@ -4863,3 +4865,7 @@ mark-style	Japanese	Japonesas
 # User Interface › Color Scheme
 	Color Scheme	Esquema de cores
 	Modern	Moderno
+
+# Symbol Options › Export Type
+@msg	name is empty	o nome está vazio
+@msg	no symbol named `{n}`	nenhum símbolo chamado `{n}`

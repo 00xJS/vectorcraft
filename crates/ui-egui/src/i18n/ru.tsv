@@ -4519,3 +4519,9 @@ lighting	Light	Свет
 # User Interface › Color Scheme
 	Color Scheme	Цветовая схема
 	Modern	Современная
+
+# Symbol Options › Export Type
+	Export Type:	Тип экспорта:
+	Movie Clip	Видеоклип
+@msg	name is empty	имя пустое
+@msg	no symbol named `{n}`	нет символа с именем `{n}`

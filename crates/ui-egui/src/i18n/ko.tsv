@@ -4487,3 +4487,9 @@ lighting	Light	광원
 # User Interface › Color Scheme
 	Color Scheme	색 구성표
 	Modern	모던
+
+# Symbol Options › Export Type
+	Export Type:	내보내기 유형:
+	Movie Clip	무비 클립
+@msg	name is empty	이름이 비어 있습니다
+@msg	no symbol named `{n}`	이름이 `{n}`인 심볼이 없습니다
