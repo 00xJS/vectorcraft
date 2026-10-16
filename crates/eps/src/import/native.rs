@@ -1334,9 +1334,40 @@ fn editing_copy(ps: &[u8]) -> Option<Result<Cow<'_, [u8]>, String>> {
 
 /// A file in the legacy format whose page can't be read (a `.ai` in PostScript form that names its
 /// prolog without including it) from its layers alone (`ps`: its program, which has them) → the
-/// document and the import's notes. `None` when the layers aren't in the program.
-pub(super) fn program_alone(ps: &[u8]) -> Option<Result<(Document, Vec<String>), String>> {
-    (!ai::has_eps_data(ps) && has_layers(ps)).then(|| build(ps, None, Page::Art, false, false, 1.0))
+/// document and the import's notes. A file whose header says it is in the format (`illustrator`)
+/// but whose program has no layers (Illustrator 3 had none; image editors still export their
+/// paths so, storytold/photocraft#6036) is read with its art on one layer. `None` when the program
+/// has no layers and isn't in the format: other PostScript isn't read as the format's operators.
+pub(super) fn program_alone(ps: &[u8], illustrator: bool) -> Option<Result<(Document, Vec<String>), String>> {
+    if ai::has_eps_data(ps) {
+        return None;
+    }
+    if has_layers(ps) {
+        return Some(build(ps, None, Page::Art, false, false, 1.0));
+    }
+    let program = one_layer(ps).filter(|_| illustrator)?;
+    Some(build(&program, None, Page::Art, false, false, 1.0))
+}
+
+/// `ps` with its art (from its `%%EndSetup` to its `%%PageTrailer`, else its `%%Trailer`, else its
+/// end) on a layer that shows, prints and isn't locked, as the version 5 format writes one. `None`
+/// without a `%%EndSetup`: where the art starts isn't known.
+fn one_layer(ps: &[u8]) -> Option<Vec<u8>> {
+    let setup = line_with(ps, 0, b"%%EndSetup")?;
+    let art = line_with(ps, setup + 1, b"").unwrap_or(ps.len());
+    let end = line_with(ps, art, b"%%PageTrailer").or_else(|| line_with(ps, art, b"%%Trailer")).unwrap_or(ps.len());
+    let mut out = Vec::with_capacity(ps.len() + 80);
+    out.extend_from_slice(ps.get(..art)?);
+    out.extend_from_slice(b"\n%AI5_BeginLayer\n1 1 1 1 0 0 0 79 128 255 Lb\n(Layer 1) Ln\n");
+    out.extend_from_slice(ps.get(art..end)?);
+    out.extend_from_slice(b"\nLB\n%AI5_EndLayer--\n");
+    out.extend_from_slice(ps.get(end..)?);
+    Some(out)
+}
+
+/// Where the first line of `ps` from `from` on that starts with `key` starts.
+fn line_with(ps: &[u8], from: usize, key: &[u8]) -> Option<usize> {
+    (from..ps.len()).find(|&i| (i == 0 || matches!(ps.get(i - 1), Some(b'\n' | b'\r'))) && ps.get(i..).is_some_and(|rest| rest.starts_with(key)))
 }
 
 #[cfg(test)]
