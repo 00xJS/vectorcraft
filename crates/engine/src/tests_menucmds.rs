@@ -1014,6 +1014,35 @@ fn select_menu_commands_stay_inside_the_isolated_group() {
     assert_eq!(selected(&s), vec![a, b, text_inside]);
 }
 
+/// In isolation mode the Layers panel's target circle and selection column can't select an object
+/// outside the isolated group, so it can't be moved either (#2286).
+#[test]
+fn layers_panel_selects_nothing_outside_the_isolated_group() {
+    let mut s = session();
+    let a = rect(&mut s, 0.0, 0.0, 50.0, 50.0);
+    let b = rect(&mut s, 100.0, 0.0, 50.0, 50.0);
+    let outside = rect(&mut s, 300.0, 0.0, 50.0, 50.0);
+    sel(&mut s, &[a, b]);
+    let g = id_of(&s.execute("object.group", &json!({})).unwrap());
+    s.execute("object.isolate", &json!({"id": g.0})).unwrap();
+    let before = bounds(&s, outside);
+    let _ = s.execute("layer.target", &json!({"id": outside.0}));
+    assert!(!selected(&s).contains(&outside));
+    let _ = s.execute("layer.target", &json!({"id": outside.0, "add": true}));
+    assert!(!selected(&s).contains(&outside));
+    let _ = s.execute("layer.selectAll", &json!({"id": outside.0}));
+    assert!(!selected(&s).contains(&outside));
+    let _ = s.execute("layer.selectAll", &json!({"id": outside.0, "add": true}));
+    assert!(!selected(&s).contains(&outside));
+    let _ = s.execute("object.move", &json!({"dx": 10, "dy": 0}));
+    assert_eq!(bounds(&s, outside), before);
+    // Objects inside the group can still be targeted and selected.
+    s.execute("layer.target", &json!({"id": a.0})).unwrap();
+    assert_eq!(selected(&s), vec![a]);
+    s.execute("layer.selectAll", &json!({"id": b.0})).unwrap();
+    assert_eq!(selected(&s), vec![b]);
+}
+
 /// In isolation mode a recalled selection leaves out the objects outside the isolated group, and
 /// Next Object Above selects nothing outside it.
 #[test]

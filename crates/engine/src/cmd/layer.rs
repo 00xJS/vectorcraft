@@ -412,6 +412,9 @@ fn target(s: &mut Session, p: &Value) -> Result<Value> {
     if !st.doc.is_editable(id) {
         return Err(bad(C, "the object is hidden or locked"));
     }
+    if !in_isolation(&st.doc, st.isolation, id) {
+        return Err(bad(C, "the object is outside the isolated group"));
+    }
     let layer = n.is_layer();
     let rows = st.layer_rows.clone();
     if p.get("add").and_then(Value::as_bool).unwrap_or(false) {
@@ -645,6 +648,11 @@ fn collect(s: &mut Session, p: &Value) -> Result<Value> {
     Ok(json!({ "id": lid.0 }))
 }
 
+/// Whether `id` lies inside the isolated group or layer (always, outside isolation mode).
+fn in_isolation(doc: &Document, isolation: Option<NodeId>, id: NodeId) -> bool {
+    isolation.is_none_or(|iso| iso != id && doc.ancestry(id).is_some_and(|a| a.contains(&iso)))
+}
+
 /// The selection column: select a row's art.
 fn select_art(s: &mut Session, p: &Value) -> Result<Value> {
     const C: &str = "layer.selectAll";
@@ -652,7 +660,7 @@ fn select_art(s: &mut Session, p: &Value) -> Result<Value> {
     let add = bool_or(p, "add", false);
     let st = s.doc()?;
     let n = st.doc.node(id).ok_or(EngineError::NoNode(id))?;
-    let ids: Vec<NodeId> = if !st.doc.is_editable(id) {
+    let ids: Vec<NodeId> = if !st.doc.is_editable(id) || !in_isolation(&st.doc, st.isolation, id) {
         vec![]
     } else if n.is_layer() {
         n.layer_art(true)
