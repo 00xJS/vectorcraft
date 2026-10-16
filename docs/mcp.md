@@ -1943,6 +1943,9 @@ every document they read except a native file and the native document that an SV
 `view.rotate {angle}` (desktop app) turns the view to `angle` degrees about the center of the canvas; a positive angle
 turns the art clockwise on screen. View › Rotate View and the status bar's angle menu run it. It returns `{angle}`, the
 angle it set, normalized to (-180, 180], and `view.rotateReset` turns the view back to 0.
+`view.rotateToSelection` (desktop app, View › Rotate View to Selection) turns the view about the center of the canvas to
+the angle the selected objects share (`selectionRotation` in `document.inspect`, 0 when their angles differ), so their
+bounding box is square to the window. It returns `{angle}`, and with nothing selected it returns "nothing selected".
 
 The Smart Guides preferences (Preferences › Smart Guides) apply to `pointer_gesture` with Smart Guides on (the
 default view) and to the mouse; they change what the tools show and how far a target pulls, and only Construction

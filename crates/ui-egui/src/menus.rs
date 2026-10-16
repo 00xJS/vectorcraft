@@ -264,6 +264,12 @@ pub const UI_COMMANDS: &[(&str, &str, &str, &str)] = &[
         "",
         "{angle: degrees, clockwise on screen as the status bar shows it} turn the view to that angle about the center of the canvas; returns {angle}, normalized to (-180, 180]",
     ),
+    (
+        "view.rotateToSelection",
+        "Rotate View to Selection",
+        "",
+        "{} turn the view about the center of the canvas to the angle the selected objects share (selectionRotation in document.inspect, 0 when they differ), so their bounding box is square to the window; returns {angle}",
+    ),
     ("view.rotateReset", "Reset Rotate View", "Cmd+Shift+1", "{}"),
     ("window.control", "Control", "", "{}"),
     ("window.toolbar", "Tools", "", "{}"),
@@ -1252,6 +1258,22 @@ pub fn run_ui_command(app: &mut VectorcraftApp, id: &str, p: &Value) -> Option<R
                 None => Err("no document".into()),
             }
         }
+        // View › Rotate View to Selection: the view turns about the center of the canvas to the angle
+        // of the selection's bounding box, so the box is square to the window.
+        "view.rotateToSelection" => {
+            let Some(st) = app.session.active() else { return Some(Err("no document".into())) };
+            if st.selection.objects.is_empty() {
+                return Some(Err("nothing selected".into()));
+            }
+            let angle = vectorcraft_geom::normalize_deg(st.doc.bbox_angle(&st.selection.objects));
+            match app.view_mut() {
+                Some(v) => {
+                    v.rotation = angle;
+                    Ok(json!({ "angle": angle }))
+                }
+                None => Err("no document".into()),
+            }
+        }
         "view.rotateReset" => {
             if let Some(v) = app.view_mut() {
                 v.rotation = 0.0;
@@ -2121,6 +2143,7 @@ pub fn enabled(app: &VectorcraftApp, id: &str) -> bool {
         | "view.fitAll"
         | "view.actualSize"
         | "view.rotate" => app.session.active().is_some(),
+        "view.rotateToSelection" => app.session.active().is_some_and(|d| !d.selection.objects.is_empty()),
         id if id.starts_with("file.openRecent") => recent_slot(app, id).is_some(),
         "file.clearRecent" => !app.ui.recent_files.is_empty(),
         id if id.starts_with("type.recentFont") => {
@@ -2703,6 +2726,7 @@ pub fn menu_tree_named(english_names: bool) -> Vec<(&'static str, Vec<Item>)> {
                 c("Actual Size", "view.actualSize"),
                 Sep,
                 sub("Rotate View", crate::state::ROTATE_VIEW_ANGLES.iter().map(|(l, a)| cp(l, "view.rotate", json!({ "angle": a }))).collect()),
+                c("Rotate View to Selection", "view.rotateToSelection"),
                 c("Reset Rotate View", "view.rotateReset"),
                 Sep,
                 c("Hide Edges", "view.edges"),

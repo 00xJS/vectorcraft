@@ -1,7 +1,9 @@
 //! View › Rotate View and `view.rotate`: the view turns to one of the status bar's preset angles
 //! from the menu, or to any angle from the command, and the menu checks the angle the view is turned to.
+//! View › Rotate View to Selection (`view.rotateToSelection`) turns the view to the angle of the
+//! selection's bounding box.
 
-use serde_json::json;
+use serde_json::{Value, json};
 use vectorcraft_engine::Session;
 
 use crate::{VectorcraftApp, menus};
@@ -62,7 +64,12 @@ fn the_view_menu_lists_the_status_bar_angles_and_checks_the_current_one() {
     let shown: Vec<_> = items.iter().map(|e| (e.path.join(" › "), e.label.as_str(), e.command.as_deref(), e.params.clone(), e.enabled)).collect();
     let want: Vec<_> = ANGLES.iter().map(|(l, a)| ("View › Rotate View".to_string(), *l, Some("view.rotate"), json!({ "angle": a }), true)).collect();
     assert_eq!(shown, want);
-    assert_eq!((after[0].path.join(" › "), after[0].label.as_str()), ("View".to_string(), "Reset Rotate View"), "the submenu comes right before it");
+    let next: Vec<_> = after[..2].iter().map(|e| (e.path.join(" › "), e.label.as_str(), e.command.as_deref())).collect();
+    let want = [
+        ("View".to_string(), "Rotate View to Selection", Some("view.rotateToSelection")),
+        ("View".to_string(), "Reset Rotate View", Some("view.rotateReset")),
+    ];
+    assert_eq!(next, want, "the submenu comes right before them");
 
     app.run("view.rotate", json!({"angle": 30})).unwrap();
     assert_eq!(checked(&app), ["30°"]);
@@ -107,6 +114,87 @@ fn rotate_view_needs_a_document() {
     assert!(!menus::enabled(&empty, "view.rotate"));
     assert_eq!(menus::checked(&empty, "view.rotate", &json!({"angle": 0})), Some(false), "a check item without a document");
     assert!(menus::enabled(&with_document(), "view.rotate"));
+}
+
+/// Selects the object `id` alone and turns it by `angle` degrees.
+fn turn(app: &mut VectorcraftApp, id: &Value, angle: f64) {
+    app.run("select.set", json!({ "ids": [id] })).unwrap();
+    app.run("object.rotate", json!({ "angle": angle })).unwrap();
+}
+
+/// Draws a 120 × 60 pt rectangle at `x` and returns its id.
+fn rectangle(app: &mut VectorcraftApp, x: f64) -> Value {
+    app.run("shape.rectangle", json!({"x": x, "y": 80, "width": 120, "height": 60})).unwrap()["id"].clone()
+}
+
+/// Says whether the sides of the selection's bounding box run across and down the window, as the
+/// canvas draws the box in the active view.
+fn square_on_screen(app: &VectorcraftApp) -> bool {
+    let st = app.session.active().unwrap();
+    let corners = st.doc.oriented_bounds(&st.selection.objects, false).unwrap().corners();
+    let rect = egui::Rect::from_min_size(egui::Pos2::ZERO, egui::vec2(800.0, 600.0));
+    let to_screen = crate::canvas::Xf::new(rect, app.view().unwrap()).affine();
+    let [a, b, c, _] = corners.map(|p| to_screen * p);
+    let (top, side) = (b - a, c - b);
+    top.x.abs() > 1.0 && top.y.abs() < 1e-6 && side.x.abs() < 1e-6 && side.y.abs() > 1.0
+}
+
+/// Runs Rotate View to Selection and returns the angle it reports, after checking that the view is
+/// turned to that angle and that it is the selection's angle `document.inspect` reports.
+fn rotate_to_selection(app: &mut VectorcraftApp) -> f64 {
+    let shared = app.run("document.inspect", json!({})).unwrap()["selectionRotation"].as_f64().unwrap();
+    let angle = app.run("view.rotateToSelection", json!({})).unwrap()["angle"].as_f64().unwrap();
+    assert_eq!((angle, app.view().unwrap().rotation), (shared, shared));
+    angle
+}
+
+#[test]
+fn rotate_view_to_selection_squares_the_view_to_the_selected_object() {
+    let near = |a: f64, b: f64| (a - b).abs() < 1e-9;
+    let mut app = with_document();
+    let id = rectangle(&mut app, 40.0);
+    turn(&mut app, &id, 30.0);
+    let (zoom, center) = (app.view().unwrap().zoom, app.view().unwrap().center);
+    assert!(!square_on_screen(&app), "the box stands at 30° before the view turns");
+    let angle = rotate_to_selection(&mut app);
+    assert!(near(angle, 30.0), "{angle}");
+    let v = app.view().unwrap();
+    assert_eq!((v.zoom, v.center), (zoom, center), "the view turns about the center of the canvas");
+    assert!(square_on_screen(&app));
+
+    // Point type turned the other way squares the view the same way.
+    let text = app.run("text.create", json!({"x": 300, "y": 300, "text": "Turned"})).unwrap()["id"].clone();
+    turn(&mut app, &text, -50.0);
+    let angle = rotate_to_selection(&mut app);
+    assert!(near(angle, -50.0), "{angle}");
+    assert!(square_on_screen(&app));
+
+    // Objects turned to different angles share no angle: the view turns back to 0.
+    let other = rectangle(&mut app, 400.0);
+    turn(&mut app, &other, 45.0);
+    app.run("select.set", json!({ "ids": [id, other] })).unwrap();
+    assert_eq!(rotate_to_selection(&mut app), 0.0);
+    assert!(square_on_screen(&app));
+}
+
+#[test]
+fn rotate_view_to_selection_needs_a_selected_object() {
+    let mut app = with_document();
+    let id = rectangle(&mut app, 40.0);
+    turn(&mut app, &id, 30.0);
+    assert!(menus::enabled(&app, "view.rotateToSelection"));
+    app.run("select.none", json!({})).unwrap();
+    assert!(!menus::enabled(&app, "view.rotateToSelection"));
+    app.run("view.rotate", json!({"angle": 15})).unwrap();
+    assert_eq!(app.run("view.rotateToSelection", json!({})).unwrap_err(), "nothing selected");
+    assert_eq!(app.view().unwrap().rotation, 15.0, "an error leaves the view as it was");
+
+    let mut empty = VectorcraftApp::new(Session::new(), crate::Services::default());
+    assert!(!menus::enabled(&empty, "view.rotateToSelection"));
+    assert_eq!(empty.run("view.rotateToSelection", json!({})).unwrap_err(), "no document");
+    // The command palette lists it.
+    let listed = crate::palette::items().into_iter().any(|(label, id, _)| label == "Rotate View to Selection" && id == "view.rotateToSelection");
+    assert!(listed);
 }
 
 /// The strings the catalogs cover include the submenu's name and leave out the angle labels, as they
