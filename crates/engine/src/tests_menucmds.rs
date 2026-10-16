@@ -2424,6 +2424,24 @@ fn crop_image_trim_cuts_to_the_opaque_pixels_as_they_are() {
 }
 
 #[test]
+fn crop_image_trim_checks_the_rgba_size_before_decoding() {
+    // 1-bit gray PNGs, header only: their samples are within the decoder's limit, and as RGBA
+    // (4 bytes a pixel) they are just over or just within the 2 GB allowance.
+    let trim = |w: u32, h: u32| {
+        let png = super::tests_linkspanel::png_header(w, h);
+        let mut s = Session::new();
+        s.execute("document.open", &json!({"name": "wall.png", "dataBase64": vectorcraft_format::base64_encode(&png)})).unwrap();
+        s.execute("select.all", &json!({})).unwrap();
+        s.execute("object.cropImage", &json!({"trim": true})).unwrap_err().to_string()
+    };
+    let over = trim(23_171, 23_170);
+    assert!(over.contains("an image of 23171 × 23170 pixels is too large to draw"), "{over}");
+    // One column fewer is within the allowance: it is decoded, and its missing rows can't be read.
+    let within = trim(23_170, 23_170);
+    assert!(within.contains("the image's pixels can't be read"), "{within}");
+}
+
+#[test]
 fn crop_image_trim_leaves_a_cmyk_image_alone() {
     // CMYK images keep their ink amounts and have no alpha: nothing to cut, and not an error.
     let inks = vectorcraft_doc::cmyk::Inks::new(4, 2, [255, 0, 0, 0].repeat(8)).unwrap();
