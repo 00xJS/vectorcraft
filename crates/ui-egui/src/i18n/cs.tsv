@@ -3481,7 +3481,9 @@ axis	Both	Obě
 	Duplicate Artboard	Duplikovat pracovní plochu
 	Area / Path Type	Text v oblasti / na cestě
 	Decrease Font Size	Zmenšit velikost písma
+	Decrease Font Size by Five Steps	Zmenšit velikost písma o pět kroků
 	Increase Font Size	Zvětšit velikost písma
+	Increase Font Size by Five Steps	Zvětšit velikost písma o pět kroků
 	Reset Tracking and Kerning	Obnovit prostrkání a vyrovnání párů
 	Step Type	Krokovat text
 	Get Text Range	Získat rozsah textu

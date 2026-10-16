@@ -1163,6 +1163,36 @@ mod tests {
         assert_eq!(app.session.tool_id(), "curvature");
     }
 
+    /// Cmd/Ctrl+Alt+Shift+. and , step the font size by five Size/Leading increments, and
+    /// Cmd/Ctrl+Shift+. still steps it by one: the chord with Alt does not reach the one-step
+    /// command.
+    #[test]
+    fn cmd_alt_shift_period_and_comma_step_the_font_size_by_five() {
+        let mut app = VectorcraftApp::new(vectorcraft_engine::Session::new(), Default::default());
+        app.session.execute("file.new", &json!({"width": 200, "height": 200})).unwrap();
+        let id = app.session.execute("text.create", &json!({"x": 20, "y": 50, "text": "One Two", "size": 12})).unwrap()["id"].as_u64().unwrap();
+        let sizes = |app: &mut VectorcraftApp| {
+            let r = app.session.execute("text.getRange", &json!({"id": id})).unwrap();
+            r["runs"].as_array().unwrap().iter().map(|run| (run["text"].clone(), run["style"]["size"].clone())).collect::<Vec<_>>()
+        };
+        let press = |key, modifiers| egui::Event::Key { key, physical_key: None, pressed: true, repeat: false, modifiers };
+        let five = Modifiers::COMMAND | Modifiers::ALT | Modifiers::SHIFT;
+        app.session.execute("select.set", &json!({"ids": [id]})).unwrap();
+        frame(&mut app, vec![press(Key::Period, five)]);
+        assert_eq!(sizes(&mut app), [(json!("One Two"), json!(22.0))]);
+        frame(&mut app, vec![press(Key::Period, Modifiers::COMMAND | Modifiers::SHIFT)]);
+        assert_eq!(sizes(&mut app), [(json!("One Two"), json!(24.0))], "one step");
+        frame(&mut app, vec![press(Key::Comma, five)]);
+        assert_eq!(sizes(&mut app), [(json!("One Two"), json!(14.0))]);
+        // While the Type tool edits: only its selection.
+        app.select_tool("type");
+        app.session.apply_actions(vec![vectorcraft_tools::Action::Notify("text.editNew".into())]).unwrap();
+        app.session.set_tool_option("select", &json!({"start": 4, "end": 7}));
+        assert!(app.session.tool_wants_text());
+        frame(&mut app, vec![press(Key::Period, five)]);
+        assert_eq!(sizes(&mut app), [(json!("One "), json!(14.0)), (json!("Two"), json!(24.0))]);
+    }
+
     /// #793: with a layout without Latin letters the one-key shortcuts go by the key's position:
     /// the P key typing Persian `ح` chooses the Pen, the V key typing Russian `м` the Selection
     /// tool. A Latin layout keeps the letter typed: AZERTY's A (the Q key's place) is A.

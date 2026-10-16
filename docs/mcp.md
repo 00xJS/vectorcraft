@@ -2019,7 +2019,9 @@ Pen's second anchor at (150, 431), in line with the square's centre.
 - `typeSizeIncrement`, `trackingIncrement`, `baselineShiftIncrement`: what `type.step {attribute: "size" | "leading" |
   "tracking" | "kerning" | "baselineShift", by?}` steps by, on the text range given, the type objects in `ids`, the
   Type tool's selected text or the selected type objects. `type.size.increase` / `type.size.decrease` (Cmd+Shift+. and
-  Cmd+Shift+,) step the size; the Type tool's Alt+arrows (`press_key {key: "Right", mods: {alt: true}}`) step kerning at
+  Cmd+Shift+,) step the size. `type.size.increaseByFive` (Cmd+Alt+Shift+., `press_key {key: ".", mods: {cmd: true,
+  alt: true, shift: true}}`) and `type.size.decreaseByFive` (Cmd+Alt+Shift+,) step it by five times `typeSizeIncrement`.
+  The Type tool's Alt+arrows (`press_key {key: "Right", mods: {alt: true}}`) step kerning at
   a caret or tracking of the selection (←/→), leading (↑/↓) and baseline shift (Shift+↑/↓), five steps with Cmd/Ctrl
   too. `type.resetTracking` (Cmd+Alt+Q, `press_key {key: "Q", mods: {cmd: true, alt: true}}`) sets tracking to 0 and
   kerning to Auto in the type objects in `ids`, the Type tool's selected text or the selected type objects; at a caret

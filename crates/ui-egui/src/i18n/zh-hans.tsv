@@ -1016,7 +1016,9 @@
 	Fit dashes to corners and ends	让虚线贴合转角与端点
 	Fit Headline	适合标题
 	Decrease Font Size	减小字体大小
+	Decrease Font Size by Five Steps	按五个增量减小字体大小
 	Increase Font Size	增大字体大小
+	Increase Font Size by Five Steps	按五个增量增大字体大小
 	Reset Tracking and Kerning	重置字距和字偶距
 	Spacing	间距
 	Step Type	按增量调整文字

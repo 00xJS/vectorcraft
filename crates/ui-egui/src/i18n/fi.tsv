@@ -3417,7 +3417,9 @@ axis	Both	Molemmat
 	Duplicate Artboard	Monista piirtoalusta
 	Area / Path Type	Alue- / polkuteksti
 	Decrease Font Size	Pienennä fonttikokoa
+	Decrease Font Size by Five Steps	Pienennä fonttikokoa viisi askelta
 	Increase Font Size	Suurenna fonttikokoa
+	Increase Font Size by Five Steps	Suurenna fonttikokoa viisi askelta
 	Step Type	Porrasta teksti
 	Get Text Range	Hae tekstialue
 	Punctuation	Välimerkit

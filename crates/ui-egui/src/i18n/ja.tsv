@@ -328,7 +328,9 @@
 	Remove Threading	スレッドを解除
 	Fit Headline	ヘッドラインを合わせる
 	Decrease Font Size	フォントサイズを小さく
+	Decrease Font Size by Five Steps	フォントサイズを5段階小さく
 	Increase Font Size	フォントサイズを大きく
+	Increase Font Size by Five Steps	フォントサイズを5段階大きく
 	Reset Tracking and Kerning	トラッキングとカーニングをリセット
 	Step Type	文字を段階的に調整
 	Find Font…	フォントの検索と置換…
