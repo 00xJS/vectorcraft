@@ -707,7 +707,10 @@ pub fn export_extensions() -> Vec<&'static str> {
 /// Text files: File → Place sets them as area type (Text Import Options).
 pub const TEXT_EXTS: &[&str] = &["txt"];
 
-/// Every extension File → Place reads: [`OPEN_EXTS`] and [`TEXT_EXTS`].
+/// RTF files: File → Place sets them as area type with their formatting.
+pub const RTF_EXTS: &[&str] = &["rtf"];
+
+/// Every extension File → Place reads: [`OPEN_EXTS`], [`TEXT_EXTS`] and [`RTF_EXTS`].
 pub const PLACE_EXTS: &[&str] = &[
     "vectorcraft",
     "drawcraft",
@@ -737,6 +740,7 @@ pub const PLACE_EXTS: &[&str] = &[
     "afdesign",
     "afpub",
     "txt",
+    "rtf",
 ];
 
 /// One dialog filter per readable format.
@@ -760,11 +764,13 @@ pub fn open_filters() -> impl Iterator<Item = (&'static str, &'static [&'static 
         .chain(std::iter::once(("Plug-ins", super::plugin::EXTS)))
 }
 
-/// File → Place dialog filters: "All placeable files", then one per placeable format, then text.
+/// File → Place dialog filters: "All placeable files", then one per placeable format, then text
+/// and RTF.
 pub fn place_filters() -> impl Iterator<Item = (&'static str, &'static [&'static str])> {
     std::iter::once(("All placeable files", PLACE_EXTS))
         .chain(format_filters().filter(|(_, exts)| exts.iter().all(|ext| PLACE_EXTS.contains(ext))))
         .chain(std::iter::once(("Text", TEXT_EXTS)))
+        .chain(std::iter::once(("RTF", RTF_EXTS)))
 }
 
 /// A format by id or extension (any case, leading dot allowed; `jpeg` finds `jpg`).

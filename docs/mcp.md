@@ -2524,6 +2524,12 @@ bounds, or the artboard less a 36 pt margin.
 {"name":"run_command","arguments":{"command":"file.place","params":{"path":"/tmp/notes.txt","text":{"removeLineReturns":true,"removeParagraphReturns":true}}}}
 ```
 
+An RTF file (any file but a `.txt` that starts with `{\rtf`) is placed the same way, without `text` options, and keeps
+its formatting: each run's font, size, bold and italic, underline, strikethrough, all caps, small caps, superscript or
+subscript, baseline shift and color, and each paragraph's alignment, indents, space before and after and direction.
+Table cells are separated by tabs and each row is a paragraph; hidden text, pictures, headers, footers and notes are
+left out. `file.place` answers `format: "rtf"`.
+
 ## PDF presets
 
 `pdf.preset.list` lists the built-in presets (`VectorCraft Default`, which preserves editing, then High Quality Print,
