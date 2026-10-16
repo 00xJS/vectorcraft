@@ -86,6 +86,18 @@ fn replace_range_takes_replaced_style_and_normalizes() {
     assert_eq!(runs[0].style.size, 12.0);
 }
 
+/// #2119: deleting all of the text with no runs to insert (Backspace over a full selection, an IME
+/// clearing its marked text) keeps the first replaced character's style, not the default one.
+#[test]
+fn replace_range_styled_with_nothing_keeps_the_style_of_emptied_text() {
+    let mut runs = vec![run("Chair", 36.0), run(" 123", 48.0)];
+    let caret = edit::replace_range_styled(&mut runs, 0, 9, &[]);
+    assert_eq!(caret, 0);
+    assert_eq!(runs.len(), 1);
+    assert!(runs[0].text.is_empty());
+    assert_eq!(runs[0].style.size, 36.0);
+}
+
 #[test]
 fn replace_respects_char_boundaries_and_slices() {
     let mut runs = vec![run("héllo", 12.0)];

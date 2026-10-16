@@ -5292,6 +5292,106 @@ mod tests {
         assert_eq!((t.len(), t.find('X')), (12, Some(caret as usize)), "{t}");
     }
 
+    /// #2119: type copied with an Alt-drag, double-clicked, all of its text selected and typed over
+    /// keeps its font, size and colour: through an IME (the marked text cleared, then committed by
+    /// Return, as Windows sends them) and with Backspace then typing. Whole app frames, one input
+    /// event per frame.
+    fn retype_all_of_a_copied_type(ime: bool) {
+        use egui::{Event, Key, Modifiers};
+        let mut app = VectorcraftApp::new(Session::new(), Default::default());
+        app.session.execute("file.new", &json!({"width": 400, "height": 300})).unwrap();
+        let original = app
+            .session
+            .execute("text.create", &json!({"x": 60, "y": 100, "text": "Chair 123", "size": 36, "font": "Georgia", "color": "#808080"}))
+            .unwrap()["id"]
+            .as_u64()
+            .unwrap();
+        app.session.execute("select.none", &json!({})).unwrap();
+        app.select_tool("selection");
+        let ctx = egui::Context::default();
+        let time = std::cell::Cell::new(0.0);
+        let frame = |app: &mut VectorcraftApp, events: Vec<Event>| {
+            time.set(time.get() + 0.03);
+            let screen = egui::Rect::from_min_size(Pos2::ZERO, vec2(1600.0, 850.0));
+            let mut out = ctx.run_ui(egui::RawInput { screen_rect: Some(screen), time: Some(time.get()), events, ..Default::default() }, |ui| {
+                app.logic(ui.ctx());
+                app.ui(ui);
+            });
+            out.textures_delta.clear();
+        };
+        for _ in 0..3 {
+            frame(&mut app, vec![]);
+        }
+        let xf = Xf::new(app.canvas_rect.unwrap(), app.view().unwrap());
+        let node = |app: &VectorcraftApp, id: u64| app.session.active().unwrap().doc.node(vectorcraft_doc::NodeId(id)).unwrap().clone();
+        let styles = |app: &VectorcraftApp, id: u64| match &node(app, id).kind {
+            NodeKind::Text(t) => {
+                t.runs.iter().map(|r| (r.text.clone(), r.style.font_family.clone(), r.style.size, r.style.fill.clone())).collect::<Vec<_>>()
+            }
+            _ => panic!("not text"),
+        };
+        let button = |pos, pressed, modifiers| Event::PointerButton { pos, button: egui::PointerButton::Primary, pressed, modifiers };
+        let key = |key, pressed, modifiers| Event::Key { key, physical_key: None, pressed, repeat: false, modifiers };
+        // 1. Alt-drag the type: a copy, selected.
+        let from = xf.to_screen(node(&app, original).geometric_bounds().unwrap().center());
+        let to = from + vec2(0.0, 120.0 * xf.zoom as f32);
+        frame(&mut app, vec![Event::PointerMoved(from), Event::ModifiersChanged(Modifiers::ALT)]);
+        frame(&mut app, vec![button(from, true, Modifiers::ALT)]);
+        for k in 1..=6 {
+            frame(&mut app, vec![Event::PointerMoved(from + (to - from) * (k as f32 / 6.0))]);
+        }
+        frame(&mut app, vec![button(to, false, Modifiers::ALT)]);
+        frame(&mut app, vec![Event::ModifiersChanged(Modifiers::NONE)]);
+        let copy = app.session.active().unwrap().selection.objects[0].0;
+        assert_ne!(copy, original);
+        let style = styles(&app, original)[0].clone();
+        // 2. Double-click it at once: the Type tool edits it.
+        let at = xf.to_screen(node(&app, copy).geometric_bounds().unwrap().center());
+        frame(&mut app, vec![Event::PointerMoved(at)]);
+        for pressed in [true, false, true, false] {
+            frame(&mut app, vec![button(at, pressed, Modifiers::NONE)]);
+        }
+        frame(&mut app, vec![]);
+        assert_eq!(app.session.tool_options()["editing"], json!(copy));
+        // 3. Select all of its text and type over it.
+        frame(&mut app, vec![key(Key::A, true, Modifiers::COMMAND)]);
+        frame(&mut app, vec![key(Key::A, false, Modifiers::COMMAND)]);
+        if ime {
+            frame(&mut app, vec![preedit("t", 1)]);
+            frame(&mut app, vec![preedit("table", 5)]);
+            let marked = styles(&app, copy);
+            assert_eq!(marked.iter().map(|r| (&r.1, r.2, &r.3)).collect::<Vec<_>>(), vec![(&style.1, style.2, &style.3)], "composing: {marked:?}");
+            // Return commits the composition.
+            frame(&mut app, vec![preedit("", 0), Event::Ime(egui::ImeEvent::Commit("table".into()))]);
+        } else {
+            frame(&mut app, vec![key(Key::Backspace, true, Modifiers::NONE)]);
+            frame(&mut app, vec![key(Key::Backspace, false, Modifiers::NONE)]);
+            frame(&mut app, vec![Event::Text("table".into())]);
+            frame(&mut app, vec![key(Key::Enter, true, Modifiers::NONE)]);
+            frame(&mut app, vec![key(Key::Enter, false, Modifiers::NONE)]);
+        }
+        frame(&mut app, vec![]);
+        let after = styles(&app, copy);
+        assert!(after.iter().any(|r| r.0.starts_with("table")), "ime={ime}: typed over: {after:?}");
+        assert!(
+            after.iter().all(|r| (&r.1, r.2, &r.3) == (&style.1, style.2, &style.3)),
+            "ime={ime}: the copy keeps {:?} {} {:?}, got {after:?}",
+            style.1,
+            style.2,
+            style.3
+        );
+    }
+
+    #[test]
+    fn retyping_all_of_a_copied_type_through_an_ime_keeps_its_style() {
+        retype_all_of_a_copied_type(true);
+    }
+
+    #[test]
+    fn retyping_all_of_a_copied_type_after_backspace_keeps_its_style() {
+        retype_all_of_a_copied_type(false);
+    }
+
     #[test]
     fn double_clicking_type_with_the_direct_selection_tool_puts_the_caret_there() {
         let mut app = VectorcraftApp::new(Session::new(), Default::default());
