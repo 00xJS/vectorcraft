@@ -325,7 +325,12 @@ pub const UI_COMMANDS: &[(&str, &str, &str, &str)] = &[
         "Shift+Tab",
         "{} show/hide the dock and the floating panels (hiding them closes a panel popped out of the icon column), leaving the toolbar and the Control bar as they are; returns whether the panels show",
     ),
-    ("window.panel", "Show Panel", "", "{panel: id} e.g. layers, swatches, stroke (case-insensitive; display labels like \"Layers\" work too)"),
+    (
+        "window.panel",
+        "Show Panel",
+        "",
+        "{panel: id, toggle?: bool} e.g. layers, swatches, stroke (case-insensitive; display labels like \"Layers\" work too); toggle (the Window menu) hides a panel that shows, and shows it again where it was",
+    ),
     (
         "window.panel.layout",
         "Change Panel Layout",
@@ -979,6 +984,16 @@ pub fn check_params(session: &vectorcraft_engine::Session, id: &str, params: &Va
 }
 
 pub fn run_ui_command(app: &mut VectorcraftApp, id: &str, p: &Value) -> Option<Result<Value, String>> {
+    // The Window menu's panel items toggle like its other checked items (#2361); the panel's
+    // other ways in (shortcuts, Show Properties Panel, a tool's double-click) only show it.
+    if id == "window.panel" && p.get("toggle").and_then(Value::as_bool) == Some(true) && checked(app, id, p) == Some(true) {
+        let panel = p.get("panel").and_then(Value::as_str).and_then(normalize_panel).unwrap_or_default();
+        if app.ui.open_panel.as_deref() == Some(panel) {
+            app.ui.open_panel = None;
+            return Some(Ok(json!({"open": null})));
+        }
+        return Some(app.run("window.panel.close", json!({"panel": panel})));
+    }
     if let Some(result) = crate::panel_docking::command(app, id, p) {
         return Some(result);
     }
@@ -2157,7 +2172,7 @@ pub fn menu_tree() -> Vec<(&'static str, Vec<Item>)> {
 }
 
 pub fn menu_tree_named(english_names: bool) -> Vec<(&'static str, Vec<Item>)> {
-    let panel = |label: &'static str, id: &'static str| cp(label, "window.panel", json!({ "panel": id }));
+    let panel = |label: &'static str, id: &'static str| cp(label, "window.panel", json!({ "panel": id, "toggle": true }));
     vec![
         (
             // The application menu: About and Discord only. The in-window bar never shows it (File
