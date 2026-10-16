@@ -1,5 +1,6 @@
 # Image Trace quality
 
+> **Last reviewed:** 2026-10-14 · **Last updated:** 2026-10-16 · **Change:** minor (Image Trace: the notch rule reads only its own piece)
 > **Last reviewed:** 2026-10-14 · **Last updated:** 2026-10-16 · **Change:** minor (Image Trace: an edge's sub-pixel shift is the same from either side)
 > **Last reviewed:** 2026-10-14 · **Last updated:** 2026-10-16 · **Change:** minor (Image Trace: a simpler contour walk with no precomputed direction table)
 
@@ -8,8 +9,24 @@ compared with the numbers before each change. Nothing here is a judgement by eye
 with any other product except the open tracer named under [Yardstick](#4-yardstick).
 
 
-## Same sub-pixel shift from either side of an edge
+## Notches read only their own piece
 
+Where the pixel at a sharp corner falls to the other colour, the outline cuts the corner in two
+one-pixel steps, and between two straight edges of three cracks or more those two steps become one
+point, where the two edges meet (a notch). Whether the edges were long enough was measured on the
+whole loop. An edge can run on past a junction in one region's loop while the region across it,
+whose loop turns at that junction, sees a shorter edge: one side made the notch and the other did
+not, the shared piece got different points on each side, and the abutting curves left a gap. The
+rule in `subpixel::outline` now also requires the three cracks of each edge next to the notch to lie
+in the piece (no junction among them), as the corner-pixel correction above it already did.
+
+Test on code-drawn images: `noisy_colour_images_leave_no_sample_uncovered` (20 seeded 36 px images
+of soft overlapping blobs in four colours plus pixel noise; Color, 5 colours, Noise 1 and 2, Paths
+0, 50 and 100; five sample points per pixel must each lie in some path). Without the condition 93
+sample points were uncovered (seeds 9, 11 and 13); with it none are. The crate's other tests pass
+unchanged.
+
+## Same sub-pixel shift from either side of an edge
 Each crack between two regions is moved by a sub-pixel shift read from the image. The reading
 looked for a thin run (one to three pixels) on the crack's inside before one on its outside, so where
 both sides were thin (a one- or two-pixel sliver beside another, as in soft gradients and noisy
@@ -17,7 +34,6 @@ scans) the two regions of the crack got different shifts, their shared piece dif
 the abutting curves left slivers that no path covers. `Layers::shift` now averages the reading from
 either side, `(s(c) - s(c flipped)) / 2`, which is exactly antisymmetric in floating point, so both
 regions get the same points.
-
 Tests on code-drawn images: `a_crack_between_thin_slivers_has_the_same_shift_from_either_side` (a
 noisy ripple of 1–2 px columns at three thresholds: every crack's shift is the exact negative of its
 flipped crack's, and the image does have cracks the one-sided reading gets wrong) and, in
@@ -25,7 +41,6 @@ flipped crack's, and the image does have cracks the one-sided reading gets wrong
 48 px noisy ripple in Black and White at thresholds 140, 157, 170 and Paths 0, 50, 100, sampled on
 the 4 × 4 grid per pixel the shared-boundary check uses). With the one-sided reading 482–1,228
 sample points per trace were uncovered; now none are. The crate's other tests pass unchanged.
-
 ## A simpler contour walk
 `contour::trace_mask` follows each region's outline along the pixel cracks with the inside on the
 right. It used to build a table of outgoing directions for every pixel corner in a raster pass and
@@ -1043,6 +1058,7 @@ One trace at a time on this machine (all cores); memory is the peak allocated ab
 
 | date | change |
 |:--|:--|
+| 2026-10-16 | Image Trace: a notch corner is cut only when the straight edges beside it lie in the shared piece, so both regions of the piece get the same points (code-drawn noisy colour images: 93 uncovered sample points to 0). |
 | 2026-10-16 | Image Trace: a crack's sub-pixel shift is the mean of the readings from its two sides, exactly antisymmetric, so abutting regions get the same points on thin slivers (a code-drawn noisy ripple went from 482–1,228 uncovered sample points per trace to 0). |
 | 2026-10-16 | Image Trace: the contour walk works out each turn from the pixels as it goes instead of following a precomputed table of per-corner directions; identical loops on all 65,536 4 × 4 masks and 400 seeded masks, and no slower (whole 1 MP traces 1–5% faster). |
 | 2026-10-14 | Closed fitting retains the positioned boundary when straightening collapses a nonzero-area loop; four generated regressions; preset scores unchanged |

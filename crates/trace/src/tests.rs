@@ -1550,3 +1550,55 @@ fn a_crack_between_thin_slivers_has_the_same_shift_from_either_side() {
         assert!(probe.iter().all(|s| s[0] == -s[1]), "threshold {threshold}");
     }
 }
+
+/// Noisy multi-colour images (soft blobs, slivers, specks) at several Paths and Noise values: no
+/// sample point is left uncovered by the abutting paths. A notch (a corner pixel cut in two steps)
+/// is made only where the straight edges beside it lie in the piece itself: measured over the whole
+/// loop, an edge that runs on past a junction made one region cut the corner and the region across
+/// the edge, whose loop turns at that junction, not (seeds 9, 11 and 13 here).
+#[test]
+fn noisy_colour_images_leave_no_sample_uncovered() {
+    use kurbo::Shape;
+    let hash =
+        |x: u32, y: u32, s: u32| (x.wrapping_mul(73_856_093) ^ y.wrapping_mul(19_349_663) ^ s.wrapping_mul(83_492_791)).wrapping_mul(2_654_435_761);
+    let mut uncovered = vec![];
+    for seed in 0..20u32 {
+        let (w, h) = (36u32, 36u32);
+        // Overlapping soft blobs of four colours plus pixel noise.
+        let img = Raster::from_fn(w, h, |x, y| {
+            let mut c = [235.0f64, 230.0, 220.0];
+            for b in 0..5u32 {
+                let cx = f64::from(hash(b, 1, seed) % w);
+                let cy = f64::from(hash(b, 2, seed) % h);
+                let r = 3.0 + f64::from(hash(b, 3, seed) % 9);
+                let d = ((f64::from(x) + 0.5 - cx).powi(2) + (f64::from(y) + 0.5 - cy).powi(2)).sqrt();
+                let a = (r + 0.7 - d).clamp(0.0, 1.4) / 1.4;
+                let col = [[20.0, 20.0, 30.0], [200.0, 40.0, 50.0], [40.0, 90.0, 200.0], [120.0, 120.0, 120.0]][(b % 4) as usize];
+                for k in 0..3 {
+                    c[k] = c[k] * (1.0 - a) + col[k] * a;
+                }
+            }
+            let n = f64::from(hash(x, y, seed) % 41) - 20.0;
+            let p = c.map(|v| (v + n).clamp(0.0, 255.0) as u8);
+            [p[0], p[1], p[2], 255]
+        });
+        for noise in [1, 2] {
+            for paths in [0.0, 50.0, 100.0] {
+                let params = TraceParams { mode: Mode::Color, colors: 5, noise, paths, ..TraceParams::default() };
+                let res = trace(&img, &params);
+                let shapes: Vec<_> = res.paths.iter().map(|p| p.path.to_bezpath()).collect();
+                for y in 1..h - 1 {
+                    for x in 1..w - 1 {
+                        for (dx, dy) in [(0.5, 0.5), (0.25, 0.25), (0.75, 0.25), (0.25, 0.75), (0.75, 0.75)] {
+                            let pt = kurbo::Point::new(f64::from(x) + dx, f64::from(y) + dy);
+                            if !shapes.iter().any(|b| b.winding(pt) != 0) {
+                                uncovered.push((seed, noise, paths, pt));
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    assert!(uncovered.is_empty(), "{} uncovered (seed, noise, paths, point), e.g. {:?}", uncovered.len(), &uncovered[..uncovered.len().min(5)]);
+}

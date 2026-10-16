@@ -222,6 +222,11 @@ pub(crate) fn outline(
             && free(s1)
             && free(s2)
             && free(b)
+            // The three cracks of `a` and of `b` next to the notch must lie in this piece. An edge
+            // that runs on past a junction is shorter in the loop of the region across it, which
+            // turns there: that region makes no notch, and the two would get different points.
+            && !(1..=2).any(|k| junction(edges[a].first + edges[a].len - k))
+            && !(1..=2).any(|k| junction(edges[b].first + k))
         {
             let (ea, eb) = (&edges[a], &edges[b]);
             // Edge `a` carried on one pixel further meets edge `b` carried back one.
