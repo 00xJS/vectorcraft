@@ -447,6 +447,21 @@ fn a_compound_path_holding_its_drawn_look_paints_its_paths_apart() {
 }
 
 #[test]
+fn a_compound_path_of_a_plain_group_stays_one_compound_path() {
+    // GUARDS: #980. Files write `9 () XW` after every group, the one a compound path keeps its
+    // subpaths in too: read as a drawn look, the compound became a group of filled paths, its
+    // holes filled in. Here a ring (outer path, inner one reversed, one paint) and a path beside it.
+    let ring = format!("{RED}1 D\n{}f\n0 D\n{}f\n", rect_path(0.0, 0.0, 20.0, 20.0), "5 5 m\n15 5 L\n15 15 L\n5 15 L\n5 5 L\n");
+    let art_ = format!("0 Ae\nu\n0 Ae\n*u\n0 Ae\nu\n{ring}U\n9 () XW\n*U\n{}f\nU\n9 () XW\n", rect_path(8.0, 8.0, 12.0, 12.0));
+    let a = art(&read_ok(&layer(&art_)).doc);
+    let NodeKind::Group { children, .. } = &a[0].kind else { panic!("{a:#?}") };
+    let NodeKind::Compound { children: subpaths, .. } = &children[0].kind else { panic!("a compound path: {:#?}", children[0]) };
+    assert_eq!(subpaths.len(), 2, "{subpaths:#?}");
+    assert!(subpaths.iter().all(|p| matches!(p.kind, NodeKind::Path { .. })));
+    assert_eq!(fill(&children[0]).color(), Some(Color::rgb(1.0, 0.0, 0.0)));
+}
+
+#[test]
 fn gradients_through_a_skewed_matrix() {
     // GUARDS: a sheared `Xm` leaves the matrix's columns oblique. A linear ramp runs along the
     // normal to its isolines, not along its first column; a radial's ellipse is the one the unit
