@@ -1067,7 +1067,10 @@ Otherwise it releases the selected guide paths and ruler guides, and with no gui
 path. A released ruler guide becomes a straight path with no fill or stroke, at the top of the guide's layer (or where
 new art goes, for a guide on no layer). An artboard guide becomes a line across its artboard, and a canvas guide
 becomes a line across the bounds of all the artboards. `index` and `ids` are refused while guides are locked. The
-release is one undo step, and the released paths are selected.
+release is one undo step, and the released paths are selected. With the Selection, Direct Selection or Group
+Selection tool, a double-click with Cmd/Ctrl and Shift held releases the ruler guide or guide path under the pointer
+(`pointer_gesture` with a `doubleclick` event and `mods: {cmd: true, shift: true}`), unless guides are hidden or
+locked.
 
 The Selection, Direct Selection and Group Selection tools pick a guide within the selection tolerance, over the art
 (an anchor on it comes first with Direct Selection), and drag the selected guides: `mods.alt` copies them,

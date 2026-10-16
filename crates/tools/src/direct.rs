@@ -17,6 +17,8 @@
 //! paths and groups outside it stay put.
 //! Both move objects selected as a whole as the Selection tool does, snapping alike.
 //! Both pick the key objects of a blend, and click or drag ruler guides ([`crate::rulerguide`]).
+//! A Cmd/Ctrl+Shift double-click with either one releases the ruler guide or guide path under the
+//! pointer ([`release_guide_at`]).
 //! Direct Selection also edits a blend's spine: drag its points (a key object on a point moves
 //! with it) and, once a point is clicked, its handles; and the points of selected gradient meshes
 //! and mesh envelopes and their handles ([`MeshEdit`]; a solid fill colour recolours a gradient
@@ -41,7 +43,7 @@ use crate::guides::{HandleSnap, Leave, PointSnap, Targets};
 use crate::meshedit::MeshEdit;
 use crate::pathtype::{self, BracketDrag, over_bracket};
 use crate::rulerguide::GuideEdit;
-use crate::select::{MoveSnap, is_area_type, matrix_json};
+use crate::select::{MoveSnap, is_area_type, matrix_json, release_guide_at};
 use crate::{Action, Cursor, Mods, Overlay, PointerEvent, PointerKind, Tool, ToolContext, ToolKey};
 
 #[derive(Clone, Debug)]
@@ -444,9 +446,13 @@ impl Tool for DirectSelectionTool {
                     vec![Action::Exec("select.set".into(), json!({"ids": [target.0]}))]
                 }
             }
+            (PointerKind::DoubleClick, _) if self.group => release_guide_at(cx, p, ev.mods).into_iter().collect(),
             (PointerKind::DoubleClick, _) if !self.group => {
                 self.state = State::Idle;
                 if let Some(a) = corners::double_click(cx, p, true) {
+                    return vec![a];
+                }
+                if let Some(a) = release_guide_at(cx, p, ev.mods) {
                     return vec![a];
                 }
                 if crate::rulerguide::guide_at(cx, p).is_some() {
@@ -983,6 +989,34 @@ mod tests {
         }
         let mut t = DirectSelectionTool::new(false);
         assert_eq!(down(&mut t, 100.0), vec![Action::Exec("select.anchors".into(), json!({"id": id.0, "anchors": [[0, 0]], "mode": "set"}))]);
+    }
+
+    /// A Cmd/Ctrl+Shift double-click with Direct Selection or Group Selection releases the ruler
+    /// guide or the guide path under the pointer; a plain double-click on a ruler guide, or one while
+    /// guides are hidden or locked, releases nothing.
+    #[test]
+    fn a_cmd_shift_double_click_releases_the_guide_under_the_pointer() {
+        let (mut d, id) = doc_with_rect();
+        d.guides.push(vectorcraft_doc::Guide::new(false, 300.0));
+        let Some(NodeKind::Path { guide, .. }) = d.node_mut(id).map(|n| &mut n.kind) else { panic!("the rectangle is a path") };
+        *guide = true;
+        let (s, p) = (Selection::default(), paint());
+        let both = Mods { cmd: true, shift: true, ..Mods::default() };
+        let index = vec![Action::Exec("view.guides.release".into(), json!({"index": 0}))];
+        let ids = vec![Action::Exec("view.guides.release".into(), json!({"ids": [id.0]}))];
+        let locked = ToolContext { guides: false, ..cx(&d, &s, &p) };
+        for group in [false, true] {
+            let dbl = |c: &ToolContext, x: f64, y: f64, m: Mods| {
+                DirectSelectionTool::new(group).pointer(c, &PointerEvent::new(PointerKind::DoubleClick, x, y).with_mods(m))
+            };
+            let c = cx(&d, &s, &p);
+            assert_eq!(dbl(&c, 350.0, 301.0, both), index, "on the ruler guide (group: {group})");
+            assert_eq!(dbl(&c, 200.0, 150.0, both), ids, "on the guide path (group: {group})");
+            assert!(dbl(&c, 350.0, 301.0, Mods::default()).is_empty(), "a plain double-click (group: {group})");
+            assert!(dbl(&c, 350.0, 301.0, Mods { cmd: true, ..Mods::default() }).is_empty(), "Cmd/Ctrl alone (group: {group})");
+            assert!(dbl(&locked, 350.0, 301.0, both).is_empty(), "guides locked (group: {group})");
+            assert!(dbl(&locked, 200.0, 150.0, both).is_empty(), "guides locked (group: {group})");
+        }
     }
 
     /// An anchor is picked from 2 px past its drawn square even where its segment is nearer, and
