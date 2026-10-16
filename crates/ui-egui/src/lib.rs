@@ -300,6 +300,8 @@ pub struct CanvasCache {
     pub selection_box: Option<((u64, u64, bool), Option<vectorcraft_doc::OrientedBox>)>,
     /// [`VectorcraftApp::selection_bounds`] for (document uid, revision).
     pub selection_bounds: Option<((u64, u64), Option<vectorcraft_geom::Rect>)>,
+    /// [`VectorcraftApp::content_bounds`] for (document uid, revision).
+    pub content_bounds: Option<((u64, u64), Option<vectorcraft_geom::Rect>)>,
     /// The tools' cursors as OS cursor bitmaps.
     pub cursors: cursors::Images,
 }
@@ -497,6 +499,7 @@ impl VectorcraftApp {
                 hidden_chars: Default::default(),
                 selection_box: None,
                 selection_bounds: None,
+                content_bounds: None,
                 cursors: Default::default(),
             },
             perf: Perf::default(),
@@ -1053,6 +1056,22 @@ impl VectorcraftApp {
         }
         let b = st.doc.bounds_of(&st.selection.objects, true);
         self.canvas.selection_bounds = Some((key, b));
+        b
+    }
+
+    /// The art and the artboards together, the span of the canvas's scroll bars: measured once
+    /// per revision, as the canvas reads it every frame.
+    pub fn content_bounds(&mut self) -> Option<vectorcraft_geom::Rect> {
+        let st = self.session.active()?;
+        let key = (st.uid, st.revision);
+        if let Some((k, b)) = self.canvas.content_bounds
+            && k == key
+        {
+            return b;
+        }
+        let boards = st.doc.artboards.iter().map(|a| a.rect).reduce(|r, a| r.union(a));
+        let b = vectorcraft_geom::union_opt(st.doc.art_bounds(), boards);
+        self.canvas.content_bounds = Some((key, b));
         b
     }
 }
