@@ -346,10 +346,10 @@ impl Cms {
         }
     }
 
-    fn cmyk_to_srgb_in(space: &CmykSpace, cmyk: [f32; 4], absolute: bool) -> [f32; 3] {
+    fn cmyk_to_srgb_in(space: &CmykSpace, cmyk: [f32; 4], absolute: bool, bpc: bool) -> [f32; 3] {
         let cmyk = cmyk.map(|v| v.clamp(0.0, 1.0));
         match space {
-            CmykSpace::Generic(g) => g.to_srgb(cmyk, absolute),
+            CmykSpace::Generic(g) => g.to_srgb(cmyk, absolute, bpc),
             CmykSpace::Device => naive_cmyk_to_rgb(cmyk),
             CmykSpace::Icc(p) => {
                 let i = if absolute { Intent::AbsoluteColorimetric } else { Intent::RelativeColorimetric };
@@ -376,7 +376,7 @@ impl Cms {
         {
             return v;
         }
-        Self::cmyk_to_srgb_in(&self.cmyk, cmyk, absolute)
+        Self::cmyk_to_srgb_in(&self.cmyk, cmyk, absolute, self.settings.bpc)
     }
     /// CMYK in the working space → working RGB with `intent`. An ICC CMYK profile converts
     /// directly into the RGB profile: not through display sRGB, which would clip colours a wider
@@ -408,6 +408,15 @@ impl Cms {
             _ => lab::srgb_to_lab(self.cmyk_to_srgb(cmyk, false)),
         }
     }
+    /// Lab of working-space CMYK as it displays: [`Self::cmyk_to_lab`] plus, for the built-in
+    /// Generic CMYK, the black-point compensation of [`Self::cmyk_to_srgb`] (its press black shows
+    /// as black). Unclipped, for interpolating tables.
+    pub fn cmyk_display_lab(&self, cmyk: [f32; 4]) -> Lab {
+        match &self.cmyk {
+            CmykSpace::Generic(g) => lab::xyz_to_lab(g.display_xyz(cmyk.map(|v| v.clamp(0.0, 1.0)), false, self.settings.bpc)),
+            _ => self.cmyk_to_lab(cmyk),
+        }
+    }
     /// Lab → working CMYK with `intent`.
     pub fn lab_to_cmyk(&self, l: Lab, intent: Intent) -> [f32; 4] {
         match &self.cmyk {
@@ -429,7 +438,7 @@ impl Cms {
     /// CIE Lab (D50) of any colour.
     pub fn lab(&self, c: &Color) -> Lab {
         match *c {
-            Color::Cmyk { c, m, y, k } => self.cmyk_to_lab([c, m, y, k]),
+            Color::Cmyk { c, m, y, k } => self.cmyk_display_lab([c, m, y, k]),
             Color::Lab { l, a, b } => Lab::new(l, a, b),
             _ => lab::srgb_to_lab(self.display_rgb(c)),
         }
@@ -490,7 +499,7 @@ impl Cms {
             Color::Rgb { .. } | Color::Lab { .. } => {
                 let src = self.lab(c);
                 match &self.cmyk {
-                    CmykSpace::Generic(g) => g.gamut_error(src),
+                    CmykSpace::Generic(g) => g.gamut_error(src, self.settings.bpc),
                     CmykSpace::Device => 0.0,
                     CmykSpace::Icc(_) => {
                         let back = self.cmyk_to_srgb(self.to_cmyk(c, Intent::RelativeColorimetric), false);
@@ -523,7 +532,7 @@ impl Cms {
             ProofTarget::Cmyk(name) => match cmyk_space(name) {
                 Ok(sp) => {
                     let cmyk = Self::srgb_to_cmyk_in(&sp, srgb, proof.intent, self.settings.bpc);
-                    Self::cmyk_to_srgb_in(&sp, cmyk, proof.simulate_paper)
+                    Self::cmyk_to_srgb_in(&sp, cmyk, proof.simulate_paper, self.settings.bpc)
                 }
                 Err(_) => srgb,
             },
@@ -534,7 +543,7 @@ impl Cms {
     pub fn proof_cmyk_to_srgb(&self, cmyk: [f32; 4], proof: &ProofSetup) -> [f32; 3] {
         match &proof.target {
             ProofTarget::Cmyk(name) => match cmyk_space(name) {
-                Ok(sp) => Self::cmyk_to_srgb_in(&sp, cmyk, proof.simulate_paper),
+                Ok(sp) => Self::cmyk_to_srgb_in(&sp, cmyk, proof.simulate_paper, self.settings.bpc),
                 Err(_) => self.cmyk_to_srgb(cmyk, proof.simulate_paper),
             },
             _ => self.cmyk_to_srgb(cmyk, proof.simulate_paper),
