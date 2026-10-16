@@ -295,3 +295,41 @@ fn a_raster_export_says_when_an_image_could_not_be_decoded() {
     let warnings = r["warnings"].as_array().cloned().unwrap_or_default();
     assert!(warnings.iter().any(|w| w.as_str().is_some_and(|w| w.contains("couldn't be decoded"))), "{r}");
 }
+
+#[test]
+fn export_rect_writes_that_page_area_and_leaves_the_document_alone() {
+    let mut s = session(200.0, 400.0, 1);
+    s.execute("paint.setStroke", &json!({"none": true})).unwrap();
+    s.execute("shape.rectangle", &json!({"x": 20, "y": 40, "width": 40, "height": 300})).unwrap();
+    let boards = s.doc().unwrap().doc.artboards.len();
+    let r = s.execute("document.export", &json!({"format": "png", "rect": [20, 40, 40, 300], "ppi": 72})).unwrap();
+    let img = rgba(&b64(&r));
+    assert_eq!((img.width(), img.height()), (40, 300));
+    assert_eq!(img.get_pixel(20, 150).0[3], 255, "the strip is all art");
+    assert_eq!(s.doc().unwrap().doc.artboards.len(), boards, "no helper artboard is left");
+    // Twice the resolution, and a window that holds both art and empty page.
+    let img = rgba(&b64(&s.execute("document.export", &json!({"format": "png", "rect": [0.0, 40.0, 40.0, 10.0], "scale": 2})).unwrap()));
+    assert_eq!((img.width(), img.height()), (80, 20));
+    assert_eq!((img.get_pixel(10, 10).0[3], img.get_pixel(60, 10).0[3]), (0, 255));
+}
+
+#[test]
+fn export_rect_refuses_what_cannot_be_exported() {
+    let mut s = session(200.0, 400.0, 1);
+    s.execute("shape.rectangle", &json!({"x": 20, "y": 40, "width": 40, "height": 300})).unwrap();
+    let bad = [
+        json!({"format": "png", "rect": [0, 0, 0, 10]}),
+        json!({"format": "png", "rect": [0, 0, -5, 10]}),
+        json!({"format": "png", "rect": [0, 0, 10]}),
+        json!({"format": "png", "rect": [0, 0, "a", 10]}),
+        json!({"format": "png", "rect": "20,40,40,300"}),
+        json!({"format": "png", "rect": [1e308, 0, 1e308, 10]}),
+        json!({"format": "png", "rect": [0, 0, 100000, 100000]}),
+        json!({"format": "png", "rect": [0, 0, 10, 10], "artboard": 0}),
+        json!({"format": "png", "rect": [0, 0, 10, 10], "useArtboards": true}),
+        json!({"format": "svg", "rect": [0, 0, 10, 10]}),
+    ];
+    for p in bad {
+        assert!(s.execute("document.export", &p).is_err(), "{p}");
+    }
+}
