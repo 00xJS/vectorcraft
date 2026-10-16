@@ -6,6 +6,21 @@ What Image Trace (`crates/trace`) makes of images whose right answer is known, m
 compared with the numbers before each change. Nothing here is a judgement by eye, and nothing is compared
 with any other product except the open tracer named under [Yardstick](#4-yardstick).
 
+## Pieces returning to a junction
+
+An outline piece can return to its starting junction while being fitted as an open chain. At loose
+Corners/Paths settings, a nonzero positioned boundary could collapse to one cubic and lose a small
+corner-touching mark. Fixed-end pieces with identical endpoints and fewer than two fitted segments
+now retain their positioned boundary when its area is finite and nonzero. Fitting the shared piece
+this way also gives an abutting fill exactly the reversed boundary, including within a compound path.
+
+Six source-generated regressions check 1- and 2-pixel regions through four rotations, both windings
+and large translations; fixed junctions; zero positioned area; free ends; Noise controls; and shared
+edges through four rotations and black/white inversion. Noise 2 still removes the 1-pixel mark.
+The white-hole Noise check is a control, not a reproduced returning-hole case. Defaults are unchanged;
+these tests establish survival and edge consistency, not a new artistic-quality or parity score.
+This is separate from the closed-contour recovery in #2012 and straightening guard in #2025.
+
 ## Thin closed outlines with Snap Curves To Lines
 
 A four-pixel stair-step mark can fit as two straight cubics along the same diagonal, leaving a closed path with zero area. The outline-distance checks accept this because both sides are close to the chord. Closed fitting now checks analytic curve area after straightening and upright levelling; if a nondegenerate source loop has lost its interior, it retains the positioned boundary as an unsimplified polygon. The area integral is translated to a local origin to reduce cancellation. This numerical degeneracy check is not a new Noise or minimum-feature-area setting.
@@ -36,6 +51,7 @@ anti-aliasing):
 
 | kind | inputs |
 |:--|:--|
+| 2026-10-15 | Fixed-end pieces returning to their junction retain their positioned nonzero boundary when fitted to fewer than two cubics; source-generated tests cover survival, winding, shared-edge equality, translations and Noise controls. Defaults and parity scores unchanged. |
 | curved shapes | a circle; two ellipses; a rounded badge with a round hole; a letter D with its counter |
 | polygons | a triangle, a turned square and a hexagon; a five-pointed star; a letter A with its counter |
 | thin lines | five lines 0.5, 1, 2, 3 and 5 units wide (of a 256-unit square), a few degrees off the pixel grid |
