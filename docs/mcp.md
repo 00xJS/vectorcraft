@@ -1807,9 +1807,17 @@ evenly by that line between them, and two objects are enough. `object.distribute
 left or top edge of the first object, in the order of those edges, on the artboard's left or top edge, and it puts the
 right or bottom edge of the last object on the artboard's right or bottom edge, with equal gaps between the objects.
 With `to: "selection"` or `"key"`, or without `to`, `object.distribute` and `object.distributeSpacing` without `spacing`
-keep the first and last objects where they are, and `object.distribute` moves nothing with fewer than three objects.
-With `spacing`, `object.distributeSpacing` does not use `to`. With anchor points selected (Direct Selection), both
-commands space the points among themselves and do not use `to` or `artboard`.
+keep the first and last objects where they are, and `object.distribute` without `spacing` moves nothing with fewer than
+three objects. With `spacing`, `object.distributeSpacing` does not use `to`, and `object.distribute` does not use it
+while the selection has a key object. With anchor points selected (Direct Selection), both commands space the points
+among themselves and do not use `to` or `artboard`.
+
+`object.distribute {spacing}` (the Distribute Objects buttons while the selection has a key object, `select.key`) keeps
+the key object where it is, with the compound path or selected group that contains it. It places the objects' lines
+(left edges, centers or right edges; top edges, centers or bottom edges) `spacing` points apart, outward from the key
+object's line, in their order on that line. With `spacing: 0`, every object ends on the key object's line. Two objects
+are enough. Without a key object, or with anchor points selected, `object.distribute` does not use `spacing`. A
+`spacing` that is not a number is an error.
 
 The desktop app adds its active artboard, the one the Artboards panel highlights, to the `object.align`,
 `object.distribute`, `object.distributeSpacing` and `select.allOnArtboard` calls it runs without `artboard`, as it does
