@@ -186,6 +186,61 @@ fn paintbrush_uses_stroke_blob_brush_fills() {
     assert!(area(&ps[1].1) > 1500.0);
 }
 
+/// Merge only with selection: a Blob Brush stroke merges with the selected blobs it touches and
+/// leaves the others. Keep selected, off by default: the blob a stroke draws or merges into is not
+/// selected afterwards, and the rest of the selection stays; on, it is selected.
+#[test]
+fn blob_brush_merges_only_with_the_selection_and_keep_selected_off_deselects() {
+    let mut s = session();
+    let r = rect(&mut s, 600.0, 400.0, 50.0, 50.0);
+    let selected = |s: &Session| s.doc().unwrap().selection.objects.clone();
+    let blob = |s: &mut Session, p: serde_json::Value| NodeId(s.execute("path.blob", &p).unwrap()["id"].as_u64().unwrap());
+    s.execute("select.set", &json!({"ids": [r.0]})).unwrap();
+    let a = blob(&mut s, json!({"points": [[100, 60], [100, 140]], "size": 20}));
+    assert_eq!(selected(&s), vec![r], "Keep selected is off by default: the new blob is not selected");
+    let b = blob(&mut s, json!({"points": [[200, 60], [200, 140]], "size": 20, "keepSelected": true}));
+    assert_eq!(selected(&s), vec![b], "Keep selected on: the new blob is selected");
+    let n = paths(&s).len();
+    let (area_a, area_b) = (area(&path(&s, a)), area(&path(&s, b)));
+    // Only `b` is selected: the stroke across both merges into `b` alone.
+    let undo = undo_steps(&s);
+    let across = json!({"points": [[50, 100], [250, 100]], "size": 10, "mergeOnlySelection": true, "keepSelected": false});
+    assert_eq!(blob(&mut s, across.clone()), b);
+    assert_eq!(paths(&s).len(), n);
+    assert_eq!(area(&path(&s, a)), area_a, "a is left as it was");
+    assert!(area(&path(&s, b)) > area_b + 500.0, "the stroke joined b");
+    assert!(selected(&s).is_empty());
+    assert_eq!(undo_steps(&s), undo + 1);
+    // With nothing selected, the stroke merges with nothing, and Keep selected off leaves the new
+    // blob unselected.
+    let new = blob(&mut s, across);
+    assert!(new != a && new != b && paths(&s).len() == n + 1, "a new blob");
+    assert!(selected(&s).is_empty());
+    // A selection that holds no blob: a new blob, and the selection stays.
+    s.execute("select.set", &json!({"ids": [r.0]})).unwrap();
+    let other = blob(&mut s, json!({"points": [[50, 300], [250, 300]], "size": 10, "mergeOnlySelection": true, "keepSelected": false}));
+    assert_eq!(paths(&s).len(), n + 2);
+    assert_eq!(selected(&s), vec![r]);
+    // Without the options, a stroke merges with every touching blob, selected or not, and the
+    // blob it merges into is not selected.
+    let all = blob(&mut s, json!({"points": [[50, 100], [250, 100]], "size": 10}));
+    assert!([a, b, new].contains(&all) && paths(&s).len() == n, "one blob of a, b and the new one");
+    assert_eq!(selected(&s), vec![r]);
+    // Keep selected on: the blob a stroke merges into is selected.
+    assert_eq!(blob(&mut s, json!({"points": [[150, 80], [150, 120]], "size": 10, "keepSelected": true})), all);
+    assert_eq!(paths(&s).len(), n);
+    assert_eq!(selected(&s), vec![all]);
+    // The tool passes both options; Keep selected is off by default.
+    s.execute("select.set", &json!({"ids": [other.0]})).unwrap();
+    s.select_tool("blobBrush", view()).unwrap();
+    assert_eq!(s.tool_options()["keepSelected"], json!(false));
+    s.set_tool_option("mergeOnlySelection", &json!(true));
+    drag(&mut s, "blobBrush", &[(150.0, 50.0), (150.0, 320.0)], Mods::default());
+    assert_eq!(paths(&s).len(), n, "merged into the selected blob only");
+    assert!(selected(&s).is_empty());
+    assert!(s.doc().unwrap().doc.node(all).is_some() && s.doc().unwrap().doc.node(other).is_some());
+}
+
 /// Three points already curve in the saved path: both ends carry a handle into the curve.
 #[test]
 fn path_curvature_with_three_points_saves_end_handles() {
