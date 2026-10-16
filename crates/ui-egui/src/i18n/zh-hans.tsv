@@ -1256,6 +1256,14 @@
 	Hyphenate	连字
 	Hyphenation	连字符
 	Hyphenation…	连字符设置…
+	Words Longer Than:	单词长度超过：
+	After First:	断开前至少：
+	Before Last:	断开后至少：
+	Hyphen Limit:	连字符限制：
+	Hyphenation Zone:	连字区：
+	letters	个字母
+	hyphens	个连字符
+	Hyphenate Capitalized Words	大写单词使用连字符
 	ICC Profile	ICC 配置文件
 	Identify Objects By	对象识别方式
 	Ignore	忽略

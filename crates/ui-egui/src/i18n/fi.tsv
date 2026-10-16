@@ -1573,6 +1573,14 @@ lighting	Light	Valo
 	Every-line Composer	Kaikkien rivien asettelu
 	First-line Left Indent	Ensimmäisen rivin vasen sisennys
 	Hyphenation…	Tavutus…
+	Words Longer Than:	Sanat, jotka ovat pidempiä kuin:
+	After First:	Ensimmäisten jälkeen:
+	Before Last:	Ennen viimeisiä:
+	Hyphen Limit:	Tavuviivaraja:
+	Hyphenation Zone:	Tavutusalue:
+	letters	kirjainta
+	hyphens	tavuviivaa
+	Hyphenate Capitalized Words	Tavuta isolla alkukirjaimella alkavat sanat
 	Justification…	Tasaus…
 	Justify with last line aligned center	Tasaa molemmat reunat, viimeinen rivi keskelle
 	Justify with last line aligned right	Tasaa molemmat reunat, viimeinen rivi oikealle

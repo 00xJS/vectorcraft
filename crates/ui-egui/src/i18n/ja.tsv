@@ -1557,6 +1557,14 @@
 	Hyphenate	ハイフネーション
 	Hyphenation	ハイフネーション
 	Hyphenation…	ハイフネーション…
+	Words Longer Than:	次の文字数を超える単語:
+	After First:	語頭の文字数:
+	Before Last:	語尾の文字数:
+	Hyphen Limit:	連続ハイフンの上限:
+	Hyphenation Zone:	ハイフネーションゾーン:
+	letters	文字
+	hyphens	個
+	Hyphenate Capitalized Words	大文字で始まる単語をハイフネーション
 	ICC Profile	ICC プロファイル
 	Identify Objects By	オブジェクトの識別方法
 	Ignore	無視

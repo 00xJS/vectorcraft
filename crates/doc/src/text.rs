@@ -381,6 +381,37 @@ impl Composer {
     }
 }
 
+/// A paragraph's hyphenation options (Paragraph panel menu › Hyphenation…): which words automatic
+/// hyphenation may break, where, and on how many lines in a row. Saved only when they differ from
+/// the defaults: words longer than 5 letters, 3 letters on each side of the hyphen, no hyphen
+/// limit, no hyphenation zone, and capitalized words hyphenated.
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(default)]
+pub struct HyphenationOptions {
+    /// Words Longer Than: only words with more letters than this are hyphenated.
+    pub words_longer_than: u32,
+    /// After First: the fewest letters a word keeps before the hyphen.
+    pub after_first: u32,
+    /// Before Last: the fewest letters a word keeps after the hyphen.
+    pub before_last: u32,
+    /// Hyphen Limit: the most consecutive lines that automatic hyphenation may end with a hyphen;
+    /// 0 sets no limit.
+    pub hyphen_limit: u32,
+    /// Hyphenation Zone (pt): with the Single-line Composer, a line whose text before the next
+    /// word already ends within this distance of its right edge breaks before that word instead
+    /// of hyphenating it. 0 allows every hyphenation.
+    pub zone: f64,
+    /// Hyphenate Capitalized Words: when it is off, words that start with a capital letter are not
+    /// hyphenated. Words in capitals only are never hyphenated.
+    pub capitalized: bool,
+}
+
+impl Default for HyphenationOptions {
+    fn default() -> Self {
+        Self { words_longer_than: 5, after_first: 3, before_last: 3, hyphen_limit: 0, zone: 0.0, capitalized: true }
+    }
+}
+
 /// Paragraph attributes (the Paragraph panel).
 ///
 /// Saved through [`ParaStyleFile`], which keeps files with text openable by builds from before
@@ -395,6 +426,8 @@ pub struct ParaStyle {
     pub space_before: f64,
     pub space_after: f64,
     pub hyphenate: bool,
+    /// The limits automatic hyphenation keeps to (Paragraph panel menu › Hyphenation…).
+    pub hyphenation: HyphenationOptions,
     /// Line breaking: Single-line or Every-line Composer.
     pub composer: Composer,
     /// Tab stops (Tabs panel), sorted by position.
@@ -442,6 +475,8 @@ struct ParaStyleFile {
     space_after: f64,
     #[serde(default)]
     hyphenate: bool,
+    #[serde(default, skip_serializing_if = "crate::skip::is_default")]
+    hyphenation: HyphenationOptions,
     #[serde(default, skip_serializing_if = "Composer::is_default")]
     composer: Composer,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -475,6 +510,7 @@ impl From<ParaStyle> for ParaStyleFile {
             space_before,
             space_after,
             hyphenate,
+            hyphenation,
             composer,
             tabs,
             style_name,
@@ -494,6 +530,7 @@ impl From<ParaStyle> for ParaStyleFile {
             space_before,
             space_after,
             hyphenate,
+            hyphenation,
             composer,
             tabs,
             style_name,
@@ -516,6 +553,7 @@ impl From<ParaStyleFile> for ParaStyle {
             space_before,
             space_after,
             hyphenate,
+            hyphenation,
             composer,
             tabs,
             style_name,
@@ -534,6 +572,7 @@ impl From<ParaStyleFile> for ParaStyle {
             space_before,
             space_after,
             hyphenate,
+            hyphenation,
             composer,
             tabs,
             style_name,
