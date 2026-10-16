@@ -781,6 +781,7 @@
 	Decimal:	Thập phân:
 	Decorative	Trang trí
 	Decrease Font Size	Giảm cỡ chữ
+	Decrease Font Size by Five Steps	Giảm cỡ chữ năm bước
 	Default	Mặc định
 	Default Actions	Hành động mặc định
 	Default Figure	Chữ số mặc định
@@ -1579,6 +1580,7 @@
 	Include SVG Code	Bao gồm mã SVG
 	Include Swatches for Tints	Bao gồm mẫu màu cho sắc pha
 	Increase Font Size	Tăng cỡ chữ
+	Increase Font Size by Five Steps	Tăng cỡ chữ năm bước
 	Inflate…	Phình…
 	Info	Thông tin
 	Ink	Mực

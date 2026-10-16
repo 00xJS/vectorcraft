@@ -1024,6 +1024,33 @@ fn type_increments_step_the_type() {
     assert_eq!((style_at(&s, id, 0).size, style_at(&s, id, 6).size), (22.0, 25.0));
 }
 
+/// Cmd/Ctrl+Alt+Shift+. and , step the font size by five times the Size/Leading increment, on
+/// the selected type objects and on the Type tool's selected text.
+#[test]
+fn font_size_steps_by_five_increments() {
+    use vectorcraft_tools::PointerKind::{Down, Up};
+    let mut s = new_doc();
+    let id = NodeId(s.execute("text.create", &json!({"x": 100, "y": 100, "text": "Hello world", "size": 12})).unwrap()["id"].as_u64().unwrap());
+    s.execute("select.set", &json!({"ids": [id.0]})).unwrap();
+    assert_eq!(find_command("type.size.increaseByFive").unwrap().shortcut, Some("Cmd+Alt+Shift+."));
+    assert_eq!(find_command("type.size.decreaseByFive").unwrap().shortcut, Some("Cmd+Alt+Shift+,"));
+    s.execute("type.size.increaseByFive", &json!({})).unwrap();
+    assert_eq!(style_at(&s, id, 0).size, 22.0, "five steps of the 2 pt Size/Leading increment");
+    s.execute("type.size.decreaseByFive", &json!({})).unwrap();
+    assert_eq!(style_at(&s, id, 0).size, 12.0);
+    set_pref(&mut s, "typeSizeIncrement", json!(3));
+    s.execute("type.size.increaseByFive", &json!({})).unwrap();
+    assert_eq!(style_at(&s, id, 10).size, 27.0, "the step follows the preference");
+    // While the Type tool edits, only its selected text steps.
+    let v = ViewInfo::default();
+    s.select_tool("type", v).unwrap();
+    gesture(&mut s, v, &[(Down, 102.0, 95.0), (Up, 102.0, 95.0)]);
+    assert_eq!(s.tool_options()["editing"], json!(id.0), "editing the text");
+    s.set_tool_option("select", &json!({"start": 6, "end": 11}));
+    s.execute("type.size.decreaseByFive", &json!({})).unwrap();
+    assert_eq!((style_at(&s, id, 0).size, style_at(&s, id, 6).size), (27.0, 12.0));
+}
+
 /// Cmd/Ctrl+Alt+Q resets tracking to 0 and kerning to Auto (0 in the Character panel) in every
 /// selected type object and in the Type tool's selected text. At a caret it resets only the
 /// kerning of the character before it. It is one undo step. Type objects given in `ids` are reset

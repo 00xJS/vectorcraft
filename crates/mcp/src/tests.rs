@@ -1076,6 +1076,30 @@ fn type_preferences_apply_to_agents() {
     assert_eq!(style(&mut s, 6), (size + 4.0, tracking + 50.0));
 }
 
+/// Cmd+Alt+Shift+. and , reach agents: the placeholder text the Type tool selects steps by five
+/// times the Size/Leading increment (2 pt by default) and back.
+#[test]
+fn cmd_alt_shift_period_steps_the_font_size_by_five_for_agents() {
+    let mut s = server();
+    let events = json!([{"kind": "down", "x": 100, "y": 100}, {"kind": "up", "x": 100, "y": 100}]);
+    let r = call(&mut s, 1, "pointer_gesture", json!({"tool": "type", "events": events}));
+    assert_eq!(r["isError"], false, "{r}");
+    let id = serde_json::from_str::<Value>(&text_of(&r)).unwrap()["selection"][0].as_u64().unwrap();
+    let r = call(&mut s, 2, "run_command", json!({"command": "text.setRangeStyle", "params": {"id": id, "size": 12}}));
+    assert_eq!(r["isError"], false, "{r}");
+    let size = |s: &mut Server, n| {
+        let r = call(s, n, "run_command", json!({"command": "text.getRange", "params": {"id": id, "effective": true}}));
+        serde_json::from_str::<Value>(&text_of(&r)).unwrap()["runs"][0]["style"]["size"].clone()
+    };
+    let r = call(&mut s, 3, "press_key", json!({"key": ".", "mods": {"cmd": true, "alt": true, "shift": true}}));
+    assert_eq!(r["isError"], false, "{r}");
+    assert_eq!(serde_json::from_str::<Value>(&text_of(&r)).unwrap()["command"], "type.size.increaseByFive", "{r}");
+    assert_eq!(size(&mut s, 4), json!(22.0));
+    let r = call(&mut s, 5, "press_key", json!({"key": ",", "mods": {"cmd": true, "alt": true, "shift": true}}));
+    assert_eq!(serde_json::from_str::<Value>(&text_of(&r)).unwrap()["command"], "type.size.decreaseByFive", "{r}");
+    assert_eq!(size(&mut s, 6), json!(12.0));
+}
+
 /// Cmd+Alt+Q reaches agents: the placeholder text the Type tool selects goes back to tracking 0
 /// and Auto kerning.
 #[test]

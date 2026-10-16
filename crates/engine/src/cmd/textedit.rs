@@ -86,6 +86,24 @@ pub fn specs() -> Vec<CommandSpec> {
             |s, p| type_step(s, &json!({"attribute": "size", "by": -f64_or(p, "by", 1.0)}))
         ),
         cmd!(
+            "type.size.increaseByFive",
+            "Increase Font Size by Five Steps",
+            [],
+            Some("Cmd+Alt+Shift+."),
+            "{} type.step {attribute: size, by: 5}: five times the Size/Leading increment (typeSizeIncrement)",
+            has_selection,
+            |s, _| type_step(s, &json!({"attribute": "size", "by": 5.0}))
+        ),
+        cmd!(
+            "type.size.decreaseByFive",
+            "Decrease Font Size by Five Steps",
+            [],
+            Some("Cmd+Alt+Shift+,"),
+            "{} type.step {attribute: size, by: -5}: five times the Size/Leading increment (typeSizeIncrement)",
+            has_selection,
+            |s, _| type_step(s, &json!({"attribute": "size", "by": -5.0}))
+        ),
+        cmd!(
             "type.resetTracking",
             "Reset Tracking and Kerning",
             [],
