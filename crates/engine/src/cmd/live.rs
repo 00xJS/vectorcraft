@@ -101,7 +101,7 @@ pub fn specs() -> Vec<CommandSpec> {
             "Reshape Spine Segment",
             [],
             None,
-            "{id? (default: the selected blend), segment: index, t: 0..1, dx, dy} bend a segment of the blend's spine so its point at t moves by (dx, dy), as path.reshapeSegment bends a path's: a straight spine turns into a curve (#1111)",
+            "{id? (default: the selected blend), segment: index, t: 0..1, dx, dy, perpendicular?: bool} bend a segment of the blend's spine so its point at t moves by (dx, dy), as path.reshapeSegment bends a path's (perpendicular too): a straight spine turns into a curve (#1111)",
             has_doc,
             spine_reshape_segment
         ),
@@ -657,7 +657,11 @@ fn spine_reshape_segment(s: &mut Session, p: &Value) -> Result<Value> {
     if !(t.is_finite() && dv.x.is_finite() && dv.y.is_finite() && dv.hypot() < 1e9) {
         return Err(bad(C, "t, dx and dy must be finite"));
     }
-    edit_spine(s, p, C, "Reshape Spine", |sp, _, _| if sp.bend_segment(seg, t, dv) { Ok(()) } else { Err(bad(C, "no such spine segment")) })?;
+    let perpendicular = bool_or(p, "perpendicular", false);
+    edit_spine(s, p, C, "Reshape Spine", |sp, _, _| {
+        let bent = if perpendicular { sp.bend_segment_perpendicular(seg, t, dv) } else { sp.bend_segment(seg, t, dv) };
+        if bent { Ok(()) } else { Err(bad(C, "no such spine segment")) }
+    })?;
     ok()
 }
 

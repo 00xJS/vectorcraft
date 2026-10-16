@@ -204,3 +204,18 @@ fn a_straight_spine_segment_bends_into_a_curve() {
         assert!(s.execute("object.blend.spine.reshapeSegment", &bad).is_err(), "{bad}");
     }
 }
+
+/// With `perpendicular` (Shift) the spine segment's handles stand at right angles to it, at one
+/// length: its middle goes straight down, wherever the drag goes sideways.
+#[test]
+fn a_spine_segment_bends_with_perpendicular_handles() {
+    let mut s = session();
+    let (_, _, g) = blend(&mut s);
+    s.execute("object.blend.spine.reshapeSegment", &json!({"segment": 0, "t": 0.5, "dx": 10, "dy": 40, "perpendicular": true})).unwrap();
+    let sp = spec(&s, g).spine.unwrap().subpaths[0].clone();
+    let (a, b) = (sp.anchors[0], sp.anchors[1]);
+    let (ha, hb) = (a.h_out - a.p, b.h_in - b.p);
+    assert!(ha.x.abs() < 1e-9 && hb.x.abs() < 1e-9 && (ha.y - hb.y).abs() < 1e-9, "{sp:?}");
+    use vectorcraft_geom::kurbo::ParamCurve;
+    assert!(sp.segment(0).eval(0.5).distance(Point::new(55.0, 45.0)) < 1e-9, "{sp:?}");
+}
