@@ -170,8 +170,11 @@ pub fn fit(app: &mut VectorcraftApp, how: &str) {
     let zoom = if how == "view.actualSize" {
         actual_size_zoom(app.session.prefs.display_print_size)
     } else {
-        let zx = (rect.width() as f64 - 60.0) / target.width().max(1.0);
-        let zy = (rect.height() as f64 - 60.0) / target.height().max(1.0);
+        // The width and height of the box round the target turned with the view, at zoom 1.
+        let (sn, cs) = app.view().map_or(0.0, |v| v.rotation.to_radians()).sin_cos();
+        let (w, h) = (target.width(), target.height());
+        let zx = (rect.width() as f64 - 60.0) / (w * cs.abs() + h * sn.abs()).max(1.0);
+        let zy = (rect.height() as f64 - 60.0) / (w * sn.abs() + h * cs.abs()).max(1.0);
         zx.min(zy).clamp(0.0313, 640.0)
     };
     let Some(v) = app.view_mut() else { return };
@@ -433,19 +436,18 @@ pub fn show(app: &mut VectorcraftApp, ui: &mut Ui) {
         // Selected guides in the selection colour.
         let picked = LineLook { color: t.selection, ..look };
         let selected: &[usize] = app.session.active().map_or(&[], |st| &st.selection.guides);
+        let view = view_bounds(&xf);
         // Guides on a hidden layer hide with it.
         for (i, g) in doc.guides.iter().enumerate().filter(|(_, g)| doc.guide_shown(g)) {
             let at = |along: f64| xf.to_screen(if g.vertical { Point::new(g.pos, along) } else { Point::new(along, g.pos) });
-            // An artboard guide runs across its artboard, a canvas guide across the window.
+            // An artboard guide runs across its artboard, a canvas guide across the window (the part
+            // of its document line that the canvas shows, turned with the view).
             let (a, b) = match doc.guide_span(g) {
                 Some((from, to)) => (at(from), at(to)),
-                None if g.vertical => {
-                    let x = at(0.0).x;
-                    (pos2(x, rect.top()), pos2(x, rect.bottom()))
-                }
                 None => {
-                    let y = at(0.0).y;
-                    (pos2(rect.left(), y), pos2(rect.right(), y))
+                    let (from, to) = if g.vertical { (view.y0, view.y1) } else { (view.x0, view.x1) };
+                    let Some(ends) = clip_segment(at(from), at(to), rect) else { continue };
+                    ends
                 }
             };
             if selected.contains(&i) { picked } else { look }.guide(&painter, a, b);
@@ -788,10 +790,10 @@ fn handle_input(app: &mut VectorcraftApp, ui: &Ui, resp: &egui::Response, rect: 
                     let r = egui::Rect::from_two_pos(start, p);
                     if let Some(vm) = app.view_mut() {
                         if r.width() > 8.0 && r.height() > 8.0 {
-                            let a = xf.to_doc(r.min);
-                            let b = xf.to_doc(r.max);
-                            vm.center = Point::new((a.x + b.x) / 2.0, (a.y + b.y) / 2.0);
-                            vm.zoom = (rect.width() as f64 / (b.x - a.x)).min(rect.height() as f64 / (b.y - a.y)).clamp(0.0313, 640.0);
+                            // The marquee's center and its size on screen set the view, at any rotation.
+                            vm.center = xf.to_doc(r.center());
+                            let fill = (rect.width() / r.width()).min(rect.height() / r.height());
+                            vm.zoom = (xf.zoom * f64::from(fill)).clamp(0.0313, 640.0);
                         } else {
                             zoom_about(vm, rect, p, crate::state::next_zoom(vm.zoom, !m.alt));
                         }
@@ -886,8 +888,14 @@ fn zoom_about(vm: &mut View, rect: egui::Rect, p: Pos2, zoom: f64) {
 /// A marquee around screen rectangle `r`: dark dashes over a light line, so it shows on a white
 /// artboard and on the grey pasteboard alike (#725).
 fn marquee(p: &egui::Painter, r: egui::Rect) {
-    let pts = [r.left_top(), r.right_top(), r.right_bottom(), r.left_bottom(), r.left_top()];
-    p.add(Shape::line(pts.to_vec(), Stroke::new(1.0, Color32::from_white_alpha(230))));
+    marquee_through(p, &[r.left_top(), r.right_top(), r.right_bottom(), r.left_bottom()]);
+}
+
+/// A [`marquee`] through the screen corners `q` in turn, back to the first: a document rectangle's
+/// [`Xf::quad`] in a rotated view.
+fn marquee_through(p: &egui::Painter, q: &[Pos2]) {
+    let pts: Vec<Pos2> = q.iter().chain(q.first()).copied().collect();
+    p.add(Shape::line(pts.clone(), Stroke::new(1.0, Color32::from_white_alpha(230))));
     for w in pts.windows(2) {
         p.extend(Shape::dashed_line(&[w[0], w[1]], Stroke::new(1.0, Color32::from_gray(40)), 3.0, 3.0));
     }
@@ -1143,15 +1151,38 @@ fn pref_color(hex: &str, fallback: Color32) -> Color32 {
     vectorcraft_color::Color::from_hex(hex).map_or(fallback, |c| crate::panels::c32(&c))
 }
 
+/// The view in document space: the box round the canvas's corners (the view may be rotated).
+fn view_bounds(xf: &Xf) -> Rect {
+    let r = xf.rect;
+    let corners = [r.left_top(), r.right_top(), r.right_bottom(), r.left_bottom()].map(|c| xf.to_doc(c));
+    corners.iter().fold(Rect::from_points(corners[0], corners[0]), |b, c| b.union_pt(*c))
+}
+
+/// The part of the segment from `a` to `b` inside `r`, none when the segment misses it.
+fn clip_segment(a: Pos2, b: Pos2, r: egui::Rect) -> Option<(Pos2, Pos2)> {
+    let d = b - a;
+    let (mut t0, mut t1) = (0.0_f32, 1.0_f32);
+    // Each edge as (the run toward it, the room before it).
+    for (run, room) in [(-d.x, a.x - r.left()), (d.x, r.right() - a.x), (-d.y, a.y - r.top()), (d.y, r.bottom() - a.y)] {
+        if run == 0.0 {
+            if room < 0.0 {
+                return None;
+            }
+        } else if run < 0.0 {
+            t0 = t0.max(room / run);
+        } else {
+            t1 = t1.min(room / run);
+        }
+    }
+    (t0 <= t1).then(|| (a + d * t0, a + d * t1))
+}
+
 /// The grid (View → Show Grid): a gridline every `spacing` and `subdiv` lighter lines between
 /// (left out when they would crowd). In the Dots style, a dot where gridlines cross the
 /// subdivisions instead.
 fn grid(p: &egui::Painter, xf: &Xf, spacing: f64, subdiv: u32, look: LineLook) {
-    let r = xf.rect;
-    // The view in document space: the box round the canvas's corners (the view may be rotated;
-    // the painter clips to the canvas).
-    let corners = [r.left_top(), r.right_top(), r.right_bottom(), r.left_bottom()].map(|c| xf.to_doc(c));
-    let view = corners.iter().fold(Rect::from_points(corners[0], corners[0]), |b, c| b.union_pt(*c));
+    // The painter clips to the canvas.
+    let view = view_bounds(xf);
     let sub = spacing / subdiv.max(1) as f64;
     let step = if sub * xf.zoom >= 6.0 { sub } else { spacing };
     // Dots crowd sooner than lines.
@@ -1688,7 +1719,8 @@ fn hidden_chars_overlay(app: &mut VectorcraftApp, p: &egui::Painter, xf: &Xf) {
     }
     walk(&st.doc.layers, &mut |n| {
         let NodeKind::Text(tx) = &n.kind else { return };
-        if !n.visible || n.geometric_bounds().is_none_or(|b| !xf.rect_to_screen(b).intersects(clip)) {
+        // The box round the object's corners on screen, turned with the view.
+        if !n.visible || n.geometric_bounds().is_none_or(|b| !egui::Rect::from_points(&xf.quad(b)).intersects(clip)) {
             return;
         }
         let marks = match last.remove(&n.id) {
@@ -2114,7 +2146,8 @@ fn names_an_artboard(text: &str) -> bool {
 fn draw_overlays(p: &egui::Painter, xf: &Xf, overlays: &[Overlay], t: &Tokens, look: HandleLook) {
     for o in overlays {
         match o {
-            Overlay::Marquee(r) => marquee(p, xf.rect_to_screen(*r)),
+            // Where the tools select: the document rectangle, turned with the view.
+            Overlay::Marquee(r) => marquee_through(p, &xf.quad(*r)),
             Overlay::Path { path, color, width, dashed } => {
                 let s = Stroke::new(*width, c32(*color));
                 if *dashed {
@@ -2351,7 +2384,10 @@ fn task_bar(app: &mut VectorcraftApp, ui: &mut Ui, xf: &Xf) {
     let fill = first.as_ref().map(|f| f.appearance.fill_paint()).unwrap_or_default();
     let colored = has_colors(&st.doc, &st.selection.objects);
     let doc = st.uid;
-    let anchor = xf.to_screen(Point::new(b.center().x, b.y1));
+    // Under the selection's lowest corner on screen, centered on the selection (the view may be
+    // rotated).
+    let lowest = xf.quad(b).iter().map(|c| c.y).fold(f32::NEG_INFINITY, f32::max);
+    let anchor = pos2(xf.to_screen(b.center()).x, lowest);
     let est_w = 118.0 + items.iter().map(|(l, _, _)| l.len() as f32 * 7.2 + 44.0).sum::<f32>();
     // Its place under the selection, then where the handle moved it, kept on the canvas (with the
     // bar's size last frame, the estimate before it first shows).
@@ -3761,6 +3797,40 @@ mod tests {
         assert!(s.iter().any(|s| matches!(s, Shape::Circle(c) if c.fill == green)), "the guide dotted");
     }
 
+    /// A canvas guide (on no artboard) is drawn along its document line in a rotated view, where it
+    /// snaps and is picked: both ends of each guide's line are on x = 100 or y = 120. At 0° the
+    /// vertical one runs from the canvas's top to its bottom.
+    #[test]
+    fn canvas_guides_turn_with_the_view() {
+        let mut app = VectorcraftApp::new(Session::new(), Default::default());
+        app.session.execute("file.new", &json!({"width": 400, "height": 300})).unwrap();
+        app.session.execute("guide.add", &json!({"vertical": true, "pos": 100})).unwrap();
+        app.session.execute("guide.add", &json!({"vertical": false, "pos": 120})).unwrap();
+        app.session.execute("prefs.set", &json!({"key": "guideColor", "value": "#123456"})).unwrap();
+        app.ui.view.guides = true;
+        let color = Color32::from_rgb(0x12, 0x34, 0x56);
+        let ctx = egui::Context::default();
+        let lines = |app: &mut VectorcraftApp| -> Vec<[Pos2; 2]> {
+            shapes(app, &ctx)
+                .into_iter()
+                .filter_map(|s| if let Shape::LineSegment { points, stroke } = s { (stroke.color == color).then_some(points) } else { None })
+                .collect()
+        };
+        let s = lines(&mut app);
+        let rect = app.canvas_rect.unwrap();
+        let vertical = s.iter().find(|[a, b]| (a.x - b.x).abs() < 1e-3).expect("the vertical guide");
+        assert!((vertical[0].y - rect.top()).abs() < 0.5 && (vertical[1].y - rect.bottom()).abs() < 0.5, "0°: {vertical:?} in {rect:?}");
+        app.run("view.rotate", json!({"angle": 30})).unwrap();
+        let s = lines(&mut app);
+        let xf = Xf::new(rect, app.view().unwrap());
+        assert_eq!(s.len(), 2, "{s:?}");
+        let on = |v: f64, along_x: bool| {
+            s.iter().any(|ends| ends.iter().all(|e| ((if along_x { xf.to_doc(*e).x } else { xf.to_doc(*e).y }) - v).abs() < 1e-3))
+        };
+        assert!(on(100.0, true), "x = 100: {s:?}");
+        assert!(on(120.0, false), "y = 120: {s:?}");
+    }
+
     /// Selection & Anchor Display › Size (#394): anchors and the bounding box's handles grow.
     #[test]
     fn anchor_size_scales_anchors_and_handles() {
@@ -4110,6 +4180,27 @@ mod tests {
         assert_ne!(drawn(&mut app, &xf), zoomed, "set in the family that arrived");
     }
 
+    /// In a rotated view Show Hidden Characters draws the marks of type whose turned outline reaches
+    /// into the canvas, also when the box between two of its corners on screen does not.
+    #[test]
+    fn show_hidden_characters_draws_type_partly_on_a_rotated_canvas() {
+        let mut app = VectorcraftApp::new(Session::new(), Default::default());
+        app.session.execute("file.new", &json!({"width": 400, "height": 300})).unwrap();
+        let id = app.session.execute("text.create", &json!({"x": 20, "y": 60, "text": "a b c d e\nf g h"})).unwrap()["id"].as_u64().unwrap();
+        let b = app.session.active().unwrap().doc.node(vectorcraft_doc::NodeId(id)).unwrap().geometric_bounds().unwrap();
+        let ctx = egui::Context::default();
+        let mut xf = Xf { rect: egui::Rect::from_min_size(Pos2::ZERO, vec2(800.0, 600.0)), zoom: 2.0, center: b.center(), rot: 45f64.to_radians() };
+        // The screen moves so that the canvas's left edge falls halfway between the right side of
+        // the box and the outline's rightmost corner, level with that corner.
+        let q = xf.quad(b);
+        let right = q.iter().copied().max_by(|a, c| a.x.total_cmp(&c.x)).unwrap();
+        let shift = vec2(-(xf.rect_to_screen(b).right() + right.x) / 2.0, xf.rect.center().y - right.y);
+        xf.center -= xf.delta_to_doc(shift);
+        assert!(!xf.rect_to_screen(b).intersects(xf.rect), "the box is off the canvas");
+        assert!(xf.quad(b).iter().any(|c| xf.rect.contains(*c)), "a corner is on it");
+        assert!(!hidden_chars(&mut app, &ctx, &xf).is_empty(), "the marks are drawn");
+    }
+
     /// The shapes Type → Show Hidden Characters draws in one canvas frame ([`show`]).
     fn hidden_char_marks(app: &mut VectorcraftApp, ctx: &egui::Context) -> Vec<Shape> {
         let blue = Color32::from_rgb(0x4f, 0x9d, 0xff);
@@ -4308,6 +4399,28 @@ mod tests {
         assert!((app.view().unwrap().zoom - 96.0 / 72.0).abs() < 1e-12, "an inch is 96 screen points");
     }
 
+    /// Fit Artboard in Window fits the artboard as a rotated view shows it: at 45° every corner is
+    /// on the canvas and one is within the 30-point margin of an edge. At 0° the zoom is unchanged.
+    #[test]
+    fn fit_artboard_fits_the_artboard_turned_with_the_view() {
+        let mut app = VectorcraftApp::new(Session::new(), Default::default());
+        app.session.execute("file.new", &json!({"width": 612, "height": 792})).unwrap();
+        let rect = egui::Rect::from_min_size(Pos2::ZERO, vec2(1000.0, 800.0));
+        app.canvas_rect = Some(rect);
+        app.run("view.fitArtboard", json!({})).unwrap();
+        assert!((app.view().unwrap().zoom - (940.0 / 612.0_f64).min(740.0 / 792.0)).abs() < 1e-12, "0°");
+        app.run("view.rotate", json!({"angle": 45})).unwrap();
+        app.run("view.fitArtboard", json!({})).unwrap();
+        let board = app.session.active().unwrap().doc.artboards[0].rect;
+        let q = Xf::new(rect, app.view().unwrap()).quad(board);
+        assert!(q.iter().all(|c| rect.contains(*c)), "the turned artboard is on the canvas: {q:?}");
+        let gap = q
+            .iter()
+            .map(|c| (c.x - rect.left()).min(rect.right() - c.x).min(c.y - rect.top()).min(rect.bottom() - c.y))
+            .fold(f32::INFINITY, f32::min);
+        assert!(gap < 31.0, "and fills it but for the margin: {gap}");
+    }
+
     /// Performance › Animated Zoom (#394): the Zoom tool dragged sideways zooms about where it was
     /// pressed (right in, left out), held still it zooms on, and a click still steps. Off, or with
     /// GPU Performance off, a drag zooms to the area dragged across.
@@ -4356,6 +4469,72 @@ mod tests {
             let z = app.view().unwrap().zoom;
             assert!((z - z0 * (rect.width() / 100.0).min(rect.height() / 50.0) as f64).abs() < 1e-6, "{key} off: {z0} → {z}");
         }
+    }
+
+    /// With Animated Zoom off, the Zoom tool zooms a rotated view to the area dragged across: at 90°
+    /// and 180° a 100 × 50-point marquee fills the canvas as it does at 0°, centered on the canvas.
+    #[test]
+    fn the_zoom_tool_zooms_a_rotated_view_to_the_area_dragged_across() {
+        use egui::Event;
+        let mut app = VectorcraftApp::new(Session::new(), Default::default());
+        app.session.execute("file.new", &json!({"width": 400, "height": 300})).unwrap();
+        app.run("prefs.set", json!({"key": "animatedZoom", "value": false})).unwrap();
+        app.select_tool("zoom");
+        let ctx = egui::Context::default();
+        frame(&mut app, &ctx, vec![]);
+        let rect = app.canvas_rect.unwrap();
+        let at = rect.center() - vec2(100.0, 50.0);
+        let to = at + vec2(100.0, 50.0);
+        let button = |pos, pressed| Event::PointerButton { pos, button: egui::PointerButton::Primary, pressed, modifiers: Default::default() };
+        for angle in [90.0, 180.0] {
+            app.run("view.rotate", json!({ "angle": angle })).unwrap();
+            let z0 = app.view().unwrap().zoom;
+            let middle = Xf::new(rect, app.view().unwrap()).to_doc(at + vec2(50.0, 25.0));
+            frame(&mut app, &ctx, vec![Event::PointerMoved(at)]);
+            frame(&mut app, &ctx, vec![button(at, true)]);
+            frame(&mut app, &ctx, vec![Event::PointerMoved(to)]);
+            frame(&mut app, &ctx, vec![button(to, false)]);
+            let v = app.view().unwrap();
+            let want = z0 * f64::from((rect.width() / 100.0).min(rect.height() / 50.0));
+            assert!((v.zoom - want).abs() < 1e-6, "{angle}°: {z0} → {}, not {want}", v.zoom);
+            assert!(v.center.distance(middle) < 1e-6, "{angle}°: the marquee's center goes to the canvas's center");
+            app.view_mut().unwrap().zoom = z0;
+        }
+    }
+
+    /// In a rotated view the Selection tool's marquee is drawn where the tool selects: through the
+    /// screen corners of the document rectangle between the press and the pointer.
+    #[test]
+    fn the_selection_marquee_is_drawn_where_it_selects_in_a_rotated_view() {
+        use egui::Event;
+        let mut app = VectorcraftApp::new(Session::new(), Default::default());
+        app.session.execute("file.new", &json!({"width": 400, "height": 300})).unwrap();
+        app.select_tool("selection");
+        let ctx = egui::Context::default();
+        frame(&mut app, &ctx, vec![]);
+        app.run("view.rotate", json!({"angle": 45})).unwrap();
+        let rect = app.canvas_rect.unwrap();
+        let (from, to) = (rect.center() - vec2(60.0, 20.0), rect.center() + vec2(60.0, 40.0));
+        frame(&mut app, &ctx, vec![Event::PointerMoved(from)]);
+        frame(
+            &mut app,
+            &ctx,
+            vec![Event::PointerButton { pos: from, button: egui::PointerButton::Primary, pressed: true, modifiers: Default::default() }],
+        );
+        frame(&mut app, &ctx, vec![Event::PointerMoved(to)]);
+        let xf = Xf::new(rect, app.view().unwrap());
+        let want = xf.quad(Rect::from_points(xf.to_doc(from), xf.to_doc(to)));
+        let drawn: Vec<Vec<Pos2>> = shapes(&mut app, &ctx)
+            .into_iter()
+            .filter_map(|s| match s {
+                Shape::Path(p) if p.stroke.color == egui::epaint::ColorMode::Solid(Color32::from_white_alpha(230)) => Some(p.points),
+                _ => None,
+            })
+            .collect();
+        let [line] = &drawn[..] else { panic!("one marquee: {drawn:?}") };
+        assert_eq!(line.len(), 5, "closed: {line:?}");
+        assert!(line.iter().zip(&want).all(|(a, b)| a.distance(*b) < 0.5), "{line:?} is not {want:?}");
+        assert_eq!(line[4], line[0]);
     }
 
     /// User Interface › Large Tabs (#394): the document tabs are taller, so the canvas starts lower.
@@ -5215,6 +5394,25 @@ mod tests {
         assert!(!app.ui.task_bar_place.pinned);
         near(select(&mut app, &a), under_a);
         near(select(&mut app, &b), under_b);
+    }
+
+    /// In a view turned 180° the Contextual Task Bar shows under the selection's lowest corner on
+    /// screen, not over the selection.
+    #[test]
+    fn the_task_bar_stays_under_the_selection_in_a_rotated_view() {
+        let mut app = VectorcraftApp::new(Session::new(), Default::default());
+        app.session.execute("file.new", &json!({"width": 400, "height": 300})).unwrap();
+        let id = app.session.execute("shape.rectangle", &json!({"x": 170, "y": 90, "width": 60, "height": 120})).unwrap()["id"].clone();
+        app.session.execute("select.set", &json!({"ids": [id]})).unwrap();
+        app.select_tool("selection");
+        app.run("view.rotate", json!({"angle": 180})).unwrap();
+        let ctx = egui::Context::default();
+        frame(&mut app, &ctx, vec![]);
+        frame(&mut app, &ctx, vec![]);
+        let bar = task_bar_rect(&ctx).expect("the task bar shows");
+        let xf = Xf::new(app.canvas_rect.unwrap(), app.view().unwrap());
+        let lowest = xf.quad(app.selection_bounds().unwrap()).iter().map(|c| c.y).fold(f32::NEG_INFINITY, f32::max);
+        assert!(bar.top() > lowest, "the bar {bar:?} starts below {lowest}");
     }
 
     fn ruler_guide_origin_ui(alt: bool, cancel: bool) {
