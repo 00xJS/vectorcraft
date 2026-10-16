@@ -1002,7 +1002,9 @@ already walks Image Trace. Short agent entry points:
 - Image Trace: `imageTrace.presets`, `imageTrace.make {id?, preset?, params?, view?}` (or `imageTrace.makeAndExpand`),
   `imageTrace.setView`, `imageTrace.expand`, `imageTrace.release`.
 
-`dataset.select`, `dataset.next` and `dataset.prev` reply `{name, applied, skipped}`. They skip an object that is
+`dataset.select`, `dataset.next` and `dataset.prev` reply `{name, applied, skipped}`. They add `overflow: [id…]`
+when area type or type on a path whose text they rewrote doesn't fit, as `text.setText` does (see
+[Fitting area type](#fitting-area-type-auto-size-shrink-text-to-fit-overflow)). They skip an object that is
 locked or inside a hidden or locked layer or group. They apply the data set's visibility values that show objects
 first, outermost object first, then its other values in the order the variables are defined, then its visibility
 values that hide objects, innermost object first. A data set that shows a group sets the objects inside it in the
