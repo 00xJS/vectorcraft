@@ -119,6 +119,20 @@ fn anchor_near(cx: &ToolContext, edge: &SegmentRef, p: Point) -> Option<(usize, 
         .min_by(|(_, a), (_, b)| a.distance(p).total_cmp(&b.distance(p)))
 }
 
+/// The point of `edge` closest to `p`.
+fn nearest_on(cx: &ToolContext, edge: &SegmentRef, p: Point) -> Option<Point> {
+    use vectorcraft_geom::kurbo::ParamCurveNearest;
+    let sp = cx.doc.node(edge.node)?.path_data()?.subpaths.get(edge.subpath)?;
+    if edge.segment >= sp.segment_count() {
+        return None;
+    }
+    let c = sp.segment(edge.segment);
+    let t = c.nearest(p, 1e-4).t;
+    use vectorcraft_geom::kurbo::ParamCurve;
+    let q = c.eval(t);
+    (q.x.is_finite() && q.y.is_finite()).then_some(q)
+}
+
 impl DimensionTool {
     fn target(&self, cx: &ToolContext, p: Point) -> Option<Target> {
         let edge = pick(cx, p)?;
@@ -216,11 +230,14 @@ impl DimensionTool {
             Kind::Linear => {
                 let (mut at, _) = crate::guides::snap_pick(cx, p);
                 let mut reference = None;
-                if let Some(edge) = pick(cx, p)
-                    && let Some((anchor, point)) = anchor_near(cx, &edge, p)
-                {
-                    at = point;
-                    reference = Some(PointRef { node: edge.node, subpath: edge.subpath, anchor });
+                if let Some(edge) = pick(cx, p) {
+                    if let Some((anchor, point)) = anchor_near(cx, &edge, p) {
+                        at = point;
+                        reference = Some(PointRef { node: edge.node, subpath: edge.subpath, anchor });
+                    } else if let Some(point) = nearest_on(cx, &edge, p) {
+                        // Not on an anchor: snap to the closest point of the line (#2432).
+                        at = point;
+                    }
                 }
                 if mods.shift
                     && let Some((last, _)) = self.points.last()

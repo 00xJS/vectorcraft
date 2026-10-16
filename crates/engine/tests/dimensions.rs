@@ -407,3 +407,17 @@ fn shift_shows_the_constrained_line_while_picking_the_second_point() {
     assert_eq!(end(&mut s, false).y, 310.0);
     assert!((end(&mut s, true).y - 300.0).abs() < 1e-9);
 }
+
+/// A click near a line, away from its anchors, snaps to the closest point of the line (#2432).
+#[test]
+fn clicking_near_a_line_snaps_the_measured_point_onto_it() {
+    let mut s = session();
+    edge(&mut s);
+    s.select_tool("dimension", ViewInfo::default()).unwrap();
+    for (x, y) in [(130.0, 103.0), (150.0, 97.0), (140.0, 130.0)] {
+        ev(&mut s, PointerKind::Down, x, y);
+        ev(&mut s, PointerKind::Up, x, y);
+    }
+    let id = s.doc().unwrap().selection.objects[0].0;
+    assert_eq!(text(&s, id), "20.00 pt");
+}
