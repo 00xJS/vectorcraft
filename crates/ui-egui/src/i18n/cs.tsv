@@ -4864,6 +4864,20 @@ imageTrace	Outline	Obrys
 	DWG (use DXF)	DWG (použijte DXF)
 	Artistic	Umělecké
 	Film Grain…	Filmové zrno…
+	Cutout…	Výřez…
+	Cutout	Výřez
+	Neon Glow…	Neonová záře…
+	Neon Glow	Neonová záře
+	Poster Edges…	Plakátové okraje…
+	Poster Edges	Plakátové okraje
+	Levels	Úrovně
+	Edge Simplicity	Jednoduchost okrajů
+	Edge Fidelity	Věrnost okrajů
+	Glow Size	Velikost záře
+	Glow Brightness	Jas záře
+	Edge Thickness	Tloušťka okrajů
+	Edge Intensity	Intenzita okrajů
+	Posterization	Posterizace
 	Highlight Area	Oblast světel
 
 # Czech render-site follow-up (AI drafts; native review requested).

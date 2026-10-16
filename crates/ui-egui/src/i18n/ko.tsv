@@ -4443,6 +4443,20 @@ lighting	Light	광원
 	X11 (XWayland)	X11 (XWayland)
 	Artistic	예술 효과
 	Film Grain…	필름 그레인…
+	Cutout…	오려내기…
+	Cutout	오려내기
+	Neon Glow…	네온 글로…
+	Neon Glow	네온 글로
+	Poster Edges…	포스터 가장자리…
+	Poster Edges	포스터 가장자리
+	Levels	레벨 수
+	Edge Simplicity	가장자리 단순화
+	Edge Fidelity	가장자리 충실도
+	Glow Size	광선 크기
+	Glow Brightness	광선 밝기
+	Edge Thickness	가장자리 두께
+	Edge Intensity	가장자리 강도
+	Posterization	포스터화
 	Highlight Area	하이라이트 영역
 @msg	the compressed file unpacks to more than VectorCraft reads ({_1} MB of document, {_2} MB per image)	압축된 파일의 압축을 풀면 VectorCraft가 읽을 수 있는 한도를 넘습니다(문서 {_1}MB, 이미지당 {_2}MB)
 @msg	the document is too large to save compressed ({0}): save it with Use Compression off	문서가 너무 커서 압축 저장할 수 없습니다({0}): 압축 사용을 끄고 저장하세요

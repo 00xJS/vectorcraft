@@ -337,11 +337,32 @@ pub fn effect_catalog() -> Vec<EffectInfo> {
         r("stylize.feather", "Feather…", STYLIZE, "{radius: pt (5)}", json!({"radius": 5.0})),
         r("blur.gaussian", "Gaussian Blur…", BLUR, "{radius: pt (5)}", json!({"radius": 5.0})),
         r(
+            "artistic.cutout",
+            "Cutout…",
+            ARTISTIC,
+            "{levels: 2..8 (4; steps per colour channel: more levels, more flat colours), edgeSimplicity: 0..10 (4; simpler, smoother edges), edgeFidelity: 1..3 (2; keeps more of the edges' detail)} redraws the object as flat pieces of coloured paper, each piece painted in the average colour that falls into it, keeping its coverage. Original visual approximation; chosen VectorCraft defaults.",
+            json!({"levels": 4.0, "edgeSimplicity": 4.0, "edgeFidelity": 2.0}),
+        ),
+        r(
             "artistic.filmGrain",
             "Film Grain…",
             ARTISTIC,
             "{grain: 0..20 (4; monochrome noise in shadows and midtones), highlightArea: 0..20 (0; widens the bright highlight area), intensity: 0..10 (10; highlight strength and quieter highlight grain)}. Smooth document-space grain follows translations; minification uses approximate footprint filtering. Coverage and pure white are preserved; black takes light speckles, and saturated colour channels may clip. Grain 0 with either highlightArea 0 or intensity 0 leaves the art unchanged. Original visual approximation; chosen VectorCraft defaults.",
             json!({"grain": 4.0, "highlightArea": 0.0, "intensity": 10.0}),
+        ),
+        r(
+            "artistic.neonGlow",
+            "Neon Glow…",
+            ARTISTIC,
+            "{glowSize: -24..24 (5; above 0 the light areas glow, below 0 the dark ones; farther from 0 spreads the glow wider), glowBrightness: 0..50 (15; a stronger glow over dimmer greys), color: \"#rrggbb\" (\"#4da6ff\"; the glow's colour)} redraws the object in greys lit by a coloured glow, keeping its coverage. Original visual approximation; chosen VectorCraft defaults.",
+            json!({"glowSize": 5.0, "glowBrightness": 15.0, "color": "#4da6ff"}),
+        ),
+        r(
+            "artistic.posterEdges",
+            "Poster Edges…",
+            ARTISTIC,
+            "{edgeThickness: 0..10 (2; wider lines), edgeIntensity: 0..10 (1; darker lines, on fainter edges too), posterization: 0..6 (2; posterization + 2 levels per colour channel)} reduces the object's colours and draws black lines on its edges, keeping its coverage. Original visual approximation; chosen VectorCraft defaults.",
+            json!({"edgeThickness": 2.0, "edgeIntensity": 1.0, "posterization": 2.0}),
         ),
         r(
             "blur.radial",

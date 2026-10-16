@@ -4747,6 +4747,20 @@ lighting	Light	光源
 	Reset Ruler Origin	重置标尺原点
 	Artistic	艺术效果
 	Film Grain…	胶片颗粒…
+	Cutout…	剪纸…
+	Cutout	剪纸
+	Neon Glow…	霓虹灯光…
+	Neon Glow	霓虹灯光
+	Poster Edges…	海报边缘…
+	Poster Edges	海报边缘
+	Levels	色阶数
+	Edge Simplicity	边缘简化度
+	Edge Fidelity	边缘逼真度
+	Glow Size	发光大小
+	Glow Brightness	发光亮度
+	Edge Thickness	边缘厚度
+	Edge Intensity	边缘强度
+	Posterization	海报化
 	Highlight Area	高光区域
 	Concentric Dividers:	同心分隔线：
 	Radial Dividers:	径向分隔线：

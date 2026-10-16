@@ -198,6 +198,9 @@ fn effect_dialog_refuses_a_color_it_cannot_draw() {
 #[test]
 fn raster_filter_dialogs_preview_and_apply() {
     for (effect, key, value) in [
+        ("artistic.cutout", "levels", "6"),
+        ("artistic.neonGlow", "color", "#ff00ff"),
+        ("artistic.posterEdges", "edgeThickness", "5"),
         ("blur.radial", "method", "zoom"),
         ("blur.smart", "quality", "high"),
         ("blur.smart", "blurMode", "overlayEdge"),

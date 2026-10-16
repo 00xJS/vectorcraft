@@ -4385,6 +4385,20 @@ lighting	Light	Светлина
 	Reset Ruler Origin	Нулиране началото на линийката
 	Artistic	Художествени
 	Film Grain…	Филмова зърнистост…
+	Cutout…	Апликация…
+	Cutout	Апликация
+	Neon Glow…	Неоново сияние…
+	Neon Glow	Неоново сияние
+	Poster Edges…	Плакатни ръбове…
+	Poster Edges	Плакатни ръбове
+	Levels	Нива
+	Edge Simplicity	Простота на ръбовете
+	Edge Fidelity	Точност на ръбовете
+	Glow Size	Размер на сиянието
+	Glow Brightness	Яркост на сиянието
+	Edge Thickness	Дебелина на ръбовете
+	Edge Intensity	Интензивност на ръбовете
+	Posterization	Постеризация
 	Highlight Area	Зона на осветяване
 @msg	the compressed file unpacks to more than VectorCraft reads ({_1} MB of document, {_2} MB per image)	компресираният файл се разпакетира до повече, отколкото VectorCraft чете ({_1} МБ документ, {_2} МБ на изображение)
 @msg	the document is too large to save compressed ({0}): save it with Use Compression off	документът е твърде голям за запазване в компресиран вид ({0}): запазете го с изключена опция „Използване на компресия“

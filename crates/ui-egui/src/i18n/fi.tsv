@@ -4772,6 +4772,20 @@ imageTrace	Outline	Ääriviiva
 	DWG (use DXF)	DWG (käytä DXF:ää)
 	Artistic	Taiteelliset
 	Film Grain…	Filmin rakeisuus…
+	Cutout…	Leikkaus…
+	Cutout	Leikkaus
+	Neon Glow…	Neonhehku…
+	Neon Glow	Neonhehku
+	Poster Edges…	Julisteen reunat…
+	Poster Edges	Julisteen reunat
+	Levels	Tasot
+	Edge Simplicity	Reunojen yksinkertaisuus
+	Edge Fidelity	Reunojen tarkkuus
+	Glow Size	Hehkun koko
+	Glow Brightness	Hehkun kirkkaus
+	Edge Thickness	Reunojen paksuus
+	Edge Intensity	Reunojen voimakkuus
+	Posterization	Posterointi
 	Highlight Area	Korostusalue
 file-filter	All readable files	Kaikki luettavat tiedostot
 file-filter	All placeable files	Kaikki sijoitettavat tiedostot

@@ -1556,6 +1556,20 @@ file-filter	Templates	Sablonok
 	Select Segments	Szakaszok kijelölése
 	Artistic	Művészi
 	Film Grain…	Filmszemcse…
+	Cutout…	Kivágás…
+	Cutout	Kivágás
+	Neon Glow…	Neonfény…
+	Neon Glow	Neonfény
+	Poster Edges…	Poszterszélek…
+	Poster Edges	Poszterszélek
+	Levels	Szintek
+	Edge Simplicity	Élek egyszerűsége
+	Edge Fidelity	Élek hűsége
+	Glow Size	Fény mérete
+	Glow Brightness	Fény fényereje
+	Edge Thickness	Élek vastagsága
+	Edge Intensity	Élek intenzitása
+	Posterization	Poszterizálás
 	Highlight Area	Csúcsfény-terület
 	English	English
 	Graph Design	Diagramminta
