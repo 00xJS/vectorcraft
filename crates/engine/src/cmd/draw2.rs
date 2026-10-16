@@ -1,6 +1,7 @@
 //! Commands backing the drawing tools (pencil, curvature, anchor tools, scissors, knife, eraser,
 //! blob brush, smooth, path eraser, join).
 
+use std::collections::BTreeSet;
 use std::sync::Arc;
 
 use kurbo::{CubicBez, ParamCurve, ParamCurveNearest};
@@ -60,7 +61,7 @@ pub fn specs() -> Vec<CommandSpec> {
             "Remove Anchor Points",
             ["Object", "Path"],
             None,
-            "{} remove the direct-selected anchors without opening their paths, refitting the curve round each → {removedObjects}",
+            "{} remove the direct-selected anchors without opening their paths, refitting the curve round each; the anchor after each removed one is selected, so running it again goes on along the path → {removedObjects}",
             has_anchors,
             remove_anchors
         ),
@@ -772,12 +773,45 @@ fn remove_anchors(s: &mut Session, _: &Value) -> Result<Value> {
         let mut removed = 0;
         let mut emptied = Beside::replacing(d, &jobs.iter().map(|(id, _)| *id).collect::<Vec<_>>());
         for (id, anchors) in jobs {
-            removed += usize::from(remove_anchors_of(d, sel, &mut emptied, id, anchors)?);
+            let shape: Vec<(usize, bool)> =
+                d.node(id).and_then(Node::path_data).map(|p| p.subpaths.iter().map(|sp| (sp.anchors.len(), sp.closed)).collect()).unwrap_or_default();
+            let next = following_anchors(&shape, &anchors);
+            if remove_anchors_of(d, sel, &mut emptied, id, anchors)? {
+                removed += 1;
+            } else if !next.is_empty() {
+                // The next anchor along is selected, so the next Remove Anchor Points goes on from
+                // there without picking it first (#2241).
+                sel.anchors.insert(id, next);
+            }
         }
         emptied.finish(d)?;
         Ok(removed)
     })?;
     Ok(json!({ "removedObjects": removed }))
+}
+
+/// Where the selection goes once Remove Anchor Points takes `removed` (subpath, anchor) out of a
+/// path whose subpaths have `shape` (anchor count, closed): in each subpath, the anchor after its
+/// last removed one, round the end of a closed subpath, or the one before it at an open subpath's
+/// end. Indexes are those after the removal, without the subpaths left with fewer than two anchors.
+fn following_anchors(shape: &[(usize, bool)], removed: &[(usize, usize)]) -> BTreeSet<(usize, usize)> {
+    let mut next = BTreeSet::new();
+    let mut kept = 0;
+    for (si, &(n, closed)) in shape.iter().enumerate() {
+        let gone: BTreeSet<usize> = removed.iter().filter(|&&(s, a)| s == si && a < n).map(|&(_, a)| a).collect();
+        if n - gone.len() < 2 {
+            continue;
+        }
+        if let Some(&last) = gone.last() {
+            let wrap = if closed { 0..last } else { 0..0 };
+            let after = (last + 1..n).chain(wrap).find(|a| !gone.contains(a));
+            if let Some(a) = after.or_else(|| (0..last).rev().find(|a| !gone.contains(a))) {
+                next.insert((kept, a - gone.range(..a).count()));
+            }
+        }
+        kept += 1;
+    }
+    next
 }
 
 /// Remove `anchors` (subpath, anchor) of path `id` without opening it, refitting the curve round

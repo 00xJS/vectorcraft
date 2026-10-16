@@ -1608,6 +1608,8 @@ paths and compound paths, and `path.reverse {reversed?}` makes subpaths run coun
 {id, anchors: [[subpath, anchor]…], mode?}`) without opening their paths, in one undo step, and answers
 `{removedObjects}` (paths left with no segment go). Each removed point's neighbours keep their handle directions and
 their facing handles are refitted so one cubic follows the two old segments; two straight sides become one.
+The anchor after each removed one is then selected (the one before at an open path's end), so running
+`path.removeAnchors` again goes on along the path.
 `path.removeAnchor {id, subpath?, anchor}` (the Delete Anchor Point tool) removes one anchor the same way, and
 `path.deleteAnchors {}` (the Delete key) deletes the selected anchors with their segments, opening closed paths there.
 
