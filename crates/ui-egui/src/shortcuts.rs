@@ -422,6 +422,27 @@ pub fn handle(app: &mut VectorcraftApp, ctx: &egui::Context) {
         for d in digits {
             let _ = app.session.tool_key(ToolKey::Digit(d), Mods::default(), view);
         }
+        // The tool gets each letter it takes (E while dragging a selection marquee) once per press,
+        // without Cmd, Ctrl or Alt. The key is the one egui reports, which on a layout without Latin
+        // letters is the key at that position on a US layout.
+        let letters: Vec<char> = ctx.input(|i| {
+            i.events
+                .iter()
+                .filter_map(|e| match e {
+                    egui::Event::Key { key, pressed: true, repeat: false, modifiers, .. }
+                        if !(modifiers.command || modifiers.alt || modifiers.ctrl) =>
+                    {
+                        letter_of(*key)
+                    }
+                    _ => None,
+                })
+                .collect()
+        });
+        for c in letters {
+            if app.session.tool_claims_key(ToolKey::Letter(c), view) {
+                let _ = app.session.tool_key(ToolKey::Letter(c), Mods::default(), view);
+            }
+        }
         return;
     }
     // Keys the active tool claims ahead of their shortcuts (the Gradient tool's selected stop:
@@ -645,6 +666,15 @@ fn latin(text: &str, physical: Option<Key>) -> String {
 fn digit_of(k: Key) -> Option<u8> {
     const DIGITS: [Key; 10] = [Key::Num0, Key::Num1, Key::Num2, Key::Num3, Key::Num4, Key::Num5, Key::Num6, Key::Num7, Key::Num8, Key::Num9];
     DIGITS.iter().position(|d| *d == k).map(|i| i as u8)
+}
+
+/// The lowercase letter a letter key A–Z stands for.
+fn letter_of(k: Key) -> Option<char> {
+    let mut name = k.name().chars();
+    match (name.next(), name.next()) {
+        (Some(c), None) if c.is_ascii_alphabetic() => Some(c.to_ascii_lowercase()),
+        _ => None,
+    }
 }
 
 #[cfg(test)]
@@ -1300,6 +1330,42 @@ mod tests {
         assert_eq!((preview.0.as_str(), &preview.1["perpendicular"]), ("perspective.move", &json!(true)));
         assert_eq!(digit_of(Key::Num0), Some(0));
         assert_eq!(digit_of(Key::A), None);
+    }
+
+    /// E pressed while the Selection tool drags a marquee makes it select only the objects inside
+    /// it: once per press, without Cmd, and from the key at E's position on a layout without Latin
+    /// letters.
+    #[test]
+    fn e_reaches_a_dragged_marquee_once_per_press() {
+        use vectorcraft_tools::{PointerEvent, PointerKind};
+        let mut app = VectorcraftApp::new(vectorcraft_engine::Session::new(), Default::default());
+        app.session.execute("file.new", &json!({"width": 800, "height": 600})).unwrap();
+        let inside = app.session.execute("shape.rectangle", &json!({"x": 100, "y": 100, "width": 100, "height": 100})).unwrap()["id"].clone();
+        let touched = app.session.execute("shape.rectangle", &json!({"x": 300, "y": 100, "width": 100, "height": 100})).unwrap()["id"].clone();
+        app.select_tool("selection");
+        let e = |key, repeat, modifiers| egui::Event::Key { key, physical_key: Some(Key::E), pressed: true, repeat, modifiers };
+        let mut marquee = |events: Vec<egui::Event>| {
+            let v = app.view_info();
+            app.session.pointer(&PointerEvent::new(PointerKind::Down, 50.0, 50.0), v).unwrap();
+            app.session.pointer(&PointerEvent::new(PointerKind::Drag, 350.0, 250.0), v).unwrap();
+            frame(&mut app, events);
+            app.session.pointer(&PointerEvent::new(PointerKind::Up, 350.0, 250.0), v).unwrap();
+            let ids = app.session.doc().unwrap().selection.objects.iter().map(|i| json!(i.0)).collect::<Vec<_>>();
+            assert_eq!(app.session.tool_id(), "selection");
+            ids
+        };
+        assert_eq!(marquee(vec![]), vec![inside.clone(), touched.clone()]);
+        // A held key repeats: only its first press switches.
+        assert_eq!(marquee(vec![e(Key::E, false, Modifiers::NONE), e(Key::E, true, Modifiers::NONE)]), vec![inside.clone()]);
+        let up = egui::Event::Key { key: Key::E, physical_key: Some(Key::E), pressed: false, repeat: false, modifiers: Modifiers::NONE };
+        let twice = vec![e(Key::E, false, Modifiers::NONE), up, e(Key::E, false, Modifiers::NONE)];
+        assert_eq!(marquee(twice), vec![inside.clone(), touched.clone()], "pressed twice: what it touches");
+        // A Russian layout: egui-winit reports the key at E's position, and the text it types.
+        assert_eq!(marquee(vec![e(Key::E, false, Modifiers::NONE), egui::Event::Text("у".into())]), vec![inside.clone()]);
+        assert_eq!(marquee(vec![e(Key::E, false, Modifiers::COMMAND)]), vec![inside, touched], "Cmd+E is not E");
+        assert_eq!(letter_of(Key::E), Some('e'));
+        assert_eq!(letter_of(Key::Num1), None);
+        assert_eq!(letter_of(Key::Escape), None);
     }
 
     /// Cmd+, opens Settings on a Mac only, and never takes a chord a command already has.

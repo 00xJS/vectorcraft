@@ -309,7 +309,7 @@ objects' fills or strokes differ (`fillMixed` / `strokeMixed`, drawn as a "?" pr
 | `draw_path` | `{points \| d, closed?, fill?, stroke?, strokeWidth?, dash?, cap?, join?, opacity?, name?, effects?}` | `points` is `[[x,y],…]` or `[{x,y,in?,out?,smooth?},…]`. `d` is SVG path data. The options are below. |
 | `draw_shape` | `{shape, …geometry, fill?, stroke?, strokeWidth?, dash?, cap?, join?, opacity?, name?, effects?}` | `rectangle`/`ellipse`: `x,y,width,height` (plus `radius` for corners). `polygon`: `cx,cy,radius,sides`. `star`: `cx,cy,radius1,radius2,points`. `line`: `x1,y1,x2,y2`. |
 | `set_paint` | `{fill?, stroke?, strokeWidth?, ids?}` | Applies to the selection (or `ids`) and becomes the default for new art. |
-| `press_key` | `{key, mods?}` | Remote: a real key event. Headless: runs the command or tool bound to that shortcut, or sends the key to the busy tool (digits too: `5` while dragging with the Perspective Selection tool). |
+| `press_key` | `{key, mods?}` | Remote: a real key event. Headless: runs the command or tool bound to that shortcut, or sends the key to the busy tool (digits too: `5` while dragging with the Perspective Selection tool; `e` while dragging a Selection or Group Selection marquee). |
 | `type_text` | `{text}` | Remote only. |
 | `invoke_menu` | `{command, params?}` | Invokes a menu item by command id. Includes UI commands such as `view.*` and `window.*` in remote mode. |
 | `open_panel` | `{panel}` | Remote only. `panel` is a panel id (`layers`, `swatches`, `colorGuide`, …, as `window.panel` takes) or its display label (`"Color Guide"`), in any case. |
@@ -349,6 +349,22 @@ mode: "set"|"add"|"toggle"|"subtract"}`:
 ```json
 {"name":"pointer_gesture","arguments":{"tool":"selection","mods":{"shift":true},"events":[{"kind":"down","x":180,"y":80},{"kind":"drag","x":300,"y":200},{"kind":"up","x":380,"y":200}]}}
 ```
+
+`press_key {key: "e"}` while a Selection or Group Selection marquee is being dragged makes the marquee select only the
+objects that lie entirely inside it, measured by their geometric bounds, and `e` pressed again switches it back to the default mode. The
+Selection tool selects a group only when the whole group lies inside; Group Selection selects the objects inside
+groups, each as a whole object. Both run `select.set {ids}` (`select.toggle {ids}` with `mods.shift`). The marquee
+also selects the artboard guides that lie entirely inside it, and no canvas guide. Each marquee starts in the default
+mode. To press the key during a drag, end one
+`pointer_gesture` after the `drag` event and send the rest in another with the same `tool`, which keeps the drag:
+
+```json
+{"name":"pointer_gesture","arguments":{"tool":"selection","events":[{"kind":"down","x":80,"y":80},{"kind":"drag","x":220,"y":170}]}}
+{"name":"press_key","arguments":{"key":"e"}}
+{"name":"pointer_gesture","arguments":{"tool":"selection","events":[{"kind":"drag","x":230,"y":170},{"kind":"up","x":230,"y":170}]}}
+```
+
+With nothing being dragged, `e` chooses the tool bound to E.
 
 Appearance stacks: an object can carry several fills and strokes (`appearance.addFill`, `appearance.addStroke`), indexed
 in paint order (0 is painted first, the bottom row of the Appearance panel). `paint.setFill`, `paint.setStroke`,
