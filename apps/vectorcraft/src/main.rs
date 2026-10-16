@@ -27,6 +27,7 @@ mod clipboard;
 #[cfg(feature = "wgpu")]
 mod compositor_gpu;
 mod control_server;
+mod cursor_theme;
 #[cfg(feature = "wgpu")]
 mod gpu;
 mod logging;
@@ -654,6 +655,9 @@ Without a window (converting, scripting, the MCP server), use vectorcraft-cli:
 ";
 
 fn main() -> std::process::ExitCode {
+    // Before any thread starts: the pointer must find a cursor theme on Wayland (#2450).
+    #[cfg(target_os = "linux")]
+    cursor_theme::apply();
     // Validate roots before logging, font scans, preferences or the window: a missing value
     // must not clear an environment root and start the control channel without confinement.
     let mut control = automation_args::ControlArg::default();
