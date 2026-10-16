@@ -268,19 +268,55 @@ pub(crate) fn reshape_leaves(art: &mut Node, fx: &[&Effect]) {
     for e in fx {
         let Some(bounds) = art.geometric_bounds() else { break };
         let params = merged_params(&e.id, &e.params);
+        let transform = (e.id == "distort.transform").then(|| crate::distort::transform_map(bounds, &params, seed));
         for_each_leaf(art, &mut |leaf| {
             let Some((path, rule)) = leaf_geometry(leaf) else { return };
+            // A gradient paints each copy by itself, not the one piece the copies make together.
+            if let Some((m, copies)) = transform
+                && copies > 0
+                && (leaf.appearance.has_unplaced_gradient() || leaf.appearance.has_placed_gradient())
+            {
+                copy_with_gradients(leaf, &path, m, copies);
+                return;
+            }
             let out = apply_one(&e.id, &params, &path, bounds, &GeomContext { seed, ..GeomContext::of(leaf) });
             set_geometry(leaf, out, rule);
         });
-        if e.id == "distort.transform" {
-            let (m, copies) = crate::distort::transform_map(bounds, &params, seed);
+        if let Some((m, copies)) = transform {
             transform_placed(art, m, copies);
         }
     }
     if !fx.is_empty() && outlines.iter().any(Option::is_some) {
         rebase_type_outlines(art, &mut outlines.into_iter());
     }
+}
+
+/// Replace `leaf` (a path or compound path with geometry `path`) by a group of it and `copies`
+/// more, each mapped once more by `m` than the last, as a Transform effect copies an object. Each
+/// copy is an object of its own, so its gradients fit it (a placed gradient moves with it) rather
+/// than spanning every copy. The copies stop where [`crate::distort::transform_within`]'s would.
+fn copy_with_gradients(leaf: &mut Node, path: &PathData, m: Affine, copies: usize) {
+    let each = path.anchor_count();
+    let mut anchors = each;
+    let mut placements: Vec<Arc<Node>> = vec![Arc::new(leaf.clone())];
+    let mut xf = Affine::IDENTITY;
+    for _ in 0..copies {
+        anchors = anchors.saturating_add(each);
+        if anchors > crate::distort::MAX_COPY_ANCHORS {
+            break;
+        }
+        xf *= m;
+        let mut copy = leaf.clone();
+        copy.transform(xf, vectorcraft_doc::Scaling::default());
+        if !copy.geometric_bounds().is_some_and(crate::distort::within_reach) {
+            break;
+        }
+        placements.push(Arc::new(copy));
+    }
+    // The copies become nodes of their own under a group with the object's id and name.
+    let mut g = Node::group(leaf.id, placements);
+    g.name = leaf.name.clone();
+    *leaf = g;
 }
 
 /// The bounds of each group of type's outlines under `n` ([`outline_text`]), `n` included, in

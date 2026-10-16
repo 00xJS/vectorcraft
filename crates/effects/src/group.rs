@@ -491,4 +491,32 @@ mod tests {
         assert!((after - before - 30.0).abs() < 1e-6, "the type's gradient starts at {before}, then {after}");
         assert_eq!(start(&members[0]), 0.0, "the square's gradient stays where it was placed");
     }
+
+    #[test]
+    fn a_transform_on_a_group_paints_each_copy_with_its_own_gradient() {
+        use vectorcraft_color::{Gradient, GradientGeom, GradientKind, GradientPaint, GradientStop};
+        let stops = vec![GradientStop::new(0.0, Color::rgb(1.0, 0.0, 0.0)), GradientStop::new(1.0, Color::rgb(0.0, 0.0, 1.0))];
+        let ramp = GradientPaint::new(Gradient { kind: GradientKind::Linear, stops });
+        let geom = GradientGeom { start: (0.0, 5.0).into(), end: (10.0, 5.0).into(), aspect: 1.0, focal: None };
+        let paints = [Paint::Gradient(Box::new(ramp.clone())), Paint::Gradient(Box::new(GradientPaint { geom: Some(geom), ..ramp }))];
+        for (k, paint) in paints.into_iter().enumerate() {
+            let square =
+                Arc::new(Node::path(NodeId(1), shapes::rectangle(Rect::new(0.0, 0.0, 10.0, 10.0)), Appearance::basic(paint, Paint::None, 0.0)));
+            let mut g = Node::group(NodeId(10), vec![square]);
+            let params = serde_json::json!({"moveH": 30, "copies": 2});
+            g.appearance.effects.push(Effect { id: "distort.transform".into(), params, visible: true });
+            let art = evaluate_container(&g).unwrap();
+            let copies = art.children().unwrap()[0].children().expect("the object and its copies are objects of their own");
+            assert_eq!(copies.len(), 3);
+            for (i, c) in copies.iter().enumerate() {
+                // Each copy's own box: an unplaced gradient fits it, a placed one moved with it.
+                assert!((c.geometric_bounds().unwrap().x0 - 30.0 * i as f64).abs() < 1e-6);
+                match c.appearance.fill_paint() {
+                    Paint::Gradient(g) if k == 0 => assert!(g.geom.is_none(), "copy {i} fits its own box"),
+                    Paint::Gradient(g) => assert!((g.geom.unwrap().start.x - 30.0 * i as f64).abs() < 1e-6, "copy {i}"),
+                    p => panic!("a gradient: {p:?}"),
+                }
+            }
+        }
+    }
 }
