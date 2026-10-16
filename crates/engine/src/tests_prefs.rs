@@ -1096,6 +1096,50 @@ fn reset_tracking_sets_tracking_and_kerning_to_zero() {
     assert_eq!(style_at(&s, other, 0).tracking, 0.0, "the reset stays");
 }
 
+/// Cmd/Ctrl+Shift+X resets the horizontal scale to 100% in every selected type object and in the
+/// Type tool's selected text, as one undo step, and leaves the vertical scale as it is. At a caret
+/// it leaves the text as it is. On a stretched object the scale the Character panel shows, which includes the
+/// object's own stretch, goes to 100%. Type objects given in `ids` are reset in full while the
+/// Type tool edits.
+#[test]
+fn reset_horizontal_scale_sets_it_to_100_percent() {
+    use vectorcraft_tools::PointerKind::{Down, Up};
+    let mut s = new_doc();
+    let id = NodeId(s.execute("text.create", &json!({"x": 100, "y": 100, "text": "Hello world", "size": 20})).unwrap()["id"].as_u64().unwrap());
+    let scales = |s: &Session, byte| {
+        let st = style_at(s, id, byte);
+        (st.h_scale, st.v_scale)
+    };
+    s.execute("text.setRangeStyle", &json!({"id": id.0, "hScale": 150, "vScale": 80})).unwrap();
+    s.execute("select.set", &json!({"ids": [id.0]})).unwrap();
+    assert_eq!(find_command("type.resetHorizontalScale").unwrap().shortcut, Some("Cmd+Shift+X"));
+    assert_eq!(s.execute("type.resetHorizontalScale", &json!({})).unwrap()["ids"], json!([id.0]));
+    assert_eq!((scales(&s, 0), scales(&s, 10)), ((100.0, 80.0), (100.0, 80.0)));
+    s.execute("edit.undo", &json!({})).unwrap();
+    assert_eq!(scales(&s, 0), (150.0, 80.0), "one undo step");
+    // A type object stretched to twice its width shows 200% and keeps half of it stored.
+    let wide = NodeId(s.execute("text.create", &json!({"x": 100, "y": 300, "text": "Wide", "size": 20})).unwrap()["id"].as_u64().unwrap());
+    s.execute("select.set", &json!({"ids": [wide.0]})).unwrap();
+    s.execute("object.scale", &json!({"sx": 200, "sy": 100})).unwrap();
+    s.execute("type.resetHorizontalScale", &json!({})).unwrap();
+    assert_eq!(style_at(&s, wide, 0).h_scale, 50.0);
+    // With the Type tool, it resets only the selected text.
+    let v = ViewInfo::default();
+    s.select_tool("type", v).unwrap();
+    gesture(&mut s, v, &[(Down, 102.0, 95.0), (Up, 102.0, 95.0)]);
+    assert_eq!(s.tool_options()["editing"], json!(id.0), "editing the text");
+    s.set_tool_option("select", &json!({"start": 0, "end": 5}));
+    s.execute("type.resetHorizontalScale", &json!({})).unwrap();
+    assert_eq!((scales(&s, 4), scales(&s, 6)), ((100.0, 80.0), (150.0, 80.0)));
+    // At a caret it leaves the text as it is.
+    s.set_tool_option("select", &json!({"start": 8, "end": 8}));
+    assert_eq!(s.execute("type.resetHorizontalScale", &json!({})).unwrap()["ids"], json!([]));
+    assert_eq!((scales(&s, 7), scales(&s, 8)), ((150.0, 80.0), (150.0, 80.0)));
+    // While the Type tool edits, the type objects in `ids` are reset in full.
+    s.execute("type.resetHorizontalScale", &json!({"ids": [id.0]})).unwrap();
+    assert_eq!((scales(&s, 6), scales(&s, 10)), ((100.0, 80.0), (100.0, 80.0)));
+}
+
 /// Type › Fill New Type Objects With Placeholder Text (#394, on by default): type the Type tool
 /// places starts with placeholder text, selected, so typing replaces it; off, it starts empty.
 #[test]
