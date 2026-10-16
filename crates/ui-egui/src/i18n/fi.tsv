@@ -4907,7 +4907,11 @@ mark-style	Japanese	Japanilainen
 	Amber	Meripihka
 	Coral	Koralli
 	Violet	Violetti
-
+	Sketch	Luonnos
+	Halftone Pattern…	Rasterikuvio…
+	Halftone Pattern	Rasterikuvio
+	Pattern Type	Kuviotyyppi
+	Dot	Piste
 # User Interface › Color Scheme
 	Color Scheme	Värimalli
 	Modern	Moderni

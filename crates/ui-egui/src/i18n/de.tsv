@@ -4480,7 +4480,11 @@ theme	Appearance	Erscheinungsbild
 	Coral	Koralle
 	Violet	Violett
 	Pink	Pink
-
+	Sketch	Zeichenfilter
+	Halftone Pattern…	Rasterungseffekt…
+	Halftone Pattern	Rasterungseffekt
+	Pattern Type	Musterart
+	Dot	Punkt
 # User Interface › Color Scheme
 	Color Scheme	Farbschema
 	Modern	Modern
