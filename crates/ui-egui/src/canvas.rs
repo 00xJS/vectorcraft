@@ -2722,17 +2722,28 @@ pub(crate) fn has_colors(doc: &vectorcraft_doc::Document, ids: &[vectorcraft_doc
     })
 }
 
+/// The bounds of the artboards the Artboard tool has selected ([`crate::panels::artboards::picked`]).
+fn picked_artboards_bounds(app: &VectorcraftApp) -> Option<Rect> {
+    let st = app.session.active()?;
+    let picked = crate::panels::artboards::picked(app, st.doc.artboards.len());
+    picked.iter().filter_map(|i| st.doc.artboards.get(*i)).map(|a| a.rect).reduce(|a, b| a.union(b))
+}
+
 /// The Contextual Task Bar: a floating pill under the selection with the most likely next actions.
+/// With the Artboard tool it sits under the selected artboards and offers Resize (Artboard
+/// Options), Duplicate, Rearrange All (with two or more artboards) and Export (Export for Screens).
 /// Its handle drags it anywhere on the canvas; unpinned it keeps that offset as it follows the
 /// selection, pinned it stays put ([`crate::state::TaskBarPlace`]).
 fn task_bar(app: &mut VectorcraftApp, ui: &mut Ui, xf: &Xf) {
     let t = Tokens::get(ui.ctx());
-    if app.session.active().is_none_or(|st| st.selection.is_empty())
-        || !matches!(app.session.tool_id(), "selection" | "directSelection" | "groupSelection")
+    let on_artboards = app.session.tool_id() == "artboard";
+    if !on_artboards
+        && (app.session.active().is_none_or(|st| st.selection.is_empty())
+            || !matches!(app.session.tool_id(), "selection" | "directSelection" | "groupSelection"))
     {
         return;
     }
-    let Some(b) = app.selection_bounds() else { return };
+    let Some(b) = (if on_artboards { picked_artboards_bounds(app) } else { app.selection_bounds() }) else { return };
     let Some(st) = app.session.active() else { return };
     let n = st.selection.len();
     let first = st.selection.objects.first().and_then(|id| st.doc.node(*id)).cloned();
@@ -2745,35 +2756,47 @@ fn task_bar(app: &mut VectorcraftApp, ui: &mut Ui, xf: &Xf) {
             f.name.as_deref() == Some("Image Trace") && f.children().is_some_and(|c| c.first().is_some_and(|i| matches!(i.kind, NodeKind::Image(_))))
         });
     let mut items: Vec<(&str, &str, &str)> = vec![]; // (label, icon, command)
-    // As in the reference app, an image offers Image Trace and Crop Image, and traced art offers
-    // Expand (<https://community.adobe.com/announcements-651/contextual-task-bar-in-illustrator-2025-quick-actions-when-you-need-them-1546580>).
-    if n == 1 && is_image {
-        items.push((tl!("Image Trace"), "image", TASK_BAR_IMAGE_TRACE));
-        items.push((tl!("Crop Image"), "dc-pf-crop", "ui.cropImage"));
+    if on_artboards {
+        // As in the reference app, the Artboard tool offers to resize, duplicate and export the
+        // artboards (<https://community.adobe.com/questions-652/contextual-task-bar-in-illustrator-2025-quick-actions-when-you-need-them-1546580>),
+        // and to rearrange them (<https://creativepro.com/managing-artboards-in-illustrator/>).
+        items.push((tl!("Resize"), "move-diagonal-2", TASK_BAR_ARTBOARD_OPTIONS));
+        items.push((tl!("Duplicate"), "copy", TASK_BAR_DUPLICATE_ARTBOARDS));
+        if st.doc.artboards.len() > 1 {
+            items.push((tl!("Rearrange All"), "dc-rearrange", TASK_BAR_REARRANGE_ARTBOARDS));
+        }
+        items.push((tl!("Export"), "share-2", "file.exportForScreens"));
+    } else {
+        // As in the reference app, an image offers Image Trace and Crop Image, and traced art offers
+        // Expand (<https://community.adobe.com/announcements-651/contextual-task-bar-in-illustrator-2025-quick-actions-when-you-need-them-1546580>).
+        if n == 1 && is_image {
+            items.push((tl!("Image Trace"), "image", TASK_BAR_IMAGE_TRACE));
+            items.push((tl!("Crop Image"), "dc-pf-crop", "ui.cropImage"));
+        }
+        // Direct-selected anchors take the place of a path's Offset Path and Simplify.
+        let anchors = !st.selection.anchors.is_empty();
+        if anchors {
+            items.push((tl!("Remove Anchor Points"), "pen-tool-delete", "path.removeAnchors"));
+            items.push((tl!("Cut Path"), "scissors", "path.cutAtAnchors"));
+        }
+        if n > 1 {
+            items.push((tl!("Group"), "group", "object.group"));
+            items.push((tl!("Unite"), "squares-unite", "object.pathfinder.unite"));
+        } else if is_trace {
+            items.push((tl!("Expand"), "maximize-2", "imageTrace.expand"));
+        } else if is_group {
+            items.push((tl!("Ungroup"), "ungroup", "object.ungroup"));
+            items.push((tl!("Isolate"), "square-dashed", "object.isolate"));
+        } else if is_text {
+            items.push((tl!("Create Outlines"), "type", "type.createOutlines"));
+        } else if is_image {
+            // Offset Path and Simplify don't apply to an image.
+        } else if !anchors {
+            items.push((tl!("Offset Path"), "square-dashed", "object.path.offsetPath"));
+            items.push((tl!("Simplify"), "spline", "object.path.simplify"));
+        }
+        items.push((tl!("Duplicate"), "copy", "edit.duplicate"));
     }
-    // Direct-selected anchors take the place of a path's Offset Path and Simplify.
-    let anchors = !st.selection.anchors.is_empty();
-    if anchors {
-        items.push((tl!("Remove Anchor Points"), "pen-tool-delete", "path.removeAnchors"));
-        items.push((tl!("Cut Path"), "scissors", "path.cutAtAnchors"));
-    }
-    if n > 1 {
-        items.push((tl!("Group"), "group", "object.group"));
-        items.push((tl!("Unite"), "squares-unite", "object.pathfinder.unite"));
-    } else if is_trace {
-        items.push((tl!("Expand"), "maximize-2", "imageTrace.expand"));
-    } else if is_group {
-        items.push((tl!("Ungroup"), "ungroup", "object.ungroup"));
-        items.push((tl!("Isolate"), "square-dashed", "object.isolate"));
-    } else if is_text {
-        items.push((tl!("Create Outlines"), "type", "type.createOutlines"));
-    } else if is_image {
-        // Offset Path and Simplify don't apply to an image.
-    } else if !anchors {
-        items.push((tl!("Offset Path"), "square-dashed", "object.path.offsetPath"));
-        items.push((tl!("Simplify"), "spline", "object.path.simplify"));
-    }
-    items.push((tl!("Duplicate"), "copy", "edit.duplicate"));
     let fill = first.as_ref().map(|f| f.appearance.fill_paint()).unwrap_or_default();
     let colored = has_colors(&st.doc, &st.selection.objects);
     let doc = st.uid;
@@ -2840,24 +2863,27 @@ fn task_bar(app: &mut VectorcraftApp, ui: &mut Ui, xf: &Xf) {
                             run = Some((*cmd, json!({})));
                         }
                     }
-                    let (r, resp) = ui.allocate_exact_size(vec2(26.0, 30.0), Sense::click());
-                    widgets::paint_chip(ui, egui::Rect::from_center_size(r.center(), vec2(16.0, 16.0)), &fill);
-                    ui.painter().rect_stroke(
-                        egui::Rect::from_center_size(r.center(), vec2(16.0, 16.0)),
-                        0.0,
-                        Stroke::new(1.0, t.button_border),
-                        StrokeKind::Outside,
-                    );
-                    if resp.on_hover_text(tl!("Fill")).clicked() {
-                        app.session.fill_active = true;
-                        app.ui.open_panel = Some("swatches".into());
-                    }
-                    // Recolor Artwork, when the selection has colours to recolour.
-                    if colored && widgets::icon_button(ui, "palette", tl!("Recolor Artwork"), false, 30.0).clicked() {
-                        run = Some(("ui.recolorDialog", json!({})));
-                    }
-                    if widgets::icon_button(ui, "lock", tl!("Lock (⌘2)"), false, 30.0).clicked() {
-                        run = Some(("object.lock", json!({})));
+                    // The selected objects' Fill, Recolor Artwork and Lock, left out with the Artboard tool.
+                    if !on_artboards {
+                        let (r, resp) = ui.allocate_exact_size(vec2(26.0, 30.0), Sense::click());
+                        widgets::paint_chip(ui, egui::Rect::from_center_size(r.center(), vec2(16.0, 16.0)), &fill);
+                        ui.painter().rect_stroke(
+                            egui::Rect::from_center_size(r.center(), vec2(16.0, 16.0)),
+                            0.0,
+                            Stroke::new(1.0, t.button_border),
+                            StrokeKind::Outside,
+                        );
+                        if resp.on_hover_text(tl!("Fill")).clicked() {
+                            app.session.fill_active = true;
+                            app.ui.open_panel = Some("swatches".into());
+                        }
+                        // Recolor Artwork, when the selection has colours to recolour.
+                        if colored && widgets::icon_button(ui, "palette", tl!("Recolor Artwork"), false, 30.0).clicked() {
+                            run = Some(("ui.recolorDialog", json!({})));
+                        }
+                        if widgets::icon_button(ui, "lock", tl!("Lock (⌘2)"), false, 30.0).clicked() {
+                            run = Some(("object.lock", json!({})));
+                        }
                     }
                     let more = widgets::icon_button(ui, "ellipsis", tl!("More Options"), false, 30.0);
                     egui::Popup::menu(&more).show(|ui| {
@@ -2894,6 +2920,11 @@ fn task_bar(app: &mut VectorcraftApp, ui: &mut Ui, xf: &Xf) {
         // Image Trace traces the image at once with the Default preset. As a quick trace from
         // Properties or the Control bar, it leaves the Image Trace panel as it was.
         Some((TASK_BAR_IMAGE_TRACE, _)) => crate::menus::invoke(app, "imageTrace.make", json!({"preset": "Default"})),
+        // The Artboard tool's buttons: Artboard Options for the active artboard, as Properties'
+        // icon opens it; Duplicate for every selected artboard; Rearrange All Artboards.
+        Some((TASK_BAR_ARTBOARD_OPTIONS, _)) => crate::menus::invoke(app, "tool.options", json!({"tool": "artboard"})),
+        Some((TASK_BAR_DUPLICATE_ARTBOARDS, _)) => crate::panels::artboards::duplicate_picked(app),
+        Some((TASK_BAR_REARRANGE_ARTBOARDS, _)) => crate::panels::artboards::open_rearrange(app),
         Some((c, p)) => crate::menus::invoke(app, c, p),
         None => {}
     }
@@ -2901,6 +2932,12 @@ fn task_bar(app: &mut VectorcraftApp, ui: &mut Ui, xf: &Xf) {
 
 /// The Contextual Task Bar's Image Trace button: a trace with the Default preset.
 const TASK_BAR_IMAGE_TRACE: &str = "taskBar.imageTrace";
+/// The Contextual Task Bar's Resize button with the Artboard tool: Artboard Options.
+const TASK_BAR_ARTBOARD_OPTIONS: &str = "taskBar.artboardOptions";
+/// The Contextual Task Bar's Duplicate button with the Artboard tool.
+const TASK_BAR_DUPLICATE_ARTBOARDS: &str = "taskBar.duplicateArtboards";
+/// The Contextual Task Bar's Rearrange All button with the Artboard tool.
+const TASK_BAR_REARRANGE_ARTBOARDS: &str = "taskBar.rearrangeArtboards";
 
 #[cfg(test)]
 mod tests {
@@ -6031,6 +6068,104 @@ mod tests {
         let mut images = 0;
         expanded.walk(&mut |n| images += usize::from(matches!(n.kind, NodeKind::Image(_))));
         assert_eq!(images, 0, "only the traced paths are kept");
+    }
+
+    /// The labels the Contextual Task Bar draws in a headless frame (after one to lay it out), with
+    /// their rects; none while it isn't shown. Icons, which draw as ⚠ without an image loader, are
+    /// left out.
+    fn task_bar_labels(app: &mut VectorcraftApp, ctx: &egui::Context) -> Vec<(String, egui::Rect)> {
+        frame(app, ctx, vec![]);
+        let raw = egui::RawInput { screen_rect: Some(egui::Rect::from_min_size(Pos2::ZERO, vec2(800.0, 600.0))), ..Default::default() };
+        let mut out = ctx.run_ui(raw, |ui| show(app, ui));
+        out.textures_delta.clear();
+        let Some(bar) = task_bar_rect(ctx) else { return vec![] };
+        out.shapes
+            .iter()
+            .filter_map(|c| match &c.shape {
+                egui::Shape::Text(t) if bar.contains(t.visual_bounding_rect().center()) && t.galley.text() != "⚠" => {
+                    Some((t.galley.text().to_string(), t.visual_bounding_rect()))
+                }
+                _ => None,
+            })
+            .collect()
+    }
+
+    /// With the Artboard tool, the Contextual Task Bar sits under the selected artboards and offers
+    /// Resize, Duplicate, Rearrange All (with two or more artboards) and Export instead of the
+    /// selected objects' actions. With the Selection tool it offers the objects' actions again, and
+    /// with nothing selected it doesn't show.
+    #[test]
+    fn the_task_bar_offers_the_artboard_tools_actions() {
+        let mut app = VectorcraftApp::new(Session::new(), Default::default());
+        app.session.execute("file.new", &json!({"width": 200, "height": 100, "artboards": 3})).unwrap();
+        app.select_tool("selection");
+        let ctx = egui::Context::default();
+        let names = |app: &mut VectorcraftApp| task_bar_labels(app, &ctx).into_iter().map(|(t, _)| t).collect::<Vec<_>>();
+        assert!(names(&mut app).is_empty() && task_bar_rect(&ctx).is_none(), "nothing selected: no bar");
+
+        app.select_tool("artboard");
+        crate::panels::artboards::select(&mut app, 1);
+        // Artboard 2 in the middle of the window, at 100%.
+        let b = app.session.active().unwrap().doc.artboards[1].rect;
+        let view = app.view_mut().unwrap();
+        (view.center, view.zoom) = (b.center(), 1.0);
+        assert_eq!(names(&mut app), ["Resize", "Duplicate", "Rearrange All", "Export"]);
+        // Under artboard 2.
+        let xf = Xf::new(app.canvas_rect.unwrap(), app.view().unwrap());
+        let bar = task_bar_rect(&ctx).unwrap();
+        let center = xf.to_screen(b.center());
+        assert!(bar.top() > xf.to_screen(Point::new(b.x0, b.y1)).y && bar.x_range().contains(center.x), "{bar:?} under {b:?}");
+
+        // A selected object with the Selection tool: its own actions, none of the artboards'.
+        app.select_tool("selection");
+        app.session.execute("shape.rectangle", &json!({"x": 20, "y": 20, "width": 40, "height": 40})).unwrap();
+        assert_eq!(names(&mut app), ["Offset Path", "Simplify", "Duplicate"]);
+
+        // One artboard: nothing to rearrange.
+        app.session.execute("file.new", &json!({"width": 200, "height": 100})).unwrap();
+        app.select_tool("artboard");
+        assert_eq!(names(&mut app), ["Resize", "Duplicate", "Export"]);
+    }
+
+    /// The Artboard tool's Contextual Task Bar buttons act on its selected artboards: Resize opens
+    /// Artboard Options for the active one, Rearrange All opens Rearrange All Artboards, Export opens
+    /// Export for Screens with the selected artboards checked, and Duplicate copies each selected
+    /// artboard in one undo step and selects the copies.
+    #[test]
+    fn the_artboard_tools_task_bar_buttons_act_on_the_selected_artboards() {
+        let mut app = VectorcraftApp::new(Session::new(), Default::default());
+        app.session.execute("file.new", &json!({"width": 200, "height": 100, "artboards": 3})).unwrap();
+        app.select_tool("artboard");
+        crate::panels::artboards::select(&mut app, 2);
+        app.session.set_tool_option("selected", &json!([2, 0]));
+        let ctx = egui::Context::default();
+        let press = |app: &mut VectorcraftApp, label: &str| {
+            let labels = task_bar_labels(app, &ctx);
+            let at = labels.iter().find(|(t, _)| t == label).unwrap_or_else(|| panic!("{label} in {labels:?}")).1.center();
+            let button =
+                |pressed| egui::Event::PointerButton { pos: at, button: egui::PointerButton::Primary, pressed, modifiers: Default::default() };
+            frame(app, &ctx, vec![egui::Event::PointerMoved(at)]);
+            frame(app, &ctx, vec![button(true)]);
+            frame(app, &ctx, vec![button(false)]);
+            app.ui.dialog.take()
+        };
+        let d = press(&mut app, "Resize").expect("Artboard Options");
+        assert_eq!((d.kind.as_str(), d.f64("index", 9.0)), ("artboardOptions", 2.0));
+        let d = press(&mut app, "Rearrange All").expect("Rearrange All Artboards");
+        assert_eq!(d.kind, crate::dialogs::rearrange_artboards::KIND);
+        let d = press(&mut app, "Export").expect("Export for Screens");
+        assert_eq!((d.kind.as_str(), &d.fields["boards"]), (crate::dialogs::EXPORT_FOR_SCREENS, &json!([true, false, true])));
+
+        let boards =
+            |app: &VectorcraftApp| app.session.active().unwrap().doc.artboards.iter().map(|a| (a.name.clone(), a.rect.size())).collect::<Vec<_>>();
+        let before = boards(&app);
+        assert!(press(&mut app, "Duplicate").is_none());
+        let after = boards(&app);
+        assert_eq!(after[..3], before[..]);
+        assert_eq!(after[3..], [("Artboard 1 copy".to_string(), before[0].1), ("Artboard 3 copy".to_string(), before[2].1)]);
+        assert_eq!(app.session.tool_options()["selected"], json!([4, 3]), "the copies are selected, artboard 3's copy active");
+        app.run("edit.undo", json!({})).unwrap();
+        assert_eq!(boards(&app), before, "one undo step");
     }
 
     /// The Contextual Task Bar's handle drags it: unpinned it keeps that offset as it follows the
