@@ -217,6 +217,86 @@ fn shaper_double_click_selects_an_original_for_construction_editing() {
     assert_eq!(s.doc().unwrap().selection.objects, vec![g]);
 }
 
+/// The arrow widget beside a selected Shaper Group switches it to Construction mode and back, with
+/// the Shaper tool and with the Selection tool. In Construction mode a Shaper tap selects a source
+/// shape, and the mode lasts through undo and redo of an edit made in it.
+#[test]
+fn shaper_widget_switches_between_face_selection_and_construction_mode() {
+    let mut s = session();
+    let a = rectangle(&mut s, 0.0, "#ff0000");
+    rectangle(&mut s, 50.0, "#0000ff");
+    let g = scribble(&mut s, &[[25.0, 20.0], [75.0, 35.0], [30.0, 50.0], [125.0, 65.0]]);
+    let sources = node(&s, g).children().unwrap()[0].id;
+    let v = ViewInfo { smart_guides: false, ..Default::default() };
+    let widget = |s: &Session| {
+        let st = s.doc().unwrap();
+        vectorcraft_tools::shaperwidget::ShaperWidget::of(&st.doc, &st.selection, st.isolation, v.zoom).unwrap()
+    };
+    let click = |s: &mut Session, p: Point| {
+        for kind in [PointerKind::Down, PointerKind::Up] {
+            s.pointer(&PointerEvent::new(kind, p.x, p.y), v).unwrap();
+        }
+    };
+    for tool in ["shaper", "selection"] {
+        s.select_tool(tool, v).unwrap();
+        s.execute("select.set", &json!({"ids": [g.0]})).unwrap();
+        let w = widget(&s);
+        assert!(!w.construction);
+        click(&mut s, w.at);
+        assert_eq!(s.doc().unwrap().isolation, Some(sources), "{tool}");
+        assert!(widget(&s).construction);
+        if tool == "shaper" {
+            click(&mut s, Point::new(25.0, 50.0));
+            assert_eq!(s.doc().unwrap().selection.objects, vec![a]);
+        } else {
+            s.execute("select.set", &json!({"ids": [a.0]})).unwrap();
+        }
+        s.execute("object.move", &json!({"dx": 10, "dy": 0})).unwrap();
+        s.execute("edit.undo", &json!({})).unwrap();
+        assert_eq!(s.doc().unwrap().isolation, Some(sources), "{tool}: undo");
+        s.execute("edit.redo", &json!({})).unwrap();
+        assert_eq!(s.doc().unwrap().isolation, Some(sources), "{tool}: redo");
+        assert_eq!(fill(&s, g, 15.0, 50.0).as_deref(), Some("#ff0000"));
+        let w = widget(&s);
+        assert!(w.construction);
+        click(&mut s, w.at);
+        assert_eq!(s.doc().unwrap().isolation, None, "{tool}");
+        assert_eq!(s.doc().unwrap().selection.objects, vec![g]);
+        s.execute("object.move", &json!({"dx": -10, "dy": 0})).unwrap();
+    }
+}
+
+/// In Construction mode a Shaper tap picks a source shape of the isolated group only, even where
+/// another Shaper Group's source shapes lie above it.
+#[test]
+fn shaper_construction_taps_stay_in_the_isolated_group() {
+    let mut s = session();
+    let a = rectangle(&mut s, 0.0, "#ff0000");
+    rectangle(&mut s, 50.0, "#0000ff");
+    let lower = scribble(&mut s, &[[25.0, 20.0], [75.0, 35.0], [30.0, 50.0], [125.0, 65.0]]);
+    let c = rectangle(&mut s, 20.0, "#00ff00");
+    let d = rectangle(&mut s, 70.0, "#ffff00");
+    let upper = NodeId(
+        s.execute("shaper.scribble", &json!({"points": [[45, 20], [95, 35], [50, 50], [145, 65]], "ids": [c.0, d.0]})).unwrap()["id"]
+            .as_u64()
+            .unwrap(),
+    );
+    assert_ne!(lower, upper);
+    let sources = node(&s, lower).children().unwrap()[0].id;
+    s.execute("object.isolate", &json!({"id": lower.0})).unwrap();
+    let v = ViewInfo { smart_guides: false, ..Default::default() };
+    s.select_tool("shaper", v).unwrap();
+    for kind in [PointerKind::Down, PointerKind::Up] {
+        s.pointer(&PointerEvent::new(kind, 25.0, 50.0), v).unwrap();
+    }
+    assert_eq!(s.doc().unwrap().selection.objects, vec![a]);
+    assert_eq!(s.doc().unwrap().isolation, Some(sources));
+    // Outside the isolated group's source shapes, a tap changes nothing.
+    s.execute("shaper.select", &json!({"point": [160, 50], "source": true})).unwrap();
+    assert_eq!(s.doc().unwrap().selection.objects, vec![a]);
+    assert_eq!(s.doc().unwrap().isolation, Some(sources));
+}
+
 #[test]
 fn shaper_lines_keep_free_angles_with_or_without_shift() {
     for shift in [false, true] {

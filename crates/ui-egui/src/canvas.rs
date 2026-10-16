@@ -480,6 +480,9 @@ pub fn show(app: &mut VectorcraftApp, ui: &mut Ui) {
         }
     }
     draw_overlays(&painter, &xf, &overlays, &t, HandleLook::of(&app.session.prefs));
+    if !revolve_edit {
+        shaper_widget_overlay(app, &painter, &xf);
+    }
     ime_output(app, ui.ctx(), &xf);
     crate::place::paint_drop_highlight(app, ui.ctx(), &painter, rect);
 
@@ -1836,6 +1839,23 @@ fn print_tiling_overlay(app: &mut VectorcraftApp, p: &egui::Painter, xf: &Xf) {
 /// The print tiling's lines: a neutral grey that reads on the paper and on the pasteboard.
 const PRINT_TILING: Color32 = Color32::from_gray(96);
 
+/// A Shaper Group's mode widget (Shaper and Selection tools), drawn with selection edges shown or
+/// hidden: an arrow pointing right in Face Selection mode and left in Construction mode.
+fn shaper_widget_overlay(app: &VectorcraftApp, p: &egui::Painter, xf: &Xf) {
+    let Some(st) = app.session.active() else { return };
+    if matches!(app.session.tool_id(), "shaper" | "selection")
+        && let Some(w) = vectorcraft_tools::shaperwidget::ShaperWidget::of(&st.doc, &st.selection, st.isolation, xf.zoom)
+    {
+        let (c, r) = (xf.to_screen(w.at), vectorcraft_tools::shaperwidget::RADIUS_PX);
+        let color = c32(st.doc.layer_color(w.group));
+        p.circle_filled(c, r, Color32::WHITE);
+        p.circle_stroke(c, r, Stroke::new(1.0, color));
+        let d = if w.construction { -1.0 } else { 1.0 };
+        let arrow = vec![c + vec2(3.0 * d, 0.0), c + vec2(-2.0 * d, -3.0), c + vec2(-2.0 * d, 3.0)];
+        p.add(Shape::convex_polygon(arrow, color, Stroke::NONE));
+    }
+}
+
 fn selection_overlay(app: &mut VectorcraftApp, p: &egui::Painter, xf: &Xf, curve_points_from_tool: bool) {
     // The Selection tool's bounding box (rotated with the objects after a rotation). It hides while
     // a drag moves or resizes the selection, so only the art is seen going with the pointer (#712).
@@ -2549,6 +2569,47 @@ mod tests {
         let bounds = node_outline(g, &symbols).bounding_box();
         assert!((bounds.x0 - 100.0).abs() < 0.01 && (bounds.x1 - 200.0).abs() < 0.01, "{bounds:?}");
         assert_eq!(node_outline(st.doc.node(line).unwrap(), &symbols).bounding_box().x0, 50.0, "an isolated original still shows its full outline");
+    }
+
+    /// A Shaper Group's mode widget, drawn for the Shaper and Selection tools with selection edges
+    /// shown or hidden: its arrow points right in Face Selection mode and left in Construction mode.
+    #[test]
+    fn the_shaper_widget_points_to_the_other_mode() {
+        let mut app = VectorcraftApp::new(Session::new(), Default::default());
+        app.session.execute("file.new", &json!({"width": 400, "height": 300})).unwrap();
+        for x in [0, 50] {
+            app.session.execute("shape.rectangle", &json!({"x": x, "y": 0, "width": 100, "height": 100})).unwrap();
+        }
+        let points = json!({"points": [[25, 20], [75, 35], [30, 50], [125, 65]]});
+        let g = app.session.execute("shaper.scribble", &points).unwrap()["id"].as_u64().unwrap();
+        let ctx = egui::Context::default();
+        // For each widget drawn, whether its arrow's tip is right of the circle's center.
+        let right = |app: &mut VectorcraftApp| -> Vec<bool> {
+            let drawn = shapes(app, &ctx);
+            let r = vectorcraft_tools::shaperwidget::RADIUS_PX;
+            let centers: Vec<egui::Pos2> = drawn
+                .iter()
+                .filter_map(|s| if let Shape::Circle(c) = s { (c.radius == r && c.fill == Color32::WHITE).then_some(c.center) } else { None })
+                .collect();
+            drawn
+                .iter()
+                .filter_map(|s| match s {
+                    Shape::Path(p) if p.points.len() == 3 => centers.iter().find(|c| c.distance(p.points[0]) <= r).map(|c| p.points[0].x > c.x),
+                    _ => None,
+                })
+                .collect()
+        };
+        app.select_tool("shaper");
+        assert_eq!(right(&mut app), vec![true], "the scribble selects the group");
+        app.session.execute("object.isolate", &json!({"id": g})).unwrap();
+        assert_eq!(right(&mut app), vec![false]);
+        app.select_tool("selection");
+        assert_eq!(right(&mut app), vec![false]);
+        // View › Hide Edges keeps the widget, which still answers clicks.
+        app.ui.view.edges = false;
+        assert_eq!(right(&mut app), vec![false]);
+        app.select_tool("pen");
+        assert!(right(&mut app).is_empty());
     }
 
     #[test]

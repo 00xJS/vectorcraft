@@ -7,7 +7,8 @@
 //! mode (Double Click To Isolate), Cmd/Ctrl-click to select the object behind (Command Click to Select Objects Behind),
 //! click or drag a ruler guide ([`crate::rulerguide`]), drag the brackets of type on a path
 //! ([`crate::pathtype`]), double-click the type widget to convert point type to area type and back
-//! ([`crate::typewidget`]).
+//! ([`crate::typewidget`]), click a Shaper Group's mode widget to switch between Face Selection and
+//! Construction mode ([`crate::shaperwidget`]).
 //! The bounding box stands at the selection's own angle after a rotation, so its handles scale
 //! along the objects' axes. A handle drag resizes area type's frame (the type area) instead of
 //! scaling its type: the text reflows at its size.
@@ -22,6 +23,7 @@ use crate::corners::{self, CornerDrag, over_widget};
 use crate::guides::Targets;
 use crate::pathtype::{self, BracketDrag, over_bracket};
 use crate::rulerguide::GuideEdit;
+use crate::shaperwidget;
 use crate::typewidget;
 use crate::{Action, Cursor, Mods, Overlay, PointerEvent, PointerKind, Tool, ToolContext, ToolKey, json_ids};
 
@@ -275,6 +277,10 @@ impl Tool for SelectionTool {
                 if let Some(a) = corners::double_click(cx, p, false).or_else(|| typewidget::double_click(cx, p)) {
                     return vec![a];
                 }
+                // The Shaper Group's mode widget answers each click of a double-click on it.
+                if shaperwidget::over_widget(cx, p) {
+                    return vec![];
+                }
                 if crate::rulerguide::guide_at(cx, p).is_some() {
                     return vec![];
                 }
@@ -302,6 +308,10 @@ impl Tool for SelectionTool {
                 if let Some(b) = BracketDrag::hit(cx, ev) {
                     self.state = State::Bracket(b);
                     return vec![];
+                }
+                if let Some(a) = shaperwidget::click(cx, p) {
+                    self.state = State::Idle;
+                    return vec![a];
                 }
                 // The type widget answers a double-click only: its clicks neither drag nor deselect.
                 if typewidget::over_widget(cx, p) {
