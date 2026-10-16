@@ -2482,6 +2482,7 @@
 	Save Save for Web Preset	Vorgabe für „Für Web speichern“ speichern
 	Save selected colors as swatches	Ausgewählte Farben als Farbfelder speichern
 	Save Selection…	Auswahl speichern…
+	Update Selection	Auswahl aktualisieren
 	Save Swatch Library	Farbfeldbibliothek speichern
 	Save Swatch Library…	Farbfeldbibliothek speichern…
 	Save the current layout under this name	Das aktuelle Layout unter diesem Namen speichern
@@ -3724,6 +3725,7 @@ theme	Appearance	Erscheinungsbild
 @msg	no saved presets	keine gespeicherten Vorgaben
 @msg	no saved print preset named `{name}` ({DEFAULT_PRESET} is protected: start a new one from it)	keine gespeicherte Druckvorgabe namens `{name}` ({DEFAULT_PRESET} ist geschützt: Erstellen Sie daraus eine neue)
 @msg	no saved profiles	keine gespeicherten Profile
+@msg	no saved selection recalled	keine gespeicherte Auswahl abgerufen
 @msg	no saved selections	keine gespeicherten Auswahlen
 @msg	no saved themes	keine gespeicherten Themen
 @msg	no segment {segment} on line {line}	kein Segment {segment} auf Linie {line}

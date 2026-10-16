@@ -960,7 +960,11 @@ Select → Save Selection… keeps the selected objects under a name, in the doc
 the first free "Selection N"; an existing name is replaced with the current selection; at most 25 per document,
 names up to 255 characters) → `{name}`, one undo step. `select.savedList` lists the names in menu order, and
 `select.recall {name}` selects those objects again, except the ones deleted since and the ones hidden, locked or
-outside the isolated group or layer (see Object selection) → `{count}`. Edit Selection…
+outside the isolated group or layer (see Object selection) → `{count}`. Update Selection: `select.update {}`
+replaces the objects of the saved selection last recalled in the document with the selected objects → `{name}`,
+one undo step. The command is enabled while objects are selected and the document holds that saved selection,
+under its own name or a name `select.editSaved` gave it; Undo and Redo do not change which saved selection is
+recalled. Edit Selection…
 renames and deletes: `select.editSaved {name, newName?, delete?}`, or several at once as
 `{edits: [{name, newName?, delete?}…]}` in one undo step, where every `name` is the name before the edit and the
 names must stay unique. In the desktop app the saved selections are listed at the bottom of the Select menu

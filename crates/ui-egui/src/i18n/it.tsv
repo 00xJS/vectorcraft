@@ -2533,6 +2533,7 @@
 	Save Save for Web Preset	Salva preset di Salva per il web
 	Save selected colors as swatches	Salva i colori selezionati come campioni
 	Save Selection…	Salva selezione…
+	Update Selection	Aggiorna selezione
 	Save Swatch Library	Salva libreria campioni
 	Save Swatch Library…	Salva libreria campioni…
 	Save the current layout under this name	Salva il layout corrente con questo nome
@@ -3823,6 +3824,7 @@ axis	Both	Entrambi
 @msg	no saved presets	nessun preset salvato
 @msg	no saved print preset named `{name}` ({DEFAULT_PRESET} is protected: start a new one from it)	nessun preset di stampa salvato denominato `{name}` ({DEFAULT_PRESET} è protetto: creane uno nuovo a partire da esso)
 @msg	no saved profiles	nessun profilo salvato
+@msg	no saved selection recalled	nessuna selezione salvata richiamata
 @msg	no saved selections	nessuna selezione salvata
 @msg	no saved themes	nessun tema salvato
 @msg	no segment {segment} on line {line}	nessun segmento {segment} alla riga {line}

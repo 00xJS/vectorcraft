@@ -300,6 +300,9 @@ pub struct DocState {
     /// What Select → Reselect repeats: the last selection command, its params and the objects
     /// selected when it ran (a Same command's reference objects).
     pub last_selection_cmd: Option<(String, Value, Vec<NodeId>)>,
+    /// The saved selection last recalled (`select.recall`), which Select → Update Selection
+    /// changes. It is not saved with the file, and a recall is not an undo step.
+    pub recalled_selection: RecalledSelection,
     /// Process-unique id of this open document (tab indices shift when tabs close).
     pub uid: u64,
     /// View Opacity Mask (Alt-click the mask thumbnail): the masked object whose mask the canvas
@@ -387,6 +390,57 @@ impl OpenRows {
     }
 }
 
+/// The saved selection last recalled, which Select → Update Selection changes. The Select commands
+/// give each saved selection an id for the session and keep the ids for every version of the
+/// document's saved selections they make or read, so the recalled one is found again after Edit
+/// Selection…, Undo and Redo. A version that nothing holds any more (neither the document nor its
+/// undo history) is dropped the next time a version is added.
+#[derive(Clone, Debug, Default)]
+pub struct RecalledSelection {
+    /// The recalled saved selection's id.
+    id: Option<u64>,
+    /// Each version of the saved selections (identified by its allocation), with the id of each saved
+    /// selection in it.
+    versions: Vec<(std::sync::Weak<Vec<vectorcraft_doc::SavedSelection>>, Vec<u64>)>,
+    /// The last id given.
+    last: u64,
+}
+
+impl RecalledSelection {
+    /// The ids of `list`'s saved selections; a version not met before gets new ones.
+    pub(crate) fn ids(&mut self, list: &vectorcraft_doc::Shared<Vec<vectorcraft_doc::SavedSelection>>) -> Vec<u64> {
+        let version = vectorcraft_doc::Shared::downgrade(list);
+        if let Some((_, ids)) = self.versions.iter().find(|(v, _)| v.ptr_eq(&version)) {
+            return ids.clone();
+        }
+        let ids: Vec<u64> = (0..list.len()).map(|_| self.new_id()).collect();
+        self.remember(list, ids.clone());
+        ids
+    }
+    /// An id no saved selection has had.
+    pub(crate) fn new_id(&mut self) -> u64 {
+        self.last += 1;
+        self.last
+    }
+    /// Keep `ids` as those of `list`'s saved selections, dropping versions nothing holds any more.
+    pub(crate) fn remember(&mut self, list: &vectorcraft_doc::Shared<Vec<vectorcraft_doc::SavedSelection>>, ids: Vec<u64>) {
+        let version = vectorcraft_doc::Shared::downgrade(list);
+        self.versions.retain(|(v, _)| v.strong_count() > 0 && !v.ptr_eq(&version));
+        self.versions.push((version, ids));
+    }
+    /// Recall the saved selection at `index` in `list`.
+    pub(crate) fn recall(&mut self, list: &vectorcraft_doc::Shared<Vec<vectorcraft_doc::SavedSelection>>, index: usize) {
+        self.id = self.ids(list).get(index).copied();
+    }
+    /// Where the recalled saved selection is in `list`, if `list` holds it.
+    pub fn index_in(&self, list: &vectorcraft_doc::Shared<Vec<vectorcraft_doc::SavedSelection>>) -> Option<usize> {
+        let id = self.id?;
+        let version = vectorcraft_doc::Shared::downgrade(list);
+        let (_, ids) = self.versions.iter().find(|(v, _)| v.ptr_eq(&version))?;
+        ids.iter().position(|&x| x == id).filter(|&i| i < list.len())
+    }
+}
+
 impl DocState {
     pub fn new(mut doc: Document, path: Option<String>) -> Self {
         let active_layer = doc.default_layer();
@@ -411,6 +465,7 @@ impl DocState {
             undo_group: None,
             last_transform: None,
             last_selection_cmd: None,
+            recalled_selection: RecalledSelection::default(),
             uid: NEXT_DOC_UID.fetch_add(1, std::sync::atomic::Ordering::Relaxed),
             mask_view: None,
             transparency_grid: false,

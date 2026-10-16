@@ -2525,6 +2525,7 @@
 	Save Save for Web Preset	Зберегти набір «Зберегти для Інтернету»
 	Save selected colors as swatches	Зберегти вибрані кольори як зразки
 	Save Selection…	Зберегти виділення…
+	Update Selection	Оновити виділення
 	Save Swatch Library	Зберегти бібліотеку зразків
 	Save Swatch Library…	Зберегти бібліотеку зразків…
 	Save the current layout under this name	Зберегти поточний макет під цим ім’ям
@@ -3807,6 +3808,7 @@ axis	Both	Обидві
 @msg	no saved presets	немає збережених наборів
 @msg	no saved print preset named `{name}` ({DEFAULT_PRESET} is protected: start a new one from it)	немає збереженого набору друку з іменем `{name}` ({DEFAULT_PRESET} захищений: створіть новий на його основі)
 @msg	no saved profiles	немає збережених профілів
+@msg	no saved selection recalled	збережене виділення не відновлено
 @msg	no saved selections	немає збережених виділень
 @msg	no saved themes	немає збережених тем
 @msg	no segment {segment} on line {line}	немає сегмента {segment} на рядку {line}

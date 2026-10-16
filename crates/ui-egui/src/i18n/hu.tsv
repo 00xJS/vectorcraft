@@ -3075,6 +3075,7 @@
 	Save selected colors as swatches	Kijelölt színek mentése színmintaként
 	Save Selection	Kijelölés mentése
 	Save Selection…	Kijelölés mentése…
+	Update Selection	Kijelölés frissítése
 	Save Swatch Library	Színminta-könyvtár mentése
 	Save Swatch Library…	Színminta-könyvtár mentése…
 	Save the current layout under this name	Az aktuális elrendezés mentése ezen a néven
@@ -4429,6 +4430,7 @@ imageTrace	Outline	Körvonal
 @msg	no saved presets	nincs mentett előbeállítás
 @msg	no saved print preset named `{name}` ({DEFAULT_PRESET} is protected: start a new one from it)	nincs ilyen nevű mentett nyomtatási előbeállítás: `{name}` (védett: {DEFAULT_PRESET}; új előbeállítást indíthatsz belőle)
 @msg	no saved profiles	nincs mentett profil
+@msg	no saved selection recalled	nincs visszahívott mentett kijelölés
 @msg	no saved selections	nincs mentett kijelölés
 @msg	No saved selections (Select → Save Selection…)	Nincs mentett kijelölés (Kijelölés → Kijelölés mentése…)
 @msg	no saved themes	nincs mentett téma

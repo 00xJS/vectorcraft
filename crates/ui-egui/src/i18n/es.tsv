@@ -2530,6 +2530,7 @@
 	Save Save for Web Preset	Guardar preajuste de Guardar para web
 	Save selected colors as swatches	Guardar los colores seleccionados como muestras
 	Save Selection…	Guardar selección…
+	Update Selection	Actualizar selección
 	Save Swatch Library	Guardar biblioteca de muestras
 	Save Swatch Library…	Guardar biblioteca de muestras…
 	Save the current layout under this name	Guardar el diseño actual con este nombre
@@ -3820,6 +3821,7 @@ axis	Both	Ambos
 @msg	no saved presets	no hay preajustes guardados
 @msg	no saved print preset named `{name}` ({DEFAULT_PRESET} is protected: start a new one from it)	no hay ningún preajuste de impresión guardado llamado `{name}` ({DEFAULT_PRESET} está protegido: crea uno nuevo a partir de él)
 @msg	no saved profiles	no hay perfiles guardados
+@msg	no saved selection recalled	no se ha recuperado ninguna selección guardada
 @msg	no saved selections	no hay selecciones guardadas
 @msg	no saved themes	no hay temas guardados
 @msg	no segment {segment} on line {line}	no existe el segmento {segment} en la línea {line}

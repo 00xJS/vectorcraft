@@ -2484,6 +2484,7 @@
 	Save Save for Web Preset	Spara förinställning för Spara för webben
 	Save selected colors as swatches	Spara markerade färger som färgrutor
 	Save Selection…	Spara markering…
+	Update Selection	Uppdatera markering
 	Save Swatch Library	Spara färgrutebibliotek
 	Save Swatch Library…	Spara färgrutebibliotek…
 	Save the current layout under this name	Spara den aktuella layouten under det här namnet
@@ -3745,6 +3746,7 @@ axis	Both	Båda
 @msg	no saved presets	inga sparade förinställningar
 @msg	no saved print preset named `{name}` ({DEFAULT_PRESET} is protected: start a new one from it)	ingen sparad utskriftsförinställning med namnet `{name}` ({DEFAULT_PRESET} är skyddad: skapa en ny utifrån den)
 @msg	no saved profiles	inga sparade profiler
+@msg	no saved selection recalled	ingen sparad markering hämtad
 @msg	no saved selections	inga sparade markeringar
 @msg	no saved themes	inga sparade teman
 @msg	no segment {segment} on line {line}	inget segment {segment} på rad {line}
