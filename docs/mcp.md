@@ -536,6 +536,9 @@ with `flattenerPreset` (empty: High Resolution; `high`, `medium`, `low` or a sav
 and `flattener` options over it (as `object.flattenTransparency` takes them); images with see-through pixels count as
 transparency and rasterized areas are clipped to their regions. A file that would still have transparency fails the
 export. PDF/X-1a and PDF/X-3 files are PDF 1.3 files too.
+A page with a side longer than 14,400 pt is written with a `UserUnit` (PDF 1.6): its longer side divided by 14,400,
+rounded up to the next thousandth, with the page's sizes and coordinates in those units, so that no side is longer than
+14,400 units (ISO 32000-1, Annex C.2). In PDF 1.3 to 1.5 files and PDF/X files, such a page is written in points.
 
 An Illustrator EPS (version 9 on) or `.ai` file opens from the editing data it carries (after the EPS page; in the
 `.ai` file's PDF private data): layers and sublayers (name, order, visibility, lock, printing, preview, dimming,
