@@ -861,6 +861,12 @@ pub fn menu_room(floor: f32, top: f32) -> f32 {
     (floor - top - BOTTOM_GAP).max(MIN_HEIGHT)
 }
 
+/// The scroll bar of a menu's list: slim, in a column of its own beside the items, so it never
+/// covers what sits at their right end (shortcuts, submenu arrows, a font's favourite star).
+pub fn list_scroll_style() -> egui::style::ScrollStyle {
+    egui::style::ScrollStyle { bar_width: 6.0, bar_inner_margin: 2.0, ..egui::style::ScrollStyle::solid() }
+}
+
 /// The body of a menu or popup list: as tall as its items up to the bottom bars of the window, and
 /// scrolling only past that, so long menus (Window, Effect, a panel's menu) stay reachable on
 /// small windows. Its scroll bar has a column of its own, so it never covers the shortcuts or the
@@ -869,7 +875,7 @@ pub fn menu_scroll<R>(ui: &mut Ui, add_contents: impl FnOnce(&mut Ui) -> R) -> R
     let floor = ui.ctx().data(|d| d.get_temp::<f32>(egui::Id::new("menu_floor"))).unwrap_or_else(|| ui.ctx().content_rect().bottom());
     let room = menu_room(floor, ui.next_widget_position().y);
     ui.scope(|ui| {
-        ui.spacing_mut().scroll = egui::style::ScrollStyle { bar_width: 6.0, bar_inner_margin: 2.0, ..egui::style::ScrollStyle::solid() };
+        ui.spacing_mut().scroll = list_scroll_style();
         // The minimum lets the list grow past a popup's default 400 pt size; it still shrinks to
         // its items when they need less.
         egui::ScrollArea::vertical().max_height(room).min_scrolled_height(room).show(ui, add_contents).inner
