@@ -1526,3 +1526,27 @@ fn shapes_keep_abutting_neighbours_watertight() {
     }
     assert!(wrong.is_empty(), "{}", wrong.join("\n"));
 }
+
+/// One- and two-pixel slivers on both sides of an edge (a soft, noisy ripple read at a threshold):
+/// read from one side only, such a crack had a different shift from each side, so the two regions'
+/// shared piece got different points. The shift is now the same from either side, exactly.
+#[test]
+fn a_crack_between_thin_slivers_has_the_same_shift_from_either_side() {
+    // Columns a pixel or two wide, alternately darker and lighter, with a deterministic ripple.
+    let rnd = |x: u32, y: u32| (x.wrapping_mul(73_856_093) ^ y.wrapping_mul(19_349_663)).wrapping_mul(2_654_435_761) >> 27;
+    let img = Raster::from_fn(40, 40, |x, y| {
+        let base = [120u32, 170, 175, 125, 165, 118, 172][(x as usize + y as usize / 7) % 7];
+        let v = (base + rnd(x, y) * (y % 3)).min(255) as u8;
+        [v, v, v, 255]
+    });
+    for threshold in [140u8, 157, 170] {
+        let params = TraceParams { threshold, noise: 0, ..TraceParams::default() };
+        let probe = shift_probe(&img, &params);
+        assert!(!probe.is_empty());
+        // The image does have cracks a one-sided reading gets wrong ...
+        let asymmetric = probe.iter().filter(|s| (s[2] + s[3]).abs() > 1e-9).count();
+        assert!(asymmetric > 0, "threshold {threshold}: no crack with thin runs on both sides");
+        // ... and the shift is exactly antisymmetric on every crack.
+        assert!(probe.iter().all(|s| s[0] == -s[1]), "threshold {threshold}");
+    }
+}

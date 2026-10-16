@@ -44,6 +44,10 @@ impl Crack {
     pub fn new(inside: (i32, i32), step: (i32, i32), w: usize, h: usize) -> Self {
         Self { inside, step, w, h }
     }
+    /// The same crack seen from its other side: the outside pixel becomes the inside one.
+    pub fn flipped(&self) -> Self {
+        Self { inside: (self.inside.0 + self.step.0, self.inside.1 + self.step.1), step: (-self.step.0, -self.step.1), w: self.w, h: self.h }
+    }
     /// The index of the pixel `k` steps out from the inside pixel (0: the inside pixel, 1: the
     /// outside one, −1: the one behind the inside pixel), if the image has it.
     pub fn at(&self, k: i32) -> Option<usize> {

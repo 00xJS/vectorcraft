@@ -744,7 +744,19 @@ impl Layers<'_> {
     /// Black and White then moves the edge to where the luminance crosses the threshold: by the
     /// threshold's distance from the middle tone, over how steep the edge is (nothing for a
     /// threshold in the middle, more the softer the edge).
+    ///
+    /// The estimate is read from each side of the crack and the two readings averaged, so that
+    /// the shift is exactly antisymmetric (`a - b == -(b - a)` in floating point) and the two
+    /// regions of a crack get the same points. A single reading is not: it looks for a thin run on
+    /// the inside before one on the outside, so where both sides are thin (a one- or two-pixel
+    /// sliver beside another, as in soft gradients and noisy scans) each region got its own shift,
+    /// their shared piece different points, and the abutting curves left a sliver uncovered.
     fn shift(&self, c: Crack) -> f64 {
+        (self.shift_one_side(c) - self.shift_one_side(c.flipped())) / 2.0
+    }
+
+    /// [`Self::shift`] read from the crack's inside pixel only.
+    fn shift_one_side(&self, c: Crack) -> f64 {
         let label = |k: i32| c.at(k).and_then(|i| self.q.labels.get(i).copied()).filter(|&l| l != TRANSPARENT);
         let (Some(la), Some(lb)) = (label(0), label(1)) else { return 0.0 };
         if la == lb {
@@ -1012,6 +1024,47 @@ impl Layers<'_> {
         }
         Some(paths)
     }
+}
+
+/// Test probe: every crack between two labels of `img` quantised as `trace` does (no gradients),
+/// as `[shift, shift from the other side, one-sided reading, one-sided reading from the other
+/// side]`.
+#[cfg(test)]
+pub(crate) fn shift_probe(img: &Raster, params: &TraceParams) -> Vec<[f64; 4]> {
+    let (w, h) = (img.width as usize, img.height as usize);
+    let mut q = quantize(img, params);
+    denoise(&mut q.labels, w, h, params.noise as usize);
+    let n = q.palette.len();
+    let rank: Vec<usize> = (0..n).collect();
+    let gradients = vec![None; n];
+    let job = Layers {
+        q: &q,
+        rank: &rank,
+        params,
+        img,
+        ignore: None,
+        boxes: vec![None; n],
+        gradients: &gradients,
+        bw_tones: bw_tones(img, &q),
+        style: params.outline_style(),
+        w,
+        h,
+        anchors: AtomicUsize::new(0),
+        max_anchors: usize::MAX,
+    };
+    let mut out = vec![];
+    for y in 0..h as i32 {
+        for x in 0..w as i32 {
+            for step in [(1, 0), (0, 1)] {
+                let c = Crack::new((x, y), step, w, h);
+                let (Some(a), Some(b)) = (c.at(0), c.at(1)) else { continue };
+                if q.labels[a] != q.labels[b] {
+                    out.push([job.shift(c), job.shift(c.flipped()), job.shift_one_side(c), job.shift_one_side(c.flipped())]);
+                }
+            }
+        }
+    }
+    out
 }
 
 /// `f` of each of `items`, in order, spread over the available cores.

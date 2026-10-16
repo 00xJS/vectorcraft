@@ -1,5 +1,6 @@
 # Image Trace quality
 
+> **Last reviewed:** 2026-10-14 · **Last updated:** 2026-10-16 · **Change:** minor (Image Trace: an edge's sub-pixel shift is the same from either side)
 > **Last reviewed:** 2026-10-14 · **Last updated:** 2026-10-16 · **Change:** minor (Image Trace: a simpler contour walk with no precomputed direction table)
 
 What Image Trace (`crates/trace`) makes of images whose right answer is known, measured by a harness and
@@ -7,8 +8,25 @@ compared with the numbers before each change. Nothing here is a judgement by eye
 with any other product except the open tracer named under [Yardstick](#4-yardstick).
 
 
-## A simpler contour walk
+## Same sub-pixel shift from either side of an edge
 
+Each crack between two regions is moved by a sub-pixel shift read from the image. The reading
+looked for a thin run (one to three pixels) on the crack's inside before one on its outside, so where
+both sides were thin (a one- or two-pixel sliver beside another, as in soft gradients and noisy
+scans) the two regions of the crack got different shifts, their shared piece different points, and
+the abutting curves left slivers that no path covers. `Layers::shift` now averages the reading from
+either side, `(s(c) - s(c flipped)) / 2`, which is exactly antisymmetric in floating point, so both
+regions get the same points.
+
+Tests on code-drawn images: `a_crack_between_thin_slivers_has_the_same_shift_from_either_side` (a
+noisy ripple of 1–2 px columns at three thresholds: every crack's shift is the exact negative of its
+flipped crack's, and the image does have cracks the one-sided reading gets wrong) and, in
+`tests/shared_boundaries.rs`, `thin_slivers_on_both_sides_of_an_edge_leave_nothing_uncovered` (a
+48 px noisy ripple in Black and White at thresholds 140, 157, 170 and Paths 0, 50, 100, sampled on
+the 4 × 4 grid per pixel the shared-boundary check uses). With the one-sided reading 482–1,228
+sample points per trace were uncovered; now none are. The crate's other tests pass unchanged.
+
+## A simpler contour walk
 `contour::trace_mask` follows each region's outline along the pixel cracks with the inside on the
 right. It used to build a table of outgoing directions for every pixel corner in a raster pass and
 then follow it. It now works out each turn during the walk from the two pixels ahead of the current
@@ -16,14 +34,12 @@ corner (right if the one ahead on the right is outside, straight if the one ahea
 else left; so at a saddle it turns right and diagonal pixels stay apart, as before). Loop starts are
 found by scanning the pixels for a top edge on the outline, with one flag per pixel for a top edge
 already walked. A mask of the wrong length now gives no loops instead of failing an assertion.
-
 The output is identical: `the_walk_equals_the_stored_direction_walk` compares it with a test-only
 copy of the previous walk on all 65,536 masks of 4 × 4 pixels and on 400 seeded 23 × 17 masks.
 Time (best of 7, release build, 4 cores): the walk alone on 2000 × 2000 masks 19.1 ms vs 26.6 ms
 (a smooth pattern), 81.3 vs 93.2 ms (12% random pixels), 223.1 vs 238.1 ms (50% random pixels);
 whole traces of 1000 × 1000 images 73.1 vs 77.1 ms (Black and White), 249.6 vs 251.7 ms (Color, 6
 colours) and 214.1 vs 218.6 ms (Color, 6 colours, Noise 1), with the same segment counts.
-
 ## Noise threshold stability (local development, 2026-10-14)
 
 Noise must merge whole 4-connected regions, including pixels absorbed by an earlier merge.
@@ -1027,6 +1043,7 @@ One trace at a time on this machine (all cores); memory is the peak allocated ab
 
 | date | change |
 |:--|:--|
+| 2026-10-16 | Image Trace: a crack's sub-pixel shift is the mean of the readings from its two sides, exactly antisymmetric, so abutting regions get the same points on thin slivers (a code-drawn noisy ripple went from 482–1,228 uncovered sample points per trace to 0). |
 | 2026-10-16 | Image Trace: the contour walk works out each turn from the pixels as it goes instead of following a precomputed table of per-corner directions; identical loops on all 65,536 4 × 4 masks and 400 seeded masks, and no slower (whole 1 MP traces 1–5% faster). |
 | 2026-10-14 | Closed fitting retains the positioned boundary when straightening collapses a nonzero-area loop; four generated regressions; preset scores unchanged |
 | 2026-10-14 | Tiny closed fits retain their positioned outlines instead of losing islands/holes; three generated regression tests; quality-harness baseline unchanged |
