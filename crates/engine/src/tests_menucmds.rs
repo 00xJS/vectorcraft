@@ -736,6 +736,31 @@ fn fit_to_artwork_bounds_fits_each_artboard_to_its_own_art() {
     assert_eq!(boards(&s), [Rect::new(100.0, 100.0, 1050.0, 280.0), was[1], was[2]], "the first artboard by default");
 }
 
+/// Artboard Options and Fit to Selected Art fail with `no such artboard` on an `index` that names
+/// no artboard (past the last, negative, fractional, a string or null), and the artboards stay as
+/// they were. Artboard Options needs an `index`; Fit to Selected Art without one fits the first
+/// artboard.
+#[test]
+fn artboard_options_and_fit_to_selected_art_refuse_an_index_that_names_no_artboard() {
+    let mut s = session();
+    s.execute("artboard.new", &json!({"x": 1000, "y": 0, "width": 400, "height": 300})).unwrap();
+    rect(&mut s, 100.0, 100.0, 50.0, 50.0);
+    s.execute("select.all", &json!({})).unwrap();
+    s.execute("paint.setStroke", &json!({"none": true})).unwrap();
+    let boards = |s: &Session| s.doc().unwrap().doc.artboards.iter().map(|a| a.rect).collect::<Vec<_>>();
+    let (was, n) = (boards(&s), undo_len(&s));
+    for index in [json!(99), json!(-1), json!(1.5), json!("1"), Value::Null] {
+        for (cmd, p) in [("artboard.setProps", json!({"index": index, "width": 300})), ("artboard.fitToSelection", json!({"index": index}))] {
+            assert_eq!(s.execute(cmd, &p).unwrap_err().to_string(), "no such artboard", "{cmd} {p}");
+        }
+    }
+    let e = s.execute("artboard.setProps", &json!({"width": 300})).unwrap_err().to_string();
+    assert_eq!(e, "invalid parameters for `artboard.setProps`: missing index");
+    assert_eq!((boards(&s), undo_len(&s)), (was.clone(), n), "the artboards and the undo steps as they were");
+    s.execute("artboard.fitToSelection", &json!({})).unwrap();
+    assert_eq!(boards(&s), [Rect::new(100.0, 100.0, 150.0, 150.0), was[1]], "the first artboard by default");
+}
+
 // ---------- Edit Colors ----------
 
 #[test]
