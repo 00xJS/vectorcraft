@@ -733,7 +733,7 @@ pub const UI_COMMANDS: &[(&str, &str, &str, &str)] = &[
         "links.editOriginal",
         "Edit Original",
         "",
-        "{id?} open the file of linked image `id` (default: the selected linked image) in the system's default app for its type (Links panel, Edit › Edit Original); a placed document's file opens here in a new tab, and saving it updates the documents placing it → {path}; edits saved elsewhere show after links.update",
+        "{id?} open the file of linked image `id` (default: the selected linked image) in the system's default app for its type (Links panel, Edit › Edit Original; only a regular file with the extension of a format document.open reads); a placed document's file opens here in a new tab, and saving it updates the documents placing it → {path}; edits saved elsewhere show after links.update",
     ),
     (
         "links.reveal",
