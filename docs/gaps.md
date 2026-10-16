@@ -335,6 +335,7 @@ from G14 and the budget run of G15: **~170–270 h** one agent, ~50–80 h wall 
 
 | Date | Change | Summary |
 |---|---|---|
+| 2026-10-16 | minor | G11: PDF export of a CMYK document reports its RGB colours and non-CMYK images, with a count, in the export warnings (#2162); no entry closed, estimates unchanged |
 | 2026-10-16 | minor | EPS editing data: legacy mesh corners, vector opacity masks and compound member paint retained; raster page comparison filters minification without relaxing limits; scores and hours unchanged. Synthetic EPS/parser/minification regressions; user EPS/SVG/JPG kept local. |
 | 2026-10-16 | minor | Correction to G12: quick Image Trace presets trace at once and leave the panel as it was; the Image Trace button in the Control bar or Properties opens the controls (<https://helpx.adobe.com/illustrator/using/image-trace-results-optimization.html>). Wording only; no entry opened or closed, estimates unchanged. |
 | 2026-10-16 | minor | Batch exporting in Export for Screens (#1935): a file name pattern (document and item names, a counter, the date), folders per format, item or both, Layers and Selection tabs with thumbnails, EPS, AI and VectorCraft rows, a PDF row with printer's marks, and export presets (built-in Logo Package and Print-Ready PDF, saved ones); scores and hours unchanged (estimated) |

@@ -1,7 +1,7 @@
 //! Document → PDF (krilla). Mirrors the tree walk of `vectorcraft-render`.
 
 use std::borrow::Cow;
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::sync::Arc;
 
 use craft_pdf::write::backend as krilla;
@@ -147,6 +147,42 @@ fn user_unit(w: f64, h: f64) -> f64 {
     if side.is_finite() && side > MAX_PAGE_SIDE { (side / MAX_PAGE_SIDE * 1000.0).ceil() / 1000.0 } else { 1.0 }
 }
 
+/// The RGB colours and non-CMYK images a CMYK document carries, which the export separates into
+/// CMYK. Their darkest values come out as rich blacks, so the export says how many there are.
+#[derive(Default)]
+pub(crate) struct RgbInCmyk {
+    /// Distinct RGB colours, by the bits of their channels.
+    colours: HashSet<[u32; 3]>,
+    /// Keys of the raster images that aren't CMYK.
+    images: HashSet<String>,
+}
+
+impl RgbInCmyk {
+    fn merge(&mut self, other: RgbInCmyk) {
+        self.colours.extend(other.colours);
+        self.images.extend(other.images);
+    }
+
+    /// The warning for the export report; `None` when the document has nothing of the sort.
+    fn warning(&self) -> Option<String> {
+        let (c, i) = (self.colours.len(), self.images.len());
+        if c == 0 && i == 0 {
+            return None;
+        }
+        let mut parts = vec![];
+        if c > 0 {
+            parts.push(format!("{c} RGB colour{}", if c == 1 { "" } else { "s" }));
+        }
+        if i > 0 {
+            parts.push(format!("{i} RGB or grey image{}", if i == 1 { "" } else { "s" }));
+        }
+        Some(format!(
+            "this CMYK document has {}: they are converted to CMYK through the colour settings, so dark ones can come out as rich blacks on several plates; paint them with CMYK colours (Edit › Edit Colors › Convert to CMYK) for pure black ink",
+            parts.join(" and ")
+        ))
+    }
+}
+
 /// A PDF being written, shared by export and print: the file's configuration and metadata, then
 /// its pages ([`Self::page`]), each drawn by an [`Exporter`].
 pub(crate) struct Writer {
@@ -159,6 +195,8 @@ pub(crate) struct Writer {
     /// Spot colours written with a Lab alternate, gathered from the exporters ([`Self::absorb`]).
     lab_spots: Vec<(String, vectorcraft_color::cms::Lab)>,
     warnings: Vec<String>,
+    /// RGB content of a CMYK document, gathered from the exporters ([`Self::absorb`]).
+    rgb_in_cmyk: RgbInCmyk,
     /// A PDF 1.3 file ([`crate::PdfSettings::pdf13`]): flat, without page groups.
     pdf13: bool,
 }
@@ -234,7 +272,15 @@ impl Writer {
             created: created.map(date_time),
         };
         let pdf = write::Writer::new(settings, metadata);
-        Ok(Self { pdf, cmyk: out.blends_cmyk(cmyk), out: Arc::new(out), lab_spots: vec![], warnings, pdf13: set.pdf13() })
+        Ok(Self {
+            pdf,
+            cmyk: out.blends_cmyk(cmyk),
+            out: Arc::new(out),
+            lab_spots: vec![],
+            warnings,
+            rgb_in_cmyk: RgbInCmyk::default(),
+            pdf13: set.pdf13(),
+        })
     }
 
     /// Draw one page: the art of `ex`'s document placed as `sheet` says, then its marks.
@@ -323,6 +369,7 @@ impl Writer {
                 self.warnings.push(w);
             }
         }
+        self.rgb_in_cmyk.merge(ex.rgb_in_cmyk);
         for spot in ex.lab_spots {
             if !self.lab_spots.iter().any(|(n, _)| *n == spot.0) {
                 self.lab_spots.push(spot);
@@ -342,6 +389,7 @@ impl Writer {
         let bytes = if lab { crate::lab_spot::lab_alternates(bytes, &self.lab_spots) } else { bytes };
         let (bytes, more) = self.out.write_catalog(bytes)?;
         self.warnings.extend(more);
+        self.warnings.extend(self.rgb_in_cmyk.warning());
         Ok((crate::pdfx::finish(bytes, self.out.standard, self.pdf13)?, self.warnings))
     }
 }
@@ -480,6 +528,8 @@ pub(crate) struct Exporter<'a> {
     pub out: Arc<ColorOut>,
     /// Colours are converted to the destination (printer's marks aren't).
     convert: bool,
+    /// RGB colours and images of a CMYK document drawn so far.
+    rgb_in_cmyk: RgbInCmyk,
     /// Text as glyph outlines; else the characters' fills are real text in embedded fonts.
     outline_text: bool,
     /// The fonts real text is written in, by face id, with their units per em; `None` for faces
@@ -523,6 +573,7 @@ impl<'a> Exporter<'a> {
             transparent: None,
             out: Arc::default(),
             convert: true,
+            rgb_in_cmyk: RgbInCmyk::default(),
             outline_text: set.advanced.outline_text,
             fonts: HashMap::new(),
             layers: false,
@@ -691,6 +742,9 @@ impl Exporter<'_> {
     /// active colour settings, so the file carries press values.
     fn col(&mut self, c: &Color) -> krilla::color::Color {
         let cmyk_doc = self.doc.color_mode == vectorcraft_doc::ColorMode::Cmyk;
+        if let (true, true, Color::Rgb { r, g, b }) = (cmyk_doc, self.convert, c) {
+            self.rgb_in_cmyk.colours.insert([r.to_bits(), g.to_bits(), b.to_bits()]);
+        }
         let c = self.out.color(c, self.intent, cmyk_doc, self.convert);
         if let (Color::Rgb { .. }, Some(note)) = (c, &self.out.srgb_note) {
             let note = note.clone();
@@ -1641,7 +1695,11 @@ impl Exporter<'_> {
         let doc = self.doc;
         let out = self.out.clone();
         let img = doc.images.get(key).and_then(|blob| {
-            let r = if blob.is_cmyk() {
+            let cmyk_image = blob.is_cmyk();
+            if !cmyk_image && self.convert && doc.color_mode == vectorcraft_doc::ColorMode::Cmyk {
+                self.rgb_in_cmyk.images.insert(key.to_string());
+            }
+            let r = if cmyk_image {
                 crate::images::recode_cmyk(blob, size, c, interpolate, out.cmyk_pixels())
             } else {
                 crate::images::recode(&blob.bytes, size, c, interpolate, out.pixels())
