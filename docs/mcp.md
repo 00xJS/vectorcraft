@@ -771,6 +771,27 @@ applies to the `--cmd` just before it. `run` also accepts the host commands `fil
 `file.exportForScreens` and `tool.select`. `run --in`, `convert` and `info` read every format `document.open` reads
 (`vectorcraft-cli --help` lists them).
 
+### What a headless session remembers
+
+`vectorcraft-cli run` and the headless `mcp` server keep two things between runs, in folders next to the
+preferences (the folder the desktop app uses, so both see the same ones; `VECTORCRAFT_CONFIG_DIR` moves it):
+
+- **Saved PDF presets** (`pdf.preset.save`, `.delete`, `.import`): one `.vcpdfpresets` file per preset in
+  `PDF Presets`, written as the command runs. Presets saved earlier are there at the next start and work as
+  `preset` in the PDF options.
+- **ICC profiles** (`color.loadProfile`): a copy of the file goes into `Color Profiles` (the result says
+  `remembered: true`), and every profile there is registered again at the next start, before the first
+  command, so `edit.colorSettings {"cmyk": "…"}` or a preset's output intent can name it in a later run. The
+  copy is what counts: the original may move or be deleted. `color.removeProfile {name}` forgets a profile and its
+  copy (not while it is a working space).
+
+Not remembered: Color Settings, the document, anything else. Nothing is read or written when
+`VECTORCRAFT_NO_PREFS` is set, and a server confined with `--automation-read-root` or
+`--automation-write-root` keeps nothing either (the folders are outside its roots). A file that is damaged, too large
+(a profile over 32 MB, a presets file over 1 MB) or not a valid preset or profile is skipped and logged. When the
+desktop app starts, the presets it kept in its preferences file before this folder existed are moved into it; after
+that the folder is the one place they live, so a preset deleted by `vectorcraft-cli` is gone in the app too.
+
 ### Parameter keys
 
 `command_run`, each step of `command_batch`, `run --cmd … --params` and the control channel's `engine.execute` check
@@ -2476,8 +2497,10 @@ newName?, description?, preset?, …document.exportPdf options}` creates or chan
 the preset's own settings; `newName` renames it; built-in presets are read-only; passwords are never stored);
 `pdf.preset.delete {name}` deletes one. `pdf.preset.export {names?, path?}` writes them as a `.vcpdfpresets` JSON file
 (without `path` it returns `data`), and `pdf.preset.import {path? | data? | dataBase64?, replace?}` adds a file's
-presets (names in use get a number unless `replace`). Saved presets live with the preferences and work as `preset`
+presets (names in use get a number unless `replace`). Saved presets work as `preset`
 in `document.exportPdf`, `document.pdfSettings`, `document.export`/`serialize` with format `pdf` and `.ai` saves.
+They are kept across restarts, in the desktop app and in `vectorcraft-cli` alike (see
+[What a headless session remembers](#what-a-headless-session-remembers)).
 
 ```json
 {"name":"run_command","arguments":{"command":"pdf.preset.save","params":{"name":"Web","preset":"Smallest File Size","compatibility":"1.5"}}}

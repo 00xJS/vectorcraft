@@ -85,7 +85,8 @@ By default VectorCraft's own crates log at `info` and everything else at `warn`.
 |---|---|
 | `VECTORCRAFT_CONTROL_PORT` | Same as `--control <port>`, which overrides it; a value that isn't a port from 1 to 65535 stops the app |
 | `VECTORCRAFT_IN_WINDOW_MENUS` | Any value but empty or `0`: same as `--in-window-menus` (see [macOS: the menu bar](#macos-the-menu-bar)) |
-| `VECTORCRAFT_NO_PREFS` | No preferences read or written, no default Data Recovery folder and no log file (agents' test runs) |
+| `VECTORCRAFT_NO_PREFS` | No preferences read or written, no default Data Recovery folder and no log file, and no saved PDF presets or loaded ICC profiles kept (agents' test runs; also for `vectorcraft-cli`) |
+| `VECTORCRAFT_CONFIG_DIR` | The folder for the preferences and the folders next to them (`PDF Presets`, `Color Profiles`, …), for the app and `vectorcraft-cli` (see `docs/control-protocol.md`) |
 | `WGPU_POWER_PREF` | Graphics adapter: `low`, `high` or `none` (see [Desktop graphics processor](#desktop-graphics-processor)) |
 | `WGPU_ADAPTER_NAME` | Graphics adapter by (part of) its name, any case (see [Desktop graphics processor](#desktop-graphics-processor)) |
 | `WGPU_BACKEND` | Graphics backends: `vulkan`, `dx12`, `metal`, `gl` |

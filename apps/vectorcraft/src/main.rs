@@ -854,8 +854,14 @@ fn main() -> std::process::ExitCode {
             "VectorCraft",
             options,
             Box::new(move |cc| {
-                let mut app = VectorcraftApp::new(Session::new(), services(cc.winit_window().cloned(), cc.egui_ctx.clone()));
+                let mut session = Session::new();
+                // The profiles loaded before come back before the preferences name any of them.
+                prefs_dir::attach_profile_store(&mut session);
+                let mut app = VectorcraftApp::new(session, services(cc.winit_window().cloned(), cc.egui_ctx.clone()));
                 load_prefs(&mut app, saved);
+                // The saved PDF presets live in their own folder (also read by vectorcraft-cli),
+                // which takes over from the copy the preferences file used to hold.
+                prefs_dir::attach_pdf_preset_store(&mut app.session);
                 // Fit the window to its monitor, or put it back where it was (still hidden).
                 if let Some(w) = cc.winit_window() {
                     app.ui.window = Some(window::restore(w, saved_window));
