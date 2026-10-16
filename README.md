@@ -74,6 +74,16 @@
 </tr>
 <tr>
 <td width="50%" valign="top">
+  <img src="docs/images/shot-6-revolve.png" alt="A still life of a vase, a bowl, a sphere and a bottle made with 3D Revolve; the vase is selected and the Revolve dialog shows its rotation, cap and view settings beside the rotation gizmo" width="100%">
+  <p align="center"><sub><b>3D Revolve</b>: smooth vector shading, caps and a rotation gizmo · <code>examples/still-life.vectorcraft</code></sub></p>
+</td>
+<td width="50%" valign="top">
+  <img src="docs/images/shot-7-dimensions.png" alt="A bracket drawing in the light theme with linear, angular, diameter and radius dimensions; the Dimension tool is active and the Properties panel shows the selected dimension's units, precision and style" width="100%">
+  <p align="center"><sub><b>Dimension tool</b>: lengths, angles and radii that follow the art they measure · <code>examples/bracket-drawing.vectorcraft</code></sub></p>
+</td>
+</tr>
+<tr>
+<td width="50%" valign="top">
   <img src="docs/images/shot-5-perspective.png" alt="Two lit building facades drawn on the left and right planes of a two-point perspective grid at sunset, with the Perspective Selection tool and the Plane Switching Widget" width="100%">
   <p align="center"><sub><b>Perspective Grid</b>: art attached to its planes stays editable in perspective · <code>examples/perspective-city.vectorcraft</code></sub></p>
 </td>
@@ -105,6 +115,12 @@ exposes to agents, and exported by VectorCraft's own renderer. The source files 
 <td colspan="2" valign="top">
   <img src="docs/images/art-ribbons.png" alt="Live Blends: three wide ribbons blending yellow to pink and teal to purple, crossing over a dark background" width="100%">
   <p align="center"><sub><b>Live Blends</b>: 70 steps, smooth colour, editable spines</sub></p>
+</td>
+</tr>
+<tr>
+<td colspan="2" valign="top">
+  <img src="docs/images/art-still-life.png" alt="Still life: a teal vase, a coral bowl, a white sphere and a mustard bottle on a warm table, all made with 3D Revolve" width="100%">
+  <p align="center"><sub><b>Still Life</b>: four revolved profiles with smooth vector shading</sub></p>
 </td>
 </tr>
 <tr>
