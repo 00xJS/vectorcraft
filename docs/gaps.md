@@ -227,8 +227,10 @@ from G14 and the budget run of G15: **~170–270 h** one agent, ~50–80 h wall 
   where three or more overlap. The group renders, saves and exports through its live expansion. Still missing: the
   right-click Bring Forward / Send Backward menu where three or more objects overlap; adding objects to the group by
   dragging them in the Layers panel is untested.
-- **Missing (asked for by users, from earlier versions):** Object › Create Gradient
-  Mesh on an embedded image, which turns it into a mesh of its colours (#1676); radial gradients in Image Trace's
+- **Done (from users' reports):** Object › Create Gradient Mesh on an embedded image turns it into a mesh over its
+  rectangle, with the image's transform kept; each point takes the average colour and opacity of the picture around it
+  (#1676). A linked image is refused, as the public documentation has it.
+- **Missing (asked for by users, from earlier versions):** radial gradients in Image Trace's
   Gradients option, which traces linear ones only (draft #1849). Inside the estimate below.
 - **Missing:** gradient dither and perceptual blending, gradient presets (30.0); tangent and perpendicular
   snapping and the consolidated snapping options (30.0); artboard locking, artboard colours and managing
@@ -355,6 +357,7 @@ from G14 and the budget run of G15: **~170–270 h** one agent, ~50–80 h wall 
 | 2026-10-14 | minor | G6: image variables (`VariableKind::Image`, `variable.makeImageDynamic`, path values on `dataset.select` keeping bounds); remaining: scripting surface, Batch, graph variables, dataset import/export; estimate 8–14 → 6–12 h |
 | 2026-10-14 | minor | Effect > Warp: style, orientation and percent controls; focused checks passed and original captures reviewed; scores and hours unchanged |
 | 2026-10-14 | minor | G11: open-path anchor Delete removes adjoining segments without bridging the gap; explicit Remove Anchors keeps its reconnect/refit behavior. Scores and hours unchanged. |
+| 2026-10-16 | minor | G13: Object › Create Gradient Mesh on an embedded image (#1676); a linked image is refused. No entry closed, estimates unchanged |
 | 2026-10-15 | minor | G13: Object › Intertwine (#1763): Make, Edit, Release, the Intertwine tool (hover, click, drawn path) and `object.intertwine.arrange` (toggle, front, back). Bring Forward / Send Backward stay missing; adding objects through the Layers panel is untested. No entry closed, estimates unchanged |
 | 2026-10-14 | minor | MCP `add_text` exposes the existing `vertical` option for point, area and path type; horizontal remains the default; scores and hours unchanged. |
 | 2026-10-14 | minor | Vertical fullwidth question and exclamation marks keep their nominal glyph upright when the font has no vertical alternate; scores and hours unchanged. |

@@ -79,6 +79,59 @@ impl ImageBlob {
         sample_pixels(&img, x * k(img.width(), object.0), y * k(img.height(), object.1), size)
     }
 
+    /// The colours of a `rows` × `cols` mesh laid over the image: `(rows + 1) * (cols + 1)` straight
+    /// RGBA samples, row-major, one per grid line crossing (row 0 is the top). Each is the
+    /// alpha-weighted average of the area around the crossing, one grid cell wide and high (a
+    /// quarter of each of the neighbouring cells), not a single pixel. A crossing over transparent
+    /// pixels gets their average colour at alpha 0. `None` when `rows` or `cols` is 0 or the
+    /// image can't be decoded.
+    pub fn grid_samples(&self, rows: u32, cols: u32) -> Option<Vec<[u8; 4]>> {
+        if rows == 0 || cols == 0 {
+            return None;
+        }
+        let img = self.decoded()?;
+        let (w, h) = (img.width() as usize, img.height() as usize);
+        if w == 0 || h == 0 {
+            return None;
+        }
+        // The pixel columns [from, to) around grid line `i` of `n`, at least one pixel wide.
+        let span = |i: u32, n: u32, len: usize| {
+            let at = |k: f64| (k / n as f64 * len as f64).round().clamp(0.0, len as f64) as usize;
+            let (from, to) = (at(i as f64 - 0.5), at(i as f64 + 0.5));
+            let from = from.min(len - 1);
+            (from, to.max(from + 1))
+        };
+        let mut out = Vec::with_capacity((rows as usize + 1) * (cols as usize + 1));
+        for r in 0..=rows {
+            let (y0, y1) = span(r, rows, h);
+            for c in 0..=cols {
+                let (x0, x1) = span(c, cols, w);
+                let (mut sum, mut plain, mut alpha, mut n) = ([0u64; 3], [0u64; 3], 0u64, 0u64);
+                for y in y0..y1 {
+                    for x in x0..x1 {
+                        let [pr, pg, pb, pa] = img.get_pixel(x as u32, y as u32).0;
+                        let a = pa as u64;
+                        for (k, v) in [pr, pg, pb].into_iter().enumerate() {
+                            sum[k] += v as u64 * a;
+                            plain[k] += v as u64;
+                        }
+                        alpha += a;
+                        n += 1;
+                    }
+                }
+                let n = n.max(1);
+                out.push(if alpha == 0 {
+                    let m = |k: usize| ((plain[k] + n / 2) / n) as u8;
+                    [m(0), m(1), m(2), 0]
+                } else {
+                    let m = |k: usize| ((sum[k] + alpha / 2) / alpha) as u8;
+                    [m(0), m(1), m(2), ((alpha + n / 2) / n) as u8]
+                });
+            }
+        }
+        Some(out)
+    }
+
     /// The decoded pixels (the last image decoded is kept for the next sample).
     fn decoded(&self) -> Option<Arc<image::RgbaImage>> {
         thread_local! {

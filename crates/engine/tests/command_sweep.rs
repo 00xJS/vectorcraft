@@ -735,3 +735,63 @@ fn text_commands_with_junk_params_on_inline_graphics() {
     }
     assert!(failures.is_empty(), "{} failures:\n{}", failures.len(), failures.join("\n"));
 }
+
+/// Create Gradient Mesh on embedded, linked and broken images (bad pixels, zero size, a NaN
+/// transform) with junk rows and columns: never a panic or a broken tree.
+#[test]
+fn gradient_mesh_from_images_with_junk_params() {
+    use vectorcraft_doc::{ImageBlob, ImageObject, LinkInfo, Node, NodeKind};
+    use vectorcraft_geom::Affine;
+    let img = image::RgbaImage::from_fn(5, 3, |x, y| image::Rgba([x as u8 * 50, y as u8 * 90, 7, if x == 2 { 0 } else { 255 }]));
+    let mut png = vec![];
+    img.write_to(&mut std::io::Cursor::new(&mut png), image::ImageFormat::Png).unwrap();
+    let params = [
+        json!({}),
+        json!({"rows": 1, "cols": 1}),
+        json!({"rows": 50, "cols": 50}),
+        json!({"rows": 0, "cols": 3}),
+        json!({"rows": 51, "cols": 3}),
+        json!({"rows": -1, "cols": 1e308}),
+        json!({"rows": "x", "columns": null, "appearance": 5}),
+        json!({"rows": 7, "cols": 9, "appearance": "edge", "highlight": f64::MAX}),
+        json!({"at": [2.5, 1.0]}),
+        json!({"at": [1e308, -1e308]}),
+        json!({"ids": [u64::MAX]}),
+    ];
+    // (stored bytes, width, height, transform, linked)
+    let variants: [(Vec<u8>, u32, u32, Affine, bool); 6] = [
+        (png.clone(), 5, 3, Affine::scale(4.0), false),
+        (png.clone(), 5, 3, Affine::scale(4.0), true),
+        (png.clone(), 0, 0, Affine::scale(4.0), false),
+        (png.clone(), 5, 3, Affine::new([f64::NAN, 0.0, 0.0, 1.0, 0.0, 0.0]), false),
+        (png[..png.len() / 2].to_vec(), 5, 3, Affine::IDENTITY, false),
+        (png.clone(), u32::MAX, u32::MAX, Affine::scale(1e300), false),
+    ];
+    let mut failures = vec![];
+    for (i, (bytes, w, h, xf, linked)) in variants.iter().enumerate() {
+        for p in &params {
+            let mut s = Fixture::Empty.session();
+            let placed = s.edit("Place", |d, sel| {
+                d.images.insert("pic".into(), ImageBlob::png(bytes.clone()));
+                let id = d.alloc_id();
+                let link = linked.then(|| LinkInfo { path: "/nonexistent/pic.png".into(), ..Default::default() });
+                let im = ImageObject { key: "pic".into(), width: *w, height: *h, xf: *xf, link, placement: Default::default() };
+                d.insert(d.default_layer(), 0, Node::new(id, NodeKind::Image(Box::new(im))))?;
+                sel.set([id]);
+                Ok(())
+            });
+            if placed.is_err() {
+                // Insert already refuses a NaN or out-of-range transform.
+                assert!(i >= 3, "variant {i}: {placed:?}");
+                continue;
+            }
+            let r = catch_quiet(|| no_panic(s.execute("object.mesh.create", p)));
+            if r.is_err() {
+                failures.push(format!("PANIC variant {i} {p}"));
+            } else if let Err(e) = check_session(&s) {
+                failures.push(format!("variant {i} {p}: {e}"));
+            }
+        }
+    }
+    assert!(failures.is_empty(), "{} failures:\n{}", failures.len(), failures.join("\n"));
+}
