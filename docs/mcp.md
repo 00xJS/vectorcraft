@@ -1042,7 +1042,8 @@ recalled. Edit Selection…
 renames and deletes: `select.editSaved {name, newName?, delete?}`, or several at once as
 `{edits: [{name, newName?, delete?}…]}` in one undo step, where every `name` is the name before the edit and the
 names must stay unique. In the desktop app the saved selections are listed at the bottom of the Select menu
-(`select.recall1` … `select.recall25`). A file's saved selections are checked when it opens: past 25, blank or
+(`select.recall1` … `select.recall25`) and in the Layers panel menu's Save Selection submenu
+(`select.recall {name}`). A file's saved selections are checked when it opens: past 25, blank or
 repeated names, and ids the document doesn't have are dropped.
 
 ## Ruler guides

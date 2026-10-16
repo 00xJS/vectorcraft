@@ -1497,6 +1497,8 @@ pub fn menu(app: &mut VectorcraftApp, ui: &mut Ui) {
     items.extend([
         None,
         Some(("Locate Object", "layer.locate", json!({}), has_sel, false)),
+        // Sentinel: rendered as the Save Selection submenu (the Select menu's saved-selection items).
+        Some(("Save Selection", "", json!({}), true, false)),
         None,
         Some(("Merge Selected", "layer.merge", json!({}), rows.len() >= 2, false)),
         Some(("Flatten Artwork", "layer.flatten", json!({}), true, false)),
@@ -1551,6 +1553,7 @@ pub fn menu(app: &mut VectorcraftApp, ui: &mut Ui) {
                     app.run("assets.add", p).ok();
                 });
             }
+            Some(("Save Selection", "", ..)) => save_selection_menu(app, ui),
             Some((label, cmd, p, enabled, checked)) => {
                 if widgets::menu_item(ui, label, enabled, checked) {
                     app.run(cmd, p).ok();
@@ -1574,6 +1577,29 @@ fn collect_for_export_menu(ui: &mut Ui, enabled: bool, mut run: impl FnMut(bool)
                 ui.close();
             }
         });
+    });
+}
+
+/// Save Selection › Save Selection…, Update Selection and Edit Selection…, enabled and run as in
+/// the Select menu, then the active document's saved selections: choosing one recalls it.
+fn save_selection_menu(app: &mut VectorcraftApp, ui: &mut Ui) {
+    ui.menu_button(format!("   {}", tl!("Save Selection")), |ui| {
+        for (label, id) in [("Save Selection…", "select.save"), ("Update Selection", "select.update"), ("Edit Selection…", "select.editSaved")] {
+            if widgets::menu_item(ui, label, crate::menus::enabled(app, id), false) {
+                crate::menus::invoke(app, id, json!({}));
+                ui.close();
+            }
+        }
+        let names: Vec<String> = app.session.active().map(|d| d.doc.saved_selections.iter().map(|s| s.name.clone()).collect()).unwrap_or_default();
+        if !names.is_empty() {
+            ui.separator();
+        }
+        for name in names {
+            if widgets::menu_item_name(ui, &name, true, false) {
+                app.run("select.recall", json!({ "name": name })).ok();
+                ui.close();
+            }
+        }
     });
 }
 
@@ -2540,6 +2566,7 @@ mod tests {
             "Make/Release Clipping Mask",
             "Enter Isolation Mode",
             "Locate Object",
+            "Save Selection",
             "Merge Selected",
             "Flatten Artwork",
             "Collect in New Layer",
@@ -2556,6 +2583,48 @@ mod tests {
         ] {
             assert!(texts.iter().any(|(t, _)| t.trim() == label), "{label} missing from {texts:?}");
         }
+    }
+
+    /// ≡ › Save Selection lists the saved selections: choosing one recalls it, Update Selection
+    /// makes it hold the selected objects, and Save Selection… opens the name dialog.
+    #[test]
+    fn the_save_selection_submenu_recalls_updates_and_saves_selections() {
+        let (mut app, _, [a, b]) = two_rects();
+        app.run("select.set", json!({"ids": [a.0]})).unwrap();
+        app.run("select.save", json!({"name": "Left"})).unwrap();
+        app.run("select.set", json!({"ids": [b.0]})).unwrap();
+        app.run("select.save", json!({"name": "Right"})).unwrap();
+        app.run("select.none", json!({})).unwrap();
+        let ctx = egui::Context::default();
+        crate::theme::install_fonts(&ctx);
+        let frame = |app: &mut VectorcraftApp, events: Vec<egui::Event>| super::super::tests_appearance::frame_events(&ctx, app, events, menu);
+        // Opens the submenu (when closed) and clicks the item labeled `label` in it.
+        let choose = |app: &mut VectorcraftApp, label: &str| {
+            let at = |texts: &[(String, egui::Rect)], label: &str| texts.iter().find(|(t, _)| t.trim() == label).map(|(_, r)| r.center());
+            let mut texts = frame(app, vec![]);
+            if at(&texts, label).is_none() {
+                let sub = at(&texts, "Save Selection").expect("the Save Selection submenu");
+                for e in [egui::Event::PointerMoved(sub), button(sub, true), button(sub, false)] {
+                    frame(app, vec![e]);
+                }
+                texts = frame(app, vec![]);
+            }
+            let item = at(&texts, label).unwrap_or_else(|| panic!("{label} missing from {texts:?}"));
+            for e in [egui::Event::PointerMoved(item), button(item, true), button(item, false)] {
+                frame(app, vec![e]);
+            }
+        };
+        let selected = |app: &VectorcraftApp| app.session.active().unwrap().selection.objects.clone();
+        choose(&mut app, "Left");
+        assert_eq!(selected(&app), vec![a], "choosing a name recalls it");
+        app.run("select.set", json!({"ids": [a.0, b.0]})).unwrap();
+        choose(&mut app, "Update Selection");
+        let saved = app.session.active().unwrap().doc.saved_selections.clone();
+        assert_eq!(saved.iter().map(|s| (s.name.as_str(), s.objects.len())).collect::<Vec<_>>(), vec![("Left", 2), ("Right", 1)]);
+        assert!(app.ui.dialog.is_none());
+        choose(&mut app, "Save Selection…");
+        let d = app.ui.dialog.clone().expect("Save Selection dialog");
+        assert_eq!((d.str("__command"), d.str("name")), ("select.save".into(), "Selection 1".into()));
     }
 
     /// With the dock collapsed, Layers shows in a floating flyout: its rows work there too.
