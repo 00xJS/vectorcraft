@@ -1434,6 +1434,29 @@ impl<'a> Reader<'a> {
         }
     }
 
+    /// Drop the object just read when it is an envelope's own mesh: a group on `%_` lines holding
+    /// only gradient meshes. Whether it was dropped.
+    fn drop_envelope_mesh(&mut self) -> bool {
+        fn only_meshes(n: &Node) -> bool {
+            match &n.kind {
+                NodeKind::Mesh(_) => true,
+                NodeKind::Group { children, .. } => !children.is_empty() && children.iter().all(|c| only_meshes(c)),
+                _ => false,
+            }
+        }
+        let Some(n) = self.last_object() else { return false };
+        let id = n.id;
+        if !matches!(n.kind, NodeKind::Group { .. }) || !only_meshes(n) || !self.hidden_ids.contains(&id) {
+            return false;
+        }
+        if let Some(f) = self.frames.last_mut() {
+            f.children.pop();
+        }
+        self.hidden_ids.remove(&id);
+        self.after_object = false;
+        true
+    }
+
     /// Do the layers being read show?
     fn shown(&self) -> bool {
         self.frames.iter().all(|f| !matches!(&f.kind, Kind::Layer(a) if !a.visible))
@@ -1442,6 +1465,12 @@ impl<'a> Reader<'a> {
     /// An object's dictionary: its name (`AIArtName`, or the XML id `AI10_ArtUID`), and the
     /// opacity mask it may carry.
     fn art_dictionary(&mut self, o: &Obj) {
+        // An envelope (a distortion, `AIDeformStyle` / `DeformValue`) is written on `%_` lines as
+        // a group holding the mesh that shapes it; the distorted art the file's PDF part draws
+        // follows on plain lines. That mesh isn't art, so it goes (#2405).
+        if (o.get("AIDeformStyle").is_some() || o.get("DeformValue").is_some()) && self.drop_envelope_mesh() {
+            return;
+        }
         if let Some(mask) = o.obj("AI9_Mask").or_else(|| o.obj("Mask")) {
             if let Some(art) = &mask.art {
                 let on = |key: &str| mask.nums(key).first().copied() == Some(1.0);

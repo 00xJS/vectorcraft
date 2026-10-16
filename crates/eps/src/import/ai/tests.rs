@@ -1226,6 +1226,46 @@ fn a_styled_object_keeps_the_transparency_written_on_its_look() {
     assert_eq!((a[0].opacity, a[0].blend), (0.6, BlendMode::Multiply));
 }
 
+/// An envelope is written on `%_` lines as a group holding the mesh that shapes it, with its
+/// distortion in the group's dictionary; the distorted art follows on plain lines. Only that art
+/// is drawn, as in the file's PDF part, not the envelope's mesh (#2405).
+#[test]
+fn an_envelope_mesh_is_not_read_as_art() {
+    let corner = |x: i32, y: i32, next: (i32, i32), prev: (i32, i32)| {
+        format!("%_[0.82 0.83 0.83 1 {x} {y} {} {} 1 {} {} 1] /N X#\n", next.0, next.1, prev.0, prev.1)
+    };
+    let mesh = format!(
+        "%_/Mesh X!\n%_(DeviceRGB) /CS X#\n%_[0 0] /P X#\n{}{}{}{}%_0 /E X#\n%_/End X!\n",
+        corner(0, 0, (0, 10), (10, 0)),
+        corner(0, 40, (10, 40), (0, 30)),
+        corner(40, 40, (40, 30), (30, 40)),
+        corner(40, 0, (30, 0), (40, 10)),
+    );
+    let envelope = |dictionary: &str| {
+        format!(
+            "%_0 Ae\n%_u\n{mesh}%_0 0 Xd\n%_6 () XW\n%_U\n%_/ArtDictionary :\n{dictionary}%_;\n%_\n%_0 0 Xd\n%_6 () XW\n{RED}{}f\n",
+            rect_path(0.0, 0.0, 40.0, 40.0)
+        )
+    };
+    let has_mesh = |n: &Node| -> bool {
+        fn walk(n: &Node) -> bool {
+            matches!(n.kind, NodeKind::Mesh(_)) || n.children().is_some_and(|c| c.iter().any(|k| walk(k)))
+        }
+        walk(n)
+    };
+
+    let warped = envelope("%_(Warp: Arch) /UnicodeString (DisplayString) ,\n%_0.27 /Real (DeformValue) ,\n%_1 /Int (AIDeformStyle) ,\n");
+    let doc = read_ok(&layer(&warped)).doc;
+    let a = art(&doc);
+    assert!(!a.iter().any(|n| has_mesh(n)), "{a:#?}");
+    assert_eq!(a.len(), 1, "{a:#?}");
+    assert_eq!(fill(&a[0]).color(), Some(Color::rgb(1.0, 0.0, 0.0)));
+
+    // A mesh in a group with no distortion is still art.
+    let doc = read_ok(&layer(&envelope(""))).doc;
+    assert!(art(&doc).iter().any(|n| has_mesh(n)), "{:#?}", art(&doc));
+}
+
 #[test]
 fn a_gradient_mesh_reads_as_a_patch() {
     let corner = |rgb: &str, x: i32, y: i32, next: (i32, i32), prev: (i32, i32)| {
