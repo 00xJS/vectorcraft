@@ -4516,7 +4516,11 @@ lighting	Light	Свет
 	Coral	Коралловый
 	Violet	Фиолетовый
 	Pink	Розовый
-
+	Sketch	Эскиз
+	Halftone Pattern…	Полутоновый узор…
+	Halftone Pattern	Полутоновый узор
+	Pattern Type	Тип узора
+	Dot	Точка
 # User Interface › Color Scheme
 	Color Scheme	Цветовая схема
 	Modern	Современная

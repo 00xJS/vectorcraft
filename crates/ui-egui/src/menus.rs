@@ -3679,13 +3679,14 @@ fn font_items(english_names: bool) -> Vec<Item> {
 /// vector effects): (submenu, the catalogue's menu path of its effects).
 /// The raster Stylize submenu shares its path with the vector one and lists only the effects at
 /// that path that [`vectorcraft_effects::PIXEL_EFFECTS`] names.
-const RASTER_MENUS: [(&str, &[&str]); 9] = [
+const RASTER_MENUS: [(&str, &[&str]); 10] = [
     ("Artistic", &["Effect", "Artistic"]),
     ("Blur", &["Effect", "Blur"]),
     ("Brush Strokes", &["Effect", "Brush Strokes"]),
     ("Distort", &["Effect", "Distort"]),
     ("Pixelate", &["Effect", "Pixelate"]),
     ("Sharpen", &["Effect", "Sharpen"]),
+    ("Sketch", &["Effect", "Sketch"]),
     ("Stylize", &["Effect", "Stylize"]),
     ("Texture", &["Effect", "Texture"]),
     ("Video", &["Effect", "Video"]),
