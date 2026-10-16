@@ -994,3 +994,51 @@ fn a_copied_area_type_object_is_framed_where_its_own_art_path_is() {
     let b = frame.bounds().unwrap();
     assert!((b.x0 - 30.0).abs() < 1e-6 && (b.y0 - 30.0).abs() < 1e-6 && (b.x1 - 80.0).abs() < 1e-6 && (b.y1 - 50.0).abs() < 1e-6, "{b:?}");
 }
+
+/// A raster print page can carry a fully vector editing copy. The legacy mesh has no
+/// opacity operand and its vector mask hides half of it: ignoring either loses this import.
+#[test]
+fn raster_print_page_recovers_legacy_mesh_vector_mask_and_editable_curve() {
+    let mesh = "/Mesh X!\n%_/DeviceRGB /CS X#\n\
+        %_[0 0 1 20 20 20 30 1 30 20 1] /N X#\n\
+        %_[0 0 1 20 60 30 60 1 20 50 1] /N X#\n\
+        %_[0 0 1 60 60 60 50 1 50 60 1] /N X#\n\
+        %_[0 0 1 60 20 50 20 1 60 30 1] /N X#\n%_/E X#\n/End X!\n";
+    let mask = "%_/ArtDictionary :\n%_/Mask :\n%_X=\n%_1 g\n%_20 20 m\n%_20 60 L\n%_40 60 L\n%_40 20 L\n%_f\n%_X+\n%_(Art) ,\n%_1 /Bool (Clipping) ,\n%_1 /Bool (Linked) ,\n%_; (AI9_Mask) ,\n%_;\n";
+    let curve = "0 1 1 0 1 0 0 Xa\n70 20 m\n70 50 90 50 90 20 c\nf\n";
+    let data = native(&layer("Editable", true, &format!("u\n{mesh}{mask}{curve}U\n")));
+    let samples = ("0000ff".repeat(20) + &"ffffff".repeat(20)).repeat(40);
+    let page = format!(
+        "gsave 20 20 translate 40 40 scale /DeviceRGB setcolorspace \
+        << /ImageType 1 /Width 40 /Height 40 /BitsPerComponent 8 /Decode [0 1 0 1 0 1] \
+        /ImageMatrix [40 0 0 -40 0 40] /DataSource <{samples}> >> image grestore \
+        1 0 0 setrgbcolor 70 20 moveto 70 50 90 50 90 20 curveto closepath fill"
+    );
+    // Use AI9's zlib container, too, rather than only the newer Zstandard test helper.
+    use std::io::Write as _;
+    let mut encoder = flate2::write::ZlibEncoder::new(Vec::new(), flate2::Compression::default());
+    encoder.write_all(data.as_bytes()).unwrap();
+    let packed = ascii85(&encoder.finish().unwrap());
+    let file = format!(
+        "%!PS-Adobe-3.0 EPSF-3.0\n%%BoundingBox: 0 0 100 100\n%%EndComments\n{page}\nshowpage\n%%EOF\n%AI9_PrivateDataBegin\n%AI9_DataStream\n%{packed}\n%AI9_PrivateDataEnd\n"
+    );
+    let r = import(file.as_bytes()).unwrap();
+    assert!(r.warnings.is_empty(), "{:?}", r.warnings);
+    assert_eq!(names(&r.document), ["Editable"]);
+    let group = &r.document.layers[0].children().unwrap()[0];
+    let a = group.children().unwrap();
+    assert_eq!(a.len(), 2);
+    assert!(matches!(a[0].kind, NodeKind::Mesh(_)));
+    assert!(a[0].extras().mask.is_some());
+    let NodeKind::Path { path, .. } = &a[1].kind else { panic!("editable path") };
+    assert_eq!(path.anchor_count(), 2);
+    assert_ne!(path.subpaths[0].anchors[0].h_out, path.subpaths[0].anchors[0].p);
+    assert_ne!(a[0].id, a[1].id);
+    // The normal EPS path remains available explicitly.
+    let page = crate::import_with(file.as_bytes(), false).unwrap();
+    assert!(matches!(page.document.layers[0].children().unwrap()[0].kind, NodeKind::Image(_)));
+    // A wrong editing copy must still fail the page comparison.
+    let wrong = file.replace("%%BoundingBox: 0 0 100 100", "%%BoundingBox: 0 0 120 100");
+    let r = import(wrong.as_bytes()).unwrap();
+    assert!(r.warnings.iter().any(|w| w.contains("different page")), "{:?}", r.warnings);
+}

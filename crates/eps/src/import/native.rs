@@ -703,6 +703,44 @@ fn compare_scale(r: Rect) -> f64 {
     (400.0 / r.width().max(r.height()).max(1.0)).min(4.0)
 }
 
+/// A flattened print page made only of images. Sampling it directly at 400 pixels aliases
+/// its fine edges while vector art receives coverage antialiasing. Compare both at a higher
+/// resolution and apply the same reconstruction filter; keep the existing difference limits.
+fn comparison_samples(doc: &Document) -> u32 {
+    let (mut images, mut vector) = (false, false);
+    doc.walk(|n| match n.kind {
+        NodeKind::Image(_) => images = true,
+        NodeKind::Layer { .. } | NodeKind::Group { .. } | NodeKind::Path { clipping: true, .. } => {}
+        _ => vector = true,
+    });
+    if images && !vector { 4 } else { 1 }
+}
+
+/// Render for the page check. The comparison scale bounds the long side to 400 px, so the
+/// extra samples stay bounded to 1600 px. Filter premultiplied channels, including alpha.
+fn comparison_render(
+    renderer: &mut vectorcraft_render::Renderer,
+    doc: &Document,
+    rect: Rect,
+    scale: f64,
+    samples: u32,
+) -> vectorcraft_render::Rendered {
+    let rendered = renderer.render_region(doc, rect, scale * f64::from(samples), false);
+    if samples == 1 {
+        return rendered;
+    }
+    let (width, height) = match vectorcraft_render::raster_size(rect, scale) {
+        Ok(size) => size,
+        // A malformed region cannot provide a comparable raster.
+        Err(_) => return rendered,
+    };
+    let Some(src) = image::RgbaImage::from_raw(rendered.width, rendered.height, rendered.pixels) else {
+        return vectorcraft_render::Rendered { width: 0, height: 0, pixels: Vec::new() };
+    };
+    let pixels = image::imageops::resize(&src, width, height, image::imageops::FilterType::Triangle).into_raw();
+    vectorcraft_render::Rendered { width, height, pixels }
+}
+
 /// The page drawn once, to weigh the layers' art against it: [`Self::difference`] draws the layers
 /// with a renderer of their own, which keeps their decoded images between draws (the page's images
 /// can share their keys and not their pixels, so the two don't share one).
@@ -712,6 +750,7 @@ struct PageView {
     page_type: Vec<Rect>,
     layers: vectorcraft_render::Renderer,
     scale: f64,
+    samples: u32,
 }
 
 impl PageView {
@@ -720,10 +759,11 @@ impl PageView {
         let scale = compare_scale(ra);
         // Drawn on nothing and then seen on white: blending modes have no page to blend with, as in
         // the app that wrote the file.
-        let page = vectorcraft_render::Renderer::new().render_region(frame.page, ra, scale, false);
+        let samples = comparison_samples(frame.page);
+        let page = comparison_render(&mut vectorcraft_render::Renderer::new(), frame.page, ra, scale, samples);
         let mut page_type = vec![];
         type_areas(&frame.page.layers, ra, scale, &mut page_type);
-        Self { page, page_type, layers: vectorcraft_render::Renderer::new(), scale }
+        Self { page, page_type, layers: vectorcraft_render::Renderer::new(), scale, samples }
     }
 
     /// How `b` on `rb` (a rectangle the page's size) draws differently from the page ([`compared`]).
@@ -731,7 +771,7 @@ impl PageView {
         // The page doesn't print what isn't printed.
         let printed = as_printed(b);
         let b = printed.as_ref().unwrap_or(b);
-        let y = self.layers.render_region(b, rb, self.scale, false);
+        let y = comparison_render(&mut self.layers, b, rb, self.scale, self.samples);
         let mut areas = self.page_type.clone();
         type_areas(&b.layers, rb, self.scale, &mut areas);
         compared(&self.page, &y, &areas)
@@ -743,7 +783,7 @@ impl PageView {
     fn colour_difference(&mut self, b: &Document, rb: Rect) -> f64 {
         let printed = as_printed(b);
         let b = printed.as_ref().unwrap_or(b);
-        let y = self.layers.render_region(b, rb, self.scale, false);
+        let y = comparison_render(&mut self.layers, b, rb, self.scale, self.samples);
         if (y.width, y.height) != (self.page.width, self.page.height) {
             return 1.0;
         }
@@ -759,8 +799,9 @@ fn difference(a: &Document, ra: Rect, b: &Document, rb: Rect) -> Difference {
     let b = printed.as_ref().unwrap_or(b);
     let scale = compare_scale(ra);
     // A renderer each: the two documents' images can share their keys and not their pixels.
-    let x = vectorcraft_render::Renderer::new().render_region(a, ra, scale, false);
-    let y = vectorcraft_render::Renderer::new().render_region(b, rb, scale, false);
+    let samples = comparison_samples(a);
+    let x = comparison_render(&mut vectorcraft_render::Renderer::new(), a, ra, scale, samples);
+    let y = comparison_render(&mut vectorcraft_render::Renderer::new(), b, rb, scale, samples);
     let mut areas = vec![];
     type_areas(&a.layers, ra, scale, &mut areas);
     type_areas(&b.layers, rb, scale, &mut areas);
@@ -772,7 +813,7 @@ fn difference(a: &Document, ra: Rect, b: &Document, rb: Rect) -> Difference {
 /// at all ([`differ`]): the page of an RGB document is written in the colours' CMYK equivalents,
 /// and what the comparison looks for is art that is missing or out of place.
 fn compared(x: &vectorcraft_render::Rendered, y: &vectorcraft_render::Rendered, areas: &[Rect]) -> Difference {
-    if x.width != y.width || x.height != y.height {
+    if x.width == 0 || x.height == 0 || x.width != y.width || x.height != y.height {
         return Difference { any: 1.0, solid: 1.0 };
     }
     let differs: Vec<bool> = x.pixels.as_chunks::<4>().0.iter().zip(y.pixels.as_chunks::<4>().0).map(|(p, q)| differ(p, q)).collect();
@@ -1357,5 +1398,59 @@ mod tests {
         join_pieces(&mut parts, &lines);
         let texts: Vec<String> = parts.iter().filter_map(|n| if let NodeKind::Text(t) = &n.kind { Some(t.plain_text()) } else { None }).collect();
         assert_eq!(texts, ["Hello", "abcd"]);
+    }
+    /// A flattened page samples a fine stripe pattern once per comparison pixel; that
+    /// aliases to white although vector coverage is gray. Shared minification avoids the
+    /// false fallback, while genuinely missing art must still be rejected.
+    #[test]
+    fn raster_page_comparison_filters_minification_without_accepting_missing_art() {
+        use vectorcraft_color::{Color, Paint};
+        use vectorcraft_doc::{Appearance, ImageBlob, ImageObject};
+        let mut vector = Document::new(1000.0, 500.0);
+        let layer = vector.layers[0].id;
+        for i in 0..400 {
+            let x = f64::from(i) * 2.5 + 0.5;
+            let n = Node::path(
+                vector.alloc_id(),
+                vectorcraft_geom::shapes::rectangle(Rect::new(x, 0.0, x + 1.0, 500.0)),
+                Appearance::basic(Paint::solid(Color::BLACK), Paint::None, 0.0),
+            );
+            vector.insert(Some(layer), usize::MAX, n).unwrap();
+        }
+        let rect = vector.artboards[0].rect;
+        let source = vectorcraft_render::Renderer::new().render_region(&vector, rect, 1.6, true);
+        let mut png = Vec::new();
+        image::RgbaImage::from_raw(source.width, source.height, source.to_straight())
+            .unwrap()
+            .write_to(&mut std::io::Cursor::new(&mut png), image::ImageFormat::Png)
+            .unwrap();
+        let blob = ImageBlob::new("image/png", png);
+        let key = blob.content_key();
+        let mut page = Document::new(1000.0, 500.0);
+        page.images.insert(key.clone(), blob);
+        let image = Node::new(
+            page.alloc_id(),
+            NodeKind::Image(Box::new(ImageObject {
+                key,
+                width: source.width,
+                height: source.height,
+                xf: Affine::scale(1.0 / 1.6),
+                link: None,
+                placement: Default::default(),
+            })),
+        );
+        page.insert(Some(page.layers[0].id), usize::MAX, image).unwrap();
+        assert_eq!(comparison_samples(&page), 4);
+        assert_eq!(comparison_samples(&vector), 1, "ordinary vector pages retain their comparison");
+        let mut renderer = vectorcraft_render::Renderer::new();
+        let a = comparison_render(&mut renderer, &page, rect, 0.4, 1);
+        let b = comparison_render(&mut vectorcraft_render::Renderer::new(), &vector, rect, 0.4, 1);
+        assert!(compared(&a, &b, &[]).solid > MAX_SOLID_DIFFERENCE, "the old point sampling falsely refused this page");
+        let frame = Frame { page: &page, page_rect: rect, rect, whole: false };
+        let mut view = PageView::new(&frame);
+        assert!(compare(&frame, &mut view, &vector).is_ok());
+        assert!(compare(&frame, &mut view, &Document::new(1000.0, 500.0)).is_err(), "missing artwork remains an error");
+        let shifted = Rect::new(0.0, 0.0, 500.0, 500.0);
+        assert!(view.difference(&vector, shifted).any > MAX_DIFFERENCE, "wrong framing remains an error");
     }
 }
