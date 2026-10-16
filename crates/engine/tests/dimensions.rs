@@ -421,3 +421,34 @@ fn clicking_near_a_line_snaps_the_measured_point_onto_it() {
     let id = s.doc().unwrap().selection.objects[0].0;
     assert_eq!(text(&s, id), "20.00 pt");
 }
+
+/// Both picked points snap onto anchors a few pixels away, the rubber band and a ring show the
+/// snap before the click, and the dimension stays linked to the anchors (#2516).
+#[test]
+fn both_points_snap_onto_anchors_with_a_visible_indicator() {
+    use vectorcraft_engine::tools::Overlay;
+    let mut s = session();
+    let line = edge(&mut s);
+    s.select_tool("dimension", ViewInfo::default()).unwrap();
+    ev(&mut s, PointerKind::Move, 103.0, 102.0);
+    let ring = |s: &mut Session| {
+        s.overlays(ViewInfo::default())
+            .into_iter()
+            .any(|o| matches!(o, Overlay::Anchor { p, size, .. } if size > 8.0 && p.x == 100.0 && p.y == 100.0))
+    };
+    assert!(ring(&mut s), "ring on the anchor before the first click");
+    ev(&mut s, PointerKind::Down, 103.0, 102.0);
+    ev(&mut s, PointerKind::Up, 103.0, 102.0);
+    ev(&mut s, PointerKind::Move, 169.0, 98.0);
+    let end = s.overlays(ViewInfo::default()).into_iter().find_map(|o| if let Overlay::Line { b, .. } = o { Some(b) } else { None }).unwrap();
+    assert_eq!((end.x, end.y), (172.0, 100.0), "rubber band ends on the anchor");
+    ev(&mut s, PointerKind::Down, 169.0, 98.0);
+    ev(&mut s, PointerKind::Up, 169.0, 98.0);
+    ev(&mut s, PointerKind::Down, 136.0, 130.0);
+    ev(&mut s, PointerKind::Up, 136.0, 130.0);
+    let id = s.doc().unwrap().selection.objects[0].0;
+    assert_eq!(text(&s, id), "72.00 pt");
+    run(&mut s, "select.set", json!({"ids":[line]}));
+    run(&mut s, "object.scale", json!({"sx":200,"sy":100}));
+    assert_eq!(text(&s, id), "144.00 pt", "linked to both anchors");
+}

@@ -133,6 +133,23 @@ fn nearest_on(cx: &ToolContext, edge: &SegmentRef, p: Point) -> Option<Point> {
     (q.x.is_finite() && q.y.is_finite()).then_some(q)
 }
 
+/// Where a Linear pick at `p` lands: on an anchor within reach (kept as a link to its path),
+/// else on the closest point of the picked line, else on the usual snap targets or `p` itself.
+fn snap_linear(cx: &ToolContext, p: Point) -> (Point, Option<PointRef>) {
+    let (mut at, _) = crate::guides::snap_pick(cx, p);
+    let mut reference = None;
+    if let Some(edge) = pick(cx, p) {
+        if let Some((anchor, point)) = anchor_near(cx, &edge, p) {
+            at = point;
+            reference = Some(PointRef { node: edge.node, subpath: edge.subpath, anchor });
+        } else if let Some(point) = nearest_on(cx, &edge, p) {
+            // Not on an anchor: snap to the closest point of the line (#2432).
+            at = point;
+        }
+    }
+    (at, reference)
+}
+
 impl DimensionTool {
     fn target(&self, cx: &ToolContext, p: Point) -> Option<Target> {
         let edge = pick(cx, p)?;
@@ -228,17 +245,7 @@ impl DimensionTool {
     fn click(&mut self, cx: &ToolContext, p: Point, target: Option<Target>, mods: Mods) -> Vec<Action> {
         match self.kind {
             Kind::Linear => {
-                let (mut at, _) = crate::guides::snap_pick(cx, p);
-                let mut reference = None;
-                if let Some(edge) = pick(cx, p) {
-                    if let Some((anchor, point)) = anchor_near(cx, &edge, p) {
-                        at = point;
-                        reference = Some(PointRef { node: edge.node, subpath: edge.subpath, anchor });
-                    } else if let Some(point) = nearest_on(cx, &edge, p) {
-                        // Not on an anchor: snap to the closest point of the line (#2432).
-                        at = point;
-                    }
-                }
+                let (mut at, mut reference) = snap_linear(cx, p);
                 if mods.shift
                     && let Some((last, _)) = self.points.last()
                 {
@@ -418,8 +425,19 @@ impl Tool for DimensionTool {
         for edge in &self.lines {
             segment(edge, &mut out);
         }
+        // Linear: show where the next click lands (anchor ring, or a dot on a line), and draw the
+        // rubber band to that point, so the user sees the snap before clicking (#2516).
+        let linear_pick = self.kind == Kind::Linear && self.pending.is_none() && self.lines.is_empty();
+        let snapped = linear_pick.then(|| snap_linear(cx, self.at));
+        if let Some((q, reference)) = &snapped
+            && (reference.is_some() || q.distance(self.at) > 1e-9)
+        {
+            let on_anchor = reference.is_some();
+            out.push(Overlay::Anchor { p: *q, color, filled: !on_anchor, size: if on_anchor { 10.0 } else { 6.0 } });
+        }
         if let Some((p, _)) = self.points.last() {
-            let b = if self.shift { constrained(cx, *p, self.at) } else { self.at };
+            let target = snapped.map_or(self.at, |(q, _)| q);
+            let b = if self.shift { constrained(cx, *p, target) } else { target };
             out.push(Overlay::Line { a: *p, b, color, dashed: true });
         }
         out
