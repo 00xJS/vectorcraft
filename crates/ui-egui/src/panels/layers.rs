@@ -1461,6 +1461,8 @@ pub fn menu(app: &mut VectorcraftApp, ui: &mut Ui) {
     let rows = st.highlighted_rows();
     let current = st.current_layer();
     let has_sel = !st.selection.is_empty();
+    // How many top-level layers hold the selected art: Merge Selected merges them.
+    let art_layers = st.selection.objects.iter().filter_map(|o| doc.layer_of(*o)).collect::<HashSet<_>>().len();
     let isolated = st.isolation.is_some();
     let targets: Vec<NodeId> = if rows.is_empty() { current.into_iter().collect() } else { rows.clone() };
     let one_container = match targets.as_slice() {
@@ -1498,7 +1500,7 @@ pub fn menu(app: &mut VectorcraftApp, ui: &mut Ui) {
         None,
         Some(("Locate Object", "layer.locate", json!({}), has_sel, false)),
         None,
-        Some(("Merge Selected", "layer.merge", json!({}), rows.len() >= 2, false)),
+        Some(("Merge Selected", "layer.merge", json!({}), rows.len() >= 2 || (rows.is_empty() && art_layers >= 2), false)),
         Some(("Flatten Artwork", "layer.flatten", json!({}), true, false)),
         Some(("Collect in New Layer", "layer.collectInNew", json!({}), !rows.is_empty() || has_sel, false)),
         // Sentinel: rendered as Collect for Export › As Single / As Multiple (assets.add).
