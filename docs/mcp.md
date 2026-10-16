@@ -1202,6 +1202,10 @@ objects themselves (a group's own stack; layers through `ids`) or, with `target:
 groups and layers. `appearance.targetContents` selects a group's members (double-clicking the Contents row).
 SVG and PDF export bake a group's own fills, strokes and geometry effects into paths; its raster effects stay a
 filter on the whole group in SVG and become an image of the whole group in PDF.
+A geometry effect on one of type's own fills or strokes (`effect.apply` with `item`) reshapes the whole outline that
+the fill or stroke paints, and SVG, PDF, EPS and the other vector exports write such type as paths. On type that
+holds inline graphics, those effects are drawn and exported only when the type has a geometry effect or perspective
+of its own.
 
 ```json
 {"name":"run_command","arguments":{"command":"appearance.addFill","params":{"ids":[7]}}}
