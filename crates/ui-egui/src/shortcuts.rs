@@ -241,6 +241,8 @@ fn type_text(app: &mut VectorcraftApp, ctx: &egui::Context) {
 }
 
 pub fn handle(app: &mut VectorcraftApp, ctx: &egui::Context) {
+    // Taken before anything returns, so a press in a field or a dialog ends a pair of Escapes.
+    let mut escape_pair = escape_press(ctx);
     // Followed before anything returns, so a key typed in a field isn't taken for a paste.
     let textless_paste = ctx.input(|i| app.paste_chord.textless_paste(&i.events));
     // A numeric field being scrubbed has the keyboard: Escape cancels the drag.
@@ -294,7 +296,16 @@ pub fn handle(app: &mut VectorcraftApp, ctx: &egui::Context) {
                     let _ = app.run("object.exitIsolation", json!({}));
                 } else if app.ui.flyout.is_some() {
                     app.ui.flyout = None;
+                } else if escape_pair.is_some_and(|second| escape_resets_rotation(app, ctx, second)) {
+                    // Escape pressed twice resets a rotated view (with the Rotate View tool, once).
+                    let _ = app.run("view.rotateReset", json!({}));
+                    escape_pair = None;
                 }
+            }
+            // An Escape that ended something can start a pair too. One that closed a popup cannot.
+            if k == Key::Escape && escape_pair.is_some() && !egui::Popup::is_any_open(ctx) {
+                let now = ctx.input(|i| i.time);
+                ctx.data_mut(|d| d.insert_temp(escape_pair_id(), now));
             }
             if k == Key::Enter && !busy && !claimed {
                 // Enter with a selection tool opens the Move dialog, as a double-click on its button
@@ -560,6 +571,49 @@ pub fn handle(app: &mut VectorcraftApp, ctx: &egui::Context) {
             app.select_tool(t);
         }
     }
+}
+
+/// The second press of Escape pressed twice comes less than this many seconds after the first.
+const ESCAPE_PAIR_SECONDS: f64 = 1.0;
+
+/// The key of the last counted Escape's time in egui's temporary data.
+fn escape_pair_id() -> egui::Id {
+    egui::Id::new("escape-pair")
+}
+
+/// Reads this frame's presses for Escape pressed twice. `None` when the frame has no Escape press, or
+/// has another key or pointer button press as well (a key repeat counts as another press, and the
+/// modifier keys do not count). Otherwise, whether the last counted Escape came less than
+/// [`ESCAPE_PAIR_SECONDS`] before. A press of Escape, another key or a pointer button removes the
+/// last counted Escape's time.
+fn escape_press(ctx: &egui::Context) -> Option<bool> {
+    let (escape, other, now) = ctx.input(|i| {
+        let (mut escape, mut other) = (false, false);
+        for e in &i.events {
+            match e {
+                egui::Event::Key { key: Key::Escape, pressed: true, repeat: false, .. } => escape = true,
+                egui::Event::Key { key, pressed: true, .. } if !is_modifier(*key) => other = true,
+                egui::Event::PointerButton { pressed: true, .. } => other = true,
+                _ => {}
+            }
+        }
+        (escape, other, i.time)
+    });
+    if !escape && !other {
+        return None;
+    }
+    let counted = ctx.data_mut(|d| d.remove_temp::<f64>(escape_pair_id()));
+    (escape && !other).then(|| counted.is_some_and(|t| now - t < ESCAPE_PAIR_SECONDS))
+}
+
+/// Does this Escape reset the view's rotation? It does when the view is rotated, no popup is open,
+/// the ruler origin is not being dragged, and the press is the second of a pair (`second`) or the
+/// Rotate View tool is chosen.
+fn escape_resets_rotation(app: &VectorcraftApp, ctx: &egui::Context, second: bool) -> bool {
+    app.view().is_some_and(|v| v.rotation != 0.0)
+        && (second || app.session.tool_id() == "rotateView")
+        && !egui::Popup::is_any_open(ctx)
+        && !crate::canvas::ruler_origin_dragging(ctx)
 }
 
 /// Go to the next artboard (`next`) or the previous one with `view.goToArtboard`, as the status bar

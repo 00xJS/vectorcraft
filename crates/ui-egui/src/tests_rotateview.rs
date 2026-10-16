@@ -119,3 +119,182 @@ fn only_the_submenu_name_needs_translating() {
         assert!(!strings.contains(label), "{label}");
     }
 }
+
+/// The window, with a 400 × 300 document whose view is turned to 30°, and the Selection tool. Each
+/// frame comes the given number of seconds, zero or more, after the one before it.
+struct Window {
+    app: VectorcraftApp,
+    ctx: egui::Context,
+    time: f64,
+}
+
+impl Window {
+    fn new() -> Self {
+        let mut w = Self { app: with_document(), ctx: egui::Context::default(), time: 0.0 };
+        w.app.select_tool("selection");
+        w.app.run("view.rotate", json!({"angle": 30})).unwrap();
+        w.after(0.0, vec![]);
+        w.after(0.0, vec![]);
+        w
+    }
+
+    /// One headless frame of the whole window, `seconds` after the last one, with `events`.
+    fn after(&mut self, seconds: f64, events: Vec<egui::Event>) {
+        self.time += seconds;
+        let rect = egui::Rect::from_min_size(egui::Pos2::ZERO, egui::vec2(800.0, 600.0));
+        let raw = egui::RawInput { screen_rect: Some(rect), time: Some(self.time), events, ..Default::default() };
+        let app = &mut self.app;
+        let mut out = self.ctx.run_ui(raw, |ui| {
+            app.logic(ui.ctx());
+            app.ui(ui);
+        });
+        out.textures_delta.clear();
+    }
+
+    /// A press and release of Escape, `seconds` after the last frame.
+    fn escape(&mut self, seconds: f64) {
+        self.after(seconds, key(egui::Key::Escape, false));
+    }
+
+    /// A press of `button` at `pos` and its release, a frame each, `seconds` after the last frame.
+    fn click(&mut self, seconds: f64, button: egui::PointerButton, pos: egui::Pos2) {
+        let press = |pressed| egui::Event::PointerButton { pos, button, pressed, modifiers: Default::default() };
+        self.after(seconds, vec![egui::Event::PointerMoved(pos), press(true)]);
+        self.after(0.0, vec![press(false)]);
+    }
+
+    fn rotation(&self) -> f64 {
+        self.app.view().unwrap().rotation
+    }
+}
+
+/// A press and release of `key`. With `repeat`, the press is a key repeat.
+fn key(key: egui::Key, repeat: bool) -> Vec<egui::Event> {
+    [true, false].map(|pressed| egui::Event::Key { key, physical_key: None, pressed, repeat, modifiers: Default::default() }).to_vec()
+}
+
+/// The second of two Escape presses less than a second apart resets a rotated view. A press of
+/// another key or a pointer button between them, or a longer wait, ends the pair. Shift does not.
+#[test]
+fn escape_pressed_twice_resets_a_rotated_view() {
+    let mut w = Window::new();
+    w.escape(0.0);
+    assert_eq!(w.rotation(), 30.0, "one Escape");
+    w.escape(0.5);
+    assert_eq!(w.rotation(), 0.0, "a second Escape 0.5 s later");
+    w.escape(0.5);
+    assert_eq!(w.rotation(), 0.0, "a third Escape leaves the view at 0°");
+
+    let mut w = Window::new();
+    let empty = w.app.canvas_rect.unwrap().left_top() + egui::vec2(20.0, 20.0);
+    w.escape(0.0);
+    w.click(0.2, egui::PointerButton::Primary, empty);
+    w.escape(0.2);
+    assert_eq!(w.rotation(), 30.0, "a click between the two");
+    let mut w = Window::new();
+    w.escape(0.0);
+    w.after(0.2, key(egui::Key::ArrowRight, false));
+    w.escape(0.2);
+    assert_eq!(w.rotation(), 30.0, "an arrow key between the two");
+    let mut w = Window::new();
+    w.escape(0.0);
+    w.after(0.2, key(egui::Key::ShiftLeft, false));
+    w.escape(0.2);
+    assert_eq!(w.rotation(), 0.0, "a Shift press between the two");
+
+    let mut w = Window::new();
+    w.escape(0.0);
+    w.escape(2.0);
+    assert_eq!(w.rotation(), 30.0, "two Escapes 2 s apart");
+    w.escape(0.5);
+    assert_eq!(w.rotation(), 0.0, "the later of them starts a pair");
+
+    // A held Escape repeats: the repeats are not a second press.
+    let mut w = Window::new();
+    w.after(0.0, vec![key(egui::Key::Escape, false)[0].clone()]);
+    for _ in 0..5 {
+        w.after(0.1, vec![key(egui::Key::Escape, true)[0].clone()]);
+    }
+    w.after(0.1, vec![key(egui::Key::Escape, false)[1].clone()]);
+    assert_eq!(w.rotation(), 30.0, "Escape held down");
+}
+
+/// The first Escape of a pair may end something, such as isolation mode. With the Rotate View
+/// tool, one Escape resets the view.
+#[test]
+fn escape_after_ending_isolation_or_with_the_rotate_view_tool_resets_the_view() {
+    let mut w = Window::new();
+    w.app.run("shape.rectangle", json!({"x": 20, "y": 20, "width": 40, "height": 40})).unwrap();
+    w.app.run("shape.rectangle", json!({"x": 80, "y": 20, "width": 40, "height": 40})).unwrap();
+    w.app.run("select.all", json!({})).unwrap();
+    w.app.run("object.group", json!({})).unwrap();
+    menus::invoke(&mut w.app, "object.isolate", json!({}));
+    let isolated = |w: &Window| w.app.session.active().unwrap().isolation.is_some();
+    assert!(isolated(&w));
+    w.escape(0.0);
+    assert_eq!((isolated(&w), w.rotation()), (false, 30.0), "the first Escape leaves isolation mode");
+    w.escape(0.5);
+    assert_eq!(w.rotation(), 0.0, "the second resets the view");
+
+    let mut w = Window::new();
+    w.app.select_tool("rotateView");
+    w.escape(0.0);
+    assert_eq!(w.rotation(), 0.0, "one Escape with the Rotate View tool");
+}
+
+/// An Escape that closes a popup (the status bar's angle menu, the canvas context menu) does not
+/// count, so the Escape after it leaves the view as it is. An Escape while the ruler origin is
+/// dragged does not reset the view either, but it counts as the first Escape of a pair.
+#[test]
+fn escape_after_closing_a_popup_or_during_a_ruler_origin_drag_keeps_the_rotation() {
+    let mut w = Window::new();
+    // The menu's button has the id `ComboBox::from_id_salt("rot-combo")` gives it in the status bar's
+    // row, which hosts other widgets too.
+    let salt = egui::IdSalt::new("rot-combo");
+    let widgets: Vec<egui::WidgetRect> = w.ctx.viewport(|vp| vp.prev_pass.widgets.layers().flat_map(|(_, ws)| ws.iter().copied()).collect());
+    let combo = widgets.iter().find(|r| widgets.iter().any(|row| r.id == row.parent_id.with(salt))).copied();
+    let combo = combo.expect("the status bar's angle menu");
+    w.click(0.0, egui::PointerButton::Primary, combo.rect.center());
+    w.after(0.0, vec![]);
+    assert!(egui::ComboBox::is_open(&w.ctx, combo.id), "the angle menu is open");
+    w.escape(0.2);
+    assert!(!egui::Popup::is_any_open(&w.ctx), "Escape closes it");
+    w.escape(0.2);
+    assert_eq!(w.rotation(), 30.0, "an Escape after the angle menu closed");
+
+    let mut w = Window::new();
+    w.click(0.0, egui::PointerButton::Secondary, w.app.canvas_rect.unwrap().center());
+    w.after(0.0, vec![]);
+    assert!(egui::Popup::is_any_open(&w.ctx), "a right click opens the context menu");
+    w.escape(0.2);
+    assert!(!egui::Popup::is_any_open(&w.ctx), "Escape closes it");
+    w.escape(0.2);
+    assert_eq!(w.rotation(), 30.0, "an Escape after the context menu closed");
+    // With the Rotate View tool, the Escape that closes the menu leaves the view as it is too.
+    let mut w = Window::new();
+    w.app.select_tool("rotateView");
+    w.click(0.0, egui::PointerButton::Secondary, w.app.canvas_rect.unwrap().center());
+    w.after(0.0, vec![]);
+    assert!(egui::Popup::is_any_open(&w.ctx), "a right click opens the context menu");
+    w.escape(0.2);
+    assert_eq!(w.rotation(), 30.0, "the Escape that closes the context menu");
+    w.escape(0.2);
+    assert_eq!(w.rotation(), 0.0, "the next Escape with the Rotate View tool");
+
+    let mut w = Window::new();
+    w.app.ui.view.rulers = true;
+    w.after(0.0, vec![]);
+    let corner = w.ctx.read_response(egui::Id::new("ruler-corner")).expect("the rulers' corner").rect.center();
+    let to = w.app.canvas_rect.unwrap().center();
+    w.after(0.0, vec![egui::Event::PointerMoved(corner)]);
+    let button = |pos, pressed| egui::Event::PointerButton { pos, button: egui::PointerButton::Primary, pressed, modifiers: Default::default() };
+    w.after(0.0, vec![button(corner, true)]);
+    w.after(0.1, vec![egui::Event::PointerMoved(to)]);
+    assert!(crate::canvas::ruler_origin_dragging(&w.ctx));
+    w.escape(0.2);
+    w.escape(0.2);
+    assert_eq!(w.rotation(), 30.0, "two Escapes while the ruler origin is dragged");
+    w.after(0.1, vec![button(to, false)]);
+    w.escape(0.2);
+    assert_eq!(w.rotation(), 0.0, "an Escape after the drag ends pairs with the last one");
+}

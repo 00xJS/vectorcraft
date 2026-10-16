@@ -1241,7 +1241,7 @@ fn ruler_input(app: &mut VectorcraftApp, ui: &Ui, full: egui::Rect, canvas: egui
     }
     // Keep previews in the UI: only a release on the canvas edits the document, once. Cancelling
     // never adds an undo step or interferes with the drawing tool's interaction.
-    let drag_id = egui::Id::new("ruler-origin-drag");
+    let drag_id = ruler_origin_drag_id();
     let uid = app.session.active().map(|d| d.uid);
     if corner.drag_started_by(egui::PointerButton::Primary) {
         ui.data_mut(|d| d.insert_temp(drag_id, (uid, false)));
@@ -1268,6 +1268,17 @@ fn ruler_input(app: &mut VectorcraftApp, ui: &Ui, full: egui::Rect, canvas: egui
         }
     }
     preview
+}
+
+/// The key of the ruler origin drag's state in egui's temporary data.
+fn ruler_origin_drag_id() -> egui::Id {
+    egui::Id::new("ruler-origin-drag")
+}
+
+/// Is a drag from the rulers' corner in progress? It stays true after Escape cancels the move, until
+/// the button is released.
+pub(crate) fn ruler_origin_dragging(ctx: &egui::Context) -> bool {
+    ctx.data(|d| d.get_temp::<(Option<u64>, bool)>(ruler_origin_drag_id()).is_some())
 }
 
 fn rulers(ui: &Ui, full: egui::Rect, xf: &Xf, hover: Option<Point>, unit: Unit, origin: Point, t: &Tokens) {
