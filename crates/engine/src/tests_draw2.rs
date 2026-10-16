@@ -430,6 +430,25 @@ fn anchor_point_tool_converts() {
     assert!(d < 0.5, "{q:?}");
 }
 
+/// #2267: clicking one handle end with the Anchor Point tool retracts that handle alone, as one
+/// undo step.
+#[test]
+fn anchor_point_tool_click_on_a_handle_retracts_it() {
+    let mut s = session();
+    let id = rect(&mut s, 100.0, 100.0, 100.0, 100.0);
+    drag(&mut s, "anchorPoint", &[(100.0, 100.0), (130.0, 80.0)], Mods::default());
+    s.execute("select.set", &json!({"ids": [id.0]})).unwrap();
+    let smooth = path(&s, id).subpaths[0].anchors[0];
+    let undo = undo_steps(&s);
+    click(&mut s, "anchorPoint", 130.0, 80.0);
+    let a = path(&s, id).subpaths[0].anchors[0];
+    assert!(!a.has_out());
+    assert_eq!((a.p, a.h_in, a.kind), (smooth.p, smooth.h_in, vectorcraft_geom::AnchorKind::Corner));
+    assert_eq!(undo_steps(&s), undo + 1);
+    s.execute("edit.undo", &json!({})).unwrap();
+    assert_eq!(path(&s, id).subpaths[0].anchors[0], smooth);
+}
+
 #[test]
 fn scissors_opens_closed_path() {
     let mut s = session();
