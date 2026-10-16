@@ -212,6 +212,19 @@ pub(crate) fn typed_unit(ctx: &egui::Context, unit: Unit) -> Unit {
 /// without a unit is in `unit` ([`typed_unit`]: in points in a picas field with Numbers Without
 /// Units Are Points on).
 pub fn num_field(ui: &mut Ui, id: impl std::hash::Hash + std::fmt::Debug, value: Option<f64>, unit: Unit, width: f32) -> Option<f64> {
+    unit_field(ui, id, value, unit, width, false)
+}
+
+/// [`num_field`]; with `share_of_value` a percentage typed alone is that share of `value`
+/// ([`share_of`]).
+fn unit_field(
+    ui: &mut Ui,
+    id: impl std::hash::Hash + std::fmt::Debug,
+    value: Option<f64>,
+    unit: Unit,
+    width: f32,
+    share_of_value: bool,
+) -> Option<f64> {
     let id = ui.id().with(id);
     let shown = value.map(|v| unit.format(v)).unwrap_or_default();
     take_dialog_focus(ui, id, &shown);
@@ -223,7 +236,18 @@ pub fn num_field(ui: &mut Ui, id: impl std::hash::Hash + std::fmt::Debug, value:
     let scrubbed = scrub::field(ui, id, rect, &buf, value.map(|v| unit.from_pt(v)), STEP_DECIMALS);
     let commit = resp.lost_focus() && buf != shown;
     ui.data_mut(|d| d.insert_temp(id, buf.clone()));
-    if commit { read.parse(&buf) } else { stepped.or(scrubbed).map(|v| unit.to_pt(v)) }
+    if commit {
+        read.parse(&buf).or_else(|| if share_of_value { share_of(&buf, value?) } else { None })
+    } else {
+        stepped.or(scrubbed).map(|v| unit.to_pt(v))
+    }
+}
+
+/// A percentage typed alone (`50%`, `150 %`, `100/3%`) as that share of `value`; `None` for any
+/// other text. `Unit::parse` reads a bare percentage as nothing, having no value to take it of.
+fn share_of(text: &str, value: f64) -> Option<f64> {
+    let percent = vectorcraft_doc::parse_number(text.trim().strip_suffix('%')?)?;
+    Some(value * percent / 100.0)
 }
 
 /// The places a stepped value in a unit field keeps (no 12.300000001).
@@ -333,7 +357,8 @@ pub(crate) fn enter_modifiers(ui: &Ui) -> Option<egui::Modifiers> {
 }
 
 /// A [`num_field`] for a width or height (Transform panel, Properties panel, Control bar): Ctrl/Cmd+Enter
-/// also commits it and ends its editing, as Enter does, and [`enter_modifiers`] reports Command.
+/// also commits it and ends its editing, as Enter does, and [`enter_modifiers`] reports Command. A
+/// percentage typed alone (`50%`) is that share of the size shown, as in Illustrator (#2401).
 pub fn size_field(ui: &mut Ui, id: impl std::hash::Hash + std::fmt::Debug, value: Option<f64>, unit: Unit, width: f32) -> Option<f64> {
     use egui::{Event, Key};
     // The text box does not end its editing on an Enter with Ctrl/Cmd: a plain Enter goes in right
@@ -348,7 +373,7 @@ pub fn size_field(ui: &mut Ui, id: impl std::hash::Hash + std::fmt::Debug, value
             }
         });
     }
-    num_field(ui, id, value, unit, width)
+    unit_field(ui, id, value, unit, width, true)
 }
 
 /// Select all of `text` in text field `id`.
