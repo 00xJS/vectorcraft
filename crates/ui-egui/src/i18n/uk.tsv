@@ -969,6 +969,32 @@
 	Export All…	Експортувати все…
 	Export and Clipboard Transparency Flattener Settings	Параметри зведення прозорості для експорту та буфера обміну
 	Export Artboard	Експортувати монтажну область
+	A File per Object	Окремий файл для кожного об’єкта
+	Example: {name}	Приклад: {name}
+	Export Preset:	Набір параметрів експорту:
+	Folders:	Теки:
+	Insert	Вставити
+	Nothing is selected. Select the art to export, then open this tab again.	Нічого не виділено. Виділіть об’єкти для експорту й знову відкрийте цю вкладку.
+	One File of the Selection	Один файл із виділення
+	Start at:	Почати з:
+	{n} objects selected	Виділено об’єктів: {n}
+	Delete Export Preset	Видалити набір параметрів експорту
+	Export Presets	Набори параметрів експорту
+	Save Export Preset	Зберегти набір параметрів експорту
+	Export Layer	Експортувати шар
+	Export Selection	Експортувати виділення
+	All in One Folder	Усе в одну теку
+	By Size or Row	За розміром або рядком
+	By Format	За форматом
+	By Artboard or Item	За монтажною областю або елементом
+	By Item, Then Format	За елементом, потім за форматом
+	Document Name	Назва документа
+	Artboard or Item Name	Назва монтажної області або елемента
+	Number (####)	Номер (####)
+	Date (YYYYMMDD)	Дата (РРРРММДД)
+	Date (YYYY-MM-DD)	Дата (РРРР-ММ-ДД)
+	Time (hhmmss)	Час (ггххсс)
+	PDF Print	PDF для друку
 	Export As	Експортувати як
 	Export As PNG…	Експортувати як PNG…
 	Export As SVG…	Експортувати як SVG…
@@ -3706,6 +3732,8 @@ axis	Both	Обидві
 @msg	cannot split an open path at its end point	не можна розділити відкритий контур у його кінцевій точці
 @msg	closing needs three anchors	для замикання потрібні три опорні точки
 @msg	check an asset to export	позначте ресурс для експорту
+@msg	check a layer to export	позначте шар для експорту
+@msg	select the art to export first	спочатку виділіть об’єкти для експорту
 @msg	choice must be "merge" or "add", not `{choice}`	choice має бути "merge" або "add", а не `{choice}`
 @msg	choose a direction to divide in	виберіть напрямок для поділу
 @msg	choose a folder to export to	виберіть папку для експорту

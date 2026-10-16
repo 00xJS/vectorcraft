@@ -167,13 +167,19 @@ fn source<'a>(s: &'a mut Session, f: &Format, p: &Value, cmd: &str) -> Result<Co
 /// The selected objects (not on template layers) alone on one layer, with one artboard: their
 /// visual bounds.
 fn selection(s: &mut Session, cmd: &str) -> Result<(Document, vectorcraft_geom::Rect)> {
+    let ids = selected_artwork(s)?;
+    isolated(&s.doc()?.doc, &ids, "Selection").ok_or_else(|| bad(cmd, "select something to export"))
+}
+
+/// The selected objects (their top-most selected ancestors) that are artwork: those on template
+/// layers are guides and are left out.
+pub(crate) fn selected_artwork(s: &mut Session) -> Result<Vec<NodeId>> {
     let ids = edit::selected_roots(s)?;
     let st = s.doc()?;
     let is_template = |id| st.doc.node(id).is_some_and(|l| matches!(l.kind, NodeKind::Layer { template: true, .. }));
     // On a template layer or sublayer, at any depth.
     let on_template = |id| st.doc.ancestry(id).is_some_and(|a| a.into_iter().any(is_template));
-    let ids: Vec<NodeId> = ids.into_iter().filter(|id| !on_template(*id)).collect();
-    isolated(&st.doc, &ids, "Selection").ok_or_else(|| bad(cmd, "select something to export"))
+    Ok(ids.into_iter().filter(|id| !on_template(*id)).collect())
 }
 
 /// The crop of an export of objects `ids` of `doc` alone: the bounds the renderer measures for what

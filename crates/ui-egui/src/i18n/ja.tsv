@@ -1370,6 +1370,32 @@
 	Expand:	拡張:
 	Export All…	すべて書き出し…
 	Export Artboard	アートボードを書き出し
+	A File per Object	オブジェクトごとに 1 ファイル
+	Example: {name}	例：{name}
+	Export Preset:	書き出しプリセット：
+	Folders:	フォルダー：
+	Insert	挿入
+	Nothing is selected. Select the art to export, then open this tab again.	何も選択されていません。書き出すアートを選択してから、このタブを開き直してください。
+	One File of the Selection	選択範囲を 1 ファイルに
+	Start at:	開始番号：
+	{n} objects selected	{n} 個のオブジェクトを選択中
+	Delete Export Preset	書き出しプリセットを削除
+	Export Presets	書き出しプリセット
+	Save Export Preset	書き出しプリセットを保存
+	Export Layer	レイヤーを書き出し
+	Export Selection	選択範囲を書き出し
+	All in One Folder	すべて 1 つのフォルダーに
+	By Size or Row	サイズまたは行ごと
+	By Format	形式ごと
+	By Artboard or Item	アートボードまたは項目ごと
+	By Item, Then Format	項目ごと、次に形式ごと
+	Document Name	ドキュメント名
+	Artboard or Item Name	アートボード名または項目名
+	Number (####)	番号（####）
+	Date (YYYYMMDD)	日付（YYYYMMDD）
+	Date (YYYY-MM-DD)	日付（YYYY-MM-DD）
+	Time (hhmmss)	時刻（hhmmss）
+	PDF Print	印刷用 PDF
 	Export As	形式を指定して書き出し
 	Export Assets	アセットを書き出し
 	Export CSS	CSS を書き出し
@@ -4024,6 +4050,8 @@ swatch	Bright Violet	ビビッドバイオレット
 @msg	nothing to export: the document has no visible art (or turn on Use Artboards)	書き出すものがありません: ドキュメントに表示されているアートがありません (または「アートボードを使用」をオンにしてください)
 @msg	add a format to export	書き出す形式を追加してください
 @msg	check an asset to export	書き出すアセットにチェックを入れてください
+@msg	check a layer to export	書き出すレイヤーにチェックを入れてください
+@msg	select the art to export first	先に書き出すアートを選択してください
 @msg	`{tool}` isn't a freehand tool	`{tool}` はフリーハンドツールではありません
 @msg	bad colour `{hex}` (#rrggbb)	カラー `{hex}` が正しくありません (#rrggbb の形式で指定してください)
 @msg	no gradient stop or freeform point is selected	グラデーションの分岐点またはフリーフォームポイントが選択されていません

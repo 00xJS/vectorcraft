@@ -1135,6 +1135,32 @@
 	Export All…	Xuất tất cả…
 	Export and Clipboard Transparency Flattener Settings	Cài đặt làm phẳng độ trong suốt khi xuất và dán
 	Export Artboard	Xuất bảng vẽ
+	A File per Object	Mỗi đối tượng một tệp
+	Example: {name}	Ví dụ: {name}
+	Export Preset:	Cài đặt sẵn xuất:
+	Folders:	Thư mục:
+	Insert	Chèn
+	Nothing is selected. Select the art to export, then open this tab again.	Chưa chọn gì. Hãy chọn hình cần xuất rồi mở lại thẻ này.
+	One File of the Selection	Một tệp cho vùng chọn
+	Start at:	Bắt đầu từ:
+	{n} objects selected	Đã chọn {n} đối tượng
+	Delete Export Preset	Xóa cài đặt sẵn xuất
+	Export Presets	Cài đặt sẵn xuất
+	Save Export Preset	Lưu cài đặt sẵn xuất
+	Export Layer	Xuất lớp
+	Export Selection	Xuất vùng chọn
+	All in One Folder	Tất cả trong một thư mục
+	By Size or Row	Theo kích thước hoặc hàng
+	By Format	Theo định dạng
+	By Artboard or Item	Theo bảng vẽ hoặc mục
+	By Item, Then Format	Theo mục, rồi theo định dạng
+	Document Name	Tên tài liệu
+	Artboard or Item Name	Tên bảng vẽ hoặc mục
+	Number (####)	Số (####)
+	Date (YYYYMMDD)	Ngày (YYYYMMDD)
+	Date (YYYY-MM-DD)	Ngày (YYYY-MM-DD)
+	Time (hhmmss)	Giờ (hhmmss)
+	PDF Print	PDF in ấn
 	Export As	Xuất thành
 	Export As PNG…	Xuất thành PNG…
 	Export As SVG…	Xuất thành SVG…
@@ -3867,6 +3893,8 @@ theme	Appearance	Giao diện
 @msg	cannot read PDF: {0}	không thể đọc PDF: {0}
 @msg	cannot split an open path at its end point	không thể tách đường dẫn mở tại điểm cuối
 @msg	check an asset to export	hãy chọn một asset để xuất
+@msg	check a layer to export	hãy đánh dấu một lớp để xuất
+@msg	select the art to export first	hãy chọn hình cần xuất trước
 @msg	choice must be "merge" or "add", not `{choice}`	lựa chọn phải là "merge" hoặc "add", không phải `{choice}`
 @msg	choose a direction to divide in	hãy chọn hướng để chia
 @msg	choose a folder to export to	hãy chọn thư mục để xuất vào

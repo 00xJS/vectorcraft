@@ -975,6 +975,32 @@
 	Export All…	Tout exporter…
 	Export and Clipboard Transparency Flattener Settings	Paramètres d’aplatissement des transparences pour l’exportation et le presse-papiers
 	Export Artboard	Exporter le plan de travail
+	A File per Object	Un fichier par objet
+	Example: {name}	Exemple : {name}
+	Export Preset:	Paramètre prédéfini d’export :
+	Folders:	Dossiers :
+	Insert	Insérer
+	Nothing is selected. Select the art to export, then open this tab again.	Aucune sélection. Sélectionnez l’illustration à exporter, puis rouvrez cet onglet.
+	One File of the Selection	Un fichier de la sélection
+	Start at:	Commencer à :
+	{n} objects selected	{n} objets sélectionnés
+	Delete Export Preset	Supprimer le paramètre prédéfini d’export
+	Export Presets	Paramètres prédéfinis d’export
+	Save Export Preset	Enregistrer le paramètre prédéfini d’export
+	Export Layer	Exporter le calque
+	Export Selection	Exporter la sélection
+	All in One Folder	Tout dans un dossier
+	By Size or Row	Par taille ou ligne
+	By Format	Par format
+	By Artboard or Item	Par plan de travail ou élément
+	By Item, Then Format	Par élément, puis format
+	Document Name	Nom du document
+	Artboard or Item Name	Nom du plan de travail ou de l’élément
+	Number (####)	Numéro (####)
+	Date (YYYYMMDD)	Date (AAAAMMJJ)
+	Date (YYYY-MM-DD)	Date (AAAA-MM-JJ)
+	Time (hhmmss)	Heure (hhmmss)
+	PDF Print	PDF impression
 	Export As	Exporter sous
 	Export As PNG…	Exporter au format PNG…
 	Export As SVG…	Exporter au format SVG…
@@ -3716,6 +3742,8 @@ axis	Both	Les deux
 @msg	cannot split an open path at its end point	impossible de scinder un tracé ouvert à son extrémité
 @msg	closing needs three anchors	la fermeture nécessite trois points d’ancrage
 @msg	check an asset to export	cochez une ressource à exporter
+@msg	check a layer to export	cochez un calque à exporter
+@msg	select the art to export first	sélectionnez d’abord l’illustration à exporter
 @msg	choice must be "merge" or "add", not `{choice}`	choice doit valoir "merge" ou "add", pas `{choice}`
 @msg	choose a direction to divide in	choisissez une direction de division
 @msg	choose a folder to export to	choisissez un dossier d’exportation

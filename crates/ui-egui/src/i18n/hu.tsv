@@ -1257,6 +1257,32 @@
 	Export All…	Összes exportálása…
 	Export and Clipboard Transparency Flattener Settings	Átlátszóság lapítása exportáláskor és vágólapra másoláskor
 	Export Artboard	Rajztábla exportálása
+	A File per Object	Objektumonként egy fájl
+	Example: {name}	Példa: {name}
+	Export Preset:	Exportálási előbeállítás:
+	Folders:	Mappák:
+	Insert	Beszúrás
+	Nothing is selected. Select the art to export, then open this tab again.	Nincs kijelölés. Jelölje ki az exportálandó grafikát, majd nyissa meg újra ezt a lapot.
+	One File of the Selection	Egy fájl a kijelölésből
+	Start at:	Kezdőérték:
+	{n} objects selected	{n} objektum kijelölve
+	Delete Export Preset	Exportálási előbeállítás törlése
+	Export Presets	Exportálási előbeállítások
+	Save Export Preset	Exportálási előbeállítás mentése
+	Export Layer	Réteg exportálása
+	Export Selection	Kijelölés exportálása
+	All in One Folder	Mind egy mappába
+	By Size or Row	Méret vagy sor szerint
+	By Format	Formátum szerint
+	By Artboard or Item	Rajztábla vagy elem szerint
+	By Item, Then Format	Elem, majd formátum szerint
+	Document Name	Dokumentum neve
+	Artboard or Item Name	Rajztábla vagy elem neve
+	Number (####)	Szám (####)
+	Date (YYYYMMDD)	Dátum (ÉÉÉÉHHNN)
+	Date (YYYY-MM-DD)	Dátum (ÉÉÉÉ-HH-NN)
+	Time (hhmmss)	Idő (óóppmm)
+	PDF Print	Nyomdai PDF
 	Export As	Exportálás másként
 	Export As PNG…	Exportálás PNG-ként…
 	Export As SVG…	Exportálás SVG-ként…
@@ -4236,6 +4262,8 @@ imageTrace	Outline	Körvonal
 @msg	cannot read PDF: {0}	a PDF nem olvasható: {0}
 @msg	cannot split an open path at its end point	nyitott útvonal a végpontjánál nem vágható ketté
 @msg	check an asset to export	jelölj be egy exportálandó elemet
+@msg	check a layer to export	jelöljön be egy exportálandó réteget
+@msg	select the art to export first	először jelölje ki az exportálandó grafikát
 @msg	choice must be "merge" or "add", not `{choice}`	a choice értéke "merge" vagy "add" lehet, ez nem az: `{choice}`
 @msg	choose a direction to divide in	válaszd ki a felosztás irányát
 @msg	choose a folder to export to	válaszd ki az exportálás célmappáját

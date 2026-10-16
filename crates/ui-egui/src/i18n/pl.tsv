@@ -2543,6 +2543,32 @@ lighting	Light	Światło
 	Summary	Podsumowanie
 	Download	Pobierz
 	Export Artboard	Eksportuj obszar kompozycji
+	A File per Object	Jeden plik na obiekt
+	Example: {name}	Przykład: {name}
+	Export Preset:	Ustawienie eksportu:
+	Folders:	Foldery:
+	Insert	Wstaw
+	Nothing is selected. Select the art to export, then open this tab again.	Nic nie zaznaczono. Zaznacz grafikę do eksportu i ponownie otwórz tę kartę.
+	One File of the Selection	Jeden plik z zaznaczenia
+	Start at:	Zacznij od:
+	{n} objects selected	Zaznaczone obiekty: {n}
+	Delete Export Preset	Usuń ustawienie eksportu
+	Export Presets	Ustawienia eksportu
+	Save Export Preset	Zapisz ustawienie eksportu
+	Export Layer	Eksportuj warstwę
+	Export Selection	Eksportuj zaznaczenie
+	All in One Folder	Wszystko w jednym folderze
+	By Size or Row	Według rozmiaru lub wiersza
+	By Format	Według formatu
+	By Artboard or Item	Według obszaru roboczego lub elementu
+	By Item, Then Format	Według elementu, potem formatu
+	Document Name	Nazwa dokumentu
+	Artboard or Item Name	Nazwa obszaru roboczego lub elementu
+	Number (####)	Numer (####)
+	Date (YYYYMMDD)	Data (RRRRMMDD)
+	Date (YYYY-MM-DD)	Data (RRRR-MM-DD)
+	Time (hhmmss)	Godzina (hhmmss)
+	PDF Print	PDF do druku
 	Encoding:	Kodowanie:
 	Line Endings:	Znaki końca wiersza:
 	Text Export Options	Opcje eksportu tekstu
@@ -3833,6 +3859,8 @@ imageTrace	Outline	Kontur
 @msg	cannot split an open path at its end point	nie można podzielić otwartej ścieżki w jej punkcie końcowym
 @msg	closing needs three anchors	zamknięcie wymaga trzech punktów
 @msg	check an asset to export	zaznacz zasób do eksportu
+@msg	check a layer to export	zaznacz warstwę do eksportu
+@msg	select the art to export first	najpierw zaznacz grafikę do eksportu
 @msg	choice must be "merge" or "add", not `{choice}`	wybór musi mieć wartość "merge" lub "add", nie `{choice}`
 @msg	choose a direction to divide in	wybierz kierunek podziału
 @msg	choose a folder to export to	wybierz folder docelowy eksportu

@@ -960,6 +960,32 @@
 	Export All…	Exportera alla…
 	Export and Clipboard Transparency Flattener Settings	Inställningar för transparensförenkling vid export och urklipp
 	Export Artboard	Exportera rityta
+	A File per Object	En fil per objekt
+	Example: {name}	Exempel: {name}
+	Export Preset:	Exportförinställning:
+	Folders:	Mappar:
+	Insert	Infoga
+	Nothing is selected. Select the art to export, then open this tab again.	Inget är markerat. Markera teckningen som ska exporteras och öppna fliken igen.
+	One File of the Selection	En fil av markeringen
+	Start at:	Börja på:
+	{n} objects selected	{n} objekt markerade
+	Delete Export Preset	Ta bort exportförinställning
+	Export Presets	Exportförinställningar
+	Save Export Preset	Spara exportförinställning
+	Export Layer	Exportera lager
+	Export Selection	Exportera markering
+	All in One Folder	Allt i en mapp
+	By Size or Row	Efter storlek eller rad
+	By Format	Efter format
+	By Artboard or Item	Efter rityta eller objekt
+	By Item, Then Format	Efter objekt, sedan format
+	Document Name	Dokumentnamn
+	Artboard or Item Name	Ritytans eller objektets namn
+	Number (####)	Nummer (####)
+	Date (YYYYMMDD)	Datum (ÅÅÅÅMMDD)
+	Date (YYYY-MM-DD)	Datum (ÅÅÅÅ-MM-DD)
+	Time (hhmmss)	Tid (ttmmss)
+	PDF Print	Tryck-PDF
 	Export As	Exportera som
 	Export As PNG…	Exportera som PNG…
 	Export As SVG…	Exportera som SVG…
@@ -3644,6 +3670,8 @@ axis	Both	Båda
 @msg	cannot split an open path at its end point	kan inte dela en öppen bana vid dess slutpunkt
 @msg	closing needs three anchors	att sluta banan kräver tre ankarpunkter
 @msg	check an asset to export	kryssa för en resurs att exportera
+@msg	check a layer to export	markera ett lager att exportera
+@msg	select the art to export first	markera först teckningen som ska exporteras
 @msg	choice must be "merge" or "add", not `{choice}`	choice måste vara "merge" eller "add", inte `{choice}`
 @msg	choose a direction to divide in	välj en riktning att dela upp i
 @msg	choose a folder to export to	välj en mapp att exportera till

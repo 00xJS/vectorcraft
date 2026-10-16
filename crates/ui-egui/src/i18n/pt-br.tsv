@@ -868,6 +868,32 @@
 	Export	Exportar
 	Export All…	Exportar Tudo…
 	Export Artboard	Exportar Mesa de Trabalho
+	A File per Object	Um arquivo por objeto
+	Example: {name}	Exemplo: {name}
+	Export Preset:	Predefinição de exportação:
+	Folders:	Pastas:
+	Insert	Inserir
+	Nothing is selected. Select the art to export, then open this tab again.	Nada selecionado. Selecione a arte a exportar e abra esta guia novamente.
+	One File of the Selection	Um arquivo da seleção
+	Start at:	Começar em:
+	{n} objects selected	{n} objetos selecionados
+	Delete Export Preset	Excluir predefinição de exportação
+	Export Presets	Predefinições de exportação
+	Save Export Preset	Salvar predefinição de exportação
+	Export Layer	Exportar camada
+	Export Selection	Exportar seleção
+	All in One Folder	Tudo em uma pasta
+	By Size or Row	Por tamanho ou linha
+	By Format	Por formato
+	By Artboard or Item	Por prancheta ou item
+	By Item, Then Format	Por item, depois formato
+	Document Name	Nome do documento
+	Artboard or Item Name	Nome da prancheta ou do item
+	Number (####)	Número (####)
+	Date (YYYYMMDD)	Data (AAAAMMDD)
+	Date (YYYY-MM-DD)	Data (AAAA-MM-DD)
+	Time (hhmmss)	Hora (hhmmss)
+	PDF Print	PDF para impressão
 	Export As	Exportar Como
 	Export As PNG…	Exportar Como PNG…
 	Export As SVG…	Exportar Como SVG…
@@ -3312,6 +3338,8 @@ axis	Both	Ambos
 @msg	cannot split an open path at its end point	não é possível dividir um traçado aberto em sua extremidade
 @msg	closing needs three anchors	fechar exige três âncoras
 @msg	check an asset to export	marque um recurso para exportar
+@msg	check a layer to export	marque uma camada para exportar
+@msg	select the art to export first	selecione primeiro a arte a exportar
 @msg	choice must be "merge" or "add", not `{choice}`	choice deve ser "merge" ou "add", não `{choice}`
 @msg	choose a direction to divide in	escolha uma direção para dividir
 @msg	choose a folder to export to	escolha uma pasta para exportar
