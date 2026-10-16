@@ -9,7 +9,7 @@ use vectorcraft_engine::Prefs;
 use vectorcraft_engine::cmd::prefscmds::{GPU_PREFERENCES, PREF_CATEGORIES, PREF_GROUPS, PREF_SPECS, PrefKind};
 
 use crate::state::Dialog;
-use crate::theme::{self, Brightness, Tokens};
+use crate::theme::{self, Accent, Brightness, Tokens};
 use crate::{VectorcraftApp, widgets};
 
 /// UI-only fields shown in the dialog (backed by `UiState`, not engine prefs).
@@ -81,6 +81,7 @@ pub fn restore(app: &mut VectorcraftApp) {
 #[derive(Clone, Copy, PartialEq)]
 struct Applied {
     brightness: Brightness,
+    accent: Accent,
     /// User Interface › Canvas Color, unless it matches the interface brightness.
     canvas: Option<egui::Color32>,
     threads: i32,
@@ -111,6 +112,7 @@ pub fn apply_runtime(app: &mut VectorcraftApp, ctx: &egui::Context) {
     }
     let want = Applied {
         brightness: app.ui.brightness,
+        accent: Accent::parse(&p.ui_accent).unwrap_or_default(),
         canvas: canvas_color(&p.canvas_color),
         threads: p.render_threads,
         tool_tips: p.show_tool_tips,
@@ -120,7 +122,7 @@ pub fn apply_runtime(app: &mut VectorcraftApp, ctx: &egui::Context) {
     let id = egui::Id::new("dc-applied-prefs");
     let prev: Option<Applied> = ctx.data(|d| d.get_temp::<Option<Applied>>(id)).flatten();
     if prev != Some(want) {
-        theme::apply(ctx, want.brightness);
+        theme::apply_with(ctx, want.brightness, want.accent);
         // General › Show Tool Tips: off, no button or field shows its tool tip (they never come
         // due), whichever widget asks for one.
         let delay = if want.tool_tips { egui::style::Interaction::default().tooltip_delay } else { f32::INFINITY };

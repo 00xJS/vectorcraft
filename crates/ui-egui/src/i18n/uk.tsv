@@ -4488,3 +4488,10 @@ lighting	Light	Світло
 @msg	choose a source folder	виберіть вихідну папку
 @msg	open a document with data sets	відкрийте документ із наборами даних
 @msg	the action has no steps	у дії немає кроків
+
+# User Interface › Accent Color
+	Accent Color	Колір акценту
+	Amber	Бурштиновий
+	Coral	Кораловий
+	Violet	Фіолетовий
+	Pink	Рожевий

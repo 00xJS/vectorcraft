@@ -4899,3 +4899,9 @@ imageTrace	Outline	Körvonal
 @msg	choose a source folder	válasszon forrásmappát
 @msg	open a document with data sets	nyisson meg egy adatkészleteket tartalmazó dokumentumot
 @msg	the action has no steps	a műveletnek nincsenek lépései
+
+# User Interface › Accent Color
+	Accent Color	Kiemelőszín
+	Amber	Borostyán
+	Coral	Korall
+	Violet	Ibolya

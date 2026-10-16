@@ -4914,3 +4914,9 @@ theme	Appearance	Външен вид
 # View › Hide Template / Show Template
 	Hide Template	Скриване на шаблона
 	Show Template	Показване на шаблона
+
+# User Interface › Accent Color
+	Accent Color	Цвят на акцента
+	Amber	Кехлибарен
+	Coral	Коралов
+	Violet	Виолетов
