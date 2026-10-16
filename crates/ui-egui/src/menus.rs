@@ -3299,7 +3299,8 @@ fn queried_dialog(id: &str) -> Option<(&'static str, &'static [&'static str])> {
 /// The dialog (kind, fields) the menu item of command `id` opens, as the reference app's does.
 fn menu_dialog(app: &VectorcraftApp, id: &str) -> Option<(&'static str, Value)> {
     Some(match id {
-        "object.move" => ("move", json!({"dx": "0 pt", "dy": "0 pt"})),
+        // Move opens on the offset moved last and the checkboxes it was last confirmed with.
+        "object.move" => ("move", crate::dialogs::transform::move_fields(app)),
         "object.rotate" => ("rotate", json!({"angle": 0})),
         "object.scale" => ("scale", json!({"sx": 100, "sy": 100, "uniform": true})),
         "object.transformEach" => (crate::dialogs::transform_each::KIND, crate::dialogs::transform_each::fields()),
@@ -3376,8 +3377,9 @@ pub fn invoke(app: &mut VectorcraftApp, id: &str, p: Value) {
     if waits_for_ime(app, id) {
         return;
     }
-    if let Some((kind, fields)) = menu_dialog(app, id)
-        && p.as_object().is_none_or(|o| o.is_empty())
+    // Params first: some dialogs' fields take a look through the session (Move's last move).
+    if p.as_object().is_none_or(|o| o.is_empty())
+        && let Some((kind, fields)) = menu_dialog(app, id)
     {
         app.ui.dialog = Some(crate::state::Dialog::new(kind, fields));
         return;
