@@ -40,7 +40,7 @@ against Illustrator's public documentation; **estimated** unless noted.
 | Spell check (Check Spelling, Auto Spell Check, custom dictionary) | missing | menu stubs; needs an openly licensed dictionary |
 | Smart Punctuation, Change Case, Find & Replace | done | |
 | Caret: the arrows and Delete step over whole clusters (Thai consonant with its marks, combining accents, emoji); Backspace removes one character | done | |
-| Touch Type tool | missing | listed in the toolbar, not implemented |
+| Touch Type tool | done | moves, scales and rotates one character through its kerning, baseline shift, scales and rotation (`text.touchType`); the first character of a line and right-to-left characters move only up and down |
 | Retype (identify fonts in outlines/images) | missing | Illustrator's uses a cloud model |
 | Snap to Glyph | missing | menu stub |
 | Thai, Lao, Khmer, Myanmar: shaping (marks, reordering), lines broken between words, word-by-word caret and double-click | done | words found by ICU4X's line segmenter: dictionaries on the desktop, LSTM models on the web |

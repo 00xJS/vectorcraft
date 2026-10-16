@@ -741,7 +741,8 @@ fn mapped_bounds(n: &Node, hi: &Homography) -> Option<Rect> {
     if ok { acc } else { None }
 }
 
-fn in_quad(q: &[Point; 4], p: Point) -> bool {
+/// Is `p` inside the convex quad `q` (either winding; a point on an edge is inside)?
+pub(crate) fn in_quad(q: &[Point; 4], p: Point) -> bool {
     let mut sign = 0.0;
     for i in 0..4 {
         let (a, b) = (q[i], q[(i + 1) % 4]);
