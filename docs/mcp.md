@@ -2682,7 +2682,9 @@ as they do for art larger than the imageable area. Type in a font family that is
 font, and the warnings of `file.print` and `print.preview` name those families. They count only type that prints:
 visible type that fits its frame or path, on the layers `printLayers` picks, on the paper of the artboards or tiles
 that print, and the type in the symbols, patterns, scatter brushes, opacity masks and placed documents of the art that
-prints.
+prints. The warnings also give the ids of the area type and type on a path that print and whose text doesn't fit
+(objects of the document only, not type in the art of symbols, patterns, brushes, opacity masks or placed documents;
+see [Fitting area type](#fitting-area-type-auto-size-shrink-text-to-fit-overflow)).
 
 ```json
 {"name":"run_command","arguments":{"command":"print.setup","params":{"settings":{"media":"a4","scaling":"fit","marks":{"trim":true}}}}}
@@ -3124,7 +3126,8 @@ Text that doesn't fit is drawn up to the last line that does, so a one-line head
 draws nothing. The commands that make type or change what it holds say so in their own reply: `text.create`,
 `text.createInPath`, `text.setText` and `text.setStyle` add `overflow: [id…]` (the area type and type on a path among
 the objects they made or changed whose text doesn't fit), and the `add_text` tool adds `overflow: true`. The key is
-left out when everything fits.
+left out when everything fits. The warnings of `file.print` and `print.preview` give the ids of the objects that print
+and whose text doesn't fit: the first 20 ids, then how many more.
 
 ```json
 {"name":"run_command","arguments":{"command":"text.areaOptions","params":{"fit":"shrinkText","fitMinPercent":60}}}

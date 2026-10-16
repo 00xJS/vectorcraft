@@ -269,6 +269,23 @@ pub(crate) fn with_overflow(s: &Session, ids: &[NodeId], mut result: Value) -> V
     result
 }
 
+/// The warning that Print gives for `ids`, area type and type on a path whose text doesn't fit
+/// (as [`with_overflow`] finds it): the text past the end of their frames doesn't print. It names
+/// the first 20 ids and counts the rest; `None` when `ids` is empty.
+pub(crate) fn overflow_warning(ids: &[NodeId]) -> Option<String> {
+    const NAMED: usize = 20;
+    let (named, rest) = ids.split_at(ids.len().min(NAMED));
+    let mut list = named.iter().map(|i| i.0.to_string()).collect::<Vec<_>>().join(", ");
+    if !rest.is_empty() {
+        list = format!("{list} and {} more", rest.len());
+    }
+    match ids {
+        [] => None,
+        [_] => Some(format!("1 text object doesn't fit its frame: the text past the end of the frame doesn't print (id {list})")),
+        _ => Some(format!("{} text objects don't fit their frames: the text past the end of each frame doesn't print (ids {list})", ids.len())),
+    }
+}
+
 /// Text objects among `ids` and their descendants.
 fn text_ids(d: &Document, ids: &[NodeId]) -> Vec<NodeId> {
     let mut out = vec![];
