@@ -958,6 +958,17 @@ mask is edited; called again it shows the artwork, still editing. It is view sta
 like the mask view: the grid shows behind the artboards of the documents that turn it on, on the canvas and in
 `ui.screenshot`, never in exports. It returns `{on}`, isn't undoable and doesn't mark the document changed.
 
+`view.globalRulers {global?}` (View → Rulers → Change to Global / Artboard Rulers, Cmd+Alt+R; default: toggle) is
+saved with the document and undoable. With artboard rulers (a new document's) the rulers count from the active
+artboard's top-left corner, or the zero point set for it; with global rulers, from one document zero point. Command
+coordinates stay absolute either way. `document.rulerOrigin {artboard?}` returns the zero point the rulers use with that
+artboard active; `document.setRulerOrigin {x, y, artboard?}` and `document.resetRulerOrigin {artboard?}` set or reset
+the document's (global rulers) or that artboard's (artboard rulers, kept relative to it so it follows the artboard).
+
+```json
+{"name":"run_command","arguments":{"command":"view.globalRulers","params":{"global":true}}}
+```
+
 ## Clipping masks
 
 `object.clippingMask.make` clips the selected objects by the topmost one, which may be a path, a compound path or a
