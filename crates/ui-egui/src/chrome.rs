@@ -266,6 +266,7 @@ pub fn control_bar(app: &mut VectorcraftApp, ui: &mut Ui) {
                 let first = sel.first().and_then(|id| st.doc.node(*id)).cloned();
                 let anchors = anchor_controls(app);
                 let label = match &first {
+                    _ if app.session.tool_id() == "artboard" => tl!("Artboard"),
                     Some(_) if sel.len() == 1 && anchors != AnchorControls::None => {
                         tl!("Anchor Point")
                     }
@@ -282,6 +283,11 @@ pub fn control_bar(app: &mut VectorcraftApp, ui: &mut Ui) {
                     _ => tl!(crate::panels::appearance::object_label(app)),
                 };
                 ui.label(egui::RichText::new(label).font(theme::semibold(12.0)).color(t.text));
+                // With the Artboard tool in use, the bar shows the active artboard's controls in place
+                // of the object controls.
+                if crate::panels::artboards::control_bar(app, ui) {
+                    return;
+                }
                 if anchors != AnchorControls::None {
                     anchor_buttons(app, ui, anchors);
                 }

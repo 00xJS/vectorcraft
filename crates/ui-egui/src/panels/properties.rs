@@ -279,10 +279,10 @@ fn rearrange_button(app: &mut VectorcraftApp, ui: &mut Ui, artboards: usize, w: 
 }
 
 /// Artboard `i`'s size preset (New Document's saved and built-in presets, by category, either way
-/// round; Custom when its `w` × `h` points match none) and its orientation. A preset sizes it in its
-/// current orientation; the other orientation swaps its width and height. Its top-left corner stays
-/// put either way.
-fn artboard_size_row(app: &mut VectorcraftApp, ui: &mut Ui, i: usize, w: f64, h: f64) {
+/// round; Custom when its `w` × `h` points match none) and its orientation, here and in the Control
+/// bar. A preset sizes it in its current orientation; the other orientation swaps its width and
+/// height. Its top-left corner stays put either way.
+pub(crate) fn artboard_size_row(app: &mut VectorcraftApp, ui: &mut Ui, i: usize, w: f64, h: f64) {
     let landscape = w > h;
     // A preset `pw` × `ph` turned to the artboard's orientation.
     let turned = |pw: f64, ph: f64| if (pw > ph) == landscape || pw == ph { (pw, ph) } else { (ph, pw) };
