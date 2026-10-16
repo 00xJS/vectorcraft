@@ -319,7 +319,7 @@ pub struct DocState {
     /// View Opacity Mask (Alt-click the mask thumbnail): the masked object whose mask the canvas
     /// shows alone, in greyscale, while that mask is edited (see [`DocState::shown_mask`]).
     pub mask_view: Option<NodeId>,
-    /// View → Show Transparency Grid, per document (view state: not saved, not undoable).
+    /// View → Show Transparency Grid, per document (saved view state, not undoable).
     pub transparency_grid: bool,
     /// The format Save writes ([`cmd::fileio::SAVE_FORMATS`]): the one the document was opened
     /// from or last saved as.
@@ -455,9 +455,9 @@ impl RecalledSelection {
 impl DocState {
     pub fn new(mut doc: Document, path: Option<String>) -> Self {
         let active_layer = doc.default_layer();
-        // The saved view and open Layers rows live here while the document is open (saves write
-        // them back).
+        // Saved view state lives here while the document is open (saves write it back).
         let view = doc.last_view.take();
+        let transparency_grid = std::mem::take(&mut doc.transparency_grid);
         let saved_open = doc.layers_open.take();
         let layers_open = OpenRows::new(&doc, saved_open);
         let doc = Arc::new(doc);
@@ -479,7 +479,7 @@ impl DocState {
             recalled_selection: RecalledSelection::default(),
             uid: NEXT_DOC_UID.fetch_add(1, std::sync::atomic::Ordering::Relaxed),
             mask_view: None,
-            transparency_grid: false,
+            transparency_grid,
             format: "vectorcraft",
             save_options: Default::default(),
             converted: false,

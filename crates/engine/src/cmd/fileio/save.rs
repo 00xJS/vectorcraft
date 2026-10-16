@@ -296,17 +296,18 @@ fn is_svg(f: &Format) -> bool {
 }
 
 /// The document as written: native files carry the view to reopen at and the Layers panel's open
-/// rows.
+/// rows and transparency grid visibility.
 fn doc_to_save(st: &DocState, f: &Format) -> Arc<Document> {
     if !is_native(f) {
         return st.doc.clone();
     }
     let open = st.layers_open.saved(&st.doc);
-    if st.doc.last_view == st.view && st.doc.layers_open == open {
+    if st.doc.last_view == st.view && st.doc.layers_open == open && st.doc.transparency_grid == st.transparency_grid {
         return st.doc.clone();
     }
     let mut d = (*st.doc).clone();
     d.last_view = st.view.clone();
+    d.transparency_grid = st.transparency_grid;
     d.layers_open = open;
     Arc::new(d)
 }
