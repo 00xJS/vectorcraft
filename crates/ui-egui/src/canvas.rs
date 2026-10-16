@@ -2243,7 +2243,19 @@ fn task_bar(app: &mut VectorcraftApp, ui: &mut Ui, xf: &Xf) {
     let first = st.selection.objects.first().and_then(|id| st.doc.node(*id)).cloned();
     let is_group = first.as_ref().is_some_and(|f| matches!(f.kind, NodeKind::Group { .. }));
     let is_text = first.as_ref().is_some_and(|f| matches!(f.kind, NodeKind::Text(_)));
+    let is_image = first.as_ref().is_some_and(|f| matches!(f.kind, NodeKind::Image(_)));
+    // An Image Trace object: the group the engine names "Image Trace", its source image first.
+    let is_trace = is_group
+        && first.as_ref().is_some_and(|f| {
+            f.name.as_deref() == Some("Image Trace") && f.children().is_some_and(|c| c.first().is_some_and(|i| matches!(i.kind, NodeKind::Image(_))))
+        });
     let mut items: Vec<(&str, &str, &str)> = vec![]; // (label, icon, command)
+    // As in the reference app, an image offers Image Trace and Crop Image, and traced art offers
+    // Expand (<https://community.adobe.com/announcements-651/contextual-task-bar-in-illustrator-2025-quick-actions-when-you-need-them-1546580>).
+    if n == 1 && is_image {
+        items.push((tl!("Image Trace"), "image", TASK_BAR_IMAGE_TRACE));
+        items.push((tl!("Crop Image"), "dc-pf-crop", "ui.cropImage"));
+    }
     // Direct-selected anchors take the place of a path's Offset Path and Simplify.
     let anchors = !st.selection.anchors.is_empty();
     if anchors {
@@ -2253,11 +2265,15 @@ fn task_bar(app: &mut VectorcraftApp, ui: &mut Ui, xf: &Xf) {
     if n > 1 {
         items.push((tl!("Group"), "group", "object.group"));
         items.push((tl!("Unite"), "squares-unite", "object.pathfinder.unite"));
+    } else if is_trace {
+        items.push((tl!("Expand"), "maximize-2", "imageTrace.expand"));
     } else if is_group {
         items.push((tl!("Ungroup"), "ungroup", "object.ungroup"));
         items.push((tl!("Isolate"), "square-dashed", "object.isolate"));
     } else if is_text {
         items.push((tl!("Create Outlines"), "type", "type.createOutlines"));
+    } else if is_image {
+        // Offset Path and Simplify don't apply to an image.
     } else if !anchors {
         items.push((tl!("Offset Path"), "square-dashed", "object.path.offsetPath"));
         items.push((tl!("Simplify"), "spline", "object.path.simplify"));
@@ -2376,10 +2392,17 @@ fn task_bar(app: &mut VectorcraftApp, ui: &mut Ui, xf: &Xf) {
         }
         ui.ctx().request_repaint();
     }
-    if let Some((c, p)) = run {
-        crate::menus::invoke(app, c, p);
+    match run {
+        // Image Trace traces the image at once with the Default preset. As a quick trace from
+        // Properties or the Control bar, it leaves the Image Trace panel as it was.
+        Some((TASK_BAR_IMAGE_TRACE, _)) => crate::menus::invoke(app, "imageTrace.make", json!({"preset": "Default"})),
+        Some((c, p)) => crate::menus::invoke(app, c, p),
+        None => {}
     }
 }
+
+/// The Contextual Task Bar's Image Trace button: a trace with the Default preset.
+const TASK_BAR_IMAGE_TRACE: &str = "taskBar.imageTrace";
 
 #[cfg(test)]
 mod tests {
@@ -4938,6 +4961,49 @@ mod tests {
         assert!(!has_colors(&st.doc, &st.selection.objects), "None paints have no colours");
         click(&mut app);
         assert!(app.ui.dialog.is_none(), "no Recolor button without colours");
+    }
+
+    /// The Contextual Task Bar shows Image Trace first for a selected image: it traces the image
+    /// with the Default preset and leaves the Image Trace panel as it was. For the Image Trace
+    /// object it made, the first button is Expand, which keeps only the traced paths.
+    #[test]
+    fn the_task_bar_traces_an_image_then_expands_the_trace() {
+        let mut app = VectorcraftApp::new(Session::new(), Default::default());
+        app.session.execute("file.new", &json!({"width": 400, "height": 300})).unwrap();
+        let img = image::RgbaImage::from_fn(20, 20, |x, _| image::Rgba(if x < 10 { [0, 0, 0, 255] } else { [255, 255, 255, 255] }));
+        let mut png = vec![];
+        img.write_to(&mut std::io::Cursor::new(&mut png), image::ImageFormat::Png).unwrap();
+        let data = vectorcraft_format::base64_encode(&png);
+        app.run("file.place", json!({"name": "half.png", "dataBase64": data, "link": false, "at": [200, 150]})).unwrap();
+        app.select_tool("selection");
+        let ctx = egui::Context::default();
+        let click_first = |app: &mut VectorcraftApp| {
+            frame(app, &ctx, vec![]);
+            frame(app, &ctx, vec![]);
+            let bar = task_bar_rect(&ctx).expect("the task bar shows");
+            // Left to right: the frame's margin, the handle and its spacing, then the first button.
+            let at = pos2(bar.left() + 8.0 + 4.0 + 6.0 + 12.0, bar.center().y);
+            let button =
+                |pressed| egui::Event::PointerButton { pos: at, button: egui::PointerButton::Primary, pressed, modifiers: Default::default() };
+            frame(app, &ctx, vec![egui::Event::PointerMoved(at)]);
+            frame(app, &ctx, vec![button(true)]);
+            frame(app, &ctx, vec![button(false)]);
+        };
+        let first = |app: &VectorcraftApp| {
+            let st = app.session.active().unwrap();
+            st.selection.objects.first().and_then(|id| st.doc.node(*id)).cloned().unwrap()
+        };
+        assert!(matches!(first(&app).kind, NodeKind::Image(_)));
+        click_first(&mut app);
+        assert_eq!(first(&app).name.as_deref(), Some("Image Trace"), "the image was traced");
+        assert_eq!(app.ui.open_panel, None, "the Image Trace panel is left as it was");
+
+        click_first(&mut app);
+        let expanded = first(&app);
+        assert_ne!(expanded.name.as_deref(), Some("Image Trace"), "the trace was expanded");
+        let mut images = 0;
+        expanded.walk(&mut |n| images += usize::from(matches!(n.kind, NodeKind::Image(_))));
+        assert_eq!(images, 0, "only the traced paths are kept");
     }
 
     /// The Contextual Task Bar's handle drags it: unpinned it keeps that offset as it follows the
