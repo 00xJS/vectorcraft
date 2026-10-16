@@ -4932,3 +4932,9 @@ mark-style	Japanese	Japonské
 @msg	choose a source folder	vyberte zdrojovou složku
 @msg	open a document with data sets	otevřete dokument se sadami dat
 @msg	the action has no steps	akce nemá žádné kroky
+
+# User Interface › Accent Color
+	Accent Color	Barva zvýraznění
+	Amber	Jantarová
+	Coral	Korálová
+	Violet	Fialová

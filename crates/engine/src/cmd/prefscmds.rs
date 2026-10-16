@@ -266,6 +266,13 @@ pub const PREF_SPECS: &[PrefSpec] = &[
         choice(&[("dark", "Dark"), ("mediumDark", "Medium Dark"), ("mediumLight", "Medium Light"), ("light", "Light")])
     ),
     p!(
+        "uiAccent",
+        "User Interface",
+        "",
+        "Accent Color",
+        choice(&[("coral", "Coral"), ("blue", "Blue"), ("violet", "Violet"), ("green", "Green"), ("amber", "Amber"), ("pink", "Pink")])
+    ),
+    p!(
         "canvasColor",
         "User Interface",
         "",

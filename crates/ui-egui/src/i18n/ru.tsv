@@ -4504,3 +4504,10 @@ lighting	Light	Свет
 @msg	choose a source folder	выберите исходную папку
 @msg	open a document with data sets	откройте документ с наборами данных
 @msg	the action has no steps	в действии нет шагов
+
+# User Interface › Accent Color
+	Accent Color	Цвет акцента
+	Amber	Янтарный
+	Coral	Коралловый
+	Violet	Фиолетовый
+	Pink	Розовый

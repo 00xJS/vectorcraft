@@ -4549,3 +4549,10 @@ lighting	Light	ライト
 @msg	choose a source folder	ソースフォルダーを選択してください
 @msg	open a document with data sets	データセットのあるドキュメントを開いてください
 @msg	the action has no steps	アクションにステップがありません
+
+# User Interface › Accent Color
+	Accent Color	アクセントカラー
+	Coral	コーラル
+	Amber	アンバー
+	Violet	バイオレット
+	Pink	ピンク

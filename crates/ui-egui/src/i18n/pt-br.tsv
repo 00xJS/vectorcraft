@@ -4849,3 +4849,9 @@ mark-style	Japanese	Japonesas
 	Color Panel Options	Opções do Painel Cor
 @msg	`mode` must be grayscale, rgb, hsb, cmyk or websafe	`mode` deve ser grayscale, rgb, hsb, cmyk ou websafe
 @msg	the image can't be read as a texture	a imagem não pode ser lida como textura
+
+# User Interface › Accent Color
+	Accent Color	Cor de destaque
+	Amber	Âmbar
+	Coral	Coral
+	Violet	Violeta

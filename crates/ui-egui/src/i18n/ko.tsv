@@ -4472,3 +4472,10 @@ lighting	Light	광원
 @msg	choose a source folder	소스 폴더를 선택하세요
 @msg	open a document with data sets	데이터 세트가 있는 문서를 여세요
 @msg	the action has no steps	액션에 단계가 없습니다
+
+# User Interface › Accent Color
+	Accent Color	강조 색상
+	Amber	호박색
+	Coral	코럴
+	Violet	보라
+	Pink	분홍
