@@ -538,6 +538,12 @@ pub const UI_COMMANDS: &[(&str, &str, &str, &str)] = &[
         "{sublayer?: bool} open Layer Options for a new layer (or a sublayer of the current layer), named and coloured as it would be: dialog `layerOptions` with mode new|newSublayer; OK runs layer.new or layer.newSublayer with the fields",
     ),
     (
+        "ui.newArtboard",
+        "New Artboard Options…",
+        "",
+        "{} open Artboard Options for a new artboard, filled in as artboard.new {} would make it (Artboard N, the last artboard's size, 20 pt to its right): dialog `artboardOptions` with new: true, fields name, x, y, width, height; OK runs artboard.new with the fields and makes the new artboard the active one; Cancel adds nothing",
+    ),
+    (
         "ui.layersPanelOptions",
         "Panel Options…",
         "",
@@ -1506,6 +1512,7 @@ pub fn run_ui_command(app: &mut VectorcraftApp, id: &str, p: &Value) -> Option<R
         "ui.tileEdgeColor" => crate::dialogs::tile_edge_color::open(app),
         "ui.layerOptions" => crate::dialogs::layer_options::open(app, p),
         "ui.newLayer" => crate::dialogs::layer_options::open_new(app, p),
+        "ui.newArtboard" => crate::dialogs::artboard_options::open_new(app),
         "ui.layersPanelOptions" => crate::dialogs::layers_panel_options::open(app),
         "ui.layersExpand" => crate::panels::layers::expand(app, p),
         "ui.layersFilter" => crate::panels::layers::set_filter(app, p),
@@ -2204,6 +2211,7 @@ pub fn enabled(app: &VectorcraftApp, id: &str) -> bool {
         "ui.findFontsInFolder" => crate::picks::can(app, &crate::picks::PickRequest::Folder) && app.session.active().is_some(),
         "ui.swatchOptions" | "ui.newSwatch" | "ui.newColorGroup" => app.session.active().is_some(),
         "ui.graphicStyleOptions" => app.session.active().is_some(),
+        "ui.newArtboard" => app.session.active().is_some(),
         "ui.sampleScreenColor" => crate::screen_color::available(app),
         "ui.brushOptions" => crate::dialogs::brush_options::available(app),
         "ui.hyphenation" => crate::panels::character::text_style(app).is_some(),

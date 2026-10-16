@@ -1,5 +1,6 @@
-//! Artboards panel: numbered list with inline rename (double-click the name), move up / down, new,
-//! delete; a row dragged onto New Artboard duplicates its artboard (as Duplicate Artboards does, with
+//! Artboards panel: numbered list with inline rename (double-click the name), move up / down, new
+//! (Alt-click: Artboard Options for the new artboard first), delete; a row dragged onto New
+//! Artboard duplicates its artboard (as Duplicate Artboards does, with
 //! its art when the Artboard tool's Move/Copy Artwork with Artboard is on). The highlighted row is the active artboard, the one the status bar's navigator shows and
 //! Fit Artboard in Window fits: clicking a row makes it active, double-clicking its number also
 //! fits it in the window. The options icon at a row's right end opens Artboard Options: a click on
@@ -8,7 +9,7 @@
 use egui::{Sense, Ui, pos2, vec2};
 use serde_json::{Value, json};
 
-use super::{pstate, set_pstate};
+use super::{alt_held, pstate, set_pstate};
 use crate::theme::Tokens;
 use crate::widgets::{self, menu_item};
 use crate::{VectorcraftApp, icons};
@@ -327,6 +328,9 @@ pub fn show(app: &mut VectorcraftApp, ui: &mut Ui) {
         }
         if let Some(row) = new.dnd_release_payload::<RowDrag>() {
             duplicate(app, row.0);
+        } else if new.clicked() && alt_held(ui) {
+            // Alt-click: Artboard Options for the new artboard, which OK adds.
+            app.run("ui.newArtboard", json!({})).ok();
         } else if new.clicked() && app.run("artboard.new", json!({})).is_ok() {
             select(app, n);
         }
@@ -1026,5 +1030,85 @@ mod tests {
         let d = &app.session.active().unwrap().doc;
         assert_eq!((d.artboards.len(), d.layers[0].children().unwrap().len()), (2, 2), "the artboard and its art");
         assert_eq!(app.view().unwrap().artboard, 1);
+    }
+
+    /// Alt-click on New Artboard opens Artboard Options for the new artboard and adds nothing yet:
+    /// the fields are those a plain click's artboard gets. Cancel adds nothing; OK adds the artboard
+    /// with the fields in one undo step and makes it the active one.
+    #[test]
+    fn alt_clicking_new_artboard_opens_artboard_options_for_the_new_artboard() {
+        let mut app = VectorcraftApp::new(Session::new(), Default::default());
+        app.session.execute("file.new", &json!({"width": 200, "height": 150})).unwrap();
+        app.session.execute("artboard.new", &json!({"x": 400, "y": 300, "width": 100, "height": 50})).unwrap();
+        select(&mut app, 0);
+        let ctx = egui::Context::default();
+        let screen = Some(egui::Rect::from_min_size(egui::Pos2::ZERO, vec2(240.0, 400.0)));
+        let frame = |app: &mut VectorcraftApp, time: f64, events: Vec<egui::Event>| {
+            let mut out = ctx.run_ui(egui::RawInput { events, time: Some(time), screen_rect: screen, ..Default::default() }, |ui| show(app, ui));
+            out.textures_delta.clear();
+            out.shapes
+        };
+        // The bottom bar's buttons sit under its divider, New Artboard second from the right.
+        let bar = frame(&mut app, 0.0, vec![])
+            .iter()
+            .find_map(|c| match &c.shape {
+                egui::Shape::Rect(r) if r.fill == Tokens::get(&ctx).divider => Some(r.rect),
+                _ => None,
+            })
+            .unwrap();
+        let new = pos2(bar.right() - 24.0 - 4.0 - 12.0, bar.bottom() + 2.0 + 12.0);
+        let click = |modifiers: egui::Modifiers| {
+            let b = |pressed| egui::Event::PointerButton { pos: new, button: egui::PointerButton::Primary, pressed, modifiers };
+            vec![egui::Event::ModifiersChanged(modifiers), egui::Event::PointerMoved(new), b(true), b(false)]
+        };
+        let count = |app: &VectorcraftApp| app.session.active().unwrap().doc.artboards.len();
+        let fields = |app: &VectorcraftApp| {
+            let d = app.ui.dialog.as_ref().unwrap();
+            assert_eq!(d.kind, crate::dialogs::artboard_options::KIND);
+            (d.str("name"), ["x", "y", "width", "height"].map(|k| d.f64(k, -1.0)))
+        };
+        // Alt-click: the dialog for Artboard 3, 20 pt right of Artboard 2 and as large; no artboard yet.
+        frame(&mut app, 1.0, click(egui::Modifiers::ALT));
+        assert_eq!(fields(&app), ("Artboard 3".to_string(), [520.0, 300.0, 100.0, 50.0]));
+        assert_eq!(count(&app), 2, "no artboard is added before OK");
+        // A plain click adds the artboard the dialog showed, with no dialog.
+        crate::dialogs::cancel(&mut app);
+        frame(&mut app, 2.0, click(egui::Modifiers::NONE));
+        let ab = app.session.active().unwrap().doc.artboards[2].clone();
+        assert_eq!((ab.name.as_str(), ab.rect), ("Artboard 3", vectorcraft_geom::Rect::new(520.0, 300.0, 620.0, 350.0)));
+        assert!(app.ui.dialog.is_none());
+        app.run("edit.undo", json!({})).unwrap();
+        select(&mut app, 0);
+        // Cancel adds nothing.
+        frame(&mut app, 3.0, click(egui::Modifiers::ALT));
+        crate::dialogs::cancel(&mut app);
+        assert_eq!((count(&app), app.view().unwrap().artboard), (2, 0));
+        // OK adds it with the fields, in one undo step, and makes it the active artboard.
+        frame(&mut app, 4.0, click(egui::Modifiers::ALT));
+        let d = app.ui.dialog.as_mut().unwrap();
+        d.fields.insert("name".into(), json!("Cover"));
+        d.fields.insert("width".into(), json!(300));
+        let undo = app.session.doc().unwrap().history.undo.len();
+        crate::dialogs::confirm(&mut app).unwrap();
+        let ab = app.session.active().unwrap().doc.artboards[2].clone();
+        assert_eq!((ab.name.as_str(), ab.rect), ("Cover", vectorcraft_geom::Rect::new(520.0, 300.0, 820.0, 350.0)));
+        assert_eq!((app.view().unwrap().artboard, app.session.doc().unwrap().history.undo.len()), (2, undo + 1));
+        assert!(app.ui.dialog.is_none());
+    }
+
+    /// `ui.newArtboard` answers with the dialog's kind. A name left empty gives the new artboard
+    /// its default name, and with the Artboard tool in use the tool moves to the new artboard.
+    #[test]
+    fn new_artboard_options_with_an_empty_name_add_the_default_name() {
+        let mut app = VectorcraftApp::new(Session::new(), Default::default());
+        assert!(app.run("ui.newArtboard", json!({})).is_err(), "no document");
+        app.session.execute("file.new", &json!({"width": 200, "height": 150})).unwrap();
+        app.select_tool("artboard");
+        assert_eq!(app.run("ui.newArtboard", json!({})).unwrap(), json!({"dialog": "artboardOptions"}));
+        app.ui.dialog.as_mut().unwrap().fields.insert("name".into(), json!(" "));
+        crate::dialogs::confirm(&mut app).unwrap();
+        let names: Vec<String> = app.session.active().unwrap().doc.artboards.iter().map(|a| a.name.clone()).collect();
+        assert_eq!(names, ["Artboard 1", "Artboard 2"]);
+        assert_eq!((selected(&app, 2), app.session.tool_options()["active"].clone()), (1, json!(1)));
     }
 }

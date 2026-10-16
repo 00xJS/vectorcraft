@@ -358,6 +358,7 @@ fn dialogs_do_not_stretch_to_the_screen() {
         ("ui.swatchOptions", json!({"name": "White"})),
         ("ui.colorPicker", json!({})),
         ("ui.graphicStyleOptions", json!({})),
+        ("ui.newArtboard", json!({})),
         ("ui.brushOptions", json!({"name": "3 pt. Round"})),
         ("ui.brushOptions", json!({"name": "Bristle Round"})),
         ("ui.colorGuideOptions", json!({})),
