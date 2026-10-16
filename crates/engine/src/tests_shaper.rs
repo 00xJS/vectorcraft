@@ -157,6 +157,20 @@ fn shaper_export_selection_crops_to_the_shown_art() {
     assert_eq!(v["bounds"], json!([b.x0, b.y0, b.width(), b.height()]), "{v}");
 }
 
+/// Fit to Artwork Bounds fits the art a Shaper group shows, not its transparent source art.
+#[test]
+fn shaper_fit_to_artwork_bounds_fits_the_shown_art() {
+    let mut s = session();
+    s.execute("paint.setFill", &json!({"color":"#ffff00"})).unwrap();
+    s.execute("shape.ellipse", &json!({"x":100,"y":100,"width":100,"height":100})).unwrap();
+    s.execute("shape.line", &json!({"x1":50,"y1":150,"x2":250,"y2":150})).unwrap();
+    scribble(&mut s, &[[60.0, 140.0], [70.0, 160.0], [80.0, 140.0], [90.0, 160.0]]);
+    let g = scribble(&mut s, &[[210.0, 140.0], [220.0, 160.0], [230.0, 140.0], [240.0, 160.0]]);
+    s.execute("artboard.fitToArt", &json!({})).unwrap();
+    let b = node(&s, g).visual_bounds().unwrap();
+    assert_eq!(s.doc().unwrap().doc.artboards[0].rect, b, "the circle and the trimmed line");
+}
+
 #[test]
 fn shaper_source_move_resize_native_roundtrip_and_release_preserve_live_art() {
     let mut s = session();
