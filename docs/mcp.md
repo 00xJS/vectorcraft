@@ -600,7 +600,7 @@ strokes (spot colours as spot swatches), linear and radial gradients, opacity, b
 embedded images with their alpha channel, guides, and every artboard where it is. An object with several fills or
 strokes, effects or a brush comes in as its drawn look (a group named after it). Type is made from the file's text
 document, whole and editable: point type, area type (a story in several frames as threaded type) and type on a path,
-with its fonts, size, leading, tracking, scaling, baseline shift, fill and stroke (grey, RGB or CMYK), alignment,
+with its fonts, size, leading, tracking, scaling, baseline shift, fill and stroke (grey, RGB or CMYK), opacity, blend mode, alignment,
 indents and paragraph spacing. Where the text document can't say, type that shows is the page's, in its text object's
 place. A text object on a layer that shows and doesn't print keeps the type the text document makes for it, on that
 layer, even where the page doesn't draw it. A file whose editing data has symbols,

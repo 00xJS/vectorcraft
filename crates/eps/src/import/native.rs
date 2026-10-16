@@ -29,6 +29,7 @@ use std::borrow::Cow;
 use std::collections::BTreeSet;
 use std::sync::Arc;
 
+use vectorcraft_color::BlendMode;
 use vectorcraft_doc::{AppearanceItem, Document, Node, NodeId, NodeKind, Scaling, TextKind};
 use vectorcraft_geom::{Affine, PathData, Point, Rect, Vec2};
 
@@ -201,9 +202,19 @@ enum Content {
     Merged,
 }
 
+/// Does `n` have transparency of its own: an opacity below 100%, a blend mode or isolation?
+fn see_through(n: &Node) -> bool {
+    n.opacity < 1.0 || n.blend != BlendMode::Normal || n.isolate
+}
+
 /// Replace the text slots in `nodes` with what `content` has for each, in order (a slot given none is
-/// left out): the page's type takes its place as it is, made type keeps the slot's name. `empty`
-/// counts those left out.
+/// left out): the page's type takes its place as it is, made type keeps the slot's name. Made type
+/// takes the slot's opacity, blend mode, isolation and knockout. The page's type takes them too when
+/// the page draws it and the strokes around it with no transparency, the slot's, or the slot's
+/// combined with that of the objects around `nodes`; otherwise they keep their own. Where the slot has
+/// transparency and the type comes with other art that has none of its own, a group of them takes the
+/// slot's instead. `round` has the opacity and blend mode of each object around `nodes`, which the page
+/// can have folded into its type. `empty` counts those left out.
 fn fill_slots(
     doc: &mut Document,
     nodes: &mut Vec<Arc<Node>>,
@@ -211,6 +222,7 @@ fn fill_slots(
     names: &std::collections::HashMap<NodeId, String>,
     empty: &mut usize,
     made: &mut Vec<(u32, usize, NodeId)>,
+    round: &mut Vec<(f32, BlendMode)>,
 ) {
     let mut i = 0;
     while i < nodes.len() {
@@ -219,10 +231,12 @@ fn fill_slots(
             let visible = n.visible;
             let name = names.get(&n.id);
             let frame = ai::slot_frame(n.name.as_deref());
+            let state = (n.opacity, n.blend, n.isolate, n.knockout);
+            let transparent = see_through(n);
             let replacement = match content.next() {
                 Some(Content::Page(parts)) if !parts.is_empty() => {
                     // The page's type (and the strokes round it) take the slot's place as they are.
-                    let parts: Vec<Arc<Node>> = parts
+                    let mut parts: Vec<Arc<Node>> = parts
                         .iter()
                         .map(|p| {
                             let mut p = reid(doc, p);
@@ -235,6 +249,31 @@ fn fill_slots(
                             p
                         })
                         .collect();
+                    // When the page draws each of them with no transparency, the slot's, or the slot's
+                    // combined with that of the objects around it, the slot's takes its place: on the one
+                    // part, or on a group of several when the slot has transparency. Otherwise every part
+                    // keeps the transparency the page draws it with (a fill's or a stroke's).
+                    let above: f32 = round.iter().map(|r| r.0).product();
+                    let objects = |p: &Node| {
+                        !see_through(p)
+                            || (!p.isolate
+                                && (p.blend == BlendMode::Normal || p.blend == state.1 || round.iter().any(|r| r.1 == p.blend))
+                                && [state.0, state.0 * above].iter().any(|o| (p.opacity - o).abs() < 1e-3))
+                    };
+                    if parts.iter().all(|p| objects(p)) {
+                        for p in &mut parts {
+                            let p = Arc::make_mut(p);
+                            (p.opacity, p.blend, p.isolate) = (1.0, BlendMode::Normal, false);
+                        }
+                        if let [p] = parts.as_mut_slice() {
+                            let p = Arc::make_mut(p);
+                            (p.opacity, p.blend, p.isolate, p.knockout) = state;
+                        } else if transparent {
+                            let mut group = Node::group(doc.alloc_id(), std::mem::take(&mut parts));
+                            (group.opacity, group.blend, group.isolate, group.knockout) = state;
+                            parts.push(Arc::new(group));
+                        }
+                    }
                     let n = parts.len();
                     nodes.splice(i..=i, parts);
                     i += n;
@@ -248,8 +287,17 @@ fn fill_slots(
                     text.visible = visible;
                     // Type the page shows is kept; other made type is weighed against the page.
                     text.name = if seen { name.cloned() } else { Some(format!("{MADE}{}", name.map_or("", String::as_str))) };
-                    let mut parts = vec![Arc::new(*text)];
-                    parts.extend(extra.iter().map(|p| reid(doc, p)));
+                    let extra: Vec<Arc<Node>> = extra.iter().map(|p| reid(doc, p)).collect();
+                    // The type takes the slot's transparency; the page's type kept after it, where it has
+                    // none of its own, goes into a group with it that has the transparency instead.
+                    let parts: Vec<Arc<Node>> = if transparent && !extra.is_empty() && !extra.iter().any(|p| see_through(p)) {
+                        let mut group = Node::group(doc.alloc_id(), std::iter::once(Arc::new(*text)).chain(extra).collect());
+                        (group.opacity, group.blend, group.isolate, group.knockout) = state;
+                        vec![Arc::new(group)]
+                    } else {
+                        (text.opacity, text.blend, text.isolate, text.knockout) = state;
+                        std::iter::once(Arc::new(*text)).chain(extra).collect()
+                    };
                     let n = parts.len();
                     nodes.splice(i..=i, parts);
                     i += n;
@@ -274,11 +322,14 @@ fn fill_slots(
                 }
             }
         } else {
+            let state = (n.opacity, n.blend);
             if n.children().is_some()
                 && !matches!(n.kind, NodeKind::Compound { .. })
                 && let Some(c) = nodes.get_mut(i).map(Arc::make_mut).and_then(Node::children_mut)
             {
-                fill_slots(doc, c, content, names, empty, made);
+                round.push(state);
+                fill_slots(doc, c, content, names, empty, made, round);
+                round.pop();
             }
             i += 1;
         }
@@ -1018,7 +1069,7 @@ fn build(data: &[u8], visible: Option<&Document>, page: Page, outlined: bool, tr
     let mut empty = 0;
     let mut layers = std::mem::take(&mut doc.layers);
     let mut made = vec![];
-    fill_slots(&mut doc, &mut layers, &mut content.into_iter(), &slot_names, &mut empty, &mut made);
+    fill_slots(&mut doc, &mut layers, &mut content.into_iter(), &slot_names, &mut empty, &mut made, &mut vec![]);
     doc.layers = layers;
     // A story in several frames is threaded type: its frames in order (the first holds the story).
     made.sort();

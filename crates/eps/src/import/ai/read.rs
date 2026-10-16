@@ -388,6 +388,8 @@ struct Reader<'a> {
     looks: HashSet<NodeId>,
     /// Legacy compound member groups, even when followed by the generic `9 () XW` marker.
     compound_groups: HashSet<NodeId>,
+    /// Groups of a text object and its look (see [`Self::style_marker`]), which aren't a look.
+    text_looks: HashSet<NodeId>,
     /// The gradient mesh being read (`/Mesh X!` … `/End X!`), and whether it started on a `%_` line.
     mesh: Option<(super::mesh::MeshReader, bool)>,
     /// The art styles (`%AI9_BeginArtStyles`), by name.
@@ -532,6 +534,7 @@ impl<'a> Reader<'a> {
             clip_fills: HashSet::new(),
             looks: HashSet::new(),
             compound_groups: HashSet::new(),
+            text_looks: HashSet::new(),
             group_ended: false,
             layer_state: None,
             styles: HashMap::new(),
@@ -1323,6 +1326,9 @@ impl<'a> Reader<'a> {
         let gs = self.gs.clone();
         let mut n = self.new_node(NodeKind::Group { children: vec![], clip: false }, &gs);
         n.name = Some(story.map_or_else(|| TEXT_SLOT.to_string(), |s| format!("{TEXT_SLOT}{s}:{frame}")));
+        // The type takes the state's transparency, as a path does; an `Xy` after it sets the slot's own.
+        n.opacity = gs.opacity;
+        n.blend = gs.blend;
         let hidden = self.obj_hidden;
         self.add(n, hidden)
     }
@@ -1624,6 +1630,7 @@ impl<'a> Reader<'a> {
         // The look is a group of paths, or one image where an effect (a blur, a shadow) rasterizes it.
         if !self.hidden_ids.contains(&object.id)
             || self.hidden_ids.contains(&look.id) != hidden
+            || self.text_looks.contains(&look.id)
             || !matches!(look.kind, NodeKind::Group { clip: false, .. } | NodeKind::Image(_))
         {
             return;
@@ -1641,7 +1648,7 @@ impl<'a> Reader<'a> {
             return;
         }
         let is_text = slot_of(object.name.as_deref()).is_some();
-        let Some(object) = f.children.pop() else { return };
+        let Some(mut object) = f.children.pop() else { return };
         let Some(look) = f.children.last_mut() else { return };
         // Inside a copy on `%_` lines everything is, so nothing tells the look's own copies apart.
         if !hidden {
@@ -1649,11 +1656,27 @@ impl<'a> Reader<'a> {
         }
         if is_text {
             // A text object stays the type it is: over what else its look draws, or in place of a
-            // look that was only its type.
-            if look.children().is_some_and(|c| c.is_empty()) {
-                *look = object;
-            } else {
-                f.children.push(object);
+            // look that was only its type. Its transparency is written on its look.
+            let empty = look.children().is_some_and(|c| c.is_empty());
+            if empty || (look.opacity >= 1.0 && look.blend == BlendMode::Normal && !look.isolate) {
+                (object.opacity, object.blend, object.isolate, object.knockout) = (look.opacity, look.blend, look.isolate, look.knockout);
+                if empty {
+                    *look = object;
+                } else {
+                    f.children.push(object);
+                }
+                return;
+            }
+            // The look and the type go into a group that has the transparency.
+            let Some(mut look) = f.children.pop() else { return };
+            let state = (look.opacity, look.blend, look.isolate, look.knockout);
+            (look.opacity, look.blend, look.isolate, look.knockout) = (1.0, BlendMode::Normal, false, Knockout::Neutral);
+            (object.opacity, object.blend, object.isolate) = (1.0, BlendMode::Normal, false);
+            let mut group = Node::group(self.doc.alloc_id(), vec![Arc::new(look), Arc::new(object)]);
+            (group.opacity, group.blend, group.isolate, group.knockout) = state;
+            self.text_looks.insert(group.id);
+            if let Some(f) = self.frames.last_mut() {
+                f.children.push(group);
             }
             return;
         }
