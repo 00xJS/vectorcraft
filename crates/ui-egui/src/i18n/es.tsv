@@ -576,6 +576,7 @@
 	Convert to RGB	Convertir a RGB
 	Convert to Shape	Convertir en forma
 	Convert to sRGB	Convertir a sRGB
+	Convert to Straight Lines	Convertir en líneas rectas
 	Convert:	Convertir:
 	Copied the CSS of {rules} object(s)	Se copió el CSS de {rules} objeto(s)
 	Copies:	Copias:
@@ -594,6 +595,7 @@
 	Copyright Notice:	Aviso de copyright:
 	Copyright Status:	Estado de copyright:
 	Copyright Symbol	Símbolo de copyright
+	Corner Point Angle Threshold:	Umbral de ángulo de los puntos de esquina:
 	Corner Radius	Radio de esquina
 	Corner Radius:	Radio de esquina:
 	Corner:	Esquina:
@@ -2766,6 +2768,7 @@
 	Show Modified	Mostrar modificados
 	Show Note	Mostrar nota
 	Show Options	Mostrar opciones
+	Show Original Path	Mostrar trazado original
 	Color Panel Options	Opciones del panel Color
 	Show Package	Mostrar paquete
 	Show Panel	Mostrar panel

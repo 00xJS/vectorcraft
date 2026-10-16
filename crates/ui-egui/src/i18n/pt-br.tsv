@@ -527,6 +527,7 @@
 	Convert to RGB	Converter para RGB
 	Convert to Shape	Converter em Forma
 	Convert to sRGB	Converter para sRGB
+	Convert to Straight Lines	Converter em Linhas Retas
 	Copies:	Cópias:
 	Copy	Copiar
 	Copy (make a transformed copy)	Copiar (fazer uma cópia transformada)
@@ -540,6 +541,7 @@
 	Copyright Notice:	Aviso de Direitos Autorais:
 	Copyright Status:	Status de Direitos Autorais:
 	Copyright Symbol	Símbolo de Direitos Autorais
+	Corner Point Angle Threshold:	Limite de Ângulo dos Pontos de Canto:
 	Corner Radius	Raio do Canto
 	Corner Radius:	Raio do Canto:
 	Corner:	Canto:
@@ -2274,6 +2276,7 @@
 	Show List View	Mostrar Exibição de Lista
 	Show Note	Mostrar Nota
 	Show Options	Mostrar Opções
+	Show Original Path	Mostrar Caminho Original
 	Show Package	Mostrar Pacote
 	Show Panel	Mostrar Painel
 	Show Perspective Grid	Mostrar Grade de Perspectiva

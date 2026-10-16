@@ -574,6 +574,7 @@
 	Convert to RGB	Преобразовать в RGB
 	Convert to Shape	Преобразовать в фигуру
 	Convert to sRGB	Преобразовать в sRGB
+	Convert to Straight Lines	Преобразовать в прямые линии
 	Convert:	Преобразовать:
 	Copied the CSS of {rules} object(s)	Скопирован CSS для {rules} объекта(ов)
 	Copies:	Копии:
@@ -592,6 +593,7 @@
 	Copyright Notice:	Уведомление об авторских правах:
 	Copyright Status:	Статус авторских прав:
 	Copyright Symbol	Символ авторского права
+	Corner Point Angle Threshold:	Пороговый угол угловых точек:
 	Corner Radius	Радиус угла
 	Corner Radius:	Радиус угла:
 	Corner:	Угол:
@@ -2765,6 +2767,7 @@
 	Show Modified	Показать изменённые
 	Show Note	Показать примечание
 	Show Options	Показать параметры
+	Show Original Path	Показать исходный контур
 	Color Panel Options	Параметры панели «Цвет»
 	Show Package	Показать пакет
 	Show Panel	Показать панель

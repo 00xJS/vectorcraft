@@ -535,6 +535,7 @@
 	Convert to RGB	Μετατροπή σε RGB
 	Convert to Shape	Μετατροπή σε σχήμα
 	Convert to sRGB	Μετατροπή σε sRGB
+	Convert to Straight Lines	Μετατροπή σε ευθείες γραμμές
 	Convert:	Μετατροπή:
 	Copied the CSS of {rules} object(s)	Αντιγράφηκαν οι κανόνες CSS από {rules} αντικείμενα
 	Copies:	Αντίγραφα:
@@ -553,6 +554,7 @@
 	Copyright Notice:	Σημείωση πνευματικών δικαιωμάτων:
 	Copyright Status:	Κατάσταση πνευματικών δικαιωμάτων:
 	Copyright Symbol	Σύμβολο πνευματικών δικαιωμάτων
+	Corner Point Angle Threshold:	Όριο γωνίας γωνιακών σημείων:
 	Corner Radius	Ακτίνα γωνίας
 	Corner Radius:	Ακτίνα γωνίας:
 	Corner:	Γωνία:
@@ -3141,6 +3143,7 @@ theme	Appearance	Εμφάνιση
 	Show Modified	Εμφάνιση τροποποιημένων
 	Show Note	Εμφάνιση σημείωσης
 	Show Options	Εμφάνιση επιλογών
+	Show Original Path	Εμφάνιση αρχικής διαδρομής
 	Show Package	Εμφάνιση συσκευασίας
 	Show Panel	Εμφάνιση πίνακα
 	Show Pattern Swatches	Εμφάνιση δειγμάτων μοτίβου

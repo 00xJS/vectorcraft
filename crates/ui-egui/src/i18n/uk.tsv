@@ -570,6 +570,7 @@
 	Convert to RGB	Перетворити на RGB
 	Convert to Shape	Перетворити на фігуру
 	Convert to sRGB	Перетворити на sRGB
+	Convert to Straight Lines	Перетворити на прямі лінії
 	Convert:	Перетворити:
 	Copied the CSS of {rules} object(s)	Скопійовано CSS об’єктів: {rules}
 	Copies:	Копії:
@@ -588,6 +589,7 @@
 	Copyright Notice:	Повідомлення про авторські права:
 	Copyright Status:	Статус авторських прав:
 	Copyright Symbol	Символ авторського права
+	Corner Point Angle Threshold:	Пороговий кут кутових точок:
 	Corner Radius	Радіус кута
 	Corner Radius:	Радіус кута:
 	Corner:	Кут:
@@ -2761,6 +2763,7 @@
 	Show Modified	Показати змінені
 	Show Note	Показати примітку
 	Show Options	Показати параметри
+	Show Original Path	Показати початковий контур
 	Color Panel Options	Параметри панелі «Колір»
 	Show Package	Показати пакет
 	Show Panel	Показати панель

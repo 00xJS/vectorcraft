@@ -1581,6 +1581,9 @@ lighting	Light	Světlo
 	Updated {} image(s)	Aktualizováno obrázků: {}
 	Break Link	Zrušit propojení
 	Tolerance:	Tolerance:
+	Corner Point Angle Threshold:	Prahový úhel rohových bodů:
+	Convert to Straight Lines	Převést na přímé čáry
+	Show Original Path	Zobrazit původní cestu
 	Transparency Options	Možnosti průhlednosti
 	Color Mixer (Shift-click the chip)	Míchání barev (Shift+kliknutí na políčko)
 	Fill: click for swatches, Shift-click for the color mixer	Výplň: kliknutím otevřete vzorník, Shift+kliknutím míchání barev

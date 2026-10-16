@@ -563,6 +563,7 @@
 	Convert to RGB	Konvertera till RGB
 	Convert to Shape	Konvertera till form
 	Convert to sRGB	Konvertera till sRGB
+	Convert to Straight Lines	Konvertera till raka linjer
 	Convert:	Konvertera:
 	Copied the CSS of {rules} object(s)	Kopierade CSS för {rules} objekt
 	Copies:	Kopior:
@@ -581,6 +582,7 @@
 	Copyright Notice:	Upphovsrättsmeddelande:
 	Copyright Status:	Upphovsrättsstatus:
 	Copyright Symbol	Upphovsrättssymbol
+	Corner Point Angle Threshold:	Vinkeltröskel för hörnpunkter:
 	Corner Radius	Hörnradie
 	Corner Radius:	Hörnradie:
 	Corner:	Hörn:
@@ -2709,6 +2711,7 @@
 	Show Modified	Visa ändrade
 	Show Note	Visa anteckning
 	Show Options	Visa alternativ
+	Show Original Path	Visa ursprunglig bana
 	Show Package	Visa paket
 	Show Panel	Visa panel
 	Show Pattern Swatches	Visa mönsterprover

@@ -765,6 +765,7 @@
 	Convert to RGB	Átalakítás RGB-re
 	Convert to Shape	Átalakítás alakzattá
 	Convert to sRGB	Átalakítás sRGB-re
+	Convert to Straight Lines	Átalakítás egyenes vonalakká
 	Convert:	Átalakítás:
 	Cool	Hideg
 	Copied the CSS of {rules} object(s)	CSS másolva, objektumok: {rules}
@@ -789,6 +790,7 @@
 	Copyright Symbol	Szerzői jogi jel
 	Copyrighted	Szerzői jogvédett
 	Corner	Sarok
+	Corner Point Angle Threshold:	Sarokpontok szögküszöbe:
 	Corner Radius	Sarokkerekítés sugara
 	Corner Radius:	Sarokkerekítés sugara:
 	Corner:	Sarok:
@@ -3350,6 +3352,7 @@
 	Show Modified	Módosultak megjelenítése
 	Show Note	Megjegyzés megjelenítése
 	Show Options	Beállítások megjelenítése
+	Show Original Path	Eredeti útvonal megjelenítése
 	Color Panel Options	Szín panel beállításai
 	Show Package	Csomag megjelenítése
 	Show Panel	Panel megjelenítése

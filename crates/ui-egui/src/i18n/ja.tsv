@@ -1093,6 +1093,7 @@
 	Convert Process to Global	プロセスカラーをグローバルに変換
 	Convert text to outlines	テキストをアウトラインに変換
 	Convert to sRGB	sRGB に変換
+	Convert to Straight Lines	直線に変換
 	Copies:	コピー:
 	Copy (make a transformed copy)	コピー (変形したコピーを作成)
 	Copy All Styles	すべてのスタイルをコピー
@@ -1104,6 +1105,7 @@
 	Copyright Info URL:	著作権情報の URL:
 	Copyright Notice:	著作権表示:
 	Copyright Status:	著作権の状態:
+	Corner Point Angle Threshold:	コーナーポイントの角度のしきい値:
 	Corner Radius	角の半径
 	Corner Radius:	角丸の半径:
 	Corner:	角の形状:
@@ -2585,6 +2587,7 @@
 	Show List View	リスト表示
 	Show Note	メモを表示
 	Show Options	オプションを表示
+	Show Original Path	元のパスを表示
 	Color Panel Options	カラーパネルオプション
 	Show Package	パッケージを表示
 	Show Panel	パネルを表示

@@ -1494,6 +1494,9 @@ lighting	Light	Światło
 	Updated {} image(s)	Zaktualizowane obrazy: {}
 	Break Link	Zerwij łącze
 	Tolerance:	Tolerancja:
+	Corner Point Angle Threshold:	Próg kąta punktów narożnych:
+	Convert to Straight Lines	Konwertuj na linie proste
+	Show Original Path	Pokaż oryginalną ścieżkę
 	Transparency Options	Opcje przezroczystości
 	Color Mixer (Shift-click the chip)	Mikser kolorów (kliknij próbkę z Shift)
 	Fill: click for swatches, Shift-click for the color mixer	Wypełnienie: kliknij, aby wybrać próbkę, z Shift — mikser kolorów

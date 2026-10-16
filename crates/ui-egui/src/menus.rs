@@ -3264,7 +3264,10 @@ fn menu_dialog(app: &VectorcraftApp, id: &str) -> Option<(&'static str, Value)> 
         // Offset Path opens on the values it was last confirmed with.
         "object.path.offsetPath" if app.ui.offset_path.is_object() => ("offsetPath", app.ui.offset_path.clone()),
         "object.path.offsetPath" => ("offsetPath", json!({"offset": "10 pt", "joins": "miter", "miterLimit": 4})),
-        "object.path.simplify" => ("simplify", json!({"tolerance": "1 pt", "preview": true})),
+        "object.path.simplify" => (
+            "simplify",
+            json!({"tolerance": "1 pt", "angleThreshold": crate::dialogs::path_ops::ANGLE_THRESHOLD, "straightLines": false, "showOriginal": false, "preview": true}),
+        ),
         "object.path.splitIntoGrid" => {
             // The grid starts at the size of the selection.
             let size =

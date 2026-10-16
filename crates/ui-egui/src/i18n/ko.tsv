@@ -1088,6 +1088,7 @@
 	Convert Process to Global	프로세스 색상을 글로벌로 변환
 	Convert text to outlines	문자를 윤곽선으로 변환
 	Convert to sRGB	sRGB로 변환
+	Convert to Straight Lines	직선으로 변환
 	Copies:	매수:
 	Copy (make a transformed copy)	복사(변형된 복사본 만들기)
 	Copy All Styles	모든 스타일 복사
@@ -1099,6 +1100,7 @@
 	Copyright Info URL:	저작권 정보 URL:
 	Copyright Notice:	저작권 고지:
 	Copyright Status:	저작권 상태:
+	Corner Point Angle Threshold:	모퉁이 포인트 각도 임계값:
 	Corner Radius	모퉁이 반지름
 	Corner Radius:	모퉁이 반지름:
 	Corner:	모퉁이:
@@ -2579,6 +2581,7 @@
 	Show List View	목록 보기 표시
 	Show Note	메모 표시
 	Show Options	옵션 표시
+	Show Original Path	원래 패스 표시
 	Color Panel Options	색상 패널 옵션
 	Show Package	패키지 표시
 	Show Panel	패널 표시
