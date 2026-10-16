@@ -1,5 +1,6 @@
 //! Character panel: font family / style, size, leading, kerning, tracking, vertical and horizontal
-//! scale, baseline shift, character rotation and the caps / underline / strikethrough toggles.
+//! scale, baseline shift, character rotation and the All Caps, Small Caps, Superscript, Subscript,
+//! Underline and Strikethrough toggles.
 
 use std::sync::{Mutex, OnceLock};
 
@@ -564,19 +565,27 @@ pub fn show(app: &mut VectorcraftApp, ui: &mut Ui) {
     }
     ui.add_space(4.0);
     ui.horizontal(|ui| {
-        for (kind, tip, key, on, enabled) in [
-            (Glyph::AllCaps, tl!("All Caps"), "allCaps", s.all_caps, true),
-            (Glyph::SmallCaps, tl!("Small Caps (on the roadmap)"), "", false, false),
-            (Glyph::Super, tl!("Superscript (on the roadmap)"), "", false, false),
-            (Glyph::Sub, tl!("Subscript (on the roadmap)"), "", false, false),
-            (Glyph::Underline, tl!("Underline"), "underline", s.underline, true),
-            (Glyph::Strike, tl!("Strikethrough"), "strikethrough", s.strikethrough, true),
+        let small = s.small_caps.is_some();
+        let position = s.position.id();
+        for (kind, tip, on, change) in [
+            (Glyph::AllCaps, tl!("All Caps"), s.all_caps, json!({"allCaps": !s.all_caps})),
+            (Glyph::SmallCaps, tl!("Small Caps"), small, json!({"smallCaps": !small})),
+            (Glyph::Super, tl!("Superscript"), position == "superscript", position_toggle(position, "superscript")),
+            (Glyph::Sub, tl!("Subscript"), position == "subscript", position_toggle(position, "subscript")),
+            (Glyph::Underline, tl!("Underline"), s.underline, json!({"underline": !s.underline})),
+            (Glyph::Strike, tl!("Strikethrough"), s.strikethrough, json!({"strikethrough": !s.strikethrough})),
         ] {
-            if style_toggle(ui, kind, tip, on, enabled) && !key.is_empty() {
-                format(app, json!({key: !on}));
+            if style_toggle(ui, kind, tip, on) {
+                format(app, change);
             }
         }
     });
+}
+
+/// The `text.setFormat` params of the Superscript or Subscript toggle `p` for text whose
+/// position is `position`: `normal` when `p` is on, else `p`, which turns the other one off.
+fn position_toggle(position: &str, p: &str) -> Value {
+    json!({"position": if position == p { "normal" } else { p }})
 }
 
 #[derive(Clone, Copy, PartialEq, Eq)]
@@ -590,15 +599,15 @@ enum Glyph {
 }
 
 /// A drawn "T" style toggle (All Caps, Small Caps, Superscript, Subscript, Underline, Strikethrough).
-fn style_toggle(ui: &mut Ui, g: Glyph, tip: &str, on: bool, enabled: bool) -> bool {
+fn style_toggle(ui: &mut Ui, g: Glyph, tip: &str, on: bool) -> bool {
     let t = Tokens::get(ui.ctx());
-    let (r, resp) = ui.allocate_exact_size(vec2(30.0, 26.0), if enabled { egui::Sense::click() } else { egui::Sense::hover() });
+    let (r, resp) = ui.allocate_exact_size(vec2(30.0, 26.0), egui::Sense::click());
     if on {
         ui.painter().rect_filled(r, 3, t.tool_active);
-    } else if resp.hovered() && enabled {
+    } else if resp.hovered() {
         ui.painter().rect_filled(r, 3, t.hover);
     }
-    let col = if enabled { t.text_strong } else { t.text_disabled };
+    let col = t.text_strong;
     let big = egui::FontId::proportional(15.0);
     let small = egui::FontId::proportional(10.5);
     let c = r.center();
@@ -630,7 +639,7 @@ fn style_toggle(ui: &mut Ui, g: Glyph, tip: &str, on: bool, enabled: bool) -> bo
         }
     }
     let resp = resp.on_hover_text(tl!(tip));
-    enabled && resp.clicked()
+    resp.clicked()
 }
 
 pub fn menu(app: &mut VectorcraftApp, ui: &mut Ui) {
@@ -651,8 +660,16 @@ pub fn menu(app: &mut VectorcraftApp, ui: &mut Ui) {
             format(app, json!({key: !on}));
         }
     }
-    for l in ["Small Caps", "Superscript", "Subscript"] {
-        menu_item(ui, tl!(l), false, false);
+    let small = s.as_ref().is_some_and(|s| s.small_caps.is_some());
+    let position = s.as_ref().map_or("normal", |s| s.position.id());
+    for (label, on, change) in [
+        (tl!("Small Caps"), small, json!({"smallCaps": !small})),
+        (tl!("Superscript"), position == "superscript", position_toggle(position, "superscript")),
+        (tl!("Subscript"), position == "subscript", position_toggle(position, "subscript")),
+    ] {
+        if menu_item(ui, label, has, on) {
+            format(app, change);
+        }
     }
     ui.separator();
     // Character Alignment: where characters smaller than the largest on their line line up, with
@@ -854,6 +871,109 @@ mod tests {
         app.run("file.new", json!({"width": 300, "height": 200})).unwrap();
         assert!(toggle_face(&mut app, Face::Bold).is_err());
         assert!(!crate::menus::enabled(&app, "type.bold"));
+    }
+
+    /// From one frame of the panel: a point inside each of the Small Caps, Superscript and
+    /// Subscript buttons, and which of them are drawn on. The two buttons with a "1" are
+    /// Superscript (the "1" up) and Subscript; Small Caps is the button before them.
+    fn script_buttons(ctx: &egui::Context, app: &mut VectorcraftApp) -> ([egui::Pos2; 3], [bool; 3]) {
+        let mut out = ctx.run_ui(egui::RawInput::default(), |ui| show(app, ui));
+        out.textures_delta.clear();
+        fn walk(s: &egui::Shape, on: egui::Color32, ones: &mut Vec<egui::Pos2>, lit: &mut Vec<egui::Rect>) {
+            match s {
+                egui::Shape::Vec(v) => v.iter().for_each(|s| walk(s, on, ones, lit)),
+                egui::Shape::Text(t) if t.galley.text() == "1" => ones.push(t.visual_bounding_rect().center()),
+                egui::Shape::Rect(r) if r.fill == on && r.rect.size() == vec2(30.0, 26.0) => lit.push(r.rect),
+                _ => {}
+            }
+        }
+        let (mut ones, mut lit) = (vec![], vec![]);
+        for c in &out.shapes {
+            walk(&c.shape, Tokens::get(ctx).tool_active, &mut ones, &mut lit);
+        }
+        let [sup, sub] = ones[..] else { panic!("two script buttons: {ones:?}") };
+        assert!(sup.x < sub.x && sup.y < sub.y, "Superscript, then Subscript: {ones:?}");
+        // Each "1" is drawn 6 points right of its button's center and 5 points above or below it.
+        let y = (sup.y + sub.y) / 2.0;
+        let (sup, sub) = (egui::pos2(sup.x - 6.0, y), egui::pos2(sub.x - 6.0, y));
+        let points = [sup - vec2(sub.x - sup.x, 0.0), sup, sub];
+        (points, points.map(|p| lit.iter().any(|r| r.contains(p))))
+    }
+
+    /// Each run's (small caps, position).
+    fn scripts(app: &VectorcraftApp, id: &Value) -> Vec<(Option<f64>, &'static str)> {
+        match &app.session.active().unwrap().doc.node(NodeId(id.as_u64().unwrap())).unwrap().kind {
+            NodeKind::Text(t) => t.runs.iter().map(|r| (r.style.small_caps, r.style.position.id())).collect(),
+            _ => panic!("text"),
+        }
+    }
+
+    /// The Small Caps, Superscript and Subscript buttons set the selected type's small caps and
+    /// position, with one undo step for each click, and show them; Superscript and Subscript turn
+    /// each other off. While the Type tool edits, they set and show the selected characters.
+    #[test]
+    fn small_caps_superscript_and_subscript_buttons_set_and_show_the_text() {
+        let mut app = VectorcraftApp::new(Session::new(), Default::default());
+        app.run("file.new", json!({"width": 300, "height": 200})).unwrap();
+        app.session.select_tool("type", Default::default()).unwrap();
+        let id = app.run("text.create", json!({"x": 20, "y": 50, "text": "E=mc2", "size": 12})).unwrap()["id"].clone();
+        let ctx = egui::Context::default();
+        let (at, lit) = script_buttons(&ctx, &mut app);
+        assert_eq!(lit, [false; 3]);
+        let small = Some(app.session.active().unwrap().doc.setup.small_caps_size);
+        for (button, runs, shown) in [
+            (0, (small, "normal"), [true, false, false]),
+            (1, (small, "superscript"), [true, true, false]),
+            (2, (small, "subscript"), [true, false, true]),
+            (2, (small, "normal"), [true, false, false]),
+            (1, (small, "superscript"), [true, true, false]),
+            (1, (small, "normal"), [true, false, false]),
+            (0, (None, "normal"), [false; 3]),
+        ] {
+            let undo = app.session.active().unwrap().history.undo.len();
+            super::super::tests_appearance::click(&ctx, &mut app, at[button], show);
+            assert_eq!(scripts(&app, &id), [runs], "button {button}");
+            assert_eq!(app.session.active().unwrap().history.undo.len(), undo + 1, "button {button}");
+            assert_eq!(script_buttons(&ctx, &mut app).1, shown, "button {button}");
+        }
+        // The Type tool's selection: "2" alone.
+        app.session.apply_actions(vec![vectorcraft_tools::Action::Notify("text.editNew".into())]).unwrap();
+        app.session.set_tool_option("select", &json!({"start": 4, "end": 5}));
+        assert!(text_editing(&app).is_some());
+        super::super::tests_appearance::click(&ctx, &mut app, at[1], show);
+        assert_eq!(scripts(&app, &id), [(None, "normal"), (None, "superscript")]);
+        assert_eq!(script_buttons(&ctx, &mut app).1, [false, true, false]);
+        app.session.set_tool_option("select", &json!({"start": 0, "end": 4}));
+        assert_eq!(script_buttons(&ctx, &mut app).1, [false; 3]);
+    }
+
+    /// The panel menu's Small Caps, Superscript and Subscript set the selected type's small caps
+    /// and position and show a check mark when on; Superscript and Subscript turn each other off.
+    #[test]
+    fn small_caps_superscript_and_subscript_menu_items_set_and_check_the_text() {
+        let mut app = VectorcraftApp::new(Session::new(), Default::default());
+        app.run("file.new", json!({"width": 300, "height": 200})).unwrap();
+        let id = app.run("text.create", json!({"x": 20, "y": 50, "text": "E=mc2", "size": 12})).unwrap()["id"].clone();
+        let ctx = egui::Context::default();
+        let checked = |app: &mut VectorcraftApp| {
+            let texts = super::super::tests_appearance::frame_events(&ctx, app, vec![], menu);
+            ["Small Caps", "Superscript", "Subscript"].map(|l| texts.iter().any(|(t, _)| *t == format!("✓ {l}")))
+        };
+        assert_eq!(checked(&mut app), [false; 3]);
+        let small = Some(app.session.active().unwrap().doc.setup.small_caps_size);
+        for (item, runs, shown) in [
+            ("Small Caps", (small, "normal"), [true, false, false]),
+            ("Superscript", (small, "superscript"), [true, true, false]),
+            ("Subscript", (small, "subscript"), [true, false, true]),
+            ("Subscript", (small, "normal"), [true, false, false]),
+            ("Small Caps", (None, "normal"), [false; 3]),
+        ] {
+            let texts = super::super::tests_appearance::frame_events(&ctx, &mut app, vec![], menu);
+            let at = texts.iter().find(|(t, _)| t.trim_start_matches(['✓', ' ']) == item).unwrap_or_else(|| panic!("{item}: {texts:?}")).1;
+            super::super::tests_appearance::click(&ctx, &mut app, at.center(), menu);
+            assert_eq!(scripts(&app, &id), [runs], "{item}");
+            assert_eq!(checked(&mut app), shown, "{item}");
+        }
     }
 
     /// Character Alignment and Proportional Metrics are in the panel menu with the East Asian

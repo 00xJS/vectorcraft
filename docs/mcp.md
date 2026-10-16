@@ -3297,6 +3297,22 @@ undo step.
 {"name":"run_command","arguments":{"command":"text.setFormat","params":{"burasagari":"forced"}}}
 ```
 
+## Small Caps, Superscript and Subscript
+
+`text.setFormat {smallCaps, position}` (the selected type, or `ids`) and `text.setRangeStyle {id, start, end, smallCaps,
+position}` (a range) set what the Character panel's Small Caps, Superscript and Subscript buttons and menu items set.
+`smallCaps: true` draws lowercase letters as capitals at Document Setup's small caps size (70% of the font size by
+default); capitals keep their size, and with All Caps on every letter is a full-size capital. `position: "superscript"`
+or `"subscript"` draws the characters at Document Setup's superscript or subscript size, raised or lowered by its
+position (by default 58.3% of the font size, moved by 33.3% of it), and `"normal"` puts them back on the baseline.
+Setting superscript on subscript characters replaces the subscript, and setting subscript on superscript characters
+replaces the superscript. When `document.setup {superscript, subscript, smallCapsSize}` changes the proportions, the
+characters take the new ones. One undo step.
+
+```json
+{"name":"run_command","arguments":{"command":"text.setFormat","params":{"position":"superscript","smallCaps":false}}}
+```
+
 ## Character Alignment
 
 `text.setFormat {charAlign}` (the selected type, or `ids`) and `text.setRangeStyle {id, start, end, charAlign}` (a range)
