@@ -11,7 +11,7 @@ use vectorcraft_doc::{Appearance, Document, Knockout, LiveCorners, LiveShape, No
 use vectorcraft_geom::shapes::CornerKind;
 use vectorcraft_geom::{Affine, FillRule, PathData, Point, Rect, Vec2};
 
-use super::edit::{duplicate_in, outermost, selected_roots};
+use super::edit::{duplicate_in, outermost, selected_roots, selected_roots_to_transform};
 use super::opacitymask::percent;
 use super::*;
 use crate::{EngineError, LastTransform};
@@ -493,14 +493,14 @@ fn transform(s: &mut Session, p: &Value) -> Result<Value> {
     let m = matrix_param(p, "matrix").ok_or_else(|| bad("object.transform", "missing matrix [a,b,c,d,e,f]"))?;
     let (ids, anchors) = match ids_param(p, "ids") {
         Some(v) => (outermost(&s.doc()?.doc, v), false),
-        None => (selected_roots(s)?, bool_or(p, "anchors", false)),
+        None => (selected_roots_to_transform(s)?, bool_or(p, "anchors", false)),
     };
     apply_transform(s, "Transform", ids, m, p, anchors)
 }
 
 fn move_cmd(s: &mut Session, p: &Value) -> Result<Value> {
     check_numbers(p, &["dx", "dy"], "object.move")?;
-    let ids = selected_roots(s)?;
+    let ids = selected_roots_to_transform(s)?;
     apply_transform(s, "Move", ids, Affine::translate((f64_or(p, "dx", 0.0), f64_or(p, "dy", 0.0))), p, true)
 }
 
@@ -524,7 +524,7 @@ fn nudge(s: &mut Session, p: &Value) -> Result<Value> {
         }
         return super::docmenu::guide_move(s, &json!({ "dx": dx, "dy": dy, "copy": copy }));
     }
-    let ids = selected_roots(s)?;
+    let ids = selected_roots_to_transform(s)?;
     apply_transform(s, "Move", ids, Affine::translate((dx, dy)), p, true)
 }
 
@@ -534,7 +534,7 @@ fn about(o: Point, a: Affine) -> Affine {
 
 fn rotate(s: &mut Session, p: &Value) -> Result<Value> {
     check_numbers(p, &["angle"], "object.rotate")?;
-    let ids = selected_roots(s)?;
+    let ids = selected_roots_to_transform(s)?;
     let o = origin_of(s, p, &ids)?;
     let mut angle = f64_or(p, "angle", 0.0);
     if bool_or(p, "absolute", false) {
@@ -547,7 +547,7 @@ fn rotate(s: &mut Session, p: &Value) -> Result<Value> {
 
 fn scale(s: &mut Session, p: &Value) -> Result<Value> {
     check_numbers(p, &["sy"], "object.scale")?;
-    let ids = selected_roots(s)?;
+    let ids = selected_roots_to_transform(s)?;
     let o = origin_of(s, p, &ids)?;
     let sx = f64_req(p, "sx", "object.scale")? / 100.0;
     let sy = f64_or(p, "sy", sx * 100.0) / 100.0;
@@ -558,7 +558,7 @@ fn scale(s: &mut Session, p: &Value) -> Result<Value> {
 }
 
 fn reflect(s: &mut Session, p: &Value) -> Result<Value> {
-    let ids = selected_roots(s)?;
+    let ids = selected_roots_to_transform(s)?;
     let o = origin_of(s, p, &ids)?;
     let m = match p.get("axis") {
         Some(Value::String(a)) if a == "horizontal" => Affine::scale_non_uniform(1.0, -1.0),
@@ -578,7 +578,7 @@ fn reflect(s: &mut Session, p: &Value) -> Result<Value> {
 
 fn shear(s: &mut Session, p: &Value) -> Result<Value> {
     check_numbers(p, &["angle"], "object.shear")?;
-    let ids = selected_roots(s)?;
+    let ids = selected_roots_to_transform(s)?;
     let o = origin_of(s, p, &ids)?;
     let t = f64_or(p, "angle", 0.0).clamp(-89.0, 89.0).to_radians().tan();
     let vertical = choice(p, "object.shear", "axis", &["horizontal", "vertical"])? == Some("vertical");
@@ -602,7 +602,7 @@ fn transform_again(s: &mut Session, p: &Value) -> Result<Value> {
     };
     match last {
         LastTransform::Matrix(m, options) => {
-            let ids = selected_roots(s)?;
+            let ids = selected_roots_to_transform(s)?;
             apply_transform(s, "Transform Again", ids, m, &merge(options), true)
         }
         LastTransform::Each(params) => super::menucmds::transform_each_again(s, &merge(params)),
