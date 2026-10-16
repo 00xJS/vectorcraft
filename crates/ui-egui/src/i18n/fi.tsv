@@ -1544,6 +1544,9 @@ lighting	Light	Valo
 	Updated {} image(s)	Päivitetty {} kuva(a)
 	Break Link	Katkaise linkki
 	Tolerance:	Toleranssi:
+	Corner Point Angle Threshold:	Kulmapisteiden kulmakynnys:
+	Convert to Straight Lines	Muunna suoriksi viivoiksi
+	Show Original Path	Näytä alkuperäinen polku
 	Transparency Options	Läpinäkyvyysasetukset
 	Color Mixer (Shift-click the chip)	Värisekoitin (Vaihto-napsauta värilaattaa)
 	Fill: click for swatches, Shift-click for the color mixer	Täyttö: napsauta avataksesi värimallit, Vaihto-napsauta avataksesi värisekoittimen

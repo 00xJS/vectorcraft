@@ -667,6 +667,7 @@
 	Convert to RGB	Chuyển sang RGB
 	Convert to Shape	Chuyển thành hình dạng
 	Convert to sRGB	Chuyển sang sRGB
+	Convert to Straight Lines	Chuyển thành đường thẳng
 	Convert:	Chuyển đổi:
 	Copied the CSS of {rules} object(s)	Đã sao chép CSS của {rules} đối tượng
 	Copies:	Bản sao:
@@ -689,6 +690,7 @@
 	Copyright Status:	Trạng thái bản quyền:
 	Copyright Symbol	Ký hiệu bản quyền
 	Corner	Góc
+	Corner Point Angle Threshold:	Ngưỡng góc của điểm góc:
 	Corner Radius	Bán kính góc
 	Corner Radius:	Bán kính góc:
 	Corner:	Góc:
@@ -3074,6 +3076,7 @@
 	Show Modified	Hiện đã sửa đổi
 	Show Note	Hiện ghi chú
 	Show Options	Hiện tùy chọn
+	Show Original Path	Hiện đường dẫn gốc
 	Color Panel Options	Tùy chọn bảng màu
 	Show Package	Hiện gói
 	Show Panel	Hiện bảng

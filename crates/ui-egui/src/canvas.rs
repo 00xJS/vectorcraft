@@ -460,6 +460,7 @@ pub fn show(app: &mut VectorcraftApp, ui: &mut Ui) {
     if app.session.active().is_some_and(|d| d.print_tiling) || app.session.tool_id() == "printTiling" {
         print_tiling_overlay(app, &painter, &xf);
     }
+    original_path_overlay(app, &painter, &xf);
 
     // Selection visuals and tool overlays.
     let revolve_edit = app.ui.dialog.as_ref().is_some_and(crate::dialogs::revolve_gizmo::active);
@@ -1810,6 +1811,19 @@ fn thread_overlay(app: &VectorcraftApp, p: &egui::Painter, xf: &Xf) {
                 p.line_segment([port - egui::vec2(2.0, 0.0), port + egui::vec2(2.0, 0.0)], Stroke::new(1.0, color));
             }
         }
+    }
+}
+
+/// Simplify's Show Original Path: the paths its preview ran on, as they were before it, in a band
+/// 3 screen points wide of their layer's color at 40%, under the selection's outlines. Nothing is drawn
+/// when they have more than [`OVERLAY_MAX_ANCHORS`] anchor points.
+fn original_path_overlay(app: &VectorcraftApp, p: &egui::Painter, xf: &Xf) {
+    let paths = crate::dialogs::path_ops::original_paths(app);
+    let Some(st) = app.session.active().filter(|_| paths.iter().map(|(_, path)| path.anchor_count()).sum::<usize>() <= OVERLAY_MAX_ANCHORS) else {
+        return;
+    };
+    for (id, path) in paths {
+        stroke_path(p, &path.to_bezpath(), xf, Stroke::new(3.0, c32(st.doc.layer_color(id)).gamma_multiply(0.4)));
     }
 }
 

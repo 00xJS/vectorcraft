@@ -561,6 +561,7 @@
 	Convert to RGB	Конвертиране в RGB
 	Convert to Shape	Конвертиране в фигура
 	Convert to sRGB	Конвертиране в sRGB
+	Convert to Straight Lines	Преобразуване в прави линии
 	Convert:	Конвертиране:
 	Copied the CSS of {rules} object(s)	Копиран е CSS кодът на {rules} обект(а)
 	Copies:	Копия:
@@ -579,6 +580,7 @@
 	Copyright Notice:	Бележка за авторското право:
 	Copyright Status:	Статус на авторското право:
 	Copyright Symbol	Символ за авторско право
+	Corner Point Angle Threshold:	Праг на ъгъла при ъгловите точки:
 	Corner Radius	Радиус на ъгъла
 	Corner Radius:	Радиус на ъгъла:
 	Corner:	Ъгъл:
@@ -2709,6 +2711,7 @@
 	Show Modified	Показване на променените
 	Show Note	Показване на бележка
 	Show Options	Показване на опциите
+	Show Original Path	Показване на оригиналния път
 	Show Package	Показване на пакет
 	Show Panel	Показване на панел
 	Show Pattern Swatches	Показване на образци за мостра

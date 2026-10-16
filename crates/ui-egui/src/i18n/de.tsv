@@ -561,6 +561,7 @@
 	Convert to RGB	In RGB konvertieren
 	Convert to Shape	In Form umwandeln
 	Convert to sRGB	In sRGB konvertieren
+	Convert to Straight Lines	In gerade Linien umwandeln
 	Convert:	Konvertieren:
 	Copied the CSS of {rules} object(s)	CSS von {rules} Objekt(en) kopiert
 	Copies:	Kopien:
@@ -579,6 +580,7 @@
 	Copyright Notice:	Copyright-Vermerk:
 	Copyright Status:	Copyright-Status:
 	Copyright Symbol	Copyright-Symbol
+	Corner Point Angle Threshold:	Winkelschwelle für Eckpunkte:
 	Corner Radius	Eckenradius
 	Corner Radius:	Eckenradius:
 	Corner:	Ecke:
@@ -2718,6 +2720,7 @@
 	Show Modified	Geänderte einblenden
 	Show Note	Notiz einblenden
 	Show Options	Optionen einblenden
+	Show Original Path	Originalpfad einblenden
 	Color Panel Options	Optionen für das Farbbedienfeld
 	Show Package	Paket anzeigen
 	Show Panel	Bedienfeld einblenden

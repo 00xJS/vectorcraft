@@ -577,6 +577,7 @@
 	Convert to RGB	Convertir en RVB
 	Convert to Shape	Convertir en forme
 	Convert to sRGB	Convertir en sRGB
+	Convert to Straight Lines	Convertir en lignes droites
 	Convert:	Convertir :
 	Copied the CSS of {rules} object(s)	CSS copié pour {rules} objet(s)
 	Copies:	Copies :
@@ -595,6 +596,7 @@
 	Copyright Notice:	Mention de copyright :
 	Copyright Status:	État du copyright :
 	Copyright Symbol	Symbole de copyright
+	Corner Point Angle Threshold:	Seuil d’angle des sommets :
 	Corner Radius	Rayon de l’angle
 	Corner Radius:	Rayon de l’angle :
 	Corner:	Angle :
@@ -2763,6 +2765,7 @@
 	Show Modified	Afficher les éléments modifiés
 	Show Note	Afficher la note
 	Show Options	Afficher les options
+	Show Original Path	Afficher le tracé d’origine
 	Color Panel Options	Options du panneau Couleur
 	Show Package	Afficher le dossier d’assemblage
 	Show Panel	Afficher le panneau

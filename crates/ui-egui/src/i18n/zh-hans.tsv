@@ -531,6 +531,7 @@
 	Convert to RGB	转换为 RGB
 	Convert to Shape	转换为形状
 	Convert to sRGB	转换为 sRGB
+	Convert to Straight Lines	转换为直线
 	Convert:	转换：
 	Copied the CSS of {rules} object(s)	已复制 {rules} 个对象的 CSS
 	Copies:	份数：
@@ -549,6 +550,7 @@
 	Copyright Notice:	版权声明：
 	Copyright Status:	版权状态：
 	Copyright Symbol	著作权符号
+	Corner Point Angle Threshold:	尖角点角度阈值：
 	Corner Radius	圆角半径
 	Corner Radius:	圆角半径：
 	Corner:	转角：
@@ -2612,6 +2614,7 @@
 	Show Modified	显示已修改
 	Show Note	显示注解
 	Show Options	显示选项
+	Show Original Path	显示原始路径
 	Color Panel Options	颜色面板选项
 	Show Package	显示打包
 	Show Panel	显示面板
