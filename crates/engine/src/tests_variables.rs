@@ -896,6 +896,26 @@ fn datasets_csv_keeps_line_breaks_in_quoted_cells() {
     assert!(s.execute("dataset.import", &json!({"csv": "name,Name\nX,\"open"})).is_err(), "unclosed quote");
 }
 
+/// A quoted text cell keeps its leading and trailing spaces, so a padded value comes back from
+/// the exported CSV as it went out; an unquoted cell, and spaces after a closing quote, are trimmed.
+#[test]
+fn datasets_csv_keeps_spaces_in_quoted_cells() {
+    let mut s = session();
+    let t = text(&mut s, "One");
+    s.execute("variable.define", &json!({"name": "Name", "kind": "text"})).unwrap();
+    s.execute("variable.bind", &json!({"variable": "Name", "ids": [t.0]})).unwrap();
+    s.execute("dataset.new", &json!({"name": "A", "values": {"Name": "  padded "}})).unwrap();
+    let csv = s.execute("dataset.export", &json!({})).unwrap()["csv"].as_str().unwrap().to_string();
+    s.execute("dataset.delete", &json!({"names": ["A"]})).unwrap();
+    s.execute("dataset.import", &json!({"csv": csv})).unwrap();
+    s.execute("dataset.import", &json!({"csv": "name,Name\nB,  typed  \nC,\" quoted \"  \n"})).unwrap();
+    let value = |name: &str| s.doc().unwrap().doc.variables.dataset(name).and_then(|d| d.values.get("Name")).cloned();
+    let text_value = |v: &str| Some(vectorcraft_doc::DataValue::Text(v.into()));
+    assert_eq!(value("A"), text_value("  padded "));
+    assert_eq!(value("B"), text_value("typed"));
+    assert_eq!(value("C"), text_value(" quoted "));
+}
+
 /// Import / export datasets as CSV: header `name` then variables; round-trip keeps values.
 #[test]
 fn datasets_csv_round_trips_and_rejects_bad_input() {
