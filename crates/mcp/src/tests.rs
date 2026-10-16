@@ -1008,6 +1008,28 @@ fn shift_marquee_gesture_toggles_the_selection() {
     }
 }
 
+/// `press_key {key: "e"}` while a Selection marquee is being dragged makes the marquee select only
+/// the objects entirely inside it. With nothing dragged, E still chooses its tool.
+#[test]
+fn e_during_a_marquee_gesture_selects_only_the_objects_inside() {
+    let mut s = server();
+    let square = |s: &mut Server, id: u64, x: u64| {
+        let r = call(s, id, "draw_shape", json!({"shape": "rectangle", "x": x, "y": 100, "width": 50, "height": 50}));
+        serde_json::from_str::<Value>(&text_of(&r)).unwrap()["id"].as_u64().unwrap()
+    };
+    let (a, _b) = (square(&mut s, 1, 100), square(&mut s, 2, 200));
+    let begin = json!([{"kind": "down", "x": 80, "y": 80}, {"kind": "drag", "x": 220, "y": 170}]);
+    let r = call(&mut s, 3, "pointer_gesture", json!({"tool": "selection", "events": begin}));
+    assert_eq!(r["isError"], false, "{r}");
+    let r = call(&mut s, 4, "press_key", json!({"key": "e"}));
+    assert_eq!(serde_json::from_str::<Value>(&text_of(&r)).unwrap()["handledBy"], "tool", "{r}");
+    let end = json!([{"kind": "drag", "x": 230, "y": 170}, {"kind": "up", "x": 230, "y": 170}]);
+    let r = call(&mut s, 5, "pointer_gesture", json!({"tool": "selection", "events": end}));
+    assert_eq!(serde_json::from_str::<Value>(&text_of(&r)).unwrap()["selection"], json!([a]), "{r}");
+    let r = call(&mut s, 6, "press_key", json!({"key": "e"}));
+    assert_eq!(serde_json::from_str::<Value>(&text_of(&r)).unwrap()["handledBy"], "tool.select", "{r}");
+}
+
 /// A click on one of two selected objects makes it the key object: `pointer_gesture` replies
 /// with it as `key` and `inspect_document` lists it, and a click on the key again lets it go.
 #[test]
