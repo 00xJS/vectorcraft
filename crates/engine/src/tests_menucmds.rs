@@ -1642,6 +1642,61 @@ fn make_release_clear_guides() {
     assert_eq!(undo_len(&s), n + 1);
 }
 
+/// The anchor positions of `id`, which must be a path of one open subpath, and whether it is still a guide.
+fn line_ends(s: &Session, id: NodeId) -> (Vec<(f64, f64)>, bool) {
+    let NodeKind::Path { path, guide, .. } = &node(s, id).kind else { panic!("not a path") };
+    let [sub] = &path.subpaths[..] else { panic!("not one subpath") };
+    assert!(!sub.closed);
+    (sub.anchors.iter().map(|a| (a.p.x, a.p.y)).collect(), *guide)
+}
+
+/// Release Guides turns ruler guides into paths with no fill or stroke, each in one undo step. An
+/// artboard guide becomes a line across its artboard, and a canvas guide becomes a line across the
+/// bounds of all the artboards.
+#[test]
+fn release_guides_turns_ruler_guides_into_paths() {
+    let mut s = session();
+    s.execute("artboard.new", &json!({})).unwrap();
+    let g = rect(&mut s, 0.0, 0.0, 10.0, 10.0);
+    sel(&mut s, &[g]);
+    s.execute("view.guides.make", &json!({})).unwrap();
+    s.execute("guide.add", &json!({"vertical": false, "pos": 300})).unwrap();
+    s.execute("guide.add", &json!({"vertical": false, "pos": 50, "artboard": 0})).unwrap();
+    let d = &s.doc().unwrap().doc;
+    let (ab, all) = (d.artboards[0].rect, d.artboards[0].rect.union(d.artboards[1].rect));
+    assert!(all.x1 > ab.x1);
+    let layer = s.doc().unwrap().current_layer();
+    // The selected artboard guide goes, and a selected path across its artboard takes its place.
+    s.execute("guide.select", &json!({"indexes": [1]})).unwrap();
+    let n = undo_len(&s);
+    assert_eq!(s.execute("view.guides.release", &json!({})).unwrap()["count"], 1);
+    assert_eq!((guides(&s), undo_len(&s)), (vec![(false, 300.0)], n + 1));
+    let [line] = selected(&s)[..] else { panic!("one path selected") };
+    assert_eq!(line_ends(&s, line), (vec![(ab.x0, 50.0), (ab.x1, 50.0)], false));
+    assert_eq!(node(&s, line).appearance, Appearance::basic(Paint::None, Paint::None, 0.0));
+    assert_eq!(s.doc().unwrap().doc.parent_of(line), layer);
+    assert!(matches!(node(&s, g).kind, NodeKind::Path { guide: true, .. }), "the guide path stays a guide");
+    // Undo brings the guide back.
+    s.execute("edit.undo", &json!({})).unwrap();
+    assert_eq!(guides(&s), vec![(false, 300.0), (false, 50.0)]);
+    assert!(s.doc().unwrap().doc.node(line).is_none());
+    // index releases the canvas guide as a line across the artboards.
+    assert_eq!(s.execute("view.guides.release", &json!({"index": 0})).unwrap()["count"], 1);
+    assert_eq!(guides(&s), vec![(false, 50.0)]);
+    let [line] = selected(&s)[..] else { panic!("one path selected") };
+    assert_eq!(line_ends(&s, line), (vec![(all.x0, 300.0), (all.x1, 300.0)], false));
+    // ids releases those guide paths.
+    assert_eq!(s.execute("view.guides.release", &json!({"ids": [g.0]})).unwrap()["count"], 1);
+    assert!(matches!(node(&s, g).kind, NodeKind::Path { guide: false, .. }));
+    assert_eq!(selected(&s), vec![g]);
+    // Locked guides are not released by index or ids.
+    s.execute("view.guides.lock", &json!({"locked": true})).unwrap();
+    for p in [json!({"index": 0}), json!({"ids": [g.0]})] {
+        assert!(matches!(s.execute("view.guides.release", &p), Err(EngineError::Other(m)) if m == "guides are locked"), "{p}");
+    }
+    assert_eq!(guides(&s).len(), 1);
+}
+
 #[test]
 fn ruler_guides_and_lock() {
     let mut s = session();

@@ -992,6 +992,14 @@ moved copies), and `guide.remove {index?}` deletes one guide or the selected one
 step. With guides selected, `edit.clear` (Delete) deletes them and `object.nudge` (the arrow keys) nudges them.
 View › Guides › Lock Guides (`view.guides.lock`) deselects them and refuses these commands until unlocked.
 
+`view.guides.release {index?, ids?}` (View › Guides › Release Guides) turns guides into paths → `{count}`. With
+`index` it releases that ruler guide, and with `ids` it releases those guide paths (and the guide paths inside them).
+Otherwise it releases the selected guide paths and ruler guides, and with no guide selected it releases every guide
+path. A released ruler guide becomes a straight path with no fill or stroke, at the top of the guide's layer (or where
+new art goes, for a guide on no layer). An artboard guide becomes a line across its artboard, and a canvas guide
+becomes a line across the bounds of all the artboards. `index` and `ids` are refused while guides are locked. The
+release is one undo step, and the released paths are selected.
+
 The Selection, Direct Selection and Group Selection tools pick a guide within the selection tolerance, over the art
 (an anchor on it comes first with Direct Selection), and drag the selected guides: `mods.alt` copies them,
 `mods.shift` snaps the dragged guide to the ruler's ticks, and otherwise it snaps to whole pixels, the grid or, with
