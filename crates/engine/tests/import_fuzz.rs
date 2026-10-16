@@ -1662,6 +1662,49 @@ proptest! {
         let text = mutate_text(&cmyk_images_eps(), cut, &edits);
         survive("mutated EPS CMYK images", || vectorcraft_eps::import(text.as_bytes()).ok().map(|r| r.document))?;
     }
+
+    /// Damaged or hostile CCITT fax images (Group 4 and Group 3 data, their parameters): read as
+    /// images, or as an error.
+    #[test]
+    fn eps_ccitt_images_never_panic(cut in 0usize..800, edits in prop::collection::vec((0usize..800, prop::sample::select(vec!['0', '1', '9', 'f', '8', ' ', '\n', '<', '>', '/', '-', 't', 'e'])), 0..12)) {
+        let text = mutate_text(&ccitt_images_eps(), cut, &edits);
+        survive("mutated EPS CCITT images", || vectorcraft_eps::import(text.as_bytes()).ok().map(|r| r.document))?;
+    }
+}
+
+/// An EPS with two 8 × 3 CCITT fax images that the PostScript interpreter reads, coded by hand from
+/// ITU-T T.4 and T.6: two rows of white 2, black 4, white 2 over a black row. The first is Group 4
+/// (horizontal, vertical 0 and vertical ±2 modes, then EOFB), the second Group 3 one-dimensional
+/// with an EOL before each row and six at the end, drawn as an image mask.
+fn ccitt_images_eps() -> String {
+    "%!PS-Adobe-3.0 EPSF-3.0\n%%BoundingBox: 0 0 100 100\n%%EndComments\ngsave 40 30 scale \
+     8 3 1 [8 0 0 -3 0 3] currentfile /ASCIIHexDecode filter << /K -1 /Columns 8 /Rows 3 >> /CCITTFaxDecode filter image\n\
+     2efc20c0040040>\ngrestore 50 50 translate 40 30 scale \
+     8 3 false [8 0 0 -3 0 3] currentfile /ASCIIHexDecode filter << /Columns 8 /EndOfLine true /BlackIs1 false >> /CCITTFaxDecode filter imagemask\n\
+     00176e002edc004d45001001001001001001>\nshowpage\n%%EOF\n"
+        .to_string()
+}
+
+/// [`ccitt_images_eps`] as it is: both images draw their rows (`B` black, `w` white, `.` left
+/// clear by the mask), without a warning.
+#[test]
+fn the_ccitt_images_fixture_reads_both_images() {
+    let r = vectorcraft_eps::import(ccitt_images_eps().as_bytes()).unwrap();
+    assert!(r.warnings.is_empty() && !r.preview, "{:?}", r.warnings);
+    let d = &r.document;
+    let shade = |p: &image::Rgba<u8>| match p.0 {
+        [_, _, _, 0] => '.',
+        [r, ..] if r < 128 => 'B',
+        _ => 'w',
+    };
+    let mut found = vec![];
+    d.walk(|n| {
+        if let vectorcraft_doc::NodeKind::Image(im) = &n.kind {
+            let px = image::load_from_memory(&d.images[&im.key].bytes).unwrap().to_rgba8();
+            found.push(px.pixels().map(shade).collect::<String>());
+        }
+    });
+    assert_eq!(found, ["wwBBBBwwwwBBBBwwBBBBBBBB", "..BBBB....BBBB..BBBBBBBB"]);
 }
 
 /// An EPS with CMYK images that the PostScript interpreter reads: a CMYK JPEG through `DCTDecode`
@@ -1726,6 +1769,7 @@ fn arb_ps_token() -> impl Strategy<Value = String> {
             "systemdict", "/userdict", "SharedFontDirectory", "(1 2 add) 0 () /SubFileDecode filter cvx exec", "currentfile cvx exec",
             "/p { (p) 0 () /SubFileDecode filter cvx exec } def p", "currentfile 0 () /SubFileDecode filter cvx exec", "cvlit", "{ (a) cshow }",
             "/ASCII85Decode", "/ASCIIHexDecode", "/FlateDecode", "/RunLengthDecode", "/LZWDecode", "/DCTDecode", "/SubFileDecode",
+            "/CCITTFaxDecode", "<< /K -1 /Columns 8 /Rows 3 >> /CCITTFaxDecode", "<< /K 2 /Columns 99999 /EndOfLine true /EncodedByteAlign true /BlackIs1 true >>",
             "/DeviceRGB", "/DeviceCMYK", "/DeviceGray", "/Pattern", "/x", "x", "/Helvetica", "(abc)", "<ff00>", "<~87cURD]i,\"Ebo80~>",
             "true", "false", "null", "[/Separation (S) /DeviceCMYK {dup dup dup}]", "[/Indexed /DeviceRGB 1 <ff000000ff00>]",
             "<< /ShadingType 2 /ColorSpace /DeviceRGB /Coords [0 0 1 1] /Function << /FunctionType 2 /C0 [0 0 0] /C1 [1 1 1] /N 1 >> >>",
