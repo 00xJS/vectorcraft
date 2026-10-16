@@ -1888,6 +1888,34 @@ fn isolating_an_object_that_doesnt_exist_says_so() {
     assert!(!e.to_string().contains("type"), "{e}");
 }
 
+/// A ring (a compound path with a hole) and its isolated paths.
+fn isolated_ring(s: &mut Session) -> (NodeId, NodeId, NodeId) {
+    let outer = rect(s, 0.0, 0.0, 40.0, 40.0);
+    let hole = rect(s, 10.0, 10.0, 10.0, 10.0);
+    s.execute("select.set", &json!({"ids": [outer.0, hole.0]})).unwrap();
+    let c = NodeId(s.execute("object.compoundPath.make", &json!({})).unwrap()["id"].as_u64().unwrap());
+    s.execute("object.isolate", &json!({"id": c.0})).unwrap();
+    s.execute("select.set", &json!({"ids": [hole.0]})).unwrap();
+    (c, outer, hole)
+}
+
+/// Isolating a compound path makes its paths objects of their own: the hole of a ring, selected
+/// alone, moves without the ring around it. Outside isolation it still moves its compound path.
+#[test]
+fn an_isolated_compound_paths_member_moves_alone() {
+    let x0 = |s: &Session, id: NodeId| s.doc().unwrap().doc.node(id).unwrap().geometric_bounds().unwrap().x0;
+    let mut s = session();
+    let (_, outer, hole) = isolated_ring(&mut s);
+    s.execute("object.transform", &json!({"matrix": [1, 0, 0, 1, 30, 0]})).unwrap();
+    assert_eq!((x0(&s, outer), x0(&s, hole)), (0.0, 40.0), "only the hole moved");
+    s.execute("object.move", &json!({"dx": 5, "dy": 0})).unwrap();
+    assert_eq!((x0(&s, outer), x0(&s, hole)), (0.0, 45.0), "Move: only the hole");
+    s.execute("object.exitIsolation", &json!({})).unwrap();
+    s.execute("select.set", &json!({"ids": [hole.0]})).unwrap();
+    s.execute("object.transform", &json!({"matrix": [1, 0, 0, 1, 5, 0]})).unwrap();
+    assert_eq!((x0(&s, outer), x0(&s, hole)), (5.0, 50.0), "not isolated: the whole compound path moved");
+}
+
 /// `depth` and `childLimit` slice a summary read; a level that shows fewer children
 /// than it has reports `childCount`, and invalid values are rejected, not reinterpreted.
 #[test]
