@@ -2703,6 +2703,7 @@ pub fn menu_tree_named(english_names: bool) -> Vec<(&'static str, Vec<Item>)> {
                 todo("Start Global Edit"),
                 Sep,
                 c("Save Selection…", "select.save"),
+                c("Update Selection", "select.update"),
                 c("Edit Selection…", "select.editSaved"),
                 Sep,
             ];
@@ -4206,6 +4207,23 @@ mod tests {
         assert!(!enabled(&app, "select.recall2"));
         assert!(shown_state(&app, "select.recall2", &Value::Null).is_none());
         assert!(shown_state(&app, "select.recall1", &Value::Null).is_some());
+    }
+
+    #[test]
+    fn update_selection_follows_save_selection_and_needs_a_recall() {
+        let mut app = app_with_a_rectangle();
+        let entries = menu_entries(&app);
+        let at = |id: &str| entries.iter().position(|e| e.command.as_deref() == Some(id));
+        assert_eq!(at("select.update").map(|i| i - 1), at("select.save"));
+        app.run("select.save", json!({"name": "Box"})).unwrap();
+        assert!(!enabled(&app, "select.update"));
+        app.run("shape.ellipse", json!({"x": 40, "y": 0, "width": 10, "height": 10})).unwrap();
+        app.run("select.recall1", json!({})).unwrap();
+        assert!(enabled(&app, "select.update"));
+        app.run("select.all", json!({})).unwrap();
+        invoke(&mut app, "select.update", json!({}));
+        app.run("select.none", json!({})).unwrap();
+        assert_eq!(app.run("select.recall1", json!({})).unwrap()["count"], 2);
     }
 
     #[test]

@@ -2086,6 +2086,7 @@
 	Save Recovery Data	Salvar Dados de Recuperação
 	Save Save for Web Preset	Salvar Predefinido de Salvar para Web
 	Save Selection…	Salvar Seleção…
+	Update Selection	Atualizar Seleção
 	Save Swatch Library	Salvar Biblioteca de Amostras
 	Save Swatch Library…	Salvar Biblioteca de Amostras…
 	Save Theme	Salvar Tema
@@ -3412,6 +3413,7 @@ axis	Both	Ambos
 @msg	no saved presets	nenhuma predefinição salva
 @msg	no saved print preset named `{name}` ({DEFAULT_PRESET} is protected: start a new one from it)	nenhuma predefinição de impressão salva chamada `{name}` ({DEFAULT_PRESET} é protegida: crie uma nova a partir dela)
 @msg	no saved profiles	nenhum perfil salvo
+@msg	no saved selection recalled	nenhuma seleção salva relembrada
 @msg	no saved selections	nenhuma seleção salva
 @msg	no saved themes	nenhum tema salvo
 @msg	no segment {segment} on line {line}	nenhum segmento {segment} na linha {line}

@@ -351,6 +351,7 @@
 	Area Text Objects	Obiekty tekstu akapitowego
 	Start Global Edit	Rozpocznij edycję globalną
 	Save Selection…	Zapisz zaznaczenie…
+	Update Selection	Aktualizuj zaznaczenie
 	Edit Selection…	Edytuj zaznaczenie…
 	Effect	Efekt
 	Apply Last Effect	Zastosuj ostatni efekt
@@ -3934,6 +3935,7 @@ imageTrace	Outline	Kontur
 @msg	no saved presets	brak zapisanych ustawień
 @msg	no saved print preset named `{name}` ({DEFAULT_PRESET} is protected: start a new one from it)	brak zapisanego ustawienia drukowania o nazwie `{name}` ({DEFAULT_PRESET} jest chronione: utwórz na jego podstawie nowe)
 @msg	no saved profiles	brak zapisanych profili
+@msg	no saved selection recalled	nie przywołano zapisanego zaznaczenia
 @msg	no saved selections	brak zapisanych zaznaczeń
 @msg	no saved themes	brak zapisanych motywów
 @msg	no segment {segment} on line {line}	brak segmentu {segment} na linii {line}

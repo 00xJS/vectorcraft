@@ -2813,6 +2813,7 @@
 	Save Save for Web Preset	Lưu thiết lập sẵn Lưu cho Web
 	Save selected colors as swatches	Lưu màu đã chọn thành mẫu màu
 	Save Selection…	Lưu vùng chọn…
+	Update Selection	Cập nhật vùng chọn
 	Save Swatch Library	Lưu thư viện mẫu màu
 	Save Swatch Library…	Lưu thư viện mẫu màu…
 	Save the current layout under this name	Lưu bố cục hiện tại với tên này
@@ -4059,6 +4060,7 @@ theme	Appearance	Giao diện
 @msg	no saved presets	không có thiết lập sẵn đã lưu
 @msg	no saved print preset named `{name}` ({DEFAULT_PRESET} is protected: start a new one from it)	không có thiết lập sẵn in đã lưu tên `{name}` ({DEFAULT_PRESET} được bảo vệ: tạo mới từ nó)
 @msg	no saved profiles	không có hồ sơ đã lưu
+@msg	no saved selection recalled	chưa khôi phục vùng chọn đã lưu nào
 @msg	no saved selections	không có vùng chọn đã lưu
 @msg	No saved selections (Select → Save Selection…)	Không có vùng chọn đã lưu (Chọn → Lưu vùng chọn…)
 @msg	no saved themes	chưa có bộ màu nào được lưu

@@ -1627,6 +1627,7 @@
 	Save for Web (Legacy)…	Αποθήκευση για ιστό (παλαιού τύπου)…
 	Save Preset…	Αποθήκευση προεπιλογής…
 	Save Selection…	Αποθήκευση επιλογής…
+	Update Selection	Ενημέρωση επιλογής
 	Saved	Αποθηκεύτηκε
 	Save…	Αποθήκευση…
 	Scale	Κλιμάκωση
@@ -3783,6 +3784,7 @@ theme	Appearance	Εμφάνιση
 @msg	no saved presets	δεν υπάρχουν αποθηκευμένες προεπιλογές
 @msg	no saved print preset named `{name}` ({DEFAULT_PRESET} is protected: start a new one from it)	δεν υπάρχει αποθηκευμένη προεπιλογή εκτύπωσης με όνομα `{name}` (η {DEFAULT_PRESET} προστατεύεται: δημιουργήστε νέα από αυτήν)
 @msg	no saved profiles	δεν υπάρχουν αποθηκευμένα προφίλ
+@msg	no saved selection recalled	δεν έχει ανακληθεί αποθηκευμένη επιλογή
 @msg	no saved selections	δεν υπάρχουν αποθηκευμένες επιλογές
 @msg	no saved themes	δεν υπάρχουν αποθηκευμένα θέματα
 @msg	no segment {segment} on line {line}	δεν υπάρχει τμήμα {segment} στη γραμμή {line}

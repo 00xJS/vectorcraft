@@ -392,6 +392,7 @@
 	Area Text Objects	영역 문자 개체
 	Start Global Edit	전체 편집 시작
 	Save Selection…	선택 영역 저장…
+	Update Selection	선택 영역 업데이트
 	Edit Selection…	선택 영역 편집…
 	Effect	효과
 	Apply Last Effect	마지막 효과 적용
@@ -3603,6 +3604,7 @@ theme	Appearance	외관
 @msg	Make Guides: select paths	안내선 만들기: 패스를 선택하세요
 @msg	Release Guides: no guides	안내선 해제: 안내선이 없습니다
 @msg	guides are locked	안내선이 잠겨 있습니다
+@msg	no saved selection recalled	불러온 저장된 선택 영역이 없습니다
 @msg	no saved selections	저장된 선택 영역이 없습니다
 @msg	no such artboard	해당 아트보드가 없습니다
 @msg	cannot split an open path at its end point	열린 패스는 끝점에서 나눌 수 없습니다

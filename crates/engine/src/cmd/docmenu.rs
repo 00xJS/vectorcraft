@@ -101,6 +101,15 @@ pub fn specs() -> Vec<CommandSpec> {
             save_selection
         ),
         cmd!(
+            "select.update",
+            "Update Selection",
+            ["Select"],
+            None,
+            "{} make the saved selection last recalled (`select.recall`) hold the selected objects instead of its own, in one undo step → {name}",
+            has_recalled_selection,
+            update_selection
+        ),
+        cmd!(
             "select.recall",
             "Recall Selection",
             ["Select"],
@@ -342,6 +351,7 @@ fn save_selection(s: &mut Session, p: &Value) -> Result<Value> {
     if existing.is_none() && saved.len() >= SavedSelection::MAX {
         return Err(bad(C, format!("a document keeps at most {} saved selections", SavedSelection::MAX)));
     }
+    let mut slots = saved_ids(s)?;
     s.edit("Save Selection", |d, _| {
         let entry = SavedSelection { name: name.clone(), objects: ids };
         match existing.and_then(|i| d.saved_selections.get_mut(i)) {
@@ -350,24 +360,68 @@ fn save_selection(s: &mut Session, p: &Value) -> Result<Value> {
         }
         Ok(())
     })?;
+    let st = s.doc_mut()?;
+    if existing.is_none() {
+        slots.push(st.recalled_selection.new_id());
+    }
+    st.recalled_selection.remember(&st.doc.saved_selections, slots);
     Ok(json!({ "name": name }))
 }
 
 fn recall_selection(s: &mut Session, p: &Value) -> Result<Value> {
     const C: &str = "select.recall";
     let name = str_param(p, "name").ok_or_else(|| bad(C, "missing name"))?;
-    let ids = s.doc()?.doc.saved_selections.iter().find(|x| x.name == name).map(|x| x.objects.clone());
-    let ids = ids.ok_or_else(|| bad(C, format!("no saved selection `{name}`")))?;
+    let saved = &s.doc()?.doc.saved_selections;
+    let i = saved.iter().position(|x| x.name == name).ok_or_else(|| bad(C, format!("no saved selection `{name}`")))?;
+    let ids = saved.get(i).map(|x| x.objects.clone()).unwrap_or_default();
     let st = s.doc()?;
     let can = selectable_ids(&st.doc, st.isolation);
     s.select(|_, sel| sel.set(ids.into_iter().filter(|id| can.contains(id))))?;
-    Ok(json!({ "count": s.doc()?.selection.len() }))
+    let st = s.doc_mut()?;
+    st.recalled_selection.recall(&st.doc.saved_selections, i);
+    Ok(json!({ "count": st.selection.len() }))
 }
 
 /// Recall and Edit Selection… need a document with at least one saved selection.
 fn has_saved_selection(s: &Session) -> std::result::Result<(), String> {
     let st = s.active().ok_or("no document open")?;
     if st.doc.saved_selections.is_empty() { Err("no saved selections".into()) } else { Ok(()) }
+}
+
+/// The session ids of the active document's saved selections ([`crate::RecalledSelection`]).
+fn saved_ids(s: &mut Session) -> Result<Vec<u64>> {
+    let st = s.doc_mut()?;
+    Ok(st.recalled_selection.ids(&st.doc.saved_selections))
+}
+
+/// Where the saved selection last recalled is, while the document has it.
+fn recalled_index(st: &crate::DocState) -> Option<usize> {
+    st.recalled_selection.index_in(&st.doc.saved_selections)
+}
+
+/// Update Selection needs selected objects and a recalled saved selection the document still has.
+fn has_recalled_selection(s: &Session) -> std::result::Result<(), String> {
+    has_selection(s)?;
+    let st = s.active().ok_or("no document open")?;
+    if recalled_index(st).is_some() { Ok(()) } else { Err("no saved selection recalled".into()) }
+}
+
+fn update_selection(s: &mut Session, _: &Value) -> Result<Value> {
+    const C: &str = "select.update";
+    let st = s.doc()?;
+    let i = recalled_index(st).ok_or_else(|| bad(C, "no saved selection recalled"))?;
+    let ids = st.selection.objects.clone();
+    let name = st.doc.saved_selections.get(i).map(|x| x.name.clone()).unwrap_or_default();
+    let slots = saved_ids(s)?;
+    s.edit("Update Selection", |d, _| {
+        if let Some(x) = d.saved_selections.get_mut(i) {
+            x.objects = ids;
+        }
+        Ok(())
+    })?;
+    let st = s.doc_mut()?;
+    st.recalled_selection.remember(&st.doc.saved_selections, slots);
+    Ok(json!({ "name": name }))
 }
 
 fn edit_saved(s: &mut Session, p: &Value) -> Result<Value> {
@@ -396,6 +450,7 @@ fn edit_saved(s: &mut Session, p: &Value) -> Result<Value> {
             x.name = n;
         }
     }
+    let slots: Vec<u64> = saved_ids(s)?.into_iter().zip(&after).filter(|(_, x)| x.is_some()).map(|(id, _)| id).collect();
     let after: Vec<SavedSelection> = after.into_iter().flatten().collect();
     let mut names = std::collections::HashSet::with_capacity(after.len());
     for x in &after {
@@ -408,6 +463,8 @@ fn edit_saved(s: &mut Session, p: &Value) -> Result<Value> {
             d.saved_selections = after.into();
             Ok(())
         })?;
+        let st = s.doc_mut()?;
+        st.recalled_selection.remember(&st.doc.saved_selections, slots);
     }
     ok()
 }

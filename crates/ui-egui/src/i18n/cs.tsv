@@ -391,6 +391,7 @@
 	Area Text Objects	Textové objekty v oblasti
 	Start Global Edit	Zahájit globální úpravy
 	Save Selection…	Uložit výběr…
+	Update Selection	Aktualizovat výběr
 	Edit Selection…	Upravit výběr…
 	Effect	Efekt
 	Apply Last Effect	Použít poslední efekt
@@ -4119,6 +4120,7 @@ imageTrace	Outline	Obrys
 @msg	no saved presets	žádná uložená přednastavení
 @msg	no saved print preset named `{name}` ({DEFAULT_PRESET} is protected: start a new one from it)	uložené přednastavení tisku s názvem `{name}` neexistuje ({DEFAULT_PRESET} je chráněné: vytvořte z něj nové)
 @msg	no saved profiles	žádné uložené profily
+@msg	no saved selection recalled	není vyvolán žádný uložený výběr
 @msg	no saved selections	žádné uložené výběry
 @msg	no saved themes	žádné uložené motivy
 @msg	no segment {segment} on line {line}	na čáře {line} není segment {segment}

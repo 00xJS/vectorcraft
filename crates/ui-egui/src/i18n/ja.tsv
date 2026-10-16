@@ -396,6 +396,7 @@
 	Area Text Objects	エリア内文字オブジェクト
 	Start Global Edit	グローバル編集を開始
 	Save Selection…	選択範囲を保存…
+	Update Selection	選択範囲を更新
 	Edit Selection…	選択範囲を編集…
 	Effect	効果
 	Apply Last Effect	前回の効果を適用
@@ -3671,6 +3672,7 @@ swatch	Bright Violet	ビビッドバイオレット
 @msg	Make Guides: select paths	ガイドを作成: パスを選択してください
 @msg	Release Guides: no guides	ガイドを解除: ガイドがありません
 @msg	guides are locked	ガイドがロックされています
+@msg	no saved selection recalled	保存した選択範囲を呼び出していません
 @msg	no saved selections	保存した選択範囲はありません
 @msg	no such artboard	指定されたアートボードが見つかりません
 @msg	cannot split an open path at its end point	オープンパスは端点で分割できません

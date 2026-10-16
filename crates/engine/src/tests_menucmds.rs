@@ -1205,6 +1205,141 @@ fn save_and_recall_selection() {
 }
 
 #[test]
+fn update_selection_replaces_the_recalled_saved_selection() {
+    let mut s = session();
+    let a = rect(&mut s, 0.0, 0.0, 10.0, 10.0);
+    let b = rect(&mut s, 20.0, 0.0, 10.0, 10.0);
+    let c = rect(&mut s, 40.0, 0.0, 10.0, 10.0);
+    sel(&mut s, &[a, b]);
+    s.execute("select.save", &json!({"name": "A"})).unwrap();
+    s.execute("select.save", &json!({"name": "Other"})).unwrap();
+    // Nothing recalled yet: Update Selection is off.
+    assert!(s.execute("select.update", &json!({})).is_err());
+    s.execute("select.none", &json!({})).unwrap();
+    s.execute("select.recall", &json!({"name": "A"})).unwrap();
+    s.execute("select.add", &json!({"ids": [c.0]})).unwrap();
+    s.doc_mut().unwrap().mark_saved();
+    assert_eq!(s.execute("select.update", &json!({})).unwrap()["name"], "A");
+    assert!(s.doc().unwrap().is_dirty());
+    s.execute("select.none", &json!({})).unwrap();
+    assert_eq!(s.execute("select.recall", &json!({"name": "A"})).unwrap()["count"], 3);
+    assert_eq!(selected(&s), vec![a, b, c]);
+    // Only the recalled one changes.
+    s.execute("select.recall", &json!({"name": "Other"})).unwrap();
+    assert_eq!(selected(&s), vec![a, b]);
+    // It travels with the file.
+    let loaded = vectorcraft_format::load(&vectorcraft_format::save_file(&s.doc().unwrap().doc)).unwrap();
+    assert_eq!(loaded.saved_selections.iter().map(|x| x.objects.len()).collect::<Vec<_>>(), [3, 2]);
+    // It is one undo step.
+    s.execute("edit.undo", &json!({})).unwrap();
+    s.execute("select.recall", &json!({"name": "A"})).unwrap();
+    assert_eq!(selected(&s), vec![a, b]);
+    // Nothing selected: Update Selection is off.
+    s.execute("select.none", &json!({})).unwrap();
+    assert!(s.execute("select.update", &json!({})).is_err());
+    // It can run again without another recall.
+    sel(&mut s, &[c]);
+    s.execute("select.update", &json!({})).unwrap();
+    sel(&mut s, &[b]);
+    s.execute("select.update", &json!({})).unwrap();
+    s.execute("select.recall", &json!({"name": "A"})).unwrap();
+    assert_eq!(selected(&s), vec![b]);
+}
+
+#[test]
+fn update_selection_follows_a_rename_and_stops_after_a_delete() {
+    let mut s = session();
+    let a = rect(&mut s, 0.0, 0.0, 10.0, 10.0);
+    let b = rect(&mut s, 20.0, 0.0, 10.0, 10.0);
+    sel(&mut s, &[a]);
+    s.execute("select.save", &json!({"name": "One"})).unwrap();
+    s.execute("select.recall", &json!({"name": "One"})).unwrap();
+    s.execute("select.editSaved", &json!({"name": "One", "newName": "Uno"})).unwrap();
+    sel(&mut s, &[a, b]);
+    assert_eq!(s.execute("select.update", &json!({})).unwrap()["name"], "Uno");
+    s.execute("select.recall", &json!({"name": "Uno"})).unwrap();
+    assert_eq!(selected(&s), vec![a, b]);
+    // A saved selection of the same name saved after the delete is not the recalled one.
+    s.execute("select.editSaved", &json!({"name": "Uno", "delete": true})).unwrap();
+    s.execute("select.save", &json!({"name": "Uno"})).unwrap();
+    assert!(s.execute("select.update", &json!({})).is_err());
+}
+
+#[test]
+fn update_selection_changes_the_recalled_saved_selection_after_undo_and_redo() {
+    let mut s = session();
+    let a = rect(&mut s, 0.0, 0.0, 10.0, 10.0);
+    let b = rect(&mut s, 20.0, 0.0, 10.0, 10.0);
+    let c = rect(&mut s, 40.0, 0.0, 10.0, 10.0);
+    let recall = |s: &mut Session, name: &str| {
+        s.execute("select.recall", &json!({"name": name})).unwrap();
+        selected(s)
+    };
+    sel(&mut s, &[a]);
+    s.execute("select.save", &json!({"name": "A"})).unwrap();
+    sel(&mut s, &[b]);
+    s.execute("select.save", &json!({"name": "B"})).unwrap();
+    recall(&mut s, "A");
+    // Swap the two names, then undo the swap: Update Selection still changes the one recalled.
+    let swap = json!({"edits": [{"name": "A", "newName": "B"}, {"name": "B", "newName": "A"}]});
+    s.execute("select.editSaved", &swap).unwrap();
+    s.execute("edit.undo", &json!({})).unwrap();
+    sel(&mut s, &[a, c]);
+    s.execute("select.update", &json!({})).unwrap();
+    assert_eq!((recall(&mut s, "A"), recall(&mut s, "B")), (vec![a, c], vec![b]));
+    // Undo and redo a rename of the recalled one.
+    recall(&mut s, "A");
+    s.execute("select.editSaved", &json!({"name": "A", "newName": "First"})).unwrap();
+    s.execute("edit.undo", &json!({})).unwrap();
+    s.execute("edit.redo", &json!({})).unwrap();
+    sel(&mut s, &[c]);
+    assert_eq!(s.execute("select.update", &json!({})).unwrap()["name"], "First");
+    s.execute("edit.undo", &json!({})).unwrap();
+    s.execute("edit.undo", &json!({})).unwrap();
+    sel(&mut s, &[c]);
+    assert_eq!(s.execute("select.update", &json!({})).unwrap()["name"], "A");
+    assert_eq!(recall(&mut s, "A"), vec![c]);
+    // Undo and redo an Edit Selection… that renamed it and deleted the other one.
+    recall(&mut s, "A");
+    let edits = json!({"edits": [{"name": "A", "newName": "First"}, {"name": "B", "delete": true}]});
+    s.execute("select.editSaved", &edits).unwrap();
+    s.execute("edit.undo", &json!({})).unwrap();
+    s.execute("edit.redo", &json!({})).unwrap();
+    sel(&mut s, &[a]);
+    assert_eq!(s.execute("select.update", &json!({})).unwrap()["name"], "First");
+    s.execute("edit.undo", &json!({})).unwrap();
+    s.execute("edit.undo", &json!({})).unwrap();
+    sel(&mut s, &[a]);
+    assert_eq!(s.execute("select.update", &json!({})).unwrap()["name"], "A");
+    assert_eq!((recall(&mut s, "A"), recall(&mut s, "B")), (vec![a], vec![b]));
+    // A cancelled undo group that renamed it.
+    recall(&mut s, "B");
+    s.execute("edit.undoGroup.begin", &json!({})).unwrap();
+    s.execute("select.editSaved", &json!({"name": "B", "newName": "Second"})).unwrap();
+    s.execute("edit.undoGroup.end", &json!({"cancel": true})).unwrap();
+    sel(&mut s, &[a, b]);
+    assert_eq!(s.execute("select.update", &json!({})).unwrap()["name"], "B");
+    assert_eq!(recall(&mut s, "B"), vec![a, b]);
+    // Undo an Update Selection that gave it the other one's objects.
+    recall(&mut s, "A");
+    sel(&mut s, &[a, b]);
+    s.execute("select.update", &json!({})).unwrap();
+    s.execute("edit.undo", &json!({})).unwrap();
+    sel(&mut s, &[c]);
+    assert_eq!(s.execute("select.update", &json!({})).unwrap()["name"], "A");
+    assert_eq!((recall(&mut s, "A"), recall(&mut s, "B")), (vec![c], vec![a, b]));
+    // Save Selection made after the recall, and undone.
+    recall(&mut s, "A");
+    s.execute("select.save", &json!({"name": "C"})).unwrap();
+    sel(&mut s, &[b]);
+    assert_eq!(s.execute("select.update", &json!({})).unwrap()["name"], "A");
+    s.execute("edit.undo", &json!({})).unwrap();
+    s.execute("edit.undo", &json!({})).unwrap();
+    sel(&mut s, &[a]);
+    assert_eq!(s.execute("select.update", &json!({})).unwrap()["name"], "A");
+}
+
+#[test]
 fn edit_selection_needs_a_saved_selection_and_a_free_name() {
     let mut s = session();
     let a = rect(&mut s, 0.0, 0.0, 10.0, 10.0);

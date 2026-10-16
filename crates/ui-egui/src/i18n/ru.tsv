@@ -2529,6 +2529,7 @@
 	Save Save for Web Preset	Сохранить набор «Сохранить для web»
 	Save selected colors as swatches	Сохранить выбранные цвета как образцы
 	Save Selection…	Сохранить выделение…
+	Update Selection	Обновить выделение
 	Save Swatch Library	Сохранить библиотеку образцов
 	Save Swatch Library…	Сохранить библиотеку образцов…
 	Save the current layout under this name	Сохранить текущий макет под этим именем
@@ -3819,6 +3820,7 @@ axis	Both	Оба
 @msg	no saved presets	нет сохранённых наборов
 @msg	no saved print preset named `{name}` ({DEFAULT_PRESET} is protected: start a new one from it)	нет сохранённого набора печати с именем `{name}` ({DEFAULT_PRESET} защищён: создайте новый на его основе)
 @msg	no saved profiles	нет сохранённых профилей
+@msg	no saved selection recalled	сохранённое выделение не восстановлено
 @msg	no saved selections	нет сохранённых выделений
 @msg	no saved themes	нет сохранённых тем
 @msg	no segment {segment} on line {line}	нет сегмента {segment} на строке {line}

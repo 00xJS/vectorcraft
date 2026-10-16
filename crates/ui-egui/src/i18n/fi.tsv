@@ -388,6 +388,7 @@
 	Area Text Objects	Aluetekstiobjektit
 	Start Global Edit	Aloita yleismuokkaus
 	Save Selection…	Tallenna valinta…
+	Update Selection	Päivitä valinta
 	Edit Selection…	Muokkaa valintaa…
 	Effect	Tehoste
 	Apply Last Effect	Käytä viimeisintä tehostetta
@@ -4042,6 +4043,7 @@ imageTrace	Outline	Ääriviiva
 @msg	no saved presets	ei tallennettuja esiasetuksia
 @msg	no saved print preset named `{name}` ({DEFAULT_PRESET} is protected: start a new one from it)	ei tallennettua tulostuksen esiasetusta nimeltä `{name}` ({DEFAULT_PRESET} on suojattu: luo uusi sen pohjalta)
 @msg	no saved profiles	ei tallennettuja profiileja
+@msg	no saved selection recalled	tallennettua valintaa ei ole palautettu
 @msg	no saved selections	ei tallennettuja valintoja
 @msg	no saved themes	ei tallennettuja teemoja
 @msg	no segment {segment} on line {line}	ei segmenttiä {segment} viivalla {line}

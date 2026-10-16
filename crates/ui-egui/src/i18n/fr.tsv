@@ -2527,6 +2527,7 @@
 	Save Save for Web Preset	Enregistrer le paramètre prédéfini d’Enregistrer pour le web
 	Save selected colors as swatches	Enregistrer les couleurs sélectionnées comme nuances
 	Save Selection…	Enregistrer la sélection…
+	Update Selection	Mettre à jour la sélection
 	Save Swatch Library	Enregistrer la bibliothèque de nuances
 	Save Swatch Library…	Enregistrer la bibliothèque de nuances…
 	Save the current layout under this name	Enregistrer la disposition actuelle sous ce nom
@@ -3817,6 +3818,7 @@ axis	Both	Les deux
 @msg	no saved presets	aucun paramètre prédéfini enregistré
 @msg	no saved print preset named `{name}` ({DEFAULT_PRESET} is protected: start a new one from it)	aucun paramètre prédéfini d’impression enregistré nommé `{name}` ({DEFAULT_PRESET} est protégé : créez-en un nouveau à partir de lui)
 @msg	no saved profiles	aucun profil enregistré
+@msg	no saved selection recalled	aucune sélection enregistrée rappelée
 @msg	no saved selections	aucune sélection enregistrée
 @msg	no saved themes	aucun thème enregistré
 @msg	no segment {segment} on line {line}	aucun segment {segment} sur la ligne {line}

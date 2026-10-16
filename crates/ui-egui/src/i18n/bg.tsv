@@ -2484,6 +2484,7 @@
 	Save Save for Web Preset	Запази предварителна настройка за „Запази за уеб“
 	Save selected colors as swatches	Запази избраните цветове като образци
 	Save Selection…	Запази селекцията…
+	Update Selection	Актуализиране на селекцията
 	Save Swatch Library	Запази библиотека с образци
 	Save Swatch Library…	Запази библиотека с образци…
 	Save the current layout under this name	Запази текущото разположение под това име
@@ -3745,6 +3746,7 @@ axis	Both	И двете
 @msg	no saved presets	няма запазени предварителни настройки
 @msg	no saved print preset named `{name}` ({DEFAULT_PRESET} is protected: start a new one from it)	няма запазена предварителна настройка за печат с име „{name}“ ({DEFAULT_PRESET} е защитена: създайте нова от нея)
 @msg	no saved profiles	няма запазени профили
+@msg	no saved selection recalled	няма възстановена запазена селекция
 @msg	no saved selections	няма запазени селекции
 @msg	no saved themes	няма запазени теми
 @msg	no segment {segment} on line {line}	няма сегмент {segment} на ред {line}
