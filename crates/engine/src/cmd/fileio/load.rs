@@ -447,18 +447,28 @@ pub(crate) use vectorcraft_doc::MAX_RASTER_ALLOC;
 /// decode, and for bytes that aren't an image.
 pub(crate) fn too_large_note(bytes: &[u8]) -> Option<String> {
     use image::ImageDecoder as _;
+    if let Some((w, h)) = vectorcraft_doc::cmyk::oversized_tiff(bytes) {
+        return Some(format!("an image of {w} × {h} pixels is too large to draw"));
+    }
     let d = image::ImageReader::new(Cursor::new(bytes)).with_guessed_format().ok()?.into_decoder().ok()?;
     let (w, h) = d.dimensions();
     (d.total_bytes() > MAX_RASTER_ALLOC).then(|| format!("an image of {w} × {h} pixels is too large to draw"))
 }
 
 /// Decode an image's header (and, for formats stored as PNG, its pixels). CMYK TIFFs are kept as
-/// they are, with their ink amounts ([`ImageBlob::cmyk`]); CMYK TIFFs with an alpha channel, which
-/// the decoder can't read, become RGBA in the active colour settings' CMYK, as do CMYK Photoshop
-/// documents, whose merged image is read ([`psdread`]). Grayscale TIFFs with an alpha channel or
-/// other extra channels, which the decoder can't read either, become RGBA too.
+/// they are, with their ink amounts ([`ImageBlob::cmyk`]), except that ones storing one plane per
+/// ink are written again with their inks together ([`vectorcraft_doc::cmyk::stored_cmyk_tiff`]);
+/// CMYK TIFFs with an alpha channel, which the decoder can't read, become RGBA in the active color
+/// settings' CMYK, as do CMYK Photoshop documents, whose merged image is read ([`psdread`]).
+/// Grayscale TIFFs with an alpha channel or other extra channels, which the decoder can't read
+/// either, become RGBA too, whether they store their channels together or one plane per channel.
+/// A TIFF with more strips or tiles than the decoder can count
+/// ([`vectorcraft_doc::cmyk::oversized_tiff`]) is refused as too large to draw.
 pub fn raster_image(bytes: &[u8]) -> Result<RasterImage> {
     let ppi = super::ppi::resolution(bytes);
+    if let Some((w, h)) = vectorcraft_doc::cmyk::oversized_tiff(bytes) {
+        return Err(err(format!("an image of {w} × {h} pixels is too large to draw")));
+    }
     if psdread::is_psd(bytes) {
         let cms = vectorcraft_color::cms::active();
         return as_png(psdread::decode(bytes, MAX_RASTER_ALLOC, |c| cms.cmyk_to_srgb(c, false)).map_err(err)?, ppi);
@@ -469,10 +479,14 @@ pub fn raster_image(bytes: &[u8]) -> Result<RasterImage> {
     reader.limits(limits);
     let kind = reader.format().ok_or_else(|| err("not an image VectorCraft reads (see document.formats)"))?;
     let f = image_format(kind).ok_or_else(|| err(format!("{kind:?} images can't be opened (see document.formats)")))?;
-    let cmyk = || ImageBlob::new(f.mime, bytes.to_vec()).cmyk().is_some();
-    if matches!(f.id, "png" | "jpg" | "gif" | "webp") || (f.id == "tiff" && cmyk()) {
+    let kept = match f.id {
+        "png" | "jpg" | "gif" | "webp" => Some(bytes.to_vec()),
+        "tiff" => vectorcraft_doc::cmyk::stored_cmyk_tiff(bytes, ppi),
+        _ => None,
+    };
+    if let Some(kept) = kept {
         let (width, height) = reader.into_dimensions().map_err(err)?;
-        return stored(bytes.to_vec(), f.mime, (width, height), ppi);
+        return stored(kept, f.mime, (width, height), ppi);
     }
     let extra_samples = || {
         let cms = vectorcraft_color::cms::active();
