@@ -59,8 +59,23 @@ pub fn fitted_corner_radius(w: f64, h: f64, radius: f64) -> f64 {
     radius.max(0.0).min(max_corner_radius(w, h))
 }
 
+/// The radii the corners of a `w` × `h` rectangle (top-left, top-right, bottom-right,
+/// bottom-left) are drawn with: each its own, no larger than leaves room for its neighbours'
+/// cuts ([`crate::corners::fitted_radii`]): half the shorter side when they are all as large, up
+/// to a whole side when its neighbours are square (#2332); 0 when negative or not a number.
+pub fn fitted_corner_radii(w: f64, h: f64, radii: [f64; 4]) -> [f64; 4] {
+    let corners = crate::corners::path_corners(&rectangle(Rect::new(0.0, 0.0, w, h)));
+    let mut out = [0.0; 4];
+    for (c, r) in corners.iter().zip(crate::corners::fitted_radii(&corners, &radii)) {
+        if let Some(o) = out.get_mut(c.index) {
+            *o = r;
+        }
+    }
+    out
+}
+
 /// Rectangle whose corners (top-left, top-right, bottom-right, bottom-left, y down) each have
-/// their own radius and kind, every radius clamped to half the shorter side. A corner without a
+/// their own radius and kind, every radius no larger than [`fitted_corner_radii`] leaves. A corner without a
 /// radius is one anchor, the others two (where the cut meets each side). Clockwise from the
 /// top-left corner, its anchor on the top side first. Cut as any path's corners are
 /// ([`crate::corners::cut_corners`]).
@@ -379,9 +394,11 @@ mod tests {
         let chamfer = rectangle_with_corners(r, radii, [CornerKind::Chamfer; 4]);
         assert!((chamfer.subpaths[0].area() - (6000.0 - 50.0)).abs() < 1e-9);
         assert!(chamfer.subpaths[0].anchors.iter().all(|a| !a.has_in() && !a.has_out()), "straight");
-        // Radii clamp to half the shorter side; negative and NaN radii are none.
+        // Radii clamp to what their neighbours leave, the whole shorter side when they are
+        // square (#2332): the cut reaches the bottom-left corner. Negative and NaN radii are none.
         let p = rectangle_with_corners(r, [500.0, -5.0, f64::NAN, 0.0], [CornerKind::Round; 4]);
-        assert_eq!(p.subpaths[0].anchors[0].p, Point::new(30.0, 0.0));
+        assert_eq!(p.subpaths[0].anchors[0].p, Point::new(60.0, 0.0));
+        assert_eq!(p.subpaths[0].anchors.last().map(|a| a.p), Some(Point::new(0.0, 60.0)));
         assert_eq!(p.anchor_count(), 5);
         assert_eq!(CornerKind::ALL.map(CornerKind::next), [CornerKind::InvertedRound, CornerKind::Chamfer, CornerKind::Round]);
     }

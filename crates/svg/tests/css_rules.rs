@@ -84,13 +84,13 @@ fn live_corners_give_per_corner_radii_and_only_round_ones() {
         kinds[1] = CornerKind::InvertedRound;
     }
     assert!(prop(&one(&d, id, &CssOptions::default()), "border-radius").is_none(), "CSS can't cut a corner in");
-    // A radius past half the shorter side is drawn at half of it (#442), and exported so: CSS
-    // would draw it larger, its neighbours leaving room.
+    // A radius is drawn no larger than its neighbours leave room for, past half the shorter
+    // side when they are small (#2332), and exported as drawn: 50 less the 4 below it.
     if let Some(LiveShape::Rectangle { radii, kinds, .. }) = d.node_mut(id).and_then(|n| n.live_shape_mut()) {
         *radii = [60.0, 8.0, 0.0, 4.0];
         *kinds = Default::default();
     }
-    assert_eq!(prop(&one(&d, id, &CssOptions::default()), "border-radius"), Some("25px 8px 0 4px"));
+    assert_eq!(prop(&one(&d, id, &CssOptions::default()), "border-radius"), Some("46px 8px 0 4px"));
 }
 
 #[test]
