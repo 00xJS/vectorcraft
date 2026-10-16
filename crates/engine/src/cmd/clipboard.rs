@@ -80,22 +80,22 @@ pub struct Clipboard {
     pub para_styles: Vec<TextStyleDef>,
     /// Brushes the objects' strokes use.
     pub brushes: Vec<Brush>,
-    /// The artboard the objects were copied from (none when they lie on no artboard): Paste on All
-    /// Artboards keeps their offset to it.
+    /// The artboard the objects were copied from (none when they lie on no artboard; the first of
+    /// [`Self::artboards`] when there are any): Paste on All Artboards keeps their offset to it.
     pub source_artboard: Option<Rect>,
     /// Per object: the name of the layer it was copied from (Paste Remembers Layers).
     pub source_layers: Vec<Option<String>>,
     /// The open document the objects came from ([`DocState::uid`]): pasting back into it uses its
     /// own resources as they are now.
     pub source_doc: Option<u64>,
-    /// An artboard copied with the Artboard tool (`artboard.copy`); `nodes` are then its art. Pasting
-    /// adds a copy of it with the art.
-    pub artboard: Option<vectorcraft_doc::Artboard>,
+    /// The artboards copied with the Artboard tool (`artboard.copy`); `nodes` are then their art.
+    /// Pasting adds a copy of each with the art.
+    pub artboards: Vec<vectorcraft_doc::Artboard>,
 }
 
 impl Clipboard {
     pub fn is_empty(&self) -> bool {
-        self.nodes.is_empty() && self.artboard.is_none()
+        self.nodes.is_empty() && self.artboards.is_empty()
     }
 
     /// Objects `roots` of `st`'s document with their resources, source artboard and layers.

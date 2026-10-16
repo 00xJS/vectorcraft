@@ -2350,19 +2350,22 @@ on top / at the bottom of the current layer. `edit.pasteOnAllArtboards` keeps th
 copied from. `layer.pasteRemembersLayers {on?}` (a document option, `document.inspect` → `pasteRemembersLayers`)
 pastes objects back into the layers they came from, by name, making missing ones.
 
-Artboards copy with their art. `artboard.copy {index?, art?}` puts an artboard on the clipboard together with the
-art fully inside it (`art` defaults to the Artboard tool's `moveArt` option, Move/Copy Artwork with Artboard; locked
-and hidden art only with prefs `moveLockedWithArtboard`); with the Artboard tool chosen, `edit.copy` does this for
-the tool's artboard and `edit.cut` runs `artboard.cut`, which also deletes them (never the only artboard). Then
-`edit.paste` adds a copy of the artboard right of the last one, with its art in the layers it came from, in one undo
-step (`edit.pasteInPlace`, `edit.pasteInFront` and `edit.pasteInBack` put it where it was; `edit.pasteOnAllArtboards`
-pastes only the art), in this document or another; the result's `artboard` is the new artboard's index.
-`artboard.duplicate {index?, art?}` (Window › Artboards › Duplicate Artboards, or a row dragged onto New Artboard)
-does the same in one step → `{index, ids}`, and `artboard.move {copy: true, moveArt: true}` is the Artboard tool's
-Alt-drag. These two commands also move the pattern tiles of the copies when `patterns` is true (default: prefs
-`transformPatternTiles`); `edit.paste` leaves the tiles of a pasted artboard's art where they were.
-`artboard.copy`, `artboard.cut` and `artboard.duplicate` take the Artboard tool's artboard when the call names no
-`index`. Every artboard command that takes an `index` fails with `no such artboard` when the `index` is not the
+Artboards copy with their art. `artboard.copy {index? | indices?, art?}` puts artboards on the clipboard together
+with the art fully inside each (`index` and `indices` default to the artboards the Artboard tool has selected; `art`
+defaults to the tool's `moveArt` option, Move/Copy Artwork with Artboard; locked and hidden art only with prefs
+`moveLockedWithArtboard`); with the Artboard tool chosen, `edit.copy` does this for the tool's selected artboards and
+`edit.cut` runs `artboard.cut`, which also deletes them (one artboard is always left: a cut of every artboard fails).
+Then `edit.paste` adds a copy of each artboard, together right of the last one and placed as they lay, with their art
+in the layers it came from, in one undo step (`edit.pasteInPlace`, `edit.pasteInFront` and `edit.pasteInBack` put
+them where they were; `edit.pasteOnAllArtboards` pastes only the art), in this document or another; the result's
+`artboards` lists the new artboards' indices and `artboard` is the first of them, and the Artboard tool, when chosen,
+selects them. `artboard.duplicate {index? | indices?, art?}` does the same in one step → `{index, indices, ids}`.
+Window › Artboards › Duplicate Artboards passes the selected artboards (those the Artboard tool has selected, else the
+active one) as `indices`, and a row dragged onto New Artboard passes its artboard as `index`.
+`artboard.move {copy: true, moveArt: true}` is the Artboard tool's Alt-drag. `artboard.duplicate` and `artboard.move`
+also move the pattern tiles of the copies when `patterns` is true (default: prefs `transformPatternTiles`);
+`edit.paste` leaves the tiles of a pasted artboard's art where they were.
+Every artboard command that takes an `index` fails with `no such artboard` when the `index` is not the
 0-based index of an artboard (past the last one, negative, fractional, a string or null), and the document and the
 clipboard stay as they were.
 
