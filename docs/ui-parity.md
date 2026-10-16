@@ -80,6 +80,7 @@ tools, never checked side by side) isn't captured row by row.
 | Escape cancels a Direct Selection drag | done | #1803 (#1743) |
 | Live Corners widgets (radius readout, Alt-click cycles kind, double-click the Corners dialog) | done | a Direct Selection click on a widget selects its corner (#1239); a press-and-drag on a widget of a path selected whole still rounds every corner (#908), and adding widgets to the selection by Shift-click (#1232) is missing; the bounding box hides while a widget is dragged with the Selection tool (#1229); a round corner next to a curved side curves smoothly instead of sticking out of the shape (#1512) |
 | Corners between curved sides (#1144), Relative rounding | partial | Relative rounding missing |
+| Pie widgets on a live ellipse: drag one to set Pie Start or End Angle, double-click one to make the ellipse whole | done | Selection tool, with the bounding box showing |
 | Isolation mode by double-click (groups and single objects), breadcrumbs, Esc to exit | done | Single paths, compound paths, images, meshes and placed files isolate too ([helpx: Isolate objects](https://helpx.adobe.com/africa/illustrator/desktop/manage-objects/select-objects/isolate-objects.html)) |
 | "Magnetic" moves of selected anchors with a modifier (#955 request) | missing | not an Illustrator feature as documented; under discussion |
 | Coinciding anchors of overlapping objects: the selected object's anchor is taken, also under another object | done | #1508 |

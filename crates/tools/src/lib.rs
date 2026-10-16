@@ -25,6 +25,7 @@ pub mod meshedit;
 pub mod params;
 pub mod pathtype;
 pub mod pen;
+pub mod pie;
 pub mod place;
 pub mod printtiling;
 pub mod rulerguide;

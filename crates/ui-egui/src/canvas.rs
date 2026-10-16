@@ -2035,6 +2035,16 @@ fn selection_overlay(app: &mut VectorcraftApp, p: &egui::Painter, xf: &Xf, curve
             p.circle_stroke(c, r, Stroke::new(1.0, color));
         }
     }
+    // Pie widgets (Selection tool, with View › Show Bounding Box, on live ellipses): each joined
+    // by a line to the outline's point at its angle. They stay while one is dragged.
+    if tool == "selection" && app.ui.view.bounding_box {
+        for w in vectorcraft_tools::pie::PieWidget::of(&st.doc, &st.selection, xf.zoom) {
+            let (on, c, r, color) = (xf.to_screen(w.on), xf.to_screen(w.at), vectorcraft_tools::pie::RADIUS_PX, c32(st.doc.layer_color(w.id)));
+            p.line_segment([on, c], Stroke::new(1.0, color));
+            p.circle_filled(c, r, Color32::WHITE);
+            p.circle_stroke(c, r, Stroke::new(1.0, color));
+        }
+    }
 }
 
 /// While the Type tool edits, let the system IME compose (egui-winit allows it only in frames that
@@ -3973,6 +3983,28 @@ mod tests {
         assert_eq!(widget(&mut app), vec![layer]);
         app.ui.view.bounding_box = false;
         assert!(widget(&mut app).is_empty(), "no bounding box, no widget");
+    }
+
+    /// A selected live ellipse shows its two pie widgets with the Selection tool while the
+    /// bounding box shows.
+    #[test]
+    fn a_selected_ellipse_shows_its_pie_widgets() {
+        let mut app = VectorcraftApp::new(Session::new(), Default::default());
+        app.session.execute("file.new", &json!({"width": 400, "height": 300})).unwrap();
+        app.session.execute("shape.ellipse", &json!({"x": 100, "y": 100, "width": 200, "height": 100})).unwrap();
+        app.session.execute("object.setLiveShape", &json!({"pieStart": 0, "pieEnd": 90})).unwrap();
+        let ctx = egui::Context::default();
+        let widgets = |app: &mut VectorcraftApp| {
+            let r = vectorcraft_tools::pie::RADIUS_PX;
+            shapes(app, &ctx).iter().filter(|s| matches!(s, Shape::Circle(c) if c.radius == r && c.fill == Color32::WHITE)).count()
+        };
+        app.select_tool("selection");
+        assert_eq!(widgets(&mut app), 2);
+        app.select_tool("directSelection");
+        assert_eq!(widgets(&mut app), 0);
+        app.select_tool("selection");
+        app.run("view.boundingBox", json!({})).unwrap();
+        assert_eq!(widgets(&mut app), 0, "no bounding box, no widgets");
     }
 
     /// The shapes Type → Show Hidden Characters draws in one frame, seen through `xf`.

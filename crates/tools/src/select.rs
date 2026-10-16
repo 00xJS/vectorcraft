@@ -3,7 +3,8 @@
 //! Guides, or with them off View › Snap to Point, snap it),
 //! bounding-box scale (Shift proportional, Alt from centre) and rotate (outside corners, Shift 45°),
 //! drag a live rectangle's or polygon's corner widget to round its corners (Alt-click cycles their kind,
-//! double-click opens the Corners dialog), double-click a group or an object to enter isolation
+//! double-click opens the Corners dialog), drag a live ellipse's pie widgets to set its pie angles
+//! (double-click makes it whole again: [`crate::pie`]), double-click a group or an object to enter isolation
 //! mode (Double Click To Isolate), Cmd/Ctrl-click to select the object behind (Command Click to Select Objects Behind),
 //! click or drag a ruler guide ([`crate::rulerguide`]), drag the brackets of type on a path
 //! ([`crate::pathtype`]), double-click the type widget to convert point type to area type and back
@@ -24,6 +25,7 @@ use crate::bbox::{Handle, hit_handle, in_rotate_zone, move_delta, rotate_for_dra
 use crate::corners::{self, CornerDrag, over_widget};
 use crate::guides::Targets;
 use crate::pathtype::{self, BracketDrag, over_bracket};
+use crate::pie::{self, PieDrag};
 use crate::rulerguide::GuideEdit;
 use crate::shaperwidget;
 use crate::typewidget;
@@ -66,6 +68,8 @@ enum State {
     },
     /// Dragging a Live Corners widget.
     Corner(CornerDrag),
+    /// Dragging a live ellipse's pie widget.
+    Pie(PieDrag),
     /// Dragging a bracket of type on a path.
     Bracket(BracketDrag),
 }
@@ -281,6 +285,7 @@ impl Tool for SelectionTool {
         match &self.state {
             State::Moving { began: true, .. } | State::Scaling { .. } | State::Rotating { .. } => true,
             State::Corner(c) => c.adjusting(),
+            State::Pie(d) => d.adjusting(),
             _ => false,
         }
     }
@@ -300,7 +305,8 @@ impl Tool for SelectionTool {
         match (ev.kind, self.state.clone()) {
             (PointerKind::DoubleClick, _) => {
                 self.state = State::Idle;
-                if let Some(a) = corners::double_click(cx, p, false).or_else(|| typewidget::double_click(cx, p)) {
+                if let Some(a) = corners::double_click(cx, p, false).or_else(|| pie::double_click(cx, p)).or_else(|| typewidget::double_click(cx, p))
+                {
                     return vec![a];
                 }
                 // The Shaper Group's mode widget answers each click of a double-click on it.
@@ -325,10 +331,14 @@ impl Tool for SelectionTool {
                 vec![]
             }
             (PointerKind::Down, _) => {
-                // 1. Live Corners widgets and type on a path's brackets, then the bounding-box
-                // handles of the current selection.
+                // 1. Live Corners widgets, pie widgets and type on a path's brackets, then the
+                // bounding-box handles of the current selection.
                 if let Some(c) = CornerDrag::hit(cx, ev, false) {
                     self.state = State::Corner(c);
+                    return vec![];
+                }
+                if let Some(d) = PieDrag::hit(cx, ev) {
+                    self.state = State::Pie(d);
                     return vec![];
                 }
                 if let Some(b) = BracketDrag::hit(cx, ev) {
@@ -456,6 +466,15 @@ impl Tool for SelectionTool {
                 self.state = State::Idle;
                 c.finish()
             }
+            (PointerKind::Drag, State::Pie(mut d)) => {
+                let out = d.drag(cx, p);
+                self.state = State::Pie(d);
+                out
+            }
+            (PointerKind::Up, State::Pie(d)) => {
+                self.state = State::Idle;
+                d.finish()
+            }
             (PointerKind::Drag, State::Bracket(mut b)) => {
                 let out = b.drag(cx, p, m.cmd);
                 self.state = State::Bracket(b);
@@ -513,6 +532,7 @@ impl Tool for SelectionTool {
         match &self.state {
             State::Marquee { start, cur, .. } => o.push(Overlay::Marquee(Rect::from_points(*start, *cur))),
             State::Corner(c) => o.extend(c.overlays(cx)),
+            State::Pie(d) => o.extend(d.overlays()),
             _ => {}
         }
         o.extend(self.guides.iter().cloned());
@@ -535,6 +555,7 @@ impl Tool for SelectionTool {
             State::Scaling { handle, bx, .. } => return handle_cursor(handle, bx.angle),
             State::Moving { began: true, .. } => return Cursor::Arrow,
             State::Corner(_) => return Cursor::CornerRadius,
+            State::Pie(_) => return Cursor::ArrowHollow,
             State::Bracket(_) => return Cursor::PathBracket,
             _ => {}
         }
@@ -543,6 +564,9 @@ impl Tool for SelectionTool {
         }
         if over_widget(cx, p, false) {
             return Cursor::CornerRadius;
+        }
+        if pie::over_widget(cx, p) {
+            return Cursor::ArrowHollow;
         }
         if over_bracket(cx, p) {
             return Cursor::PathBracket;
