@@ -904,6 +904,10 @@ pub struct Prefs {
     /// not a Preferences dialog field: resetting the preferences keeps it; `pdf.preset.*` edit it.
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub pdf_presets: Vec<vectorcraft_pdf::PdfPreset>,
+    /// File → Export for Screens: the user's batch export presets (`document.exportPresets.*`;
+    /// the built-in ones aren't stored). A local library, not a Preferences dialog field.
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub screen_export_presets: Vec<cmd::fileio::ScreenExportPreset>,
     // File Handling (continued)
     /// Where Save as Template and New from Template start ("" = `Documents/VectorCraft Templates`).
     pub templates_folder: String,
@@ -1089,6 +1093,7 @@ impl Default for Prefs {
             new_doc_presets: vec![],
             recent_new_docs: vec![],
             pdf_presets: vec![],
+            screen_export_presets: vec![],
             templates_folder: String::new(),
             append_converted: true,
             use_compression: false,

@@ -946,6 +946,32 @@
 	Export All…	全部匯出…
 	Export and Clipboard Transparency Flattener Settings	匯出與剪貼簿透明度平面化設定
 	Export Artboard	匯出工作區域
+	A File per Object	每個物件一個檔案
+	Example: {name}	範例：{name}
+	Export Preset:	轉存預設集：
+	Folders:	資料夾：
+	Insert	插入
+	Nothing is selected. Select the art to export, then open this tab again.	未選取任何內容。請選取要轉存的圖稿，然後重新開啟此標籤。
+	One File of the Selection	選取範圍轉存為一個檔案
+	Start at:	起始編號：
+	{n} objects selected	已選取 {n} 個物件
+	Delete Export Preset	刪除轉存預設集
+	Export Presets	轉存預設集
+	Save Export Preset	儲存轉存預設集
+	Export Layer	轉存圖層
+	Export Selection	轉存選取範圍
+	All in One Folder	全部放在一個資料夾
+	By Size or Row	依尺寸或列
+	By Format	依格式
+	By Artboard or Item	依工作區域或項目
+	By Item, Then Format	依項目，再依格式
+	Document Name	文件名稱
+	Artboard or Item Name	工作區域或項目名稱
+	Number (####)	編號（####）
+	Date (YYYYMMDD)	日期（YYYYMMDD）
+	Date (YYYY-MM-DD)	日期（YYYY-MM-DD）
+	Time (hhmmss)	時間（hhmmss）
+	PDF Print	印刷用 PDF
 	Export As	匯出為
 	Export As PNG…	匯出為 PNG…
 	Export As SVG…	匯出為 SVG…
@@ -3845,6 +3871,8 @@ lighting	Light	光源
 	Destination Folder:	目的地資料夾：
 	Overrides	覆寫
 	Uses every data set of the open document.	使用開啟文件的每個資料集。
+@msg	check a layer to export	請勾選要轉存的圖層
+@msg	select the art to export first	請先選取要轉存的圖稿
 
 # User Interface › Accent Color
 	Accent Color	強調色

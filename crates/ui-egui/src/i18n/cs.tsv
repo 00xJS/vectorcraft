@@ -2667,6 +2667,32 @@ lighting	Light	Světlo
 	Summary	Souhrn
 	Download	Stáhnout
 	Export Artboard	Exportovat pracovní plochu
+	A File per Object	Jeden soubor na objekt
+	Example: {name}	Příklad: {name}
+	Export Preset:	Přednastavení exportu:
+	Folders:	Složky:
+	Insert	Vložit
+	Nothing is selected. Select the art to export, then open this tab again.	Nic není vybráno. Vyberte kresbu k exportu a znovu otevřete tuto kartu.
+	One File of the Selection	Jeden soubor z výběru
+	Start at:	Začít od:
+	{n} objects selected	Vybráno objektů: {n}
+	Delete Export Preset	Odstranit přednastavení exportu
+	Export Presets	Přednastavení exportu
+	Save Export Preset	Uložit přednastavení exportu
+	Export Layer	Exportovat vrstvu
+	Export Selection	Exportovat výběr
+	All in One Folder	Vše v jedné složce
+	By Size or Row	Podle velikosti nebo řádku
+	By Format	Podle formátu
+	By Artboard or Item	Podle kreslicí plochy nebo položky
+	By Item, Then Format	Podle položky, pak formátu
+	Document Name	Název dokumentu
+	Artboard or Item Name	Název kreslicí plochy nebo položky
+	Number (####)	Číslo (####)
+	Date (YYYYMMDD)	Datum (RRRRMMDD)
+	Date (YYYY-MM-DD)	Datum (RRRR-MM-DD)
+	Time (hhmmss)	Čas (hhmmss)
+	PDF Print	PDF pro tisk
 	Encoding:	Kódování:
 	UTF-16 (Unicode)	UTF-16 (Unicode)
 	Line Endings:	Konce řádků:
@@ -4018,6 +4044,8 @@ imageTrace	Outline	Obrys
 @msg	cannot split an open path at its end point	otevřenou cestu nelze rozdělit v jejím koncovém bodu
 @msg	closing needs three anchors	uzavření vyžaduje tři kotevní body
 @msg	check an asset to export	zaškrtněte prvek k exportu
+@msg	check a layer to export	zaškrtněte vrstvu k exportu
+@msg	select the art to export first	nejprve vyberte kresbu k exportu
 @msg	choice must be "merge" or "add", not `{choice}`	volba musí být "merge" nebo "add", ne `{choice}`
 @msg	choose a direction to divide in	zvolte směr rozdělení
 @msg	choose a folder to export to	zvolte složku pro export

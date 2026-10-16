@@ -975,6 +975,32 @@
 	Export All…	Esporta tutto…
 	Export and Clipboard Transparency Flattener Settings	Impostazioni di appiattimento trasparenza per esportazione e Appunti
 	Export Artboard	Esporta tavola da disegno
+	A File per Object	Un file per oggetto
+	Example: {name}	Esempio: {name}
+	Export Preset:	Predefinito di esportazione:
+	Folders:	Cartelle:
+	Insert	Inserisci
+	Nothing is selected. Select the art to export, then open this tab again.	Nessuna selezione. Seleziona la grafica da esportare, poi riapri questa scheda.
+	One File of the Selection	Un file della selezione
+	Start at:	Inizia da:
+	{n} objects selected	{n} oggetti selezionati
+	Delete Export Preset	Elimina predefinito di esportazione
+	Export Presets	Predefiniti di esportazione
+	Save Export Preset	Salva predefinito di esportazione
+	Export Layer	Esporta livello
+	Export Selection	Esporta selezione
+	All in One Folder	Tutto in una cartella
+	By Size or Row	Per dimensione o riga
+	By Format	Per formato
+	By Artboard or Item	Per tavola o elemento
+	By Item, Then Format	Per elemento, poi formato
+	Document Name	Nome del documento
+	Artboard or Item Name	Nome della tavola o dell’elemento
+	Number (####)	Numero (####)
+	Date (YYYYMMDD)	Data (AAAAMMGG)
+	Date (YYYY-MM-DD)	Data (AAAA-MM-GG)
+	Time (hhmmss)	Ora (hhmmss)
+	PDF Print	PDF per la stampa
 	Export As	Esporta come
 	Export As PNG…	Esporta come PNG…
 	Export As SVG…	Esporta come SVG…
@@ -3722,6 +3748,8 @@ axis	Both	Entrambi
 @msg	cannot split an open path at its end point	impossibile dividere un tracciato aperto nel suo punto finale
 @msg	closing needs three anchors	per chiudere servono tre punti di ancoraggio
 @msg	check an asset to export	spunta una risorsa da esportare
+@msg	check a layer to export	seleziona un livello da esportare
+@msg	select the art to export first	seleziona prima la grafica da esportare
 @msg	choice must be "merge" or "add", not `{choice}`	choice deve essere "merge" o "add", non `{choice}`
 @msg	choose a direction to divide in	scegli una direzione in cui dividere
 @msg	choose a folder to export to	scegli una cartella in cui esportare

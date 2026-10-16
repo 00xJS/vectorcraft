@@ -2620,7 +2620,23 @@ art), `includeBleed` grows each artboard by the document's bleed, `subfolders` p
 sub-folders) replaces the rows, and `settings: {png: {…}, jpg: {…}, svg: {…}, pdf: {preset}}` gives every row of a
 format its options. The document remembers the last params: `document.exportSettings`.
 
+Batch exports (#1935):
+- **What:** `layers: [id…]` (each layer's art alone) or `selection: "one" | "each"` instead of artboards
+  (`assets`, `fullDocument` as before).
+- **Names:** `name` is a pattern for every file: `<filename>` (the document), `<name>` (the artboard, asset, layer
+  or object), `<index>`, `####` (a counter zero-padded to the run of `#`, from `counterStart`; `counterPer: "item"`
+  or `"file"`), `YYYYMMDD`, `YYYY-MM-DD`, `<date>`, `<time>`, `<format>`, `<scale>` and `<suffix>` (else the row's
+  suffix ends the name; `date` sets the day the pattern uses). Different files it names alike get `-2`, `-3`….
+- **Folders:** `folders: "none" | "rows" | "format" | "item" | "itemFormat"` (all in one, a folder per row, per
+  extension, per item, or item then extension).
+- **Formats:** rows may also be `eps`, `ai` and `vectorcraft` (a document of the item alone). A PDF row with
+  `marks` (`{trim, registration, colorBars, pageInfo}`) and a suffix such as `-print` sits next to a plain PDF row.
+- **Presets:** `document.exportPresets.list` (built-in: Logo Package, Print-Ready PDF), `.save {name, settings}`
+  (kept with the preferences) and `.delete {name}`; `exportPreset: "<name>"` uses one under the call's own params.
+
 ```json
+{"name":"run_command","arguments":{"command":"document.exportForScreens","params":{"range":"1-3","name":"COMPANY-Logo-<filename>-####-YYYYMMDD","folders":"format","formats":[{"format":"svg"},{"format":"png"},{"format":"pdf"},{"format":"pdf","suffix":"-print","marks":{"trim":true,"registration":true,"colorBars":true,"pageInfo":true}}]}}}
+{"name":"run_command","arguments":{"command":"document.exportForScreens","params":{"exportPreset":"Logo Package","layers":[2,9]}}}
 {"name":"run_command","arguments":{"command":"document.exportForScreens","params":{"preset":"density","zip":true}}}
 {"name":"run_command","arguments":{"command":"document.exportForScreens","params":{"range":"1-2","formats":[{"format":"png","scale":"512w"},{"format":"jpg","quality":80,"scale":"2x"},{"format":"svg"}],"settings":{"png":{"background":"white"}}}}}
 {"name":"run_command","arguments":{"command":"document.exportSettings","params":{}}}

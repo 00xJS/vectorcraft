@@ -958,6 +958,32 @@
 	Export All…	Експортиране на всичко…
 	Export and Clipboard Transparency Flattener Settings	Настройки за сплескване на прозрачността за експортиране и клипборд
 	Export Artboard	Експортиране на работна област
+	A File per Object	Отделен файл за всеки обект
+	Example: {name}	Пример: {name}
+	Export Preset:	Набор за експортиране:
+	Folders:	Папки:
+	Insert	Вмъкване
+	Nothing is selected. Select the art to export, then open this tab again.	Нищо не е избрано. Изберете графиката за експортиране и отворете този раздел отново.
+	One File of the Selection	Един файл от избраното
+	Start at:	Начало от:
+	{n} objects selected	Избрани обекти: {n}
+	Delete Export Preset	Изтриване на набор за експортиране
+	Export Presets	Набори за експортиране
+	Save Export Preset	Запазване на набор за експортиране
+	Export Layer	Експортиране на слой
+	Export Selection	Експортиране на избраното
+	All in One Folder	Всичко в една папка
+	By Size or Row	По размер или ред
+	By Format	По формат
+	By Artboard or Item	По монтажна област или елемент
+	By Item, Then Format	По елемент, после по формат
+	Document Name	Име на документа
+	Artboard or Item Name	Име на монтажната област или елемента
+	Number (####)	Номер (####)
+	Date (YYYYMMDD)	Дата (ГГГГММДД)
+	Date (YYYY-MM-DD)	Дата (ГГГГ-ММ-ДД)
+	Time (hhmmss)	Час (ччммсс)
+	PDF Print	PDF за печат
 	Export As	Експортиране като
 	Export As PNG…	Експортиране като PNG…
 	Export As SVG…	Експортиране като SVG…
@@ -3644,6 +3670,8 @@ axis	Both	И двете
 @msg	cannot split an open path at its end point	отворен път не може да бъде разделен в крайната му точка
 @msg	closing needs three anchors	затварянето изисква три опорни точки
 @msg	check an asset to export	изберете актив за експортиране
+@msg	check a layer to export	отметнете слой за експортиране
+@msg	select the art to export first	първо изберете графиката за експортиране
 @msg	choice must be "merge" or "add", not `{choice}`	изборът трябва да бъде "merge" или "add", а не `{choice}`
 @msg	choose a direction to divide in	изберете посока за разделяне
 @msg	choose a folder to export to	изберете папка за експортиране
