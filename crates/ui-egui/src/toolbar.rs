@@ -471,7 +471,7 @@ fn bottom_controls(app: &mut VectorcraftApp, ui: &mut Ui, t: &Tokens, cols: usiz
                 let (r, resp) = ui.allocate_exact_size(vec2(chip, chip), Sense::click());
                 match cmd {
                     "paint.lastColor" => widgets::paint_chip(ui, r, &Paint::solid(app.session.last_solid)),
-                    "paint.lastGradient" => widgets::gradient_chip(ui, r, &app.session.last_gradient.gradient),
+                    "paint.lastGradient" => widgets::gradient_chip(ui, r, &app.session.last_gradient),
                     _ => widgets::paint_chip(ui, r, &Paint::None),
                 }
                 if resp.on_hover_text(tl!(tip)).clicked() {

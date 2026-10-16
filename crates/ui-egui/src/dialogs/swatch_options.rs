@@ -76,7 +76,7 @@ pub fn open(app: &mut VectorcraftApp, name: &str) -> Result<Value, String> {
             Ok(Value::Null)
         }
         Paint::Gradient(g) => {
-            let fields = json!({"__swatch": name, "name": name, "__gradient": g.gradient, "preview": true});
+            let fields = json!({"__swatch": name, "name": name, "__gradient": g, "preview": true});
             app.ui.dialog = Some(Dialog::new(KIND, fields));
             Ok(Value::Null)
         }
@@ -105,7 +105,7 @@ fn edit_params(d: &Dialog) -> Value {
 }
 
 fn body(app: &mut VectorcraftApp, ui: &mut egui::Ui, d: &mut Dialog) -> bool {
-    let changed = match d.fields.get("__gradient").and_then(|g| serde_json::from_value::<vectorcraft_color::Gradient>(g.clone()).ok()) {
+    let changed = match d.fields.get("__gradient").and_then(|g| serde_json::from_value::<vectorcraft_color::GradientPaint>(g.clone()).ok()) {
         Some(g) => {
             let changed = grid(ui, |ui| name_row(ui, d));
             ui.add_space(6.0);

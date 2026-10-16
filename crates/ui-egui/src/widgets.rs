@@ -554,7 +554,7 @@ pub fn paint_chip(ui: &Ui, rect: Rect, paint: &Paint) {
             let [r, g, b, _] = color.to_rgba8(1.0);
             p.rect_filled(rect, 0.0, Color32::from_rgb(r, g, b));
         }
-        Paint::Gradient(gp) => gradient_chip(ui, rect, &gp.gradient),
+        Paint::Gradient(gp) => gradient_chip(ui, rect, gp),
         Paint::Pattern { .. } => {
             p.rect_filled(rect, 0.0, Color32::from_gray(200));
             for i in 0..4 {
@@ -565,32 +565,68 @@ pub fn paint_chip(ui: &Ui, rect: Rect, paint: &Paint) {
     }
 }
 
-/// Draw a gradient preview into `rect` (linear left to right; radial from the centre).
-pub fn gradient_chip(ui: &Ui, rect: Rect, gradient: &vectorcraft_color::Gradient) {
-    let p = ui.painter();
-    let radial = gradient.kind == vectorcraft_color::GradientKind::Radial;
-    if radial {
-        // Outer colour fills the corners beyond the largest circle.
-        let (c, _) = gradient.sample(1.0);
-        let [r, g, b, _] = c.to_rgba8(1.0);
-        p.rect_filled(rect, 0.0, Color32::from_rgb(r, g, b));
+/// Draw a gradient preview into `rect`, laid out as the gradient would be on an object of that
+/// shape: linear along its angle, radial from the centre, freeform from its colour points.
+pub fn gradient_chip(ui: &Ui, rect: Rect, gradient: &vectorcraft_color::GradientPaint) {
+    if !(rect.width() > 0.0 && rect.height() > 0.0) {
+        return;
     }
-    let n = 24;
-    let w = rect.width() / n as f32;
-    for i in 0..n {
-        let tt = (i as f32 + 0.5) / n as f32;
-        if radial {
-            let (c, _) = gradient.sample(1.0 - tt);
-            let [r, g, b, _] = c.to_rgba8(1.0);
-            let s = rect.width().min(rect.height()) * tt / 2.0;
-            p.circle_filled(rect.center(), s.max(0.5), Color32::from_rgb(r, g, b));
-        } else {
-            let (c, _) = gradient.sample(tt);
-            let [r, g, b, _] = c.to_rgba8(1.0);
-            let rr = Rect::from_min_size(pos2(rect.left() + i as f32 * w, rect.top()), vec2(w + 0.5, rect.height()));
-            p.rect_filled(rr, 0.0, Color32::from_rgb(r, g, b));
+    // Freeform sampling is costly per spot, so it gets a coarse grid (the mesh interpolates).
+    let freeform = gradient.gradient.kind == vectorcraft_color::GradientKind::Freeform;
+    let max = if freeform { 16 } else { 64 };
+    let cols = ((rect.width() / 3.0).ceil() as usize).clamp(1, max);
+    let rows = ((rect.height() / 3.0).ceil() as usize).clamp(1, max);
+    let colors = gradient_chip_colors(gradient, rect.width(), rect.height(), cols, rows);
+    let mut mesh = egui::Mesh::default();
+    for (k, color) in colors.into_iter().enumerate() {
+        let (i, j) = (k % (cols + 1), k / (cols + 1));
+        let at = pos2(rect.left() + rect.width() * i as f32 / cols as f32, rect.top() + rect.height() * j as f32 / rows as f32);
+        mesh.colored_vertex(at, color);
+    }
+    for j in 0..rows as u32 {
+        for i in 0..cols as u32 {
+            let v = j * (cols as u32 + 1) + i;
+            mesh.add_triangle(v, v + 1, v + cols as u32 + 1);
+            mesh.add_triangle(v + 1, v + cols as u32 + 2, v + cols as u32 + 1);
         }
     }
+    ui.painter().add(egui::Shape::mesh(mesh));
+}
+
+/// The colours at the `(cols + 1) x (rows + 1)` grid points (row by row) of a `width` x `height`
+/// chip showing `gp` as it would look on an object of that size.
+fn gradient_chip_colors(gp: &vectorcraft_color::GradientPaint, width: f32, height: f32, cols: usize, rows: usize) -> Vec<Color32> {
+    use vectorcraft_color::{GradientGeom, GradientKind};
+    let b = vectorcraft_geom::kurbo::Rect::new(0.0, 0.0, width as f64, height as f64);
+    let rgb = |c: vectorcraft_color::Color| {
+        let [r, g, b, _] = c.to_rgba8(1.0);
+        Color32::from_rgb(r, g, b)
+    };
+    let at = |k: usize| {
+        let (i, j) = (k % (cols + 1), k / (cols + 1));
+        vectorcraft_geom::kurbo::Point::new(b.width() * i as f64 / cols as f64, b.height() * j as f64 / rows as f64)
+    };
+    let n = (cols + 1) * (rows + 1);
+    if gp.gradient.kind == GradientKind::Freeform {
+        let Some(painted) = vectorcraft_color::freeform::painted_box(b) else { return vec![Color32::TRANSPARENT; n] };
+        let field = gp.freeform_on(painted).field(vectorcraft_color::freeform::spread_scale(painted));
+        return (0..n)
+            .map(|k| {
+                let ([r, g, b], _) = field.sample(at(k));
+                let q = |v: f32| (v.clamp(0.0, 1.0) * 255.0).round() as u8;
+                Color32::from_rgb(q(r), q(g), q(b))
+            })
+            .collect();
+    }
+    // A placed gradient keeps its direction; a fresh one is fitted to the chip at its angle.
+    let angle = gp.geom.map_or(gp.angle, |g| g.angle_deg());
+    let geom = GradientGeom::fit(gp.gradient.kind, b, if angle.is_finite() { angle } else { 0.0 });
+    (0..n)
+        .map(|k| {
+            let t = geom.param_at(gp.gradient.kind, at(k)).clamp(0.0, 1.0) as f32;
+            rgb(gp.gradient.sample(t).0)
+        })
+        .collect()
 }
 
 /// A Fill chip of `paint` into `rect` or, with `ring`, a Stroke chip: a frame `ring` wide round a
@@ -2039,5 +2075,39 @@ mod menu_room_tests {
     #[test]
     fn menu_keeps_a_minimum_height() {
         assert_eq!(menu_room(300.0, 290.0), 120.0);
+    }
+}
+
+#[cfg(test)]
+mod gradient_chip_tests {
+    use super::*;
+    use vectorcraft_color::{Gradient, GradientKind, GradientPaint};
+
+    fn paint(kind: GradientKind, angle: f64) -> GradientPaint {
+        let mut gp = GradientPaint::new(Gradient { kind, ..Gradient::default() });
+        gp.angle = angle;
+        gp
+    }
+
+    #[test]
+    fn linear_chip_follows_the_angle() {
+        // 5 x 5 grid points on a 20 x 20 chip; White (start) to Black (end).
+        let at = |colors: &[Color32], i: usize, j: usize| colors[j * 5 + i];
+        let side = gradient_chip_colors(&paint(GradientKind::Linear, 0.0), 20.0, 20.0, 4, 4);
+        assert_eq!(at(&side, 0, 2), Color32::WHITE);
+        assert_eq!(at(&side, 4, 2), Color32::BLACK);
+        assert_eq!(at(&side, 2, 0), at(&side, 2, 4));
+        // 90 degrees runs bottom to top: constant along rows, white at the bottom.
+        let up = gradient_chip_colors(&paint(GradientKind::Linear, 90.0), 20.0, 20.0, 4, 4);
+        assert_eq!(at(&up, 0, 4), Color32::WHITE);
+        assert_eq!(at(&up, 0, 0), Color32::BLACK);
+        assert_eq!(at(&up, 0, 2), at(&up, 4, 2));
+    }
+
+    #[test]
+    fn radial_chip_runs_from_the_centre_out() {
+        let colors = gradient_chip_colors(&paint(GradientKind::Radial, 0.0), 20.0, 20.0, 4, 4);
+        assert_eq!(colors[2 * 5 + 2], Color32::WHITE);
+        assert_eq!(colors[0], Color32::BLACK);
     }
 }
