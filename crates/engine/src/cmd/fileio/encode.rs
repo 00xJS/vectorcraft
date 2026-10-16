@@ -479,6 +479,9 @@ fn encode_files(doc: &Document, f: &Format, p: &Value) -> Result<Encoded> {
                 } else {
                     bytes
                 };
+                // PNG: say the colours are sRGB (what the renderer draws), unless `embedIcc` is false.
+                let bytes =
+                    if format == RasterFormat::Png && settings.jpeg.embed_icc { vectorcraft_render::encode::png::with_srgb(bytes) } else { bytes };
                 enc.files.push((Some(b), bytes));
             }
             if enc.files.is_empty() {
