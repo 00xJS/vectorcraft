@@ -389,3 +389,21 @@ fn unknown_dimension_options_are_refused_by_commands_but_a_newer_file_still_open
     let doc = vectorcraft_format::load(&serde_json::to_vec(&v).unwrap()).unwrap();
     assert!(doc.node(NodeId(id)).unwrap().extras().dimension.is_some());
 }
+
+/// With Shift down, the dashed line from the first picked point follows the 45-degree step the
+/// second click will pick (#2432), not the raw pointer.
+#[test]
+fn shift_shows_the_constrained_line_while_picking_the_second_point() {
+    use vectorcraft_engine::tools::Overlay;
+    let mut s = session();
+    s.select_tool("dimension", ViewInfo::default()).unwrap();
+    ev(&mut s, PointerKind::Down, 300.0, 300.0);
+    ev(&mut s, PointerKind::Up, 300.0, 300.0);
+    let end = |s: &mut Session, shift: bool| {
+        let e = PointerEvent::new(PointerKind::Move, 372.0, 310.0).with_mods(Mods { shift, ..Mods::default() });
+        s.pointer(&e, ViewInfo::default()).unwrap();
+        s.overlays(ViewInfo::default()).into_iter().find_map(|o| if let Overlay::Line { b, .. } = o { Some(b) } else { None }).unwrap()
+    };
+    assert_eq!(end(&mut s, false).y, 310.0);
+    assert!((end(&mut s, true).y - 300.0).abs() < 1e-9);
+}

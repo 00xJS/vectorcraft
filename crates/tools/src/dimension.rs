@@ -60,7 +60,15 @@ pub struct DimensionTool {
     dragging: bool,
     hover: Option<Target>,
     at: Point,
+    /// Whether Shift was down at the last pointer event: the picked line shows constrained.
+    shift: bool,
     began: bool,
+}
+
+/// `at` as a Shift click picks it: the direction from `last` snapped to 45° steps (from the
+/// constrain angle), the distance kept.
+fn constrained(cx: &ToolContext, last: Point, at: Point) -> Point {
+    last + vectorcraft_geom::constrain_angle_from(at - last, 45.0, cx.constrain_angle)
 }
 
 /// Nearest editable segment, with bounded work and no snapping to dimension artwork itself.
@@ -217,7 +225,7 @@ impl DimensionTool {
                 if mods.shift
                     && let Some((last, _)) = self.points.last()
                 {
-                    at = *last + vectorcraft_geom::constrain_angle_from(at - *last, 45.0, cx.constrain_angle);
+                    at = constrained(cx, *last, at);
                     reference = reference.filter(|r| r.position(cx.doc) == Some(at));
                 }
                 self.points.push((at, reference));
@@ -293,6 +301,7 @@ impl Tool for DimensionTool {
     }
     fn pointer(&mut self, cx: &ToolContext, ev: &PointerEvent) -> Vec<Action> {
         self.at = ev.pos;
+        self.shift = ev.mods.shift;
         match ev.kind {
             PointerKind::Move => {
                 if self.pending.is_some() {
@@ -393,7 +402,8 @@ impl Tool for DimensionTool {
             segment(edge, &mut out);
         }
         if let Some((p, _)) = self.points.last() {
-            out.push(Overlay::Line { a: *p, b: self.at, color, dashed: true });
+            let b = if self.shift { constrained(cx, *p, self.at) } else { self.at };
+            out.push(Overlay::Line { a: *p, b, color, dashed: true });
         }
         out
     }
