@@ -3842,3 +3842,9 @@ lighting	Light	光源
 # User Interface › Color Scheme
 	Color Scheme	配色方案
 	Modern	現代
+
+# Symbol Options › Export Type
+	Export Type:	轉存類型:
+	Movie Clip	影片片段
+@msg	name is empty	名稱為空
+@msg	no symbol named `{n}`	沒有名為 `{n}` 的符號

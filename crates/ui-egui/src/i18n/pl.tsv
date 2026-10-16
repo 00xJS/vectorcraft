@@ -4791,3 +4791,9 @@ mark-style	Japanese	Japońskie
 # User Interface › Color Scheme
 	Color Scheme	Schemat kolorów
 	Modern	Nowoczesny
+
+# Symbol Options › Export Type
+	Export Type:	Typ eksportu:
+	Movie Clip	Klip filmowy
+@msg	name is empty	nazwa jest pusta
+@msg	no symbol named `{n}`	brak symbolu o nazwie `{n}`

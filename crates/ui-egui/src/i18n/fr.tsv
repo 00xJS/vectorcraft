@@ -4945,3 +4945,9 @@ theme	Appearance	Apparence
 # User Interface › Color Scheme
 	Color Scheme	Jeu de couleurs
 	Modern	Moderne
+
+# Symbol Options › Export Type
+	Export Type:	Type d'exportation :
+	Movie Clip	Clip
+@msg	name is empty	le nom est vide
+@msg	no symbol named `{n}`	aucun symbole nommé `{n}`

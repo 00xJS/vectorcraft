@@ -20,9 +20,11 @@ pub mod inks;
 mod inline;
 pub mod intertwine;
 pub mod shared;
+mod symbol_export_type;
 mod symbol_registration;
 pub use inline::{SYMBOL_HALF, SYMBOL_SIZES};
 pub use shared::Shared;
+pub use symbol_export_type::{SYMBOL_EXPORT_TYPE, SymbolExportType};
 pub use symbol_registration::{SYMBOL_REGISTRATION, SymbolRegistration};
 pub mod links;
 pub mod live;
@@ -1577,6 +1579,52 @@ impl Document {
         } else {
             o.insert(name.into(), serde_json::json!(reg.0));
         }
+    }
+
+    /// Move the stored registration when a symbol is renamed.
+    pub fn rename_symbol_registration(&mut self, from: &str, to: &str) {
+        if from == to {
+            return;
+        }
+        let reg = self.symbol_registration(from);
+        self.set_symbol_registration(from, SymbolRegistration::CENTER);
+        self.set_symbol_registration(to, reg);
+    }
+
+    /// Symbol Options › Export Type for `name` (default: Movie Clip).
+    pub fn symbol_export_type(&self, name: &str) -> SymbolExportType {
+        self.unknown.get(SYMBOL_EXPORT_TYPE).and_then(|m| m.get(name)).and_then(SymbolExportType::from_value).unwrap_or_default()
+    }
+
+    /// Set or clear (when Movie Clip, the default) the export type stored for `name`.
+    pub fn set_symbol_export_type(&mut self, name: &str, kind: SymbolExportType) {
+        if kind.is_default() {
+            self.clear_symbol_export_type(name);
+            return;
+        }
+        let m = self.unknown.entry(SYMBOL_EXPORT_TYPE.to_string()).or_insert_with(|| serde_json::json!({}));
+        let Some(o) = m.as_object_mut() else { return };
+        o.insert(name.into(), serde_json::json!(kind.id()));
+    }
+
+    /// Drop any stored export type for `name` (Movie Clip default).
+    pub fn clear_symbol_export_type(&mut self, name: &str) {
+        let Some(m) = self.unknown.get_mut(SYMBOL_EXPORT_TYPE) else { return };
+        let Some(o) = m.as_object_mut() else { return };
+        o.remove(name);
+        if o.is_empty() {
+            self.unknown.remove(SYMBOL_EXPORT_TYPE);
+        }
+    }
+
+    /// Move the stored export type when a symbol is renamed.
+    pub fn rename_symbol_export_type(&mut self, from: &str, to: &str) {
+        if from == to {
+            return;
+        }
+        let kind = self.symbol_export_type(from);
+        self.clear_symbol_export_type(from);
+        self.set_symbol_export_type(to, kind);
     }
 }
 

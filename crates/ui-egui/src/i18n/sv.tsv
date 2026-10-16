@@ -4902,3 +4902,9 @@ theme	Appearance	Utseende
 # User Interface › Color Scheme
 	Color Scheme	Färgschema
 	Modern	Modern
+
+# Symbol Options › Export Type
+	Export Type:	Exporttyp:
+	Movie Clip	Filmklipp
+@msg	name is empty	namnet är tomt
+@msg	no symbol named `{n}`	ingen symbol med namnet `{n}`
