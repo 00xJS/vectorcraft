@@ -737,3 +737,23 @@ fn a_colour_previewed_while_typing_keeps_the_typing() {
     s.tool_text("d", v).unwrap();
     assert_eq!(obj(&s, id).plain_text(), "abcd");
 }
+
+/// The red out port of selected overflowing area type is drawn with the Selection tool too, and
+/// not twice with the Type tool, which draws it itself (#2323).
+#[test]
+fn overflow_marker_shows_with_the_selection_tool() {
+    let mut s = session();
+    let v = ViewInfo::default();
+    let long = "Words that fill more than the frame holds. ".repeat(20);
+    let r = s.execute("text.create", &json!({"x": 50, "y": 50, "text": long, "size": 20, "area": {"width": 100, "height": 40}})).unwrap();
+    let id = NodeId(r["id"].as_u64().unwrap());
+    s.execute("select.set", &json!({"ids": [id.0]})).unwrap();
+    s.select_tool("selection", v).unwrap();
+    let red = |s: &mut Session| s.overlays(v).iter().filter(|o| matches!(o, vectorcraft_tools::Overlay::Path { color: [230, 30, 30], .. })).count();
+    assert_eq!(red(&mut s), 1, "the out port");
+    s.select_tool("type", v).unwrap();
+    assert_eq!(red(&mut s), 1, "the Type tool's own, not a second one");
+    s.execute("select.set", &json!({"ids": []})).unwrap();
+    s.select_tool("selection", v).unwrap();
+    assert_eq!(red(&mut s), 0, "nothing selected");
+}
