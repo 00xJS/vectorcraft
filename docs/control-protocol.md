@@ -127,7 +127,10 @@ Swatch editors: `engine.execute` with `ui.swatchOptions {name}` opens the `swatc
 `preview`), which previews on the canvas while open; `ui.dialog.confirm` applies it with `swatch.edit` as one undo
 step and `ui.dialog.cancel` rolls the preview back. For a gradient swatch the dialog has `name` only (it shows the
 gradient) and OK renames it; pattern swatches open pattern editing instead. Dropping a gradient (or colour) on a
-swatch of its kind in the Swatches panel with Alt held replaces it (`swatch.edit {name, paint}`).
+swatch of its kind in the Swatches panel with Alt held replaces it (`swatch.edit {name, paint}`), unless that is a
+tint swatch. A swatch dragged from the panel with Alt held also replaces the swatch of its kind it is dropped on,
+which keeps its name and place (`swatch.edit {name, paint: {swatch}}`); without Alt, or on a tint swatch or a swatch
+of another kind, it moves.
 
 Confirmations: deleting swatches from the Swatches panel opens a `confirm` dialog (fields `message`, `detail`);
 `ui.dialog.confirm` runs the command it asks about (here `swatch.delete`) and `ui.dialog.cancel` drops it.
