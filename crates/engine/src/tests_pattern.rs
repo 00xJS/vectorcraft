@@ -115,6 +115,8 @@ fn edit_then_cancel_restores_definition() {
 fn edit_defaults_to_selected_objects_pattern() {
     let mut s = session();
     make_dots(&mut s);
+    let bg = rect(&mut s, 0.0, 0.0, 400.0, 400.0);
+    s.execute("paint.setFill", &json!({"ids": [bg.0], "color": "#223344"})).unwrap();
     let big = rect(&mut s, 100.0, 100.0, 100.0, 100.0);
     s.execute("paint.setFill", &json!({"ids": [big.0], "swatch": "Dots"})).unwrap();
     sel(&mut s, &[big]);
@@ -129,6 +131,8 @@ fn edit_defaults_to_selected_objects_pattern() {
 fn set_fill_with_pattern_swatch() {
     let mut s = session();
     make_dots(&mut s);
+    let bg = rect(&mut s, 0.0, 0.0, 400.0, 400.0);
+    s.execute("paint.setFill", &json!({"ids": [bg.0], "color": "#223344"})).unwrap();
     let big = rect(&mut s, 100.0, 100.0, 100.0, 100.0);
     s.execute("paint.setFill", &json!({"ids": [big.0], "swatch": "Dots"})).unwrap();
     assert!(matches!(node(&s, big).appearance.fill_paint(), Paint::Pattern { pattern, .. } if pattern == "Dots"));
@@ -170,6 +174,8 @@ fn options_set_tile_type_spacing_and_overlap() {
 fn options_rename_updates_swatch_and_paints() {
     let mut s = session();
     make_dots(&mut s);
+    let bg = rect(&mut s, 0.0, 0.0, 400.0, 400.0);
+    s.execute("paint.setFill", &json!({"ids": [bg.0], "color": "#223344"})).unwrap();
     let big = rect(&mut s, 100.0, 100.0, 50.0, 50.0);
     s.execute("paint.setFill", &json!({"ids": [big.0], "swatch": "Dots"})).unwrap();
     s.execute("pattern.options", &json!({"name": "Dots", "newName": "Spots"})).unwrap();
@@ -182,6 +188,8 @@ fn options_rename_updates_swatch_and_paints() {
 fn delete_pattern_unpaints_objects() {
     let mut s = session();
     make_dots(&mut s);
+    let bg = rect(&mut s, 0.0, 0.0, 400.0, 400.0);
+    s.execute("paint.setFill", &json!({"ids": [bg.0], "color": "#223344"})).unwrap();
     let big = rect(&mut s, 100.0, 100.0, 50.0, 50.0);
     s.execute("paint.setFill", &json!({"ids": [big.0], "swatch": "Dots"})).unwrap();
     let v = s.execute("pattern.delete", &json!({"name": "Dots"})).unwrap();
@@ -195,6 +203,8 @@ fn delete_pattern_unpaints_objects() {
 fn transform_patterns_only_moves_placement() {
     let mut s = session();
     make_dots(&mut s);
+    let bg = rect(&mut s, 0.0, 0.0, 400.0, 400.0);
+    s.execute("paint.setFill", &json!({"ids": [bg.0], "color": "#223344"})).unwrap();
     let big = rect(&mut s, 100.0, 100.0, 50.0, 50.0);
     s.execute("paint.setFill", &json!({"ids": [big.0], "swatch": "Dots"})).unwrap();
     let before = node(&s, big).geometric_bounds();
@@ -212,6 +222,8 @@ fn transform_patterns_only_moves_placement() {
 fn transforms_without_transform_objects_move_only_the_pattern() {
     let mut s = session();
     make_dots(&mut s);
+    let bg = rect(&mut s, 0.0, 0.0, 400.0, 400.0);
+    s.execute("paint.setFill", &json!({"ids": [bg.0], "color": "#223344"})).unwrap();
     let big = rect(&mut s, 100.0, 100.0, 50.0, 50.0);
     s.execute("paint.setFill", &json!({"ids": [big.0], "swatch": "Dots"})).unwrap();
     s.execute("select.set", &json!({"ids": [big.0]})).unwrap();
@@ -296,6 +308,8 @@ fn hit_testing_in_edit_mode_only_reaches_tile_layer() {
 fn save_load_roundtrip_keeps_patterns_and_repeats() {
     let mut s = session();
     make_dots(&mut s);
+    let bg = rect(&mut s, 0.0, 0.0, 400.0, 400.0);
+    s.execute("paint.setFill", &json!({"ids": [bg.0], "color": "#223344"})).unwrap();
     let big = rect(&mut s, 100.0, 100.0, 50.0, 50.0);
     s.execute("paint.setFill", &json!({"ids": [big.0], "swatch": "Dots"})).unwrap();
     let r = rect(&mut s, 300.0, 50.0, 10.0, 10.0);
@@ -312,6 +326,8 @@ fn save_load_roundtrip_keeps_patterns_and_repeats() {
 fn svg_export_writes_pattern_def() {
     let mut s = session();
     make_dots(&mut s);
+    let bg = rect(&mut s, 0.0, 0.0, 400.0, 400.0);
+    s.execute("paint.setFill", &json!({"ids": [bg.0], "color": "#223344"})).unwrap();
     let big = rect(&mut s, 100.0, 100.0, 50.0, 50.0);
     s.execute("paint.setFill", &json!({"ids": [big.0], "swatch": "Dots"})).unwrap();
     let svg = vectorcraft_svg::export(doc(&s), &vectorcraft_svg::ExportOptions::default());
@@ -329,6 +345,8 @@ fn svg_export_writes_pattern_def() {
 fn pdf_export_expands_pattern_fills() {
     let mut s = session();
     make_dots(&mut s);
+    let bg = rect(&mut s, 0.0, 0.0, 400.0, 400.0);
+    s.execute("paint.setFill", &json!({"ids": [bg.0], "color": "#223344"})).unwrap();
     let big = rect(&mut s, 100.0, 100.0, 50.0, 50.0);
     s.execute("paint.setFill", &json!({"ids": [big.0], "swatch": "Dots"})).unwrap();
     let rep = vectorcraft_pdf::export_with_report(doc(&s), &Default::default()).unwrap();
@@ -586,4 +604,26 @@ fn picking_another_pattern_swatch_keeps_the_pattern_transform() {
     let Paint::Pattern { pattern, xf } = node(&s, big).appearance.fill_paint() else { panic!() };
     assert_eq!(pattern, "Dots");
     assert_eq!(xf.as_coeffs(), [2.0, 0.0, 0.0, 2.0, 15.0, 10.0]);
+}
+
+#[test]
+fn inner_glow_on_a_pattern_fill_stays_inside_the_object_on_the_threaded_renderer() {
+    // #2426: the glow's pixmap was drawn with the pattern's paint transform, so it landed
+    // scaled at the top left instead of along the object's edges.
+    let mut s = session();
+    make_dots(&mut s);
+    let bg = rect(&mut s, 0.0, 0.0, 400.0, 400.0);
+    s.execute("paint.setFill", &json!({"ids": [bg.0], "color": "#223344"})).unwrap();
+    let big = rect(&mut s, 100.0, 100.0, 150.0, 150.0);
+    s.execute("paint.setFill", &json!({"ids": [big.0], "swatch": "Dots"})).unwrap();
+    sel(&mut s, &[big]);
+    s.execute("effect.apply", &json!({"effect": "stylize.innerGlow", "params": {"blur": 10}})).unwrap();
+    let mut r = vectorcraft_render::Renderer::new();
+    r.threads = 2;
+    let view = Affine::scale(1.5) * Affine::translate((-20.0, -30.0));
+    let out = r.render(&s.doc().unwrap().doc, 400, 400, view, &Default::default());
+    let [red, ..] = out.pixel(110, 100);
+    assert!(red < 0x30, "glow outside the object: red {red}");
+    let [red, ..] = out.pixel(123, 200);
+    assert!(red > 0x40, "no glow along the edge: red {red}");
 }
