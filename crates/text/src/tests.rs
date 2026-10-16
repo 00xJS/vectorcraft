@@ -487,6 +487,21 @@ fn tab_stops_position_text() {
 }
 
 #[test]
+fn a_leading_tab_takes_its_width_in_the_line_and_the_justification() {
+    // A tab at the start of area type is 36 pt wide: the line breaks and justifies around that,
+    // so no line reaches past the frame's right edge (#2457).
+    for justify in [Justify::Left, Justify::JustifyLeft] {
+        let t =
+            area("\tSample copy flows here while the layout takes shape. Swap these words", style(12.0), Rect::new(0.0, 0.0, 200.0, 400.0), justify);
+        let lay = layout(db(), &t);
+        let right = lay.glyphs.iter().filter(|g| !t.plain_text()[g.byte..].starts_with(' ')).map(|g| g.origin.x + g.advance).fold(0.0, f64::max);
+        assert!(right <= 200.0 + 1e-6, "{justify:?}: the type reaches {right}");
+        let first = lay.glyphs.iter().find(|g| g.byte == 1).map(|g| g.origin.x).unwrap();
+        assert!((first - 36.0).abs() < 1e-6, "{justify:?}: the text after the tab starts at {first}");
+    }
+}
+
+#[test]
 fn tab_leaders_line_up_from_line_to_line_and_stop_short_of_the_stop() {
     use vectorcraft_doc::{TabAlign, TabStop};
     let mut t = point("A\t1\nAAAAA\t2", style(12.0));
