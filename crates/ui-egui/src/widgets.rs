@@ -317,6 +317,25 @@ pub(crate) fn enter_modifiers(ui: &Ui) -> Option<egui::Modifiers> {
     })
 }
 
+/// A [`num_field`] for a width or height (Transform panel, Properties panel, Control bar): Ctrl/Cmd+Enter
+/// also commits it and ends its editing, as Enter does, and [`enter_modifiers`] reports Command.
+pub fn size_field(ui: &mut Ui, id: impl std::hash::Hash + std::fmt::Debug, value: Option<f64>, unit: Unit, width: f32) -> Option<f64> {
+    use egui::{Event, Key};
+    // The text box does not end its editing on an Enter with Ctrl/Cmd: a plain Enter goes in right
+    // after it, so the box first takes the text typed before it in this frame.
+    let field = ui.id().with(&id);
+    if ui.memory(|m| m.has_focus(field)) {
+        ui.input_mut(|i| {
+            let cmd_enter = |e: &Event| matches!(e, Event::Key { key: Key::Enter, pressed: true, modifiers, .. } if modifiers.command);
+            if let Some(at) = i.events.iter().position(cmd_enter) {
+                let enter = Event::Key { key: Key::Enter, physical_key: None, pressed: true, repeat: false, modifiers: egui::Modifiers::NONE };
+                i.events.insert(at + 1, enter);
+            }
+        });
+    }
+    num_field(ui, id, value, unit, width)
+}
+
 /// Select all of `text` in text field `id`.
 fn select_all(ui: &Ui, id: egui::Id, text: &str) {
     let mut st = egui::TextEdit::load_state(ui.ctx(), id).unwrap_or_default();
