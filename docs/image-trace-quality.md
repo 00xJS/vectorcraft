@@ -1,11 +1,28 @@
 # Image Trace quality
 
-> **Last reviewed:** 2026-10-14 · **Last updated:** 2026-10-14 · **Change:** minor (Gradients: grown over noise and soft rims)
+> **Last reviewed:** 2026-10-14 · **Last updated:** 2026-10-16 · **Change:** minor (Image Trace: a simpler contour walk with no precomputed direction table)
 
 What Image Trace (`crates/trace`) makes of images whose right answer is known, measured by a harness and
 compared with the numbers before each change. Nothing here is a judgement by eye, and nothing is compared
 with any other product except the open tracer named under [Yardstick](#4-yardstick).
 
+
+## A simpler contour walk
+
+`contour::trace_mask` follows each region's outline along the pixel cracks with the inside on the
+right. It used to build a table of outgoing directions for every pixel corner in a raster pass and
+then follow it. It now works out each turn during the walk from the two pixels ahead of the current
+corner (right if the one ahead on the right is outside, straight if the one ahead on the left is,
+else left; so at a saddle it turns right and diagonal pixels stay apart, as before). Loop starts are
+found by scanning the pixels for a top edge on the outline, with one flag per pixel for a top edge
+already walked. A mask of the wrong length now gives no loops instead of failing an assertion.
+
+The output is identical: `the_walk_equals_the_stored_direction_walk` compares it with a test-only
+copy of the previous walk on all 65,536 masks of 4 × 4 pixels and on 400 seeded 23 × 17 masks.
+Time (best of 7, release build, 4 cores): the walk alone on 2000 × 2000 masks 19.1 ms vs 26.6 ms
+(a smooth pattern), 81.3 vs 93.2 ms (12% random pixels), 223.1 vs 238.1 ms (50% random pixels);
+whole traces of 1000 × 1000 images 73.1 vs 77.1 ms (Black and White), 249.6 vs 251.7 ms (Color, 6
+colours) and 214.1 vs 218.6 ms (Color, 6 colours, Noise 1), with the same segment counts.
 
 ## Noise threshold stability (local development, 2026-10-14)
 
@@ -1010,6 +1027,7 @@ One trace at a time on this machine (all cores); memory is the peak allocated ab
 
 | date | change |
 |:--|:--|
+| 2026-10-16 | Image Trace: the contour walk works out each turn from the pixels as it goes instead of following a precomputed table of per-corner directions; identical loops on all 65,536 4 × 4 masks and 400 seeded masks, and no slower (whole 1 MP traces 1–5% faster). |
 | 2026-10-14 | Closed fitting retains the positioned boundary when straightening collapses a nonzero-area loop; four generated regressions; preset scores unchanged |
 | 2026-10-14 | Tiny closed fits retain their positioned outlines instead of losing islands/holes; three generated regression tests; quality-harness baseline unchanged |
 | 2026-10-14 | Gradients: a gradient that noise or a soft rim broke into pieces is found in its largest piece and grown over the rest (blurred and noisy linear gradients: 3 to 11 paths beside the gradient down to 0.5 with 6 Colors, 24 to 56 down to 0.5 to 1.5 with High Fidelity Photo) |
