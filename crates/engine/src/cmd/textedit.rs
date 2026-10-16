@@ -113,6 +113,15 @@ pub fn specs() -> Vec<CommandSpec> {
             reset_tracking
         ),
         cmd!(
+            "type.resetHorizontalScale",
+            "Reset Horizontal Scale",
+            [],
+            Some("Cmd+Shift+X"),
+            "{ids?: [id…]} set the horizontal scale to 100% (as the Character panel shows it, the object's own transform included) in all the text of the type objects in `ids`, else in the text the Type tool has selected (nothing at a caret), else in every selected type object, as one undo step → {ids}",
+            has_selection,
+            reset_horizontal_scale
+        ),
+        cmd!(
             "text.discardEmpty",
             "Discard Empty Type",
             [],
@@ -744,6 +753,26 @@ fn reset_tracking(s: &mut Session, p: &Value) -> Result<Value> {
                         st.tracking = 0.0;
                     }
                 });
+                refresh_bounds(t);
+            }
+            Ok(())
+        })?;
+    }
+    Ok(json!({ "ids": ranges.iter().map(|(id, ..)| id.0).collect::<Vec<_>>() }))
+}
+
+/// Cmd/Ctrl+Shift+X: horizontal scale 100% (the Character panel's value, which includes the
+/// object's own transform) in the type objects in `ids`, else in the Type tool's selected text,
+/// else in every selected type object. At a caret the command leaves the text as it is.
+fn reset_horizontal_scale(s: &mut Session, p: &Value) -> Result<Value> {
+    const C: &str = "type.resetHorizontalScale";
+    let ranges = type_ranges(s, p, C, |_, _| None)?;
+    if !ranges.is_empty() {
+        s.edit("Reset Horizontal Scale", |d, _| {
+            for &(id, a, b, _) in &ranges {
+                let t = text_mut(d, id).ok_or(EngineError::NoNode(id))?;
+                let h_scale = super::typecmd::local_type_value(t, 100.0, (1.0, 10000.0), true, C)?;
+                edit::style_range(&mut t.runs, a, b, |st| st.h_scale = h_scale);
                 refresh_bounds(t);
             }
             Ok(())
