@@ -208,6 +208,7 @@ pub(crate) fn open_file(app: &mut VectorcraftApp, p: &Value, reveal: bool) -> Re
     if reveal {
         crate::io::reveal_path(app, &path)?;
     } else {
+        app.refuse_automation("links.editOriginal")?;
         openable_original(&path)?;
         crate::io::open_in_app(app, &path)?;
     }

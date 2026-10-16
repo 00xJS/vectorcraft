@@ -2547,7 +2547,8 @@ file is missing stays linked: relink it first); `links.unembed {id, path}` write
 `links.placementOptions {ids?, preserve?: transforms|bounds|fileDimensions|fit|fill, align?: topLeftÃ¢â‚¬Â¦bottomRight,
 clip?}` decides how a relinked or updated file takes an image's place (default `bounds`: stretched into the old
 bounds; `clip` puts it in a clip group of the old bounds when it is larger). The UI commands `links.editOriginal` and
-`links.reveal` open the linked file in its app or show it in its folder (desktop).
+`links.reveal` open the linked file in its app or show it in its folder (desktop). Edit Original runs only from the app's window,
+except for a placed document, which opens in a tab.
 
 ```json
 {"name":"run_command","arguments":{"command":"links.list","params":{"show":"missing"}}}
