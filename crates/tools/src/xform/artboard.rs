@@ -481,7 +481,8 @@ impl Tool for ArtboardTool {
                 Handle::Left | Handle::Right => Cursor::ResizeH,
                 Handle::TopLeft | Handle::BottomRight => Cursor::ResizeNwSe,
                 Handle::TopRight | Handle::BottomLeft => Cursor::ResizeNeSw,
-            };
+            }
+            .turned(cx.view_angle());
         }
         if cx.doc.artboards.iter().any(|a| a.rect.contains(p)) { Cursor::Move } else { Cursor::Crosshair }
     }
@@ -645,6 +646,20 @@ mod tests {
         t.pointer(&c, &ev(PointerKind::Down, 798.0, 100.0));
         let v = preview_params(&t.pointer(&c, &ev(PointerKind::Drag, 808.0, 100.0)));
         assert_eq!(v["width"].as_f64(), Some(210.0));
+    }
+
+    /// In a view turned 90° the handles' cursors turn with the view.
+    #[test]
+    fn handle_cursors_turn_with_the_view() {
+        let d = two_boards();
+        let (s, p) = (Selection::default(), paint());
+        let t = ArtboardTool { active: 1, ..Default::default() };
+        let mut c = cx(&d, &s, &p);
+        let (top, right) = (Point::new(700.0, 0.0), Point::new(800.0, 100.0));
+        assert_eq!(t.cursor(&c, top, Mods::default()), Cursor::ResizeV);
+        c.screen = turned_view(90.0);
+        assert_eq!(t.cursor(&c, top, Mods::default()), Cursor::ResizeH);
+        assert_eq!(t.cursor(&c, right, Mods::default()), Cursor::ResizeV);
     }
 
     /// Shift-click selects several artboards (#1139): a drag moves them all, Shift-click takes one
