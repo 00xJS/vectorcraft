@@ -129,7 +129,7 @@ pub fn specs() -> Vec<CommandSpec> {
             "Make",
             ["Object", "Image Trace"],
             None,
-            "{id?: image or Image Trace group (default: selection), preset?: name (imageTrace.presets), enhanced?: false (the preset's enhanced version: with Auto Grouping, and with Shapes in all but High Fidelity Photo; Flat Logo has none and is traced as it is), params?: {mode: \"blackAndWhite\"|\"grayscale\"|\"color\"|\"logo\", threshold: 0-255, palette: \"limited\"|\"fullTone\"|\"automatic\"|\"documentLibrary\" (color mode; limited: the `colors` best colours, fullTone: as many as the tones need, more with colorDetail, automatic: flat art with its own colours, else fullTone, documentLibrary: at most `colors` of the library's colours, as they are), colors: 2-256, colorDetail: 0-100 (fullTone, automatic), library: \"document\" (the document's swatches) or a swatch library id or name (swatch.library.list; documentLibrary), paths: 0-100, corners: 0-100, noise: px, method: \"abutting\"|\"overlapping\", ignoreWhite (leave out white areas), ignoreColor?: \"#rrggbb\" (with ignoreWhite: the colour left out instead of white), snapCurvesToLines, shapes: false (filled outlines that are a circle, an ellipse, a rectangle or a regular polygon come out as that live shape), autoGrouping: false (each path that has others inside it is grouped with them), gradients: false (grayscale and color: an area whose colour changes evenly along one direction is one path with a linear gradient fill), fills: true, strokes: false (Create: lines up to strokeWidth wide become stroked centre lines; without fills, wider areas become stroked outlines), strokeWidth: px (10), logoColors?: [\"#rrggbb\"…] (mode logo: flat-colour logos only; colours found automatically or named here, white is always its own colour, at most ten; noise = areas under noise/10 px ignored; edges to a fraction of a pixel, sharp corners restored, lines and circles snapped; enclosed transparent areas are painted white unless ignoreWhite makes them holes; fills/strokes are ignored; gradients and photos are refused)}, view?: as imageTrace.setView (default: the traced object's own, else tracingResult), ids?: [id…] (instead of id)} → {id, paths, anchors, colors}",
+            "{id?: image or Image Trace group (default: selection), preset?: name (imageTrace.presets), enhanced?: false (the preset's enhanced version: with Auto Grouping, and with Shapes in all but High Fidelity Photo; Flat Logo has none and is traced as it is), params?: {mode: \"blackAndWhite\"|\"grayscale\"|\"color\"|\"logo\", threshold: 0-255, palette: \"limited\"|\"fullTone\"|\"automatic\"|\"documentLibrary\" (color mode; limited: the `colors` best colours, fullTone: as many as the tones need, more with colorDetail, automatic: flat art with its own colours, else fullTone, documentLibrary: at most `colors` of the library's colours, as they are), colors: 2-256, colorDetail: 0-100 (fullTone, automatic), library: \"document\" (the document's swatches) or a swatch library id or name (swatch.library.list; documentLibrary), paths: 0-100, corners: 0-100, noise: px, method: \"abutting\"|\"overlapping\", ignoreWhite (leave out white areas), ignoreColor?: \"#rrggbb\" (with ignoreWhite: the colour left out instead of white), snapCurvesToLines, shapes: false (filled outlines that are a circle, an ellipse, a rectangle or a regular polygon come out as that live shape), autoGrouping: false (each path that has others inside it is grouped with them), gradients: false (grayscale and color: an area whose colour changes evenly along one direction is one path with a linear gradient fill), fills: true, strokes: false (Create: lines up to strokeWidth wide become stroked centre lines; without fills, wider areas become stroked outlines), strokeWidth: px (10), logoColors?: [\"#rrggbb\"…] (mode logo: flat-colour logos only; colours found automatically or named here, white is always its own colour, at most ten; noise = areas under noise/10 px ignored; edges to a fraction of a pixel, sharp corners restored, lines and circles snapped; enclosed transparent areas are painted white unless ignoreWhite makes them holes; fills/strokes are ignored; gradients and photos are refused)}, view?: as imageTrace.setView (default: the traced object's own, else tracingResult), ids?: [id…] (instead of id)} → {id, paths, anchors, colors, warnings: [text…] (the image is over 1500 px on a side, so it traces more slowly; or it was traced scaled down)}",
             has_selection_or_ids,
             |s, p| trace_make(s, p, false)
         ),
@@ -859,9 +859,16 @@ fn trace_library(s: &Session, params: &mut tr::TraceParams) -> Result<Vec<([u8; 
     Ok(library)
 }
 
-/// The most anchor points an Image Trace may make: a photo traced at high fidelity can make
-/// millions, more than the canvas draws smoothly or a laptop has memory for, so the trace is
-/// refused with advice instead (#525).
+/// The most anchor points an Image Trace may make, a guard for memory: a trace past it is refused
+/// with advice instead (#525). A trace keeps about 90 bytes an anchor in the document (measured on
+/// code-drawn photos of 2000 × 2000 to 6000 × 4000 pixels), so 8,000,000 anchors are about
+/// 0.7 GB, with a peak of about 1 GB while tracing: a 4000 × 3000 photo at High Fidelity Photo
+/// makes about 1.9 million, and even at Paths 100, Noise 1 and every tone about 7.9 million. On the
+/// web, where a page has at most 4 GB of memory, the limit stays at 2,000,000.
+#[cfg(not(target_arch = "wasm32"))]
+pub const MAX_TRACE_ANCHORS: usize = 8_000_000;
+/// The most anchor points an Image Trace may make on the web (see the native limit).
+#[cfg(target_arch = "wasm32")]
 pub const MAX_TRACE_ANCHORS: usize = 2_000_000;
 
 /// The live shape for a shape the tracer found (in the image's pixels), placed in the document by `xf`.
@@ -975,6 +982,7 @@ fn trace_make(s: &mut Session, p: &Value, expand: bool) -> Result<Value> {
     let raster = tr::Raster::decode_to_fit(&blob.bytes).map_err(|e| EngineError::Other(e.to_string()))?;
     let library = trace_library(s, &mut params)?;
     let res = tr::trace_within(&raster, &params, MAX_TRACE_ANCHORS).map_err(|e| EngineError::Other(e.to_string()))?;
+    let warnings = trace_warnings((img.width, img.height), (raster.width, raster.height));
     // Pixel space of the decoded raster → the image object's pixel space → document.
     let sx = img.width.max(1) as f64 / raster.width.max(1) as f64;
     let sy = img.height.max(1) as f64 / raster.height.max(1) as f64;
@@ -1044,7 +1052,34 @@ fn trace_make(s: &mut Session, p: &Value, expand: bool) -> Result<Value> {
         sel.set([gid]);
         Ok(gid)
     })?;
-    Ok(json!({ "id": id.0, "paths": npaths, "anchors": anchors, "colors": colors }))
+    Ok(json!({ "id": id.0, "paths": npaths, "anchors": anchors, "colors": colors, "warnings": warnings }))
+}
+
+/// Images larger than this on a side are traced, but more slowly: the trace says so.
+pub const LARGE_TRACE_SIDE: u32 = 1500;
+
+/// What a trace of an image of `size` pixels, traced at `traced` pixels, tells the user: that a
+/// large image takes longer (the public documentation's warning for images over 1500 px), and that
+/// one over the tracer's [`tr::MAX_PIXELS`] was traced scaled down.
+pub(crate) fn trace_warnings(size: (u32, u32), traced: (u32, u32)) -> Vec<String> {
+    let mut out = vec![];
+    if size.0.max(size.1) > LARGE_TRACE_SIDE {
+        out.push(format!(
+            "The image is {} × {} pixels, more than {LARGE_TRACE_SIDE} on a side: it is traced, but more slowly. A lower-fidelity preset or a smaller copy of the image traces faster.",
+            size.0, size.1
+        ));
+    }
+    if u64::from(traced.0) * u64::from(traced.1) < u64::from(size.0) * u64::from(size.1) {
+        out.push(format!(
+            "The image was traced at {} × {} pixels, scaled down from {} × {} ({} megapixels at most).",
+            traced.0,
+            traced.1,
+            size.0,
+            size.1,
+            tr::MAX_PIXELS >> 20
+        ));
+    }
+    out
 }
 
 fn trace_targets(s: &Session, p: &Value) -> Result<Vec<NodeId>> {
@@ -1112,4 +1147,22 @@ fn trace_expand(s: &mut Session, p: &Value) -> Result<Value> {
         Ok(())
     })?;
     Ok(json!({ "ids": ids_json(&targets) }))
+}
+
+#[cfg(test)]
+mod trace_limit_tests {
+    use super::{MAX_TRACE_ANCHORS, trace_warnings};
+
+    #[test]
+    fn trace_warnings_name_a_large_or_scaled_down_image() {
+        assert!(trace_warnings((1500, 1500), (1500, 1500)).is_empty());
+        assert_eq!(trace_warnings((1501, 10), (1501, 10)).len(), 1);
+        let w = trace_warnings((16000, 12000), (9459, 7094));
+        assert_eq!(w.len(), 2, "{w:?}");
+        assert!(w[0].contains("16000 × 12000") && w[1].contains("9459 × 7094") && w[1].contains("64 megapixels"), "{w:?}");
+    }
+
+    // A 4000 × 3000 photo at High Fidelity Photo makes about 1.9 million anchors, which must fit;
+    // the limit still guards memory (about 90 bytes an anchor). Checked when the tests build.
+    const _: () = assert!(MAX_TRACE_ANCHORS >= 2_000_000 && MAX_TRACE_ANCHORS <= 16_000_000);
 }

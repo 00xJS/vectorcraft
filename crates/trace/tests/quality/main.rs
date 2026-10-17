@@ -33,7 +33,7 @@ use measure::{Metrics, measure};
 use vectorcraft_trace::{Raster, TraceParams, TraceResult, TracedPath, presets, trace_within};
 
 /// The engine's limit (`MAX_TRACE_ANCHORS`): a trace past it is refused.
-const MAX_ANCHORS: usize = 2_000_000;
+const MAX_ANCHORS: usize = 8_000_000;
 
 struct Counting;
 static LIVE: AtomicUsize = AtomicUsize::new(0);
@@ -243,7 +243,7 @@ fn cost(img: &Raster, params: &TraceParams) -> String {
         Ok(res) => format!("{secs:.2} s, {} paths, {} anchors, {mb:.0} MB", res.paths.len(), res.anchor_count()),
         Err(e) => {
             let why = e.to_string();
-            let why = if why.contains("anchor points") { "over 2,000,000 anchors" } else { "not flat art" };
+            let why = if why.contains("anchor points") { "over 8,000,000 anchors" } else { "not flat art" };
             format!("refused after {secs:.2} s ({why}), {mb:.0} MB")
         }
     }
@@ -341,7 +341,7 @@ fn report() -> String {
         .map(|mp| (mp.sqrt() * 1024.0).round() as u32)
         .collect();
     let (photo, badge) = (inputs.iter().find(|i| i.name == "photo-like").unwrap(), inputs.iter().find(|i| i.name == "four-colour badge").unwrap());
-    md += "\n## 5. Cost\n\nOne trace at a time on this machine (all cores); memory is the peak allocated above the image itself. A trace of more than 2,000,000 anchors is refused, as in the app.\n\n| preset | image | megapixels | result |\n|:--|:--|--:|:--|\n";
+    md += "\n## 5. Cost\n\nOne trace at a time on this machine (all cores); memory is the peak allocated above the image itself. A trace of more than 8,000,000 anchors is refused, as in the app.\n\n| preset | image | megapixels | result |\n|:--|:--|--:|:--|\n";
     for size in sizes {
         let n = size as usize;
         let images = [("photo-like", photo.draw(size, Variant::Clean)), ("four-colour badge", raster::render(&badge.scaled(size), badge.bg, n, n))];

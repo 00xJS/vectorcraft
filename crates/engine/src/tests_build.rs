@@ -909,6 +909,34 @@ fn traced_paths(n: &Node) -> Vec<Arc<Node>> {
 }
 
 #[test]
+fn a_large_image_traces_with_a_warning() {
+    // The public documentation: images over 1500 px on a side are traced, only more slowly.
+    let mut s = session();
+    let art = vectorcraft_trace::Raster::from_fn(
+        1600,
+        40,
+        |x, y| if (100..1500).contains(&x) && (10..30).contains(&y) { [0, 0, 0, 255] } else { [255; 4] },
+    );
+    add_image(&mut s, &art, Affine::IDENTITY);
+    let r = s.execute("imageTrace.make", &json!({"params": {"ignoreWhite": true}})).unwrap();
+    assert_eq!(r["paths"], 1);
+    let w = r["warnings"].as_array().unwrap();
+    assert_eq!(w.len(), 1, "{w:?}");
+    assert!(w[0].as_str().unwrap().contains("1600 × 40") && w[0].as_str().unwrap().contains("1500"), "{w:?}");
+    // Make and Expand says so too.
+    let r = s.execute("imageTrace.makeAndExpand", &json!({"id": r["id"], "params": {"ignoreWhite": true}})).unwrap();
+    assert_eq!(r["warnings"].as_array().map(Vec::len), Some(1));
+    // At 1500 px and under, no warning.
+    let mut s = session();
+    image_doc(&mut s);
+    let r = s.execute("imageTrace.make", &json!({})).unwrap();
+    assert_eq!(r["warnings"], json!([]));
+    let edge = vectorcraft_trace::Raster::from_fn(1500, 8, |x, _| if x < 700 { [0, 0, 0, 255] } else { [255; 4] });
+    add_image(&mut s, &edge, Affine::IDENTITY);
+    assert_eq!(s.execute("imageTrace.make", &json!({})).unwrap()["warnings"], json!([]));
+}
+
+#[test]
 fn image_trace_make_places_paths_over_the_image() {
     let mut s = session();
     let img = image_doc(&mut s);

@@ -1,5 +1,6 @@
 # Image Trace quality
 
+> **Last reviewed:** 2026-10-14 · **Last updated:** 2026-10-17 · **Change:** minor (Image Trace: large images trace with a warning; anchor limit raised to 8,000,000; earlier: Gradients: grown over noise and soft rims)
 > **Last reviewed:** 2026-10-14 · **Last updated:** 2026-10-17 · **Change:** minor (Image Trace: Raster::new returns an error for a buffer of the wrong length; earlier: Gradients: grown over noise and soft rims)
 > **Last reviewed:** 2026-10-17 · **Last updated:** 2026-10-17 · **Change:** minor (Create Strokes: maximal-disc pruning and junction merging; centre-lines rerun)
 > **Last reviewed:** 2026-10-17 · **Last updated:** 2026-10-17 · **Change:** minor (Create Strokes: exact crop distances and Guo–Hall thinning; centre-lines rerun)
@@ -14,8 +15,37 @@ compared with the numbers before each change. Nothing here is a judgement by eye
 with any other product except the open tracer named under [Yardstick](#4-yardstick).
 
 
-## Collapsed loops keep few segments
+## Large images
 
+Images over 1500 px on a side are traced with a warning that they trace more slowly (see
+[image-trace-adjustments.md](image-trace-adjustments.md)), and the anchor limit that guards memory is
+8,000,000 (2,000,000 on the web) instead of 2,000,000. Measured through `imageTrace.make` (release
+build, 4 cores, one trace at a time; memory is the peak allocated above the placed image, and what the
+document keeps after the trace) on code-drawn photo-like pictures (40 soft-edged shaded discs on a
+gradient, texture, sensor noise):
+
+| size | preset | time | anchors | paths | peak | kept |
+|:--|:--|--:|--:|--:|--:|--:|
+| 2000 × 2000 | High Fidelity Photo | 4.1 s | 737,478 | 16,064 | 152 MB | 52 MB |
+| 2000 × 2000 | Low Fidelity Photo | 1.6 s | 114,008 | 1,486 | 142 MB | 7 MB |
+| 2000 × 2000 | Default | 0.9 s | 103,084 | 1,001 | 117 MB | 6 MB |
+| 3000 × 2000 | High Fidelity Photo | 6.4 s | 1,013,114 | 25,256 | 236 MB | 75 MB |
+| 3000 × 2000 | Default | 1.2 s | 145,756 | 1,574 | 162 MB | 9 MB |
+| 4000 × 3000 | High Fidelity Photo | 12.8 s | 1,914,018 | 58,638 | 471 MB | 150 MB |
+| 4000 × 3000 | Low Fidelity Photo | 5.1 s | 258,826 | 4,833 | 428 MB | 18 MB |
+| 4000 × 3000 | Default | 2.4 s | 273,392 | 3,568 | 317 MB | 17 MB |
+| 4000 × 3000 | 16 Colors | 3.0 s | 103,222 | 2,434 | 364 MB | 7 MB |
+| 4000 × 3000 | Full Tone, Colors 85, Paths 90, Noise 4 | 29.6 s | 5,230,847 | 164,687 | 684 MB | 412 MB |
+| 4000 × 3000 | Full Tone, Colors 100, Paths 100, Noise 1 | 37.2 s | 7,885,709 | 338,561 | 876 MB | 685 MB |
+| 6000 × 4000 | Full Tone, Colors 85, Paths 90, Noise 4 | 106.1 s | 10,445,409 | 398,772 | 1169 MB | 872 MB |
+| 6000 × 4000 | Full Tone, Colors 100, Paths 100, Noise 1 | 116.3 s | 13,508,871 | 658,133 | 1456 MB | 1230 MB |
+
+(The last two rows were measured without a limit; they are refused now.) The 4000 × 3000 High Fidelity
+Photo trace was 86,000 anchors under the old limit; a noisier scan of the same size would have been
+refused. At 8,000,000 anchors a trace keeps about 0.7 GB, with a peak of about 0.9 GB while tracing.
+
+
+## Collapsed loops keep few segments
 A small closed loop (or a piece that returns to its own junction) whose fit collapsed to a single
 cubic cannot stay as one, so it kept every positioned point as a straight segment. A looser Paths
 collapses more loops, so it could give more segments than a tighter one. Such a loop now tries the
@@ -24,7 +54,6 @@ stays within 1.5 × max(tolerance, 0.5 px) of the points both ways: the fit at u
 tighter tolerances (what a slightly higher Paths gives); for a closed loop then two cubics split at
 its start and its farthest point, then the outline simplified at the tolerance and finer; the
 positioned points last, as before.
-
 Test on code-drawn images: `a_higher_paths_never_gives_fewer_segments` (32 seeded 48 px images of
 soft blobs in four colours plus pixel noise, Color and Black and White, Noise 1 and 3, segments at
 Paths 0, 25, 50, 75 and 100 must not fall). Before, six runs fell, e.g. 125 → 79 segments from
@@ -32,7 +61,6 @@ Paths 0 to 25 (seed 21, Color, Noise 1) and 71 → 63 → 52 from Paths 0 to 50 
 White, Noise 3); now they are 75 → 79 and 41 → 48 → 52. One image (seed 16 in Black and White) still
 falls from 140 to 136 segments between Paths 0 and 25, before and after this change; that fall has
 another cause, still open, and the image is left out of the test. The crate's other tests pass unchanged.
-
 ## Notches read only their own piece
 Where the pixel at a sharp corner falls to the other colour, the outline cuts the corner in two
 one-pixel steps, and between two straight edges of three cracks or more those two steps become one
@@ -1212,6 +1240,7 @@ The remaining spur/extra-junction target is not met by this graph-only change.
 
 | date | change |
 |:--|:--|
+| 2026-10-17 | Images over 1500 px on a side trace with a warning; the anchor limit is 8,000,000 (2,000,000 on the web); time and memory of 2000 × 2000 to 6000 × 4000 code-drawn photos |
 | 2026-10-17 | `Raster::new` returns an error for RGBA bytes of the wrong length (it failed an assertion) and `Raster::pixel` reads nothing past the raster; traces of valid images unchanged |
 | 2026-10-17 | M12: maximal-disc graph pruning, split-crossing merges and degree-two joins; correct junction degrees 30→44/45 aa and hard, none missed; remaining spurs unchanged. Centre-lines rerun, scores and earlier tables unchanged. |
 | 2026-10-17 | M12: exact per-blob Euclidean distances and Guo–Hall thinning; centre-lines rerun on 46 inputs. Ends found: aa 638→682/688, hard 631→681/688. Whole-blob stroke/fill choice retained; preset/cost tables unchanged. |

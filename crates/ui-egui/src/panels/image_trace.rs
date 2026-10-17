@@ -520,6 +520,20 @@ mod tests {
     }
 
     #[test]
+    fn a_large_image_traces_and_the_status_bar_says_it_is_slower() {
+        let mut app = VectorcraftApp::new(vectorcraft_engine::Session::new(), Default::default());
+        app.session.execute("file.new", &json!({"width": 100, "height": 100})).unwrap();
+        let img = image::RgbaImage::from_fn(1601, 12, |x, _| image::Rgba(if x < 800 { [0, 0, 0, 255] } else { [255, 255, 255, 255] }));
+        let mut png = vec![];
+        img.write_to(&mut std::io::Cursor::new(&mut png), image::ImageFormat::Png).unwrap();
+        let data = vectorcraft_format::base64_encode(&png);
+        app.run("file.place", json!({"name": "wide.png", "dataBase64": data, "link": false})).unwrap();
+        trace_with(&mut app, "Default");
+        assert!(target(&app).2.is_some(), "the image is traced");
+        assert!(app.ui.status.contains("1601 × 12") && app.ui.status.contains("more slowly"), "{}", app.ui.status);
+    }
+
+    #[test]
     fn sketch_quick_trace_reveals_all_adjustments_and_keeps_the_source() {
         let mut app = traced_app();
         app.run("imageTrace.release", json!({})).unwrap();
