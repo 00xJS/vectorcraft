@@ -3355,8 +3355,27 @@ undo step.
 {"name":"run_command","arguments":{"command":"text.setFormat","params":{"burasagari":"forced"}}}
 ```
 
-## Small Caps, Superscript and Subscript
+## Optical Margin Alignment
 
+`type.opticalMarginAlignment {on?: bool}` (Type › Optical Margin Alignment) turns Optical Margin Alignment on or off
+for the selected type objects (or `ids`); without `on` it sets the opposite of the first object's setting. It replies
+`{on, ids}`, and the menu item is checked while the first type object it acts on (inside a selected group too) has it
+on. In every left-to-right paragraph of point and area type, these characters hang outside the margin when they
+start or end a line: quotation marks, hyphens (a hyphenated line's hyphen too), full stops and commas hang wholly;
+asterisks, tildes, ellipses, en and em dashes, colons and semicolons hang by half their width; and A, V, W, Y, v, w
+and y hang by a tenth of theirs. A punctuation mark followed by a quotation mark hangs with it.
+Left-aligned lines hang at their left margin, right-aligned lines hang at their right margin, and centered and
+justified lines hang at both. In vertical type the margins are the top and bottom of a column. The space that
+justification adds between glyphs leaves out the gaps next to a hanging punctuation mark. Lines break where they did
+without it, and a line of one glyph does not hang. East Asian commas and full stops hang only through burasagari, and
+a line that ends in one hangs only at its start. Type on a path and right-to-left paragraphs are laid out as before.
+New type and documents from before it have it off, and it is saved only when on. One undo step.
+
+```json
+{"name":"run_command","arguments":{"command":"type.opticalMarginAlignment","params":{"on":true}}}
+```
+
+## Small Caps, Superscript and Subscript
 `text.setFormat {smallCaps, position}` (the selected type, or `ids`) and `text.setRangeStyle {id, start, end, smallCaps,
 position}` (a range) set what the Character panel's Small Caps, Superscript and Subscript buttons and menu items set.
 `smallCaps: true` draws lowercase letters as capitals at Document Setup's small caps size (70% of the font size by
@@ -3366,11 +3385,7 @@ position (by default 58.3% of the font size, moved by 33.3% of it), and `"normal
 Setting superscript on subscript characters replaces the subscript, and setting subscript on superscript characters
 replaces the superscript. When `document.setup {superscript, subscript, smallCapsSize}` changes the proportions, the
 characters take the new ones. One undo step.
-
-```json
 {"name":"run_command","arguments":{"command":"text.setFormat","params":{"position":"superscript","smallCaps":false}}}
-```
-
 ## Character Alignment
 
 `text.setFormat {charAlign}` (the selected type, or `ids`) and `text.setRangeStyle {id, start, end, charAlign}` (a range)

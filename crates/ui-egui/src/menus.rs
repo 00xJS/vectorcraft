@@ -1676,19 +1676,32 @@ pub fn checked(app: &VectorcraftApp, id: &str, p: &Value) -> Option<bool> {
     let v = &app.ui.view;
     // An item that can be on or off is `Some` whatever the document and selection (off with none):
     // the macOS menu bar can't change an item's kind without rebuilding.
+    // The first type object (of type on a path, with `onpath`) among the selected objects and the
+    // objects inside them, in the order the type commands act on them.
     let selected_text = |onpath: bool| {
         let st = app.session.active()?;
-        st.selection.objects.iter().find_map(|id| match st.doc.node(*id).map(|n| &n.kind) {
-            Some(vectorcraft_engine::doc::NodeKind::Text(t)) if !onpath || matches!(t.kind, vectorcraft_engine::doc::TextKind::OnPath { .. }) => {
-                Some(t)
+        let mut found = None;
+        for n in st.selection.objects.iter().filter_map(|id| st.doc.node(*id)) {
+            n.walk(&mut |c| {
+                if found.is_none()
+                    && let vectorcraft_engine::doc::NodeKind::Text(t) = &c.kind
+                    && (!onpath || matches!(t.kind, vectorcraft_engine::doc::TextKind::OnPath { .. }))
+                {
+                    found = Some(t);
+                }
+            });
+            if found.is_some() {
+                break;
             }
-            _ => None,
-        })
+        }
+        found
     };
     Some(match id {
         "type.orientation.vertical" | "type.orientation.horizontal" => {
             selected_text(false).is_some_and(|t| t.vertical == (id == "type.orientation.vertical"))
         }
+        // Checked when the first type object `selected_text` finds has it on.
+        "type.opticalMarginAlignment" => selected_text(false).is_some_and(|t| t.optical_margin),
         "view.outline" => v.outline,
         "view.pixelPreview" => v.pixel_preview,
         "view.trimView" => v.trim_view,
@@ -2646,7 +2659,7 @@ pub fn menu_tree_named(english_names: bool) -> Vec<(&'static str, Vec<Item>)> {
                 cp("Smart Punctuation…", "type.smartPunctuation", json!({"quotes": true, "dashes": true, "ellipsis": true, "scope": "selection"})),
                 Sep,
                 c("Create Outlines", "type.createOutlines"),
-                todo("Optical Margin Alignment"),
+                c("Optical Margin Alignment", "type.opticalMarginAlignment"),
                 Sep,
                 c("Fill with Placeholder Text", "type.fillPlaceholder"),
                 c("Insert Inline Symbol", "text.insertInline"),
@@ -4112,6 +4125,43 @@ mod tests {
             app.run(id, json!({})).unwrap();
             assert_eq!(dynamic_label(&app, id, ""), off);
         }
+    }
+
+    /// Type › Optical Margin Alignment runs `type.opticalMarginAlignment`, needs a selection, and
+    /// is checked while the selected type has it on. Its check, and Type Orientation's, read the
+    /// type inside a selected group too.
+    #[test]
+    fn optical_margin_alignment_is_a_checked_type_menu_item() {
+        let mut app = VectorcraftApp::new(vectorcraft_engine::Session::new(), crate::Services::default());
+        app.run("file.new", json!({})).unwrap();
+        let ids: Vec<&str> = menu_tree()
+            .into_iter()
+            .filter(|(menu, _)| *menu == "Type")
+            .flat_map(|(_, items)| items)
+            .filter_map(|item| match item {
+                Item::Cmd("Optical Margin Alignment", id, _) => Some(id),
+                _ => None,
+            })
+            .collect();
+        assert_eq!(ids, ["type.opticalMarginAlignment"]);
+        let id = "type.opticalMarginAlignment";
+        assert_eq!(checked(&app, id, &Value::Null), Some(false));
+        assert!(!enabled(&app, id));
+        let text = app.run("text.create", json!({"x": 10, "y": 10, "text": "“Hi”"})).unwrap()["id"].clone();
+        app.run("select.set", json!({"ids": [text]})).unwrap();
+        assert!(enabled(&app, id));
+        assert_eq!(checked(&app, id, &Value::Null), Some(false));
+        app.run(id, json!({})).unwrap();
+        assert_eq!(checked(&app, id, &Value::Null), Some(true));
+        app.run(id, json!({})).unwrap();
+        assert_eq!(checked(&app, id, &Value::Null), Some(false));
+        // With the type in a selected group, the checks show the type the commands change.
+        app.run("object.group", json!({})).unwrap();
+        app.run(id, json!({})).unwrap();
+        assert_eq!(checked(&app, id, &Value::Null), Some(true));
+        app.run("type.orientation.vertical", json!({})).unwrap();
+        assert_eq!(checked(&app, "type.orientation.vertical", &Value::Null), Some(true));
+        assert_eq!(checked(&app, "type.orientation.horizontal", &Value::Null), Some(false));
     }
 
     #[test]
