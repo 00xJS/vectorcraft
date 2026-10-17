@@ -160,6 +160,21 @@ fn black_output_rich_covers_ink_plane_documents_and_leaves_cmyk_exports_alone() 
 }
 
 #[test]
+fn png_says_it_is_srgb_unless_embed_icc_is_false() {
+    let mut s = session(40.0, 30.0, 1);
+    s.execute("shape.rectangle", &json!({"x": 5, "y": 5, "width": 20, "height": 10})).unwrap();
+    let png = |s: &mut Session, p: Value| b64(&s.execute("document.export", &p).unwrap());
+    let on = png(&mut s, json!({"format": "png"}));
+    assert_eq!(png_chunk(&on, b"sRGB"), Some(&[0u8][..]), "an sRGB chunk, perceptual intent");
+    let off = png(&mut s, json!({"format": "png", "embedIcc": false}));
+    assert!(png_chunk(&off, b"sRGB").is_none());
+    assert_eq!(rgba(&on), rgba(&off), "same pixels either way");
+    let r = s.execute("document.formats", &json!({})).unwrap();
+    let f = r["formats"].as_array().unwrap().iter().find(|f| f["id"] == "png").unwrap();
+    assert!(f["options"].get("embedIcc").is_some(), "png lists embedIcc");
+}
+
+#[test]
 fn formats_list_the_raster_options() {
     let mut s = Session::new();
     let r = s.execute("document.formats", &json!({})).unwrap();
