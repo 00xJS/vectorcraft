@@ -622,9 +622,9 @@ fn corners(path: &PathData, live: Option<&LiveShape>) -> Option<Corners> {
         Some(LiveShape::Rectangle { w, h, radii, kinds, xf })
             if upright(xf) && radii.iter().zip(kinds).all(|(r, k)| *r <= 0.0 || *k == CornerKind::Round) =>
         {
-            // The radii as drawn, none past half the shorter side (CSS draws one further when its
-            // neighbours leave room).
-            let radii = radii.map(|r| shapes::fitted_corner_radius(*w, *h, r));
+            // The radii as drawn: no two neighbours' cuts add up to more than their side, so CSS
+            // draws them as they are.
+            let radii = shapes::fitted_corner_radii(*w, *h, *radii);
             if radii.iter().all(|r| *r <= 0.0) {
                 Some(Corners::Square)
             } else if radii.iter().all(|r| (r - radii[0]).abs() < 1e-9) {
