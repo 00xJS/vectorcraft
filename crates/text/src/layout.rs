@@ -1162,6 +1162,16 @@ fn tab_advance<'t>(tabs: &'t [vectorcraft_doc::TabStop], origin: f64, x: f64, re
     ((at - rel).max(0.0), leader)
 }
 
+/// The width of glyphs `from..to` of `sg` set on a line whose content starts `x_start` from the
+/// tab origin: tabs take what [`tab_advance`] gives them, not the width of their glyph.
+fn set_width(sg: &[SGlyph], from: usize, to: usize, tabs: &[vectorcraft_doc::TabStop], x_start: f64) -> f64 {
+    let mut x = x_start;
+    for (j, g) in sg.iter().enumerate().take(to).skip(from) {
+        x += if g.ch == '\t' { tab_advance(tabs, 0.0, x, sg.get(j + 1..to).unwrap_or_default()).0 } else { g.adv };
+    }
+    x - x_start
+}
+
 /// Most copies of a leader drawn in one tab: a tiny type size and a far stop must not make
 /// millions of outlines.
 const MAX_LEADER_COPIES: f64 = 4096.0;
@@ -1223,12 +1233,16 @@ fn word_width(g: &[SGlyph], i: usize) -> f64 {
 /// With burasagari, a comma or full stop that doesn't fit ends the line, hanging outside it.
 /// `hyphenate` holds the paragraph's Hyphenation options and the Hyphenation Zone in force when
 /// the line may hyphenate a word; a line whose text before the overflowing word already ends
-/// within the zone breaks before that word.
+/// within the zone breaks before that word. A tab is as wide as it is set: up to its next stop
+/// (`tabs`), with the line's content starting `x_start` from the tab origin.
+#[allow(clippy::too_many_arguments)]
 fn break_line(
     text: &str,
     g: &[SGlyph],
     i: usize,
     width: f64,
+    tabs: &[vectorcraft_doc::TabStop],
+    x_start: f64,
     hyphenate: Option<(&HyphenationOptions, f64)>,
     burasagari: Burasagari,
     kinsoku: Kinsoku,
@@ -1245,7 +1259,11 @@ fn break_line(
         while g.get(cluster_end).is_some_and(|next| next.byte == gl.byte) {
             cluster_end += 1;
         }
-        let cluster_width: f64 = g[j..cluster_end].iter().map(|glyph| glyph.adv).sum();
+        let cluster_width: f64 = if gl.ch == '\t' {
+            tab_advance(tabs, 0.0, x_start + x, g.get(cluster_end..).unwrap_or_default()).0
+        } else {
+            g[j..cluster_end].iter().map(|glyph| glyph.adv).sum()
+        };
         if j > i && !gl.is_space() && x + cluster_width > width + EPS {
             // It ends the line with the spaces after it.
             if burasagari != Burasagari::None && hangs(gl) && kinsoku_allows(g, cluster_end - 1, kinsoku) {
@@ -1390,7 +1408,7 @@ mod wrapping_tests {
         let text = "بَت";
         let glyphs = synthetic_glyphs(&[(0, 4, 2.0, 'ب'), (0, 4, 2.0, 'ب'), (4, 2, 1.0, 'ت')]);
 
-        let (end, hyphenated) = break_line(text, &glyphs, 0, 3.0, None, Burasagari::None, Kinsoku::Hard);
+        let (end, hyphenated) = break_line(text, &glyphs, 0, 3.0, &[], 0.0, None, Burasagari::None, Kinsoku::Hard);
 
         assert!(!hyphenated);
         assert_eq!(end, 2, "oversized base-plus-mark cluster must stay together");
@@ -1403,11 +1421,11 @@ mod wrapping_tests {
         let text = "بَتَث";
         let glyphs = synthetic_glyphs(&[(0, 4, 1.0, 'ب'), (4, 4, 2.0, 'ت'), (4, 4, 2.0, 'ت'), (8, 2, 1.0, 'ث')]);
 
-        let (first_end, _) = break_line(text, &glyphs, 0, 3.0, None, Burasagari::None, Kinsoku::Hard);
+        let (first_end, _) = break_line(text, &glyphs, 0, 3.0, &[], 0.0, None, Burasagari::None, Kinsoku::Hard);
         assert_eq!(first_end, 1);
         assert_eq!(source_range(&glyphs, 0, first_end), 0..4);
 
-        let (second_end, hyphenated) = break_line(text, &glyphs, first_end, 3.0, None, Burasagari::None, Kinsoku::Hard);
+        let (second_end, hyphenated) = break_line(text, &glyphs, first_end, 3.0, &[], 0.0, None, Burasagari::None, Kinsoku::Hard);
 
         assert!(!hyphenated);
         assert_eq!(second_end, 3, "oversized cluster at the next line start must stay together");
@@ -1567,7 +1585,10 @@ fn compose_para(cx: &Ctx<'_>, sg: &[SGlyph], para: &ParaStyle, pen: &Pen<'_>, rt
     // A paragraph whose commas or full stops may hang is composed line by line (as the Japanese
     // single-line composer does).
     let may_hang = para.burasagari != Burasagari::None && sg.iter().any(hangs);
-    if composer != Composer::EveryLine || pen.regions.is_none() || sg.len() < 2 || sg.len() > MAX_COMPOSE_GLYPHS || may_hang {
+    // A tab's width depends on where it falls in its line, which the composer's fixed glyph widths
+    // can't follow: such a paragraph is broken line by line ([`break_line`] measures its tabs).
+    let has_tab = sg.iter().any(|g| g.ch == '\t');
+    if composer != Composer::EveryLine || pen.regions.is_none() || sg.len() < 2 || sg.len() > MAX_COMPOSE_GLYPHS || may_hang || has_tab {
         return None;
     }
     let m = Metrics::of(&sg[0]);
@@ -1695,7 +1716,7 @@ fn flow(cx: &mut Ctx<'_>, paras: &[Range<usize>], t: &TextObject, regions: Optio
                 let hyphenate = (para.hyphenate && (hyphen_limit == 0 || hyphen_run < hyphen_limit)).then_some((&para.hyphenation, zone));
                 let (end, hyph) = match composed.as_ref().and_then(|c| c.get(li_para)) {
                     Some(&(e, h)) if e > i => (e, h),
-                    _ if i < n => break_line(cx.text, &sg, i, width, hyphenate, para.burasagari, para.kinsoku),
+                    _ if i < n => break_line(cx.text, &sg, i, width, &para.tabs, ind_l, hyphenate, para.burasagari, para.kinsoku),
                     _ => (n, false),
                 };
                 let m = Metrics::max(&sg[i..end]).unwrap_or(pm);
@@ -1739,7 +1760,7 @@ fn flow(cx: &mut Ctx<'_>, paras: &[Range<usize>], t: &TextObject, regions: Optio
                 }
                 None => 0.0,
             };
-            let w: f64 = sg[i..trimmed].iter().map(|g| g.adv).sum::<f64>() + hyphen.as_ref().map_or(0.0, |h| h.adv) - end_trim;
+            let w: f64 = set_width(&sg, i, trimmed, &para.tabs, ind_l) + hyphen.as_ref().map_or(0.0, |h| h.adv) - end_trim;
             // Burasagari: a comma or full stop ending an area type line hangs outside it (Standard:
             // when it doesn't fit; Forced: always). The rest of the line is aligned and justified
             // without it, and it follows the line's last character.
@@ -1816,6 +1837,9 @@ fn flow(cx: &mut Ctx<'_>, paras: &[Range<usize>], t: &TextObject, regions: Optio
             let mut x_end = start_x;
             // Tab stops are measured from the frame's left edge (point type: the origin).
             let tab_origin = if regions.is_some() { x0 } else { 0.0 };
+            // A line with tabs is measured as if it started at the left (see `set_width`), then
+            // aligned as a whole: its tabs stop where they were measured, however it is aligned.
+            let tab_shift = start_x - if regions.is_some() { ax0 } else { ind_l };
             let line_start = sg.get(i).map_or(pr.start, |g| g.byte);
             let line_end = sg.get(end).map_or(pr.end, |g| g.byte);
             let order = visual_order(bidi.as_ref().filter(|_| !cx.vertical), pr.start, line_start..line_end, &sg[i..end]);
@@ -1833,7 +1857,7 @@ fn flow(cx: &mut Ctx<'_>, paras: &[Range<usize>], t: &TextObject, regions: Optio
                 }
                 let mut leader = "";
                 if g.ch == '\t' {
-                    (adv, leader) = tab_advance(&para.tabs, tab_origin, x, &sg[j + 1..trimmed.max(j + 1)]);
+                    (adv, leader) = tab_advance(&para.tabs, tab_origin, x - tab_shift, &sg[j + 1..trimmed.max(j + 1)]);
                 } else if j < body {
                     if g.is_space() {
                         adv += per_space;
