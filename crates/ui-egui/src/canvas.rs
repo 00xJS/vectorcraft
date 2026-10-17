@@ -236,7 +236,10 @@ pub fn show(app: &mut VectorcraftApp, ui: &mut Ui) {
     let xf = Xf::new(rect, &v);
     let origin_preview = if app.ui.view.rulers && app.ui.screen_mode < 3 { ruler_input(app, ui, full, rect, &xf) } else { None };
     panel_drop(app, ui, &resp, &xf);
-    context_menu(app, &resp, &xf);
+    // In Presentation Mode a right click or a long touch opens no context menu.
+    if app.ui.screen_mode < 3 {
+        context_menu(app, &resp, &xf);
+    }
     let painter = ui.painter_at(rect);
     let Some(st) = app.session.active() else { return };
     let doc = st.doc.clone();
@@ -536,7 +539,10 @@ pub fn show(app: &mut VectorcraftApp, ui: &mut Ui) {
         } else {
             None
         };
-        let cur = if let Some(c) = view_cursor.or_else(|| app.hover_doc.map(|p| app.session.cursor(p, mods(m, space), view_info))) {
+        // In Presentation Mode the pointer is the default one, with no tool cursor.
+        let tool_cursor =
+            (app.ui.screen_mode < 3).then(|| view_cursor.or_else(|| app.hover_doc.map(|p| app.session.cursor(p, mods(m, space), view_info))));
+        let cur = if let Some(c) = tool_cursor.flatten() {
             let painter = ui.ctx().layer_painter(egui::LayerId::new(egui::Order::Tooltip, egui::Id::new("tool-cursor")));
             // The loaded place cursor carries the file's thumbnail.
             if app.session.tool_id() == "place"
@@ -1210,7 +1216,10 @@ fn touch_gestures(app: &mut VectorcraftApp, ui: &Ui, rect: egui::Rect, view: vec
         }
     }
     ui.data_mut(|d| d.insert_temp(key, taps));
-    if let Some(cmd) = tap {
+    // In Presentation Mode a tap of two or three fingers undoes or redoes nothing.
+    if let Some(cmd) = tap
+        && app.ui.screen_mode < 3
+    {
         crate::menus::invoke(app, cmd, serde_json::json!({}));
     }
 }
