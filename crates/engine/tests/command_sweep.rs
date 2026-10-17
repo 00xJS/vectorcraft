@@ -189,6 +189,11 @@ fn every_command_with_junk_params() {
 fn structured_junk() {
     let cases: Vec<(&str, Value)> = vec![
         ("select.set", json!({"ids": [0, u64::MAX, -1, "x", null, 1.5]})),
+        ("document.export", json!({"format": "png", "rect": [1e308, -1e308, 1e308, 1e308]})),
+        ("document.export", json!({"format": "png", "rect": [0, 0, 1e300, 1e300], "scale": 64})),
+        ("document.export", json!({"format": "tiff", "rect": [null, "x", -1, 0.0000001], "useArtboards": true})),
+        ("document.export", json!({"format": "bmp", "rect": {"x": 1}, "artboard": 3})),
+        ("document.export", json!({"format": "svg", "rect": [0, 0, 10, 10]})),
         ("select.add", json!({"ids": [[1], {"a": 1}]})),
         ("select.anchors", json!({"id": 2, "anchors": [[99, 99], [-1, 0], ["a", "b"]], "mode": "set"})),
         ("select.anchorsMany", json!({"items": [{"id": 2, "anchors": [[0, 1000]]}, null, 5]})),
