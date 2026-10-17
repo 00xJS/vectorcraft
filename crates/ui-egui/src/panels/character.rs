@@ -734,12 +734,26 @@ pub fn menu(app: &mut VectorcraftApp, ui: &mut Ui) {
         app.status(format!("{} font families available", r["families"]));
     }
     if menu_item(ui, tl!("Reset Panel"), has, false) {
-        style(app, json!({"tracking": 0, "leading": "auto"}));
-        format(
-            app,
-            json!({"kerning": "auto", "baselineShift": 0, "hScale": 100, "vScale": 100, "rotation": 0, "underline": false, "strikethrough": false, "allCaps": false}),
-        );
+        reset_panel(app);
     }
+}
+
+/// Reset Panel: the characters the panel acts on ([`char_cmd`]) take tracking 0, Auto leading and
+/// kerning, no baseline shift, 100% scales, no rotation, no underline or strikethrough, All Caps
+/// and Small Caps off, the normal position (neither superscript nor subscript), Roman Baseline
+/// character alignment, Proportional Metrics off and the Default digits, whether or not Show
+/// East Asian Options and Show Indic Options are on.
+fn reset_panel(app: &mut VectorcraftApp) {
+    let d = CharStyle::default();
+    style(app, json!({"tracking": 0, "leading": "auto"}));
+    format(
+        app,
+        json!({
+            "kerning": "auto", "baselineShift": 0, "hScale": 100, "vScale": 100, "rotation": 0, "underline": false, "strikethrough": false,
+            "allCaps": false, "smallCaps": d.small_caps.is_some(), "position": d.position.id(), "charAlign": d.char_align,
+            "proportionalMetrics": d.proportional_metrics, "digits": d.digits
+        }),
+    );
 }
 
 #[cfg(test)]
@@ -1005,5 +1019,66 @@ mod tests {
         assert!(!shown(&mut app));
         app.session.prefs.show_indic_options = true;
         assert!(shown(&mut app));
+    }
+
+    /// Reset Panel sets every character attribute the panel shows, except the font family, style
+    /// and size, back to its default (Small Caps, the position, Character Alignment, Proportional
+    /// Metrics and Digits included), in the selected type and in the text the Type tool has
+    /// selected while it edits.
+    #[test]
+    fn reset_panel_resets_every_attribute_but_the_font() {
+        let mut app = VectorcraftApp::new(Session::new(), Default::default());
+        app.run("file.new", json!({"width": 300, "height": 200})).unwrap();
+        let id = app.run("text.create", json!({"x": 20, "y": 50, "text": "One 12"})).unwrap()["id"].as_u64().unwrap();
+        let runs = |app: &VectorcraftApp| match &app.session.active().unwrap().doc.node(NodeId(id)).unwrap().kind {
+            NodeKind::Text(t) => t.runs.iter().map(|r| (r.text.clone(), r.style.clone())).collect::<Vec<_>>(),
+            _ => panic!("text"),
+        };
+        let differs = |s: &CharStyle, d: &CharStyle| {
+            [
+                s.tracking != d.tracking,
+                s.leading != d.leading,
+                s.kerning != d.kerning,
+                s.baseline_shift != d.baseline_shift,
+                s.h_scale != d.h_scale,
+                s.v_scale != d.v_scale,
+                s.rotation != d.rotation,
+                s.underline != d.underline,
+                s.strikethrough != d.strikethrough,
+                s.all_caps != d.all_caps,
+                s.small_caps != d.small_caps,
+                s.position != d.position,
+                s.char_align != d.char_align,
+                s.proportional_metrics != d.proportional_metrics,
+                s.digits != d.digits,
+            ]
+        };
+        let custom = |app: &mut VectorcraftApp| {
+            app.run(
+                "text.setRangeStyle",
+                json!({
+                    "id": id, "tracking": 50, "leading": 30, "kerning": 20, "baselineShift": 3, "hScale": 120, "vScale": 90, "rotation": 15,
+                    "underline": true, "strikethrough": true, "allCaps": true, "smallCaps": true, "position": "superscript",
+                    "charAlign": "emBoxCenter", "proportionalMetrics": true, "digits": "hindi"
+                }),
+            )
+            .unwrap();
+        };
+        let plain = runs(&app)[0].1.clone();
+        assert_eq!(differs(&plain, &CharStyle::default()), [false; 15]);
+        custom(&mut app);
+        let styled = runs(&app)[0].1.clone();
+        assert_eq!(differs(&styled, &CharStyle::default()), [true; 15]);
+        app.run("select.set", json!({"ids": [id]})).unwrap();
+        reset_panel(&mut app);
+        assert_eq!(runs(&app), [("One 12".to_string(), plain.clone())]);
+        // While the Type tool edits text, Reset Panel resets only its selection.
+        custom(&mut app);
+        app.select_tool("type");
+        app.session.apply_actions(vec![vectorcraft_tools::Action::Notify("text.editNew".into())]).unwrap();
+        app.session.set_tool_option("select", &json!({"start": 4, "end": 6}));
+        assert!(text_editing(&app).is_some());
+        reset_panel(&mut app);
+        assert_eq!(runs(&app), [("One ".to_string(), styled), ("12".to_string(), plain)]);
     }
 }
