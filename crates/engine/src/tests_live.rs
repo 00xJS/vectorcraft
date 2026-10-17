@@ -732,3 +732,66 @@ fn disabled_without_live_selection() {
     assert!(s.execute("object.blend.make", &json!({})).is_err(), "needs two objects");
     let _ = Paint::solid(Color::BLACK);
 }
+
+/// A selected embedded 8×4 image at (100, 50), 2 pt per pixel: red on the left half, blue on the
+/// right half (which is transparent when `clear_right`). `link` makes it a linked image.
+fn two_colour_image(s: &mut Session, clear_right: bool, linked: bool) -> NodeId {
+    let right = image::Rgba([0, 0, 255, if clear_right { 0 } else { 255 }]);
+    let img = image::RgbaImage::from_fn(8, 4, |x, _| if x < 4 { image::Rgba([255, 0, 0, 255]) } else { right });
+    let mut png = vec![];
+    img.write_to(&mut std::io::Cursor::new(&mut png), image::ImageFormat::Png).unwrap();
+    s.edit("Place", |d, sel| {
+        d.images.insert("pic".into(), vectorcraft_doc::ImageBlob::png(png));
+        let id = d.alloc_id();
+        let xf = vectorcraft_geom::Affine::translate((100.0, 50.0)) * vectorcraft_geom::Affine::scale(2.0);
+        let link = linked.then(|| vectorcraft_doc::LinkInfo { path: "/tmp/pic.png".into(), ..Default::default() });
+        let im = vectorcraft_doc::ImageObject { key: "pic".into(), width: 8, height: 4, xf, link, placement: Default::default() };
+        d.insert(d.default_layer(), 0, Node::new(id, NodeKind::Image(Box::new(im))))?;
+        sel.set([id]);
+        Ok(id)
+    })
+    .unwrap()
+}
+
+#[test]
+fn mesh_create_on_an_embedded_image_takes_its_colours_and_placement() {
+    let mut s = session();
+    let id = two_colour_image(&mut s, false, false);
+    let undo = s.doc().unwrap().history.undo.len();
+    s.execute("object.mesh.create", &json!({"rows": 1, "cols": 2})).unwrap();
+    assert_eq!(s.doc().unwrap().history.undo.len(), undo + 1, "one undo step");
+    let m = mesh_of(&s, id);
+    assert_eq!((m.rows, m.cols, m.points.len()), (1, 2, 6));
+    // Row 0 is the image's top: red at the left edge, the average of both halves in the middle
+    // (an area, not one pixel), blue at the right edge.
+    let hex = |i: usize| m.points[i].color.to_hex();
+    assert_eq!((hex(0).as_str(), hex(1).as_str(), hex(2).as_str()), ("#ff0000", "#800080", "#0000ff"));
+    assert_eq!((hex(3).as_str(), hex(5).as_str()), ("#ff0000", "#0000ff"));
+    assert!(m.points.iter().all(|p| p.opacity == 1.0));
+    // The mesh keeps the image's transform: (100, 50) to (116, 58).
+    let near = |p: Point, x: f64, y: f64| close(p.x, x) && close(p.y, y);
+    assert!(near(m.points[0].p, 100.0, 50.0) && near(m.points[2].p, 116.0, 50.0) && near(m.points[5].p, 116.0, 58.0));
+    assert_eq!(node(&s, id).kind_label(), "Mesh");
+    s.execute("edit.undo", &json!({})).unwrap();
+    assert_eq!(node(&s, id).kind_label(), "Image");
+}
+
+#[test]
+fn mesh_create_on_an_image_keeps_alpha_and_refuses_linked_and_big_grids() {
+    let mut s = session();
+    let id = two_colour_image(&mut s, true, false);
+    s.execute("object.mesh.create", &json!({"rows": 1, "cols": 1})).unwrap();
+    let m = mesh_of(&s, id);
+    assert_eq!(m.points.iter().map(|p| p.opacity).collect::<Vec<_>>(), [1.0, 0.0, 1.0, 0.0]);
+    assert_eq!(m.points[0].color.to_hex(), "#ff0000");
+
+    let mut s = session();
+    two_colour_image(&mut s, false, false);
+    assert!(s.execute("object.mesh.create", &json!({"rows": 51, "cols": 4})).is_err(), "grid capped");
+
+    let mut s = session();
+    let id = two_colour_image(&mut s, false, true);
+    let e = s.execute("object.mesh.create", &json!({})).unwrap_err().to_string();
+    assert!(e.contains("linked"), "{e}");
+    assert_eq!(node(&s, id).kind_label(), "Image", "left as it was");
+}
