@@ -2491,6 +2491,8 @@
 	Revert to the saved version of “{name}”?	Revenir à la version enregistrée de « {name} » ?
 	Replace “{name}”, the file this document was opened from?	Remplacer « {name} », le fichier à partir duquel ce document a été ouvert ?
 	Opening it left out what VectorCraft can't read yet ({what}), so replacing it loses that for good. Save under another name to keep it.	Son ouverture a laissé de côté ce que VectorCraft ne sait pas encore lire ({what}) : le remplacer le perd définitivement. Enregistrez sous un autre nom pour le conserver.
+	“{name}” already exists. Replace it?	« {name} » existe déjà. Le remplacer ?
+	The name in the save panel was “{typed}”; VectorCraft added the file type's extension. Replacing the file overwrites its contents.	Le nom dans la fenêtre d’enregistrement était « {typed} », puis VectorCraft a ajouté l’extension du type de fichier. Remplacer le fichier écrase son contenu.
 	Revolve…	Révolution…
 	RGB Color	Couleur RVB
 	Right	Droite

@@ -2265,6 +2265,8 @@ file-filter	Templates	Mẫu
 	Open the URL in the web browser	Mở URL trong trình duyệt web
 	Opened with {} note(s): {}	Mở với {} ghi chú: {}
 	Opening it left out what VectorCraft can't read yet ({what}), so replacing it loses that for good. Save under another name to keep it.	Khi mở, những phần VectorCraft chưa đọc được ({what}) đã bị bỏ qua, nên thay thế sẽ mất chúng vĩnh viễn. Hãy lưu với tên khác để giữ lại.
+	“{name}” already exists. Replace it?	“{name}” đã tồn tại. Thay thế tệp này?
+	The name in the save panel was “{typed}”; VectorCraft added the file type's extension. Replacing the file overwrites its contents.	Tên trong bảng lưu là “{typed}”, và VectorCraft đã thêm phần mở rộng của loại tệp. Thay thế tệp sẽ ghi đè nội dung của tệp.
 	Open…	Mở…
 	Optical Margin Alignment	Căn lề quang học
 	Optimize for fast web view	Tối ưu để xem web nhanh

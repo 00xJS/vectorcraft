@@ -3489,6 +3489,8 @@ effect	Regular	Normalny
 	Revert to the saved version of “{name}”?	Przywrócić zapisaną wersję „{name}”?
 	Replace “{name}”, the file this document was opened from?	Zastąpić „{name}”, plik, z którego otwarto ten dokument?
 	Opening it left out what VectorCraft can't read yet ({what}), so replacing it loses that for good. Save under another name to keep it.	Przy otwieraniu pominięto to, czego VectorCraft jeszcze nie odczytuje ({what}), więc zastąpienie pliku utraci to bezpowrotnie. Zapisz pod inną nazwą, aby to zachować.
+	“{name}” already exists. Replace it?	„{name}” już istnieje. Zastąpić?
+	The name in the save panel was “{typed}”; VectorCraft added the file type's extension. Replacing the file overwrites its contents.	Nazwa w oknie zapisu to „{typed}”, a VectorCraft dodał rozszerzenie typu pliku. Zastąpienie pliku nadpisze jego zawartość.
 	Saved {path}	Zapisano {path}
 	Saved {path} with {} note(s): {first}	Zapisano {path}, uwagi ({}): {first}
 	Saving	Zapisywanie

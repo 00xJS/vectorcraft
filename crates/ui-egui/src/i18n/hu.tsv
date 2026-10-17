@@ -2468,6 +2468,8 @@ file-filter	Templates	Sablonok
 	Open the URL in the web browser	URL megnyitása a böngészőben
 	Opened with {} note(s): {}	Megnyitva, megjegyzések: {}. {}
 	Opening it left out what VectorCraft can't read yet ({what}), so replacing it loses that for good. Save under another name to keep it.	Megnyitáskor kimaradt, amit a VectorCraft még nem tud beolvasni ({what}), ezért a fájl felülírásával ez végleg elvész. A megtartásához mentsd más néven.
+	“{name}” already exists. Replace it?	„{name}” már létezik. Felülírod?
+	The name in the save panel was “{typed}”; VectorCraft added the file type's extension. Replacing the file overwrites its contents.	A mentési panelen megadott név ez volt: „{typed}”, a VectorCraft pedig hozzáadta a fájltípus kiterjesztését. A fájl felülírásakor a tartalma elvész.
 	Open…	Megnyitás…
 	Optical Margin Alignment	Optikai margóigazítás
 	Optimize for fast web view	Optimalizálás gyors webes megtekintéshez

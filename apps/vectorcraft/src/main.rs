@@ -529,6 +529,7 @@ fn services(parent: Parent, ui: egui::Context) -> Services {
         no_cursor_theme: wayland && cursor_theme::theme_missing(),
         read: Some(Box::new(|p: &str| std::fs::read(p).map_err(|e| e.to_string()))),
         write: Some(Box::new(write_file)),
+        exists: Some(Box::new(|p: &str| std::path::Path::new(p).exists())),
         // Background Save and Export write from a worker thread.
         write_shared: Some(std::sync::Arc::new(write_file)),
         // Native saves stream into the file as they are encoded.

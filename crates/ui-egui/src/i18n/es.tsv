@@ -2494,6 +2494,8 @@
 	Revert to the saved version of “{name}”?	¿Revertir a la versión guardada de “{name}”?
 	Replace “{name}”, the file this document was opened from?	¿Reemplazar “{name}”, el archivo desde el que se abrió este documento?
 	Opening it left out what VectorCraft can't read yet ({what}), so replacing it loses that for good. Save under another name to keep it.	Al abrirlo quedó fuera lo que VectorCraft aún no puede leer ({what}), así que reemplazarlo lo pierde para siempre. Guárdelo con otro nombre para conservarlo.
+	“{name}” already exists. Replace it?	“{name}” ya existe. ¿Reemplazarlo?
+	The name in the save panel was “{typed}”; VectorCraft added the file type's extension. Replacing the file overwrites its contents.	El nombre en el panel de guardado era “{typed}”, y VectorCraft añadió la extensión del tipo de archivo. Reemplazar el archivo sobrescribe su contenido.
 	Revolve…	Revolución…
 	RGB Color	Color RGB
 	Right	Derecha

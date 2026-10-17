@@ -2448,6 +2448,8 @@
 	Revert to the saved version of “{name}”?	Връщане към запазената версия на „{name}“?
 	Replace “{name}”, the file this document was opened from?	Замяна на „{name}“, файла, от който беше отворен този документ?
 	Opening it left out what VectorCraft can't read yet ({what}), so replacing it loses that for good. Save under another name to keep it.	Отварянето му пропусна това, което VectorCraft все още не може да прочете ({what}), така че замяната му го губи завинаги. Запазете под друго име, за да го запазите.
+	“{name}” already exists. Replace it?	„{name}“ вече съществува. Да бъде ли заменен?
+	The name in the save panel was “{typed}”; VectorCraft added the file type's extension. Replacing the file overwrites its contents.	Името в панела за запазване беше „{typed}“, а VectorCraft добави разширението на типа файл. Замяната на файла презаписва съдържанието му.
 	Revolve…	Завъртане…
 	RGB Color	RGB цвят
 	Right	Вдясно

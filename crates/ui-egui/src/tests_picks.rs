@@ -369,6 +369,58 @@ fn preset_dialogs_export_asks_off_the_ui_thread() {
     }
 }
 
+/// A sheet's answer that names a file that is there once given its extension asks before replacing
+/// it, with no "cancelled" in the status bar, and the question's OK writes it without another sheet.
+#[test]
+fn a_sheets_answer_given_its_extension_asks_before_replacing() {
+    let (mut app, shown, written) = app();
+    app.services.exists = Some(Box::new(|p: &str| p == "/art/card.vectorcraft"));
+    app.run("file.new", json!({"width": 100, "height": 80})).unwrap();
+    assert!(app.run("file.save", json!({})).is_err());
+    shown.answer(&["/art/card"]);
+    poll(&mut app);
+    assert_eq!(dialog_kind(&app), Some(crate::dialogs::confirm::REPLACE));
+    assert!(written.borrow().is_empty());
+    poll(&mut app);
+    assert_eq!(app.ui.status, "");
+    crate::dialogs::confirm(&mut app).unwrap();
+    assert_eq!(*written.borrow(), ["/art/card.vectorcraft"]);
+    assert!(shown.requests().is_empty(), "{:?}", shown.requests());
+}
+
+/// Export… in a presets dialog whose save dialog shows in line (Windows): a name that is there
+/// once given its extension asks over the presets dialog; Cancel shows it again and writes
+/// nothing, and OK writes the preset and shows it again.
+#[test]
+fn a_preset_dialogs_export_asks_before_replacing_over_it() {
+    let written = Written::default();
+    let w = written.clone();
+    let services = Services {
+        pick_save: Some(Box::new(|_: &FilePick| Some("/presets/mine".to_string()))),
+        write: Some(Box::new(move |path: &str, _: &[u8]| {
+            w.borrow_mut().push(path.to_string());
+            Ok(())
+        })),
+        exists: Some(Box::new(|_: &str| true)),
+        ..Default::default()
+    };
+    let mut app = VectorcraftApp::new(Session::new(), services);
+    app.run("file.new", json!({"width": 100, "height": 80})).unwrap();
+    app.run("pdf.preset.save", json!({"name": "Mine"})).unwrap();
+    app.run("ui.pdfPresetsDialog", json!({"selected": "Mine"})).unwrap();
+    let kind = dialog_kind(&app).unwrap().to_string();
+    click(&mut app, "Export…", dialogs);
+    assert_eq!(dialog_kind(&app), Some(crate::dialogs::confirm::REPLACE));
+    crate::dialogs::cancel(&mut app);
+    assert_eq!(dialog_kind(&app), Some(kind.as_str()));
+    assert!(written.borrow().is_empty());
+    click(&mut app, "Export…", dialogs);
+    crate::dialogs::confirm(&mut app).unwrap();
+    let path = format!("/presets/mine.{}", vectorcraft_engine::cmd::pdfcmds::PRESET_FORMAT);
+    assert_eq!(*written.borrow(), [path], "{}", app.ui.status);
+    assert_eq!(dialog_kind(&app), Some(kind.as_str()));
+}
+
 /// Save As answers on the document that asked for it: the one made active meanwhile isn't saved,
 /// and the one that asked is active again.
 #[test]

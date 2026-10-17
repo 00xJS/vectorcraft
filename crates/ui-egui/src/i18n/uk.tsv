@@ -2503,6 +2503,8 @@ mark-style	Japanese	Японський
 	Revert to the saved version of “{name}”?	Повернутися до збереженої версії «{name}»?
 	Replace “{name}”, the file this document was opened from?	Замінити «{name}» — файл, з якого відкрито цей документ?
 	Opening it left out what VectorCraft can't read yet ({what}), so replacing it loses that for good. Save under another name to keep it.	При відкритті було пропущено те, що VectorCraft поки що не вміє читати ({what}), тому заміна файлу втратить це назавжди. Щоб зберегти це, збережіть документ під іншим ім’ям.
+	“{name}” already exists. Replace it?	«{name}» уже існує. Замінити?
+	The name in the save panel was “{typed}”; VectorCraft added the file type's extension. Replacing the file overwrites its contents.	Назва у вікні збереження була «{typed}», а VectorCraft додав розширення типу файлу. Заміна файлу перезапише його вміст.
 	Revolve…	Обертання…
 	RGB Color	Колір RGB
 	Right	Праворуч
