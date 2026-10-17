@@ -269,6 +269,113 @@ fn a_rotated_image_keeps_its_place() {
     assert!(back.as_coeffs().iter().zip(xf.as_coeffs()).all(|(a, b)| (a - b).abs() < 1e-6), "{back:?}");
 }
 
+/// A 16 × 16 RGB image of `doc` filling `r`.
+fn picture(doc: &mut Document, r: Rect) -> Node {
+    let mut png = vec![];
+    image::RgbaImage::from_fn(16, 16, |u, v| image::Rgba([(u * 16) as u8, (v * 16) as u8, 128, 255]))
+        .write_to(&mut std::io::Cursor::new(&mut png), image::ImageFormat::Png)
+        .unwrap();
+    let blob = ImageBlob::new("image/png", png);
+    let key = blob.content_key();
+    doc.images.insert(key.clone(), blob);
+    let xf = Affine::new([r.width() / 16.0, 0.0, 0.0, r.height() / 16.0, r.x0, r.y0]);
+    Node::new(doc.alloc_id(), NodeKind::Image(Box::new(ImageObject { key, width: 16, height: 16, xf, link: None, placement: Default::default() })))
+}
+
+/// A layer `Below` holding a clipping group (a circle clipping an image, as in #2692), a group
+/// holding an image and an image; a layer `Above` holding an orange square. Without `images`,
+/// `Below` is empty.
+fn images_below_a_square(images: bool) -> Document {
+    let mut doc = Document::new(400.0, 200.0);
+    doc.layers.clear();
+    let below = doc.add_layer(Some("Below"));
+    let above = doc.add_layer(Some("Above"));
+    if images {
+        let clip = Node::new(
+            doc.alloc_id(),
+            NodeKind::Path {
+                path: shapes::ellipse(Rect::new(30.0, 30.0, 170.0, 170.0)),
+                rule: FillRule::NonZero,
+                live: None,
+                clipping: true,
+                guide: false,
+            },
+        );
+        let clipped = picture(&mut doc, Rect::new(20.0, 20.0, 180.0, 180.0));
+        let window = Node::new(doc.alloc_id(), NodeKind::Group { children: vec![Arc::new(clip), Arc::new(clipped)], clip: true });
+        doc.insert(Some(below), usize::MAX, window).unwrap();
+        let grouped = picture(&mut doc, Rect::new(200.0, 20.0, 240.0, 60.0));
+        let group = Node::group(doc.alloc_id(), vec![Arc::new(grouped)]);
+        doc.insert(Some(below), usize::MAX, group).unwrap();
+        let loose = picture(&mut doc, Rect::new(250.0, 20.0, 290.0, 60.0));
+        doc.insert(Some(below), usize::MAX, loose).unwrap();
+    }
+    let orange = Paint::solid(Color::rgb(247.0 / 255.0, 148.0 / 255.0, 29.0 / 255.0));
+    let square = shape(&mut doc, shapes::rectangle(Rect::new(220.0, 100.0, 380.0, 180.0)), orange, Paint::None);
+    doc.insert(Some(above), usize::MAX, square).unwrap();
+    doc
+}
+
+/// Each image the file holds (§8.4): the lines from `%AI5_File:` to `%AI5_EndRaster`.
+fn rasters(text: &str) -> Vec<Vec<&str>> {
+    let lines: Vec<&str> = text.lines().collect();
+    let mut out = vec![];
+    for (i, l) in lines.iter().enumerate() {
+        if *l == "%AI5_File:" {
+            let end = lines[i..].iter().position(|l| *l == "%AI5_EndRaster").map(|n| i + n).unwrap();
+            out.push(lines[i..=end].to_vec());
+        }
+    }
+    out
+}
+
+/// Every image, in a clipping group, a group or neither, is written as §8.1's syntax and §8.4's
+/// examples write one: `%AI5_File:`, `%AI5_BeginRaster`, the matrix with a space inside each
+/// bracket and the operands on the `XI` line, the samples in hex on comment lines of 60 digits,
+/// `%AI5_EndRaster`. The art after the images is written as it is without them, and the file
+/// reads back with its layers, clipping group, images and square (#2692).
+#[test]
+fn images_are_written_in_the_form_the_specification_shows() {
+    let out = write(&images_below_a_square(true));
+    let text = String::from_utf8(out.bytes.clone()).unwrap();
+    let images = rasters(&text);
+    assert_eq!(images.len(), 3, "{text}");
+    for lines in &images {
+        let [file, begin, xi, data @ .., end] = lines.as_slice() else { panic!("{lines:?}") };
+        assert_eq!((*file, *begin, *end), ("%AI5_File:", "%AI5_BeginRaster", "%AI5_EndRaster"));
+        let matrix = xi.strip_prefix("[ ").and_then(|l| l.strip_suffix(" ] 0 0 16 16 16 16 8 3 0 0 0 0 XI")).unwrap_or_else(|| panic!("{xi}"));
+        assert_eq!(matrix.split(' ').filter(|v| v.parse::<f64>().is_ok()).count(), 6, "{xi}");
+        let digits: Vec<&str> = data.iter().map(|l| l.strip_prefix('%').unwrap_or_else(|| panic!("{l}"))).collect();
+        let (last, full) = digits.split_last().unwrap();
+        assert!(full.iter().all(|d| d.len() == 60) && (1..=60).contains(&last.len()), "{digits:?}");
+        assert!(digits.iter().all(|d| d.bytes().all(|b| b.is_ascii_hexdigit())), "{digits:?}");
+        assert_eq!(digits.concat().len(), 16 * 16 * 3 * 2);
+    }
+    // The clipping group: `q`, the clipping path painted `h W n` (§5.6.2), the image, `Q`; the
+    // group: `u`, the image, `U`.
+    assert!(text.contains("\nh\nW\nn\n%AI5_File:\n") && text.contains("\n%AI5_EndRaster\nQ\n"), "{text}");
+    assert!(text.contains("\nu\n%AI5_File:\n") && text.contains("\n%AI5_EndRaster\nU\n"), "{text}");
+    let layer = |t: &str| -> String {
+        let at = t.find("(Above) Ln\n").unwrap();
+        t[at..].split("%AI5_EndLayer--").next().unwrap().to_string()
+    };
+    let alone = String::from_utf8(write(&images_below_a_square(false)).bytes).unwrap();
+    assert_eq!(layer(&text), layer(&alone));
+    let doc = crate::import(&out.bytes).unwrap().document;
+    let names: Vec<_> = doc.layers.iter().map(|l| l.name.clone().unwrap_or_default()).collect();
+    assert_eq!(names, ["Below", "Above"]);
+    let below = children(&doc.layers[0]);
+    assert_eq!(below.len(), 3, "{below:#?}");
+    let NodeKind::Group { children: window, clip: true } = &below[0].kind else { panic!("{:?}", below[0].kind) };
+    assert!(matches!(window[0].kind, NodeKind::Path { clipping: true, .. }) && matches!(window[1].kind, NodeKind::Image(_)), "{window:#?}");
+    assert!(matches!(&below[1].kind, NodeKind::Group { children, clip: false } if matches!(children[0].kind, NodeKind::Image(_))));
+    assert!(matches!(below[2].kind, NodeKind::Image(_)));
+    let above = children(&doc.layers[1]);
+    assert_eq!(above.len(), 1);
+    let rgb = above[0].appearance.fill_paint().color().map(|c| c.to_rgb()).unwrap();
+    assert!(rgb.iter().zip([247.0, 148.0, 29.0]).all(|(c, want)| (c * 255.0 - want).abs() < 0.1), "{rgb:?}");
+}
+
 #[test]
 fn a_gradient_fill_and_its_stroke_are_one_object() {
     let mut doc = Document::new(100.0, 100.0);
