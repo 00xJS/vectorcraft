@@ -215,7 +215,6 @@ panel-menu commands such as Break Link to Symbol), so they can be given shortcut
 | Pathfinder panel on one group selected alone; a greyed-out button says what it needs | partial | #1450; the group's members are combined; one plain path selected alone stays disabled (the public documentation doesn't say what the operations do to a single path) |
 | Pathfinder Divide: an open cutting line splits a filled path | done | #1307; straight, crossed, bent and curved cutters, holes and frontmost appearance regression-tested; native automation: independent piece movement, one Undo/Redo, saved-document round trip and window capture; existing bounded-map fallback remains |
 | Canvas context menu | done | Layers rows, panels and type have none (gap) |
-| Blend panel (30.7) | missing | Blend Options dialog exists |
 | SVG Interactivity panel: JavaScript for each object's events and the document's linked JavaScript files, written to SVG and read back as text | done | `svgInteractivity.*`, `ui.javascriptFilesDialog` |
 | Retype, Comments, Version History panels | missing | the last two are cloud features (out of scope) |
 | Blend panel (30.7) | partial | Window › Blend: Make, Spacing, Orientation, Reverse Front to Back, Reverse Spine, Replace Spine, Expand and Release, running the Object › Blend commands; the easing and color controls are missing |
