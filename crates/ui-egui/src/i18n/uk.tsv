@@ -3720,6 +3720,7 @@ axis	Both	Обидві
 @msg	a freeform gradient keeps at least one point	довільний градієнт зберігає як мінімум одну точку
 @msg	a gradient needs at least two stops	градієнту потрібні як мінімум дві точки переходу
 @msg	a graphic style named `{to}` already exists	графічний стиль з ім’ям `{to}` вже існує
+@msg	a key object sits on that point	у цій точці розташований ключовий об’єкт
 @msg	a page is missing	сторінка відсутня
 @msg	a page out of range	сторінка поза діапазоном
 @msg	a page tree kid isn't a reference	нащадок дерева сторінок не є посиланням
@@ -3727,6 +3728,7 @@ axis	Both	Обидві
 @msg	a page's placement is not finite	розміщення сторінки не звісно
 @msg	a preset named `{_1}` exists	набір з іменем `{_1}` вже існує
 @msg	a slice size must be a positive number of points	розмір фрагмента має бути позитивним числом пунктів
+@msg	a spine keeps at least two points	вісь зберігає як мінімум дві точки
 @msg	a stream runs past the end	потік виходить за кінець
 @msg	a stream's length is wrong	довжина потоку неправильна
 @msg	a stream's length isn't a number	довжина потоку не є числом
@@ -3788,11 +3790,13 @@ axis	Both	Обидві
 @msg	give horizontal or vertical	вкажіть horizontal або vertical
 @msg	give the path `id` and the width point `index`	вкажіть `id` контуру та `index` точки ширини
 @msg	guides are locked	напрямні заблоковані
+@msg	handle must be in or out	handle має бути in або out
 @msg	image '{key}' has no pixels and was left out	зображення '{key}' не має пікселів і було пропущено
 @msg	image data `{_1}` is missing	дані зображення `{_1}` відсутні
 @msg	image would be too large; lower the resolution	зображення буде завеликим; зменште роздільну здатність
 @msg	index must be a number or first, previous, next or last	index має бути числом або first, previous, next, last
 @msg	index must be a number or first, previous, next or last, not `{other}`	index повинен бути числом або first, previous, next, last, а не `{other}`
+@msg	index must be ≥ 0	index не може бути від’ємним
 @msg	installing from a path is not available on the web; pass the module as `dataBase64`	встановлення з файлу недоступне у вебверсії; передайте модуль як `dataBase64`
 @msg	internal error in `{cmd}`: {msg} (the document was left as it was before; please report this bug)	внутрішня помилка `{cmd}`: {msg} (документ залишений у попередньому стані; будь ласка, повідомте про цю помилку)
 @msg	internal error: {msg} (please report this bug)	внутрішня помилка: {msg} (будь ласка, повідомте про цю помилку)
@@ -3812,6 +3816,7 @@ axis	Both	Обидві
 @msg	missing `name`	відсутня `name`
 @msg	missing `tool`	відсутня `tool`
 @msg	missing index	відсутня index
+@msg	missing number `{key}`	відсутнє число `{key}`
 @msg	multiple windows land with M11.5	кілька вікон з’являться в M11.5
 @msg	name the file	дайте файлу ім’я
 @msg	no CSS to copy: select objects with CSS of their own	ні CSS для копіювання: виділіть об’єкти з власним CSS
@@ -3892,6 +3897,8 @@ axis	Both	Обидві
 @msg	no such recent font	такого останнього шрифту немає
 @msg	no such saved selection	такого збереженого виділення немає
 @msg	no such segment	такого сегменту немає
+@msg	no such spine point	такої точки осі немає
+@msg	no such spine segment	такого сегмента осі немає
 @msg	no such subpath	такого вкладеного контуру немає
 @msg	no such user library	такої користувацької бібліотеки немає
 @msg	no such view	такого виду немає
@@ -3907,6 +3914,7 @@ axis	Both	Обидві
 @msg	not a DXF drawing	не є кресленням DXF
 @msg	not a VectorCraft file: {0}	не є файлом VectorCraft: {0}
 @msg	not a VectorCraft shortcut set (missing `overrides`)	не є набором поєднань клавіш VectorCraft (відсутнє `overrides`)
+@msg	not a blend	це не перехід
 @msg	not a graphic style library (format `{_1}`)	не є бібліотекою графічних стилів (формат `{_1}`)
 @msg	not a shortcut set: the text doesn't start with a slash name and an opening brace	це не набір сполучень клавіш: текст не починається з імені зі скісною рискою та відкривної фігурної дужки
 @msg	not a stored central record	не є збереженим центральним записом
@@ -3963,6 +3971,7 @@ axis	Both	Обидві
 @msg	select (or target) objects whose appearance isn't basic	виділіть (або вкажіть як об’єкт) об’єкти, оформлення яких не є основним
 @msg	select a Live Paint group	виділіть групу швидкої заливки
 @msg	select a blend	виділіть перехід
+@msg	select a blend or give `id`	виділіть перехід або вкажіть `id`
 @msg	select a clip group	виділіть відсічну групу
 @msg	select a gradient mesh	виділіть градієнтну сітку
 @msg	select a linked image: an embedded one has no file	виділіть пов’язане зображення: у вбудованого немає файлу
@@ -3996,6 +4005,7 @@ axis	Both	Обидві
 @msg	stop {i} needs `offset`	точці переходу {i} потрібен `offset`
 @msg	stop {i} needs a valid `color`	точці переходу {i} потрібен допустимий `color`
 @msg	stop {i}: `{k}` must be a number	точка переходу {i}: `{k}` має бути числом
+@msg	t, dx and dy must be finite	t, dx і dy мають бути скінченними
 @msg	the EMF header is damaged	заголовок EMF пошкоджений
 @msg	the PDF has no pages	PDF немає сторінок
 @msg	the PDF is no longer loaded	PDF більше не завантажений
@@ -4008,6 +4018,7 @@ axis	Both	Обидві
 @msg	the art is too light for any dots	малюнок занадто світлий для будь-яких точок
 @msg	the artboard to fit must be a positive size up to {_1} pt	монтажна область для вписування повинна мати позитивний розмір до {_1} пт
 @msg	the background worker stopped	фоновий процес зупинено
+@msg	the blend has no spine	у переходу немає осі
 @msg	the compressed file unpacks to more than {_1} MB	стислий файл розпаковується більш ніж {_1} МБ
 @msg	the document has never been saved	документ ніколи не зберігався
 @msg	the document has no artboard	у документі немає монтажної області
@@ -4048,6 +4059,7 @@ axis	Both	Обидві
 @msg	the selected stroke's profile is already listed as {_1}	профіль обраного обведення вже вказаний як {_1}
 @msg	the selection has no URL (or they differ)	виділення немає URL (або вони різняться)
 @msg	the selection isn't in perspective	виділення не в перспективі
+@msg	the spine has no segments	в осі немає сегментів
 @msg	the stroke has no weight	у обведення немає товщини
 @msg	the thumbnail image is malformed	зображення мініатюри пошкоджено
 @msg	the top object must be a path, compound path or text object to use as a clipping mask	верхній об’єкт повинен бути контуром, складеним контуром або текстовим об’єктом, щоб використовувати його як відсічну маску
@@ -4086,6 +4098,7 @@ axis	Both	Обидві
 @msg	version {0} files can't be compressed: only version {COMPRESSED_SINCE} and later open compressed files	файли версії {0} не можуть бути стиснуті: тільки версія {COMPRESSED_SINCE} і новіші відкривають стислі файли
 @msg	width and height are at least 1 pixel	ширина та висота повинні бути не менше 1 пікселя
 @msg	workspace name can't be empty	ім’я робочого середовища не може бути порожнім
+@msg	x and y must be finite	x і y мають бути скінченними
 @msg	{C}: no effect at index {from}	{C}: немає ефекту з індексом {from}
 @msg	{_1} failed: {e}	{_1} завершився з помилкою: {e}
 @msg	{_1} files can be opened but not written (see document.formats)	файли {_1} можна відкрити, але не записати (див. document.formats)

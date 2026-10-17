@@ -3640,6 +3640,7 @@ axis	Both	И двете
 @msg	a freeform gradient keeps at least one point	свободно формулираният градиент запазва поне една точка
 @msg	a gradient needs at least two stops	градиентът се нуждае от поне две опорни точки
 @msg	a graphic style named `{to}` already exists	графичен стил с име `{to}` вече съществува
+@msg	a key object sits on that point	в тази точка има основен обект
 @msg	a page is missing	липсва страница
 @msg	a page out of range	страница извън диапазона
 @msg	a page tree kid isn't a reference	дете в дървото на страниците не е препратка
@@ -3647,6 +3648,7 @@ axis	Both	И двете
 @msg	a page's placement is not finite	разположението на страницата не е крайно
 @msg	a preset named `{_1}` exists	предварителна настройка с име `{_1}` съществува
 @msg	a slice size must be a positive number of points	размерът на парчето трябва да бъде положително число в точки
+@msg	a spine keeps at least two points	оста запазва поне две точки
 @msg	a stream runs past the end	потокът преминава отвъд края
 @msg	a stream's length is wrong	дължината на потока е грешна
 @msg	a stream's length isn't a number	дължината на потока не е число
@@ -3705,11 +3707,13 @@ axis	Both	И двете
 @msg	give horizontal or vertical	дайте хоризонтална или вертикална
 @msg	give the path `id` and the width point `index`	дайте пътя `id` и точката на ширина `index`
 @msg	guides are locked	водачите са заключени
+@msg	handle must be in or out	handle трябва да е in или out
 @msg	image '{key}' has no pixels and was left out	изображението '{key}' няма пиксели и беше пропуснато
 @msg	image data `{_1}` is missing	данните за изображение `{_1}` липсват
 @msg	image would be too large; lower the resolution	изображението ще бъде твърде голямо; намалете разделителната способност
 @msg	index must be a number or first, previous, next or last	индексът трябва да е число или first, previous, next или last
 @msg	index must be a number or first, previous, next or last, not `{other}`	индексът трябва да е число или first, previous, next или last, а не `{other}`
+@msg	index must be ≥ 0	индексът не може да е отрицателен
 @msg	installing from a path is not available on the web; pass the module as `dataBase64`	инсталирането от път не е налично в уеб; предайте модула като `dataBase64`
 @msg	internal error in `{cmd}`: {msg} (the document was left as it was before; please report this bug)	вътрешна грешка в `{cmd}`: {msg} (документът беше оставен в състоянието си отпреди; моля, докладвайте тази грешка)
 @msg	internal error: {msg} (please report this bug)	вътрешна грешка: {msg} (моля, докладвайте тази грешка)
@@ -3729,6 +3733,7 @@ axis	Both	И двете
 @msg	missing `name`	липсва `name`
 @msg	missing `tool`	липсва `tool`
 @msg	missing index	липсва индекс
+@msg	missing number `{key}`	липсва число `{key}`
 @msg	multiple windows land with M11.5	множество прозорци се зареждат с M11.5
 @msg	name the file	именувайте файла
 @msg	no CSS to copy: select objects with CSS of their own	няма CSS за копиране: изберете обекти със собствен CSS
@@ -3809,6 +3814,8 @@ axis	Both	И двете
 @msg	no such recent font	няма такъв скорошен шрифт
 @msg	no such saved selection	няма такава запазена селекция
 @msg	no such segment	няма такъв сегмент
+@msg	no such spine point	няма такава точка от оста
+@msg	no such spine segment	няма такъв сегмент от оста
 @msg	no such subpath	няма такъв подпът
 @msg	no such user library	няма такава потребителска библиотека
 @msg	no such view	няма такъв изглед
@@ -3824,6 +3831,7 @@ axis	Both	И двете
 @msg	not a DXF drawing	не е DXF чертеж
 @msg	not a VectorCraft file: {0}	не е файл на VectorCraft: {0}
 @msg	not a VectorCraft shortcut set (missing `overrides`)	не е набор от клавишни комбинации на VectorCraft (липсват `overrides`)
+@msg	not a blend	не е преливане
 @msg	not a graphic style library (format `{_1}`)	не е библиотека със стилове на графики (формат `{_1}`)
 @msg	not a shortcut set: the text doesn't start with a slash name and an opening brace	 не е набор от преки пътища: текстът не започва с име със слъш и отваряща скоба
 @msg	not a stored central record	не е съхранен централен запис
@@ -3880,6 +3888,7 @@ axis	Both	И двете
 @msg	select (or target) objects whose appearance isn't basic	изберете (или насочете към) обекти, чийто изглед не е основен
 @msg	select a Live Paint group	изберете група за интерактивно оцветяване (Live Paint)
 @msg	select a blend	изберете преход (blend)
+@msg	select a blend or give `id`	изберете преливане или задайте неговия `id`
 @msg	select a clip group	изберете група за изрязване
 @msg	select a gradient mesh	изберете мрежа на градиент (gradient mesh)
 @msg	select a linked image: an embedded one has no file	изберете свързано изображение: вграденото няма файл
@@ -3913,6 +3922,7 @@ axis	Both	И двете
 @msg	stop {i} needs `offset`	спирката {i} се нуждае от `offset`
 @msg	stop {i} needs a valid `color`	спирката {i} се нуждае от валиден `color`
 @msg	stop {i}: `{k}` must be a number	спирка {i}: `{k}` трябва да е число
+@msg	t, dx and dy must be finite	t, dx и dy трябва да са крайни числа
 @msg	the EMF header is damaged	EMF заглавната част е повредена
 @msg	the PDF has no pages	PDF файлът няма страници
 @msg	the PDF is no longer loaded	PDF файлът вече не е зареден
@@ -3925,6 +3935,7 @@ axis	Both	И двете
 @msg	the art is too light for any dots	графиката е твърде светла за каквито и да е точки
 @msg	the artboard to fit must be a positive size up to {_1} pt	работната област за напасване трябва да бъде с положителен размер до {_1} pt
 @msg	the background worker stopped	фоновият процес спря
+@msg	the blend has no spine	оста на преливането липсва
 @msg	the compressed file unpacks to more than {_1} MB	архивираният файл се разхирата до повече от {_1} MB
 @msg	the document has never been saved	документът никога не е бил запазван
 @msg	the document has no artboard	документът няма работна област
@@ -3965,6 +3976,7 @@ axis	Both	И двете
 @msg	the selected stroke's profile is already listed as {_1}	профилът на избрания щрих вече е посочен като {_1}
 @msg	the selection has no URL (or they differ)	селекцията няма URL адрес (или те се различават)
 @msg	the selection isn't in perspective	селекцията не е в перспектива
+@msg	the spine has no segments	оста няма сегменти
 @msg	the stroke has no weight	щрихът няма дебелина
 @msg	the thumbnail image is malformed	миниатюрното изображение е дефектно
 @msg	the top object must be a path, compound path or text object to use as a clipping mask	горният обект трябва да бъде път, съставен път или текстов обект, за да се използва като маска за изрязване
@@ -4003,6 +4015,7 @@ axis	Both	И двете
 @msg	version {0} files can't be compressed: only version {COMPRESSED_SINCE} and later open compressed files	файловете от версия {0} не могат да бъдат компресирани: само версия {COMPRESSED_SINCE} и по-нови отварят компресирани файлове
 @msg	width and height are at least 1 pixel	ширината и височината са най-малко 1 пиксел
 @msg	workspace name can't be empty	името на работното пространство не може да бъде празно
+@msg	x and y must be finite	x и y трябва да са крайни числа
 @msg	{C}: no effect at index {from}	{C}: няма ефект на индекс {from}
 @msg	{_1} failed: {e}	{_1} неуспешно: {e}
 @msg	{_1} files can be opened but not written (see document.formats)	{_1} файловете могат да се отварят, но не и да се записват (вижте document.formats)

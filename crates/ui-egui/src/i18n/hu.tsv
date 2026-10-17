@@ -4223,6 +4223,7 @@ imageTrace	Outline	Körvonal
 @msg	a freeform gradient keeps at least one point	a szabad formájú színátmenetben legalább egy pont marad
 @msg	a gradient needs at least two stops	a színátmenethez legalább két színátmenet-pont kell
 @msg	a graphic style named `{to}` already exists	már van ilyen nevű grafikai stílus: `{to}`
+@msg	a key object sits on that point	ezen a ponton kulcsobjektum van
 @msg	a layer couldn't be read	egy réteg nem olvasható
 @msg	a page is missing	hiányzik egy oldal
 @msg	a page out of range	tartományon kívüli oldal
@@ -4237,6 +4238,7 @@ imageTrace	Outline	Körvonal
 @msg	a PostScript error ({name})	PostScript-hiba ({name})
 @msg	a preset named `{_1}` exists	már van ilyen nevű előbeállítás: `{_1}`
 @msg	a slice size must be a positive number of points	a szelet mérete pozitív pontérték kell legyen
+@msg	a spine keeps at least two points	a gerincen legalább két pont marad
 @msg	a stream runs past the end	egy adatfolyam túlnyúlik a végén
 @msg	a stream's length is wrong	egy adatfolyam hossza hibás
 @msg	a stream's length isn't a number	egy adatfolyam hossza nem szám
@@ -4367,6 +4369,7 @@ imageTrace	Outline	Körvonal
 @msg	gradient “{name}” isn't defined in the file: a plain colour stands in for it	a színátmenet nincs megadva a fájlban: „{name}”; helyette egyszínű kitöltés áll
 @msg	group must be true or false	a group értéke true vagy false lehet
 @msg	guides are locked	a segédvonalak zárolva vannak
+@msg	handle must be in or out	handle: in vagy out kell
 @msg	image '{key}' has no pixels and was left out	a kép kimaradt, mert nincsenek pixelei: '{key}'
 @msg	image data `{_1}` is missing	hiányoznak a képadatok: `{_1}`
 @msg	image is empty	a kép üres
@@ -4376,6 +4379,7 @@ imageTrace	Outline	Körvonal
 @msg	Imported {what}: {_1}	Importálva: {what}: {_1}
 @msg	index must be a number or first, previous, next or last	az index szám vagy first, previous, next, last lehet
 @msg	index must be a number or first, previous, next or last, not `{other}`	az index szám vagy first, previous, next, last lehet, ez nem az: `{other}`
+@msg	index must be ≥ 0	az index nem lehet negatív
 @msg	Installed plug-in {_1}	Telepített bővítmény: {_1}
 @msg	installing from a path is not available on the web; pass the module as `dataBase64`	a webes változatban útvonalról nem lehet telepíteni; add át a modult `dataBase64`-ként
 @msg	internal error in `{cmd}`: {msg} (the document was left as it was before; please report this bug)	belső hiba (`{cmd}`): {msg} (a dokumentum változatlan maradt; kérjük, jelentsd ezt a hibát)
@@ -4426,6 +4430,7 @@ imageTrace	Outline	Körvonal
 @msg	missing `name`	hiányzik: `name`
 @msg	missing `tool`	hiányzik: `tool`
 @msg	missing index	hiányzik az index
+@msg	missing number `{key}`	hiányzik a szám: `{key}`
 @msg	missing panel layout	hiányzik a panelelrendezés
 @msg	move requires a destination panel	az áthelyezéshez célpanel kell
 @msg	move requires an existing destination panel	az áthelyezéshez létező célpanel kell
@@ -4514,6 +4519,8 @@ imageTrace	Outline	Körvonal
 @msg	no such recent font	nincs ilyen legutóbbi betűtípus
 @msg	no such saved selection	nincs ilyen mentett kijelölés
 @msg	no such segment	nincs ilyen szakasz
+@msg	no such spine point	nincs ilyen gerincpont
+@msg	no such spine segment	nincs ilyen gerincszakasz
 @msg	no such subpath	nincs ilyen részútvonal
 @msg	no such user library	nincs ilyen felhasználói könyvtár
 @msg	no such view	nincs ilyen nézet
@@ -4535,6 +4542,7 @@ imageTrace	Outline	Körvonal
 @msg	not a valid plug-in module: {0}	nem érvényes bővítménymodul: {0}
 @msg	not a VectorCraft file: {0}	nem VectorCraft-fájl: {0}
 @msg	not a VectorCraft shortcut set (missing `overrides`)	nem VectorCraft-billentyűparancskészlet (hiányzik: `overrides`)
+@msg	not a blend	nem összemosás
 @msg	not an EMF or WMF file	nem EMF- vagy WMF-fájl
 @msg	not found	nem található
 @msg	not in pattern editing mode	nem mintázatszerkesztő módban vagy
@@ -4624,6 +4632,7 @@ imageTrace	Outline	Körvonal
 @msg	searching a folder isn't available on the web	a webes változatban nem lehet mappában keresni
 @msg	select (or target) objects whose appearance isn't basic	jelölj ki (vagy célozz meg) olyan objektumokat, amelyeknek nem alapmegjelenésük van
 @msg	select a blend	jelölj ki egy összemosást
+@msg	select a blend or give `id`	jelölj ki egy összemosást, vagy add meg az `id` értékét
 @msg	select a clip group	jelölj ki egy vágócsoportot
 @msg	select a gradient mesh	jelölj ki egy színátmenetes hálót
 @msg	select a linked image: an embedded one has no file	jelölj ki egy csatolt képet: a beágyazottnak nincs fájlja
@@ -4663,6 +4672,7 @@ imageTrace	Outline	Körvonal
 @msg	stop {i} needs `offset`	a színátmenet-pontnak kell `offset`: {i}
 @msg	stop {i} needs a valid `color`	a színátmenet-pontnak érvényes `color` kell: {i}
 @msg	stop {i}: `{k}` must be a number	{i}. színátmenet-pont: `{k}` csak szám lehet
+@msg	t, dx and dy must be finite	t, dx és dy: véges szám kell
 @msg	SVG parse error: {0}	SVG-elemzési hiba: {0}
 @msg	Targa files are RGB: colorModel rgb	a Targa-fájlok RGB-k: colorModel rgb
 @msg	Text Wrap: select a wrap object	Szöveg körbefuttatása: jelölj ki egy körbefuttató objektumot
@@ -4676,6 +4686,7 @@ imageTrace	Outline	Körvonal
 @msg	the file's layers weren't read from its editing data ({_1}): they come from its PDF part	a fájl rétegei nem olvashatók a szerkesztési adataiból ({_1}): a PDF-részéből származnak
 @msg	the artboard to fit must be a positive size up to {_1} pt	az illesztendő rajztábla mérete pozitív, legfeljebb {_1} pt lehet
 @msg	the background worker stopped	a háttérfolyamat leállt
+@msg	the blend has no spine	az összemosásnak nincs gerince
 @msg	the compressed file unpacks to more than {_1} MB	a tömörített fájl kicsomagolva nagyobb lenne, mint {_1} MB
 @msg	the document has never been saved	a dokumentumot még nem mentették
 @msg	the document has no artboard	a dokumentumban nincs rajztábla
@@ -4735,6 +4746,7 @@ imageTrace	Outline	Körvonal
 @msg	the selected stroke's profile is already listed as {_1}	a kijelölt körvonal profilja már szerepel a listán: {_1}
 @msg	the selection has no URL (or they differ)	a kijelölésnek nincs URL-je (vagy az URL-ek eltérnek)
 @msg	the selection isn't in perspective	a kijelölés nincs perspektívában
+@msg	the spine has no segments	a gerincnek nincsenek szakaszai
 @msg	the stroke has no weight	a körvonalnak nincs vastagsága
 @msg	the target layer is locked or hidden	a célréteg zárolt vagy rejtett
 @msg	the thumbnail image is malformed	a bélyegkép hibás
@@ -4788,6 +4800,7 @@ imageTrace	Outline	Körvonal
 @msg	version {0} files can't be compressed: only version {COMPRESSED_SINCE} and later open compressed files	ilyen verziójú fájl nem tömöríthető: {0}; tömörített fájlt csak ez a verzió és az újabbak nyitnak meg: {COMPRESSED_SINCE}
 @msg	width and height are at least 1 pixel	a szélesség és a magasság legalább 1 pixel
 @msg	workspace name can't be empty	a munkaterület neve nem lehet üres
+@msg	x and y must be finite	x és y: véges szám kell
 @msg	x and y must be provided together	az x és az y csak együtt adható meg
 @msg	x and y must both be numbers	az x és az y is szám kell legyen
 @msg	Your unsaved changes are kept in this browser: reload the page to get them back.	A nem mentett módosításaidat ez a böngésző megőrizte: töltsd újra az oldalt a visszakapásukhoz.
