@@ -2749,7 +2749,8 @@ answers what it would print without writing it: `{pages (copies included), sheet
 height, orientation, scale}] (one copy, in order), tiles: [{artboard, columns, rows, printed, tiles}] (document
 space), inks: [{name, spot, print, frequency, angle}], warnings, settings}`. `print.setup {settings?}` saves the
 settings with the document (one undo step, kept in the native file as `print_setup`); both other commands start from
-the saved settings, with `settings` over them (`null` keeps a value). `list_commands` with filter `print.setup`
+the saved settings, or from a print preset's with `preset` (see Print presets), with `settings` over them (`null` keeps
+a value). `list_commands` with filter `print.setup`
 documents every field:
 
 - General: `copies` (1–999), `collate`, `reverse`; `artboards: all|range|ignore` with `range: "1-3, 5"` (ignore: all
@@ -3017,11 +3018,14 @@ preset?, settings?}` creates or changes a saved preset (starting from its own se
 `settings` over them) and `print.presets.delete {name}` deletes one; `[Default]` can be neither changed nor deleted.
 `print.presets.export {names?, path?}` writes them as a `.vcprintpresets` JSON file (without `path` it returns `data`),
 and `print.presets.import {path? | data? | dataBase64?, replace?}` adds a file's presets (a name in use gets a number
-unless `replace`). Saved presets live with the preferences. To print with a preset, pass its `settings` to
-`print.setup`, `print.preview` or `file.print`.
+unless `replace`). Saved presets live with the preferences. `print.setup`, `print.preview` and `file.print` take
+`preset`, the name of `[Default]` or of a saved preset in any case: the preset's settings are used instead of the
+document's, with `settings` over them, and `print.setup {preset}` saves them with the document. An unknown name is
+refused with the list of presets.
 
 ```json
 {"name":"run_command","arguments":{"command":"print.presets.save","params":{"name":"Posters","settings":{"scaling":"tileImageable","overlap":18,"marks":{"trim":true}}}}}
+{"name":"run_command","arguments":{"command":"file.print","params":{"preset":"Posters","path":"/tmp/posters.pdf"}}}
 ```
 
 ## EPS and PostScript import
