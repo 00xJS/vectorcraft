@@ -2543,6 +2543,8 @@ fn arb_ai_token() -> impl Strategy<Value = String> {
             "1 /Bool (BSDashAdj) ,",
             "0.75 /Real (opac) ,",
             "1e308 /Real (blur) ,",
+            "1 /Int (csrc) ,",
+            "-1e308 /Real (dark) ,",
             "0 /Real ,",
             "; (BSVariableWidthTValuesArray) ,",
             "; (BSCenteredWidthsArray) ,",

@@ -1176,6 +1176,26 @@ fn a_styled_object_inside_a_drawn_look_survives_it() {
     assert_eq!((shadow.id.as_str(), shadow.params["x"].as_f64(), shadow.params["y"].as_f64()), ("stylize.dropShadow", Some(3.0), Some(4.0)));
 }
 
+/// An object whose style's Drop Shadow has Darkness (`csrc` 1, `dark` 50) comes in as itself with
+/// that shadow, not as its drawn look.
+#[test]
+fn an_object_with_a_darkness_shadow_comes_in_as_itself() {
+    let styles = ART_STYLES.replace("3 /Real (horz) ,\n", "1 /Int (csrc) ,\n50 /Real (dark) ,\n3 /Real (horz) ,\n");
+    let hidden_rect = rect_path(0.0, 0.0, 10.0, 10.0).replace('\n', "\n%_");
+    let art_ = format!("0 Ae\nu\n{RED}{}f\nU\n%_{hidden_rect}f\n1 (Blue) XW\n", rect_path(0.0, 0.0, 10.0, 10.0));
+    let r = read_ok(&format!("{styles}{}", layer(&art_)));
+    assert!(!r.warnings.iter().any(|w| w.contains("drawn look")), "{:?}", r.warnings);
+    let a = art(&r.doc);
+    assert_eq!(a.len(), 1, "{a:#?}");
+    assert!(matches!(a[0].kind, NodeKind::Path { .. }), "the object, not its look: {a:#?}");
+    assert_eq!(fill(&a[0]).color(), Some(Color::rgb(0.0, 0.0, 1.0)));
+    let [shadow] = a[0].appearance.effects.as_slice() else { panic!("{:?}", a[0].appearance.effects) };
+    assert_eq!(
+        (shadow.id.as_str(), shadow.params["shade"].as_str(), shadow.params["darkness"].as_f64(), shadow.params["x"].as_f64()),
+        ("stylize.dropShadow", Some("darkness"), Some(50.0), Some(3.0))
+    );
+}
+
 /// A styled object read in place of its drawn look keeps the transparency written on the look (the
 /// object's own, after the look's group ends): here 60 % in Multiply.
 #[test]
