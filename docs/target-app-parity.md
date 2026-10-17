@@ -692,6 +692,8 @@ Moved from the ROADMAP's "Shipped so far" on 2026-10-10. Update it when a featur
 
 - **Pattern tiles:** the renderer keeps a tile of each pattern for each scale it rasterizes the pattern at, until the tiles fill the tile cache's budget, and then drops the least recently used tiles first. Objects that show one pattern at different scales, such as a pattern scaled to 25% with Transform Pattern Tiles next to the same pattern at 100%, draw from tiles kept between frames.
 
+- **Pattern fills in Expand:** Object › Expand with Fill turns a pattern fill into the pattern's tiles in a clip group shaped like the object, with the fill's opacity and blend mode, and the object's other fills and strokes stay above or below it in paint order, in one undo step (`object.expand`).
+
 - **Type with transparency or effects:** type at less than 100% opacity, in a blend mode other than Normal, or with raster effects such as a drop shadow keeps its glyph outlines between frames, as opaque type does, and is laid out again when it is edited or the fonts change. At 2880 × 1800 on 8 threads, a page of 1,000 type objects takes 13 ms a frame instead of 23 ms at 80% opacity, 31 ms instead of 41 ms in Multiply and 16 ms instead of 26 ms with a drop shadow, with the same pixels.
 
 - **Type drawn as glyph outlines:** under a geometry effect, in EMF and WMF export, in DXF export when it is written as outlines, flattened with Convert All Text to Outlines, and inside an envelope, type keeps its underline and strikethrough, the weight and dashes of its character strokes when it is scaled, and the placement of its gradients and patterns, as the canvas draws it. A group's or layer's own fills and strokes also paint the underline and strikethrough of the type in it.

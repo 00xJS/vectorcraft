@@ -1687,9 +1687,27 @@ outlines strokes into filled paths; `fill` (on) expands gradient fills: with `gr
 no seams show; concentric ellipses for a radial one, largest first; just the bands when stops are translucent), with
 `gradient: "mesh"` into a gradient mesh that paints the gradient (columns or rings where its colour changes, sharp at
 coincident stops), each inside a clip group shaped like the object. A freeform gradient becomes a mesh shaped like the
-object either way. Expanded colours keep the colour model their stops share. With `fill: false` gradient fills stay
-live. `object.expand.info` answers which options have something to expand in the selection (`{object, fill,
-stroke}`), and `object.mesh.create` on a gradient-filled object colours the mesh points as the gradient paints them.
+object either way. Expanded colours keep the colour model their stops share. `fill` also expands pattern fills: each
+becomes the pattern's tiles that reach the object's box, placed by the pattern's transform, in a clip group shaped like
+the object that isolates their blending, with the fill's opacity, blend mode and effects; the object's other fills
+and strokes stay on copies of it in paint order. The tiles' stroke weights and effect distances scale with the
+pattern, and opacity masks in the tile art, unlinked ones included, move with each tile. When the pattern is rotated,
+reflected, stretched or sheared, or scaled while its art has geometry effects (Roughen's detail is per inch), the
+strokes (brushed ones included) and geometry effects of the tiles' paths become filled art and their live shapes
+become plain paths, in their opacity masks too. A path in the tile art with a Transform effect set to Random, or with
+a brush that varies at random (a calligraphic or scatter brush with Random variation, or a bristle brush), becomes
+filled art first, so every tile shows the one result the canvas draws. A pattern fill stays as it is when it lays no
+tiles there (as when the box would take more than 250,000 tile positions), when a group or type in its art has a
+Transform effect set to Random, when the pattern is scaled, rotated, reflected, stretched or sheared and its art holds
+a symbol instance (the canvas scales the instance's strokes with the tile), and when the pattern is rotated,
+reflected, stretched or sheared, or scaled while its art has geometry effects, and its art has raster or 3D effects,
+or a geometry effect on a group or type, which the canvas draws turned or scaled with each tile. The geometry effects of a gradient or pattern fill (such as Offset Path)
+and those of the object shape the outline of the clip group, the gradient fits that outline and the tiles reach its
+box, as the canvas paints the fill; the expanded art does not keep them. With `fill: false` gradient and pattern fills
+stay live. `object.expand.info` answers which options have something to expand in the selection
+(`{object, fill, stroke, gradient}`; `gradient` says whether Fill has a gradient fill, which Expand Gradient To
+applies to), and `object.mesh.create` on a gradient-filled object colours the mesh points as the
+gradient paints them.
 
 ```json
 {"name":"run_command","arguments":{"command":"object.expand","params":{"stroke":false,"gradient":"mesh"}}}
