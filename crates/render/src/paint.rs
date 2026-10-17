@@ -65,18 +65,32 @@ pub fn decode_failures() -> u64 {
     DECODE_FAILURES.load(std::sync::atomic::Ordering::Relaxed)
 }
 
-/// `bytes` decoded within [`MAX_DECODE_ALLOC`]; a failure is counted in [`decode_failures`].
+/// `bytes` decoded within [`MAX_DECODE_ALLOC`] ([`decode_within_allowance`]); a failure is counted
+/// in [`decode_failures`].
 fn decode(bytes: &[u8]) -> Option<image::DynamicImage> {
-    let img = image::ImageReader::new(std::io::Cursor::new(bytes)).with_guessed_format().ok().and_then(|mut r| {
-        let mut limits = image::Limits::default();
-        limits.max_alloc = Some(MAX_DECODE_ALLOC);
-        r.limits(limits);
-        r.decode().ok()
-    });
+    let img = decode_within_allowance(bytes).ok();
     if img.is_none() {
         DECODE_FAILURES.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
     }
     img
+}
+
+/// `bytes` decoded within [`MAX_DECODE_ALLOC`], counted as RGBA: the image's size is read from its
+/// header first, and an image of more than that as RGBA gets a limit error before anything is
+/// decoded (#1717).
+pub(crate) fn decode_within_allowance(bytes: &[u8]) -> image::ImageResult<image::DynamicImage> {
+    let reader = || -> image::ImageResult<_> {
+        let mut r = image::ImageReader::new(std::io::Cursor::new(bytes)).with_guessed_format()?;
+        let mut limits = image::Limits::default();
+        limits.max_alloc = Some(MAX_DECODE_ALLOC);
+        r.limits(limits);
+        Ok(r)
+    };
+    let (w, h) = reader()?.into_dimensions()?;
+    if u64::from(w) * u64::from(h) > MAX_DECODE_ALLOC / 4 {
+        return Err(image::ImageError::Limits(image::error::LimitError::from_kind(image::error::LimitErrorKind::InsufficientMemory)));
+    }
+    reader()?.decode()
 }
 
 /// `img` shrunk, keeping its proportions, to fit a pixmap's sides (at most `u16::MAX` pixels).
