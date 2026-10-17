@@ -4384,6 +4384,20 @@ lighting	Light	Ljus
 	Reset Ruler Origin	Återställ linjalens origo
 	Artistic	Konstnärligt
 	Film Grain…	Filmkorn…
+	Cutout…	Urklipp…
+	Cutout	Urklipp
+	Neon Glow…	Neonsken…
+	Neon Glow	Neonsken
+	Poster Edges…	Affischkanter…
+	Poster Edges	Affischkanter
+	Levels	Nivåer
+	Edge Simplicity	Kantförenkling
+	Edge Fidelity	Kanttrohet
+	Glow Size	Skenets storlek
+	Glow Brightness	Skenets ljusstyrka
+	Edge Thickness	Kanttjocklek
+	Edge Intensity	Kantintensitet
+	Posterization	Posterisering
 	Highlight Area	Högdagerområde
 @msg	the compressed file unpacks to more than VectorCraft reads ({_1} MB of document, {_2} MB per image)	den komprimerade filen packas upp till mer än VectorCraft läser ({_1} MB dokument, {_2} MB per bild)
 @msg	the document is too large to save compressed ({0}): save it with Use Compression off	dokumentet är för stort för att sparas komprimerat ({0}): spara det med Använd komprimering avstängt

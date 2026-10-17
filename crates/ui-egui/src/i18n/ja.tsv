@@ -4519,6 +4519,20 @@ lighting	Light	ライト
 	Reset Ruler Origin	定規の原点をリセット
 	Artistic	アーティスティック
 	Film Grain…	フィルム粒子…
+	Cutout…	カットアウト…
+	Cutout	カットアウト
+	Neon Glow…	ネオングロー…
+	Neon Glow	ネオングロー
+	Poster Edges…	ポスターエッジ…
+	Poster Edges	ポスターエッジ
+	Levels	レベル数
+	Edge Simplicity	エッジの単純さ
+	Edge Fidelity	エッジの正確さ
+	Glow Size	光彩のサイズ
+	Glow Brightness	光彩の明るさ
+	Edge Thickness	エッジの太さ
+	Edge Intensity	エッジの強さ
+	Posterization	ポスタリゼーション
 	Highlight Area	ハイライト領域
 @msg	the compressed file unpacks to more than VectorCraft reads ({_1} MB of document, {_2} MB per image)	圧縮ファイルを展開すると VectorCraft が読み込める量を超えます (ドキュメント {_1} MB、画像 1 枚あたり {_2} MB)
 @msg	the document is too large to save compressed ({0}): save it with Use Compression off	ドキュメントが大きすぎて圧縮保存できません ({0}): 「圧縮を使用」をオフにして保存してください

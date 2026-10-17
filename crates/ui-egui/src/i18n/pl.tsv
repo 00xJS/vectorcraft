@@ -4691,6 +4691,20 @@ imageTrace	Outline	Kontur
 	DWG (use DXF)	DWG (użyj DXF)
 	Artistic	Artystyczne
 	Film Grain…	Ziarno filmu…
+	Cutout…	Wycinanka…
+	Cutout	Wycinanka
+	Neon Glow…	Neonowa poświata…
+	Neon Glow	Neonowa poświata
+	Poster Edges…	Krawędzie plakatu…
+	Poster Edges	Krawędzie plakatu
+	Levels	Poziomy
+	Edge Simplicity	Prostota krawędzi
+	Edge Fidelity	Wierność krawędzi
+	Glow Size	Rozmiar poświaty
+	Glow Brightness	Jasność poświaty
+	Edge Thickness	Grubość krawędzi
+	Edge Intensity	Intensywność krawędzi
+	Posterization	Posteryzacja
 	Highlight Area	Obszar świateł
 file-filter	All readable files	Wszystkie obsługiwane pliki
 file-filter	All placeable files	Wszystkie pliki do umieszczenia

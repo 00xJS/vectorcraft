@@ -4475,6 +4475,20 @@ lighting	Light	Свет
 	Reset Ruler Origin	Сбросить начало координат линеек
 	Artistic	Художественные
 	Film Grain…	Зернистость плёнки…
+	Cutout…	Аппликация…
+	Cutout	Аппликация
+	Neon Glow…	Неоновое свечение…
+	Neon Glow	Неоновое свечение
+	Poster Edges…	Края плаката…
+	Poster Edges	Края плаката
+	Levels	Уровни
+	Edge Simplicity	Простота краёв
+	Edge Fidelity	Точность краёв
+	Glow Size	Размер свечения
+	Glow Brightness	Яркость свечения
+	Edge Thickness	Толщина краёв
+	Edge Intensity	Интенсивность краёв
+	Posterization	Постеризация
 	Highlight Area	Область светов
 @msg	the compressed file unpacks to more than VectorCraft reads ({_1} MB of document, {_2} MB per image)	сжатый файл распаковывается в объём больше, чем читает VectorCraft ({_1} МБ документа, {_2} МБ на изображение)
 @msg	the document is too large to save compressed ({0}): save it with Use Compression off	документ слишком велик для сохранения со сжатием ({0}): сохраните его с выключенным параметром «Использовать сжатие»

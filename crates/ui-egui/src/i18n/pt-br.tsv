@@ -3858,6 +3858,20 @@ axis	Both	Ambos
 	Reset Ruler Origin	Redefinir origem das réguas
 	Artistic	Artístico
 	Film Grain…	Granulação de filme…
+	Cutout…	Recorte…
+	Cutout	Recorte
+	Neon Glow…	Brilho neon…
+	Neon Glow	Brilho neon
+	Poster Edges…	Bordas de pôster…
+	Poster Edges	Bordas de pôster
+	Levels	Níveis
+	Edge Simplicity	Simplicidade das bordas
+	Edge Fidelity	Fidelidade das bordas
+	Glow Size	Tamanho do brilho
+	Glow Brightness	Intensidade do brilho
+	Edge Thickness	Espessura das bordas
+	Edge Intensity	Intensidade das bordas
+	Posterization	Posterização
 	Grain	Grão
 	Highlight Area	Área de realces
 @msg	the compressed file unpacks to more than VectorCraft reads ({_1} MB of document, {_2} MB per image)	o arquivo compactado se expande para mais do que o VectorCraft lê ({_1} MB de documento, {_2} MB por imagem)

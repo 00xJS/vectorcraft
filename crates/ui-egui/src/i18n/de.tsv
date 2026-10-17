@@ -4434,6 +4434,20 @@ lighting	Light	Licht
 	Reset Ruler Origin	Linealursprung zurücksetzen
 	Artistic	Kunstfilter
 	Film Grain…	Filmkörnung…
+	Cutout…	Ausschnitt…
+	Cutout	Ausschnitt
+	Neon Glow…	Neonglühen…
+	Neon Glow	Neonglühen
+	Poster Edges…	Posterkanten…
+	Poster Edges	Posterkanten
+	Levels	Stufen
+	Edge Simplicity	Kantenvereinfachung
+	Edge Fidelity	Kantentreue
+	Glow Size	Leuchtgröße
+	Glow Brightness	Leuchthelligkeit
+	Edge Thickness	Kantenstärke
+	Edge Intensity	Kantenintensität
+	Posterization	Tontrennung
 	Grain	Körnung
 	Highlight Area	Lichterbereich
 @msg	the compressed file unpacks to more than VectorCraft reads ({_1} MB of document, {_2} MB per image)	die komprimierte Datei entpackt sich auf mehr, als VectorCraft liest ({_1} MB Dokument, {_2} MB pro Bild)

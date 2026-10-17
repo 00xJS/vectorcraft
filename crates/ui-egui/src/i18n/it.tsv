@@ -4479,6 +4479,20 @@ lighting	Light	Luce
 	Reset Ruler Origin	Ripristina origine dei righelli
 	Artistic	Artistico
 	Film Grain…	Grana della pellicola…
+	Cutout…	Ritaglio…
+	Cutout	Ritaglio
+	Neon Glow…	Bagliore neon…
+	Neon Glow	Bagliore neon
+	Poster Edges…	Bordi poster…
+	Poster Edges	Bordi poster
+	Levels	Livelli
+	Edge Simplicity	Semplicità dei bordi
+	Edge Fidelity	Fedeltà dei bordi
+	Glow Size	Dimensione del bagliore
+	Glow Brightness	Luminosità del bagliore
+	Edge Thickness	Spessore dei bordi
+	Edge Intensity	Intensità dei bordi
+	Posterization	Posterizzazione
 	Highlight Area	Area luci
 @msg	the compressed file unpacks to more than VectorCraft reads ({_1} MB of document, {_2} MB per image)	il file compresso, una volta decompresso, supera ciò che VectorCraft legge ({_1} MB di documento, {_2} MB per immagine)
 @msg	the document is too large to save compressed ({0}): save it with Use Compression off	il documento è troppo grande per essere salvato compresso ({0}): salvalo con Usa compressione disattivato

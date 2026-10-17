@@ -12,7 +12,7 @@ the work list made from it. Deep areas have their own checklists: [UI and intera
 | Number | Value | Kind |
 |---|---|---|
 | 2026-10-15 | minor | Image Trace retains nonzero positioned boundaries when a fixed-end returning piece has fewer than two fitted cubics. Source-generated tests check survival, winding, shared-edge reversal and Noise controls; see `image-trace-quality.md`. Scores and hours unchanged. |
-| **Feature breadth** (does each Illustrator menu item, tool, effect and format exist?) | **~88%** | measured in part: menu tree 353 of 375 items wired (94.1%), tools 89 of 92 (97%), vector effects 44 of 50 (88%), Photoshop-style effects 30 of 57 (53%), 3D 4 of 4 (initial: Extrude & Bevel, Revolve, Inflate, Rotate); blended by the area weights below |
+| **Feature breadth** (does each Illustrator menu item, tool, effect and format exist?) | **~88%** | measured in part: menu tree 353 of 375 items wired (94.1%), tools 89 of 92 (97%), vector effects 44 of 50 (88%), Photoshop-style effects 33 of 57 (58%), 3D 4 of 4 (initial: Extrude & Bevel, Revolve, Inflate, Rotate); blended by the area weights below |
 | **Feature depth** (each area scored by behaviour, weighted) | **~75%** | estimated, area table below |
 | **Ready for real work, mainstream illustrator** | **~65%** (60–70%) | estimated, see [Ready for real work](#ready-for-real-work) |
 | **Ready for real work, full Illustrator** (decides the stage) | **~62%** (57–67%) | estimated: additive weighted sum over the dimensions, see [Ready for real work](#ready-for-real-work) |
@@ -75,7 +75,7 @@ dominate; 3D, graphs and automation are specialist). They sum to 105. Feature de
 | Strokes, brushes, width profiles | 5 | 88% | Shift-double-click adjoining adjustment is implemented; remaining:  Art brush Overlap, Pattern brush auto corners, brush libraries, pen pressure on macOS, tilt/bearing/rotation | 8–15 | estimated; width-point creation and adjoining adjustment regression-tested; dialog layout reviewed; evidence below; finite-arithmetic follow-up regressions and full CI passed (evidence below) |
 | Appearance, transparency, graphic styles, masks | 5 | 97% | raster effect reach in preview bounds | 1–2 | estimated |
 | Live vector effects | 5 | 85% | Outline Object, Effect › Rasterize, Pathfinder Hard Mix/Soft Mix/Trap, SVG Filters, the Transform effect's missing options (#885) | 6–10 | measured count 44/50, depth estimated; Warp Options controls verified by focused checks and original-image review |
-| Raster effects (Effect Gallery) | 4 | 49% | 27 Photoshop-style filters (14 Artistic, 13 Sketch), the Effect Gallery dialog, Load Texture | 22–38 | measured count 30/57; texture redraw distances optimized (#1257), pixels verified; depth estimated |
+| Raster effects (Effect Gallery) | 4 | 49% | 24 Photoshop-style filters (11 Artistic, 13 Sketch), the Effect Gallery dialog, Load Texture | 21–35 | measured count 33/57; texture redraw distances optimized (#1257), pixels verified; depth estimated |
 | 3D and Materials (and Turntable) | 4 | ~25% | live Revolve with automatic smooth vector shading and default-on continuous circular caps, Extrude & Bevel (twist, taper, caps, five bevel shapes), Inflate and Rotate with Position presets (other types use flat shading; one light, painter visibility); materials, several lights, shadows, ray tracing, 3D Classic, Turntable views, 3D export | 30–55 | estimated (Extrude & Bevel, Inflate and Rotate added 2026-10-12) |
 | Type core | 9 | 80% | Auto-leading style resets are implemented; remaining:  hyphenation and justification options, Optical Margin Alignment, Middle Eastern features beyond bidi layout, optional group font-size preservation; transformed character controls fixed (#1034), see [type-parity.md](type-parity.md) | 14–19 | estimated; full-name font matches regression-tested (#1258); mixed paragraph alignment indication implemented; headless regressions, full integration CI and visual review pass; localized legacy family-name fallback with loaded/catalog regressions (#2208) |
 | Type advanced (CJK, spelling, Touch Type, Retype) | 4 | 50% | CJK vertical composition (ruby, mojikumi), variable font axes, tab leaders, spell check, Touch Type, Retype | 20–28 | estimated; upright fallback for fullwidth `！` / `？` regression-tested; score and hours unchanged |
@@ -290,6 +290,12 @@ with PNG rendering and SVG/PDF raster baking. Evidence: `crates/effects/src/pixe
 its `film_grain_*` tests and the canvas/export cases in `crates/engine/src/tests_rasterfilters.rs`.
 This raises the measured Photoshop filter count to 29/57; the depth estimate is conservatively 49%.
 The full feature/readiness headline remains unchanged at its existing rounding.
+
+Cutout, Neon Glow and Poster Edges (G2, 2026-10-16) follow as original Artistic filters with live
+preview, undo, appearance editing and save/reopen, keeping coverage at any Document Raster Effects
+resolution. Evidence: `crates/effects/src/pixel/artistic.rs`, its `cutout_*`, `neon_glow_*` and
+`poster_edges_*` tests, and `artistic_settings_survive_a_save_and_open` in
+`crates/engine/src/tests_rasterfilters.rs`. Measured Photoshop filter count 33/57; depth unchanged.
 
 ## Detailed missing items per area (2026-10-05 table, still current unless the area table above says otherwise)
 

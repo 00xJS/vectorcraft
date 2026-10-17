@@ -4452,6 +4452,20 @@ lighting	Light	Luz
 	Reset Ruler Origin	Restablecer el origen de las reglas
 	Artistic	Artístico
 	Film Grain…	Granulado de película…
+	Cutout…	Recorte…
+	Cutout	Recorte
+	Neon Glow…	Resplandor de neón…
+	Neon Glow	Resplandor de neón
+	Poster Edges…	Bordes de póster…
+	Poster Edges	Bordes de póster
+	Levels	Niveles
+	Edge Simplicity	Simplicidad de bordes
+	Edge Fidelity	Fidelidad de bordes
+	Glow Size	Tamaño del resplandor
+	Glow Brightness	Brillo del resplandor
+	Edge Thickness	Grosor de bordes
+	Edge Intensity	Intensidad de bordes
+	Posterization	Posterización
 	Highlight Area	Área de iluminaciones
 @msg	the compressed file unpacks to more than VectorCraft reads ({_1} MB of document, {_2} MB per image)	el archivo comprimido ocupa al descomprimirse más de lo que VectorCraft lee ({_1} MB de documento, {_2} MB por imagen)
 @msg	the document is too large to save compressed ({0}): save it with Use Compression off	el documento es demasiado grande para guardarlo comprimido ({0}): guárdelo con Usar compresión desactivado
