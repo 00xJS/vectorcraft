@@ -8,9 +8,9 @@
 //! 3. **Skeleton**: Guo–Hall thins the crop to one pixel, preserving diagonal ends, then
 //!    staircase corners that don't connect anything are dropped.
 //! 4. **Graph**: runs of skeleton pixels between ends and junctions (touching junction pixels
-//!    merged into one point) become polylines through the pixel centres; rings without ends
-//!    become closed ones. Short spurs that thinning leaves at junctions are pruned and the runs
-//!    on either side of a junction left with two of them are joined.
+//!    placed at their deepest pixel) become polylines; rings become closed ones. Spurs are
+//!    measured beyond each junction's maximal disc. Overlapping or split-crossing junctions
+//!    merge, and runs join through nodes left with two ends.
 //! 5. **Ink**: the skeleton is right to a pixel only, so each of its points is moved to the middle
 //!    of the line's ink, read from the image: across the line (along the pixel column or row most
 //!    nearly square to it) each pixel is as much ink as its colour is the line's rather than the
@@ -22,9 +22,8 @@
 //!    is two anchors, corners stay corners, the rest is as few curves as Paths allows.
 
 mod distance;
+mod graph;
 mod thin;
-
-use std::collections::HashSet;
 
 use vectorcraft_geom::{PathData, Point};
 
@@ -88,11 +87,11 @@ pub(crate) fn lines(
         }
         let Some(g) = Grid::from_component(&comp, w) else { continue };
         let Some(dt) = distance::squared(&g.on, g.w, g.h) else { continue };
-        let widest = 2.0 * f64::from(dt.into_iter().fold(0.0f32, f32::max)).sqrt() - 1.0;
+        let widest = 2.0 * f64::from(dt.iter().copied().fold(0.0f32, f32::max)).sqrt() - 1.0;
         if widest > max_width {
             continue;
         }
-        let Some(line) = trace_line(g, comp.len(), max_width, img, ink, style) else { continue };
+        let Some(line) = trace_line(g, &dt, comp.len(), max_width, img, ink, style) else { continue };
         for &i in &comp {
             if let Some(v) = thin.get_mut(i) {
                 *v = true;
@@ -189,113 +188,25 @@ impl Grid {
     }
 }
 
-/// A run of skeleton pixels between two nodes (`None`: none, a ring).
-#[derive(Clone)]
-struct Run {
-    pts: Vec<Point>,
-    ends: [Option<usize>; 2],
-    closed: bool,
-}
-
-impl Run {
-    fn length(&self) -> f64 {
-        self.pts.windows(2).map(|p| p[0].distance(p[1])).sum::<f64>()
-            + if self.closed { self.pts.first().zip(self.pts.last()).map_or(0.0, |(a, b)| a.distance(*b)) } else { 0.0 }
-    }
-}
-
 /// The centre lines of one line component (pixel indices of the `w`-wide image).
-fn trace_line(mut g: Grid, pixels: usize, max_width: f64, img: &Raster, ink: [f64; 3], style: &Style) -> Option<Line> {
+fn trace_line(mut g: Grid, dist: &[f32], pixels: usize, max_width: f64, img: &Raster, ink: [f64; 3], style: &Style) -> Option<Line> {
     thin::thin(&mut g);
-    let skeleton: Vec<usize> = g.interior().filter(|&i| g.on.get(i) == Some(&true)).collect();
-    if skeleton.len() < 2 {
+    let mut graph = graph::build(&g, dist)?;
+    graph.simplify(max_width)?;
+    let meet = graph.degrees()?;
+    let mut runs = graph.branches;
+    if runs.is_empty() {
         return None;
-    }
-    // Nodes: line ends, and junctions with the junction pixels touching them.
-    let mut node = vec![usize::MAX; g.on.len()];
-    let mut centres: Vec<Point> = vec![];
-    for &i in &skeleton {
-        let d = g.degree(i);
-        if d == 2 || node.get(i) != Some(&usize::MAX) {
-            continue;
-        }
-        let id = centres.len();
-        let mut members = vec![i];
-        *node.get_mut(i)? = id;
-        if d > 2 {
-            let mut k = 0;
-            while let Some(&p) = members.get(k) {
-                k += 1;
-                for q in g.neighbours(p).collect::<Vec<_>>() {
-                    if *node.get(q)? == usize::MAX && g.degree(q) > 2 {
-                        *node.get_mut(q)? = id;
-                        members.push(q);
-                    }
-                }
-            }
-        }
-        let sum = members.iter().fold(Point::ZERO, |s, &m| s + g.centre(m).to_vec2());
-        centres.push(Point::new(sum.x / members.len() as f64, sum.y / members.len() as f64));
-    }
-    // Runs from each node, then the rings left.
-    let mut used: HashSet<(usize, usize)> = HashSet::new();
-    let edge = |a: usize, b: usize| (a.min(b), a.max(b));
-    let mut runs: Vec<Run> = vec![];
-    for &p in skeleton.iter().filter(|&&i| node.get(i) != Some(&usize::MAX)) {
-        for q in g.neighbours(p).collect::<Vec<_>>() {
-            if *node.get(q)? == *node.get(p)? || !used.insert(edge(p, q)) {
-                continue;
-            }
-            let mut pts = vec![*centres.get(*node.get(p)?)?, g.centre(q)];
-            let (mut prev, mut cur) = (p, q);
-            while *node.get(cur)? == usize::MAX {
-                let Some(next) = g.neighbours(cur).find(|&n| n != prev && !used.contains(&edge(cur, n))) else { break };
-                used.insert(edge(cur, next));
-                pts.push(g.centre(next));
-                (prev, cur) = (cur, next);
-            }
-            let end = (*node.get(cur)? != usize::MAX).then_some(*node.get(cur)?);
-            if let (Some(e), Some(last)) = (end, pts.last_mut()) {
-                *last = *centres.get(e)?;
-            }
-            runs.push(Run { pts, ends: [Some(*node.get(p)?), end], closed: false });
-        }
-    }
-    for &s in &skeleton {
-        if *node.get(s)? != usize::MAX || g.neighbours(s).any(|n| used.contains(&edge(s, n))) {
-            continue;
-        }
-        let mut pts = vec![g.centre(s)];
-        let (mut prev, mut cur) = (usize::MAX, s);
-        let mut closed = false;
-        while let Some(next) = g.neighbours(cur).find(|&n| n != prev && !used.contains(&edge(cur, n))) {
-            used.insert(edge(cur, next));
-            if next == s {
-                closed = true;
-                break;
-            }
-            pts.push(g.centre(next));
-            (prev, cur) = (cur, next);
-        }
-        runs.push(Run { pts, ends: [None, None], closed });
     }
     // The line's mean width: its pixels over its length (the skeleton stops about half a width
     // short of each end).
-    let width = |runs: &[Run]| {
-        let length: f64 = runs.iter().map(Run::length).sum();
+    let width = |runs: &[graph::Branch]| {
+        let length: f64 = runs.iter().map(graph::Branch::length).sum();
         let px = pixels as f64;
         ((-length + (length * length + 4.0 * px).sqrt()) / 2.0).clamp(1.0, max_width.max(1.0))
     };
-    let spur = width(&runs);
-    let runs = join(prune(runs, centres.len(), spur), centres.len());
-    let mut runs = runs;
     let coarse = width(&runs);
     let ink = Ink { img, color: ink, reach: (max_width / 2.0).ceil().clamp(1.0, 64.0) as i64 + 2 };
-    // How many runs end at each node: one is an end of the line.
-    let mut meet = vec![0usize; centres.len()];
-    for e in runs.iter().flat_map(|r| r.ends.iter().flatten()) {
-        *meet.get_mut(*e)? += 1;
-    }
     let (mut widths, mut soft, mut read) = (vec![], 0usize, 0usize);
     for r in &mut runs {
         let n = r.pts.len();
@@ -485,72 +396,4 @@ impl Ink<'_> {
         }
         sum
     }
-}
-
-/// The runs without the spurs thinning leaves: runs shorter than the line's `width` from a line end
-/// to a junction that keeps at least two other runs.
-fn prune(runs: Vec<Run>, nodes: usize, width: f64) -> Vec<Run> {
-    let mut degree = vec![0usize; nodes];
-    for e in runs.iter().flat_map(|r| r.ends.iter().flatten()) {
-        if let Some(d) = degree.get_mut(*e) {
-            *d += 1;
-        }
-    }
-    let mut order: Vec<usize> = (0..runs.len()).collect();
-    order.sort_by(|a, b| runs.get(*a).map_or(0.0, Run::length).total_cmp(&runs.get(*b).map_or(0.0, Run::length)));
-    let mut keep = vec![true; runs.len()];
-    for i in order {
-        let Some(r) = runs.get(i) else { continue };
-        let [Some(a), Some(b)] = r.ends else { continue };
-        let (tip, fork) = if degree.get(a).copied().unwrap_or(0) == 1 { (a, b) } else { (b, a) };
-        if degree.get(tip).copied().unwrap_or(0) == 1 && degree.get(fork).copied().unwrap_or(0) >= 3 && r.length() < width.max(2.0) {
-            if let Some(k) = keep.get_mut(i) {
-                *k = false;
-            }
-            if let Some(d) = degree.get_mut(tip) {
-                *d = d.saturating_sub(1);
-            }
-            if let Some(d) = degree.get_mut(fork) {
-                *d = d.saturating_sub(1);
-            }
-        }
-    }
-    runs.into_iter().zip(keep).filter_map(|(r, k)| k.then_some(r)).collect()
-}
-
-/// The runs joined through every node exactly two of them meet at (a run meeting itself closes).
-fn join(runs: Vec<Run>, nodes: usize) -> Vec<Run> {
-    let mut runs: Vec<Option<Run>> = runs.into_iter().map(Some).collect();
-    for n in 0..nodes {
-        let at: Vec<(usize, usize)> = runs
-            .iter()
-            .enumerate()
-            .flat_map(|(i, r)| r.iter().flat_map(move |r| (0..2).filter(move |&k| r.ends.get(k) == Some(&Some(n))).map(move |k| (i, k))))
-            .collect();
-        let &[(i, ki), (j, kj)] = at.as_slice() else { continue };
-        if i == j {
-            if let Some(r) = runs.get_mut(i).and_then(Option::as_mut) {
-                r.pts.pop();
-                r.ends = [None, None];
-                r.closed = r.pts.len() >= 3;
-            }
-            continue;
-        }
-        let (Some(mut a), Some(mut b)) = (runs.get_mut(i).and_then(Option::take), runs.get_mut(j).and_then(Option::take)) else { continue };
-        // a ends at n, b starts at n.
-        if ki == 0 {
-            a.pts.reverse();
-            a.ends.reverse();
-        }
-        if kj == 1 {
-            b.pts.reverse();
-            b.ends.reverse();
-        }
-        a.pts.extend(b.pts.into_iter().skip(1));
-        a.ends[1] = b.ends[1];
-        if let Some(r) = runs.get_mut(i) {
-            *r = Some(a);
-        }
-    }
-    runs.into_iter().flatten().collect()
 }
