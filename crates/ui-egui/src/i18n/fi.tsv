@@ -2675,10 +2675,10 @@ lighting	Light	Valo
 	All in One Folder	Kaikki yhteen kansioon
 	By Size or Row	Koon tai rivin mukaan
 	By Format	Muodon mukaan
-	By Artboard or Item	Piirtoalueen tai kohteen mukaan
+	By Artboard or Item	Piirtoalustan tai kohteen mukaan
 	By Item, Then Format	Kohteen, sitten muodon mukaan
 	Document Name	Asiakirjan nimi
-	Artboard or Item Name	Piirtoalueen tai kohteen nimi
+	Artboard or Item Name	Piirtoalustan tai kohteen nimi
 	Number (####)	Numero (####)
 	Date (YYYYMMDD)	Päivämäärä (VVVVKKPP)
 	Date (YYYY-MM-DD)	Päivämäärä (VVVV-KK-PP)
@@ -5009,7 +5009,7 @@ mark-style	Japanese	Japanilainen
 	Pattern Type	Kuviotyyppi
 	Dot	Piste
 # User Interface › Color Scheme
-	Color Scheme	Värimalli
+	Color Scheme	Väriteema
 	Modern	Moderni
 
 # Symbol Options › Export Type
