@@ -1000,7 +1000,7 @@ fn export(s: &mut Session, p: &Value) -> Result<Value> {
 /// the note the raster exports add (`fileio::encode::encode_all_of`) when an image has failed to
 /// decode since then and so is missing from the image.
 fn undecoded(failed: u64) -> Vec<&'static str> {
-    if vectorcraft_render::decode_failures() > failed { vec!["an image couldn't be decoded and is missing from the picture"] } else { vec![] }
+    super::rasterfx::undecoded_warning(failed).into_iter().collect()
 }
 
 fn preview(s: &mut Session, p: &Value) -> Result<Value> {
