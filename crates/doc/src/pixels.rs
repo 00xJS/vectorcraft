@@ -11,15 +11,20 @@ use crate::ImageBlob;
 /// address and aborts when an allocation fails, so it keeps the decoder's own 512 MB.
 pub const MAX_RASTER_ALLOC: u64 = if cfg!(target_arch = "wasm32") { 512 << 20 } else { 2 << 30 };
 
-/// The pixels of encoded image `bytes` as RGBA; `None` when they can't be decoded or would take
-/// more than `max` bytes as RGBA. The size is read from the header first: the decoder's own limit
-/// is on the file's samples, and a grey image is a quarter of what it becomes here (#1717).
+/// The pixels of encoded image `bytes` as RGBA; `None` when they can't be decoded, would take
+/// more than `max` bytes as RGBA, or need more than `max` bytes to decode. The size is read from
+/// the header first: the decoder's limit is on the file's samples, and a gray image is a quarter
+/// of what it becomes here (#1717).
 fn rgba_within(bytes: &[u8], max: u64) -> Option<image::RgbaImage> {
     let (w, h) = image::ImageReader::new(Cursor::new(bytes)).with_guessed_format().ok()?.into_dimensions().ok()?;
     if u64::from(w) * u64::from(h) > max / 4 {
         return None;
     }
-    Some(image::load_from_memory(bytes).ok()?.to_rgba8())
+    let mut reader = image::ImageReader::new(Cursor::new(bytes)).with_guessed_format().ok()?;
+    let mut limits = image::Limits::default();
+    limits.max_alloc = Some(max);
+    reader.limits(limits);
+    Some(reader.decode().ok()?.into_rgba8())
 }
 
 impl ImageBlob {
@@ -129,6 +134,35 @@ mod tests {
 
     fn pixels(b: &ImageBlob) -> Vec<[u8; 4]> {
         image::load_from_memory(&b.bytes).unwrap().to_rgba8().pixels().map(|p| p.0).collect()
+    }
+
+    /// A GIF whose `w` × `h` screen holds one opaque red pixel at the top left. The file holds no
+    /// other pixels, and the decoder makes them transparent.
+    fn gif_with_one_red_pixel(w: u16, h: u16) -> Vec<u8> {
+        let mut gif = b"GIF89a".to_vec();
+        gif.extend_from_slice(&w.to_le_bytes());
+        gif.extend_from_slice(&h.to_le_bytes());
+        // Flags for a global color table of two colors, the background and aspect bytes, then the
+        // table: red and black.
+        gif.extend_from_slice(&[0x80, 0, 0, 255, 0, 0, 0, 0, 0]);
+        // A 1 × 1 image at (0, 0), its LZW data (clear, color 0, end), and the end of the file.
+        gif.extend_from_slice(&[0x2C, 0, 0, 0, 0, 1, 0, 1, 0, 0, 2, 2, 0x44, 0x01, 0, 0x3B]);
+        gif
+    }
+
+    /// The pixels are decoded within the allowance, not within the decoder's own 512 MB: an RGBA
+    /// image of 11,586 × 11,586 pixels (536,941,584 bytes) is recolored and sampled.
+    #[test]
+    fn pixels_past_the_decoders_own_limit_are_decoded_within_the_allowance() {
+        let (w, h) = (11_586, 11_586);
+        let rgba = u64::from(w) * u64::from(h) * 4;
+        assert!(rgba > 512 << 20);
+        let gif = gif_with_one_red_pixel(w, h);
+        assert!(rgba_within(&gif, rgba - 1).is_none(), "past the allowance");
+        let b = ImageBlob::new("image/gif", gif);
+        assert!(b.map_rgb(|[r, g, bl]| [bl, g, r]).is_some(), "red becomes blue");
+        assert_eq!(b.sample(0.5, 0.5, 1), Some([255, 0, 0, 255]));
+        assert_eq!(b.sample(f64::from(w) - 0.5, f64::from(h) - 0.5, 1), None, "transparent");
     }
 
     /// #1717: the RGBA size is checked from the header, before anything is decoded: a grey image
