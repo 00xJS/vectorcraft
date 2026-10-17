@@ -587,3 +587,25 @@ fn picking_another_pattern_swatch_keeps_the_pattern_transform() {
     assert_eq!(pattern, "Dots");
     assert_eq!(xf.as_coeffs(), [2.0, 0.0, 0.0, 2.0, 15.0, 10.0]);
 }
+
+#[test]
+fn inner_glow_on_a_pattern_fill_stays_inside_the_object_on_the_threaded_renderer() {
+    // #2426: the glow's pixmap was drawn with the pattern's paint transform, so it landed
+    // scaled at the top left instead of along the object's edges.
+    let mut s = session();
+    make_dots(&mut s);
+    let bg = rect(&mut s, 0.0, 0.0, 400.0, 400.0);
+    s.execute("paint.setFill", &json!({"ids": [bg.0], "color": "#223344"})).unwrap();
+    let big = rect(&mut s, 100.0, 100.0, 150.0, 150.0);
+    s.execute("paint.setFill", &json!({"ids": [big.0], "swatch": "Dots"})).unwrap();
+    sel(&mut s, &[big]);
+    s.execute("effect.apply", &json!({"effect": "stylize.innerGlow", "params": {"blur": 10}})).unwrap();
+    let mut r = vectorcraft_render::Renderer::new();
+    r.threads = 2;
+    let view = Affine::scale(1.5) * Affine::translate((-20.0, -30.0));
+    let out = r.render(&s.doc().unwrap().doc, 400, 400, view, &Default::default());
+    let [red, ..] = out.pixel(110, 100);
+    assert!(red < 0x30, "glow outside the object: red {red}");
+    let [red, ..] = out.pixel(123, 200);
+    assert!(red > 0x40, "no glow along the edge: red {red}");
+}
