@@ -623,10 +623,10 @@ fn floating_group_paints_an_opaque_background() {
     app.run("window.panel.float", json!({"panel":"properties","x":400,"y":200,"width":300,"height":420})).unwrap();
     let h = harness(app, vec2(1280.0, 800.0));
     // Paint order: the last big filled rectangle over a point decides what the user sees there
-    // (outlines and small widgets don't count).
+    // (outlines, small widgets and fully transparent fills, which paint nothing, don't count).
     fn topmost(shape: &egui::Shape, p: Pos2, found: &mut Option<egui::Color32>) {
         match shape {
-            egui::Shape::Rect(r) if r.rect.contains(p) && r.rect.width() >= 200.0 && r.stroke.is_empty() => *found = Some(r.fill),
+            egui::Shape::Rect(r) if r.rect.contains(p) && r.rect.width() >= 200.0 && r.stroke.is_empty() && r.fill.a() > 0 => *found = Some(r.fill),
             egui::Shape::Vec(v) => v.iter().for_each(|s| topmost(s, p, found)),
             _ => {}
         }
