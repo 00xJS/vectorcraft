@@ -251,7 +251,7 @@ pub(crate) fn script_params(p: &Value, setup: &DocSetup, cmd: &str) -> Result<(O
 }
 
 /// A superscript or subscript in `setup`'s proportions.
-fn position_in(setup: &DocSetup, p: CharPosition) -> CharPosition {
+pub(crate) fn position_in(setup: &DocSetup, p: CharPosition) -> CharPosition {
     match p {
         CharPosition::Normal => CharPosition::Normal,
         CharPosition::Superscript(_) => CharPosition::Superscript(setup.superscript),
