@@ -3364,6 +3364,12 @@ left out when everything fits. `text.create` and `text.createInPath` also return
 as `document.inspect` reports it (after `justify`), so a script can place the type without a helper object (#2413). The warnings of `file.print` and `print.preview` give the ids of the objects that print
 and whose text doesn't fit: the first 20 ids, then how many more.
 
+In PDF, EPS, SVG, EMF, WMF and the raster formats, the warnings of `document.export`, `document.exportPdf` and
+`document.exportEps` give the ids in the same way for the visible objects that the export draws and whose text doesn't
+fit. The export draws the objects on the pages or artboards it writes; an EPS of the visible art and an SVG without
+chosen artboards draw all of them. A PDF leaves out the layers that don't print unless `includeNonPrinting` or
+`createLayers` is set. A `.ai` file keeps the whole text in its editing data and gives no such warning.
+
 ```json
 {"name":"run_command","arguments":{"command":"text.areaOptions","params":{"fit":"shrinkText","fitMinPercent":60}}}
 ```

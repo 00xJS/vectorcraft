@@ -136,6 +136,19 @@ pub(super) fn printed_type(d: &Document, layers: &[Arc<Node>], areas: &[Rect]) -
     (walk.fonts, walk.overflow)
 }
 
+/// The warning of an export that draws `layers` of `d` over `areas` (document space; `None`: the
+/// whole of them) about the area type and type on a path that it draws and whose text doesn't fit,
+/// found as [`printed_type`] finds them for Print: visible objects of the document that aren't on
+/// a template layer.
+pub(super) fn export_overflow_warning(d: &Document, layers: &[Arc<Node>], areas: Option<&[Rect]>) -> Option<String> {
+    let mut walk = Printed { d, own: true, fonts: BTreeSet::new(), overflow: BTreeSet::new(), symbols: BTreeSet::new(), patterns: BTreeSet::new() };
+    for l in layers {
+        walk.node(l, areas);
+    }
+    let overflow: Vec<NodeId> = walk.overflow.into_iter().collect();
+    super::typecmd::export_overflow_warning(&overflow)
+}
+
 /// The walk of [`printed_type`].
 struct Printed<'a> {
     d: &'a Document,

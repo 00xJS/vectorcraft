@@ -385,7 +385,7 @@ pub fn encode(doc: &Document, format: &str, p: &Value) -> Result<Vec<u8>> {
 
 /// Like [`encode`], also returning the encoder's warnings (PDF and SVG: options not applied yet,
 /// features approximated or left out; every format that draws type: fonts written in the fallback
-/// font).
+/// font; PDF, EPS, SVG, EMF, WMF and the raster formats: type that doesn't fit its frame).
 pub fn encode_with_warnings(doc: &Document, format: &str, p: &Value) -> Result<(Vec<u8>, Vec<String>)> {
     let f = super::writable(C, Some(format), None)?;
     encode_all(doc, f.id, p)?.single(f)
@@ -529,6 +529,8 @@ fn encode_files(doc: &Document, f: &Format, p: &Value) -> Result<Encoded> {
             if enc.files.is_empty() {
                 return Err(bad(C, "the document has no artboard"));
             }
+            let regions: Vec<Rect> = enc.files.iter().filter_map(|(b, _)| b.and_then(|b| doc.artboards.get(b))).map(|a| a.rect).collect();
+            enc.warnings.extend(crate::cmd::fonts::export_overflow_warning(doc, &doc.layers, Some(&regions)));
             if format == RasterFormat::WebP && o.lossless == Some(false) {
                 enc.warnings.push("lossy WebP isn't available yet: the file is lossless (exact, but larger)".into());
             }
