@@ -45,6 +45,15 @@ pub(super) fn length(ui: &mut egui::Ui, d: &mut Dialog, key: &str, unit: Unit, w
     true
 }
 
+/// What [`length`] shows for `d.fields[key]`, as the screen-reader value of a rail over `range`
+/// (in points) beside it: the number in `unit` and the field's text. `None` while the field is
+/// blank.
+pub(super) fn length_value(d: &Dialog, key: &str, unit: Unit, range: std::ops::RangeInclusive<f64>) -> Option<crate::widgets::SliderValue> {
+    let pt = d.fields.contains_key(key).then(|| d.f64(key, 0.0))?;
+    let number = unit.number(pt).parse().unwrap_or(unit.from_pt(pt));
+    Some(crate::widgets::SliderValue::text(number, unit.from_pt(*range.start())..=unit.from_pt(*range.end()), unit.format(pt)))
+}
+
 /// The fields of the form dialogs ([`grid`]) that are distances, by dialog kind.
 fn lengths(kind: &str) -> &'static [&'static str] {
     match kind {
@@ -491,7 +500,8 @@ pub(super) fn slider_w(
 }
 
 /// The rail and value field of [`slider`] without its label (for a row that draws its own); screen
-/// readers call the rail `name` (the row's label, already translated).
+/// readers call the rail `name` (the row's label, already translated), with the number and text
+/// the field shows as its value.
 pub(super) fn slider_field_named(
     ui: &mut egui::Ui,
     d: &mut Dialog,
@@ -503,7 +513,8 @@ pub(super) fn slider_field_named(
 ) {
     let (min, max) = (*range.start(), *range.end());
     let v = d.f64(key, 0.0).clamp(min, max);
-    slider_rail_named(ui, d, key, name, range, track);
+    let shown = crate::widgets::SliderValue::field(v, range.clone(), suffix, 0);
+    slider_rail_valued(ui, d, key, name, range, Some(shown), track);
     if let Some(n) = crate::widgets::plain_field(ui, ("dlg-field", key), v, suffix, 0, 52.0).map(|x| x.round().clamp(min, max)).filter(|n| *n != v) {
         d.fields.insert(key.into(), json!(n));
     }
@@ -511,7 +522,7 @@ pub(super) fn slider_field_named(
 
 /// The rail of [`slider_field_named`] alone: dragging it sets the number `d.fields[key]` to a
 /// whole number in `range` (a value past the range shows at its end until the rail moves); screen
-/// readers call it `name` (already translated).
+/// readers call it `name` (already translated), with the number `d.fields[key]` as its value.
 pub(super) fn slider_rail_named(
     ui: &mut egui::Ui,
     d: &mut Dialog,
@@ -520,9 +531,25 @@ pub(super) fn slider_rail_named(
     range: std::ops::RangeInclusive<f64>,
     track: &dyn Fn(f32) -> egui::Color32,
 ) {
+    let shown = crate::widgets::SliderValue::number(d.f64(key, 0.0), range.clone());
+    slider_rail_valued(ui, d, key, name, range, Some(shown), track);
+}
+
+/// [`slider_rail_named`] that screen readers get `shown` from: the number and text of the field
+/// the row draws beside it (no value for `None`, as for a blank field).
+pub(super) fn slider_rail_valued(
+    ui: &mut egui::Ui,
+    d: &mut Dialog,
+    key: &str,
+    name: &str,
+    range: std::ops::RangeInclusive<f64>,
+    shown: Option<crate::widgets::SliderValue>,
+    track: &dyn Fn(f32) -> egui::Color32,
+) {
     let (min, max) = (*range.start(), *range.end());
     let v = d.f64(key, 0.0).clamp(min, max);
-    let (dragged, _) = crate::widgets::color_slider_named(ui, ("dlg-slider", key), name, ((v - min) / (max - min)) as f32, SLIDER_WIDTH, track);
+    let (dragged, _) =
+        crate::widgets::color_slider_valued(ui, ("dlg-slider", key), name, shown, ((v - min) / (max - min)) as f32, SLIDER_WIDTH, track);
     if let Some(n) = dragged.map(|x| (min + x as f64 * (max - min)).round()).filter(|n| *n != v) {
         d.fields.insert(key.into(), json!(n));
     }

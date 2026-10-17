@@ -620,11 +620,7 @@ pub fn mixed_field(
     width: f32,
 ) -> Option<f64> {
     let id = ui.id().with(id);
-    let show = |value: f64| {
-        let s = format!("{:.*}", decimals, value);
-        let s = if s.contains('.') { s.trim_end_matches('0').trim_end_matches('.').to_string() } else { s };
-        format!("{s}{suffix}")
-    };
+    let show = |value: f64| field_text(value, suffix, decimals);
     // The suffix (and %, °) may follow any operand: `45*2°`, `50% / 2`.
     let read = |buf: &str| {
         let suffix = suffix.trim();
@@ -641,6 +637,14 @@ pub fn mixed_field(
     let stepped = step_value(ui, &resp, &mut buf, read, show).map(|v| round_to(v, decimals));
     let scrubbed = scrub::field(ui, id, rect, &buf, value, decimals);
     if commit && buf != shown { read(&buf) } else { stepped.or(scrubbed).filter(|&v| Some(v) != value) }
+}
+
+/// The text [`plain_field`] shows for `value`: at most `decimals` places, without trailing zeros,
+/// then `suffix`.
+fn field_text(value: f64, suffix: &str, decimals: usize) -> String {
+    let s = format!("{:.*}", decimals, value);
+    let s = if s.contains('.') { s.trim_end_matches('0').trim_end_matches('.').to_string() } else { s };
+    format!("{s}{suffix}")
 }
 
 /// Draw a paint preview (swatch chip) into `rect`.
@@ -1594,6 +1598,69 @@ pub fn color_slider_named(
     width: f32,
     track: &dyn Fn(f32) -> Color32,
 ) -> (Option<f32>, Live) {
+    color_slider_valued(ui, id, name, None, value, width, track)
+}
+
+/// The value a slider gives screen readers: the number the field beside it shows, the range of the
+/// slider's rail and the field's text.
+#[derive(Clone, Debug, PartialEq)]
+pub struct SliderValue {
+    pub value: f64,
+    pub range: std::ops::RangeInclusive<f64>,
+    /// The field's text, such as "50%"; `None` gives the number alone.
+    pub text: Option<String>,
+}
+
+impl SliderValue {
+    /// `value` on a rail over `range`, without a text.
+    pub fn number(value: f64, range: std::ops::RangeInclusive<f64>) -> Self {
+        Self { value, range, text: None }
+    }
+
+    /// `value` on a rail over `range` as [`plain_field`] shows it with `suffix` and at most
+    /// `decimals` places: the number it shows (`value` rounded) and its text.
+    pub fn field(value: f64, range: std::ops::RangeInclusive<f64>, suffix: &str, decimals: usize) -> Self {
+        let number = field_text(value, "", decimals);
+        Self { value: number.parse().unwrap_or(value), range, text: Some(format!("{number}{suffix}")) }
+    }
+
+    /// `value` on a rail over `range`, with `text`, for a field that writes its own text (a length
+    /// in the document's unit, an egui `DragValue`).
+    pub fn text(value: f64, range: std::ops::RangeInclusive<f64>, text: String) -> Self {
+        Self { value, range, text: Some(text) }
+    }
+}
+
+/// Give `resp` a slider's screen-reader node named `name` (nothing when `name` is empty), with
+/// `shown`'s number, text and range: the rail's range, extended to the number when the field holds
+/// a number past the rail's end.
+fn slider_info(ui: &Ui, resp: &Response, name: &str, shown: Option<SliderValue>) {
+    if name.is_empty() {
+        return;
+    }
+    let enabled = ui.is_enabled();
+    let Some(s) = shown else {
+        resp.widget_info(|| egui::WidgetInfo::labeled(egui::WidgetType::Slider, enabled, name));
+        return;
+    };
+    resp.widget_info(|| egui::WidgetInfo { current_text_value: s.text.clone(), ..egui::WidgetInfo::slider(enabled, s.value, name) });
+    ui.ctx().accesskit_node_builder(resp.id, |node| {
+        node.set_min_numeric_value(s.range.start().min(s.value));
+        node.set_max_numeric_value(s.range.end().max(s.value));
+    });
+}
+
+/// [`color_slider_named`] that screen readers also get `shown` from (see [`SliderValue`]). With
+/// `None`, as for a field left blank for a mixed value, it reports no value.
+pub fn color_slider_valued(
+    ui: &mut Ui,
+    id: impl std::hash::Hash + std::fmt::Debug,
+    name: &str,
+    shown: Option<SliderValue>,
+    value: f32,
+    width: f32,
+    track: &dyn Fn(f32) -> Color32,
+) -> (Option<f32>, Live) {
     let t = Tokens::get(ui.ctx());
     let (rect, _) = ui.allocate_exact_size(vec2(width, 22.0), Sense::hover());
     let bar = Rect::from_min_size(pos2(rect.left() + 4.0, rect.top() + 4.0), vec2(width - 8.0, 7.0));
@@ -1606,9 +1673,7 @@ pub fn color_slider_named(
     let thumb = vec![tip, pos2(x + 5.5, tip.y + 6.0), pos2(x + 5.5, tip.y + 10.0), pos2(x - 5.5, tip.y + 10.0), pos2(x - 5.5, tip.y + 6.0)];
     let fill = if resp.dragged() || resp.hovered() { Color32::WHITE } else { t.icon };
     ui.painter().add(egui::Shape::convex_polygon(thumb, fill, Stroke::new(1.0, t.border)));
-    if !name.is_empty() {
-        resp.widget_info(|| egui::WidgetInfo::labeled(egui::WidgetType::Slider, ui.is_enabled(), name));
-    }
+    slider_info(ui, &resp, name, shown);
     match pointer_phase(&resp) {
         Some((p, phase)) => (Some(((p.x - bar.left()) / bar.width()).clamp(0.0, 1.0)), phase),
         None => (None, Live::Idle),
@@ -1711,6 +1776,20 @@ pub fn channel_slider_named(
     size: Vec2,
     track: &dyn Fn(f32) -> Color32,
 ) -> (Option<f32>, Live) {
+    channel_slider_valued(ui, id, name, None, value, size, track)
+}
+
+/// [`channel_slider_named`] that screen readers also get `shown` from, as for
+/// [`color_slider_valued`].
+pub fn channel_slider_valued(
+    ui: &mut Ui,
+    id: impl std::hash::Hash + std::fmt::Debug,
+    name: &str,
+    shown: Option<SliderValue>,
+    value: f32,
+    size: Vec2,
+    track: &dyn Fn(f32) -> Color32,
+) -> (Option<f32>, Live) {
     let t = Tokens::get(ui.ctx());
     let (rect, _) = ui.allocate_exact_size(size, Sense::hover());
     let resp = ui.interact(rect, ui.id().with(id), Sense::click_and_drag());
@@ -1723,9 +1802,7 @@ pub fn channel_slider_named(
         let tip = pos2(x + d * 5.0, y);
         ui.painter().add(egui::Shape::convex_polygon(vec![tip, pos2(x, y + 4.0 * d), pos2(x, y - 4.0 * d)], fill, Stroke::NONE));
     }
-    if !name.is_empty() {
-        resp.widget_info(|| egui::WidgetInfo::labeled(egui::WidgetType::Slider, ui.is_enabled(), name));
-    }
+    slider_info(ui, &resp, name, shown);
     match pointer_phase(&resp) {
         Some((p, phase)) => (Some(((bar.bottom() - p.y) / bar.height()).clamp(0.0, 1.0)), phase),
         None => (None, Live::Idle),
@@ -2102,9 +2179,12 @@ pub fn harmony_wheel(ui: &mut Ui, id: &str, size: f32, colors: &[Color], base: O
     ui.horizontal(|ui| {
         ui.add_space(((ui.available_width() - size - 76.0) / 2.0).max(0.0));
         ui.add_sized([70.0, 22.0], egui::Label::new(egui::RichText::new(tl!("Brightness")).color(t.text_dim)));
+        // Screen readers get the brightness in percent, as the Color panel's HSB B field shows it.
+        let shown = SliderValue::field((f64::from(v) * 100.0).round(), 0.0..=100.0, "%", 0);
         if let (Some(b), Some([h, s, _])) = (base, base_hsb)
-            && let (Some(nv), _) =
-                color_slider_named(ui, (id, "brightness"), tl!("Brightness"), v, size, &|x| crate::panels::c32(&Color::from_hsb(h, s, x)))
+            && let (Some(nv), _) = color_slider_valued(ui, (id, "brightness"), tl!("Brightness"), Some(shown), v, size, &|x| {
+                crate::panels::c32(&Color::from_hsb(h, s, x))
+            })
         {
             out.moved = Some((b, [None, None, Some(nv)]));
         }
@@ -2413,8 +2493,38 @@ pub(crate) mod accessibility_tests {
         assert_eq!(slider("Angle"), (Role::Slider, Some(45.0)));
         assert_eq!(slider("H"), (Role::Slider, None));
         assert_eq!(slider("Color wheel"), (Role::Slider, None));
-        assert_eq!(slider("Brightness"), (Role::Slider, None));
         assert!(tree.iter().any(|n| n.role() == Role::ComboBox && n.value() == Some("Regular")), "the searchable combo box shows its text");
+    }
+
+    /// The number, range and text of the slider of `tree` that screen readers name `label`.
+    pub(crate) fn slider_value(tree: &[Node], label: &str) -> (Option<f64>, Option<f64>, Option<f64>, Option<String>) {
+        let n = tree.iter().find(|n| n.role() == Role::Slider && n.label() == Some(label)).unwrap_or_else(|| panic!("no slider is named {label:?}"));
+        (n.numeric_value(), n.min_numeric_value(), n.max_numeric_value(), n.value().map(str::to_string))
+    }
+
+    /// The `_valued` sliders give screen readers the number and text of their field, with the rail's
+    /// range extended to a number past it; the harmony wheel's Brightness gives its percent.
+    #[test]
+    fn sliders_report_the_value_their_field_shows() {
+        let dark_red = Color::from_hsb(0.0, 1.0, 0.5);
+        let gray = |_: f32| Color32::GRAY;
+        let tree = tree(|ui| {
+            color_slider_valued(ui, "opacity", "Opacity:", Some(SliderValue::field(49.6, 0.0..=100.0, "%", 0)), 0.5, 120.0, &gray);
+            color_slider_valued(ui, "scale", "Horizontal:", Some(SliderValue::field(312.5, 0.0..=200.0, "%", 2)), 1.0, 120.0, &gray);
+            color_slider_valued(ui, "move", "Vertical:", Some(SliderValue::text(-1.5, -14.0..=14.0, "-1.5 in".into())), 0.4, 120.0, &gray);
+            color_slider_valued(ui, "count", "Ridges per segment:", Some(SliderValue::number(4.0, 0.0..=100.0)), 0.04, 120.0, &gray);
+            color_slider_valued(ui, "axis", "Weight", None, 0.5, 120.0, &gray);
+            channel_slider_valued(ui, "channel", "H", Some(SliderValue::field(210.0, 0.0..=360.0, "°", 0)), 210.0 / 360.0, vec2(22.0, 80.0), &gray);
+            harmony_wheel(ui, "wheel", 120.0, &[dark_red], Some(0));
+        });
+        let s = |label| slider_value(&tree, label);
+        assert_eq!(s("Opacity:"), (Some(50.0), Some(0.0), Some(100.0), Some("50%".into())));
+        assert_eq!(s("Horizontal:"), (Some(312.5), Some(0.0), Some(312.5), Some("312.5%".into())));
+        assert_eq!(s("Vertical:"), (Some(-1.5), Some(-14.0), Some(14.0), Some("-1.5 in".into())));
+        assert_eq!(s("Ridges per segment:"), (Some(4.0), Some(0.0), Some(100.0), None));
+        assert_eq!(s("Weight"), (None, None, None, None), "a mixed value");
+        assert_eq!(s("H"), (Some(210.0), Some(0.0), Some(360.0), Some("210°".into())));
+        assert_eq!(s("Brightness"), (Some(50.0), Some(0.0), Some(100.0), Some("50%".into())));
     }
 }
 
