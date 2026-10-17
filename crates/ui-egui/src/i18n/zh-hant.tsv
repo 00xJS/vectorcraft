@@ -4058,3 +4058,5 @@ lighting	Light	光源
 @msg	name is empty	名稱為空
 @msg	no symbol named `{n}`	沒有名為 `{n}` 的符號
 	Enable Guides for 9-Slice Scaling	啟用 9-slice 縮放參考線
+	Persistent	持久
+	Library Panel Options	資料庫面板選項

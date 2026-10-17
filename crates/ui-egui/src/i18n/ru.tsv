@@ -4758,3 +4758,9 @@ lighting	Light	Свет
 @msg	a linked image can't become a gradient mesh: embed it first	связанное изображение нельзя превратить в сетчатый градиент: сначала встройте его
 @msg	the image has no usable size or position	у изображения нет пригодного размера или положения
 @msg	the image's pixels can't be read	не удаётся прочитать пиксели изображения
+	Persistent	Постоянная
+	Library Panel Options	Параметры панели библиотеки
+@msg	Persistent libraries not found: {files}	Постоянные библиотеки не найдены: {files}
+@msg	`{given}` isn't a library panel (see window.swatchLibrary)	`{given}` — не панель библиотеки (см. window.swatchLibrary)
+@msg	library panel `{given}` isn't open	панель библиотеки `{given}` не открыта
+@msg	too many library panels were opened in this session	в этом сеансе открыто слишком много панелей библиотек

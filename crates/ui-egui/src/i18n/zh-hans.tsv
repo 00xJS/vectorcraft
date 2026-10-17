@@ -4985,3 +4985,9 @@ lighting	Light	光源
 @msg	a linked image can't become a gradient mesh: embed it first	链接的图像无法转换为渐变网格：请先嵌入它
 @msg	the image has no usable size or position	图像没有可用的尺寸或位置
 @msg	the image's pixels can't be read	无法读取图像的像素
+	Persistent	持久
+	Library Panel Options	库面板选项
+@msg	Persistent libraries not found: {files}	找不到持久库：{files}
+@msg	`{given}` isn't a library panel (see window.swatchLibrary)	`{given}` 不是库面板 (请参阅 window.swatchLibrary)
+@msg	library panel `{given}` isn't open	库面板 `{given}` 未打开
+@msg	too many library panels were opened in this session	本次会话中打开的库面板过多

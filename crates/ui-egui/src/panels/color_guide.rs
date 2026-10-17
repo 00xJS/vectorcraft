@@ -103,7 +103,7 @@ fn limit_menu(app: &mut VectorcraftApp, ui: &mut Ui) {
         }
     }
     ui.separator();
-    chosen = library_panel::library_items(ui, &colour_libraries(app), Some(&cur)).or(chosen);
+    chosen = library_panel::library_items(ui, &colour_libraries(app), &|id| id == cur).or(chosen);
     if let Some(key) = chosen {
         set_limit(app, &json!({ "library": key })).ok();
         clear_selection(ui.ctx());

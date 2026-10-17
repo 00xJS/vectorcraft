@@ -22,8 +22,9 @@ use crate::theme::Tokens;
 use crate::widgets::{self, PanelDrag, SwatchRows, menu_item, swatch_tile};
 use crate::{VectorcraftApp, icons};
 
-/// View modes of the swatch list (and of the library panel).
-#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+/// View modes of the swatch list (and of the library panels: `ui.libraryPanel {view}`).
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub enum View {
     SmallThumb,
     #[default]
@@ -927,7 +928,7 @@ fn delete(app: &mut VectorcraftApp, names: Vec<String>, now: bool) {
 fn bottom(app: &mut VectorcraftApp, ui: &mut Ui, sel: &[String]) {
     let kind: Kind = pstate(ui.ctx(), "swatch-kind");
     widgets::bottom_bar(ui, |ui| {
-        let open = app.ui.library_panel.as_ref().is_some_and(|o| o.kind == SwatchLibraries::KIND);
+        let open = library_panel::any_open::<SwatchLibraries>(&app.ui);
         let lr = widgets::icon_button(ui, "library", SwatchLibraries::MENU, open, 24.0);
         egui::Popup::menu(&lr).show(|ui| {
             ui.set_min_width(200.0);
@@ -1107,12 +1108,14 @@ pub(crate) fn limit_key(app: &VectorcraftApp, l: &str) -> Result<String, String>
     swatchlib::library(&app.session, l).map(|(info, _)| info.id).ok_or_else(|| format!("no swatch library `{l}` (see swatch.library.list)"))
 }
 
-/// Swatch libraries in the library panel (engine: `swatch.library.*`).
+/// Swatch libraries in library panels (engine: `swatch.library.*`).
 pub(crate) struct SwatchLibraries;
 
 impl LibraryKind for SwatchLibraries {
     const KIND: &'static str = "swatches";
     const OPEN: &'static str = "window.swatchLibrary";
+    const LIST: &'static str = "swatch.library.list";
+    const LOAD: &'static str = "swatch.library.load";
     const MENU: &'static str = "Swatch Libraries Menu";
     const ADD: &'static str = "Add to Swatches";
     type Lib = Arc<SwatchLibrary>;
@@ -1123,6 +1126,12 @@ impl LibraryKind for SwatchLibraries {
     }
     fn get(app: &VectorcraftApp, id: &str) -> Option<(String, Self::Lib)> {
         swatchlib::library(&app.session, id).map(|(info, lib)| (info.name, lib))
+    }
+    fn find(app: &VectorcraftApp, key: &str) -> Option<(String, String, usize)> {
+        swatchlib::library(&app.session, key).map(|(info, lib)| (info.id, info.name, lib.len()))
+    }
+    fn path(app: &VectorcraftApp, id: &str) -> Option<String> {
+        app.session.swatch_libraries.path(id).map(str::to_string)
     }
     /// Ungrouped swatches, then each colour group's folder and swatches (a group whose name
     /// matches shows all of them), as in the Swatches panel.
@@ -1189,15 +1198,13 @@ fn add_from_library(app: &mut VectorcraftApp, params: Value) {
     }
 }
 
-/// `window.swatchLibrary {library}`: open a swatch library in the library panel (`library` null
-/// closes it).
+/// `window.swatchLibrary {library}`: open a swatch library in its own panel (`library` null closes
+/// every swatch library panel).
 pub(crate) fn open_library(app: &mut VectorcraftApp, p: &Value) -> Result<Value, String> {
-    library_panel::open_command::<SwatchLibraries>(app, p, "swatch.library.list", |app, key| {
-        swatchlib::library(&app.session, key).map(|(info, lib)| (info.id, info.name, lib.len()))
-    })
+    library_panel::open_command::<SwatchLibraries>(app, p)
 }
 
-/// `swatch.library.load` params, then open the library in the panel.
+/// `swatch.library.load` params, then open the library in its panel.
 pub(crate) fn load_library(app: &mut VectorcraftApp, params: Value) -> Result<Value, String> {
     let r = app.run("swatch.library.load", params)?;
     open_library(app, &json!({ "library": r["library"] }))

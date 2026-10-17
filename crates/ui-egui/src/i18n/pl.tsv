@@ -5001,3 +5001,9 @@ mark-style	Japanese	Japońskie
 @msg	a linked image can't become a gradient mesh: embed it first	połączony obraz nie może stać się siatką gradientu: najpierw go osadź
 @msg	the image has no usable size or position	obraz nie ma użytecznego rozmiaru ani położenia
 @msg	the image's pixels can't be read	nie można odczytać pikseli obrazu
+	Persistent	Trwały
+	Library Panel Options	Opcje panelu biblioteki
+@msg	Persistent libraries not found: {files}	Nie znaleziono trwałych bibliotek: {files}
+@msg	`{given}` isn't a library panel (see window.swatchLibrary)	`{given}` nie jest panelem biblioteki (zobacz window.swatchLibrary)
+@msg	library panel `{given}` isn't open	panel biblioteki `{given}` nie jest otwarty
+@msg	too many library panels were opened in this session	w tej sesji otwarto zbyt wiele paneli bibliotek

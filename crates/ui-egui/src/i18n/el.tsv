@@ -5101,3 +5101,9 @@ effect	Points	Σημεία
 @msg	a linked image can't become a gradient mesh: embed it first	μια συνδεδεμένη εικόνα δεν μπορεί να γίνει πλέγμα διαβάθμισης: ενσωματώστε την πρώτα
 @msg	the image has no usable size or position	η εικόνα δεν έχει χρησιμοποιήσιμο μέγεθος ή θέση
 @msg	the image's pixels can't be read	τα εικονοστοιχεία της εικόνας δεν μπορούν να διαβαστούν
+	Persistent	Μόνιμη
+	Library Panel Options	Επιλογές πίνακα βιβλιοθήκης
+@msg	Persistent libraries not found: {files}	Δεν βρέθηκαν μόνιμες βιβλιοθήκες: {files}
+@msg	`{given}` isn't a library panel (see window.swatchLibrary)	Το `{given}` δεν είναι πίνακας βιβλιοθήκης (δείτε window.swatchLibrary)
+@msg	library panel `{given}` isn't open	ο πίνακας βιβλιοθήκης `{given}` δεν είναι ανοιχτός
+@msg	too many library panels were opened in this session	άνοιξαν πάρα πολλοί πίνακες βιβλιοθηκών σε αυτή τη συνεδρία

@@ -5149,3 +5149,9 @@ mark-style	Japanese	Japonské
 @msg	a linked image can't become a gradient mesh: embed it first	propojený obraz nelze převést na síť přechodu: nejprve jej vložte
 @msg	the image has no usable size or position	obraz nemá použitelnou velikost ani polohu
 @msg	the image's pixels can't be read	pixely obrazu nelze přečíst
+	Persistent	Trvalé
+	Library Panel Options	Možnosti panelu knihovny
+@msg	Persistent libraries not found: {files}	Trvalé knihovny nebyly nalezeny: {files}
+@msg	`{given}` isn't a library panel (see window.swatchLibrary)	`{given}` není panel knihovny (viz window.swatchLibrary)
+@msg	library panel `{given}` isn't open	panel knihovny `{given}` není otevřený
+@msg	too many library panels were opened in this session	v této relaci bylo otevřeno příliš mnoho panelů knihoven

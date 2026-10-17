@@ -4726,3 +4726,9 @@ lighting	Light	광원
 @msg	a linked image can't become a gradient mesh: embed it first	연결된 이미지는 그라디언트 메시로 만들 수 없습니다: 먼저 포함하십시오
 @msg	the image has no usable size or position	이미지에 사용할 수 있는 크기나 위치가 없습니다
 @msg	the image's pixels can't be read	이미지의 픽셀을 읽을 수 없습니다
+	Persistent	지속
+	Library Panel Options	라이브러리 패널 옵션
+@msg	Persistent libraries not found: {files}	지속 라이브러리를 찾을 수 없습니다: {files}
+@msg	`{given}` isn't a library panel (see window.swatchLibrary)	`{given}`은(는) 라이브러리 패널이 아닙니다(window.swatchLibrary 참조)
+@msg	library panel `{given}` isn't open	라이브러리 패널 `{given}`이(가) 열려 있지 않습니다
+@msg	too many library panels were opened in this session	이 세션에서 라이브러리 패널을 너무 많이 열었습니다

@@ -4762,3 +4762,9 @@ lighting	Light	Luce
 @msg	a linked image can't become a gradient mesh: embed it first	un’immagine collegata non può diventare una trama sfumata: incorporala prima
 @msg	the image has no usable size or position	l’immagine non ha dimensioni o posizione utilizzabili
 @msg	the image's pixels can't be read	impossibile leggere i pixel dell’immagine
+	Persistent	Persistente
+	Library Panel Options	Opzioni pannello libreria
+@msg	Persistent libraries not found: {files}	Librerie persistenti non trovate: {files}
+@msg	`{given}` isn't a library panel (see window.swatchLibrary)	`{given}` non è un pannello libreria (vedi window.swatchLibrary)
+@msg	library panel `{given}` isn't open	il pannello libreria `{given}` non è aperto
+@msg	too many library panels were opened in this session	in questa sessione sono stati aperti troppi pannelli libreria

@@ -5125,3 +5125,5 @@ theme	Appearance	Външен вид
 @msg	name is empty	името е празно
 @msg	no symbol named `{n}`	няма символ с име `{n}`
 	Enable Guides for 9-Slice Scaling	Включване на водачи за 9-slice мащабиране
+	Persistent	Постоянна
+	Library Panel Options	Опции на панела с библиотека
