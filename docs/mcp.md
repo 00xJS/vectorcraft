@@ -1704,10 +1704,17 @@ limit. A rectangle's right-angle miters stay within half the weight of its edges
 
 A symbol instance is measured by its symbol's art, placed by the instance's transform. The bounds in
 `document.inspect` and `document.node`, the Align commands, `object.setBounds`, the bounding box, clicks, marquees,
-Fit to Artwork Bounds and exports of the art use that box. Visual bounds (Use Preview Bounds, Fit to Selected Art)
-take in the strokes in the art at their own weight, as the canvas draws them when the instance scales the art. An
-instance is measured as the 20 × 20 square around the origin, which symbols made in the app keep their art in, when
-its symbol is missing, when its symbol or a symbol nested in its art holds an instance of itself, and when symbols
+Fit to Artwork Bounds and exports of the art use that box. So do `artboard.rearrange` and `artboard.move` (which
+artboard the art moves with), `artboard.convertToArtboards`, `select.allOnArtboard`, `object.transformEach`,
+`object.lock.above` and `object.hide.above`. `edit.copy` and `edit.cut` record the artboard under the center of that
+box as the one the copy comes from, and `edit.pasteInPlace`, `edit.pasteInFront`, `edit.pasteInBack` and
+`edit.pasteOnAllArtboards` keep the copy's offset to it. `edit.paste {center}`, `library.use {center}` and the
+`clipboard.import*` commands center that box on the point, and `library.add` gives a graphic the size of that box.
+`clipboard.exportPng`, `clipboard.exportPdf` and the PNG and PDF that Copy offers other apps are cropped to that box.
+Visual bounds (Use Preview Bounds, Fit to Selected Art) take in the strokes in the art at their own weight, as the
+canvas draws them when the instance scales the art. An instance is measured as the 20 × 20
+square around the origin, which symbols made in the app keep their art in, when its symbol is missing,
+when its symbol or a symbol nested in its art holds an instance of itself, and when symbols
 nest 32 deep in its art. PDF and EPS export and the SVG of an artboard leave out art outside the page or artboard, and
 Skip Blank Artboards skips an artboard with no art on it. For both, the box of an instance whose art holds brushed
 strokes grows by 16 times the widest stroke (at least 1 pt) of the objects in its art that have a brushed stroke,
