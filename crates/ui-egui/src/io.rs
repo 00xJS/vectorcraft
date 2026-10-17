@@ -286,14 +286,16 @@ pub(crate) fn is_web(app: &VectorcraftApp) -> bool {
     app.services.download.is_some()
 }
 
-/// Write `bytes` to `path`, else to a file picked with `name` suggested next to the document (the
-/// web downloads them as `name`) → where they went.
+/// Write `bytes` to `path`, else to a file picked in a save panel that suggests `name` next to the
+/// document and shows its file type, [`file_types`] (the web downloads them as `name`) → where
+/// they went.
 pub(crate) fn write_named(app: &mut VectorcraftApp, path: Option<String>, name: &str, bytes: &[u8]) -> Result<String, String> {
     let path = match path {
         Some(p) => p,
         None => {
             let (_, folder) = suggested(app, "");
-            pick_path(app, &FilePick { name: name.to_string(), folder, ..Default::default() })?
+            let filters = file_types(&fileio::extension(name));
+            pick_path(app, &FilePick { name: name.to_string(), folder, filters })?
         }
     };
     write_reporting(app, &path, bytes)?;
@@ -344,14 +346,40 @@ fn suggested(app: &VectorcraftApp, ext: &str) -> (String, Option<String>) {
     (format!("{}.{ext}", fileio::file_stem(&t)), folder.filter(|f| !f.is_empty()))
 }
 
+/// The save panel's file type, `(label, extensions)`, for the files `write_named` and
+/// `target_path` write that are not a document format (`fileio::format` has those).
+const FILE_TYPES: &[(&str, &[&str])] = &[
+    ("Swatch libraries", &["vcswatches"]),
+    ("Swatch libraries", &["gpl"]),
+    ("Swatch libraries", &["ase"]),
+    ("Graphic Style Libraries", &[vectorcraft_doc::style_libs::STYLES_EXT]),
+    ("Libraries", vectorcraft_engine::cmd::library::LIBRARY_EXTS),
+    ("Flattener presets", vectorcraft_engine::cmd::flatten::PRESET_EXTS),
+    ("PDF presets", vectorcraft_engine::cmd::pdfcmds::PRESET_EXTS),
+    ("Perspective grid presets", vectorcraft_engine::cmd::perspgrid::PRESET_EXTS),
+    ("Print presets", vectorcraft_engine::cmd::printpresets::PRESET_EXTS),
+    ("CSS", &["css"]),
+    ("PostScript", &["ps"]),
+];
+
+/// The file type a save panel shows for a file with extension `ext`: its format's, else its
+/// [`FILE_TYPES`] row; none for any other extension.
+fn file_types(ext: &str) -> Vec<(&'static str, &'static [&'static str])> {
+    if let Some(f) = fileio::format(ext) {
+        return vec![(f.label, f.extensions)];
+    }
+    let ext = ext.trim_start_matches('.').to_ascii_lowercase();
+    FILE_TYPES.iter().find(|(_, exts)| exts.contains(&ext.as_str())).copied().into_iter().collect()
+}
+
 /// `path`, else one picked in a save panel (the web: the suggested name) for the active document
-/// with extension `ext`, filtered to that format when it is one.
+/// with extension `ext`, filtered to its file type when it has one ([`file_types`]).
 pub(crate) fn target_path(app: &mut VectorcraftApp, path: Option<String>, ext: &str) -> Result<String, String> {
     if let Some(p) = path {
         return Ok(p);
     }
     let (name, folder) = suggested(app, ext);
-    let filters = fileio::format(ext).map(|f| vec![(f.label, f.extensions)]).unwrap_or_default();
+    let filters = file_types(ext);
     pick_path(app, &FilePick { name, folder, filters })
 }
 
@@ -684,7 +712,8 @@ pub fn export(app: &mut VectorcraftApp, format: Option<&str>, path: Option<Strin
 }
 
 /// Run an engine command that returns `{dataBase64}` and write the bytes to a picked path
-/// (Export Selection, Save as Template).
+/// (Export Selection, Save for Office Documents, Text Export Options and the presets dialogs'
+/// Export…).
 pub fn save_command_output(app: &mut VectorcraftApp, id: &str, ext: &str, params: Value) -> Result<String, String> {
     let (path, _) = run_to_file(app, id, ext, params)?;
     app.status(format!("Saved {path}"));
