@@ -672,7 +672,7 @@ fn trim_image(s: &mut Session, id: NodeId, im: ImageObject) -> Result<Value> {
     // The image's size as RGBA, read from its header, is held to that allowance before anything
     // is decoded (#1717).
     let (w, h) = reader()?.into_dimensions().map_err(|e| bad(C, format!("the image's pixels can't be read: {e}")))?;
-    if u64::from(w) * u64::from(h) * 4 > crate::cmd::fileio::MAX_RASTER_ALLOC {
+    if u64::from(w) * u64::from(h) > crate::cmd::fileio::MAX_RASTER_ALLOC / 4 {
         return Err(bad(C, format!("an image of {w} × {h} pixels is too large to draw")));
     }
     let mut reader = reader()?;
