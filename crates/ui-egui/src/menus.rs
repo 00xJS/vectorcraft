@@ -1816,6 +1816,12 @@ pub fn dynamic_label(app: &VectorcraftApp, id: &str, label: &str) -> String {
         id if saved_selection_slot(id).is_some() => saved_selection_name(app, id).unwrap_or_else(|| "—".into()),
         "view.artboards" => if v.artboards { "Hide Artboards" } else { "Show Artboards" }.into(),
         "view.rulers" => if v.rulers { "Hide Rulers" } else { "Show Rulers" }.into(),
+        "view.globalRulers" => if app.session.active().is_some_and(|d| d.doc.rulers == vectorcraft_doc::RulerMode::Global) {
+            "Change to Artboard Rulers"
+        } else {
+            "Change to Global Rulers"
+        }
+        .into(),
         "view.boundingBox" => if v.bounding_box { "Hide Bounding Box" } else { "Show Bounding Box" }.into(),
         "view.transparencyGrid" => {
             if app.session.active().is_some_and(|d| d.transparency_grid) { "Hide Transparency Grid" } else { "Show Transparency Grid" }.into()
@@ -2803,7 +2809,7 @@ pub fn menu_tree_named(english_names: bool) -> Vec<(&'static str, Vec<Item>)> {
                 c("Lock Slices", "view.slices.lock"),
                 c("Hide Template", "view.template"),
                 Sep,
-                sub("Rulers", vec![c("Show Rulers", "view.rulers"), todos("Change to Global Rulers", "Cmd+Alt+R"), todo("Show Video Rulers")]),
+                sub("Rulers", vec![c("Show Rulers", "view.rulers"), c("Change to Global Rulers", "view.globalRulers"), todo("Show Video Rulers")]),
                 c("Hide Bounding Box", "view.boundingBox"),
                 c("Show Transparency Grid", "view.transparencyGrid"),
                 c("Hide Text Threads", "view.textThreads"),
@@ -3879,6 +3885,8 @@ pub const DYNAMIC_LABELS: &[&str] = &[
     "Show Artboards",
     "Hide Rulers",
     "Show Rulers",
+    "Change to Global Rulers",
+    "Change to Artboard Rulers",
     "Hide Bounding Box",
     "Show Bounding Box",
     "Hide Transparency Grid",

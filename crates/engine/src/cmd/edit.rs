@@ -4,7 +4,7 @@ use std::collections::{BTreeMap, BTreeSet};
 use std::sync::Arc;
 
 use serde_json::{Value, json};
-use vectorcraft_doc::{Document, Node, NodeId, Unit};
+use vectorcraft_doc::{Document, Node, NodeId, RulerMode, Unit};
 use vectorcraft_geom::{Affine, Point, Vec2};
 
 use super::clipboard::SwatchChoices;
@@ -37,13 +37,21 @@ pub fn specs() -> Vec<CommandSpec> {
             has_doc,
             set_units
         ),
-        cmd!(query "document.rulerOrigin", "Ruler Origin", [], None, "{} → {x, y} the rulers' zero point, in absolute document points", has_doc, |s, _| Ok(json!(s.doc()?.doc.ruler_origin))),
+        cmd!(
+            query "document.rulerOrigin",
+            "Ruler Origin",
+            [],
+            None,
+            "{artboard?: index=0 (the active artboard, which artboard rulers measure from)} → {x, y} the rulers' zero point, in absolute document points",
+            has_doc,
+            ruler_origin
+        ),
         cmd!(
             "document.setRulerOrigin",
             "Ruler Origin",
             [],
             None,
-            "{x, y} set the rulers' zero point in absolute document points; art, guides and command coordinates stay in place",
+            "{x, y, artboard?: index=0} set the rulers' zero point in absolute document points: the document's with global rulers, that artboard's with artboard rulers (it moves with the artboard); art, guides and command coordinates stay in place",
             has_doc,
             set_ruler_origin
         ),
@@ -52,9 +60,18 @@ pub fn specs() -> Vec<CommandSpec> {
             "Reset Ruler Origin",
             [],
             None,
-            "{artboard?: index=0} reset the rulers' zero point to that artboard's top-left corner",
+            "{artboard?: index=0} reset the rulers' zero point to that artboard's top-left corner (with artboard rulers, that artboard's own zero point)",
             has_doc,
             reset_ruler_origin
+        ),
+        cmd!(
+            "view.globalRulers",
+            "Change to Global Rulers",
+            ["View", "Rulers"],
+            Some("Cmd+Alt+R"),
+            "{global?: bool (default: toggle)} global rulers measure the whole document from one zero point; artboard rulers (a new document's) from the active artboard's top-left corner, or the zero point set for it. Saved with the document → {global}",
+            has_doc,
+            global_rulers
         ),
         cmd!("edit.undo", "Undo", ["Edit"], Some("Cmd+Z"), "{}", can_undo, undo),
         cmd!("edit.redo", "Redo", ["Edit"], Some("Cmd+Shift+Z"), "{}", can_redo, redo),
@@ -229,33 +246,91 @@ fn set_units(s: &mut Session, p: &Value) -> Result<Value> {
     ok()
 }
 
+/// The `artboard` param of the ruler origin commands: an artboard index, 0 when not given.
+fn artboard_param(s: &Session, p: &Value, c: &str) -> Result<usize> {
+    let index = match p.get("artboard") {
+        None => 0,
+        Some(v) => v.as_u64().and_then(|n| usize::try_from(n).ok()).ok_or_else(|| bad(c, "index out of range"))?,
+    };
+    if index >= s.doc()?.doc.artboards.len() {
+        return Err(bad(c, "index out of range"));
+    }
+    Ok(index)
+}
+
+fn ruler_origin(s: &mut Session, p: &Value) -> Result<Value> {
+    let d = &s.doc()?.doc;
+    // A document without artboards measures from its global zero point.
+    let index = if d.artboards.is_empty() && p.get("artboard").is_none() { 0 } else { artboard_param(s, p, "document.rulerOrigin")? };
+    Ok(json!(s.doc()?.doc.ruler_origin_for(index)))
+}
+
 fn set_ruler_origin(s: &mut Session, p: &Value) -> Result<Value> {
     const C: &str = "document.setRulerOrigin";
     let origin = Point::new(f64_req(p, "x", C)?, f64_req(p, "y", C)?);
-    change_ruler_origin(s, origin, "Ruler Origin")
+    let index = if s.doc()?.doc.rulers == RulerMode::Global && p.get("artboard").is_none() { 0 } else { artboard_param(s, p, C)? };
+    change_ruler_origin(s, index, Some(origin), "Ruler Origin")
 }
 
 fn reset_ruler_origin(s: &mut Session, p: &Value) -> Result<Value> {
-    const C: &str = "document.resetRulerOrigin";
-    let index = match p.get("artboard") {
-        None => 0,
-        Some(v) => v.as_u64().and_then(|n| usize::try_from(n).ok()).ok_or_else(|| bad(C, "index out of range"))?,
-    };
-    let ab = s.doc()?.doc.artboards.get(index).ok_or_else(|| bad(C, "index out of range"))?;
-    change_ruler_origin(s, Point::new(ab.rect.x0, ab.rect.y0), "Reset Ruler Origin")
+    let index = artboard_param(s, p, "document.resetRulerOrigin")?;
+    change_ruler_origin(s, index, None, "Reset Ruler Origin")
 }
 
-fn change_ruler_origin(s: &mut Session, origin: Point, label: &str) -> Result<Value> {
-    if !origin.is_finite() || origin.x.abs() > crate::MAX_COORD || origin.y.abs() > crate::MAX_COORD {
+/// Move the rulers' zero point to `origin`, or back to artboard `index`'s top-left corner: the
+/// document's (global rulers) or that artboard's (artboard rulers, kept as an offset from its
+/// corner so it follows the artboard).
+fn change_ruler_origin(s: &mut Session, index: usize, origin: Option<Point>, label: &str) -> Result<Value> {
+    let d = &s.doc()?.doc;
+    let global = d.rulers == RulerMode::Global;
+    let corner = d.artboards.get(index).map(|ab| Point::new(ab.rect.x0, ab.rect.y0));
+    let target = origin.or(corner).unwrap_or(Point::ZERO);
+    if !target.is_finite() || target.x.abs() > crate::MAX_COORD || target.y.abs() > crate::MAX_COORD {
         return Err(EngineError::Other("result would exceed the canvas (coordinates out of range)".into()));
     }
-    if s.doc()?.doc.ruler_origin != origin {
+    if global {
+        if d.ruler_origin != target {
+            s.edit(label, |d, _| {
+                d.ruler_origin = target;
+                Ok(())
+            })?;
+        }
+        return Ok(json!(target));
+    }
+    let Some((id, corner)) = d.artboards.get(index).map(|ab| ab.id).zip(corner) else {
+        return Err(bad("document.setRulerOrigin", "index out of range"));
+    };
+    let offset = Some(target - corner).filter(|o| *o != Vec2::ZERO);
+    if d.artboard_ruler_origins.get(&id).copied() != offset {
         s.edit(label, |d, _| {
-            d.ruler_origin = origin;
+            // Origins of artboards that no longer exist go too.
+            let ids: BTreeSet<u32> = d.artboards.iter().map(|ab| ab.id).collect();
+            d.artboard_ruler_origins.retain(|id, _| ids.contains(id));
+            match offset {
+                Some(o) => d.artboard_ruler_origins.insert(id, o),
+                None => d.artboard_ruler_origins.remove(&id),
+            };
             Ok(())
         })?;
     }
-    Ok(json!(origin))
+    Ok(json!(target))
+}
+
+/// View › Rulers › Change to Global / Artboard Rulers.
+fn global_rulers(s: &mut Session, p: &Value) -> Result<Value> {
+    let current = s.doc()?.doc.rulers == RulerMode::Global;
+    let global = match p.get("global") {
+        None => !current,
+        Some(v) => v.as_bool().ok_or_else(|| bad("view.globalRulers", "global must be true or false"))?,
+    };
+    if global != current {
+        let label = if global { "Change to Global Rulers" } else { "Change to Artboard Rulers" };
+        s.edit(label, |d, _| {
+            d.rulers = if global { RulerMode::Global } else { RulerMode::Artboard };
+            Ok(())
+        })?;
+    }
+    Ok(json!({ "global": global }))
 }
 
 /// A typing session in progress (the Type tool previews the whole session as one interaction).

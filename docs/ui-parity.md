@@ -115,7 +115,8 @@ tools, never checked side by side) isn't captured row by row.
 | A selected ruler guide's X or Y in the Transform panel; typing a value moves it | not scored | #1659 (part of #1597); several guides move together; not in Properties or the Control bar. Not established by the documentation we could find: the help pages on guides, rulers and the Transform, Control and Properties panels (read again on 2026-10-14) don't describe it, and the one public statement is a user's [community answer](https://community.adobe.com/questions-652/adding-a-new-custom-guide-785586), which is not documentation. Kept as a convenience pending the owner's decision; no parity claim |
 | Alt swaps a ruler guide's orientation while dragging | missing | |
 | Alt swaps a new ruler guide's orientation while dragging | done | Both rulers; preview, snapping and final placement follow the current modifier; existing-guide Alt-copy is unchanged. |
-| Global/artboard ruler mode switch and video rulers | missing | menu stubs; custom document origin is done (#1212) |
+| Global/artboard ruler mode switch (View › Rulers › Change to Global / Artboard Rulers, Cmd+Alt+R) | done | `view.globalRulers`; a new document has artboard rulers, counting from the active artboard's top-left corner or the zero point set for it (kept relative to the artboard); global rulers keep one document zero point. Rulers, Transform, Properties, Control and Info X/Y, guide readouts and Shift ruler-tick snapping follow the mode; saved with the document, older files open with global rulers. Behaviour from [About rulers](https://helpx.adobe.com/illustrator/desktop/measure-and-align/grids-and-guides/about-rulers.html) and [Use rulers](https://helpx.adobe.com/illustrator/desktop/measure-and-align/grids-and-guides/use-rulers.html) |
+| Video rulers | missing | menu stub |
 
 ## Transform handles, bounding box, Free Transform
 

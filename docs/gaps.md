@@ -267,10 +267,11 @@ from G14 and the budget run of G15: **~170–270 h** one agent, ~50–80 h wall 
 ## G7 Views and windows
 
 - **Done:** custom document ruler origin (#1212): corner drag with preview, double-click reset to the active artboard, relative X/Y inputs and native save/reopen.
+- **Done:** View › Rulers › Change to Global / Artboard Rulers (`view.globalRulers`, Cmd+Alt+R): artboard rulers, a new document's, count from the active artboard, each artboard with its own zero point; rulers, X/Y fields and guide readouts follow the mode, which is saved with the document. Estimate unchanged.
 - **Missing (noted for reporters, 2026-10-14):** custom toolbars (Window › Toolbars › New Toolbar, #1759);
   panel widths kept with a workspace (#1753). Inside the estimate below.
 - **Missing:** multiple windows and Window › Arrange (Cascade, Tile, Float in Window, Consolidate All Windows),
-  panels on another monitor, New View/Edit Views, global/artboard ruler mode switch and video rulers.
+  panels on another monitor, New View/Edit Views, video rulers.
 - **Estimate:** 15–25 h.
 
 ## G6 Automation and scripting

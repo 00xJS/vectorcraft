@@ -594,6 +594,23 @@ pub struct ImageBlob {
     pub proxy: Option<Arc<Vec<u8>>>,
 }
 
+/// What the rulers measure from (View › Rulers): the active artboard's origin, the default of a
+/// new document, or one origin for the whole document.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum RulerMode {
+    #[default]
+    Artboard,
+    Global,
+}
+
+impl RulerMode {
+    /// The mode of a document saved before the choice existed: global, as its rulers measured.
+    pub fn legacy() -> Self {
+        Self::Global
+    }
+}
+
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Document {
     pub version: u32,
@@ -607,6 +624,15 @@ pub struct Document {
     /// The rulers' zero point in document coordinates. Moving it changes measurements, never art.
     #[serde(default, skip_serializing_if = "skip::is_default")]
     pub ruler_origin: Point,
+    /// View › Rulers › Change to Global / Artboard Rulers: whether the rulers and position fields
+    /// measure from [`Self::ruler_origin`] (global) or from the active artboard's own origin.
+    /// Documents saved before the choice existed measured globally and open that way.
+    #[serde(default = "RulerMode::legacy")]
+    pub rulers: RulerMode,
+    /// Artboard rulers' zero point of each artboard (by [`Artboard::id`]), as an offset from its
+    /// top-left corner; an artboard not listed measures from that corner.
+    #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
+    pub artboard_ruler_origins: BTreeMap<u32, Vec2>,
     #[serde(default)]
     pub color_mode: ColorMode,
     pub artboards: Vec<Artboard>,
@@ -772,6 +798,27 @@ impl Document {
         if origin.is_finite() && origin.x.abs() <= MAX_COORD && origin.y.abs() <= MAX_COORD { origin } else { Point::ZERO }
     }
 
+    /// Where the rulers measure from with artboard `index` active: [`Self::ruler_origin_or_zero`]
+    /// with global rulers; with artboard rulers that artboard's top-left corner moved by its own
+    /// offset (the first artboard's when `index` is out of range, the global zero point when the
+    /// document has no artboard or the result is out of the supported range).
+    pub fn ruler_origin_for(&self, index: usize) -> Point {
+        if self.rulers == RulerMode::Global {
+            return self.ruler_origin_or_zero();
+        }
+        let Some(ab) = self.artboards.get(index).or_else(|| self.artboards.first()) else { return self.ruler_origin_or_zero() };
+        let corner = Point::new(ab.rect.x0, ab.rect.y0);
+        let offset = self.artboard_ruler_origins.get(&ab.id).copied().unwrap_or(Vec2::ZERO);
+        let origin = corner + offset;
+        if origin.is_finite() && origin.x.abs() <= MAX_COORD && origin.y.abs() <= MAX_COORD {
+            origin
+        } else if corner.is_finite() && corner.x.abs() <= MAX_COORD && corner.y.abs() <= MAX_COORD {
+            corner
+        } else {
+            Point::ZERO
+        }
+    }
+
     /// A new RGB document with one artboard of `size` and one layer ("Layer 1").
     pub fn new(width: f64, height: f64) -> Self {
         Self::new_with_mode(width, height, ColorMode::Rgb)
@@ -786,6 +833,8 @@ impl Document {
             template: false,
             units: Unit::Points,
             ruler_origin: Point::ZERO,
+            rulers: RulerMode::Artboard,
+            artboard_ruler_origins: BTreeMap::new(),
             color_mode: mode,
             artboards: vec![Artboard {
                 id: 1,

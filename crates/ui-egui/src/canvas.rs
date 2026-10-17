@@ -1523,7 +1523,7 @@ fn ruler_input(app: &mut VectorcraftApp, ui: &Ui, full: egui::Rect, canvas: egui
             ui.data_mut(|d| d.remove::<(Option<u64>, bool)>(drag_id));
             if !cancelled
                 && let Some(at) = at
-                && let Err(e) = app.run("document.setRulerOrigin", json!({"x": at.x, "y": at.y}))
+                && let Err(e) = app.run("document.setRulerOrigin", json!({"x": at.x, "y": at.y, "artboard": app.view().map_or(0, |v| v.artboard)}))
             {
                 app.status(e.to_string());
             }
@@ -6347,7 +6347,7 @@ mod tests {
                 frame(&mut app, &ctx, vec![Event::PointerMoved(end), button(end, false)]);
                 check(&app, alt, release);
                 let st = app.session.active().unwrap();
-                assert_eq!(st.doc.ruler_origin, origin);
+                assert_eq!(st.doc.ruler_origin_for(0), origin);
                 assert_eq!(st.doc.layers, before.layers, "the rectangle tool draws no artwork");
                 assert_eq!(st.selection, selection);
                 assert_eq!(history(&app), (original_history.0 + 1, 0, true));
@@ -6376,6 +6376,8 @@ mod tests {
     fn ruler_guide_origin_display_fallback_accepts_only_bounded_finite_pairs() {
         let mut app = VectorcraftApp::new(Session::new(), Default::default());
         app.run("file.new", json!({})).unwrap();
+        // The global zero point as stored (artboard rulers check their own, see `ruler_origin_for`).
+        app.run("view.globalRulers", json!({"global": true})).unwrap();
         let max = vectorcraft_engine::MAX_COORD;
         for (origin, expected) in [
             (Point::ZERO, Point::ZERO),

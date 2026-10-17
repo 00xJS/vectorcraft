@@ -25,6 +25,8 @@ pub struct ViewInfo {
     pub corner_widgets: bool,
     /// The document window (none headless): screen-fixed widgets sit in it.
     pub screen: Option<vectorcraft_tools::ScreenFrame>,
+    /// The view's active artboard (an index): artboard rulers measure from it.
+    pub artboard: usize,
 }
 
 impl Default for ViewInfo {
@@ -40,6 +42,7 @@ impl Default for ViewInfo {
             snap_to_point: true,
             corner_widgets: true,
             screen: None,
+            artboard: 0,
         }
     }
 }
@@ -184,6 +187,7 @@ impl Session {
         let (unit, stroke_unit) = (self.general_unit(), self.stroke_unit());
         let cx = ToolContext {
             doc: &st.doc,
+            ruler_origin: st.doc.ruler_origin_for(view.artboard),
             revision: (st.uid, st.revision),
             selection: &st.selection,
             zoom: view.zoom,

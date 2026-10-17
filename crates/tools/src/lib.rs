@@ -225,6 +225,9 @@ impl ScreenFrame {
 /// Read-only context a tool sees.
 pub struct ToolContext<'a> {
     pub doc: &'a Document,
+    /// The rulers' zero point with the view's active artboard (see
+    /// [`Document::ruler_origin_for`]): where ruler ticks and measured positions count from.
+    pub ruler_origin: Point,
     /// Which open document `doc` is (its process-unique id) and its revision, which moves with
     /// every change of the document or the selection: what a tool keeps between pointer events
     /// for the document as it is (the snap targets of hovering) is keyed on it.
@@ -875,6 +878,7 @@ pub(crate) mod testutil {
     pub fn cx<'a>(d: &'a Document, s: &'a Selection, p: &'a PaintDefaults) -> ToolContext<'a> {
         ToolContext {
             doc: d,
+            ruler_origin: d.ruler_origin_for(0),
             revision: (0, 0),
             selection: s,
             zoom: 1.0,

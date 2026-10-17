@@ -630,9 +630,11 @@ impl VectorcraftApp {
         self.session.active_index().and_then(|i| self.views.get(i))
     }
 
-    /// The zero point shown by rulers and position fields; command coordinates stay absolute.
+    /// The zero point shown by rulers and position fields: the document's with global rulers, the
+    /// active artboard's with artboard rulers. Command coordinates stay absolute.
     pub(crate) fn ruler_origin(&self) -> vectorcraft_geom::Point {
-        self.session.active().map_or(vectorcraft_geom::Point::ZERO, |d| d.doc.ruler_origin_or_zero())
+        let artboard = self.view().map_or(0, |v| v.artboard);
+        self.session.active().map_or(vectorcraft_geom::Point::ZERO, |d| d.doc.ruler_origin_for(artboard))
     }
     pub fn view_mut(&mut self) -> Option<&mut View> {
         self.sync_views();
@@ -654,6 +656,7 @@ impl VectorcraftApp {
             snap_to_point: self.ui.view.snap_to_point,
             corner_widgets: self.ui.view.corner_widgets && self.ui.view.edges,
             screen: self.screen_frame(),
+            artboard: self.view().map_or(0, |v| v.artboard),
         }
     }
 
