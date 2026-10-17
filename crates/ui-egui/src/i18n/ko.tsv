@@ -1593,6 +1593,90 @@
 	Highlight anchors on mouse over	마우스를 올리면 앵커 강조 표시
 	History Options…	히스토리 옵션…
 	History States	히스토리 상태
+# History panel: the names of undo steps (`every_undo_label_is_translated`).
+	Apply Data Set	데이터 세트 적용
+	Area Type	영역 문자
+	Bloat	부풀리기
+	Cancel Pattern Editing	패턴 편집 취소
+	Copy Appearance	모양새 복사
+	Copy Guide	안내선 복사
+	Copy in Perspective	원근 복사
+	Create Slice from Selection	선택 영역으로 분할 만들기
+	Create Slices from Guides	안내선으로 분할 만들기
+	Delete All Slices	모든 분할 삭제
+	Delete Data Sets	데이터 세트 삭제
+	Delete Graphic Styles	그래픽 스타일 삭제
+	Delete Guide	안내선 삭제
+	Delete Guides	안내선 삭제
+	Delete Slice	분할 삭제
+	Delete Style	스타일 삭제
+	Delete Variables	변수 삭제
+	Delete View	보기 삭제
+	Done Editing Pattern	패턴 편집 완료
+	Duplicate Rows	행 복제
+	Edit Perspective Grid	원근 격자 편집
+	Expand Blend	블렌드 확장
+	Expand Envelope	엔벨로프 확장
+	Expand Image Trace	이미지 추적 확장
+	Expand Live Paint	라이브 페인트 확장
+	Grid Repeat	격자 반복
+	Image Trace (Make and Expand)	이미지 추적 (만들기 및 확장)
+	Live Shape	라이브 모양
+	Make Blend	블렌드 만들기
+	Make Dynamic	동적으로 만들기
+	Make Intertwine	교차 만들기
+	Make Live Paint	라이브 페인트 만들기
+	Make Pattern	패턴 만들기
+	Make Slice	분할 만들기
+	Make Text Wrap	텍스트 감싸기 만들기
+	Merge Live Paint	라이브 페인트 병합
+	Mesh Point Color	메시 점 색상
+	Mirror Repeat	미러 반복
+	Move Envelope Point	엔벨로프 점 이동
+	Move Plane and Copy Objects	평면 이동 및 개체 복사
+	Move Plane and Objects	평면 및 개체 이동
+	Move Slice	분할 이동
+	Move Type on a Path	패스 위 문자 이동
+	New Guide	새 안내선
+	Pen	펜
+	Place from Library	라이브러리에서 가져오기
+	Pucker	오므리기
+	Radial Repeat	방사형 반복
+	Rearrange Artboards	아트보드 재정렬
+	Release Blend	블렌드 해제
+	Release Envelope	엔벨로프 해제
+	Release Image Trace	이미지 추적 해제
+	Release Intertwine	교차 해제
+	Release Live Paint	라이브 페인트 해제
+	Release Repeat	반복 해제
+	Release Slice	분할 해제
+	Release Text Wrap	텍스트 감싸기 해제
+	Release Threaded Text	연결된 문자 해제
+	Rename Design	디자인 이름 바꾸기
+	Rename Style	스타일 이름 바꾸기
+	Rename View	보기 이름 바꾸기
+	Reorder Appearance	모양새 순서 변경
+	Reorder Artboards	아트보드 순서 변경
+	Reshape Spine	스파인 모양 변경
+	Resize Artboard	아트보드 크기 조절
+	Resize Slice	분할 크기 조절
+	Resize Type Area	문자 영역 크기 조절
+	Scale in Perspective	원근 크기 조절
+	Scallop	스캘럽
+	Shape Builder Delete	모양 빌더 (삭제)
+	Sort Swatches	견본 정렬
+	Symbol Screener	심볼 스크리너
+	Symbol Scruncher	심볼 스크런처
+	Symbol Shifter	심볼 시프터
+	Symbol Sizer	심볼 크기
+	Symbol Spinner	심볼 회전
+	Symbol Stainer	심볼 염색기
+	Symbol Styler	심볼 스타일
+	Text Orientation	문자 방향
+	Thread Text	문자 연결
+	Twirl	돌리기
+	Typing	문자 입력
+	Wrinkle	주름
 	Hollow	속이 빈
 	Home	홈
 	Horizon Height:	수평선 높이:

@@ -1320,6 +1320,76 @@
 	History	Historik
 	History Options…	Historikalternativ…
 	History States	Historiktillstånd
+# History panel: the names of undo steps (`every_undo_label_is_translated`).
+	Apply Data Set	Använd datauppsättning
+	Cancel Pattern Editing	Avbryt mönsterredigering
+	Copy Appearance	Kopiera utseende
+	Copy Guide	Kopiera stödlinje
+	Copy in Perspective	Kopiera i perspektiv
+	Create Slice from Selection	Skapa skiva från markering
+	Create Slices from Guides	Skapa skivor från stödlinjer
+	Delete All Slices	Radera alla skivor
+	Delete Data Sets	Radera datauppsättningar
+	Delete Graphic Styles	Radera grafikstilar
+	Delete Guide	Radera stödlinje
+	Delete Guides	Radera stödlinjer
+	Delete Slice	Radera skiva
+	Delete Style	Radera stil
+	Delete Variables	Radera variabler
+	Delete View	Radera vy
+	Done Editing Pattern	Avsluta mönsterredigering
+	Duplicate Rows	Duplicera rader
+	Edit Perspective Grid	Redigera perspektivrutnät
+	Expand Blend	Expandera blandning
+	Expand Envelope	Expandera kuvert
+	Expand Image Trace	Expandera bildkalkering
+	Expand Live Paint	Expandera direktmålning
+	Live Shape	Direktform
+	Make Blend	Skapa blandning
+	Make Dynamic	Gör dynamisk
+	Make Intertwine	Skapa sammanflätning
+	Make Live Paint	Skapa direktmålning
+	Make Pattern	Skapa mönster
+	Make Slice	Skapa skiva
+	Merge Live Paint	Sammanfoga direktmålning
+	Mesh Point Color	Nätpunktsfärg
+	Move Envelope Point	Flytta kuvertpunkt
+	Move Plane and Copy Objects	Flytta plan och kopiera objekt
+	Move Plane and Objects	Flytta plan och objekt
+	Move Slice	Flytta skiva
+	Move Type on a Path	Flytta text på bana
+	New Guide	Ny stödlinje
+	Place from Library	Placera från bibliotek
+	Rearrange Artboards	Ordna om ritytor
+	Release Blend	Släpp blandning
+	Release Envelope	Släpp kuvert
+	Release Intertwine	Släpp sammanflätning
+	Release Live Paint	Släpp direktmålning
+	Release Repeat	Släpp upprepning
+	Release Slice	Släpp skiva
+	Release Threaded Text	Släpp länkad text
+	Rename Design	Byt namn på design
+	Rename Style	Byt namn på stil
+	Rename View	Byt namn på vy
+	Reorder Appearance	Ändra ordning på utseende
+	Reorder Artboards	Ändra ordning på ritytor
+	Reshape Spine	Omforma ryggrad
+	Resize Artboard	Ändra storlek på rityta
+	Resize Slice	Ändra storlek på skiva
+	Resize Type Area	Ändra storlek på textområde
+	Scale in Perspective	Skala i perspektiv
+	Shape Builder Delete	Formbyggare (radera)
+	Sort Swatches	Sortera färgrutor
+	Symbol Screener	Symbolopacitet
+	Symbol Scruncher	Dra ihop symboler
+	Symbol Shifter	Flytta symboler
+	Symbol Sizer	Symbolstorlek
+	Symbol Spinner	Rotera symboler
+	Symbol Stainer	Färga symboler
+	Symbol Styler	Symbolstil
+	Text Orientation	Textorientering
+	Thread Text	Länka text
+	Typing	Skrivning
 	Hollow	Ihålig
 	Home	Start
 	Horizon Height:	Horisonthöjd:

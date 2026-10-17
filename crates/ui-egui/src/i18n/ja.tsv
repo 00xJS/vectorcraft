@@ -1598,6 +1598,90 @@
 	Highlight anchors on mouse over	マウスオーバー時にアンカーをハイライト
 	History Options…	ヒストリーオプション…
 	History States	ヒストリー数
+# History panel: the names of undo steps (`every_undo_label_is_translated`).
+	Apply Data Set	データセットを適用
+	Area Type	エリア内文字
+	Bloat	膨張
+	Cancel Pattern Editing	パターン編集をキャンセル
+	Copy Appearance	アピアランスをコピー
+	Copy Guide	ガイドをコピー
+	Copy in Perspective	遠近でコピー
+	Create Slice from Selection	選択範囲からスライスを作成
+	Create Slices from Guides	ガイドからスライスを作成
+	Delete All Slices	すべてのスライスを削除
+	Delete Data Sets	データセットを削除
+	Delete Graphic Styles	グラフィックスタイルを削除
+	Delete Guide	ガイドを削除
+	Delete Guides	ガイドを削除
+	Delete Slice	スライスを削除
+	Delete Style	スタイルを削除
+	Delete Variables	変数を削除
+	Delete View	表示を削除
+	Done Editing Pattern	パターン編集を完了
+	Duplicate Rows	行を複製
+	Edit Perspective Grid	遠近グリッドを編集
+	Expand Blend	ブレンドを拡張
+	Expand Envelope	エンベロープを拡張
+	Expand Image Trace	画像トレースを拡張
+	Expand Live Paint	ライブペイントを拡張
+	Grid Repeat	グリッドリピート
+	Image Trace (Make and Expand)	画像トレース (作成して拡張)
+	Live Shape	ライブシェイプ
+	Make Blend	ブレンドを作成
+	Make Dynamic	動的にする
+	Make Intertwine	織り交ぜを作成
+	Make Live Paint	ライブペイントを作成
+	Make Pattern	パターンを作成
+	Make Slice	スライスを作成
+	Make Text Wrap	テキストの回り込みを作成
+	Merge Live Paint	ライブペイントを結合
+	Mesh Point Color	メッシュポイントのカラー
+	Mirror Repeat	ミラーリピート
+	Move Envelope Point	エンベロープのポイントを移動
+	Move Plane and Copy Objects	面を移動してオブジェクトをコピー
+	Move Plane and Objects	面とオブジェクトを移動
+	Move Slice	スライスを移動
+	Move Type on a Path	パス上文字を移動
+	New Guide	新規ガイド
+	Pen	ペン
+	Place from Library	ライブラリから配置
+	Pucker	収縮
+	Radial Repeat	ラジアルリピート
+	Rearrange Artboards	アートボードを再配置
+	Release Blend	ブレンドを解除
+	Release Envelope	エンベロープを解除
+	Release Image Trace	画像トレースを解除
+	Release Intertwine	織り交ぜを解除
+	Release Live Paint	ライブペイントを解除
+	Release Repeat	リピートを解除
+	Release Slice	スライスを解除
+	Release Text Wrap	テキストの回り込みを解除
+	Release Threaded Text	スレッドテキストを解除
+	Rename Design	デザインの名前を変更
+	Rename Style	スタイルの名前を変更
+	Rename View	表示の名前を変更
+	Reorder Appearance	アピアランスの順序を変更
+	Reorder Artboards	アートボードの順序を変更
+	Reshape Spine	スパインをシェイプ変形
+	Resize Artboard	アートボードのサイズを変更
+	Resize Slice	スライスのサイズを変更
+	Resize Type Area	テキストエリアのサイズを変更
+	Scale in Perspective	遠近で拡大・縮小
+	Scallop	ギザギザ
+	Shape Builder Delete	シェイプ形成 (削除)
+	Sort Swatches	スウォッチを並べ替え
+	Symbol Screener	シンボルスクリーナー
+	Symbol Scruncher	シンボルスクランチャー
+	Symbol Shifter	シンボルシフター
+	Symbol Sizer	シンボルリサイザー
+	Symbol Spinner	シンボルスピン
+	Symbol Stainer	シンボルステイン
+	Symbol Styler	シンボルスタイル
+	Text Orientation	組み方向
+	Thread Text	テキストをスレッド
+	Twirl	旋回
+	Typing	文字入力
+	Wrinkle	しわ
 	Hollow	中空
 	Home	ホーム
 	Horizon Height:	水平線の高さ:

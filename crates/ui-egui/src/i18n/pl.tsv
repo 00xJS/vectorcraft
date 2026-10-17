@@ -1426,6 +1426,82 @@ lighting	Light	Światło
 	{percent}% opacity	Krycie {percent}%
 	History Options…	Opcje historii…
 	Open a document to see its history.	Otwórz dokument, aby zobaczyć jego historię.
+# History panel: the names of undo steps (`every_undo_label_is_translated`).
+	Apply Data Set	Zastosuj zestaw danych
+	Area Type	Tekst akapitowy
+	Cancel Pattern Editing	Anuluj edycję wzorka
+	Copy Appearance	Kopiuj wygląd
+	Copy Guide	Kopiuj linię pomocniczą
+	Copy in Perspective	Kopiuj w perspektywie
+	Create Slice from Selection	Utwórz plasterek z zaznaczenia
+	Create Slices from Guides	Utwórz plasterki z linii pomocniczych
+	Delete All Slices	Usuń wszystkie plasterki
+	Delete Data Sets	Usuń zestawy danych
+	Delete Graphic Styles	Usuń style graficzne
+	Delete Guide	Usuń linię pomocniczą
+	Delete Guides	Usuń linie pomocnicze
+	Delete Slice	Usuń plasterek
+	Delete Style	Usuń styl
+	Delete Variables	Usuń zmienne
+	Delete View	Usuń widok
+	Done Editing Pattern	Zakończ edycję wzorka
+	Duplicate Rows	Powiel wiersze
+	Edit Perspective Grid	Edytuj siatkę perspektywy
+	Expand Blend	Rozszerz przejście
+	Expand Envelope	Rozszerz kopertę
+	Expand Image Trace	Rozszerz obrys obrazu
+	Expand Live Paint	Rozszerz aktywne malowanie
+	Image Trace (Make and Expand)	Obrys obrazu (utwórz i rozszerz)
+	Live Shape	Aktywny kształt
+	Make Blend	Utwórz przejście
+	Make Dynamic	Uczyń dynamicznym
+	Make Intertwine	Utwórz przeplatanie
+	Make Live Paint	Utwórz aktywne malowanie
+	Make Pattern	Utwórz wzorek
+	Make Slice	Utwórz plasterek
+	Make Text Wrap	Utwórz oblewanie tekstem
+	Merge Live Paint	Scal aktywne malowanie
+	Mesh Point Color	Kolor punktu siatki
+	Move Envelope Point	Przesuń punkt koperty
+	Move Plane and Copy Objects	Przesuń płaszczyznę i kopiuj obiekty
+	Move Plane and Objects	Przesuń płaszczyznę i obiekty
+	Move Slice	Przesuń plasterek
+	Move Type on a Path	Przesuń tekst na ścieżce
+	New Guide	Nowa linia pomocnicza
+	Pen	Pióro
+	Place from Library	Umieść z biblioteki
+	Rearrange Artboards	Przestaw obszary kompozycji
+	Release Blend	Uwolnij przejście
+	Release Envelope	Uwolnij kopertę
+	Release Image Trace	Uwolnij obrys obrazu
+	Release Intertwine	Uwolnij przeplatanie
+	Release Live Paint	Uwolnij aktywne malowanie
+	Release Repeat	Uwolnij powtórzenie
+	Release Slice	Uwolnij plasterek
+	Release Text Wrap	Uwolnij oblewanie tekstem
+	Release Threaded Text	Uwolnij tekst wątkowy
+	Rename Design	Zmień nazwę projektu
+	Rename Style	Zmień nazwę stylu
+	Rename View	Zmień nazwę widoku
+	Reorder Appearance	Zmień kolejność wyglądu
+	Reorder Artboards	Zmień kolejność obszarów kompozycji
+	Reshape Spine	Zmień kształt grzbietu
+	Resize Artboard	Zmień rozmiar obszaru kompozycji
+	Resize Slice	Zmień rozmiar plasterka
+	Resize Type Area	Zmień rozmiar obszaru tekstu
+	Scale in Perspective	Skaluj w perspektywie
+	Shape Builder Delete	Kreator kształtów (usuwanie)
+	Sort Swatches	Sortuj próbki
+	Symbol Screener	Przesłanianie symboli
+	Symbol Scruncher	Zagęszczanie symboli
+	Symbol Shifter	Przesuwanie symboli
+	Symbol Sizer	Skalowanie symboli
+	Symbol Spinner	Obracanie symboli
+	Symbol Stainer	Barwienie symboli
+	Symbol Styler	Stylizowanie symboli
+	Text Orientation	Orientacja tekstu
+	Thread Text	Połącz tekst w wątek
+	Typing	Pisanie
 	Abutting	Stykające się
 	Black and White	Czarno-biały
 	Corners	Narożniki

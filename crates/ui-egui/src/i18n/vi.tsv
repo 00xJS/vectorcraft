@@ -1546,6 +1546,90 @@ file-filter	Templates	Mẫu
 	History	Lịch sử
 	History Options…	Tùy chọn lịch sử…
 	History States	Trạng thái lịch sử
+# History panel: the names of undo steps (`every_undo_label_is_translated`).
+	Apply Data Set	Áp dụng tập dữ liệu
+	Area Type	Chữ vùng
+	Bloat	Phình
+	Cancel Pattern Editing	Hủy chỉnh sửa họa tiết
+	Copy Appearance	Sao chép diện mạo
+	Copy Guide	Sao chép đường căn
+	Copy in Perspective	Sao chép theo phối cảnh
+	Create Slice from Selection	Tạo lát cắt từ vùng chọn
+	Create Slices from Guides	Tạo lát cắt từ đường căn
+	Delete All Slices	Xóa tất cả lát cắt
+	Delete Data Sets	Xóa tập dữ liệu
+	Delete Graphic Styles	Xóa kiểu đồ họa
+	Delete Guide	Xóa đường căn
+	Delete Guides	Xóa các đường căn
+	Delete Slice	Xóa lát cắt
+	Delete Style	Xóa kiểu
+	Delete Variables	Xóa biến số
+	Delete View	Xóa chế độ xem
+	Done Editing Pattern	Hoàn tất chỉnh sửa họa tiết
+	Duplicate Rows	Nhân bản hàng
+	Edit Perspective Grid	Chỉnh sửa lưới phối cảnh
+	Expand Blend	Mở rộng hòa trộn
+	Expand Envelope	Mở rộng Envelope
+	Expand Image Trace	Mở rộng vector hóa ảnh
+	Expand Live Paint	Mở rộng tô trực tiếp
+	Grid Repeat	Lặp lại dạng lưới
+	Image Trace (Make and Expand)	Vector hóa ảnh (tạo và mở rộng)
+	Live Shape	Hình dạng trực tiếp
+	Make Blend	Tạo hòa trộn
+	Make Dynamic	Tạo động
+	Make Intertwine	Tạo đan xen
+	Make Live Paint	Tạo tô trực tiếp
+	Make Pattern	Tạo họa tiết
+	Make Slice	Tạo lát cắt
+	Make Text Wrap	Tạo bao văn bản
+	Merge Live Paint	Hợp nhất tô trực tiếp
+	Mesh Point Color	Màu điểm lưới
+	Mirror Repeat	Lặp lại đối xứng
+	Move Envelope Point	Di chuyển điểm Envelope
+	Move Plane and Copy Objects	Di chuyển mặt phẳng và sao chép đối tượng
+	Move Plane and Objects	Di chuyển mặt phẳng và đối tượng
+	Move Slice	Di chuyển lát cắt
+	Move Type on a Path	Di chuyển chữ trên đường dẫn
+	New Guide	Đường căn mới
+	Pen	Bút
+	Place from Library	Đặt từ thư viện
+	Pucker	Nhíu
+	Radial Repeat	Lặp lại hướng tâm
+	Rearrange Artboards	Sắp xếp lại bảng vẽ
+	Release Blend	Giải phóng hòa trộn
+	Release Envelope	Giải phóng Envelope
+	Release Image Trace	Giải phóng vector hóa ảnh
+	Release Intertwine	Giải phóng đan xen
+	Release Live Paint	Giải phóng tô trực tiếp
+	Release Repeat	Giải phóng lặp lại
+	Release Slice	Giải phóng lát cắt
+	Release Text Wrap	Giải phóng bao văn bản
+	Release Threaded Text	Giải phóng văn bản chuỗi
+	Rename Design	Đổi tên thiết kế
+	Rename Style	Đổi tên kiểu
+	Rename View	Đổi tên chế độ xem
+	Reorder Appearance	Sắp xếp lại diện mạo
+	Reorder Artboards	Đổi thứ tự bảng vẽ
+	Reshape Spine	Định hình lại trục
+	Resize Artboard	Đổi kích thước bảng vẽ
+	Resize Slice	Đổi kích thước lát cắt
+	Resize Type Area	Đổi kích thước vùng chữ
+	Scale in Perspective	Tỷ lệ theo phối cảnh
+	Scallop	Vỏ sò
+	Shape Builder Delete	Tạo hình dạng (xóa)
+	Sort Swatches	Sắp xếp mẫu màu
+	Symbol Screener	Lọc ký hiệu
+	Symbol Scruncher	Thu gọn ký hiệu
+	Symbol Shifter	Dịch chuyển ký hiệu
+	Symbol Sizer	Kích thước ký hiệu
+	Symbol Spinner	Xoay ký hiệu
+	Symbol Stainer	Tô màu ký hiệu
+	Symbol Styler	Tạo kiểu ký hiệu
+	Text Orientation	Hướng chữ
+	Thread Text	Xâu chuỗi văn bản
+	Twirl	Xoáy
+	Typing	Nhập chữ
+	Wrinkle	Nhăn
 	Hold	Giữ
 	Hollow	Rỗng
 	Home	Trang chủ

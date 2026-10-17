@@ -1344,6 +1344,76 @@
 	History	Historial
 	History Options…	Opciones de historial…
 	History States	Estados de historial
+# History panel: the names of undo steps (`every_undo_label_is_translated`).
+	Apply Data Set	Aplicar conjunto de datos
+	Cancel Pattern Editing	Cancelar edición de motivo
+	Copy Appearance	Copiar apariencia
+	Copy Guide	Copiar guía
+	Copy in Perspective	Copiar en perspectiva
+	Create Slice from Selection	Crear sector a partir de la selección
+	Create Slices from Guides	Crear sectores a partir de guías
+	Delete All Slices	Eliminar todos los sectores
+	Delete Data Sets	Eliminar conjuntos de datos
+	Delete Graphic Styles	Eliminar estilos gráficos
+	Delete Guide	Eliminar guía
+	Delete Guides	Eliminar guías
+	Delete Slice	Eliminar sector
+	Delete Style	Eliminar estilo
+	Delete Variables	Eliminar variables
+	Delete View	Eliminar vista
+	Done Editing Pattern	Terminar edición de motivo
+	Duplicate Rows	Duplicar filas
+	Edit Perspective Grid	Editar cuadrícula de perspectiva
+	Expand Blend	Expandir fusión
+	Expand Envelope	Expandir envolvente
+	Expand Image Trace	Expandir calco de imagen
+	Expand Live Paint	Expandir pintura interactiva
+	Live Shape	Forma dinámica
+	Make Blend	Crear fusión
+	Make Dynamic	Hacer dinámico
+	Make Intertwine	Crear entrelazado
+	Make Live Paint	Crear pintura interactiva
+	Make Pattern	Crear motivo
+	Make Slice	Crear sector
+	Merge Live Paint	Combinar pintura interactiva
+	Mesh Point Color	Color de punto de malla
+	Move Envelope Point	Mover punto de envolvente
+	Move Plane and Copy Objects	Mover plano y copiar objetos
+	Move Plane and Objects	Mover plano y objetos
+	Move Slice	Mover sector
+	Move Type on a Path	Mover texto en trazado
+	New Guide	Nueva guía
+	Place from Library	Colocar desde biblioteca
+	Rearrange Artboards	Reorganizar mesas de trabajo
+	Release Blend	Soltar fusión
+	Release Envelope	Soltar envolvente
+	Release Intertwine	Soltar entrelazado
+	Release Live Paint	Soltar pintura interactiva
+	Release Repeat	Soltar repetición
+	Release Slice	Soltar sector
+	Release Threaded Text	Soltar texto enlazado
+	Rename Design	Cambiar nombre del diseño
+	Rename Style	Cambiar nombre del estilo
+	Rename View	Cambiar nombre de la vista
+	Reorder Appearance	Reordenar apariencia
+	Reorder Artboards	Reordenar mesas de trabajo
+	Reshape Spine	Remodelar eje
+	Resize Artboard	Cambiar tamaño de la mesa de trabajo
+	Resize Slice	Cambiar tamaño del sector
+	Resize Type Area	Cambiar tamaño del área de texto
+	Scale in Perspective	Escalar en perspectiva
+	Shape Builder Delete	Generador de formas (eliminar)
+	Sort Swatches	Ordenar muestras
+	Symbol Screener	Transparencia de símbolos
+	Symbol Scruncher	Concentración de símbolos
+	Symbol Shifter	Desplazamiento de símbolos
+	Symbol Sizer	Tamaño de símbolos
+	Symbol Spinner	Giro de símbolos
+	Symbol Stainer	Tinte de símbolos
+	Symbol Styler	Estilo de símbolos
+	Text Orientation	Orientación del texto
+	Thread Text	Enlazar texto
+	Typing	Escritura
 	Hollow	Hueco
 	Home	Inicio
 	Horizon Height:	Altura del horizonte:

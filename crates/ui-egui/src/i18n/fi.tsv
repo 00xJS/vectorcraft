@@ -1486,6 +1486,76 @@ lighting	Light	Valo
 	{percent}% opacity	{percent}% peittävyys
 	History Options…	Historian asetukset…
 	Open a document to see its history.	Avaa asiakirja, niin näet sen historian.
+# History panel: the names of undo steps (`every_undo_label_is_translated`).
+	Apply Data Set	Käytä tietojoukkoa
+	Cancel Pattern Editing	Peruuta kuvion muokkaus
+	Copy Appearance	Kopioi ulkoasu
+	Copy Guide	Kopioi apuviiva
+	Copy in Perspective	Kopioi perspektiivissä
+	Create Slice from Selection	Luo siivu valinnasta
+	Create Slices from Guides	Luo siivut apuviivoista
+	Delete All Slices	Poista kaikki siivut
+	Delete Data Sets	Poista tietojoukot
+	Delete Graphic Styles	Poista grafiikkatyylit
+	Delete Guide	Poista apuviiva
+	Delete Guides	Poista apuviivat
+	Delete Slice	Poista siivu
+	Delete Style	Poista tyyli
+	Delete Variables	Poista muuttujat
+	Delete View	Poista näkymä
+	Done Editing Pattern	Lopeta kuvion muokkaus
+	Duplicate Rows	Monista rivit
+	Edit Perspective Grid	Muokkaa perspektiiviruudukkoa
+	Expand Blend	Laajenna sulautus
+	Expand Envelope	Laajenna kuori
+	Expand Image Trace	Laajenna kuvan jäljitys
+	Expand Live Paint	Laajenna elävä maalaus
+	Live Shape	Elävä muoto
+	Make Blend	Luo sulautus
+	Make Dynamic	Tee dynaamiseksi
+	Make Intertwine	Luo lomitus
+	Make Live Paint	Luo elävä maalaus
+	Make Pattern	Luo kuvio
+	Make Slice	Luo siivu
+	Merge Live Paint	Yhdistä elävä maalaus
+	Mesh Point Color	Verkkopisteen väri
+	Move Envelope Point	Siirrä kuoren pistettä
+	Move Plane and Copy Objects	Siirrä tasoa ja kopioi objektit
+	Move Plane and Objects	Siirrä tasoa ja objekteja
+	Move Slice	Siirrä siivua
+	Move Type on a Path	Siirrä polun tekstiä
+	New Guide	Uusi apuviiva
+	Place from Library	Sijoita kirjastosta
+	Rearrange Artboards	Järjestä piirtoalustat uudelleen
+	Release Blend	Vapauta sulautus
+	Release Envelope	Vapauta kuori
+	Release Intertwine	Vapauta lomitus
+	Release Live Paint	Vapauta elävä maalaus
+	Release Repeat	Vapauta toisto
+	Release Slice	Vapauta siivu
+	Release Threaded Text	Vapauta ketjutettu teksti
+	Rename Design	Nimeä malli uudelleen
+	Rename Style	Nimeä tyyli uudelleen
+	Rename View	Nimeä näkymä uudelleen
+	Reorder Appearance	Järjestä ulkoasu uudelleen
+	Reorder Artboards	Muuta piirtoalustojen järjestystä
+	Reshape Spine	Muotoile selkäranka uudelleen
+	Resize Artboard	Muuta piirtoalustan kokoa
+	Resize Slice	Muuta siivun kokoa
+	Resize Type Area	Muuta tekstialueen kokoa
+	Scale in Perspective	Skaalaa perspektiivissä
+	Shape Builder Delete	Muodonmuodostin (poisto)
+	Sort Swatches	Lajittele värimallit
+	Symbol Screener	Symbolien läpinäkyvyys
+	Symbol Scruncher	Symbolien tiivistys
+	Symbol Shifter	Symbolien siirto
+	Symbol Sizer	Symbolien koonmuutos
+	Symbol Spinner	Symbolien kierto
+	Symbol Stainer	Symbolien värjäys
+	Symbol Styler	Symbolien tyylittely
+	Text Orientation	Tekstin suunta
+	Thread Text	Ketjuta teksti
+	Typing	Kirjoitus
 	Abutting	Vierekkäinen
 	Black and White	Mustavalkoinen
 	Corners	Kulmat

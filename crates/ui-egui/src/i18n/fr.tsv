@@ -1343,6 +1343,76 @@
 	History	Historique
 	History Options…	Options d’historique…
 	History States	États de l’historique
+# History panel: the names of undo steps (`every_undo_label_is_translated`).
+	Apply Data Set	Appliquer le jeu de données
+	Cancel Pattern Editing	Annuler la modification du motif
+	Copy Appearance	Copier l’aspect
+	Copy Guide	Copier le repère
+	Copy in Perspective	Copier en perspective
+	Create Slice from Selection	Créer une tranche à partir de la sélection
+	Create Slices from Guides	Créer des tranches à partir des repères
+	Delete All Slices	Supprimer toutes les tranches
+	Delete Data Sets	Supprimer les jeux de données
+	Delete Graphic Styles	Supprimer les styles graphiques
+	Delete Guide	Supprimer le repère
+	Delete Guides	Supprimer les repères
+	Delete Slice	Supprimer la tranche
+	Delete Style	Supprimer le style
+	Delete Variables	Supprimer les variables
+	Delete View	Supprimer la vue
+	Done Editing Pattern	Terminer la modification du motif
+	Duplicate Rows	Dupliquer les lignes
+	Edit Perspective Grid	Modifier la grille de perspective
+	Expand Blend	Décomposer le dégradé de formes
+	Expand Envelope	Décomposer l’enveloppe
+	Expand Image Trace	Décomposer la vectorisation de l’image
+	Expand Live Paint	Décomposer la peinture dynamique
+	Live Shape	Forme dynamique
+	Make Blend	Créer un dégradé de formes
+	Make Dynamic	Rendre dynamique
+	Make Intertwine	Créer un entrelacement
+	Make Live Paint	Créer une peinture dynamique
+	Make Pattern	Créer un motif
+	Make Slice	Créer une tranche
+	Merge Live Paint	Fusionner la peinture dynamique
+	Mesh Point Color	Couleur du point de filet
+	Move Envelope Point	Déplacer le point d’enveloppe
+	Move Plane and Copy Objects	Déplacer le plan et copier les objets
+	Move Plane and Objects	Déplacer le plan et les objets
+	Move Slice	Déplacer la tranche
+	Move Type on a Path	Déplacer le texte curviligne
+	New Guide	Nouveau repère
+	Place from Library	Importer depuis la bibliothèque
+	Rearrange Artboards	Réorganiser les plans de travail
+	Release Blend	Annuler le dégradé de formes
+	Release Envelope	Annuler l’enveloppe
+	Release Intertwine	Annuler l’entrelacement
+	Release Live Paint	Annuler la peinture dynamique
+	Release Repeat	Annuler la répétition
+	Release Slice	Annuler la tranche
+	Release Threaded Text	Annuler le texte lié
+	Rename Design	Renommer la conception
+	Rename Style	Renommer le style
+	Rename View	Renommer la vue
+	Reorder Appearance	Réorganiser l’aspect
+	Reorder Artboards	Changer l’ordre des plans de travail
+	Reshape Spine	Modeler la dorsale
+	Resize Artboard	Redimensionner le plan de travail
+	Resize Slice	Redimensionner la tranche
+	Resize Type Area	Redimensionner la zone de texte
+	Scale in Perspective	Mettre à l’échelle en perspective
+	Shape Builder Delete	Concepteur de forme (suppression)
+	Sort Swatches	Trier les nuances
+	Symbol Screener	Transparence de symboles
+	Symbol Scruncher	Espacement de symboles
+	Symbol Shifter	Glissement de symboles
+	Symbol Sizer	Redimensionnement de symboles
+	Symbol Spinner	Rotation de symboles
+	Symbol Stainer	Coloration de symboles
+	Symbol Styler	Stylisation de symboles
+	Text Orientation	Orientation du texte
+	Thread Text	Chaîner le texte
+	Typing	Saisie
 	Hollow	Évidé
 	Home	Accueil
 	Horizon Height:	Hauteur de l’horizon :

@@ -1351,6 +1351,90 @@ file-filter	Templates	Шаблоны
 	History	История
 	History Options…	Параметры истории…
 	History States	Состояния истории
+# History panel: the names of undo steps (`every_undo_label_is_translated`).
+	Apply Data Set	Применить набор данных
+	Area Type	Текст в области
+	Bloat	Раздувание
+	Cancel Pattern Editing	Отменить редактирование узора
+	Copy Appearance	Копировать оформление
+	Copy Guide	Копировать направляющую
+	Copy in Perspective	Копировать в перспективе
+	Create Slice from Selection	Создать фрагмент из выделения
+	Create Slices from Guides	Создать фрагменты из направляющих
+	Delete All Slices	Удалить все фрагменты
+	Delete Data Sets	Удалить наборы данных
+	Delete Graphic Styles	Удалить графические стили
+	Delete Guide	Удалить направляющую
+	Delete Guides	Удалить направляющие
+	Delete Slice	Удалить фрагмент
+	Delete Style	Удалить стиль
+	Delete Variables	Удалить переменные
+	Delete View	Удалить вид
+	Done Editing Pattern	Завершить редактирование узора
+	Duplicate Rows	Дублировать строки
+	Edit Perspective Grid	Редактировать сетку перспективы
+	Expand Blend	Разобрать переход
+	Expand Envelope	Разобрать оболочку
+	Expand Image Trace	Разобрать трассировку изображения
+	Expand Live Paint	Разобрать быструю заливку
+	Grid Repeat	Повтор сеткой
+	Image Trace (Make and Expand)	Трассировка изображения (создать и разобрать)
+	Live Shape	Динамическая фигура
+	Make Blend	Создать переход
+	Make Dynamic	Сделать динамическим
+	Make Intertwine	Создать переплетение
+	Make Live Paint	Создать быструю заливку
+	Make Pattern	Создать узор
+	Make Slice	Создать фрагмент
+	Make Text Wrap	Создать обтекание текстом
+	Merge Live Paint	Объединить быструю заливку
+	Mesh Point Color	Цвет точки сетки
+	Mirror Repeat	Зеркальный повтор
+	Move Envelope Point	Переместить точку оболочки
+	Move Plane and Copy Objects	Переместить плоскость и копировать объекты
+	Move Plane and Objects	Переместить плоскость и объекты
+	Move Slice	Переместить фрагмент
+	Move Type on a Path	Переместить текст по контуру
+	New Guide	Новая направляющая
+	Pen	Перо
+	Place from Library	Поместить из библиотеки
+	Pucker	Сморщивание
+	Radial Repeat	Радиальный повтор
+	Rearrange Artboards	Переставить монтажные области
+	Release Blend	Освободить переход
+	Release Envelope	Освободить оболочку
+	Release Image Trace	Освободить трассировку изображения
+	Release Intertwine	Освободить переплетение
+	Release Live Paint	Освободить быструю заливку
+	Release Repeat	Освободить повтор
+	Release Slice	Освободить фрагмент
+	Release Text Wrap	Освободить обтекание текстом
+	Release Threaded Text	Освободить связанный текст
+	Rename Design	Переименовать дизайн
+	Rename Style	Переименовать стиль
+	Rename View	Переименовать вид
+	Reorder Appearance	Изменить порядок оформления
+	Reorder Artboards	Изменить порядок монтажных областей
+	Reshape Spine	Изменить форму остова
+	Resize Artboard	Изменить размер монтажной области
+	Resize Slice	Изменить размер фрагмента
+	Resize Type Area	Изменить размер текстовой области
+	Scale in Perspective	Масштабировать в перспективе
+	Scallop	Фестоны
+	Shape Builder Delete	Создание фигур (удаление)
+	Sort Swatches	Сортировать образцы
+	Symbol Screener	Прозрачность символов
+	Symbol Scruncher	Сжатие символов
+	Symbol Shifter	Сдвиг символов
+	Symbol Sizer	Размер символов
+	Symbol Spinner	Вращение символов
+	Symbol Stainer	Тонирование символов
+	Symbol Styler	Стилизация символов
+	Text Orientation	Ориентация текста
+	Thread Text	Связать текст
+	Twirl	Закручивание
+	Typing	Ввод текста
+	Wrinkle	Морщины
 	Hollow	Полый
 	Home	Домой
 	Horizon Height:	Высота горизонта:

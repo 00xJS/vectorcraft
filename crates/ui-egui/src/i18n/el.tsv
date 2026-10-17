@@ -1281,6 +1281,76 @@
 	History	Ιστορικό
 	History Options…	Επιλογές ιστορικού…
 	History States	Καταστάσεις ιστορικού
+# History panel: the names of undo steps (`every_undo_label_is_translated`).
+	Apply Data Set	Εφαρμογή συνόλου δεδομένων
+	Cancel Pattern Editing	Ακύρωση επεξεργασίας μοτίβου
+	Copy Appearance	Αντιγραφή εμφάνισης
+	Copy Guide	Αντιγραφή οδηγού
+	Copy in Perspective	Αντιγραφή σε προοπτική
+	Create Slice from Selection	Δημιουργία τομής από επιλογή
+	Create Slices from Guides	Δημιουργία τομών από οδηγούς
+	Delete All Slices	Διαγραφή όλων των τομών
+	Delete Data Sets	Διαγραφή συνόλων δεδομένων
+	Delete Graphic Styles	Διαγραφή στυλ γραφικών
+	Delete Guide	Διαγραφή οδηγού
+	Delete Guides	Διαγραφή οδηγών
+	Delete Slice	Διαγραφή τομής
+	Delete Style	Διαγραφή στυλ
+	Delete Variables	Διαγραφή μεταβλητών
+	Delete View	Διαγραφή προβολής
+	Done Editing Pattern	Ολοκλήρωση επεξεργασίας μοτίβου
+	Duplicate Rows	Δημιουργία αντιγράφου γραμμών
+	Edit Perspective Grid	Επεξεργασία πλέγματος προοπτικής
+	Expand Blend	Επέκταση ανάμειξης
+	Expand Envelope	Επέκταση περιβλήματος
+	Expand Image Trace	Επέκταση ανίχνευσης περιγραμμάτων εικόνας
+	Expand Live Paint	Επέκταση δυναμικής βαφής
+	Live Shape	Δυναμικό σχήμα
+	Make Blend	Δημιουργία ανάμειξης
+	Make Dynamic	Μετατροπή σε δυναμικό
+	Make Intertwine	Δημιουργία διαπλοκής
+	Make Live Paint	Δημιουργία δυναμικής βαφής
+	Make Pattern	Δημιουργία μοτίβου
+	Make Slice	Δημιουργία τομής
+	Merge Live Paint	Συγχώνευση δυναμικής βαφής
+	Mesh Point Color	Χρώμα σημείου πλέγματος
+	Move Envelope Point	Μετακίνηση σημείου περιβλήματος
+	Move Plane and Copy Objects	Μετακίνηση επιπέδου προοπτικής και αντιγραφή αντικειμένων
+	Move Plane and Objects	Μετακίνηση επιπέδου προοπτικής και αντικειμένων
+	Move Slice	Μετακίνηση τομής
+	Move Type on a Path	Μετακίνηση κειμένου σε διαδρομή
+	New Guide	Νέος οδηγός
+	Place from Library	Τοποθέτηση από βιβλιοθήκη
+	Rearrange Artboards	Αναδιάταξη πινάκων σχεδίασης
+	Release Blend	Αποδέσμευση ανάμειξης
+	Release Envelope	Αποδέσμευση περιβλήματος
+	Release Intertwine	Αποδέσμευση διαπλοκής
+	Release Live Paint	Αποδέσμευση δυναμικής βαφής
+	Release Repeat	Αποδέσμευση επανάληψης
+	Release Slice	Αποδέσμευση τομής
+	Release Threaded Text	Αποδέσμευση συνδεδεμένου κειμένου
+	Rename Design	Μετονομασία σχεδίου
+	Rename Style	Μετονομασία στυλ
+	Rename View	Μετονομασία προβολής
+	Reorder Appearance	Αναδιάταξη εμφάνισης
+	Reorder Artboards	Αλλαγή σειράς πινάκων σχεδίασης
+	Reshape Spine	Αναδιαμόρφωση κεντρικής καμπύλης
+	Resize Artboard	Αλλαγή μεγέθους πίνακα σχεδίασης
+	Resize Slice	Αλλαγή μεγέθους τομής
+	Resize Type Area	Αλλαγή μεγέθους περιοχής κειμένου
+	Scale in Perspective	Κλιμάκωση σε προοπτική
+	Shape Builder Delete	Δημιουργία σχημάτων (διαγραφή)
+	Sort Swatches	Ταξινόμηση δειγμάτων χρωμάτων
+	Symbol Screener	Αραίωση συμβόλων
+	Symbol Scruncher	Σύμπτυξη συμβόλων
+	Symbol Shifter	Μετατόπιση συμβόλων
+	Symbol Sizer	Αλλαγή μεγέθους συμβόλων
+	Symbol Spinner	Περιστροφή συμβόλων
+	Symbol Stainer	Χρωματισμός συμβόλων
+	Symbol Styler	Μορφοποίηση συμβόλων
+	Text Orientation	Προσανατολισμός κειμένου
+	Thread Text	Σύνδεση κειμένου
+	Typing	Πληκτρολόγηση
 	Hollow	Κοίλο
 	Home	Αρχική οθόνη
 	Horizon Height:	Ύψος ορίζοντα:

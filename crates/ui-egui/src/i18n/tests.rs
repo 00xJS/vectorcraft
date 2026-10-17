@@ -440,6 +440,21 @@ fn every_tl_literal_is_translated() {
     }
 }
 
+/// Every undo step name the engine, the tools and the shell record ([`undo_labels`]), and every
+/// effect's name without its ellipsis, has a row in each language marked `complete_menus`: its plain
+/// row, or the row of the same name with an ellipsis (`panels::history::step_name`).
+#[test]
+fn every_undo_label_is_translated() {
+    let mut labels = undo_labels();
+    assert!(labels.len() > 300, "scan found only {} undo labels", labels.len());
+    labels.extend(vectorcraft_effects::effect_catalog().iter().map(|e| e.label.trim_end_matches('…').to_string()));
+    for l in LANGUAGES.iter().filter(|l| l.complete_menus) {
+        let lang = Lang::from_code(l.code).expect("registered");
+        let missing: Vec<_> = labels.iter().filter(|s| crate::panels::history::step_name(lang, s).is_none()).collect();
+        assert!(missing.is_empty(), "{}: {} untranslated undo labels: {missing:#?}", l.code, missing.len());
+    }
+}
+
 /// Every `tl!("…")` literal in this crate's sources (test modules aside).
 pub fn tl_literals() -> std::collections::BTreeSet<String> {
     let dir = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("src");
@@ -473,6 +488,308 @@ pub fn tl_literals() -> std::collections::BTreeSet<String> {
     literals
 }
 
+/// Crates whose undo steps the History panel lists.
+const UNDO_CRATES: &[&str] = &["engine", "tools", "ui-egui"];
+
+/// Calls whose first argument names an undo step.
+const UNDO_MARKERS: &[&str] = &[".edit(", "begin_interaction(", "Action::Begin(", "begin_named_undo_group(Some("];
+
+/// A function in a source file, as [`undo_labels`] reads it.
+struct SourceFn<'a> {
+    file: usize,
+    name: &'a str,
+    /// Declared `pub` (`pub(crate)`, `pub(super)`), so other files call it too.
+    public: bool,
+    /// Position of its `label` parameter among a call's arguments (`self` not counted).
+    label: Option<usize>,
+    body: &'a str,
+}
+
+/// Every undo step name in [`UNDO_CRATES`] (test modules aside) that the sources write as a
+/// literal: the first argument at each of [`UNDO_MARKERS`], the argument a function whose `label`
+/// parameter reaches one of them takes at each of its calls, and the value of each `let label = …`
+/// in a function that passes `label` on. A literal counts where it is the value (`"Move"`,
+/// `if copy { "Copy" } else { "Move" }`, a match arm's result). A call of a function named
+/// `…label` (`pf_label(op)`, `kind.label()`) gives the literals that function returns in the same
+/// file. A name built with `format!` or taken from data (an effect's, a plug-in's) is not read.
+pub fn undo_labels() -> std::collections::BTreeSet<String> {
+    let crates = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("..");
+    let mut out = std::collections::BTreeSet::new();
+    for krate in UNDO_CRATES {
+        let files = undo_sources(&crates.join(krate).join("src"));
+        let fns: Vec<SourceFn> = files.iter().enumerate().flat_map(|(i, t)| source_fns(i, t)).collect();
+        // Functions whose `label` parameter reaches a marker, directly or through one another.
+        let mut forwards = vec![false; fns.len()];
+        loop {
+            let before = forwards.clone();
+            for (i, f) in fns.iter().enumerate().filter(|(_, f)| f.label.is_some()) {
+                let passed = |g: &SourceFn| call_args(f.body, g).iter().any(|a| bare(a) == "label");
+                forwards[i] |= marker_args(f.body).iter().any(|a| bare(a) == "label") || fns.iter().zip(&before).any(|(g, &on)| on && passed(g));
+            }
+            if forwards == before {
+                break;
+            }
+        }
+        let forwarders: Vec<&SourceFn> = fns.iter().zip(&forwards).filter(|(_, on)| **on).map(|(f, _)| f).collect();
+        // Each expression that gives a step's name, with the file it is in.
+        let mut exprs: Vec<(usize, &str)> = vec![];
+        for (i, t) in files.iter().enumerate() {
+            exprs.extend(marker_args(t).into_iter().map(|a| (i, a)));
+            for g in forwarders.iter().filter(|g| g.public || g.file == i) {
+                exprs.extend(call_args(t, g).into_iter().map(|a| (i, a)));
+            }
+        }
+        for f in &fns {
+            let mut passed = marker_args(f.body);
+            passed.extend(forwarders.iter().flat_map(|g| call_args(f.body, g)));
+            if !passed.iter().any(|a| bare(a).starts_with("label")) {
+                continue;
+            }
+            for (at, m) in f.body.match_indices("let label =") {
+                let rest = &f.body[at + m.len()..];
+                exprs.push((f.file, rest[..top_level(rest).1].trim()));
+            }
+        }
+        for (file, e) in exprs {
+            label_literals(e, file, &fns, &mut out);
+        }
+    }
+    out
+}
+
+/// The sources of a crate's `src` directory, test modules and files and `//` comments aside.
+fn undo_sources(dir: &std::path::Path) -> Vec<String> {
+    let mut out = vec![];
+    let mut stack = vec![dir.to_path_buf()];
+    while let Some(d) = stack.pop() {
+        for entry in std::fs::read_dir(&d).into_iter().flatten().flatten() {
+            let path = entry.path();
+            let name = path.file_name().and_then(|n| n.to_str()).unwrap_or("");
+            if path.is_dir() {
+                if name != "tests" {
+                    stack.push(path);
+                }
+            } else if name.ends_with(".rs") && !name.starts_with("tests") && !name.ends_with("_tests.rs") {
+                let text = std::fs::read_to_string(&path).unwrap_or_default();
+                out.push(without_comments(without_test_module(&text)));
+            }
+        }
+    }
+    out
+}
+
+/// `text` with each `//` comment removed (a `//` inside a string literal stays).
+fn without_comments(text: &str) -> String {
+    let mut out = String::with_capacity(text.len());
+    let mut i = 0;
+    while let Some(c) = text[i..].chars().next() {
+        if let Some(end) = (c == '"' || c == '\'').then(|| quoted_end(text, i)).flatten() {
+            out.push_str(&text[i..end]);
+            i = end;
+        } else if text[i..].starts_with("//") {
+            i = text[i..].find('\n').map_or(text.len(), |n| i + n);
+        } else {
+            out.push(c);
+            i += c.len_utf8();
+        }
+    }
+    out
+}
+
+/// Where the string or character literal starting at `text[at]` (a `"` or `'`) ends, raw strings
+/// (`r#"…"#`) included; `None` for a lifetime's `'`.
+fn quoted_end(text: &str, at: usize) -> Option<usize> {
+    let rest = &text[at + 1..];
+    if text[at..].starts_with('\'') {
+        let mut it = rest.char_indices();
+        let (_, c) = it.next()?;
+        if c == '\\' {
+            it.next()?;
+            return it.find(|(_, c)| *c == '\'').map(|(n, _)| at + 1 + n + 1);
+        }
+        return it.next().filter(|(_, c)| *c == '\'').map(|(n, _)| at + 1 + n + 1);
+    }
+    let hashes = text[..at].chars().rev().take_while(|c| *c == '#').count();
+    if text[..at - hashes].ends_with('r') {
+        let close = format!("\"{}", "#".repeat(hashes));
+        return rest.find(&close).map(|n| at + 1 + n + close.len());
+    }
+    let mut it = rest.char_indices();
+    while let Some((n, c)) = it.next() {
+        match c {
+            '\\' => {
+                it.next();
+            }
+            '"' => return Some(at + 1 + n + 1),
+            _ => {}
+        }
+    }
+    None
+}
+
+/// In `s` (the text after an opening bracket), the offset of each top-level `,`, and where the
+/// list ends: at the bracket that closes it, a top-level `;`, or the end of `s`.
+fn top_level(s: &str) -> (Vec<usize>, usize) {
+    let (mut commas, mut depth, mut i) = (vec![], 0usize, 0);
+    while let Some(c) = s[i..].chars().next() {
+        if let Some(end) = (c == '"' || c == '\'').then(|| quoted_end(s, i)).flatten() {
+            i = end;
+            continue;
+        }
+        match c {
+            '(' | '[' | '{' => depth += 1,
+            ')' | ']' | '}' if depth == 0 => return (commas, i),
+            ')' | ']' | '}' => depth -= 1,
+            ';' if depth == 0 => return (commas, i),
+            ',' if depth == 0 => commas.push(i),
+            _ => {}
+        }
+        i += c.len_utf8();
+    }
+    (commas, s.len())
+}
+
+/// The length of the block at the start of `s` (which starts with `{`), braces included.
+fn block_len(s: &str) -> usize {
+    let mut at = 1;
+    while at < s.len() {
+        let end = at + top_level(&s[at..]).1;
+        if !s[end..].starts_with(';') {
+            return (end + 1).min(s.len());
+        }
+        at = end + 1;
+    }
+    s.len()
+}
+
+/// The arguments of the call whose `(` comes just before `s`, trimmed.
+fn arguments(s: &str) -> Vec<&str> {
+    let (commas, end) = top_level(s);
+    let mut out = vec![];
+    let mut start = 0;
+    for at in commas.into_iter().chain([end]) {
+        out.push(s[start..at].trim());
+        start = at + 1;
+    }
+    out
+}
+
+/// The functions defined in a source file, with their bodies.
+fn source_fns(file: usize, text: &str) -> Vec<SourceFn<'_>> {
+    let mut out = vec![];
+    for (at, _) in text.match_indices("fn ") {
+        if text[..at].chars().next_back().is_some_and(|c| c.is_alphanumeric() || c == '_') {
+            continue;
+        }
+        let after = &text[at + 3..];
+        let name_len = after.find(|c: char| !(c.is_alphanumeric() || c == '_')).unwrap_or(after.len());
+        let (name, mut rest) = after.split_at(name_len);
+        if rest.starts_with('<') {
+            let mut depth = 0;
+            let close = rest
+                .char_indices()
+                .find(|&(n, c)| {
+                    depth += match c {
+                        '<' => 1,
+                        '>' if !rest[..n].ends_with('-') => -1,
+                        _ => 0,
+                    };
+                    depth == 0
+                })
+                .map(|(n, _)| n);
+            rest = close.map_or("", |n| &rest[n + 1..]);
+        }
+        let Some(params) = rest.strip_prefix('(') else { continue };
+        let names: Vec<&str> =
+            arguments(params).into_iter().map(|p| p.split(':').next().unwrap_or("").trim().trim_start_matches("mut ").trim()).collect();
+        let after_params = &params[top_level(params).1..];
+        let (Some(open), semi) = (after_params.find('{'), after_params.find(';')) else { continue };
+        if semi.is_some_and(|s| s < open) {
+            continue;
+        }
+        let body = &after_params[open..];
+        let body = &body[..block_len(body)];
+        let skip = usize::from(names.first().is_some_and(|n| n.ends_with("self")));
+        let line = &text[text[..at].rfind('\n').map_or(0, |n| n + 1)..at];
+        out.push(SourceFn { file, name, public: line.contains("pub"), label: names.iter().position(|n| *n == "label").map(|k| k - skip), body });
+    }
+    out
+}
+
+/// The first argument at each of [`UNDO_MARKERS`] in `text`.
+fn marker_args(text: &str) -> Vec<&str> {
+    UNDO_MARKERS.iter().flat_map(|m| text.match_indices(m).filter_map(move |(at, _)| arguments(&text[at + m.len()..]).first().copied())).collect()
+}
+
+/// The argument at `g`'s `label` position at each call of `g` in `text`.
+fn call_args<'a>(text: &'a str, g: &SourceFn) -> Vec<&'a str> {
+    let Some(k) = g.label else { return vec![] };
+    let call = format!("{}(", g.name);
+    text.match_indices(&call)
+        .filter(|(at, _)| !text[..*at].chars().next_back().is_some_and(|c| c.is_alphanumeric() || c == '_') && !text[..*at].ends_with("fn "))
+        .filter_map(|(at, _)| arguments(&text[at + call.len()..]).get(k).copied())
+        .collect()
+}
+
+/// An expression without a leading `&` and trailing conversions (`.into()`, `.to_string()`).
+fn bare(e: &str) -> &str {
+    let mut e = e.trim().trim_start_matches('&');
+    while let Some(s) = [".into()", ".to_string()", ".clone()", ".as_str()", ".to_owned()"].iter().find_map(|t| e.strip_suffix(t)) {
+        e = s.trim_end();
+    }
+    e
+}
+
+/// Add the step names expression `e` in source file `file` gives (see [`undo_labels`]).
+fn label_literals(e: &str, file: usize, fns: &[SourceFn], out: &mut std::collections::BTreeSet<String>) {
+    let mut e = bare(e);
+    if e.starts_with("format!(") {
+        return;
+    }
+    if let Some(body) = e.strip_prefix('|').and_then(|r| r.find('|').map(|n| &r[n + 1..])) {
+        e = body.trim();
+    }
+    let values = string_literals(e, |before, after| {
+        let before = before.trim_end();
+        let value = before.is_empty() || ["{", "=>", "else", "Some(", "unwrap_or("].iter().any(|t| before.ends_with(t));
+        value && !after.trim_start().starts_with("=>") && !after.trim_start().starts_with('|')
+    });
+    if !values.is_empty() {
+        out.extend(values);
+        return;
+    }
+    let Some(inner) = e.strip_suffix(')') else { return };
+    let Some(open) = inner.rfind('(').filter(|n| !inner[n + 1..].contains(')')) else { return };
+    let name_at = inner[..open].rfind(|c: char| !(c.is_alphanumeric() || c == '_')).map_or(0, |n| n + 1);
+    let name = &inner[name_at..open];
+    let method = inner[..name_at].ends_with('.');
+    if name.ends_with("label") && (name != "label" || method) {
+        for f in fns.iter().filter(|f| f.file == file && f.name == name) {
+            out.extend(string_literals(f.body, |_, after| !after.trim_start().starts_with("=>") && !after.trim_start().starts_with('|')));
+        }
+    }
+}
+
+/// The string literals in `e` that `keep` accepts, given the text before and after each.
+fn string_literals(e: &str, keep: impl Fn(&str, &str) -> bool) -> Vec<String> {
+    let mut out = vec![];
+    let mut i = 0;
+    while let Some(c) = e[i..].chars().next() {
+        if let Some(end) = (c == '"' || c == '\'').then(|| quoted_end(e, i)).flatten() {
+            if c == '"'
+                && let Some(lit) = string_literal(&e[i + 1..])
+                && keep(&e[..i], &e[end..])
+            {
+                out.push(lit);
+            }
+            i = end;
+        } else {
+            i += c.len_utf8();
+        }
+    }
+    out
+}
+
 /// `VECTORCRAFT_I18N_DUMP=<file> cargo test -p vectorcraft-ui-egui dump_source_strings` writes every
 /// English source string a complete catalog has to cover, one per line, for translators.
 #[test]
@@ -480,6 +797,7 @@ fn dump_source_strings() {
     let Ok(path) = std::env::var("VECTORCRAFT_I18N_DUMP") else { return };
     let mut all = crate::menus::menu_strings();
     all.extend(tl_literals());
+    all.extend(undo_labels());
     let text: String = all.iter().map(|s| format!("{}\n", s.replace('\\', "\\\\").replace('\n', "\\n").replace('\t', "\\t"))).collect();
     std::fs::write(path, text).expect("write dump");
 }
