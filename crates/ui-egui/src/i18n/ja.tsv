@@ -3040,7 +3040,7 @@ mark-style	Japanese	日本式
 	{effect} is already applied	{effect} はすでに適用されています
 	{format} Options	{format} オプション
 	{kind} Gradient	{kind}グラデーション
-gradient-kind	Radial	ラジアル
+gradient-kind	Radial	円形
 	{kind} Style Options…	{kind}スタイルオプション…
 	{kind}, {model}	{kind}、{model}
 	{name} (spot)	{name} (特色)
