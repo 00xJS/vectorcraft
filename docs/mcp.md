@@ -3396,6 +3396,32 @@ A digit the font lacks comes from a fallback font. Default and saved only when s
 {"name":"run_command","arguments":{"command":"text.setFormat","params":{"digits":"hindi"}}}
 ```
 
+## Touch Type
+
+The Touch Type tool (`touchType`, Shift+T) changes one character at a time. A click on a character of a type object
+(`pointer_gesture` with `touchType`) selects the object and that character and shows a box around the character.
+Dragging the box or its lower-left handle moves the character along its line and up or down. The upper-left handle
+scales it vertically, the lower-right handle scales it horizontally, the upper-right handle scales it proportionally,
+and the handle in the middle of the top edge rotates it about its pen position on the baseline. Escape lets go of the character. Each
+drag is one `text.touchType {id, start, dx?, dy?, hScale?, vScale?, rotation?}` and one undo step. `start` is the byte
+offset of the character; a ligature (one glyph for several characters) changes as a whole, and the reply's `start` and
+`end` give its bytes. `dx` (document points, in reading order) changes the kerning of the character before it on
+its line and its own kerning, so the character moves by `dx` and the characters after it stay where they are. The first
+character of a line and a right-to-left character take no `dx`, and `dx` is limited to what kerning from -1000 to 10000 (1/1000 em) on the two
+characters can give. `dy` raises it by baseline shift, which moves a rotated character along its own up axis. The tool
+splits a drag of a character rotated by up to about 84 degrees between kerning and baseline shift, so the character
+follows the pointer; nearer a quarter turn, a drag moves it only along its line. `hScale`, `vScale`
+and `rotation` set its scales and rotation as `text.setRangeStyle` does. Where the font kerned the character with its
+neighbors, the kerning of the two characters keeps it and the characters after it where they were along the line; a
+wider or narrower character moves the characters after it by the change in its width. Touch Type gives the character
+before it a kerning value of its own (with `dx`, and with any other change where the font kerned the character with
+its neighbors), and that character can then move by the font's kerning pair with the one before
+it, as with any style change to one character (`text.setRangeStyle`). The type stays editable.
+
+```json
+{"name":"run_command","arguments":{"command":"text.touchType","params":{"id":7,"start":1,"dx":10,"dy":4}}}
+```
+
 ## New type in a Japanese interface
 
 While the interface is in Japanese (Preferences › User Interface › Language, or `auto` on a Japanese system), new type starts with em
