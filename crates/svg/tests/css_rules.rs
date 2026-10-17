@@ -259,3 +259,15 @@ fn groups_stand_for_their_objects_and_hidden_ones_are_left_out() {
     assert_eq!(sheet.rules.len(), 1, "one visible rectangle, once: {sheet:?}");
     assert_eq!(sheet.text(), sheet.rules[0].text());
 }
+
+#[test]
+fn font_family_with_quote_or_backslash_is_escaped() {
+    for (family, want) in [("Bob's Font", r"'Bob\'s Font'"), (r"Back\slash Font", r"'Back\\slash Font'"), ("Bob's", r"'Bob\'s'")] {
+        let mut d = doc();
+        let st = CharStyle { font_family: family.into(), size: 18.0, ..CharStyle::default() };
+        let n = text(&mut d, "Hello", st);
+        let id = add(&mut d, n);
+        let r = one(&d, id, &CssOptions::default());
+        assert_eq!(prop(&r, "font-family"), Some(want));
+    }
+}

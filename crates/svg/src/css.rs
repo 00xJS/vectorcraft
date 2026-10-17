@@ -81,7 +81,12 @@ pub(crate) fn font_descriptor(st: &CharStyle) -> (u16, bool) {
 /// (600 for Semibold, 300 for Light), `bold` for 700 and left out for 400.
 pub(crate) fn font_props(st: &CharStyle, len: &dyn Fn(f64) -> String) -> Props {
     let mut p = Props::new();
-    let fam = if st.font_family.contains(|c: char| c.is_whitespace() || c == ',') { format!("'{}'", st.font_family) } else { st.font_family.clone() };
+    // A quoted family escapes `\` and `'`, which would otherwise end the string early.
+    let fam = if st.font_family.contains(|c: char| c.is_whitespace() || matches!(c, ',' | '\'' | '\\')) {
+        format!("'{}'", st.font_family.replace('\\', "\\\\").replace('\'', "\\'"))
+    } else {
+        st.font_family.clone()
+    };
     p.push(("font-family", fam));
     p.push(("font-size", len(st.size * st.v_scale / 100.0)));
     let (weight, italic) = font_descriptor(st);
