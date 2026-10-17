@@ -1,5 +1,6 @@
 # Image Trace quality
 
+> **Last reviewed:** 2026-10-14 · **Last updated:** 2026-10-17 · **Change:** minor (Image Trace: Raster::new returns an error for a buffer of the wrong length; earlier: Gradients: grown over noise and soft rims)
 > **Last reviewed:** 2026-10-17 · **Last updated:** 2026-10-17 · **Change:** minor (Create Strokes: maximal-disc pruning and junction merging; centre-lines rerun)
 > **Last reviewed:** 2026-10-17 · **Last updated:** 2026-10-17 · **Change:** minor (Create Strokes: exact crop distances and Guo–Hall thinning; centre-lines rerun)
 > **Last reviewed:** 2026-10-17 · **Last updated:** 2026-10-17 · **Change:** minor (centre-lines baseline; no tracing behaviour change)
@@ -1211,6 +1212,7 @@ The remaining spur/extra-junction target is not met by this graph-only change.
 
 | date | change |
 |:--|:--|
+| 2026-10-17 | `Raster::new` returns an error for RGBA bytes of the wrong length (it failed an assertion) and `Raster::pixel` reads nothing past the raster; traces of valid images unchanged |
 | 2026-10-17 | M12: maximal-disc graph pruning, split-crossing merges and degree-two joins; correct junction degrees 30→44/45 aa and hard, none missed; remaining spurs unchanged. Centre-lines rerun, scores and earlier tables unchanged. |
 | 2026-10-17 | M12: exact per-blob Euclidean distances and Guo–Hall thinning; centre-lines rerun on 46 inputs. Ends found: aa 638→682/688, hard 631→681/688. Whole-blob stroke/fill choice retained; preset/cost tables unchanged. |
 | 2026-10-17 | M12: add the ignored centre-lines class and measure the existing Create Strokes output on 23 code-drawn scenes, aa and hard; centre/width/topology/end/coverage metrics, no new images, dependencies or behaviour |

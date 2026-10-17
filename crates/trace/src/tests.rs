@@ -602,7 +602,7 @@ fn create_strokes_survives_noise_and_tiny_images() {
         seed
     };
     let noise: Vec<u8> = (0..120 * 120).flat_map(|_| if next() % 3 == 0 { BLACK } else { WHITE }).collect();
-    let noise = Raster::new(120, 120, noise);
+    let noise = Raster::new(120, 120, noise).unwrap();
     for img in [noise, Raster::from_fn(1, 1, |_, _| BLACK), Raster::from_fn(3, 2, |x, _| if x == 1 { BLACK } else { WHITE })] {
         for (fills, width) in [(true, 1.0), (false, 4.0), (true, 100.0)] {
             for noise in [0, 1, 4] {
@@ -1651,4 +1651,26 @@ fn a_higher_paths_never_gives_fewer_segments() {
         }
     }
     assert!(wrong.is_empty(), "{}", wrong.join("\n"));
+}
+
+#[test]
+fn a_raster_of_the_wrong_length_is_an_error_not_a_crash() {
+    for (w, h, len) in [(4, 4, 63), (4, 4, 65), (4, 4, 0), (0, 4, 4), (1, 1, 3), (u32::MAX, u32::MAX, 16)] {
+        match Raster::new(w, h, vec![7; len]) {
+            Err(TraceError::Decode(why)) => assert!(why.starts_with(&format!("{len} bytes")) && why.contains(&format!("{w} × {h}")), "{why}"),
+            other => panic!("{w} × {h}, {len} bytes: {other:?}"),
+        }
+    }
+    let e = Raster::new(3, 2, vec![0; 20]).unwrap_err().to_string();
+    assert!(e.contains("20 bytes") && e.contains("3 × 2"), "{e}");
+    assert_eq!(Raster::new(3, 2, vec![9; 24]).unwrap().pixel(2, 1), [9; 4]);
+    assert!(Raster::new(0, 0, vec![]).is_ok());
+    // A raster whose public fields disagree is still no crash: no pixel past its bytes, no trace,
+    // no mosaic tile out of range.
+    let broken = Raster { width: 8, height: 8, rgba: vec![255; 40] };
+    assert_eq!(broken.pixel(7, 7), [0; 4]);
+    assert_eq!(broken.pixel(1, 1), [255; 4]);
+    assert_eq!(broken.pixel(9, 0), [0; 4]);
+    assert!(trace(&broken, &TraceParams::default()).paths.is_empty());
+    assert_eq!(mosaic(&broken, 2, 2).len(), 4);
 }
