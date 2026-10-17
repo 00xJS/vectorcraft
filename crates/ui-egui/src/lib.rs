@@ -1353,6 +1353,7 @@ impl VectorcraftApp {
             return;
         }
         let t0 = now_ms();
+        widgets::set_dialog_open(&ctx, self.ui.dialog.is_some());
         scrub::begin_frame(self, &ctx);
         font_menu::end_stale_preview(self, &ctx);
         floating::track(self, &ctx);

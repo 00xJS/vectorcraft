@@ -632,6 +632,68 @@ fn a_dialog_opens_with_its_first_field_focused_so_typing_and_enter_apply() {
     assert_eq!(node.appearance.effects.last().map(|e| e.params["scaleH"].clone()), Some(json!(50.0)));
 }
 
+/// In a dialog, Shift+Enter in a field applies its value and confirms the dialog, as Enter does:
+/// the Move dialog moves the art, and the New Document dialog creates a document as wide as typed.
+/// Panel fields keep the focus on Shift+Enter (`tests_numfields`).
+#[test]
+fn shift_enter_in_a_dialog_field_applies_it_and_confirms_the_dialog() {
+    let mut app = app();
+    let id = app.run("shape.rectangle", json!({"x": 10, "y": 10, "width": 40, "height": 20})).unwrap()["id"].as_u64().unwrap();
+    let ctx = egui::Context::default();
+    theme::install_fonts(&ctx);
+    theme::apply(&ctx, Default::default());
+    let screen_rect = Some(egui::Rect::from_min_size(egui::Pos2::ZERO, egui::vec2(1280.0, 900.0)));
+    let mut time = 0.0;
+    // Whole app frames: the panels, then the dialog.
+    let mut frame = |app: &mut VectorcraftApp, events: Vec<egui::Event>| {
+        time += 0.1;
+        let mut out = ctx.run_ui(egui::RawInput { events, time: Some(time), screen_rect, ..Default::default() }, |ui| {
+            app.logic(ui.ctx());
+            app.ui(ui);
+        });
+        out.textures_delta.clear();
+        out
+    };
+    let shift_enter =
+        || egui::Event::Key { key: egui::Key::Enter, physical_key: None, pressed: true, repeat: false, modifiers: egui::Modifiers::SHIFT };
+    let bounds = |app: &VectorcraftApp| app.session.doc().unwrap().doc.node(vectorcraft_doc::NodeId(id)).unwrap().geometric_bounds().unwrap();
+    // Move…: type 15 over its first field and press Shift+Enter.
+    let before = bounds(&app);
+    crate::menus::invoke(&mut app, "object.move", json!({}));
+    frame(&mut app, vec![]);
+    frame(&mut app, vec![]);
+    frame(&mut app, vec![egui::Event::Text("15".into())]);
+    frame(&mut app, vec![shift_enter()]);
+    assert!(app.ui.dialog.is_none(), "Shift+Enter confirms the Move dialog");
+    let after = bounds(&app);
+    assert!((after.x0 - before.x0 - 15.0).abs() < 1e-6 && (after.y0 - before.y0).abs() < 1e-6, "{before:?} → {after:?}");
+    // New Document (the recent 200 × 200 pt size): click into Width, type 300 and press Shift+Enter.
+    app.run("file.newDialog", json!({})).unwrap();
+    frame(&mut app, vec![]);
+    let out = frame(&mut app, vec![]);
+    fn walk(s: &egui::Shape, out: &mut Vec<(String, egui::Pos2)>) {
+        match s {
+            egui::Shape::Vec(v) => v.iter().for_each(|s| walk(s, out)),
+            egui::Shape::Text(t) => out.push((t.galley.text().to_string(), t.visual_bounding_rect().center())),
+            _ => {}
+        }
+    }
+    let mut texts = vec![];
+    out.shapes.iter().for_each(|c| walk(&c.shape, &mut texts));
+    // The Width field comes right after its caption.
+    let width = texts.iter().position(|(t, _)| t == "Width").and_then(|i| texts.get(i + 1));
+    assert_eq!(width.map(|(t, _)| t.as_str()), Some("200 pt"), "{texts:?}");
+    let at = width.map(|(_, p)| *p).unwrap();
+    let press = |pressed| egui::Event::PointerButton { pos: at, button: egui::PointerButton::Primary, pressed, modifiers: Default::default() };
+    frame(&mut app, vec![egui::Event::PointerMoved(at), press(true)]);
+    frame(&mut app, vec![press(false)]);
+    frame(&mut app, vec![]);
+    frame(&mut app, vec![egui::Event::Text("300".into())]);
+    frame(&mut app, vec![shift_enter()]);
+    assert!(app.ui.dialog.is_none(), "Shift+Enter creates the document");
+    assert_eq!(app.session.active().unwrap().doc.artboards[0].rect.width(), 300.0);
+}
+
 /// #1367: a dialog opened by a click (its menu item) is drawn in the frame of that click, where egui
 /// takes the focus from a field the click missed: its first field still has the focus, each time it
 /// opens.

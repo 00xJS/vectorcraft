@@ -208,9 +208,9 @@ pub(crate) fn typed_unit(ctx: &egui::Context, unit: Unit) -> Unit {
 }
 
 /// A recessed numeric field showing `value` (points) in `unit`. Returns the new value (points)
-/// when the user commits (Enter / focus loss). Supports unit suffixes and arithmetic; a number
-/// without a unit is in `unit` ([`typed_unit`]: in points in a picas field with Numbers Without
-/// Units Are Points on).
+/// when the user commits (Enter / focus loss / Shift+Enter, which keeps the focus outside dialogs).
+/// Supports unit suffixes and arithmetic; a number without a unit is in `unit` ([`typed_unit`]: in
+/// points in a picas field with Numbers Without Units Are Points on).
 pub fn num_field(ui: &mut Ui, id: impl std::hash::Hash + std::fmt::Debug, value: Option<f64>, unit: Unit, width: f32) -> Option<f64> {
     unit_field(ui, id, value, unit, width, false)
 }
@@ -228,13 +228,13 @@ fn unit_field(
     let id = ui.id().with(id);
     let shown = value.map(|v| unit.format(v)).unwrap_or_default();
     take_dialog_focus(ui, id, &shown);
-    let (mut buf, resp, rect) = recessed_text(ui, id, &shown, width, 1);
+    let (mut buf, commit, resp, rect) = recessed_text(ui, id, &shown, width, 1);
     select_all_on_focus(ui, &resp, &buf);
     // ↑/↓ and the wheel step in the field's unit; a drag on its label scrubs it.
     let read = typed_unit(ui.ctx(), unit);
     let stepped = step_value(ui, &resp, &mut buf, |b| Some(unit.from_pt(read.parse(b)?)), |v| unit.format(unit.to_pt(v)));
     let scrubbed = scrub::field(ui, id, rect, &buf, value.map(|v| unit.from_pt(v)), STEP_DECIMALS);
-    let commit = resp.lost_focus() && buf != shown;
+    let commit = commit && buf != shown;
     ui.data_mut(|d| d.insert_temp(id, buf.clone()));
     if commit {
         read.parse(&buf).or_else(|| if share_of_value { share_of(&buf, value?) } else { None })
@@ -384,6 +384,45 @@ fn select_all(ui: &Ui, id: egui::Id, text: &str) {
     st.store(ui.ctx(), id);
 }
 
+/// The flag that tells the fields a dialog is open in this frame ([`set_dialog_open`]).
+fn dialog_open_flag() -> egui::Id {
+    egui::Id::new("dialog-open")
+}
+
+/// The app sets this at the start of each frame: while a dialog is open, Shift+Enter in a field
+/// applies its value and confirms the dialog as Enter does ([`shift_enter_keeps_focus`]).
+pub(crate) fn set_dialog_open(ctx: &egui::Context, open: bool) {
+    ctx.data_mut(|d| d.insert_temp(dialog_open_flag(), open));
+}
+
+/// Shift+Enter (Shift+Return) in single-line field `id` while it has the keyboard focus and no
+/// dialog is open: the press is taken from this frame's events before the field's text box reads
+/// them, so the field keeps the focus. Returns true when it was pressed; the field then applies its
+/// text as Enter does, and in the next frame shows its value with all of it selected
+/// ([`after_shift_enter`]).
+fn shift_enter_keeps_focus(ui: &Ui, id: egui::Id) -> bool {
+    if !ui.memory(|m| m.has_focus(id)) || ui.data(|d| d.get_temp::<bool>(dialog_open_flag())).unwrap_or(false) {
+        return false;
+    }
+    let pressed = ui.input_mut(|i| {
+        let before = i.events.len();
+        i.events.retain(|e| {
+            !matches!(e, egui::Event::Key { key: egui::Key::Enter, pressed: true, modifiers, .. } if modifiers.matches_exact(egui::Modifiers::SHIFT))
+        });
+        i.events.len() < before
+    });
+    if pressed {
+        ui.data_mut(|d| d.insert_temp(id.with("shift-enter"), true));
+    }
+    pressed
+}
+
+/// Whether field `id`, still focused, took Shift+Enter in the last frame
+/// ([`shift_enter_keeps_focus`]). Clears that record.
+fn after_shift_enter(ui: &Ui, id: egui::Id) -> bool {
+    ui.data_mut(|d| d.remove_temp::<bool>(id.with("shift-enter"))).unwrap_or(false) && ui.memory(|m| m.has_focus(id))
+}
+
 /// Numeric fields select the whole text on keyboard focus, a completed focus click or a
 /// double-click. A pointer press keeps its caret so dragging selects from the pressed position,
 /// and a short drag the toolkit still counts as a click keeps it too (#1326): only a tap
@@ -435,9 +474,10 @@ fn select_all_on_focus(ui: &Ui, resp: &Response, text: &str) {
 }
 
 /// The recessed text box of the panel fields showing `shown`, `rows` lines tall (1: single line),
-/// its text kept under `id` while it has focus. Returns the text (as edited), the text edit's
-/// response and the box.
-fn recessed_text(ui: &mut Ui, id: egui::Id, shown: &str, width: f32, rows: usize) -> (String, Response, Rect) {
+/// its text kept under `id` while it has focus. Returns the text (as edited), whether the field
+/// applies it in this frame (it lost the focus, or a single-line field took Shift+Enter and kept
+/// the focus: [`shift_enter_keeps_focus`]), the text edit's response and the box.
+fn recessed_text(ui: &mut Ui, id: egui::Id, shown: &str, width: f32, rows: usize) -> (String, bool, Response, Rect) {
     let t = Tokens::get(ui.ctx());
     let editing = ui.memory(|m| m.has_focus(id));
     // A press outside the field ends its editing in this frame, so the text typed is committed
@@ -460,8 +500,14 @@ fn recessed_text(ui: &mut Ui, id: egui::Id, shown: &str, width: f32, rows: usize
     // `lost_focus`: the text typed is still taken then, to be committed (#1637). Escape drops it.
     let focus_id = id.with("had-focus");
     let had_focus = ui.data_mut(|d| d.get_temp::<bool>(focus_id)).unwrap_or(false) && !ui.input(|i| i.key_pressed(egui::Key::Escape));
-    let typed = if (editing || had_focus) && followed { ui.data_mut(|d| d.get_temp::<String>(id)) } else { None };
+    // After Shift+Enter applied the text, the field shows the value as it is now, all selected.
+    let reshown = after_shift_enter(ui, id);
+    let typed = if (editing || had_focus) && followed && !reshown { ui.data_mut(|d| d.get_temp::<String>(id)) } else { None };
     let mut buf: String = typed.unwrap_or_else(|| shown.to_string());
+    if reshown {
+        select_all(ui, id, &buf);
+    }
+    let kept = rows == 1 && shift_enter_keeps_focus(ui, id);
     // The box is exactly as tall as the other controls of a row (26 points a line), its text
     // centred in it: a frame around the text came out a point taller and stood out next to
     // spinners and dropdowns (#900).
@@ -496,25 +542,26 @@ fn recessed_text(ui: &mut Ui, id: egui::Id, shown: &str, width: f32, rows: usize
         d.insert_temp(id, buf.clone());
         d.insert_temp(focus_id, focused);
     });
-    (buf, resp, rect)
+    let commit = resp.lost_focus() || kept;
+    (buf, commit, resp, rect)
 }
 
 /// A recessed text field showing `value` (blank when `None`: the selection's values differ),
-/// `rows` lines tall (1: single line, which Enter commits). Returns the new text, trimmed, when a
-/// change is committed (Enter or focus loss).
+/// `rows` lines tall (1: single line, which Enter and Shift+Enter commit). Returns the new text,
+/// trimmed, when a change is committed (Enter, Shift+Enter or focus loss).
 pub fn text_field(ui: &mut Ui, id: impl std::hash::Hash + std::fmt::Debug, value: Option<&str>, width: f32, rows: usize) -> Option<String> {
     let id = ui.id().with(id);
     let shown = value.unwrap_or_default();
-    let (buf, resp, _) = recessed_text(ui, id, shown, width, rows);
-    (resp.lost_focus() && buf.trim() != shown).then(|| buf.trim().to_string())
+    let (buf, commit, _, _) = recessed_text(ui, id, shown, width, rows);
+    (commit && buf.trim() != shown).then(|| buf.trim().to_string())
 }
 
 /// A one-line [`text_field`] that keeps the text exactly as typed, spaces included (a tab
-/// leader such as ". "). Returns it when a change is committed (Enter or focus loss).
+/// leader such as ". "). Returns it when a change is committed (Enter, Shift+Enter or focus loss).
 pub fn exact_text_field(ui: &mut Ui, id: impl std::hash::Hash + std::fmt::Debug, value: &str, width: f32) -> Option<String> {
     let id = ui.id().with(id);
-    let (buf, resp, _) = recessed_text(ui, id, value, width, 1);
-    (resp.lost_focus() && buf != value).then_some(buf)
+    let (buf, commit, _, _) = recessed_text(ui, id, value, width, 1);
+    (commit && buf != value).then_some(buf)
 }
 
 /// A form row: `label` in a column `label_width` wide, then what `add` draws.
@@ -572,14 +619,14 @@ pub fn mixed_field(
     };
     let shown = value.map(show).unwrap_or_default();
     take_dialog_focus(ui, id, &shown);
-    let (mut buf, resp, rect) = recessed_text(ui, id, &shown, width, 1);
+    let (mut buf, commit, resp, rect) = recessed_text(ui, id, &shown, width, 1);
     select_all_on_focus(ui, &resp, &buf);
     // ↑/↓ and the wheel step at the field's precision (a count ignores Ctrl/Cmd's tenth); a drag on
     // its label scrubs it.
     let decimals = decimals.min(6) as i32;
     let stepped = step_value(ui, &resp, &mut buf, read, show).map(|v| round_to(v, decimals));
     let scrubbed = scrub::field(ui, id, rect, &buf, value, decimals);
-    if resp.lost_focus() && buf != shown { read(&buf) } else { stepped.or(scrubbed).filter(|&v| Some(v) != value) }
+    if commit && buf != shown { read(&buf) } else { stepped.or(scrubbed).filter(|&v| Some(v) != value) }
 }
 
 /// Draw a paint preview (swatch chip) into `rect`.
@@ -1672,7 +1719,8 @@ pub fn channel_slider_named(
 }
 
 /// A hex colour field (`E67828`, no `#`) after a `#` label. Returns the text on commit when it
-/// was typed into the field and differs from `hex`.
+/// was typed into the field and differs from `hex`. Enter, Shift+Enter (which keeps the focus
+/// outside dialogs) and focus loss commit it.
 pub fn hex_field(ui: &mut Ui, id: impl std::hash::Hash + std::fmt::Debug, hex: &str) -> Option<String> {
     let t = Tokens::get(ui.ctx());
     ui.label(egui::RichText::new("#").size(15.0).color(t.text));
@@ -1685,6 +1733,10 @@ pub fn hex_field(ui: &mut Ui, id: impl std::hash::Hash + std::fmt::Debug, hex: &
     let edited_id = id.with("edited");
     let edited = editing && ui.data_mut(|d| d.get_temp::<bool>(edited_id)).unwrap_or(false);
     let mut buf: String = if edited { ui.data_mut(|d| d.get_temp::<String>(id)).unwrap_or_else(|| hex.to_string()) } else { hex.to_string() };
+    if after_shift_enter(ui, id) {
+        select_all(ui, id, &buf);
+    }
+    let kept = shift_enter_keeps_focus(ui, id);
     let resp = egui::Frame::NONE
         .fill(t.input)
         .stroke(Stroke::new(1.0, if editing { t.accent } else { t.input_border }))
@@ -1704,11 +1756,11 @@ pub fn hex_field(ui: &mut Ui, id: impl std::hash::Hash + std::fmt::Debug, hex: &
             )
         })
         .inner;
-    let commit = resp.lost_focus() && buf != hex;
+    let commit = (resp.lost_focus() || kept) && buf != hex;
     let focused = ui.memory(|m| m.has_focus(id));
     ui.data_mut(|d| {
         d.insert_temp(id, buf.clone());
-        d.insert_temp(edited_id, (edited || resp.changed()) && focused);
+        d.insert_temp(edited_id, (edited || resp.changed()) && focused && !kept);
     });
     commit.then_some(buf)
 }
@@ -1779,8 +1831,9 @@ pub fn menu_item_name(ui: &mut Ui, label: &str, enabled: bool, checked: bool) ->
 }
 
 /// A number field that may be empty (Stroke dash/gap): `value` (points) shows in `unit` without
-/// its suffix, to fit narrow fields. Returns `Some(new)` (points) on commit, where `new` is `None`
-/// when the field was cleared; typed units and arithmetic work as in [`num_field`].
+/// its suffix, to fit narrow fields. Returns `Some(new)` (points) on commit (Enter, Shift+Enter or
+/// focus loss, as in [`num_field`]), where `new` is `None` when the field was cleared; typed units
+/// and arithmetic work as in [`num_field`].
 pub fn opt_field(ui: &mut Ui, id: impl std::hash::Hash + std::fmt::Debug, value: Option<f64>, unit: Unit, width: f32) -> Option<Option<f64>> {
     let t = Tokens::get(ui.ctx());
     let id = ui.id().with(id);
@@ -1793,9 +1846,11 @@ pub fn opt_field(ui: &mut Ui, id: impl std::hash::Hash + std::fmt::Debug, value:
     let edited = editing && ui.data_mut(|d| d.get_temp::<bool>(edited_id)).unwrap_or(false);
     let before = ui.data_mut(|d| d.get_temp::<String>(id));
     let mut buf: String = if edited { before.clone().unwrap_or_else(|| shown.clone()) } else { shown.clone() };
-    if editing && !edited && before.is_some_and(|b| b != buf) {
+    let reshown = after_shift_enter(ui, id);
+    if reshown || editing && !edited && before.is_some_and(|b| b != buf) {
         select_all(ui, id, &buf);
     }
+    let kept = shift_enter_keeps_focus(ui, id);
     let enabled = ui.is_enabled();
     let framed = egui::Frame::NONE
         .fill(t.input)
@@ -1820,9 +1875,9 @@ pub fn opt_field(ui: &mut Ui, id: impl std::hash::Hash + std::fmt::Debug, value:
     let focused = ui.memory(|m| m.has_focus(id));
     ui.data_mut(|d| {
         d.insert_temp(id, buf.clone());
-        d.insert_temp(edited_id, (edited || resp.changed()) && focused);
+        d.insert_temp(edited_id, (edited || resp.changed()) && focused && !kept);
     });
-    if resp.lost_focus() && buf != shown {
+    if (resp.lost_focus() || kept) && buf != shown {
         let s = buf.trim();
         if s.is_empty() { Some(None) } else { typed_unit(ui.ctx(), unit).parse(s).map(Some) }
     } else {
