@@ -213,7 +213,7 @@ panel-menu commands such as Break Link to Symbol), so they can be given shortcut
 | SVG Interactivity, Retype, Comments, Version History panels | missing | the last two are cloud features (out of scope) |
 | Workspaces (save, reset, switch) | done | |
 | DXF export/import preserves intended curve closure | done | #1299; R13–2018 closed SPLINE bit set/read; an open curve ending at its start stays open; knots and control points unchanged; native CIRCLE/ARC export and CNC preset remain pending |
-| macOS save sheet: choose the format from a menu | missing | #866 (reopened); the menu was withdrawn by #1855 to restore saving: Save As, Save a Copy and the first Save showed no sheet with it. It comes back once the format can be set before the sheet opens |
+| macOS save sheet: choose the format from a menu | done | #866; the save panel is VectorCraft's own `NSSavePanel` with its Format menu set before the sheet opens (`apps/vectorcraft/src/mac_save_format.rs`); #1855 had withdrawn the menu that was added after the sheet began, which made Save As, Save a Copy and the first Save show no sheet |
 | Preferences: every option acts | partial | ~16 stored but unused (#394) |
 | Tabs panel: a stop drags from where the press landed, a stop just added included | done | #1458 |
 | Outline view keeps template layers in Preview, dimmed | done | #1486; a picture placed to be traced stays visible under the outlines |
