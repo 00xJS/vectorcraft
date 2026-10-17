@@ -28,6 +28,8 @@ pub const MAX_STORE_FILES: usize = 1000;
 pub const MAX_PRESET_FILE: u64 = 1 << 20;
 /// The largest ICC profile file read or loaded (CMYK profiles with large tables are a few MB).
 pub const MAX_PROFILE_FILE: u64 = 32 << 20;
+/// The most stored ICC profile bytes read at startup, all files together (the rest are skipped).
+pub const MAX_PROFILE_STORE: u64 = 256 << 20;
 /// The extension of a stored ICC profile.
 const PROFILE_EXT: &str = "icc";
 
@@ -151,9 +153,16 @@ impl Session {
     /// Keep the ICC profiles this session loads in `dir`, and register the ones already there.
     /// Call it before anything that names a profile (restoring the preferences, the first command).
     pub fn attach_profile_store(&mut self, dir: PathBuf) {
+        let mut left = MAX_PROFILE_STORE;
         for path in list_files(&dir, PROFILE_EXT) {
-            let loaded =
-                read_capped(&path, MAX_PROFILE_FILE).and_then(|bytes| vectorcraft_color::cms::register_icc(&bytes, None).map_err(|e| e.to_string()));
+            if left == 0 {
+                log::warn!("skipping the other stored colour profiles: they hold more than {MAX_PROFILE_STORE} bytes together");
+                break;
+            }
+            let loaded = read_capped(&path, MAX_PROFILE_FILE.min(left)).and_then(|bytes| {
+                left -= bytes.len() as u64;
+                vectorcraft_color::cms::register_icc(&bytes, None).map_err(|e| e.to_string())
+            });
             if let Err(e) = loaded {
                 log::warn!("skipping the stored colour profile {}: {e}", path.display());
             }
