@@ -52,13 +52,6 @@ pub fn max_corner_radius(w: f64, h: f64) -> f64 {
     w.abs().min(h.abs()) / 2.0
 }
 
-/// The radius a corner of a `w` × `h` rectangle is drawn with: `radius`, no larger than
-/// [`max_corner_radius`] (the same limit for every corner, so opposite corners match), 0 when
-/// negative or not a number.
-pub fn fitted_corner_radius(w: f64, h: f64, radius: f64) -> f64 {
-    radius.max(0.0).min(max_corner_radius(w, h))
-}
-
 /// The radii the corners of a `w` × `h` rectangle (top-left, top-right, bottom-right,
 /// bottom-left) are drawn with: each its own, no larger than leaves room for its neighbours'
 /// cuts ([`crate::corners::fitted_radii`]): half the shorter side when they are all as large, up
@@ -409,7 +402,6 @@ mod tests {
     fn corners_of_a_non_square_rectangle_are_alike() {
         let r = Rect::new(0.0, 0.0, 200.0, 80.0);
         assert_eq!(max_corner_radius(-200.0, 80.0), 40.0);
-        assert_eq!([30.0, 60.0, -1.0, f64::NAN].map(|x| fitted_corner_radius(200.0, 80.0, x)), [30.0, 40.0, 0.0, 0.0]);
         for (radius, drawn) in [(30.0, 30.0), (60.0, 40.0)] {
             for kinds in [[CornerKind::Round; 4], [CornerKind::Chamfer, CornerKind::InvertedRound, CornerKind::Round, CornerKind::Chamfer]] {
                 let a: Vec<Point> = rectangle_with_corners(r, [radius; 4], kinds).subpaths[0].anchors.iter().map(|a| a.p).collect();

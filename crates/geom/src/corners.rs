@@ -148,12 +148,6 @@ impl Corner {
         self.radius_at_setback(room(self.lu, before).min(room(self.lv, after)))
     }
 
-    /// The radius the corner is drawn with whatever its neighbours do: `radius`, no larger than
-    /// [`Corner::max_radius`], 0 when negative or not a number.
-    pub fn fitted(&self, radius: f64) -> f64 {
-        radius.max(0.0).min(self.max_radius())
-    }
-
     /// The largest radius the corner draws when it and the corners for which `edited` holds are
     /// set to one radius together, the other corners of `corners` keeping their `radii` (by
     /// anchor index). A side shared with an edited corner takes both cuts as far as they fit
@@ -422,9 +416,6 @@ mod tests {
         for c in &corners {
             let max = c.max_radius();
             assert!((c.setback(max) - c.lu.min(c.lv) / 2.0).abs() < 1e-9);
-            assert_eq!(c.fitted(1e6), max);
-            assert_eq!(c.fitted(-3.0), 0.0);
-            assert_eq!(c.fitted(f64::NAN), 0.0);
         }
         // The right angle at (0, 0) takes up to 20, half its shorter side.
         assert!((corners[0].max_radius() - 20.0).abs() < 1e-9);
