@@ -392,6 +392,7 @@
 	Point Text Objects	포인트 문자 개체
 	Area Text Objects	영역 문자 개체
 	Start Global Edit	전체 편집 시작
+	Save Selection	선택 영역 저장
 	Save Selection…	선택 영역 저장…
 	Update Selection	선택 영역 업데이트
 	Edit Selection…	선택 영역 편집…

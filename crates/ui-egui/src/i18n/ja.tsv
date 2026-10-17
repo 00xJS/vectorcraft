@@ -396,6 +396,7 @@
 	Point Text Objects	ポイント文字オブジェクト
 	Area Text Objects	エリア内文字オブジェクト
 	Start Global Edit	グローバル編集を開始
+	Save Selection	選択範囲を保存
 	Save Selection…	選択範囲を保存…
 	Update Selection	選択範囲を更新
 	Edit Selection…	選択範囲を編集…
