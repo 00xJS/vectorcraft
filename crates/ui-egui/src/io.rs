@@ -304,11 +304,25 @@ pub(crate) fn write_named(app: &mut VectorcraftApp, path: Option<String>, name: 
 /// save panel's choice, given the suggested name's extension when it names no file type (a name
 /// typed without one).
 fn pick_path(app: &mut VectorcraftApp, pick: &FilePick) -> Result<String, String> {
+    let ext = fileio::extension(&pick.name);
+    pick_finished(app, pick, |picked| with_extension(picked, &ext, |_| true))
+}
+
+/// The suggested name made into a path by `finish` on the web (a download), else the save panel's
+/// choice made into one. When `finish` changed the choice (an extension added) and a file is
+/// there, which the panel did not ask about, a question asks before replacing it
+/// ([`crate::picks::ask_to_replace`]) and this answers "cancelled"; the question's OK runs what
+/// asked again.
+fn pick_finished(app: &mut VectorcraftApp, pick: &FilePick, finish: impl Fn(&str) -> String) -> Result<String, String> {
     if is_web(app) {
-        return Ok(pick.name.clone());
+        return Ok(finish(&pick.name));
     }
     let picked = crate::picks::save(app, pick).ok_or("cancelled")?;
-    Ok(with_extension(&picked, &fileio::extension(&pick.name), |_| true))
+    let path = finish(&picked);
+    if path != picked && crate::picks::ask_to_replace(app, crate::picks::PickRequest::Save(pick.clone()), &picked, &path) {
+        return Err("cancelled".into());
+    }
+    Ok(path)
 }
 
 /// `path` as typed in a save panel: kept when it ends in `ext` or its extension names a format
@@ -402,12 +416,13 @@ pub fn save(app: &mut VectorcraftApp, mode: SaveMode, p: &Value, ask_options: bo
         SaveMode::Template => fileio::template_filters(first.format.id),
         _ => fileio::save_filters(first.format.id),
     };
-    let picked = pick_path(app, &FilePick { name: first.name.clone(), folder: first.folder.clone(), filters })?;
+    let pick = FilePick { name: first.name.clone(), folder: first.folder.clone(), filters };
+    let picked = pick_finished(app, &pick, |picked| with_save_extension(picked, first.format, mode))?;
     // The picked file type wins over a `format` param.
     let mut q = if p.is_object() { p.clone() } else { json!({}) };
     if let Some(o) = q.as_object_mut() {
         o.remove("format");
-        o.insert("path".into(), json!(with_save_extension(&picked, first.format, mode)));
+        o.insert("path".into(), json!(picked));
     }
     let chosen = plan(app, mode, &acknowledged(&q))?;
     if let Some(r) = chosen.path.as_deref().and_then(|path| ask_before_losing(app, path, save_command(mode), &q)) {

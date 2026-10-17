@@ -2511,6 +2511,8 @@ mark-style	Japanese	Giapponese
 	Revert to the saved version of “{name}”?	Ripristinare la versione salvata di “{name}”?
 	Replace “{name}”, the file this document was opened from?	Sostituire “{name}”, il file da cui è stato aperto questo documento?
 	Opening it left out what VectorCraft can't read yet ({what}), so replacing it loses that for good. Save under another name to keep it.	Aprendolo è rimasto fuori ciò che VectorCraft non sa ancora leggere ({what}), quindi sostituirlo lo perde per sempre. Salva con un altro nome per conservarlo.
+	“{name}” already exists. Replace it?	“{name}” esiste già. Sostituirlo?
+	The name in the save panel was “{typed}”; VectorCraft added the file type's extension. Replacing the file overwrites its contents.	Il nome nel pannello di salvataggio era “{typed}”, poi VectorCraft ha aggiunto l'estensione del tipo di file. Sostituire il file ne sovrascrive il contenuto.
 	Revolve…	Rivoluzione…
 	RGB Color	Colore RGB
 	Right	Destra

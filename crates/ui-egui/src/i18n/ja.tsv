@@ -2451,6 +2451,8 @@ mark-style	Japanese	日本式
 	Revert to the saved version of “{name}”?	「{name}」を保存済みの状態に戻しますか？
 	Replace “{name}”, the file this document was opened from?	このドキュメントの開き元のファイル「{name}」を置き換えますか？
 	Opening it left out what VectorCraft can't read yet ({what}), so replacing it loses that for good. Save under another name to keep it.	開いたときに VectorCraft がまだ読み込めない内容（{what}）が除外されたため、置き換えるとそれは完全に失われます。保持するには別の名前で保存してください。
+	“{name}” already exists. Replace it?	「{name}」は既に存在します。置き換えますか？
+	The name in the save panel was “{typed}”; VectorCraft added the file type's extension. Replacing the file overwrites its contents.	保存パネルの名前は「{typed}」で、VectorCraft がファイル形式の拡張子を付加しました。ファイルを置き換えると内容が上書きされます。
 	Right Grid:	右グリッド:
 	Right Indent	右インデント
 	Right Plane	右面

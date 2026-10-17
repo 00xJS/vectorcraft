@@ -192,6 +192,7 @@ pub type PickOpen = Box<dyn FnMut(&FilePick) -> Option<String>>;
 pub type PickSave = Box<dyn FnMut(&FilePick) -> Option<String>>;
 pub type ReadFn = Box<dyn Fn(&str) -> Result<Vec<u8>, String>>;
 pub type WriteFn = Box<dyn FnMut(&str, &[u8]) -> Result<(), String>>;
+pub type ExistsFn = Box<dyn Fn(&str) -> bool>;
 pub type Inbox = Arc<Mutex<Vec<(String, Vec<u8>)>>>;
 /// Starts a browser download of the bytes under a file name; an error when it couldn't be started
 /// (the save or export then fails as a refused write does: #1693).
@@ -212,6 +213,10 @@ pub struct Services {
     pub pick_save: Option<PickSave>,
     pub read: Option<ReadFn>,
     pub write: Option<WriteFn>,
+    /// Is there a file or folder at a path (desktop)? The app asks before replacing a file that a
+    /// save panel's name names once the app gives it an extension ([`picks::ask_to_replace`]).
+    /// Without it, no file counts as there.
+    pub exists: Option<ExistsFn>,
     /// Files that arrived asynchronously (web open / drops): (name, bytes).
     pub inbox: Option<Inbox>,
     /// Web: trigger a browser download instead of writing a path.

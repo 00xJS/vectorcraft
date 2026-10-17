@@ -2448,6 +2448,8 @@
 	Revert to the saved version of “{name}”?	Vill du återgå till den sparade versionen av ”{name}”?
 	Replace “{name}”, the file this document was opened from?	Vill du ersätta ”{name}”, filen som dokumentet öppnades från?
 	Opening it left out what VectorCraft can't read yet ({what}), so replacing it loses that for good. Save under another name to keep it.	När filen öppnades utelämnades det som VectorCraft inte kan läsa än ({what}), så om du ersätter den förloras det för gott. Spara under ett annat namn för att behålla det.
+	“{name}” already exists. Replace it?	”{name}” finns redan. Vill du ersätta den?
+	The name in the save panel was “{typed}”; VectorCraft added the file type's extension. Replacing the file overwrites its contents.	Namnet i sparpanelen var ”{typed}”, och VectorCraft lade till filtypens filändelse. Om du ersätter filen skrivs innehållet över.
 	Revolve…	Rotera runt axel…
 	RGB Color	RGB-färg
 	Right	Höger

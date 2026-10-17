@@ -2445,6 +2445,8 @@ mark-style	Japanese	일본식
 	Revert to the saved version of “{name}”?	“{name}”을(를) 저장된 버전으로 되돌리시겠습니까?
 	Replace “{name}”, the file this document was opened from?	이 문서를 연 원본 파일 “{name}”을(를) 바꾸시겠습니까?
 	Opening it left out what VectorCraft can't read yet ({what}), so replacing it loses that for good. Save under another name to keep it.	파일을 열 때 VectorCraft가 아직 읽지 못하는 내용({what})이 제외되어, 덮어쓰면 해당 내용이 영구적으로 사라집니다. 보존하려면 다른 이름으로 저장하세요.
+	“{name}” already exists. Replace it?	“{name}”이(가) 이미 있습니다. 바꾸시겠습니까?
+	The name in the save panel was “{typed}”; VectorCraft added the file type's extension. Replacing the file overwrites its contents.	저장 패널의 이름은 “{typed}”였고, VectorCraft가 파일 형식의 확장자를 붙였습니다. 파일을 바꾸면 내용을 덮어씁니다.
 	Right Grid:	오른쪽 격자:
 	Right Indent	오른쪽 들여쓰기
 	Right Plane	오른쪽 평면
