@@ -619,7 +619,7 @@ impl Tool for DirectSelectionTool {
                 let d = p - start;
                 out.push(Action::Preview(
                     "path.reshapeSegment".into(),
-                    json!({"id": id.0, "subpath": si, "segment": seg, "t": t, "dx": d.x, "dy": d.y}),
+                    json!({"id": id.0, "subpath": si, "segment": seg, "t": t, "dx": d.x, "dy": d.y, "perpendicular": ev.mods.shift}),
                 ));
                 out
             }
@@ -704,7 +704,7 @@ impl Tool for DirectSelectionTool {
                 let d = p - start;
                 out.push(Action::Preview(
                     "object.blend.spine.reshapeSegment".into(),
-                    json!({"id": id.0, "segment": seg, "t": t, "dx": d.x, "dy": d.y}),
+                    json!({"id": id.0, "segment": seg, "t": t, "dx": d.x, "dy": d.y, "perpendicular": ev.mods.shift}),
                 ));
                 out
             }
@@ -1133,6 +1133,44 @@ mod tests {
             "{a:?}"
         );
         assert_eq!(t.pointer(&curved, &PointerEvent::new(PointerKind::Up, 160.0, 345.0)), vec![Action::Commit]);
+    }
+
+    /// Shift held while a curved segment is dragged sends `perpendicular`. The test drags a path's
+    /// segment with Direct Selection, and a blend spine's segment with Direct Selection and with the
+    /// Anchor Point tool.
+    #[test]
+    fn shift_reshapes_a_segment_perpendicular() {
+        let shift = Mods { shift: true, ..Mods::default() };
+        let p = paint();
+        let drag = |t: &mut dyn crate::Tool, cx: &ToolContext, from: (f64, f64), mods: Mods| {
+            t.pointer(cx, &PointerEvent::new(PointerKind::Down, from.0, from.1));
+            let a = t.pointer(cx, &PointerEvent::new(PointerKind::Drag, from.0 + 10.0, from.1 - 20.0).with_mods(mods));
+            t.pointer(cx, &PointerEvent::new(PointerKind::Up, from.0 + 10.0, from.1 - 20.0).with_mods(mods));
+            a
+        };
+        let sent = |a: &[Action], cmd: &str| match a.last() {
+            Some(Action::Preview(c, v)) if c == cmd => v["perpendicular"].as_bool(),
+            _ => None,
+        };
+        let (d, _) = arch_doc();
+        let s = Selection::default();
+        let arch = cx(&d, &s, &p);
+        let (mut b, g, _) = blend_doc();
+        let mut sp = vectorcraft_geom::SubPath::polyline(&[Point::new(110.0, 310.0), Point::new(210.0, 310.0)], false);
+        sp.bend_segment(0, 0.5, vectorcraft_geom::Vec2::new(0.0, 20.0));
+        let Some(NodeKind::Blend { spec, .. }) = b.node_mut(g).map(|n| &mut n.kind) else { panic!("blend") };
+        (spec.spine, spec.key_anchors) = (Some(PathData::single(sp)), vec![0, 1]);
+        let mut bs = Selection::default();
+        bs.set([g]);
+        let spine = cx(&b, &bs, &p);
+        for (mods, perpendicular) in [(Mods::default(), false), (shift, true)] {
+            let a = drag(&mut DirectSelectionTool::new(false), &arch, (150.0, 262.5), mods);
+            assert_eq!(sent(&a, "path.reshapeSegment"), Some(perpendicular), "{a:?}");
+            let a = drag(&mut DirectSelectionTool::new(false), &spine, (160.0, 330.0), mods);
+            assert_eq!(sent(&a, "object.blend.spine.reshapeSegment"), Some(perpendicular), "{a:?}");
+            let a = drag(crate::create("anchorPoint").as_mut(), &spine, (160.0, 330.0), mods);
+            assert_eq!(sent(&a, "object.blend.spine.reshapeSegment"), Some(perpendicular), "{a:?}");
+        }
     }
 
     #[test]
