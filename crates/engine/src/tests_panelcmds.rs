@@ -130,6 +130,27 @@ fn duplicate_artboard_copies_its_art() {
     assert_eq!(ids(&s.execute("artboard.duplicate", &json!({"index": 0, "art": true})).unwrap()["ids"]).len(), 1);
 }
 
+/// Duplicate, Copy and Cut Artboard and Move Artboard Up/Down fail with `no such artboard` on an
+/// `index` that names no artboard (past the last, negative, fractional, a string or null), and the
+/// artboards, the art and the clipboard stay as they were.
+#[test]
+fn artboard_copies_refuse_an_index_that_names_no_artboard() {
+    let mut s = session();
+    rect(&mut s);
+    s.execute("artboard.new", &json!({})).unwrap();
+    s.set_tool_options(Some("artboard"), json!({"active": 1}).as_object().unwrap());
+    let (was, n) = (boards(&s), s.doc().unwrap().history.undo.len());
+    for index in [json!(99), json!(-1), json!(1.5), json!("1"), serde_json::Value::Null] {
+        for cmd in ["artboard.duplicate", "artboard.copy", "artboard.cut", "artboard.reorder"] {
+            let p = if cmd == "artboard.reorder" { json!({"index": index, "to": 0}) } else { json!({"index": index}) };
+            assert_eq!(s.execute(cmd, &p).unwrap_err().to_string(), "no such artboard", "{cmd} {p}");
+        }
+    }
+    let st = s.doc().unwrap();
+    assert_eq!((boards(&s), st.doc.layers[0].children().unwrap().len(), st.history.undo.len()), (was, 1, n));
+    assert!(s.clipboard.nodes.is_empty() && s.clipboard.artboard.is_none(), "nothing copied");
+}
+
 /// With the Artboard tool, Copy and Paste copy its artboard with the art on it (#446): Paste places
 /// it right of the last artboard, Paste in Place where it was, also in another document; each paste
 /// is one undo step, and the tool takes the pasted artboard.

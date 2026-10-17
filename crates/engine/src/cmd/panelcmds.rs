@@ -54,7 +54,7 @@ pub fn specs() -> Vec<CommandSpec> {
 
 fn artboard_reorder(s: &mut Session, p: &Value) -> Result<Value> {
     const C: &str = "artboard.reorder";
-    let i = p.get("index").and_then(Value::as_u64).ok_or_else(|| bad(C, "missing index"))? as usize;
+    let i = artboard_index(&s.doc()?.doc, p, C)?;
     let to = p.get("to").and_then(Value::as_u64).ok_or_else(|| bad(C, "missing to"))? as usize;
     s.edit("Reorder Artboards", |d, _| {
         if i >= d.artboards.len() {
@@ -70,10 +70,21 @@ fn artboard_reorder(s: &mut Session, p: &Value) -> Result<Value> {
 
 /// The artboard (`index`) and whether its art comes along (`art`) for the artboard copy
 /// commands: by default the Artboard tool's artboard and its Move/Copy Artwork with Artboard option.
-fn board_and_art(s: &Session, p: &Value) -> (usize, bool) {
+/// An `index` that names no artboard is an error.
+fn board_and_art(s: &Session, p: &Value, cmd: &str) -> Result<(usize, bool)> {
     let t = s.tool_options_of("artboard");
-    let i = p.get("index").and_then(Value::as_u64).or_else(|| t["active"].as_u64()).unwrap_or(0) as usize;
-    (i, bool_or(p, "art", t["moveArt"].as_bool().unwrap_or(true)))
+    let i = match p.get("index") {
+        Some(_) => artboard_index(&s.doc()?.doc, p, cmd)?,
+        None => t["active"].as_u64().unwrap_or(0) as usize,
+    };
+    Ok((i, bool_or(p, "art", t["moveArt"].as_bool().unwrap_or(true))))
+}
+
+/// The one artboard `cmd` acts on: `index`, an artboard of `d`, with the errors of
+/// [`artboard_indices`] (`missing index`, `no such artboard`).
+pub(crate) fn artboard_index(d: &vectorcraft_doc::Document, p: &Value, cmd: &str) -> Result<usize> {
+    let i = p.get("index").ok_or_else(|| bad(cmd, "missing index"))?;
+    artboard_indices(d, &json!({ "index": i }), cmd)?.into_iter().next().ok_or_else(|| EngineError::Other("no such artboard".into()))
 }
 
 /// The art that goes with artboard `i` when `art`: the objects fully inside it (locked and hidden
@@ -106,7 +117,7 @@ pub(crate) fn beside_artboards(d: &vectorcraft_doc::Document, rect: Rect) -> Vec
 }
 
 fn artboard_duplicate(s: &mut Session, p: &Value) -> Result<Value> {
-    let (i, art) = board_and_art(s, p);
+    let (i, art) = board_and_art(s, p, "artboard.duplicate")?;
     let art = artboard_art(s, i, art)?;
     let sc = Scaling { patterns: super::object::transform_patterns(s, p, &art)?, ..Scaling::default() };
     let (index, ids) = s.edit("Duplicate Artboard", |d, _| {
@@ -119,7 +130,7 @@ fn artboard_duplicate(s: &mut Session, p: &Value) -> Result<Value> {
 /// Artboard Copy / Cut: the artboard and its art onto the clipboard (pasting brings both); a cut
 /// then deletes them.
 pub(crate) fn artboard_copy(s: &mut Session, p: &Value, cut: bool) -> Result<Value> {
-    let (i, art) = board_and_art(s, p);
+    let (i, art) = board_and_art(s, p, if cut { "artboard.cut" } else { "artboard.copy" })?;
     let art = artboard_art(s, i, art)?;
     let st = s.doc()?;
     if cut && st.doc.artboards.len() <= 1 {

@@ -2287,6 +2287,10 @@ pastes only the art), in this document or another; the result's `artboard` is th
 does the same in one step → `{index, ids}`, and `artboard.move {copy: true, moveArt: true}` is the Artboard tool's
 Alt-drag. These two commands also move the pattern tiles of the copies when `patterns` is true (default: prefs
 `transformPatternTiles`); `edit.paste` leaves the tiles of a pasted artboard's art where they were.
+`artboard.copy`, `artboard.cut` and `artboard.duplicate` take the Artboard tool's artboard when the call names no
+`index`. Every artboard command that takes an `index` fails with `no such artboard` when the `index` is not the
+0-based index of an artboard (past the last one, negative, fractional, a string or null), and the document and the
+clipboard stay as they were.
 
 Scale Artwork with Artboard (#602): `artboard.setProps {index, x?, y?, width?, height?, scaleArt: true}` resizes an
 artboard and scales the art fully inside it, and its artboard guides, from the old rectangle onto the new one, each side
