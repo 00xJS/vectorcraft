@@ -6,7 +6,8 @@
 //! double-click opens the Corners dialog), drag a live ellipse's pie widgets to set its pie angles
 //! (double-click makes it whole again: [`crate::pie`]), double-click a group or an object to enter isolation
 //! mode (Double Click To Isolate), Cmd/Ctrl-click to select the object behind (Command Click to Select Objects Behind),
-//! click or drag a ruler guide ([`crate::rulerguide`]), drag the brackets of type on a path
+//! click or drag a ruler guide ([`crate::rulerguide`]), Cmd/Ctrl+Shift-double-click a ruler guide or
+//! a guide path to release it ([`release_guide_at`]), drag the brackets of type on a path
 //! ([`crate::pathtype`]), double-click the type widget to convert point type to area type and back
 //! ([`crate::typewidget`]), click a Shaper Group's mode widget to switch between Face Selection and
 //! Construction mode ([`crate::shaperwidget`]).
@@ -314,6 +315,9 @@ impl Tool for SelectionTool {
                 // The Shaper Group's mode widget answers each click of a double-click on it.
                 if shaperwidget::over_widget(cx, p) {
                     return vec![];
+                }
+                if let Some(a) = release_guide_at(cx, p, m) {
+                    return vec![a];
                 }
                 if crate::rulerguide::guide_at(cx, p).is_some() {
                     return vec![];
@@ -643,6 +647,22 @@ pub fn isolates(kind: &vectorcraft_doc::NodeKind) -> bool {
     matches!(kind, K::Group { .. } | K::Compound { .. } | K::Path { .. } | K::Image(_) | K::Mesh(_) | K::PlacedDocument(_))
 }
 
+/// A Cmd/Ctrl+Shift double-click at `p` with a selection tool releases the guide there: the ruler
+/// guide under the pointer (`view.guides.release {index}`), else the guide path hit there
+/// (`view.guides.release {ids}`). It returns None without both keys, while guides are hidden or
+/// locked, or when no guide is at `p`.
+pub(crate) fn release_guide_at(cx: &ToolContext, p: Point, m: Mods) -> Option<Action> {
+    if !(m.cmd && m.shift && cx.guides) {
+        return None;
+    }
+    if let Some(i) = crate::rulerguide::guide_at(cx, p) {
+        return Some(Action::Exec("view.guides.release".into(), json!({ "index": i })));
+    }
+    let leaf = hit_test(cx.doc, p, cx.hit_options())?.leaf;
+    let guide = cx.doc.node(leaf).is_some_and(|n| matches!(n.kind, vectorcraft_doc::NodeKind::Path { guide: true, .. }));
+    guide.then(|| Action::Exec("view.guides.release".into(), json!({ "ids": [leaf.0] })))
+}
+
 /// The resize cursor for handle `h` of a box turned by `angle` (counter-clockwise degrees): the
 /// handle that sits where `h` appears on screen, in 45° steps.
 fn handle_cursor(h: Handle, angle: f64) -> Cursor {
@@ -785,6 +805,34 @@ mod tests {
         assert!(!t.busy());
         // A double-click there doesn't go through to the art.
         assert!(t.pointer(&cx, &ev(PointerKind::DoubleClick, 160.0, 150.0)).is_empty());
+    }
+
+    /// A Cmd/Ctrl+Shift double-click releases the ruler guide or the guide path under the pointer;
+    /// without both keys, or while guides are hidden or locked, nothing is released.
+    #[test]
+    fn a_cmd_shift_double_click_releases_the_guide_under_the_pointer() {
+        let (mut d, id) = doc_with_rect();
+        d.guides.push(vectorcraft_doc::Guide::new(false, 300.0));
+        let Some(vectorcraft_doc::NodeKind::Path { guide, .. }) = d.node_mut(id).map(|n| &mut n.kind) else { panic!("the rectangle is a path") };
+        *guide = true;
+        let s = Selection::default();
+        let p = paint();
+        let both = Mods { cmd: true, shift: true, ..Mods::default() };
+        let dbl = |c: &ToolContext, x: f64, y: f64, m: Mods| SelectionTool::default().pointer(c, &ev(PointerKind::DoubleClick, x, y).with_mods(m));
+        let releases = |a: &[Action]| a.iter().any(|a| matches!(a, Action::Exec(c, _) if c == "view.guides.release"));
+        let c = cx(&d, &s, &p);
+        assert_eq!(dbl(&c, 350.0, 301.0, both), vec![Action::Exec("view.guides.release".into(), json!({"index": 0}))]);
+        assert_eq!(dbl(&c, 200.0, 150.0, both), vec![Action::Exec("view.guides.release".into(), json!({"ids": [id.0]}))]);
+        assert!(dbl(&c, 350.0, 301.0, Mods::default()).is_empty(), "a plain double-click on a ruler guide");
+        for m in [Mods { cmd: true, ..Mods::default() }, Mods { shift: true, ..Mods::default() }, Mods::default()] {
+            assert!(!releases(&dbl(&c, 200.0, 150.0, m)), "{m:?}");
+        }
+        let locked = ToolContext { guides: false, ..cx(&d, &s, &p) };
+        assert!(!releases(&dbl(&locked, 350.0, 301.0, both)));
+        assert!(!releases(&dbl(&locked, 200.0, 150.0, both)));
+        // A double-click on art that is not a guide does not release it.
+        let (plain, _) = doc_with_rect();
+        assert!(!releases(&dbl(&cx(&plain, &s, &p), 200.0, 150.0, both)));
     }
 
     /// Just outside each corner of the box the rotate cursor bows toward that corner, its arc
