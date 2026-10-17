@@ -1296,6 +1296,16 @@
 	Flatten Transparency…	Làm phẳng độ trong suốt…
 	Flattener preset:	Thiết lập sẵn làm phẳng:
 	Flattener presets	Thiết lập sẵn làm phẳng
+file-filter	All readable files	Tất cả tệp đọc được
+file-filter	All placeable files	Tất cả tệp đặt được
+file-filter	Swatch libraries	Thư viện mẫu màu
+file-filter	Flattener presets	Thiết lập sẵn làm phẳng
+file-filter	PDF presets	Thiết lập sẵn PDF
+file-filter	Print presets	Thiết lập sẵn in
+file-filter	SVG Compressed	SVG nén
+file-filter	PDF-compatible .ai	.ai tương thích PDF
+file-filter	VectorCraft Template	Mẫu VectorCraft
+file-filter	Templates	Mẫu
 	Flattener Preview	Xem trước làm phẳng
 	Flip	Lật
 	Flip Across	Lật qua
@@ -1936,6 +1946,10 @@
 	Merge Selected	Hợp nhất mục đã chọn
 	Merge Swatches	Hợp nhất mẫu màu
 	Merged PRs	PR đã hợp nhất
+	PRs	PR
+	@{login}: {prs}, {commits}, +{added} / −{deleted} lines (Δ {delta}), +{binary_added} / −{binary_deleted} binary assets, {first} – {last}	@{login}: {prs}, {commits}, +{added} / −{deleted} dòng (Δ {delta}), +{binary_added} / −{binary_deleted} asset nhị phân, {first} – {last}
+@plural	{n} PR|{n} PRs	{n} PR
+@plural	{n} commit|{n} commits	{n} commit
 	Mesh Tool	Công cụ Lưới
 	Message:	Thông điệp:
 	Metadata:	Siêu dữ liệu:
@@ -2382,6 +2396,8 @@
 	Percent:	Phần trăm:
 	Perceptual Scales	Tỷ lệ tri giác
 	Performance	Hiệu suất
+diagnostics	render	kết xuất
+diagnostics	ui	giao diện
 	Performance & Storage	Hiệu suất & Bộ nhớ
 	Permissions	Quyền
 	Permissions password:	Mật khẩu quyền:
@@ -2497,6 +2513,8 @@
 	Print Tiling Tool	Công cụ Ghép trang in
 	Printer	Máy in
 	Printer mark type:	Loại dấu máy in:
+	Roman	Kiểu La Mã
+mark-style	Japanese	Kiểu Nhật
 	Printer profile:	Hồ sơ máy in:
 	Printer Setup…	Thiết lập máy in…
 	Printer:	Máy in:
@@ -2849,6 +2867,7 @@
 	Save PDF Preset	Lưu thiết lập sẵn PDF
 	Save Perspective Grid Preset	Lưu thiết lập sẵn lưới phối cảnh
 	Save Preset	Lưu thiết lập sẵn
+	Preset {number}	Thiết lập sẵn {number}
 	Save Preset…	Lưu thiết lập sẵn…
 	Save Print Preset	Lưu thiết lập sẵn in
 	Save Recovery Data	Lưu dữ liệu khôi phục
@@ -3736,6 +3755,7 @@
 	{folders} folder(s) and {files} file(s) searched	Đã tìm kiếm {folders} thư mục và {files} tệp
 	{format} Options	Tùy chọn {format}
 	{kind} Gradient	Chuyển sắc {kind}
+gradient-kind	Radial	Hướng tâm
 	{kind} Style Options…	Tùy chọn kiểu {kind}…
 	{kind}, {model}	{kind}, {model}
 	{name} (spot)	{name} (màu chuyên biệt)

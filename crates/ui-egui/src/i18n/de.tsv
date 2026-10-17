@@ -1119,6 +1119,16 @@
 	Flatten Transparency…	Transparenz reduzieren…
 	Flattener preset:	Reduzierungsvorgabe:
 	Flattener presets	Reduzierungsvorgaben
+file-filter	All readable files	Alle lesbaren Dateien
+file-filter	All placeable files	Alle platzierbaren Dateien
+file-filter	Swatch libraries	Farbfeldbibliotheken
+file-filter	Flattener presets	Reduzierungsvorgaben
+file-filter	PDF presets	PDF-Vorgaben
+file-filter	Print presets	Druckvorgaben
+file-filter	SVG Compressed	SVG komprimiert
+file-filter	PDF-compatible .ai	PDF-kompatible .ai
+file-filter	VectorCraft Template	VectorCraft-Vorlage
+file-filter	Templates	Vorlagen
 	Flattener Preview	Reduzierungsvorschau
 	Flip Across	Quer spiegeln
 	Flip Along	Längs spiegeln
@@ -2075,6 +2085,8 @@
 	Percent:	Prozent:
 	Perceptual Scales	Wahrnehmungsgetreue Skalen
 	Performance	Leistung
+diagnostics	render	Rendern
+diagnostics	ui	Oberfläche
 	Performance & Storage	Leistung und Speicher
 	Permissions	Berechtigungen
 	Permissions password:	Berechtigungskennwort:
@@ -2179,6 +2191,8 @@
 	Print Tiling Tool	Druckaufteilungs-Werkzeug
 	Printer	Drucker
 	Printer mark type:	Art der Druckermarken:
+	Roman	Römisch
+mark-style	Japanese	Japanisch
 	Printer profile:	Druckerprofil:
 	Printer Setup…	Drucker einrichten…
 	Printer:	Drucker:
@@ -2517,6 +2531,7 @@
 	Save PDF Preset	PDF-Vorgabe speichern
 	Save Perspective Grid Preset	Vorgabe für Perspektivenraster speichern
 	Save Preset	Vorgabe speichern
+	Preset {number}	Vorgabe {number}
 	Save Preset…	Vorgabe speichern…
 	Save Print Preset	Druckvorgabe speichern
 	Save Recovery Data	Wiederherstellungsdaten speichern
@@ -3314,6 +3329,7 @@ effect	Points	Punkte
 	{effect} is already applied	{effect} ist bereits angewendet
 	{format} Options	{format}-Optionen
 	{kind} Gradient	Verlauf ({kind})
+gradient-kind	Radial	Radial
 	{kind} Style Options…	{kind}formatoptionen…
 	{kind}, {model}	{kind}, {model}
 	{name} (spot)	{name} (Vollton)
@@ -3429,6 +3445,10 @@ imageTrace	Outline	Kontur
 	Table	Tabelle
 	Name (A–Z)	Name (A–Z)
 	Merged PRs	Zusammengeführte PRs
+	PRs	PRs
+	@{login}: {prs}, {commits}, +{added} / −{deleted} lines (Δ {delta}), +{binary_added} / −{binary_deleted} binary assets, {first} – {last}	@{login}: {prs}, {commits}, +{added} / −{deleted} Zeilen (Δ {delta}), +{binary_added} / −{binary_deleted} Binär-Assets, {first} – {last}
+@plural	{n} PR|{n} PRs	{n} PR|{n} PRs
+@plural	{n} commit|{n} commits	{n} Commit|{n} Commits
 	Commits	Commits
 	Lines added	Hinzugefügte Zeilen
 	Lines deleted	Gelöschte Zeilen
@@ -4310,6 +4330,7 @@ theme	Appearance	Erscheinungsbild
 	Axis side	Achsenseite
 	Drag rings to rotate. Shift snaps to 15°.	Ziehen Sie die Ringe, um zu drehen. Mit Shift in 15°-Schritten.
 	Drag the light, or its rings. Shift snaps to 15°.	Ziehen Sie das Licht oder seine Ringe. Mit Shift in 15°-Schritten.
+lighting	Light	Licht
 	Drag values or labels. Double-click a value to type.	Ziehen Sie Werte oder Beschriftungen. Doppelklicken Sie auf einen Wert, um ihn einzugeben.
 	Step up or down	Schrittweise erhöhen oder verringern
 	Intensity	Intensität
@@ -4443,6 +4464,7 @@ theme	Appearance	Erscheinungsbild
 	Top Left	Oben links
 	Top Right	Oben rechts
 	Bottom Right	Unten rechts
+effect	Regular	Regelmäßig
 	Bottom Left	Unten links
 # Corner Radius: a field per corner of a live rectangle.
 	Single Corner Radius	Einheitlicher Eckenradius

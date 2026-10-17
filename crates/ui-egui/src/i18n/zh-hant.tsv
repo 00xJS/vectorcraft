@@ -1106,6 +1106,16 @@
 	Flatten Transparency…	透明度平面化…
 	Flattener preset:	平面化預設集：
 	Flattener presets	平面化預設集
+file-filter	All readable files	所有可讀取的檔案
+file-filter	All placeable files	所有可置入的檔案
+file-filter	Swatch libraries	色票資料庫
+file-filter	Flattener presets	平面化預設集
+file-filter	PDF presets	PDF 預設集
+file-filter	Print presets	列印預設集
+file-filter	SVG Compressed	壓縮 SVG
+file-filter	PDF-compatible .ai	PDF 相容 .ai
+file-filter	VectorCraft Template	VectorCraft 範本
+file-filter	Templates	範本
 	Flattener Preview	平面化預視
 	Flip Across	跨軸翻轉
 	Flip Along	沿軸翻轉
@@ -2099,6 +2109,8 @@
 	Percent:	百分比：
 	Perceptual Scales	感知尺度
 	Performance	效能
+diagnostics	render	繪製
+diagnostics	ui	介面
 	Performance & Storage	效能與儲存空間
 	Permissions	權限
 	Permissions password:	權限密碼：
@@ -2203,6 +2215,8 @@
 	Print Tiling Tool	列印拼貼工具
 	Printer	印表機
 	Printer mark type:	印表機標記類型：
+	Roman	西式
+mark-style	Japanese	日式
 	Printer profile:	印表機描述檔：
 	Printer Setup…	印表機設定…
 	Printer:	印表機：
@@ -2542,6 +2556,7 @@
 	Save PDF Preset	儲存 PDF 預設集
 	Save Perspective Grid Preset	儲存透視格點預設集
 	Save Preset	儲存預設集
+	Preset {number}	預設集 {number}
 	Save Preset…	儲存預設集…
 	Save Print Preset	儲存列印預設集
 	Save Recovery Data	儲存救援資料
@@ -3396,6 +3411,7 @@
 	{effect} is already applied	已套用 {effect}
 	{format} Options	{format} 選項
 	{kind} Gradient	{kind}漸層
+gradient-kind	Radial	放射狀
 	{kind} Style Options…	{kind}樣式選項…
 	{kind}, {model}	{kind}，{model}
 	{name} (spot)	{name} (特別色)
@@ -3505,6 +3521,10 @@ imageTrace	Outline	輪廓
 	Table	表格
 	Name (A–Z)	名稱 (A–Z)
 	Merged PRs	已合併的 PR
+	PRs	PR
+	@{login}: {prs}, {commits}, +{added} / −{deleted} lines (Δ {delta}), +{binary_added} / −{binary_deleted} binary assets, {first} – {last}	@{login}：{prs}，{commits}，+{added} / −{deleted} 行 (Δ {delta})，+{binary_added} / −{binary_deleted} 個二進位資產，{first} – {last}
+@plural	{n} PR|{n} PRs	{n} 個 PR
+@plural	{n} commit|{n} commits	{n} 次提交
 	Commits	提交
 	Lines added	新增行數
 	Lines deleted	刪除行數
