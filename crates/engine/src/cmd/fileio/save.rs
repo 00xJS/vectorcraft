@@ -648,7 +648,8 @@ impl SaveJob {
 
     /// Once written: Save and Save As (except to a template) make the file `st`'s own: path,
     /// title, format, options, and the snapshot as the saved state (edits made since the job was
-    /// made keep the document modified).
+    /// made keep the document modified; changes that are not edits to save don't,
+    /// [`DocState::same_content`]).
     pub fn finish(self, st: &mut DocState) {
         let retargets = self.plan.retargets();
         if let (true, Some(path)) = (retargets, self.plan.path) {
@@ -660,6 +661,12 @@ impl SaveJob {
             if let Some(at) = self.stamped {
                 if Arc::ptr_eq(&st.doc, &self.source) {
                     st.doc = self.snapshot.clone();
+                } else if st.same_content(&self.source) {
+                    // Changed while the save ran only by changes that are not edits to save
+                    // (Puppet Warp pins dropped, Edit Text ended, type laid out again after a font
+                    // scan): with the dates, the document counts as saved.
+                    stamp_save_dates(st, at);
+                    return st.mark_saved();
                 } else {
                     // Edited while the save ran: the dates still go on, the edits stay unsaved. The
                     // undo history holds the document as it was before the dates, so that is the

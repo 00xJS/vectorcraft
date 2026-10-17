@@ -475,16 +475,14 @@ pub(crate) fn rescan(s: &mut Session, _: &Value) -> Result<Value> {
             }
         });
         if !texts.is_empty() {
-            let saved = !d.is_dirty();
-            let doc = std::sync::Arc::make_mut(&mut d.doc);
-            for id in texts {
-                if let Some(NodeKind::Text(t)) = doc.node_mut(id).map(|n| &mut n.kind) {
-                    refresh_bounds(t);
+            d.change_unsaved(|doc| {
+                let doc = std::sync::Arc::make_mut(doc);
+                for id in texts {
+                    if let Some(NodeKind::Text(t)) = doc.node_mut(id).map(|n| &mut n.kind) {
+                        refresh_bounds(t);
+                    }
                 }
-            }
-            if saved {
-                d.mark_saved();
-            }
+            });
         }
         d.revision += 1;
     }
