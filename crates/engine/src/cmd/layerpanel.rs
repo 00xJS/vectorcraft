@@ -263,22 +263,13 @@ fn merge_into(d: &mut Document, into: NodeId, others: &[NodeId]) -> Result<()> {
 
 fn merge(s: &mut Session, p: &Value) -> Result<Value> {
     const C: &str = "layer.merge";
-    let mut ids = rows_param(s, p, C)?;
+    let ids = rows_param(s, p, C)?;
     let st = s.doc()?;
     let d = &st.doc;
-    // Nothing named or highlighted, but art selected on the canvas in several layers (Select All):
-    // merge those layers (#2383).
-    if p.get("ids").is_none() && p.get("id").is_none() && st.highlighted_rows().is_empty() {
-        let held: HashSet<NodeId> = st.selection.objects.iter().filter_map(|o| d.layer_of(*o)).collect();
-        let layers: Vec<NodeId> = d.layers.iter().map(|l| l.id).filter(|l| held.contains(l)).collect();
-        if layers.len() >= 2 {
-            ids = layers;
-        }
-    }
     let mut seen = HashSet::new();
     let ids: Vec<NodeId> = ids.into_iter().filter(|id| d.node(*id).is_some() && seen.insert(*id)).collect();
     if ids.len() < 2 {
-        return Err(bad(C, "highlight two or more rows to merge, or select art in two or more layers"));
+        return Err(bad(C, "highlight two or more rows to merge"));
     }
     // The last highlighted layer that is not inside another highlighted row: with a layer and its
     // sublayer both highlighted (Select All in the panel), the sublayer travels with its layer

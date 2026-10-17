@@ -625,24 +625,6 @@ fn merge_selected_with_all_layer_rows_highlighted_merges_into_the_last_top_level
     }
 }
 
-/// Merge Selected with no highlighted rows but art selected in several layers (Select All on the
-/// canvas) merges those layers; art in one layer still asks for rows (#2383).
-#[test]
-fn merge_selected_with_art_selected_in_several_layers_merges_those_layers() {
-    let mut s = session();
-    let a = rect(&mut s, 0.0);
-    run(&mut s, "layer.new", json!({"top": true}));
-    let b = rect(&mut s, 100.0);
-    run(&mut s, "select.set", json!({"ids": [b.0]}));
-    run(&mut s, "layer.highlight", json!({"ids": []}));
-    assert!(s.execute("layer.merge", &json!({})).is_err());
-    run(&mut s, "select.set", json!({"ids": [a.0, b.0]}));
-    let into = id(&run(&mut s, "layer.merge", json!({})));
-    let st = s.doc().unwrap();
-    assert_eq!(st.doc.layers.len(), 1);
-    assert!(st.doc.layer_of(a) == Some(into) && st.doc.layer_of(b) == Some(into));
-}
-
 /// Collect in New Layer puts the new layer beside the topmost row when that row is directly in a
 /// layer, and on top of the layer holding its group when it is in a group. When that row is in a
 /// hidden or locked layer, the selected art it collects from another layer is deselected, the key
