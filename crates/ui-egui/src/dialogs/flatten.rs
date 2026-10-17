@@ -309,6 +309,32 @@ mod tests {
     }
 
     #[test]
+    fn ok_says_in_the_status_bar_when_an_image_could_not_be_decoded() {
+        const WARNING: &str = "an image couldn't be decoded and is missing from the picture";
+        // A PNG whose header reads (so it places at its size) but whose pixel data is cut short.
+        let mut png = Vec::new();
+        image::RgbaImage::from_pixel(64, 32, image::Rgba([200, 30, 30, 255]))
+            .write_to(&mut std::io::Cursor::new(&mut png), image::ImageFormat::Png)
+            .unwrap();
+        let idat = png.windows(4).position(|w| w == b"IDAT").unwrap();
+        png.truncate(idat + 8);
+        for preview in [true, false] {
+            let mut app = scene();
+            let placed = app.run("file.place", json!({"name": "cut.png", "dataBase64": vectorcraft_format::base64_encode(&png)})).unwrap();
+            // The image is half transparent itself, so Flatten Transparency flattens it wherever it was placed.
+            app.run("transparency.set", json!({"ids": placed["ids"], "opacity": 50})).unwrap();
+            app.run("select.all", json!({})).unwrap();
+            app.run("ui.flattenTransparencyDialog", json!({})).unwrap();
+            app.ui.dialog.as_mut().unwrap().fields.insert("preview".into(), json!(preview));
+            frame(&mut app);
+            assert_eq!(app.session.in_interaction(), preview);
+            app.status("");
+            super::super::confirm(&mut app).unwrap();
+            assert_eq!(app.ui.status, WARNING, "preview {preview}");
+        }
+    }
+
+    #[test]
     fn save_preset_keeps_the_options_and_lists_them() {
         let mut app = scene();
         app.run("ui.flattenTransparencyDialog", json!({})).unwrap();
