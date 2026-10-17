@@ -2308,6 +2308,29 @@ fn object_mosaic_tiles_follow_the_image_colours() {
     assert!(!st.doc.layers[0].children().unwrap().iter().any(|n| matches!(n.kind, vectorcraft_doc::NodeKind::Image(_))));
 }
 
+/// Columns and rows that are not whole numbers (a fraction, a negative number, a string or another value) are an
+/// error naming the key, and no mosaic is made; 2.0 columns are two columns.
+#[test]
+fn object_mosaic_refuses_columns_and_rows_that_are_not_whole_numbers() {
+    let mut s = session();
+    rect(&mut s, 0.0, 0.0, 100.0, 50.0);
+    s.execute("object.rasterize", &json!({"ppi": 72})).unwrap();
+    let undo = |s: &Session| s.doc().unwrap().history.undo.len();
+    let before = undo(&s);
+    for (p, msg) in [
+        (json!({"columns": 2.5}), "`columns` must be a whole number"),
+        (json!({"rows": -1}), "`rows` must be a whole number"),
+        (json!({"columns": "4"}), "`columns` must be a number, not \"4\""),
+        (json!({"rows": true}), "`rows` must be a number, not true"),
+    ] {
+        let r = s.execute("object.createObjectMosaic", &p);
+        assert!(matches!(&r, Err(EngineError::BadParams { msg: m, .. }) if m == msg), "{p}: {r:?}");
+        assert_eq!(undo(&s), before, "{p}");
+    }
+    let r = s.execute("object.createObjectMosaic", &json!({"columns": 2.0, "rows": 1.0})).unwrap();
+    assert_eq!(r["tiles"], json!(2));
+}
+
 #[test]
 fn snap_to_pixel_rounds_drawing_and_moves() {
     let mut s = session();

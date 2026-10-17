@@ -103,7 +103,7 @@ pub fn specs() -> Vec<CommandSpec> {
             "Create Object Mosaic…",
             ["Object"],
             None,
-            "{columns=10, rows=10, width?, height? (new size in pt; default the image's), spacingX=0, spacingY=0 (pt between tiles), gray?: bool, deleteRaster?: bool} a group of rectangles coloured by the selected image's average tile colours → {id, tiles}",
+            "{columns=10, rows=10 (whole numbers, kept within 1..1000), width?, height? (new size in pt; default the image's), spacingX=0, spacingY=0 (pt between tiles), gray?: bool, deleteRaster?: bool} a group of rectangles coloured by the selected image's average tile colours → {id, tiles}",
             has_image,
             object_mosaic
         ),
@@ -166,6 +166,20 @@ pub fn specs() -> Vec<CommandSpec> {
 
 fn ids_json(ids: &[NodeId]) -> Value {
     json!({ "ids": ids.iter().map(|i| i.0).collect::<Vec<_>>() })
+}
+
+/// The whole number `p` gives for `key`, written `4` or `4.0`, or `default` when `p` gives none or null. A value that
+/// is not a number gives the [`check_numbers`] error, and a fraction or a negative number gives
+/// "`{key}` must be a whole number".
+fn whole_or(p: &Value, key: &str, default: u64, cmd: &str) -> Result<u64> {
+    check_numbers(p, &[key], cmd)?;
+    let Some(v) = p.get(key).filter(|v| !v.is_null()) else { return Ok(default) };
+    match (v.as_u64(), v.as_f64()) {
+        (Some(n), _) => Ok(n),
+        // A whole number past `u64::MAX` saturates to it.
+        (None, Some(x)) if x >= 0.0 && x.fract() == 0.0 => Ok(x as u64),
+        _ => Err(bad(cmd, format!("`{key}` must be a whole number"))),
+    }
 }
 
 /// Run a command's implementation without the enablement check or journaling.
@@ -335,13 +349,13 @@ fn transform_each_as(s: &mut Session, p: &Value, label: &str) -> Result<Value> {
     let rx = bool_or(p, "reflectX", false);
     let ry = bool_or(p, "reflectY", false);
     let random = bool_or(p, "random", false);
-    let refi = p.get("reference").and_then(Value::as_u64).unwrap_or(4).min(8) as usize;
+    let refi = whole_or(p, "reference", 4, "object.transformEach")?.min(8) as usize;
     let copy = bool_or(p, "copy", false);
     let objects = super::object::transforms_objects(p);
     if sh == 0.0 || sv == 0.0 {
         return Err(bad("object.transformEach", "scale must be non-zero"));
     }
-    let mut rng = Rng(p.get("seed").and_then(Value::as_u64).unwrap_or(0x9E37_79B9_7F4A_7C15).max(1));
+    let mut rng = Rng(whole_or(p, "seed", 0x9E37_79B9_7F4A_7C15, "object.transformEach")?.max(1));
     let mut sc = if sh != 100.0 || sv != 100.0 { super::object::scaling(s, p) } else { Default::default() };
     sc.patterns = super::object::transform_patterns(s, p, &roots)?;
     // With no object to transform, or without a copy when both scales are 100% and there is no
@@ -524,8 +538,8 @@ fn object_mosaic(s: &mut Session, p: &Value) -> Result<Value> {
     let NodeKind::Image(im) = &node.kind else { return Err(bad(C, "select an image")) };
     let blob = st.doc.images.get(&im.key).filter(|b| !b.bytes.is_empty()).ok_or_else(|| bad(C, "the image has no embedded pixels"))?;
     let raster = vectorcraft_trace::Raster::decode(&blob.bytes).map_err(|e| bad(C, e.to_string()))?;
-    let cols = p.get("columns").and_then(Value::as_u64).unwrap_or(10).clamp(1, 1000) as u32;
-    let rows = p.get("rows").and_then(Value::as_u64).unwrap_or(10).clamp(1, 1000) as u32;
+    let cols = whole_or(p, "columns", 10, C)?.clamp(1, 1000) as u32;
+    let rows = whole_or(p, "rows", 10, C)?.clamp(1, 1000) as u32;
     let gray = bool_or(p, "gray", false);
     let colors = vectorcraft_trace::mosaic(&raster, cols, rows);
     // Tiles in image space, placed by the image transform (scaled to a new size if asked).
@@ -916,8 +930,8 @@ fn rearrange_artboards(s: &mut Session, p: &Value) -> Result<Value> {
     };
     let count = s.doc()?.doc.artboards.len();
     let n_ab = count.max(1);
-    // Columns of a grid by row, rows of a grid by column (NaN casts to 0).
-    let lines = (f64_or(p, "columns", 2.0).clamp(1.0, n_ab as f64) as usize).max(1);
+    // Columns of a grid by row, rows of a grid by column.
+    let lines = whole_or(p, "columns", 2, CMD)?.clamp(1, n_ab as u64) as usize;
     let (rows, cols) = match layout {
         L::GridByRow => (n_ab.div_ceil(lines), lines),
         L::GridByColumn => (lines, n_ab.div_ceil(lines)),
