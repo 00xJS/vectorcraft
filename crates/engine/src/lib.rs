@@ -1252,6 +1252,9 @@ pub struct Session {
     /// Where the ICC profiles `color.loadProfile` loads are kept; `None`: only for the process
     /// ([`Session::attach_profile_store`]).
     profile_dir: Option<std::path::PathBuf>,
+    /// Where the plug-ins `plugin.install` installs are kept; `None`: only for the process
+    /// ([`Session::attach_plugin_store`]).
+    plugin_dir: Option<std::path::PathBuf>,
     /// URLs recently given in the Attributes panel (`attributes.set {url}`), newest first; not saved.
     pub recent_urls: Vec<String>,
     /// The language the UI is drawn in (a language code, never `auto`), set by the UI each frame;
@@ -1346,6 +1349,7 @@ impl Session {
             libraries: Default::default(),
             pdf_preset_dir: None,
             profile_dir: None,
+            plugin_dir: None,
             recent_urls: vec![],
             ui_language: None,
             journal_note: Default::default(),

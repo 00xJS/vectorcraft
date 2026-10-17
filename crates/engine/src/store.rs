@@ -1,6 +1,7 @@
-//! The user's own PDF presets and ICC profiles, kept in folders next to the preferences so that
-//! they outlive the process (#2168, #2174). The apps decide where ([`Session::attach_pdf_preset_store`],
-//! [`Session::attach_profile_store`]); a session nobody attached a folder to keeps nothing, which
+//! The user's own PDF presets, ICC profiles and plug-ins, kept in folders next to the preferences
+//! so that they outlive the process (#2168, #2174, #2541). The apps decide where
+//! ([`Session::attach_pdf_preset_store`], [`Session::attach_profile_store`],
+//! [`Session::attach_plugin_store`]); a session nobody attached a folder to keeps nothing, which
 //! is how the engine's own tests and embedders run.
 //!
 //! * **PDF presets**: one `.vcpdfpresets` file per preset (the format `pdf.preset.export` writes,
@@ -10,6 +11,10 @@
 //! * **ICC profiles**: the bytes of each profile `color.loadProfile` registered, as `.icc` files
 //!   named after the profile, never the path they came from (a profile in a system folder may
 //!   move or go away). Attaching the folder registers them again.
+//! * **Plug-ins**: the module of each plug-in `plugin.install` installs, as a `.wasm` file named
+//!   after its id (as Illustrator keeps plug-ins in its Plug-ins folder); `plugin.remove` deletes it.
+//!   Attaching the folder installs them again. The Additional Plug-ins Folder preference is not
+//!   copied: it is loaded from where it is.
 //!
 //! The files are untrusted input like any other: sizes and counts are capped, a file that does not
 //! parse is skipped with a log record, and every write is atomic.
@@ -32,6 +37,10 @@ pub const MAX_PROFILE_FILE: u64 = 32 << 20;
 pub const MAX_PROFILE_STORE: u64 = 256 << 20;
 /// The extension of a stored ICC profile.
 const PROFILE_EXT: &str = "icc";
+/// The most stored plug-in bytes read at startup, all files together (the rest are skipped).
+pub const MAX_PLUGIN_STORE: u64 = 512 << 20;
+/// The extension of a stored plug-in.
+const PLUGIN_EXT: &str = "wasm";
 
 /// The file name (without extension) a stored item called `name` gets: its name made safe for any
 /// file system, then a hash of the name, so that names that differ only in characters a file name
@@ -179,6 +188,44 @@ impl Session {
     pub(crate) fn unstore_profile(&self, name: &str) {
         if let Some(dir) = &self.profile_dir {
             take(dir, &format!("{}.{PROFILE_EXT}", file_stem(name)));
+        }
+    }
+
+    /// Keep the plug-ins this session installs in `dir`, and install the ones already there (a
+    /// module that doesn't load is skipped with a log record).
+    pub fn attach_plugin_store(&mut self, dir: PathBuf) {
+        let limits = vectorcraft_plugins::Limits::default();
+        let mut left = MAX_PLUGIN_STORE;
+        for path in list_files(&dir, PLUGIN_EXT) {
+            if left == 0 {
+                log::warn!("skipping the other stored plug-ins: they hold more than {MAX_PLUGIN_STORE} bytes together");
+                break;
+            }
+            let loaded = read_capped(&path, (limits.max_module_bytes as u64).min(left)).and_then(|bytes| {
+                left -= bytes.len() as u64;
+                vectorcraft_plugins::Plugin::load(&bytes, limits.clone()).map_err(|e| e.to_string())
+            });
+            match loaded {
+                Ok(plugin) => {
+                    vectorcraft_plugins::registry::install(plugin.with_source(path.display().to_string()));
+                }
+                Err(e) => log::warn!("skipping the stored plug-in {}: {e}", path.display()),
+            }
+        }
+        self.plugin_dir = Some(dir);
+    }
+
+    /// Write the module `bytes` of the plug-in `id` to the store.
+    pub(crate) fn store_plugin(&self, id: &str, bytes: &[u8]) {
+        if let Some(dir) = &self.plugin_dir {
+            put(dir, &format!("{}.{PLUGIN_EXT}", file_stem(id)), bytes);
+        }
+    }
+
+    /// Remove the plug-in `id` from the store.
+    pub(crate) fn unstore_plugin(&self, id: &str) {
+        if let Some(dir) = &self.plugin_dir {
+            take(dir, &format!("{}.{PLUGIN_EXT}", file_stem(id)));
         }
     }
 }
