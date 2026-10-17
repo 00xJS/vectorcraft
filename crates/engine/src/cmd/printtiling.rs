@@ -81,11 +81,7 @@ fn point(p: &Value, key: &str) -> Option<Point> {
 /// edge, else one that holds it on its right or bottom edge or within a millionth of a point
 /// outside an edge (the edges `Document::art_on_artboard` counts).
 fn region_holding(regions: &[(Option<usize>, Rect)], at: Point) -> Option<&(Option<usize>, Rect)> {
-    let holds = |r: &Rect| {
-        let r = r.inflate(1e-6, 1e-6);
-        r.x0 <= at.x && at.x <= r.x1 && r.y0 <= at.y && at.y <= r.y1
-    };
-    regions.iter().find(|(_, r)| r.contains(at)).or_else(|| regions.iter().find(|(_, r)| holds(r)))
+    regions.iter().find(|(_, r)| r.contains(at)).or_else(|| regions.iter().find(|(_, r)| vectorcraft_doc::artboard_holds(*r, at)))
 }
 
 fn set_origin(s: &mut Session, p: &Value) -> Result<Value> {

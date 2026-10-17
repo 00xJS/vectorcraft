@@ -27,18 +27,6 @@ fn snap1(v: f64, edges: [f64; 2], tol: f64) -> f64 {
     edges.into_iter().filter(|e| (e - v).abs() <= tol).min_by(|a, b| (a - v).abs().total_cmp(&(b - v).abs())).unwrap_or(v)
 }
 
-/// Index of the first artboard holding `p`: one that holds it inside or on its left or top edge,
-/// else one that holds it on its right or bottom edge or within a millionth of a point outside an
-/// edge (the edges `Document::art_on_artboard` counts).
-fn artboard_holding(cx: &ToolContext, p: Point) -> Option<usize> {
-    let rects = || cx.doc.artboards.iter().map(|a| a.rect);
-    let holds = |r: Rect| {
-        let r = r.inflate(1e-6, 1e-6);
-        r.x0 <= p.x && p.x <= r.x1 && r.y0 <= p.y && p.y <= r.y1
-    };
-    rects().position(|r| r.contains(p)).or_else(|| rects().position(holds))
-}
-
 impl Tool for PrintTilingTool {
     fn id(&self) -> &'static str {
         "printTiling"
@@ -51,7 +39,7 @@ impl Tool for PrintTilingTool {
     fn pointer(&mut self, cx: &ToolContext, ev: &PointerEvent) -> Vec<Action> {
         match ev.kind {
             PointerKind::Down => {
-                let hit = artboard_holding(cx, ev.pos);
+                let hit = cx.doc.artboard_holding(ev.pos, false);
                 self.drag = Some((hit, hit.and_then(|i| cx.doc.artboards.get(i)).map(|a| a.rect)));
                 (self.began, self.last) = (false, ev.pos);
                 vec![]
