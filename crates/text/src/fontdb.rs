@@ -500,47 +500,11 @@ pub const THAI_FAMILIES: &[&str] = &[
     "Garuda",
 ];
 
-/// Installed sans-serif families tried first for Chinese characters the font in use lacks, so that
-/// Han next to Hangul (which only these cover) is not set in the bundled Mincho (#2491).
-const HAN_SANS_FAMILIES: &[&str] = &[
-    "PingFang SC",
-    "Hiragino Sans",
-    "Hiragino Kaku Gothic ProN",
-    "Microsoft YaHei",
-    "Yu Gothic",
-    "Noto Sans CJK SC",
-    "Noto Sans CJK JP",
-    "Noto Sans SC",
-    "Noto Sans JP",
-    "Source Han Sans",
-];
-
-/// The same for kana: the Japanese families first.
-const KANA_SANS_FAMILIES: &[&str] = &[
-    "Hiragino Sans",
-    "Hiragino Kaku Gothic ProN",
-    "Yu Gothic",
-    "Noto Sans CJK JP",
-    "Noto Sans JP",
-    "Source Han Sans",
-    "PingFang SC",
-    "Microsoft YaHei",
-    "Noto Sans CJK SC",
-];
-
 /// The families tried first for character `c`, in a script whose text only fonts made for it set
-/// well (Thai, Lao, Khmer, Myanmar), or that is set in an installed sans-serif rather than the
-/// bundled Mincho (Han, kana, CJK punctuation); none for other characters. When none of the
-/// families is installed the loaded fonts are used, the Mincho among them.
+/// well (Thai, Lao, Khmer, Myanmar); none for other characters.
 fn script_families(c: char) -> &'static [&'static str] {
     use unicode_script::{Script, UnicodeScript};
-    if matches!(c, '\u{3000}'..='\u{303F}' | '\u{FF00}'..='\u{FFEF}') {
-        // Punctuation is set the Japanese way (the corner brackets sit by the line's start).
-        return KANA_SANS_FAMILIES;
-    }
     match c.script() {
-        Script::Han | Script::Bopomofo => HAN_SANS_FAMILIES,
-        Script::Hiragana | Script::Katakana => KANA_SANS_FAMILIES,
         Script::Thai => THAI_FAMILIES,
         Script::Lao => &["Lao UI", "Leelawadee UI", "Lao Sangam MN", "Noto Sans Lao", "Noto Sans Lao UI", "Phetsarath OT"],
         Script::Khmer => &["Khmer UI", "Khmer Sangam MN", "Noto Sans Khmer", "Noto Sans Khmer UI", "Khmer OS"],
