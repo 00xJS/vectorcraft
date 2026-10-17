@@ -168,6 +168,12 @@ fn through_editing_data(bytes: &[u8], opts: &LoadOptions, doc: Document, warning
     if !read {
         return (doc, warnings);
     }
+    // The layers' text objects hold type and the stroked paths around it, which can include stroked
+    // glyphs the PDF part kept as outlines: without any such glyph in the document, the warnings on
+    // outlines are dropped.
+    if !vectorcraft_pdf::holds_outlines(&doc) {
+        warnings.retain(|w| !vectorcraft_pdf::is_outlines_note(w));
+    }
     // The layers hold the art that the PDF part leaves out or, in a PDF, that the import clipped
     // to the page.
     warnings.retain(|w| w != vectorcraft_pdf::OFF_ARTBOARD_NOTE && w != vectorcraft_pdf::PAST_PAGE_NOTE);

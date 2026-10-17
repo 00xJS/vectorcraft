@@ -73,7 +73,10 @@ pub use editing::{EDITING_FILE, Editing, LEGACY_EDITING_FILE, editing, editing_w
 pub use encrypt::Encryption;
 pub use export::{export, export_with_report, page_areas};
 pub use file_info::{FileInfo, file_info};
-pub use import::{OFF_ARTBOARD_NOTE, PAST_PAGE_NOTE, import, import_with_report};
+pub use import::{
+    OFF_ARTBOARD_NOTE, OUTLINED_TEXT_NOTE, PAST_PAGE_NOTE, UNMATCHED_GLYPHS_NOTE, UNNAMED_CHARACTERS_NOTE, holds_outlines, import,
+    import_with_report, is_glyph_outlines, is_outlines_note,
+};
 pub use pages::{PageInfo, PdfInfo, has_illustrator_data, illustrator_data, info, is_postscript};
 pub use post::{THUMBNAIL_SIZE, Thumbnail};
 pub use presets::*;
