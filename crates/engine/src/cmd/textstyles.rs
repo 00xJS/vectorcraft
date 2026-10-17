@@ -436,7 +436,7 @@ fn new(s: &mut Session, p: &Value, kind: Kind) -> Result<Value> {
         None => (1..).map(|i| format!("{base} {i}")).find(|n| kind.attrs(d, n).is_none()).unwrap_or_else(|| base.to_string()),
     };
     if name.is_empty() {
-        return Err(bad(&c, format!("`{name}` is empty or already used")));
+        return Err(bad(&c, "give the style a name"));
     }
     if kind.attrs(d, &name).is_some() {
         return Err(bad(&c, format!("a style named `{name}` already exists")));
@@ -706,7 +706,7 @@ mod tests {
             let e = s.execute(&format!("{p}.new"), &json!({"name": " Body"})).unwrap_err().to_string();
             assert!(e.contains("a style named `Body` already exists"), "{p}: {e}");
             let e = s.execute(&format!("{p}.new"), &json!({"name": " \t "})).unwrap_err().to_string();
-            assert!(e.contains("`` is empty or already used"), "{p}: {e}");
+            assert!(e.contains("give the style a name"), "{p}: {e}");
             assert_eq!(s.execute(&format!("{p}.duplicate"), &json!({"name": "Body"})).unwrap()["name"], "Body copy", "{p}");
         }
         // A style whose name has spaces around it, as a saved file can hold, is copied under the
