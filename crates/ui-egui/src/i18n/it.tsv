@@ -2474,6 +2474,8 @@ mark-style	Japanese	Giapponese
 	Redefine Character Style	Ridefinisci stile carattere
 	Redefine Graphic Style	Ridefinisci stile grafico
 	Redefine Graphic Style “{name}”	Ridefinisci stile grafico “{name}”
+	Apply {name}	Applica stile “{name}”
+	Redefine {name}	Ridefinisci stile “{name}”
 	Redefine Paragraph Style	Ridefinisci stile paragrafo
 	Redefine Symbol	Ridefinisci simbolo
 	Redefine {kind} Style	Ridefinisci stile {kind}

@@ -2444,6 +2444,8 @@
 	Redefine Character Style	Redefinir estilo de carácter
 	Redefine Graphic Style	Redefinir estilo gráfico
 	Redefine Graphic Style “{name}”	Redefinir estilo gráfico “{name}”
+	Apply {name}	Aplicar estilo “{name}”
+	Redefine {name}	Redefinir estilo “{name}”
 	Redefine Paragraph Style	Redefinir estilo de párrafo
 	Redefine Symbol	Redefinir símbolo
 	Redefine {kind} Style	Redefinir estilo de {kind}

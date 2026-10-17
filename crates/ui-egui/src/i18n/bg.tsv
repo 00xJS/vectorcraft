@@ -2398,6 +2398,8 @@
 	Redefine Character Style	Предефиниране на стил на знаци
 	Redefine Graphic Style	Предефиниране на графичен стил
 	Redefine Graphic Style “{name}”	Предефиниране на графичен стил „{name}“
+	Apply {name}	Прилагане на стил „{name}“
+	Redefine {name}	Предефиниране на стил „{name}“
 	Redefine Paragraph Style	Предефиниране на стил на абзац
 	Redefine Symbol	Предефиниране на символ
 	Redefine {kind} Style	Предефиниране на стил {kind}

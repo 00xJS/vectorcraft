@@ -440,18 +440,28 @@ fn every_tl_literal_is_translated() {
     }
 }
 
-/// Every undo step name the engine, the tools and the shell record ([`undo_labels`]), and every
-/// effect's name without its ellipsis, has a row in each language marked `complete_menus`: its plain
-/// row, or the row of the same name with an ellipsis (`panels::history::step_name`).
+/// Every undo step name the engine, the tools and the shell record ([`undo_labels`]), every
+/// effect's name without its ellipsis, and the Liquify tools' step names (`{} Tool`), has a row in
+/// each language marked `complete_menus`: its plain row, or the row of the same name with an
+/// ellipsis (`panels::history::step_name`). Every template a step name is made from with
+/// `Session::edit_named` has a plain row in each, which `panels::history::entry_name` fills with the
+/// name. No other step name is built with `format!`.
 #[test]
 fn every_undo_label_is_translated() {
-    let mut labels = undo_labels();
+    let scan = undo_scan();
+    let mut labels = scan.labels;
     assert!(labels.len() > 300, "scan found only {} undo labels", labels.len());
     labels.extend(vectorcraft_effects::effect_catalog().iter().map(|e| e.label.trim_end_matches('…').to_string()));
+    let liquify = ["warp", "twirl", "pucker", "bloat", "scallop", "crystallize", "wrinkle"];
+    labels.extend(liquify.iter().filter_map(|k| vectorcraft_tools::distort::liquify::LiquifyKind::parse(k)).map(|k| format!("{} Tool", k.label())));
+    assert_eq!(scan.formatted.iter().collect::<Vec<_>>(), ["{} Tool"], "step names built with format! (make them with Session::edit_named)");
+    assert!(scan.templates.len() >= 3, "scan found only the templates {:?}", scan.templates);
     for l in LANGUAGES.iter().filter(|l| l.complete_menus) {
         let lang = Lang::from_code(l.code).expect("registered");
         let missing: Vec<_> = labels.iter().filter(|s| crate::panels::history::step_name(lang, s).is_none()).collect();
         assert!(missing.is_empty(), "{}: {} untranslated undo labels: {missing:#?}", l.code, missing.len());
+        let missing: Vec<_> = scan.templates.iter().filter(|t| l.catalog().plain(t).is_none()).collect();
+        assert!(missing.is_empty(), "{}: {} untranslated undo label templates: {missing:#?}", l.code, missing.len());
     }
 }
 
@@ -494,6 +504,9 @@ const UNDO_CRATES: &[&str] = &["engine", "tools", "ui-egui"];
 /// Calls whose first argument names an undo step.
 const UNDO_MARKERS: &[&str] = &[".edit(", "begin_interaction(", "Action::Begin(", "begin_named_undo_group(Some("];
 
+/// The call whose first argument is the template of an undo step's name (`Session::edit_named`).
+const NAMED_MARKER: &str = ".edit_named(";
+
 /// A function in a source file, as [`undo_labels`] reads it.
 struct SourceFn<'a> {
     file: usize,
@@ -513,8 +526,26 @@ struct SourceFn<'a> {
 /// `…label` (`pf_label(op)`, `kind.label()`) gives the literals that function returns in the same
 /// file. A name built with `format!` or taken from data (an effect's, a plug-in's) is not read.
 pub fn undo_labels() -> std::collections::BTreeSet<String> {
+    undo_scan().labels
+}
+
+/// What [`undo_scan`] finds in [`UNDO_CRATES`].
+struct UndoScan {
+    /// The step names written as literals ([`undo_labels`]).
+    labels: std::collections::BTreeSet<String>,
+    /// The templates step names are made from with `Session::edit_named` (its first argument).
+    templates: std::collections::BTreeSet<String>,
+    /// The format strings of the step names built with `format!` where [`undo_labels`] reads a
+    /// name.
+    formatted: std::collections::BTreeSet<String>,
+}
+
+/// The undo step names and templates in [`UNDO_CRATES`] (see [`undo_labels`]).
+fn undo_scan() -> UndoScan {
     let crates = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("..");
     let mut out = std::collections::BTreeSet::new();
+    let mut templates = std::collections::BTreeSet::new();
+    let mut formatted = std::collections::BTreeSet::new();
     for krate in UNDO_CRATES {
         let files = undo_sources(&crates.join(krate).join("src"));
         let fns: Vec<SourceFn> = files.iter().enumerate().flat_map(|(i, t)| source_fns(i, t)).collect();
@@ -551,10 +582,14 @@ pub fn undo_labels() -> std::collections::BTreeSet<String> {
             }
         }
         for (file, e) in exprs {
-            label_literals(e, file, &fns, &mut out);
+            label_literals(e, file, &fns, &mut out, &mut formatted);
+        }
+        for t in &files {
+            let named = t.match_indices(NAMED_MARKER).filter_map(|(at, _)| arguments(&t[at + NAMED_MARKER.len()..]).first().copied());
+            templates.extend(named.filter_map(|a| a.strip_prefix('"').and_then(string_literal)));
         }
     }
-    out
+    UndoScan { labels: out, templates, formatted }
 }
 
 /// The sources of a crate's `src` directory, test modules and files and `//` comments aside.
@@ -740,10 +775,18 @@ fn bare(e: &str) -> &str {
     e
 }
 
-/// Add the step names expression `e` in source file `file` gives (see [`undo_labels`]).
-fn label_literals(e: &str, file: usize, fns: &[SourceFn], out: &mut std::collections::BTreeSet<String>) {
+/// Add the step names expression `e` in source file `file` gives (see [`undo_labels`]) to `out`,
+/// and the format string of a name it builds with `format!` to `formatted`.
+fn label_literals(
+    e: &str,
+    file: usize,
+    fns: &[SourceFn],
+    out: &mut std::collections::BTreeSet<String>,
+    formatted: &mut std::collections::BTreeSet<String>,
+) {
     let mut e = bare(e);
-    if e.starts_with("format!(") {
+    if let Some(args) = e.strip_prefix("format!(") {
+        formatted.extend(args.trim_start().strip_prefix('"').and_then(string_literal));
         return;
     }
     if let Some(body) = e.strip_prefix('|').and_then(|r| r.find('|').map(|n| &r[n + 1..])) {
@@ -798,6 +841,7 @@ fn dump_source_strings() {
     let mut all = crate::menus::menu_strings();
     all.extend(tl_literals());
     all.extend(undo_labels());
+    all.extend(undo_scan().templates);
     let text: String = all.iter().map(|s| format!("{}\n", s.replace('\\', "\\\\").replace('\n', "\\n").replace('\t', "\\t"))).collect();
     std::fs::write(path, text).expect("write dump");
 }

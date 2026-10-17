@@ -1302,6 +1302,8 @@ lighting	Light	Valo
 	Opacity: {value}	Peittävyys: {value}
 	Rectangle: Sunshine	Suorakulmio: Auringonpaiste
 	Redefine Graphic Style “{name}”	Määritä grafiikkatyyli ”{name}” uudelleen
+	Apply {name}	Käytä tyyliä ”{name}”
+	Redefine {name}	Määritä tyyli ”{name}” uudelleen
 	Show Thumbnail	Näytä pikkukuva
 	Artboard Options: edit with the Artboard tool	Piirtoalustan asetukset: muokkaa piirtoalustatyökalulla
 	Delete Artboards	Poista piirtoalustat
