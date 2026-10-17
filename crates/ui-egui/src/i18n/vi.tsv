@@ -1367,6 +1367,14 @@ file-filter	Templates	Mẫu
 	Gamut Warning	Cảnh báo ngoài dải màu
 	gap	khoảng cách
 	Gap Options…	Tùy chọn khoảng cách…
+	Gap Options	Tùy chọn khoảng cách
+	Gap Detection	Phát hiện khoảng cách
+	Paint Stops At:	Ngừng tô tại:
+	Small Gaps	Khoảng cách nhỏ
+	Medium Gaps	Khoảng cách vừa
+	Large Gaps	Khoảng cách lớn
+	Gap Preview Color:	Màu xem trước khoảng cách:
+	Close Gaps With Paths	Đóng khoảng cách bằng đường dẫn
 	Gaussian Blur	Mờ Gaussian
 	Gaussian Blur…	Làm mờ Gaussian…
 	General	Chung

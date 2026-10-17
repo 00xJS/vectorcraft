@@ -1185,6 +1185,14 @@
 	Gamut Warning	Alerte de gamme
 	gap	espace
 	Gap Options…	Options d’espacement…
+	Gap Options	Options d’espacement
+	Gap Detection	Détection des espaces
+	Paint Stops At:	Arrêt de la peinture à :
+	Small Gaps	Petits espaces
+	Medium Gaps	Espaces moyens
+	Large Gaps	Grands espaces
+	Gap Preview Color:	Couleur d’aperçu des espaces :
+	Close Gaps With Paths	Fermer les espaces avec des tracés
 	Gaussian Blur…	Flou gaussien…
 	General	Général
 	General › Placement › X	Général › Placement › X

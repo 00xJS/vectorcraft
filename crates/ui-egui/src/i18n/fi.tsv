@@ -252,6 +252,14 @@
 	Live Paint	Elävä maalaus
 	Merge	Yhdistä
 	Gap Options…	Aukkojen asetukset…
+	Gap Options	Aukkojen asetukset
+	Gap Detection	Aukkojen tunnistus
+	Paint Stops At:	Maalaus pysähtyy:
+	Small Gaps	Pienet aukot
+	Medium Gaps	Keskikokoiset aukot
+	Large Gaps	Suuret aukot
+	Gap Preview Color:	Aukkojen esikatseluväri:
+	Close Gaps With Paths	Sulje aukot poluilla
 	Image Trace	Kuvan jäljitys
 	Image Trace (Make and Expand)	Kuvan jäljitys (luo ja laajenna)
 	Release Image Trace	Vapauta kuvan jäljitys

@@ -252,6 +252,14 @@
 	Live Paint	ライブペイント
 	Merge	結合
 	Gap Options…	間隔オプション…
+	Gap Options	間隔オプション
+	Gap Detection	間隔の検出
+	Paint Stops At:	ペイントが止まる間隔:
+	Small Gaps	小さい間隔
+	Medium Gaps	中程度の間隔
+	Large Gaps	大きい間隔
+	Gap Preview Color:	間隔のプレビューカラー:
+	Close Gaps With Paths	パスで間隔を閉じる
 	Image Trace	画像トレース
 	Image Tracing	画像トレースオブジェクト
 	Tracing Presets	トレースプリセット

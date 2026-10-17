@@ -1142,6 +1142,14 @@ file-filter	Templates	模板
 	Gamut Warning	色域警告
 	gap	间隔
 	Gap Options…	间隙选项…
+	Gap Options	间隙选项
+	Gap Detection	间隙检测
+	Paint Stops At:	上色停止于：
+	Small Gaps	小间隙
+	Medium Gaps	中等间隙
+	Large Gaps	大间隙
+	Gap Preview Color:	间隙预览颜色：
+	Close Gaps With Paths	用路径封闭间隙
 	Gaussian Blur…	高斯模糊…
 	General	常规
 	General › Placement › X	一般 › 位置 › X

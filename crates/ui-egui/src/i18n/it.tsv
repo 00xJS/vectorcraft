@@ -1195,6 +1195,14 @@ file-filter	Templates	Modelli
 	Gamut Warning	Avviso gamut
 	gap	spazio
 	Gap Options…	Opzioni spazi vuoti…
+	Gap Options	Opzioni spazi vuoti
+	Gap Detection	Rilevamento spazi vuoti
+	Paint Stops At:	La pittura si ferma a:
+	Small Gaps	Spazi vuoti piccoli
+	Medium Gaps	Spazi vuoti medi
+	Large Gaps	Spazi vuoti grandi
+	Gap Preview Color:	Colore anteprima spazi vuoti:
+	Close Gaps With Paths	Chiudi spazi vuoti con tracciati
 	Gaussian Blur…	Sfocatura gaussiana…
 	General	Generale
 	General › Placement › X	Generale › Posizionamento › X

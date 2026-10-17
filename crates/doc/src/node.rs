@@ -570,6 +570,8 @@ pub struct NodeExtras {
     /// Object › Intertwine: as a member of an Intertwine group, the area (document coordinates,
     /// filled non-zero) where this object is drawn over the group's other members.
     pub intertwine: Option<Box<PathData>>,
+    /// Live Paint group: its Gap Options (Object › Live Paint › Gap Options; `None`: the defaults).
+    pub live_paint_gaps: Option<Box<crate::live_paint::GapOptions>>,
 }
 
 /// No extras: what [`Node::extras`] gives for a node without any.
@@ -587,6 +589,7 @@ static NO_EXTRAS: NodeExtras = NodeExtras {
     perspective: None,
     dimension: None,
     intertwine: None,
+    live_paint_gaps: None,
 };
 
 /// A node's [`NodeExtras`], if it has any ([`Node::extras`]). Extras that are all unset equal
@@ -720,6 +723,7 @@ impl Serialize for Node {
             e.perspective.is_none(),
             e.dimension.is_none(),
             e.intertwine.is_none(),
+            e.live_paint_gaps.is_none(),
         ];
         let mut st = s.serialize_struct("Node", skips.iter().filter(|s| !**s).count())?;
         let mut skip = skips.into_iter();
@@ -757,6 +761,7 @@ impl Serialize for Node {
         field!("perspective", &e.perspective);
         field!("dimension", &e.dimension);
         field!("intertwine", &e.intertwine);
+        field!("live_paint_gaps", &e.live_paint_gaps);
         st.end()
     }
 }
@@ -814,6 +819,8 @@ struct NodeWire {
     dimension: Option<Box<crate::dimension::Dimension>>,
     #[serde(default)]
     intertwine: Option<Box<PathData>>,
+    #[serde(default)]
+    live_paint_gaps: Option<Box<crate::live_paint::GapOptions>>,
 }
 
 impl From<NodeWire> for Node {
@@ -832,6 +839,7 @@ impl From<NodeWire> for Node {
             perspective: w.perspective,
             dimension: w.dimension,
             intertwine: w.intertwine,
+            live_paint_gaps: w.live_paint_gaps,
         };
         Node {
             id: w.id,
@@ -2055,6 +2063,7 @@ mod tests {
             e.attrs = Some(Box::default());
             e.slice = Some(Box::default());
             e.perspective = Some(Box::new(crate::PerspectiveAttachment::new("left", 1.0)));
+            e.live_paint_gaps = Some(Box::default());
         }
         /// The top-level keys of a JSON object, in the order written.
         struct Keys(Vec<String>);
@@ -2096,6 +2105,7 @@ mod tests {
             "slice",
             "bbox_angle",
             "perspective",
+            "live_paint_gaps",
         ];
         assert_eq!(keys, order);
         assert_eq!(serde_json::from_value::<Node>(v).unwrap(), n);

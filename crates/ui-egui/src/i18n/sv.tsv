@@ -1163,6 +1163,14 @@
 	Gamut Warning	Färgomfångsvarning
 	gap	mellanrum
 	Gap Options…	Alternativ för mellanrum…
+	Gap Options	Alternativ för mellanrum
+	Gap Detection	Identifiering av mellanrum
+	Paint Stops At:	Målningen stannar vid:
+	Small Gaps	Små mellanrum
+	Medium Gaps	Medelstora mellanrum
+	Large Gaps	Stora mellanrum
+	Gap Preview Color:	Förhandsgranskningsfärg för mellanrum:
+	Close Gaps With Paths	Stäng mellanrum med banor
 	Gaussian Blur…	Gaussisk oskärpa…
 	General	Allmänt
 	General › Placement › X	Allmänt › Placering › X
