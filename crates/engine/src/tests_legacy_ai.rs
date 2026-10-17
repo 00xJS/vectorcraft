@@ -192,6 +192,58 @@ fn art_under_transparent_art_stays_in_its_own_layer() {
     assert!(d.layers.iter().all(|l| l.children().is_some_and(|c| c.len() == 1)), "{:?}", d.layers);
 }
 
+/// #2687's file: a circle filled with a radial gradient from white to #1b2a6b, and a square filled
+/// with a linear one.
+const RADIAL_AND_LINEAR: &str = r##"<svg xmlns="http://www.w3.org/2000/svg" width="400" height="200" viewBox="0 0 400 200">
+  <defs>
+    <radialGradient id="r" cx="0.5" cy="0.5" r="0.5"><stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#1b2a6b"/></radialGradient>
+    <linearGradient id="l" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#1b2a6b"/></linearGradient>
+  </defs>
+  <circle cx="100" cy="100" r="80" fill="url(#r)"/>
+  <rect x="220" y="20" width="160" height="160" fill="url(#l)"/>
+</svg>"##;
+
+/// A radial gradient is written with its highlight, `0 0 0 0 Bh` at the center (§3.5.5, §3.5.6).
+/// #2687's file had none, and the reference app drew the circle in its outer color. The linear one
+/// has none. Both open again with their type, stops and place.
+#[test]
+fn a_radial_gradient_is_written_with_its_highlight() {
+    let mut s = Session::new();
+    let svg = vectorcraft_format::base64_encode(RADIAL_AND_LINEAR.as_bytes());
+    s.execute("document.open", &json!({"name": "t_radial.svg", "dataBase64": svg})).unwrap();
+    let r = s.execute("file.saveCopy", &json!({"format": "ai", "aiVersion": "7"})).unwrap();
+    let text = String::from_utf8(vectorcraft_format::base64_decode(r["dataBase64"].as_str().unwrap()).unwrap()).unwrap();
+    assert!(text.contains("\n%AI5_BeginGradient: (Gradient)\n(Gradient) 1 2 Bd\n[\n"), "{text}");
+    assert!(text.contains("\nBb\n0 0 0 0 Bh\n1 (Gradient) 100 100 0 80 1 0 0 1 0 0 Bg\nf\n0 BB\n"), "{text}");
+    assert!(text.contains("\nBb\n1 (Gradient 2) 220 180 0 160 1 0 0 1 0 0 Bg\nf\n0 BB\n"), "{text}");
+    assert_eq!(text.matches(" Bh\n").count(), 1, "{text}");
+    s.execute("document.open", &json!({"name": "t.ai", "dataBase64": r["dataBase64"]})).unwrap();
+    let d = &s.doc().unwrap().doc;
+    let mut found = vec![];
+    d.walk(|n| {
+        if let vectorcraft_color::Paint::Gradient(g) = n.appearance.fill_paint() {
+            found.push(*g);
+        }
+    });
+    let [radial, linear] = found.as_slice() else { panic!("{found:#?}") };
+    let navy = vectorcraft_color::Color::rgb(27.0 / 255.0, 42.0 / 255.0, 107.0 / 255.0);
+    use vectorcraft_color::GradientKind::{Linear, Radial};
+    for (g, kind, start, end) in [(radial, Radial, (100.0, 100.0), (180.0, 100.0)), (linear, Linear, (220.0, 20.0), (380.0, 20.0))] {
+        assert_eq!(g.gradient.kind, kind);
+        let [a, b] = g.gradient.stops.as_slice() else { panic!("{g:?}") };
+        assert_eq!((a.offset, b.offset, a.color), (0.0, 1.0, vectorcraft_color::Color::rgb(1.0, 1.0, 1.0)), "{g:?}");
+        assert!(b.color.to_rgb().iter().zip(navy.to_rgb()).all(|(x, y)| (x - y).abs() < 1e-3), "{g:?}");
+        let geom = g.geom.unwrap();
+        assert!((geom.start.x - start.0).abs() < 1e-3 && (geom.start.y - start.1).abs() < 1e-3, "{geom:?}");
+        assert!((geom.end.x - end.0).abs() < 1e-3 && (geom.end.y - end.1).abs() < 1e-3 && geom.focal.is_none(), "{geom:?}");
+    }
+    // White at the center, #1b2a6b at the edge.
+    for ((x, y), want) in [((100.0, 100.0), [255, 255, 255]), ((100.0, 21.0), [27, 42, 107])] {
+        let got = colour_at(d, x, y);
+        assert!(got.iter().zip(want).all(|(a, b)| a.abs_diff(b) <= 8), "{got:?} at {x}, {y}");
+    }
+}
+
 /// A `w`×`h` PNG of one colour (`rgba`), 72 ppi.
 fn png(w: u32, h: u32, rgba: [u8; 4]) -> Vec<u8> {
     let mut out = vec![];
