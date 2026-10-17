@@ -631,6 +631,12 @@ pub const UI_COMMANDS: &[(&str, &str, &str, &str)] = &[
         "{url?} open url, else the selection's URL (attributes.info), in the web browser (the Attributes panel's Browser button) → {url}",
     ),
     (
+        "ui.javascriptFilesDialog",
+        "Link JavaScript Files…",
+        "",
+        "{} open JavaScript Files for the active document (dialog `javascriptFiles`, fields `file`: a path or URL and `selected`: a linked file; the SVG Interactivity panel's Link JavaScript Files button): its list shows svgInteractivity.info's files, Add runs svgInteractivity.addFile with file and Remove runs svgInteractivity.removeFile with selected",
+    ),
+    (
         "ui.spotColors",
         "Spot Colors…",
         "",
@@ -1537,6 +1543,7 @@ pub fn run_ui_command(app: &mut VectorcraftApp, id: &str, p: &Value) -> Option<R
         },
         "ui.expandDialog" => crate::dialogs::expand::open(app),
         "attributes.openUrl" => crate::panels::attributes::open_url(app, p),
+        "ui.javascriptFilesDialog" => crate::panels::svg_interactivity::files_dialog(app, p),
         "ui.spotColors" => crate::dialogs::spot_colors::open(app),
         "ui.menuDialog" => match s("command").as_deref() {
             Some(c) if crate::dialogs::envelope::opens(c) => crate::dialogs::envelope::open(app, c),
@@ -2886,7 +2893,7 @@ pub fn menu_tree_named(english_names: bool) -> Vec<(&'static str, Vec<Item>)> {
                 panel("Properties", "properties"),
                 panel("Separations Preview", "separations"),
                 panel("Stroke", "stroke"),
-                todo("SVG Interactivity"),
+                panel("SVG Interactivity", crate::panels::svg_interactivity::ID),
                 panel("Swatches", "swatches"),
                 panel("Symbols", "symbols"),
                 panel("Transform", "transform"),

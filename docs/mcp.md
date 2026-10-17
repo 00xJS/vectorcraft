@@ -1743,6 +1743,28 @@ paths and compound paths, and `path.reverse {reversed?}` makes subpaths run coun
 {"name":"run_command","arguments":{"command":"path.setFillRule","params":{"rule":"evenOdd"}}}
 ```
 
+## SVG interactivity
+
+The SVG Interactivity panel (`window.panel {panel: "svgInteractivity"}`) reads `svgInteractivity.info {ids?}`:
+`events` (`[{event, script}]` in the panel's order, null where the objects differ), `files` (the linked JavaScript
+files) and `eventNames` (the 19 events the panel lists, from `onfocusin` to `onscroll`).
+`svgInteractivity.setEvent {event, script, ids?}` sets the JavaScript an event runs on the objects, replacing the
+event's script where they have one (an empty `script` removes it); `svgInteractivity.removeEvent {event, ids?}` and
+`svgInteractivity.clearEvents {ids?}` remove one event or all of them. Each is one undo step.
+`svgInteractivity.addFile {file}` and `svgInteractivity.removeFile {file}` link and unlink a JavaScript file (a path
+or a URL, kept as given without surrounding spaces); a document links at most 64 files. `ui.javascriptFilesDialog {}`
+opens the JavaScript Files dialog, whose Choose… puts a picked file in as a `file:///` URL. SVG export writes each event
+as an event attribute on the object's element (`onclick="…"`; with the SVG Tiny 1.2 profile it leaves them out with a
+warning) and each file as `<script xlink:href>`. SVG import reads the event attributes the panel lists and the
+`<script>` links back as text; it never reads a script file or runs a script, and leaves inline scripts and the links
+after the first 64 out with a warning. An unnamed `<g>` with event attributes of its own stays a group, apart from the object in
+it. The native format keeps the events and the files.
+
+```json
+{"name":"run_command","arguments":{"command":"svgInteractivity.setEvent","params":{"ids":[12],"event":"onclick","script":"showMenu()"}}}
+{"name":"run_command","arguments":{"command":"svgInteractivity.addFile","params":{"file":"menu.js"}}}
+```
+
 ## Removing anchor points
 
 `path.removeAnchors {}` (Object › Path › Remove Anchor Points) removes the direct-selected anchors (`select.anchors

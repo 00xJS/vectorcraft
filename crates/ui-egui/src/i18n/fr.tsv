@@ -2991,6 +2991,16 @@
 	Superscript:	Exposant :
 	SVG Filters	Filtres SVG
 	SVG Interactivity	Interactivité SVG
+	Event:	Événement :
+	JavaScript:	JavaScript :
+	Add Event	Ajouter un événement
+	Remove Selected Entry	Supprimer l’entrée sélectionnée
+	Clear Events	Effacer les événements
+	Link JavaScript Files…	Lier des fichiers JavaScript…
+	JavaScript Files	Fichiers JavaScript
+	File or URL:	Fichier ou URL :
+	Add JavaScript File	Ajouter un fichier JavaScript
+	Remove JavaScript File	Supprimer le fichier JavaScript
 	SVG Options	Options SVG
 	SVG Profile:	Profil SVG :
 	Swap Fill and Stroke	Permuter le fond et le contour

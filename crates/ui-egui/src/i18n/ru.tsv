@@ -3009,6 +3009,16 @@ mark-style	Japanese	Японский
 	Superscript:	Верхний индекс:
 	SVG Filters	Фильтры SVG
 	SVG Interactivity	Интерактивность SVG
+	Event:	Событие:
+	JavaScript:	JavaScript:
+	Add Event	Добавить событие
+	Remove Selected Entry	Убрать выбранную запись
+	Clear Events	Очистить события
+	Link JavaScript Files…	Связать файлы JavaScript…
+	JavaScript Files	Файлы JavaScript
+	File or URL:	Файл или URL:
+	Add JavaScript File	Добавить файл JavaScript
+	Remove JavaScript File	Убрать файл JavaScript
 	SVG Options	Параметры SVG
 	SVG Profile:	Профиль SVG:
 	Swap Fill and Stroke	Поменять заливку и обводку

@@ -3314,6 +3314,16 @@ theme	Appearance	Εμφάνιση
 	Superscript (on the roadmap)	Εκθέτης (προγραμματισμένη λειτουργία)
 	SVG Filters	Φίλτρα SVG
 	SVG Interactivity	Διαδραστικότητα SVG
+	Event:	Συμβάν:
+	JavaScript:	JavaScript:
+	Add Event	Προσθήκη συμβάντος
+	Remove Selected Entry	Αφαίρεση επιλεγμένης καταχώρισης
+	Clear Events	Αφαίρεση όλων των συμβάντων
+	Link JavaScript Files…	Σύνδεση αρχείων JavaScript…
+	JavaScript Files	Αρχεία JavaScript
+	File or URL:	Αρχείο ή διεύθυνση URL:
+	Add JavaScript File	Προσθήκη αρχείου JavaScript
+	Remove JavaScript File	Αφαίρεση αρχείου JavaScript
 	SVG Options	Επιλογές SVG
 	SVG Profile:	Προφίλ SVG:
 	Swap Fill and Stroke	Εναλλαγή γεμίσματος και περιγράμματος

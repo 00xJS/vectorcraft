@@ -6,7 +6,7 @@ use std::sync::Arc;
 
 use vectorcraft_color::{BlendMode, GradientKind, GradientPaint, Paint};
 use vectorcraft_doc::{
-    AppearanceItem, Document, FillLayer, LineCap, LineJoin, Node, NodeId, NodeKind, StrokeAlign, StrokeLayer, TextKind, TextObject,
+    AppearanceItem, Document, FillLayer, LineCap, LineJoin, Node, NodeId, NodeKind, SVG_EVENTS, StrokeAlign, StrokeLayer, TextKind, TextObject,
 };
 use vectorcraft_doc::{CharStyle, ImageBlob, Justify};
 use vectorcraft_effects::stroke::{self, Written, WrittenShape};
@@ -141,6 +141,15 @@ fn write(doc: &Document, opts: &ExportOptions, native: Option<&[u8]>, id_prefix:
     if !doc.metadata.description.trim().is_empty() {
         out.push_str(&w.indent(1));
         out.push_str(&format!("<desc>{}</desc>{nl}", xml_escape(&doc.metadata.description)));
+    }
+    // Window › SVG Interactivity › Link JavaScript Files.
+    for file in &doc.svg_scripts {
+        if file.is_empty() || !valid_xml_value(file) {
+            w.warn("JavaScript files with empty names or invalid XML characters were left out of SVG");
+            continue;
+        }
+        out.push_str(&w.indent(1));
+        out.push_str(&format!("<script xlink:href=\"{}\"/>{nl}", xml_attr_escape(file)));
     }
     let latin1 = encoding == Encoding::Latin1;
     if latin1 {
@@ -637,7 +646,33 @@ impl Writer<'_> {
             self.non_latin1_names |= k.chars().any(|c| u32::from(c) > 0xff);
             out.push_str(&format!(" data-{k}=\"{}\"", xml_attr_escape(v)));
         }
+        self.event_attrs(n, &mut out);
         out
+    }
+    /// Window › SVG Interactivity: `n`'s events as event attributes (`onclick="…"`), added to
+    /// `out`. The SVG Tiny 1.2 profile leaves them out with a warning.
+    fn event_attrs(&mut self, n: &Node, out: &mut String) {
+        let events = n.extras().attrs.as_deref().map_or(&[][..], |a| a.events.as_slice());
+        if events.is_empty() {
+            return;
+        }
+        if self.tiny() {
+            self.warn("SVG Tiny 1.2 has no event attributes: SVG Interactivity events were left out");
+            return;
+        }
+        let mut seen = HashSet::new();
+        for (event, script) in events {
+            // Native data can name anything: only the panel's events are written, once each.
+            if !SVG_EVENTS.contains(&event.as_str()) || !valid_xml_value(script) {
+                self.warn("SVG Interactivity events with unknown names or invalid XML characters were left out of SVG");
+                continue;
+            }
+            if !seen.insert(event.as_str()) {
+                self.warn("Repeated SVG Interactivity events were written only once in SVG");
+                continue;
+            }
+            out.push_str(&format!(" {event}=\"{}\"", xml_attr_escape(script)));
+        }
     }
     fn matrix(&self, m: Affine) -> String {
         let c = m.as_coeffs();

@@ -2935,6 +2935,16 @@
 	Superscript:	Горен индекс:
 	SVG Filters	SVG филтри
 	SVG Interactivity	SVG интерактивност
+	Event:	Събитие:
+	JavaScript:	JavaScript:
+	Add Event	Добавяне на събитие
+	Remove Selected Entry	Премахване на избрания запис
+	Clear Events	Изчистване на събитията
+	Link JavaScript Files…	Свързване на файлове JavaScript…
+	JavaScript Files	Файлове JavaScript
+	File or URL:	Файл или URL адрес:
+	Add JavaScript File	Добавяне на файл JavaScript
+	Remove JavaScript File	Премахване на файл JavaScript
 	SVG Options	SVG опции
 	SVG Profile:	SVG профил:
 	Swap Fill and Stroke	Размяна на запълването и щриха

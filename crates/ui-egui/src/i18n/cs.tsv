@@ -612,6 +612,16 @@
 	Separations Preview	Náhled separací
 	Stroke	Tah
 	SVG Interactivity	Interaktivita SVG
+	Event:	Událost:
+	JavaScript:	JavaScript:
+	Add Event	Přidat událost
+	Remove Selected Entry	Odebrat vybranou položku
+	Clear Events	Vymazat události
+	Link JavaScript Files…	Propojit soubory JavaScript…
+	JavaScript Files	Soubory JavaScript
+	File or URL:	Soubor nebo URL:
+	Add JavaScript File	Přidat soubor JavaScript
+	Remove JavaScript File	Odebrat soubor JavaScript
 	Swatches	Vzorník
 	Symbols	Symboly
 	Transparency	Průhlednost
