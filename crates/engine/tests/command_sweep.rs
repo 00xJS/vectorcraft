@@ -425,6 +425,15 @@ fn structured_junk() {
         ("object.puppetWarp", json!({"rest": true, "pins": [[1e308, 0]], "moved": [[0, 0]], "expand": -5})),
         ("object.puppetWarp", json!({"rest": true, "ids": [u64::MAX], "pins": [[0, 0]], "moved": [[0, 0]]})),
         ("object.puppetWarp.pins", json!({"ids": [0, 1, 2], "expand": 1e308})),
+        ("symbol.new", json!({"name": "J", "nineSlice": true, "nineSliceGuides": [1e308, -1e308, f64::NAN, 0]})),
+        ("symbol.new", json!({"name": "J", "nineSlice": "yes", "nineSliceGuides": [0.6, 0.1, 0.6, 0.1]})),
+        ("symbol.new", json!({"name": "J", "nineSliceGuides": [0.1, 0.2]})),
+        ("symbol.new", json!({"name": "J", "nineSliceGuides": {"left": 0.1}})),
+        ("symbol.new", json!({"name": "J", "nineSlice": true, "nineSliceGuides": ["a", null, [1], {}]})),
+        ("symbol.options", json!({"nineSlice": true, "nineSliceGuides": [0.5, 0.5, 0.5, 0.5]})),
+        ("symbol.options", json!({"name": "Dot", "nineSlice": true, "nineSliceGuides": [1e308, -1e308, 0, 0]})),
+        ("symbol.options", json!({"nineSlice": 7, "nineSliceGuides": []})),
+        ("symbol.options", json!({"nineSlice": false, "nineSliceGuides": null})),
     ];
     let mut failures = vec![];
     for fx in Fixture::ALL {

@@ -5054,6 +5054,7 @@ imageTrace	Outline	Körvonal
 	Movie Clip	Mozgóklip
 @msg	name is empty	a név üres
 @msg	no symbol named `{n}`	nincs `{n}` nevű szimbólum
+	Enable Guides for 9-Slice Scaling	Segédvonalak engedélyezése a 9-slice méretezéshez
 @msg	a mask has more than one art block	egy maszk egynél több grafikai blokkot tartalmaz
 @msg	mask art ends outside a mask dictionary	a maszk grafikája a maszk szótárán kívül ér véget
 @msg	cancelled; nothing was changed	megszakítva; semmi sem változott

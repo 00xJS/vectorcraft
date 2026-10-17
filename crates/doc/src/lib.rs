@@ -22,10 +22,12 @@ mod inline;
 pub mod intertwine;
 pub mod shared;
 mod symbol_export_type;
+mod symbol_nine_slice;
 mod symbol_registration;
 pub use inline::{SYMBOL_HALF, SYMBOL_SIZES};
 pub use shared::Shared;
 pub use symbol_export_type::{SYMBOL_EXPORT_TYPE, SymbolExportType};
+pub use symbol_nine_slice::{SYMBOL_NINE_SLICE, SymbolNineSlice};
 pub use symbol_registration::{SYMBOL_REGISTRATION, SymbolRegistration};
 pub mod links;
 pub mod live;
@@ -1687,6 +1689,37 @@ impl Document {
         let kind = self.symbol_export_type(from);
         self.clear_symbol_export_type(from);
         self.set_symbol_export_type(to, kind);
+    }
+
+    /// Symbol Options › 9-slice guides for `name`: `None` when 9-slice scaling is off (default).
+    pub fn symbol_nine_slice(&self, name: &str) -> Option<SymbolNineSlice> {
+        self.unknown.get(SYMBOL_NINE_SLICE).and_then(|m| m.get(name)).and_then(SymbolNineSlice::from_value)
+    }
+
+    /// Turn 9-slice scaling on with `guides`, or off with `None`, for `name`.
+    pub fn set_symbol_nine_slice(&mut self, name: &str, guides: Option<SymbolNineSlice>) {
+        let Some(g) = guides else {
+            let Some(o) = self.unknown.get_mut(SYMBOL_NINE_SLICE).and_then(|m| m.as_object_mut()) else { return };
+            o.remove(name);
+            if o.is_empty() {
+                self.unknown.remove(SYMBOL_NINE_SLICE);
+            }
+            return;
+        };
+        let m = self.unknown.entry(SYMBOL_NINE_SLICE.to_string()).or_insert_with(|| serde_json::json!({}));
+        if let Some(o) = m.as_object_mut() {
+            o.insert(name.into(), g.to_value());
+        }
+    }
+
+    /// Move the stored 9-slice guides when a symbol is renamed.
+    pub fn rename_symbol_nine_slice(&mut self, from: &str, to: &str) {
+        if from == to {
+            return;
+        }
+        let g = self.symbol_nine_slice(from);
+        self.set_symbol_nine_slice(from, None);
+        self.set_symbol_nine_slice(to, g);
     }
 }
 
