@@ -1674,3 +1674,191 @@ fn a_raster_of_the_wrong_length_is_an_error_not_a_crash() {
     assert!(trace(&broken, &TraceParams::default()).paths.is_empty());
     assert_eq!(mosaic(&broken, 2, 2).len(), 4);
 }
+
+// ---- Automatic keeps rare but distinct colours (code-drawn flat art) ----
+
+/// Where a layer of [`flat_art`] is.
+type Inside<'a> = &'a dyn Fn(f64, f64) -> bool;
+/// A layer of [`flat_art`], owning where it is.
+type Layer = ([u8; 3], Box<dyn Fn(f64, f64) -> bool>);
+
+/// Flat art drawn in code at `scale` (1 or 2) with 4 × 4 samples a pixel (anti-aliased) or one
+/// (hard): `layers` painted in order, each a colour and where it is (in 1× units).
+fn flat_art(w: u32, h: u32, scale: u32, aa: bool, layers: &[([u8; 3], Inside)]) -> Raster {
+    let n = if aa { 4 } else { 1 };
+    Raster::from_fn(w * scale, h * scale, |x, y| {
+        let mut acc = [0.0f64; 3];
+        for i in 0..n {
+            for j in 0..n {
+                let (fx, fy) = (
+                    (f64::from(x) + (f64::from(i) + 0.5) / f64::from(n)) / f64::from(scale),
+                    (f64::from(y) + (f64::from(j) + 0.5) / f64::from(n)) / f64::from(scale),
+                );
+                let c = layers.iter().rev().find(|(_, inside)| inside(fx, fy)).map_or([255, 255, 255], |l| l.0);
+                for k in 0..3 {
+                    acc[k] += f64::from(c[k]);
+                }
+            }
+        }
+        let c = acc.map(|v| (v / f64::from(n * n)).round() as u8);
+        [c[0], c[1], c[2], 255]
+    })
+}
+
+/// Whether the trace has a colour within `de` (Oklab × 100) of `c`.
+fn has_colour(res: &TraceResult, c: [u8; 3], de: f64) -> bool {
+    let target = quantize::tests_oklab(c);
+    res.paths.iter().any(|p| {
+        let o = quantize::tests_oklab(p.color);
+        (0..3).map(|k| (o[k] - target[k]).powi(2)).sum::<f64>().sqrt() <= de
+    })
+}
+
+fn distinct_colours(res: &TraceResult) -> usize {
+    let mut v: Vec<[u8; 3]> = res.paths.iter().map(|p| p.color).collect();
+    v.sort_unstable();
+    v.dedup();
+    v.len()
+}
+
+const LARGE: [[u8; 3]; 8] =
+    [[245, 240, 228], [30, 60, 140], [200, 40, 50], [40, 140, 70], [240, 190, 40], [90, 50, 30], [120, 120, 130], [20, 20, 25]];
+
+#[test]
+fn automatic_keeps_a_rare_distinct_stem_or_patch() {
+    // 2–8 large flat colours (bands) and a contrasting stem 1–4 px wide, or a square patch, from
+    // about 0.05% to 2% of the picture, hard and anti-aliased at 1× and 2×.
+    let rare = [[230, 30, 200], [0, 200, 220], [255, 255, 255]];
+    let params = preset("Auto Color").unwrap();
+    let mut failed = vec![];
+    for k in [2usize, 3, 5, 8] {
+        for (ri, &stem) in rare.iter().enumerate() {
+            for (width, length) in [(1.0, 20.0), (2.0, 30.0), (4.0, 50.0), (6.0, 6.0), (14.0, 14.0)] {
+                for (scale, aa) in [(1, false), (1, true), (2, true)] {
+                    let bands = move |x: f64, _: f64| ((x / 200.0 * k as f64) as usize).min(k - 1);
+                    let band_colour = |b: usize| LARGE[(b + ri) % 8];
+                    // The stem goes where it contrasts with the band under it.
+                    let (x0, y0) = (12.0, 40.0);
+                    if band_colour(bands(x0, y0)) == stem {
+                        continue;
+                    }
+                    let layers: Vec<Layer> = (0..k)
+                        .map(|b| (band_colour(b), Box::new(move |x: f64, y: f64| bands(x, y) == b) as Box<dyn Fn(f64, f64) -> bool>))
+                        .chain(std::iter::once((
+                            stem,
+                            Box::new(move |x: f64, y: f64| (x0..x0 + width).contains(&x) && (y0..y0 + length).contains(&y))
+                                as Box<dyn Fn(f64, f64) -> bool>,
+                        )))
+                        .collect();
+                    let refs: Vec<([u8; 3], Inside)> = layers.iter().map(|(c, f)| (*c, f.as_ref())).collect();
+                    let img = flat_art(200, 200, scale, aa, &refs);
+                    let res = trace(&img, &params);
+                    let share = width * length / 40000.0 * 100.0;
+                    if !has_colour(&res, stem, 3.0) {
+                        failed.push(format!(
+                            "{k} colours, stem {stem:?} {width}×{length} ({share:.2}%), ×{scale} aa {aa}: lost, {} colours",
+                            distinct_colours(&res)
+                        ));
+                    } else if distinct_colours(&res) > k + 1 {
+                        failed.push(format!("{k} colours, stem {stem:?} {width}×{length}, ×{scale} aa {aa}: {} colours", distinct_colours(&res)));
+                    }
+                }
+            }
+        }
+    }
+    assert!(failed.is_empty(), "{}", failed.join("\n"));
+}
+
+#[test]
+fn automatic_keeps_near_white_highlights_on_a_pale_background() {
+    // White highlights (ten islands of about 10–20 px, 0.2–0.4% in all) on #FFF4E0, with brown and
+    // dark shapes: the white is 4 (Oklab × 100) from the background, the islands under Noise.
+    let bg = [255, 244, 224];
+    let params = preset("Auto Color").unwrap();
+    for (scale, aa) in [(1, false), (1, true), (2, true)] {
+        let face = |x: f64, y: f64| (x - 100.0).hypot(y - 100.0) < 60.0;
+        let eyes = |x: f64, y: f64| (x - 80.0).hypot(y - 90.0) < 9.0 || (x - 120.0).hypot(y - 90.0) < 9.0;
+        let shine = |x: f64, y: f64| (0..10).any(|i| (x - (40.0 + 13.0 * f64::from(i))).hypot(y - 30.0) < 2.0);
+        let layers: [([u8; 3], Inside); 4] = [(bg, &|_, _| true), ([139, 90, 43], &face), ([46, 31, 20], &eyes), ([255, 255, 255], &shine)];
+        let img = flat_art(200, 200, scale, aa, &layers);
+        let res = trace(&img, &params);
+        assert!(has_colour(&res, [255, 255, 255], 1.5), "×{scale} aa {aa}: white lost: {:?}", res.palette);
+        assert!(has_colour(&res, bg, 1.5), "×{scale} aa {aa}: background lost: {:?}", res.palette);
+        assert_eq!(distinct_colours(&res), 4, "×{scale} aa {aa}: {:?}", res.palette);
+        // The highlights survive Noise (16 in Auto Color): each is a region of its own.
+        let white = res.paths.iter().filter(|p| p.color == [255, 255, 255]).count();
+        assert!(white >= 10, "×{scale} aa {aa}: {white} white paths");
+    }
+}
+
+#[test]
+fn automatic_keeps_a_thin_low_contrast_stem() {
+    // A coherent 3 px stem #909090 on #808080 beside a dark area: close in RGB (28 levels), so
+    // merge_mixed would take it for noise, but it is one region, not intermixed.
+    let params = preset("Auto Color").unwrap();
+    for (scale, aa) in [(1, false), (1, true), (2, true)] {
+        let stem = |x: f64, y: f64| (60.0..63.0).contains(&x) && (20.0..180.0).contains(&y);
+        let dark = |x: f64, _: f64| x > 130.0;
+        let layers: [([u8; 3], Inside); 3] = [([128, 128, 128], &|_, _| true), ([32, 32, 32], &dark), ([144, 144, 144], &stem)];
+        let res = trace(&flat_art(200, 200, scale, aa, &layers), &params);
+        assert!(has_colour(&res, [144, 144, 144], 1.5), "×{scale} aa {aa}: stem lost: {:?}", res.palette);
+        assert_eq!(distinct_colours(&res), 3, "×{scale} aa {aa}: {:?}", res.palette);
+    }
+}
+
+#[test]
+fn scattered_noise_adds_no_colour() {
+    // The negative control: the same areas as a stem (0.05% to 2%) as scattered single pixels of a
+    // distinct colour, seeded, over 2–5 flat colours: no palette entry of their own.
+    let params = preset("Auto Color").unwrap();
+    let hash =
+        |x: u32, y: u32, s: u32| (x.wrapping_mul(73_856_093) ^ y.wrapping_mul(19_349_663) ^ s.wrapping_mul(83_492_791)).wrapping_mul(2_654_435_761);
+    for k in [2usize, 3, 5] {
+        for (seed, per_mille) in [(1u32, 1u32), (2, 5), (3, 10), (4, 20)] {
+            let img = Raster::from_fn(200, 200, |x, y| {
+                let b = ((f64::from(x) / 200.0 * k as f64) as usize).min(k - 1);
+                let c = if hash(x, y, seed) % 1000 < per_mille { [230, 30, 200] } else { LARGE[b] };
+                [c[0], c[1], c[2], 255]
+            });
+            let res = trace(&img, &params);
+            assert!(!has_colour(&res, [230, 30, 200], 8.0), "{k} colours, {per_mille}‰ noise: {:?}", res.palette);
+            assert!(distinct_colours(&res) <= k, "{k} colours, {per_mille}‰ noise: {:?}", res.palette);
+        }
+    }
+}
+
+#[test]
+fn noise_keeps_a_kept_rare_colours_regions_but_not_its_specks() {
+    // Labels: 0 background, 1 a rare colour kept on purpose (four islands of 4, 6, 9 and 2
+    // pixels), 2 an ordinary colour with an island of 6.
+    let (w, h) = (40usize, 10usize);
+    let mut labels = vec![0u16; w * h];
+    let mut put = |x0: usize, y0: usize, cw: usize, ch: usize, l: u16| {
+        for y in y0..y0 + ch {
+            for x in x0..x0 + cw {
+                labels[y * w + x] = l;
+            }
+        }
+    };
+    put(2, 2, 2, 2, 1);
+    put(8, 2, 3, 2, 1);
+    put(14, 2, 3, 3, 1);
+    put(20, 2, 2, 1, 1);
+    put(28, 2, 3, 2, 2);
+    for noise in [0usize, 4, 10, 16, 32] {
+        let mut l = labels.clone();
+        quantize::denoise_keeping(&mut l, w, h, noise, &[false, true, false]);
+        let count = |label: u16| l.iter().filter(|&&v| v == label).count();
+        // The rare colour's regions of at least four pixels stay whatever Noise is; its speck of
+        // two goes from Noise 4 on, as the ordinary colour's island of six goes from Noise 10.
+        assert_eq!(count(1), if noise >= 4 { 4 + 6 + 9 } else { 4 + 6 + 9 + 2 }, "Noise {noise}");
+        assert_eq!(count(2), if noise >= 10 { 0 } else { 6 }, "Noise {noise}");
+    }
+    // Without a kept label, denoise is as before.
+    let mut a = labels.clone();
+    let mut b = labels.clone();
+    denoise(&mut a, w, h, 16);
+    quantize::denoise_keeping(&mut b, w, h, 16, &[]);
+    assert_eq!(a, b);
+    assert!(a.iter().all(|&v| v == 0));
+}

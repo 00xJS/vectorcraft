@@ -1,5 +1,6 @@
 # Image Trace quality
 
+> **Last reviewed:** 2026-10-14 · **Last updated:** 2026-10-17 · **Change:** minor (Image Trace: Auto Color keeps rare but distinct colours; earlier: Gradients: grown over noise and soft rims)
 > **Last reviewed:** 2026-10-14 · **Last updated:** 2026-10-17 · **Change:** minor (Image Trace: large images trace with a warning; anchor limit raised to 8,000,000; earlier: Gradients: grown over noise and soft rims)
 > **Last reviewed:** 2026-10-14 · **Last updated:** 2026-10-17 · **Change:** minor (Image Trace: Raster::new returns an error for a buffer of the wrong length; earlier: Gradients: grown over noise and soft rims)
 > **Last reviewed:** 2026-10-17 · **Last updated:** 2026-10-17 · **Change:** minor (Create Strokes: maximal-disc pruning and junction merging; centre-lines rerun)
@@ -15,15 +16,53 @@ compared with the numbers before each change. Nothing here is a judgement by eye
 with any other product except the open tracer named under [Yardstick](#4-yardstick).
 
 
-## Large images
+## Auto Color keeps rare colours
 
+The Automatic palette (Auto Color) counts flat art's colours by area: a colour needs about 1% of the
+picture (0.5% at Colors 100) to be counted, and the count is then fitted by median cut (Heckbert 1982)
+and k-means (Lloyd 1982), weighted by area. A stem, a highlight or a cream close to a pale background
+was averaged into a large neighbour, and Noise could remove what was left of it. Now, on the flat route
+only, after the count is fitted, the colours too rare or too close for it are found and kept when they
+are:
+
+- distinct: at least 2.5 (Oklab × 100; Ottosson 2020) from every palette colour and from the main
+  colour each one stands for;
+- flat: mostly one histogram bin;
+- drawn: a 4-connected region of their own (not blended) pixels of at least 8 pixels, or three of at
+  least 4 (repeated highlights); a colour lying between two others, as an edge's anti-aliasing mixes
+  them, must also have an inside (pixels whose four neighbours are all of it).
+
+At most six are kept, largest region first. They are fixed while the other colours are refitted around
+them, mixed-colour merging leaves them alone, and Noise removal keeps their regions of 4 pixels or more
+(smaller specks of them still go). This follows the idea of salient-colour preservation in palette
+reduction (Fukuda et al. 2019, doi:10.1117/12.2521607); the rule and its numbers are VectorCraft's own.
+Full Tone, Limited and the continuous-tone route of Automatic are unchanged.
+
+Tests (code-drawn): `automatic_keeps_a_rare_distinct_stem_or_patch` (2, 3, 5 and 8 flat colours and a
+contrasting stem 1–4 px wide or a patch, about 0.05% to 0.5% of the picture, hard and anti-aliased at
+1× and 2×: the stem's colour is kept and no other is added), `automatic_keeps_near_white_highlights_on_a_pale_background`
+(ten white islands of about 12 px on #FFF4E0: kept, each still a path at Noise 16),
+`automatic_keeps_a_thin_low_contrast_stem` (#909090 on #808080, 3 px), `scattered_noise_adds_no_colour`
+(the negative control: the same areas as single scattered pixels add no colour) and
+`noise_keeps_a_kept_rare_colours_regions_but_not_its_specks` (Noise 0 to 32).
+
+Measured on 22 synthetic flat-colour logos drawn from known palettes, each hard 1×, anti-aliased 1×
+and 2× (66 inputs, used locally and not committed; a key colour is missing when no traced colour is
+within ΔE00 5): every key colour and no spurious one in **66 of 66** (was 39); missing key colours 0 (was 43),
+spurious 0 (was 2), key colours sharing one traced colour 0 pairs (was 46); mean rendered ΔE00 against
+the input 0.138 (was 0.348); paths 2547 → 2586, anchors 27,204 → 24,896, trace time 2.85 → 3.02 s in
+all. On four public-domain scan crops (1024 × 1024) Auto Color takes the continuous-tone route and
+nothing changes: 14, 72, 199 and 98 colours, the same paths, anchors and rendered error (2.11, 5.66,
+9.15 and 1.00 ΔE00), time within run-to-run spread.
+
+
+## Large images
 Images over 1500 px on a side are traced with a warning that they trace more slowly (see
 [image-trace-adjustments.md](image-trace-adjustments.md)), and the anchor limit that guards memory is
 8,000,000 (2,000,000 on the web) instead of 2,000,000. Measured through `imageTrace.make` (release
 build, 4 cores, one trace at a time; memory is the peak allocated above the placed image, and what the
 document keeps after the trace) on code-drawn photo-like pictures (40 soft-edged shaded discs on a
 gradient, texture, sensor noise):
-
 | size | preset | time | anchors | paths | peak | kept |
 |:--|:--|--:|--:|--:|--:|--:|
 | 2000 × 2000 | High Fidelity Photo | 4.1 s | 737,478 | 16,064 | 152 MB | 52 MB |
@@ -39,12 +78,9 @@ gradient, texture, sensor noise):
 | 4000 × 3000 | Full Tone, Colors 100, Paths 100, Noise 1 | 37.2 s | 7,885,709 | 338,561 | 876 MB | 685 MB |
 | 6000 × 4000 | Full Tone, Colors 85, Paths 90, Noise 4 | 106.1 s | 10,445,409 | 398,772 | 1169 MB | 872 MB |
 | 6000 × 4000 | Full Tone, Colors 100, Paths 100, Noise 1 | 116.3 s | 13,508,871 | 658,133 | 1456 MB | 1230 MB |
-
 (The last two rows were measured without a limit; they are refused now.) The 4000 × 3000 High Fidelity
 Photo trace was 86,000 anchors under the old limit; a noisier scan of the same size would have been
 refused. At 8,000,000 anchors a trace keeps about 0.7 GB, with a peak of about 0.9 GB while tracing.
-
-
 ## Collapsed loops keep few segments
 A small closed loop (or a piece that returns to its own junction) whose fit collapsed to a single
 cubic cannot stay as one, so it kept every positioned point as a straight segment. A looser Paths
@@ -1240,6 +1276,7 @@ The remaining spur/extra-junction target is not met by this graph-only change.
 
 | date | change |
 |:--|:--|
+| 2026-10-17 | Auto Color keeps rare but distinct colours (stems, highlights, near-white on pale backgrounds): 66 of 66 flat test logos keep every key colour (was 39); scans unchanged |
 | 2026-10-17 | Images over 1500 px on a side trace with a warning; the anchor limit is 8,000,000 (2,000,000 on the web); time and memory of 2000 × 2000 to 6000 × 4000 code-drawn photos |
 | 2026-10-17 | `Raster::new` returns an error for RGBA bytes of the wrong length (it failed an assertion) and `Raster::pixel` reads nothing past the raster; traces of valid images unchanged |
 | 2026-10-17 | M12: maximal-disc graph pruning, split-crossing merges and degree-two joins; correct junction degrees 30→44/45 aa and hard, none missed; remaining spurs unchanged. Centre-lines rerun, scores and earlier tables unchanged. |
