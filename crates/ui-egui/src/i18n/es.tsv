@@ -3692,6 +3692,9 @@ axis	Both	Ambos
 @msg	its editing data doesn't say where its artboard is	sus datos de edición no indican dónde está su mesa de trabajo
 @msg	its editing data has no layers	sus datos de edición no tienen capas
 @msg	its editing data is damaged	sus datos de edición están dañados
+@msg	its zlib compression is damaged	su compresión zlib está dañada
+@msg	its Zstandard compression is damaged	su compresión Zstandard está dañada
+@msg	it decompresses to more than {_1} MB	ocupan más de {_1} MB al descomprimirse
 @msg	its editing data is for a different page	sus datos de edición son de otra página
 @msg	its layers use {_1}, which aren't read yet	sus capas usan {_1}, que aún no se leen
 @msg	its page has text, and its layers have no text objects to put it in	su página tiene texto y sus capas no tienen objetos de texto donde ponerlo

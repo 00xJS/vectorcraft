@@ -4182,6 +4182,9 @@ theme	Appearance	Giao diện
 @msg	its editing data doesn't say where its artboard is	dữ liệu chỉnh sửa không cho biết vị trí bảng vẽ
 @msg	its editing data has no layers	dữ liệu chỉnh sửa không có lớp
 @msg	its editing data is damaged	dữ liệu chỉnh sửa bị hỏng
+@msg	its zlib compression is damaged	phần nén zlib của chúng bị hỏng
+@msg	its Zstandard compression is damaged	phần nén Zstandard của chúng bị hỏng
+@msg	it decompresses to more than {_1} MB	giải nén ra hơn {_1} MB
 @msg	its editing data is for a different page	dữ liệu chỉnh sửa dành cho trang khác
 @msg	its layers use {_1}, which aren't read yet	các lớp của nó dùng {_1}, chưa đọc được
 @msg	its objects are nested too deeply	các đối tượng của nó lồng nhau quá sâu

@@ -1991,6 +1991,9 @@ axis	Both	Και τα δύο
 @msg	its editing data doesn't say where its artboard is	Τα δεδομένα επεξεργασίας δεν προσδιορίζουν τη θέση του πίνακα σχεδίασης
 @msg	its editing data has no layers	Τα δεδομένα επεξεργασίας δεν περιλαμβάνουν επίπεδα
 @msg	its editing data is damaged	Τα δεδομένα επεξεργασίας είναι κατεστραμμένα
+@msg	its zlib compression is damaged	η συμπίεση zlib τους είναι κατεστραμμένη
+@msg	its Zstandard compression is damaged	η συμπίεση Zstandard τους είναι κατεστραμμένη
+@msg	it decompresses to more than {_1} MB	αποσυμπιεσμένα υπερβαίνουν τα {_1} MB
 @msg	its editing data is for a different page	Τα δεδομένα επεξεργασίας αφορούν άλλη σελίδα
 @msg	its layers use {_1}, which aren't read yet	Τα επίπεδά του χρησιμοποιούν {_1}, που δεν υποστηρίζονται ακόμη στην ανάγνωση
 @msg	its page has text, and its layers have no text objects to put it in	Η σελίδα περιέχει κείμενο, αλλά τα επίπεδα δεν διαθέτουν αντικείμενα κειμένου για την τοποθέτησή του
