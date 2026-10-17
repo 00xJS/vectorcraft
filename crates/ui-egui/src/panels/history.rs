@@ -96,6 +96,9 @@ pub fn menu(app: &mut VectorcraftApp, ui: &mut Ui) {
         }
     }
     ui.separator();
+    if menu_item(ui, tl!("Clear History"), crate::menus::enabled(app, "edit.clearHistory"), false) {
+        crate::menus::invoke(app, "edit.clearHistory", json!({}));
+    }
     if menu_item(ui, tl!("Set History Limit…"), true, false) {
         crate::menus::invoke(app, "edit.preferences", json!({ "category": "Performance" }));
     }
@@ -251,6 +254,46 @@ mod tests {
         assert_eq!(disabled(&mut app), (true, false), "one step to redo");
         click(&mut app, "Step Backward");
         assert_eq!(depth(&app), (0, 1));
+    }
+
+    /// Returns whether the panel menu's item labeled `label` is disabled.
+    fn disabled(app: &mut VectorcraftApp, label: &str) -> bool {
+        let tree = crate::widgets::accessibility_tests::tree(|ui| menu(app, ui));
+        tree.iter().find(|n| n.label().map(str::trim) == Some(label)).unwrap_or_else(|| panic!("no `{label}`")).is_disabled()
+    }
+
+    /// The panel menu's Clear History removes the steps to undo and to redo, and the document stays
+    /// as it is. Step Backward and Step Forward are then disabled.
+    #[test]
+    fn the_panel_menu_clears_the_history() {
+        let mut app = app_with_two_rectangles();
+        click(&mut app, "Step Backward");
+        assert_eq!(depth(&app), (1, 1));
+        let doc = app.session.active().unwrap().doc.clone();
+        click(&mut app, "Clear History");
+        assert_eq!(depth(&app), (0, 0));
+        assert!(std::sync::Arc::ptr_eq(&app.session.active().unwrap().doc, &doc), "the document stays as it is");
+        assert_eq!((disabled(&mut app, "Step Backward"), disabled(&mut app, "Step Forward")), (true, true));
+    }
+
+    /// Clear History is disabled with no document and with no step to undo or redo, and a click on it
+    /// then changes nothing.
+    #[test]
+    fn clear_history_is_disabled_with_no_step_to_clear() {
+        let mut app = VectorcraftApp::new(vectorcraft_engine::Session::new(), Default::default());
+        assert!(disabled(&mut app, "Clear History"), "no document");
+        app.session.execute("file.new", &json!({"width": 200, "height": 150})).unwrap();
+        assert!(disabled(&mut app, "Clear History"), "a new document");
+        app.session.execute("shape.rectangle", &json!({"x": 10, "y": 10, "width": 20, "height": 20})).unwrap();
+        assert!(!disabled(&mut app, "Clear History"), "one step to undo");
+        click(&mut app, "Step Backward");
+        assert!(!disabled(&mut app, "Clear History"), "one step to redo");
+        click(&mut app, "Clear History");
+        assert_eq!(depth(&app), (0, 0));
+        assert!(disabled(&mut app, "Clear History"), "the history cleared");
+        let revision = app.session.active().unwrap().revision;
+        click(&mut app, "Clear History");
+        assert_eq!(app.session.active().unwrap().revision, revision, "a click on the disabled item changes nothing");
     }
 
     /// Set History Limit… opens Preferences at Performance, the page with History States.

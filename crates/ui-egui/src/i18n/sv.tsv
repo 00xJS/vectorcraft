@@ -1325,6 +1325,7 @@
 	History Options…	Historikalternativ…
 	Step Backward	Stega bakåt
 	Step Forward	Stega framåt
+	Clear History	Rensa historik
 	Set History Limit…	Ange historikgräns…
 	History States	Historiktillstånd
 # History panel: the names of undo steps (`every_undo_label_is_translated`).
@@ -3971,6 +3972,7 @@ axis	Both	Båda
 @msg	nothing to redo	inget att göra om
 @msg	nothing to save: the document has no visible art	inget att spara: dokumentet har ingen synlig grafik
 @msg	nothing to undo	inget att ångra
+@msg	no history to clear	ingen historik att rensa
 @msg	nothing to warp	inget att böja
 @msg	nothing to wrap	inget att radbryta
 @msg	object {0} cannot have children	objekt {0} kan inte ha underordnade objekt

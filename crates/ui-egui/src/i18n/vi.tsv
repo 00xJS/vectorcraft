@@ -1551,6 +1551,7 @@ file-filter	Templates	Mẫu
 	History Options…	Tùy chọn lịch sử…
 	Step Backward	Lùi một bước
 	Step Forward	Tiến một bước
+	Clear History	Xóa lịch sử
 	Set History Limit…	Đặt giới hạn lịch sử…
 	History States	Trạng thái lịch sử
 # History panel: the names of undo steps (`every_undo_label_is_translated`).
@@ -4342,6 +4343,7 @@ theme	Appearance	Giao diện
 @msg	nothing to redo	không có gì để làm lại
 @msg	nothing to save: the document has no visible art	không có gì để lưu: tài liệu không có tác phẩm hiển thị
 @msg	nothing to undo	không có gì để hoàn tác
+@msg	no history to clear	không có lịch sử để xóa
 @msg	nothing to warp	không có gì để biến dạng
 @msg	nothing to wrap	không có gì để bọc
 @msg	object ids are non-negative integers, not {v}	id đối tượng là số nguyên không âm, không phải {v}

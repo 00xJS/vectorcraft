@@ -1492,6 +1492,7 @@ lighting	Light	Valo
 	History Options…	Historian asetukset…
 	Step Backward	Askel taaksepäin
 	Step Forward	Askel eteenpäin
+	Clear History	Tyhjennä historia
 	Set History Limit…	Aseta historian raja…
 	Open a document to see its history.	Avaa asiakirja, niin näet sen historian.
 # History panel: the names of undo steps (`every_undo_label_is_translated`).
@@ -4270,6 +4271,7 @@ imageTrace	Outline	Ääriviiva
 @msg	nothing to redo	ei tehtävää uudelleen
 @msg	nothing to save: the document has no visible art	ei tallennettavaa: asiakirjassa ei ole näkyvää kuvitusta
 @msg	nothing to undo	ei kumottavaa
+@msg	no history to clear	ei tyhjennettävää historiaa
 @msg	nothing to warp	ei taivutettavaa
 @msg	nothing to wrap	ei rivitettävää
 @msg	object {0} cannot have children	objektilla {0} ei voi olla alikohteita

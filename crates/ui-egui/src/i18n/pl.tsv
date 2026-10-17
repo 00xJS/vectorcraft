@@ -1432,6 +1432,7 @@ lighting	Light	Światło
 	History Options…	Opcje historii…
 	Step Backward	Krok wstecz
 	Step Forward	Krok naprzód
+	Clear History	Wyczyść historię
 	Set History Limit…	Ustaw limit historii…
 	Open a document to see its history.	Otwórz dokument, aby zobaczyć jego historię.
 # History panel: the names of undo steps (`every_undo_label_is_translated`).
@@ -4171,6 +4172,7 @@ imageTrace	Outline	Kontur
 @msg	nothing to redo	nie ma czego ponowić
 @msg	nothing to save: the document has no visible art	nie ma czego zapisać: dokument nie ma widocznej kompozycji
 @msg	nothing to undo	nie ma czego cofnąć
+@msg	no history to clear	brak historii do wyczyszczenia
 @msg	nothing to warp	nie ma czego wypaczyć
 @msg	nothing to wrap	nie ma czego oblewać
 @msg	object {0} cannot have children	obiekt {0} nie może mieć elementów podrzędnych

@@ -1358,6 +1358,7 @@ file-filter	Templates	Modelli
 	History Options…	Opzioni cronologia…
 	Step Backward	Passo indietro
 	Step Forward	Passo avanti
+	Clear History	Cancella cronologia
 	Set History Limit…	Imposta limite cronologia…
 	History States	Stati cronologia
 # History panel: the names of undo steps (`every_undo_label_is_translated`).
@@ -4085,6 +4086,7 @@ axis	Both	Entrambi
 @msg	nothing to redo	niente da ripetere
 @msg	nothing to save: the document has no visible art	niente da salvare: il documento non ha grafica visibile
 @msg	nothing to undo	niente da annullare
+@msg	no history to clear	nessuna cronologia da cancellare
 @msg	nothing to warp	niente da alterare
 @msg	nothing to wrap	niente da avvolgere
 @msg	object {0} cannot have children	l'oggetto {0} non può avere elementi figli

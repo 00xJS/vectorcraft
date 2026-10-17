@@ -1341,6 +1341,7 @@ file-filter	Templates	Vorlagen
 	History Options…	Protokolloptionen…
 	Step Backward	Schritt zurück
 	Step Forward	Schritt vorwärts
+	Clear History	Protokoll löschen
 	Set History Limit…	Protokollgrenze festlegen…
 	History States	Protokollschritte
 # History panel: the names of undo steps (`every_undo_label_is_translated`).
@@ -3984,6 +3985,7 @@ theme	Appearance	Erscheinungsbild
 @msg	nothing to redo	nichts zu wiederholen
 @msg	nothing to save: the document has no visible art	nichts zu speichern: Das Dokument enthält keine sichtbare Grafik
 @msg	nothing to undo	nichts rückgängig zu machen
+@msg	no history to clear	kein Protokoll zu löschen
 @msg	nothing to warp	nichts zu verkrümmen
 @msg	nothing to wrap	nichts zu umfließen
 @msg	object {0} cannot have children	Objekt {0} kann keine untergeordneten Objekte haben
