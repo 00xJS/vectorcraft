@@ -45,10 +45,7 @@ mod system {
     }
     #[cfg(windows)]
     pub(crate) fn setup_command(printer: Option<&str>, default_printer: Option<&str>) -> Command {
-        let target = printer
-            .map(str::trim)
-            .filter(|p| !p.is_empty())
-            .or_else(|| default_printer.map(str::trim).filter(|p| !p.is_empty()));
+        let target = printer.map(str::trim).filter(|p| !p.is_empty()).or_else(|| default_printer.map(str::trim).filter(|p| !p.is_empty()));
         if let Some(name) = target {
             let mut cmd = Command::new("rundll32.exe");
             cmd.args(["printui.dll,PrintUIEntry", "/e", "/n", name]);
@@ -64,6 +61,9 @@ mod system {
         {
             let list = printers();
             let default = list.iter().find(|p| p.default).or_else(|| list.first()).map(|p| p.name.as_str());
+            // Only an installed printer's own name reaches the command line: `printer` can come
+            // from a command or MCP, and PrintUIEntry reads options from its arguments.
+            let printer = printer.map(str::trim).filter(|p| list.iter().any(|q| q.name == *p));
             let mut cmd = setup_command(printer, default);
             match cmd.spawn() {
                 Ok(_) => Ok(()),
