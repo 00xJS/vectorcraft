@@ -78,8 +78,8 @@ USAGE:
 
   vectorcraft-cli run [--in FILE] [--cmd ID [--params JSON]]... [--export FILE]... [--scale N]
       Headless batch: open FILE (any readable format) or start a new document, run commands in
-      order, export each FILE in the format its extension picks (see Writable formats). Prints one
-      JSON result per step.
+      order, export each FILE in the format its extension picks (see Writable formats; a .ait FILE
+      is a template, written as file.saveAsTemplate writes it). Prints one JSON result per step.
 
   vectorcraft-cli commands
       Print the command catalogue as JSON.
@@ -88,6 +88,8 @@ USAGE:
       Open IN (any readable format) and export OUT in the format its extension picks (see Writable
       formats). --artboard is 0-based, --range 1-based (\"1-3,5\"); a PDF gets every artboard
       unless one of them is given, EPS the bounds of the art, the other formats the first artboard.
+      A .ait OUT is a template of every artboard, written as file.saveAsTemplate writes it (not with
+      --artboard or --range).
       Live effects are kept, and hidden layers and objects (written hidden in SVG and PSD), with
       SVG's data-* attributes; --outline-text writes SVG text as paths, --decimals sets SVG's coordinate
       precision (1–7, default 3). OUT may not be IN when reading
@@ -259,6 +261,10 @@ fn convert(args: &[String]) -> Result<(), String> {
         }
     }
     let [input, output] = <[String; 2]>::try_from(files).map_err(|_| "convert needs IN and OUT")?;
+    let template = is_template(&output);
+    if template && (artboard.is_some() || range.is_some()) {
+        return Err("a .ait template holds every artboard: --artboard and --range don't apply".into());
+    }
     let mut h = Headless::new();
     let opened = if editing_data {
         let params = json!({"path": input, "editingData": "always"});
@@ -266,16 +272,22 @@ fn convert(args: &[String]) -> Result<(), String> {
     } else {
         h.call("app.open", json!({"path": input})).map_err(|e| format!("open {input}: {e}"))?
     };
-    // A conversion keeps hidden layers and objects, written hidden, where the format can (SVG,
-    // PSD).
-    let mut params = json!({"path": output, "scale": scale, "artboard": artboard, "range": range, "outlineText": outline_text, "hiddenLayers": true, "acknowledgeLoss": replace_lossy});
-    if let Some(decimals) = decimals {
-        params["decimals"] = json!(decimals);
-    }
+    let (command, mut params) = if template {
+        // Save as Template writes every artboard, with the .ai options.
+        ("file.saveAsTemplate", json!({"path": output, "format": "ait", "outlineText": outline_text, "acknowledgeLoss": replace_lossy}))
+    } else {
+        // A conversion keeps hidden layers and objects, written hidden, where the format can (SVG,
+        // PSD).
+        let mut params = json!({"path": output, "scale": scale, "artboard": artboard, "range": range, "outlineText": outline_text, "hiddenLayers": true, "acknowledgeLoss": replace_lossy});
+        if let Some(decimals) = decimals {
+            params["decimals"] = json!(decimals);
+        }
+        ("document.export", params)
+    };
     for (key, value) in legacy {
         params[key] = json!(value);
     }
-    let mut r = h.call("engine.execute", json!({"command": "document.export", "params": params})).map_err(|e| format!("export {output}: {e}"))?;
+    let mut r = h.call("engine.execute", json!({"command": command, "params": params})).map_err(|e| format!("export {output}: {e}"))?;
     // What reading the input left out (a missing linked file, an unsupported filter…) matters as
     // much as what writing the output did.
     if let (Some(w), Some(out)) = (opened.get("warnings").filter(|w| w.as_array().is_some_and(|a| !a.is_empty())), r.as_object_mut()) {
@@ -283,6 +295,11 @@ fn convert(args: &[String]) -> Result<(), String> {
     }
     outln!("{r}");
     Ok(())
+}
+
+/// Is `path` a `.ait` template? `file.saveAsTemplate` writes it; exports don't.
+fn is_template(path: &str) -> bool {
+    vectorcraft_engine::cmd::fileio::format_for_name(path).is_some_and(|f| f.id == "ait")
 }
 
 fn info(args: &[String]) -> Result<(), String> {
@@ -371,7 +388,12 @@ fn run(args: &[String]) -> Result<(), String> {
                 r
             }
             Step::Export(path) => {
-                let r = h.call("app.export", json!({"path": path, "scale": scale})).map_err(|e| format!("export {path}: {e}"))?;
+                let r = if is_template(&path) {
+                    h.call("engine.execute", json!({"command": "file.saveAsTemplate", "params": {"path": path, "format": "ait"}}))
+                } else {
+                    h.call("app.export", json!({"path": path, "scale": scale}))
+                };
+                let r = r.map_err(|e| format!("export {path}: {e}"))?;
                 emit(json!({"step": "export", "result": r}))?;
                 r
             }

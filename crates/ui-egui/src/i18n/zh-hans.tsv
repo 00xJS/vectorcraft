@@ -3655,6 +3655,7 @@ imageTrace	Outline	轮廓
 @msg	this file was saved without PDF compatibility, and its editing data can't be read ({why})	此文件保存时未启用 PDF 兼容性，且无法读取其编辑数据 ({why})
 @msg	the export wrote no file	导出未写入任何文件
 @msg	{_1} files can be opened but not written (see document.formats)	{_1} 文件可以打开，但不能写入 (请参阅 document.formats)
+@msg	{_1} files are written by file.saveAsTemplate	{_1} 文件由 file.saveAsTemplate 写入
 @msg	{path}: no file system here (pass dataBase64 to open; omit the path to get dataBase64)	{path}：此处没有文件系统 (要打开文件，请传入 dataBase64；省略路径可获取 dataBase64)
 @msg	Save writes {_1}, not {_2}: use document.export for other formats	保存会写入 {_1}，而不是 {_2}：其他格式请使用 document.export
 @msg	no changes since the last save	自上次保存以来没有更改

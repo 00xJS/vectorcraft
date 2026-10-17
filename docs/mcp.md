@@ -703,7 +703,10 @@ of `range` (default all; `{name}-{artboard}.ai` when several, listed in the resu
 raster effects are expanded can't be decoded, the result does not show it, and `warnings` carries "an image couldn't
 be decoded and is missing from the picture" once. From the CLI: `vectorcraft-cli convert in.svg
 out.ai --ai-version 7 [--hidden-objects layer|omit|visible] [--transparent-images flatten|omit] [--outline-text]
-[--range R]`.
+[--range R]`. `document.export`, `serialize`, `exportSelection` and `exportForScreens` refuse a `.ait` path or
+`format: "ait"` with an error that names `file.saveAsTemplate`, which writes it. The CLI's `run --export x.ait` and
+`convert in.svg out.ait` write it as `file.saveAsTemplate` does, with every artboard; `convert` refuses `--artboard`
+and `--range` for a `.ait`.
 
 Drive a tool like a mouse:
 

@@ -3902,6 +3902,7 @@ swatch	Bright Violet	ビビッドバイオレット
 @msg	this file was saved without PDF compatibility, and its editing data can't be read ({why})	このファイルは PDF 互換性なしで保存されており、編集データを読み込めません ({why})
 @msg	the export wrote no file	書き出しでファイルが作成されませんでした
 @msg	{_1} files can be opened but not written (see document.formats)	{_1} ファイルは開けますが、保存や書き出しはできません (document.formats を参照してください)
+@msg	{_1} files are written by file.saveAsTemplate	{_1} ファイルは file.saveAsTemplate で保存します
 @msg	{path}: no file system here (pass dataBase64 to open; omit the path to get dataBase64)	{path}: この環境にはファイルシステムがありません (開くには dataBase64 を渡し、dataBase64 を受け取るにはパスを省略してください)
 @msg	Save writes {_1}, not {_2}: use document.export for other formats	保存できる形式は {_1} のみで、{_2} 形式では保存できません: ほかの形式には document.export を使用してください
 @msg	Save writes {_1}, not {_2}: use file.saveAsTemplate to write it	保存できる形式は {_1} のみで、{_2} 形式では保存できません: この形式で保存するには file.saveAsTemplate を使用してください

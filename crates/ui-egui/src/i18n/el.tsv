@@ -4191,6 +4191,7 @@ theme	Appearance	Εμφάνιση
 @msg	{C}: no effect at index {from}	{C}: δεν υπάρχει εφέ στον δείκτη {from}
 @msg	{_1} failed: {e}	η ενέργεια {_1} απέτυχε: {e}
 @msg	{_1} files can be opened but not written (see document.formats)	τα αρχεία {_1} μπορούν να ανοιχτούν αλλά όχι να αποθηκευτούν (δείτε document.formats)
+@msg	{_1} files are written by file.saveAsTemplate	τα αρχεία {_1} αποθηκεύονται με το file.saveAsTemplate
 @msg	{_1} font families available	{_1} διαθέσιμες οικογένειες γραμματοσειρών
 @msg	{_1} is a live effect (Effect › Plug-ins)	το {_1} είναι δυναμικό εφέ (Εφέ › Πρόσθετα)
 @msg	{_1} is already used by {_2}	το {_1} χρησιμοποιείται ήδη από το {_2}

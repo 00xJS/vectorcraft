@@ -4246,6 +4246,7 @@ imageTrace	Outline	Kontur
 @msg	{C}: no effect at index {from}	{C}: tidak ada efek pada indeks {from}
 @msg	{_1} failed: {e}	{_1} gagal: {e}
 @msg	{_1} files can be opened but not written (see document.formats)	berkas {_1} dapat dibuka tetapi tidak dapat ditulis (lihat document.formats)
+@msg	{_1} files are written by file.saveAsTemplate	berkas {_1} ditulis oleh file.saveAsTemplate
 @msg	{_1} font families available	{_1} keluarga font tersedia
 @msg	{_1} is a live effect (Effect › Plug-ins)	{_1} adalah efek langsung (Efek › Plug-in)
 @msg	{_1} is already used by {_2}	{_1} sudah digunakan oleh {_2}

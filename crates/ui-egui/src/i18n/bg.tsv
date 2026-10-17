@@ -4136,6 +4136,7 @@ axis	Both	И двете
 @msg	{C}: no effect at index {from}	{C}: няма ефект на индекс {from}
 @msg	{_1} failed: {e}	{_1} неуспешно: {e}
 @msg	{_1} files can be opened but not written (see document.formats)	{_1} файловете могат да се отварят, но не и да се записват (вижте document.formats)
+@msg	{_1} files are written by file.saveAsTemplate	{_1} файловете се записват с file.saveAsTemplate
 @msg	{_1} font families available	наличности на шрифтови семейства: {_1}
 @msg	{_1} is a live effect (Effect › Plug-ins)	{_1} е динамичен ефект (Ефект › Добавки)
 @msg	{_1} is already used by {_2}	{_1} вече се използва от {_2}

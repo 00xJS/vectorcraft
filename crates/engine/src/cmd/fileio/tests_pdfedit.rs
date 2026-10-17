@@ -232,6 +232,28 @@ fn save_as_template_names_its_file_after_the_template_format() {
     }
 }
 
+/// Exports don't write a `.ait`: each export asked for one, by its path or `format`, answers an
+/// error that names `file.saveAsTemplate`, which writes it, and writes nothing. A format that
+/// nothing writes keeps its own error.
+#[test]
+fn exports_of_an_ait_name_save_as_template() {
+    let mut s = rich();
+    let path = tmp("exported.ait");
+    let _ = std::fs::remove_file(&path);
+    for (cmd, p) in [
+        ("document.export", json!({"path": path})),
+        ("document.export", json!({"format": "ait"})),
+        ("document.serialize", json!({"format": "ait"})),
+        ("document.exportSelection", json!({"path": path})),
+        ("document.exportForScreens", json!({"formats": [{"format": "ait"}]})),
+    ] {
+        let e = s.execute(cmd, &p).unwrap_err().to_string();
+        assert!(e.contains("PDF-compatible .ait template files are written by file.saveAsTemplate"), "{cmd} {p}: {e}");
+    }
+    assert!(!std::path::Path::new(&path).exists(), "nothing written");
+    assert_eq!(writable_format(Some("ps"), None).unwrap_err(), "PostScript files can be opened but not written (see document.formats)");
+}
+
 #[test]
 fn standards_and_screens_leave_the_editing_data_out() {
     let mut s = rich();

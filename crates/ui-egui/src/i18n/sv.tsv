@@ -4139,6 +4139,7 @@ axis	Both	Båda
 @msg	{C}: no effect at index {from}	{C}: ingen effekt vid index {from}
 @msg	{_1} failed: {e}	{_1} misslyckades: {e}
 @msg	{_1} files can be opened but not written (see document.formats)	{_1}-filer kan öppnas men inte skrivas (se document.formats)
+@msg	{_1} files are written by file.saveAsTemplate	{_1}-filer skrivs av file.saveAsTemplate
 @msg	{_1} font families available	{_1} teckensnittsfamiljer tillgängliga
 @msg	{_1} is a live effect (Effect › Plug-ins)	{_1} är en live-effekt (Effekt › Insticksprogram)
 @msg	{_1} is already used by {_2}	{_1} används redan av {_2}
