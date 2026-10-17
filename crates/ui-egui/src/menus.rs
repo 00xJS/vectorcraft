@@ -3776,7 +3776,7 @@ fn effect_menu() -> Vec<Item> {
         Sep,
         Item::Header("Vector Effects"),
     ];
-    // Submenus (and Crop Marks, an item of its own) in the reference app's order.
+    // Submenus (and Crop Marks and Rasterize…, items of their own) in the reference app's order.
     let order = [
         "3D and Materials",
         "Color Adjustments",
@@ -3785,6 +3785,7 @@ fn effect_menu() -> Vec<Item> {
         "Distort & Transform",
         "Path",
         "Pathfinder",
+        "Rasterize…",
         "Stylize",
         "SVG Filters",
         "Warp",
@@ -3795,21 +3796,18 @@ fn effect_menu() -> Vec<Item> {
     // Glowing Edges).
     let in_vector_menu =
         |e: &vectorcraft_effects::EffectInfo| order.iter().any(|s| e.menu == ["Effect", *s]) && !vectorcraft_effects::PIXEL_EFFECTS.contains(&e.id);
+    let item = |e: &vectorcraft_effects::EffectInfo| match e.defaults.as_object().is_some_and(|o| o.is_empty()) {
+        // No options (Effect → Pathfinder, Crop Marks): apply directly, like Illustrator.
+        true => Item::Cmd(e.label, "effect.apply", json!({ "effect": e.id })),
+        false => Item::Cmd(e.label, "effect.dialog", json!({ "effect": e.id })),
+    };
     // The effects whose catalogue menu path is `path`.
     // `vector` picks the ones for the vector submenu or the ones for the raster submenu.
-    let items_at = |path: &[&str], vector: bool| -> Vec<Item> {
-        cat.iter()
-            .filter(|e| e.menu == path && in_vector_menu(e) == vector)
-            .map(|e| match e.defaults.as_object().is_some_and(|o| o.is_empty()) {
-                // No options (Effect → Pathfinder): apply directly, like Illustrator.
-                true => Item::Cmd(e.label, "effect.apply", json!({ "effect": e.id })),
-                false => Item::Cmd(e.label, "effect.dialog", json!({ "effect": e.id })),
-            })
-            .collect()
-    };
+    let items_at =
+        |path: &[&str], vector: bool| -> Vec<Item> { cat.iter().filter(|e| e.menu == path && in_vector_menu(e) == vector).map(item).collect() };
     for sub_name in order {
         if let Some(e) = cat.iter().find(|e| top_level(e) && e.label == sub_name) {
-            out.push(Item::Cmd(e.label, "effect.apply", json!({ "effect": e.id })));
+            out.push(item(e));
             continue;
         }
         let items = items_at(&["Effect", sub_name], true);

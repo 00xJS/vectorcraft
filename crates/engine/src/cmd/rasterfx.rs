@@ -6,11 +6,13 @@
 //! model, background, anti-aliasing, room around the art). Shadows and outer glows only add the
 //! effect: the image (with the object's own area knocked out) goes under the untouched vector
 //! object. Effects that change the object itself (inner glow, feather, Gaussian blur) replace it
-//! with the image. Expand Appearance makes its images with the same helpers.
+//! with the image. An object whose only raster effect is a Rasterize of its own is replaced with
+//! the image Object › Rasterize makes with that effect's options. Expand Appearance makes its
+//! images with the same helpers.
 //!
 //! SVG has filters for shadows, glows, blurs and feathers but none for the Photoshop-style
-//! effects (Radial Blur, Unsharp Mask…): SVG export turns only the objects carrying one of those
-//! into images the same way ([`flatten_pixel_effects`]).
+//! effects (Radial Blur, Unsharp Mask…) or Rasterize: SVG export turns only the objects carrying
+//! one of those into images the same way ([`flatten_pixel_effects`]).
 
 use std::sync::Arc;
 
@@ -289,11 +291,15 @@ fn below_images(d: &mut Document, n: &Node) -> Option<Vec<Node>> {
 }
 
 /// The raster effects of `n` (its own, its fills' and strokes') as an embedded image of `d`
-/// rendered at the document's raster effects resolution, without `n`'s transparency (that stays
-/// on the object). With `below` (they all paint below it: shadows and outer glows) the image holds
-/// just them; with `members` too, a group's or layer's image leaves out its members' raster
-/// effects (they get images of their own).
+/// rendered at the document's raster effects resolution, or at a Rasterize effect's finer one (an
+/// object whose only raster effect is its own Rasterize gets [`rasterize_effect_image`]'s image),
+/// without `n`'s transparency (that stays on the object). With `below` (they all paint below it:
+/// shadows and outer glows) the image holds just them; with `members` too, a group's or layer's
+/// image leaves out its members' raster effects (they get images of their own).
 pub(crate) fn raster_image(d: &mut Document, n: &Node, below: bool, members: bool) -> Option<Node> {
+    if !below && let Some(image) = rasterize_effect_image(d, n) {
+        return Some(image);
+    }
     let mut whole = n.clone();
     (whole.opacity, whole.blend) = (1.0, Default::default());
     whole.extras_mut().mask = None;
@@ -307,8 +313,35 @@ pub(crate) fn raster_image(d: &mut Document, n: &Node, below: bool, members: boo
         strip_raster(&mut b, false);
         b
     });
-    let scale = effects_scale(d);
+    // A Rasterize effect at a finer resolution than the document's is rendered at its own.
+    let scale = raster_fx(n)
+        .iter()
+        .filter_map(|fx| if let RasterFx::Rasterize(r) = fx { r.ppi } else { None })
+        .fold(effects_scale(d), |s, ppi| s.max(ppi / 72.0));
     effect_image(d, &whole, bare.as_ref(), scale)
+}
+
+/// The image Object › Rasterize makes of `n` with the options of `n`'s Effect › Rasterize, when
+/// that is its only visible raster effect and is its own (not a fill's or a stroke's): made of `n`
+/// without that effect and without its transparency, which stays on the object. `None` otherwise,
+/// or when the image can't be made.
+fn rasterize_effect_image(d: &mut Document, n: &Node) -> Option<Node> {
+    let [RasterFx::Rasterize(r)] = raster_fx(n)[..] else { return None };
+    let at = n.appearance.effects.iter().position(|e| e.visible && e.id == effects::RASTERIZE)?;
+    let p = json!({
+        "ppi": r.ppi.unwrap_or(d.raster_effects_ppi),
+        "colorModel": r.color_model.id(),
+        "background": if r.white { "white" } else { "transparent" },
+        "antiAlias": if !r.anti_alias { "none" } else if r.hinted { "type" } else { "art" },
+        "clippingMask": r.clipping_mask,
+        "addAround": r.add_around,
+    });
+    let mut whole = n.clone();
+    whole.appearance.effects.remove(at);
+    (whole.opacity, whole.blend) = (1.0, Default::default());
+    whole.extras_mut().mask = None;
+    let image = super::menucmds::rasterize_art(d, vec![whole], &p, "object.rasterize").ok()?;
+    Some(image.into_node(d))
 }
 
 /// `v` (an object without its raster effects) replaced by `image` of the object with them: the
@@ -409,7 +442,8 @@ fn placed_symbol(d: &Document, n: &Node) -> Option<Node> {
 enum Which {
     /// Every raster effect (PDF).
     All,
-    /// Objects with a Photoshop-style effect, which SVG can't draw (with all their raster effects).
+    /// Objects with a Photoshop-style effect or Rasterize, which SVG can't draw (with all their
+    /// raster effects).
     Pixel,
 }
 
@@ -418,7 +452,7 @@ fn imaged(n: &Node, which: Which) -> bool {
     let fx = raster_fx(n);
     match which {
         Which::All => !fx.is_empty(),
-        Which::Pixel => fx.iter().any(|f| matches!(f, RasterFx::Pixel(_))),
+        Which::Pixel => fx.iter().any(|f| matches!(f, RasterFx::Pixel(_) | RasterFx::Rasterize(_))),
     }
 }
 
@@ -519,8 +553,8 @@ pub fn flatten_raster_effects(doc: &Document) -> Option<Document> {
 }
 
 /// A copy of `doc` in which the objects with Photoshop-style raster effects (Radial Blur, Unsharp
-/// Mask…) are images as [`flatten_raster_effects`] makes them (SVG export: its filters draw the
-/// other raster effects live), or `None` when there are none.
+/// Mask…) or Rasterize are images as [`flatten_raster_effects`] makes them (SVG export: its
+/// filters draw the other raster effects live), or `None` when there are none.
 pub fn flatten_pixel_effects(doc: &Document) -> Option<Document> {
     flatten(doc, &mut FlattenReport::new(Which::Pixel, doc))
 }

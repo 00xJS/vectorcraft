@@ -1655,7 +1655,7 @@ impl Writer<'_> {
         let region = bounds.map(|b| self.xf.transform_rect_bbox(b).inflate(reach, reach));
         let mut opened = 0;
         for f in fx.iter().rev() {
-            if matches!(f, RasterFx::Pixel(_)) {
+            if matches!(f, RasterFx::Pixel(_) | RasterFx::Rasterize(_)) {
                 self.warn("SVG has no pixel effects such as Radial Blur, Smart Blur or Unsharp Mask: they are left out");
                 continue;
             }
@@ -1716,7 +1716,7 @@ impl Writer<'_> {
                     sd(*radius)
                 ),
                 RasterFx::GaussianBlur { radius } => format!("<feGaussianBlur in=\"SourceGraphic\" stdDeviation=\"{}\"/>", sd(*radius)),
-                RasterFx::Pixel(_) => continue,
+                RasterFx::Pixel(_) | RasterFx::Rasterize(_) => continue,
             };
             // Filters composite normally: a shadow's or glow's other blend mode is recorded for import.
             let mode = match f {

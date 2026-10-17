@@ -11,7 +11,7 @@ Part of [target-app-parity.md](target-app-parity.md); open work is in [gaps.md](
 
 | Group | Illustrator | VectorCraft | % | Remaining (h) |
 |---|---:|---:|---:|---:|
-| Illustrator effects (vector and stylize) | 50 | 45 | 90% | 6–10 |
+| Illustrator effects (vector and stylize) | 50 | 46 | 92% | 6–10 |
 | Photoshop effects (raster, Effect Gallery) | 57 | 33 | 58% | 21–35 |
 | 3D and Materials | 4 (+3 Classic) | 4 (initial: Extrude & Bevel, Revolve, Inflate, Rotate) | ~25% | 25–45 |
 | Beyond Illustrator: Effect › Color Adjustments (6), effect plug-ins (WebAssembly) | — | 6 + plug-ins | — | — |
@@ -25,7 +25,7 @@ Part of [target-app-parity.md](target-app-parity.md); open work is in [gaps.md](
 | Distort & Transform | Free Distort, Pucker & Bloat, Roughen, Transform, Tweak, Twist, Zig Zag | 7/7 | Free Distort's dialog has a handle on each corner of the object's bounds, moved by dragging or with the arrow keys; Transform's Transform Objects/Patterns and Scale Strokes & Effects options, invisible Reflect checkboxes (#885); Zig Zag's ridges are evenly spaced along each segment (#1558), and Smooth points make a continuous wave whose peaks and valleys have handles along the path (#2343); Roughen with Smooth keeps turn-backs smooth instead of cusps that draw as spikes (#1646) |
 | Path | Offset Path, Outline Object, Outline Stroke | 3/3 | With Use Preview Bounds on, Align, Distribute and the Transform panel still measure type that carries Outline Object by its layout box (preview bounds leave out effects) |
 | Pathfinder | Add, Intersect, Exclude, Subtract, Minus Back, Divide, Trim, Merge, Crop, Outline, Hard Mix, Soft Mix, Trap | 10/13 | Hard Mix, Soft Mix, Trap |
-| Rasterize | Rasterize… (as a live effect) | 0/1 | the live effect (Object › Rasterize exists) |
+| Rasterize | Rasterize… (as a live effect) | 1/1 | — |
 | Stylize | Drop Shadow, Feather, Inner Glow, Outer Glow, Round Corners, Scribble | 6/6 | Scribble Options' Settings presets |
 | SVG Filters | Apply SVG Filter… and the filter list | 0/1 | the whole submenu (SVG filters on import round-trip already) |
 | Warp | Arc, Arc Lower, Arc Upper, Arch, Bulge, Shell Lower, Shell Upper, Flag, Wave, Fish, Rise, Fisheye, Inflate, Squeeze, Twist | 15/15 | warp point editing in envelopes; Arc is a circular arc in the object's own proportions (#1578) |

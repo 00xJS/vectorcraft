@@ -68,6 +68,18 @@ fn effect_menu_lists_outline_object_between_offset_path_and_outline_stroke() {
     );
 }
 
+/// Effect › Rasterize…, an item of its own between Pathfinder and Stylize, opens its options.
+#[test]
+fn effect_menu_lists_rasterize_between_pathfinder_and_stylize() {
+    let app = app();
+    let entries = menus::menu_entries(&app);
+    let at = |path: &[&str], label: Option<&str>| entries.iter().position(|e| e.path == path && label.is_none_or(|l| e.label == l)).unwrap();
+    let rasterize = at(&["Effect"], Some("Rasterize…"));
+    assert!(at(&["Effect", "Pathfinder"], None) < rasterize && rasterize < at(&["Effect", "Stylize"], None));
+    let e = &entries[rasterize];
+    assert_eq!((e.command.as_deref(), e.params["effect"].as_str()), (Some("effect.dialog"), Some("rasterize")));
+}
+
 #[test]
 fn effect_menu_lists_the_artistic_filters_before_blur() {
     let app = app();

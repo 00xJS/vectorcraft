@@ -59,7 +59,7 @@ pub fn specs() -> Vec<CommandSpec> {
             "Expand Appearance",
             ["Object"],
             None,
-            "{ids?|id?: [..], target?} turn each object's appearance into objects: every fill and stroke becomes an object of its own (strokes outlined, brushed strokes their brush art) grouped in paint order under the object's id and transparency, geometry effects are baked, raster effects become an embedded image (shadows and outer glows below the art; blur, feather and inner glow replace it), type with effects or fills of its own is outlined; Crop Marks become a group of the object and its marks; a group's or layer's own fills and strokes become objects among its members, which are expanded too. Hidden fills, strokes and effects are dropped. Enabled when a selected or targeted object's appearance isn't basic (`ids` then pick which objects) → {ids, warning? (an image in the art couldn't be decoded, as object.rasterize says)}",
+            "{ids?|id?: [..], target?} turn each object's appearance into objects: every fill and stroke becomes an object of its own (strokes outlined, brushed strokes their brush art) grouped in paint order under the object's id and transparency, geometry effects are baked, raster effects become an embedded image (shadows and outer glows below the art; blur, feather and inner glow replace it; an object whose only raster effect is its own Rasterize becomes the image object.rasterize makes with the effect's options), type with effects or fills of its own is outlined; Crop Marks become a group of the object and its marks; a group's or layer's own fills and strokes become objects among its members, which are expanded too. Hidden fills, strokes and effects are dropped. Enabled when a selected or targeted object's appearance isn't basic (`ids` then pick which objects) → {ids, warning? (an image in the art couldn't be decoded, as object.rasterize says)}",
             can_expand,
             expand_appearance
         ),
@@ -426,9 +426,10 @@ fn is_container(n: &Node) -> bool {
 }
 
 /// The raster effects of `n` (its own, its fills' and strokes') as an embedded image rendered at
-/// the document's raster effects resolution, with whether they all paint below it (shadows and
-/// outer glows: the image then holds just them). A group's or layer's image leaves out its
-/// members' raster effects, which are expanded with them. `None` when it has none.
+/// the document's raster effects resolution or a Rasterize effect's finer one, with whether they
+/// all paint below it (shadows and outer glows: the image then holds just them). A group's or
+/// layer's image leaves out its members' raster effects, which are expanded with them. `None`
+/// when it has none.
 fn raster_image(d: &mut Document, n: &Node) -> Option<(Node, bool)> {
     let fx = rasterfx::raster_fx(n);
     if fx.is_empty() {
