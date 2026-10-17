@@ -5033,3 +5033,10 @@ swatch	Bright Violet	Felviolet
 	Movie Clip	Filmclip
 @msg	name is empty	naam is leeg
 @msg	no symbol named `{n}`	geen symbool met de naam `{n}`
+	Remove Color Profile…	Kleurprofiel verwijderen…
+	Color wheel	Kleurenwiel
+	First Artboard	Eerste tekenbord
+	Last Artboard	Laatste tekenbord
+	Next Artboard	Volgende tekenbord
+	Previous Artboard	Vorige tekenbord
+	Step up or down	Stapsgewijs verhogen of verlagen

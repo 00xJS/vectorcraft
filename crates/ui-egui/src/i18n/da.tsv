@@ -5033,3 +5033,10 @@ swatch	Bright Violet	Kraftig violet
 	Movie Clip	Filmklip
 @msg	name is empty	navnet er tomt
 @msg	no symbol named `{n}`	intet symbol med navnet `{n}`
+	Remove Color Profile…	Fjern farveprofil…
+	Color wheel	Farvehjul
+	First Artboard	Første kunstplade
+	Last Artboard	Sidste kunstplade
+	Next Artboard	Næste kunstplade
+	Previous Artboard	Forrige kunstplade
+	Step up or down	Trinvis op eller ned

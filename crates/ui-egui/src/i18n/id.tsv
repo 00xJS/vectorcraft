@@ -5033,3 +5033,10 @@ swatch	Bright Violet	Violet cerah
 	Movie Clip	Klip film
 @msg	name is empty	nama kosong
 @msg	no symbol named `{n}`	tidak ada simbol bernama `{n}`
+	Remove Color Profile…	Hapus profil warna…
+	Color wheel	Roda warna
+	First Artboard	Artboard pertama
+	Last Artboard	Artboard terakhir
+	Next Artboard	Artboard berikutnya
+	Previous Artboard	Artboard sebelumnya
+	Step up or down	Naikkan atau turunkan bertahap
