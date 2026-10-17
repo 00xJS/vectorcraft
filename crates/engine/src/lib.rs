@@ -14,6 +14,7 @@ pub mod journal;
 pub mod link_watch;
 pub mod namematch;
 pub mod steps;
+pub mod store;
 mod tooling;
 pub mod units;
 
@@ -1176,6 +1177,12 @@ pub struct Session {
     pub style_libraries: cmd::stylelib::Libraries,
     /// The Libraries panel's libraries of graphics, colours and text styles (`library.*`).
     pub libraries: cmd::library::Libraries,
+    /// Where the saved PDF presets are kept, one file each; `None`: only for the session
+    /// ([`Session::attach_pdf_preset_store`]).
+    pdf_preset_dir: Option<std::path::PathBuf>,
+    /// Where the ICC profiles `color.loadProfile` loads are kept; `None`: only for the process
+    /// ([`Session::attach_profile_store`]).
+    profile_dir: Option<std::path::PathBuf>,
     /// URLs recently given in the Attributes panel (`attributes.set {url}`), newest first; not saved.
     pub recent_urls: Vec<String>,
     /// The language the UI is drawn in (a language code, never `auto`), set by the UI each frame;
@@ -1268,6 +1275,8 @@ impl Session {
             freeform_point: None,
             style_libraries: Default::default(),
             libraries: Default::default(),
+            pdf_preset_dir: None,
+            profile_dir: None,
             recent_urls: vec![],
             ui_language: None,
             journal_note: Default::default(),
@@ -2129,6 +2138,8 @@ mod tests_shortcutset;
 mod tests_slices;
 #[cfg(test)]
 mod tests_smartguides;
+#[cfg(test)]
+mod tests_store;
 #[cfg(test)]
 mod tests_strokegeom;
 #[cfg(test)]
