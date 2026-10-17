@@ -26,6 +26,15 @@ so Undo also restores the panel values before its next frame. View can show the 
 Use **Expand** when finished to turn the result into ordinary editable vector objects;
 after expanding, the tracing settings are no longer available. **Release** restores the source.
 
+**Large images.** An image of more than 1500 pixels on a side is traced as any other, only more
+slowly, and the trace says so: `imageTrace.make` returns the note in `warnings` and the status bar
+shows it (the [results optimization](https://helpx.adobe.com/illustrator/using/image-trace-results-optimization.html)
+page describes the same warning for images over 1500 px). An image of more than 64 megapixels (up to
+192) is traced from a copy scaled down to 64 megapixels, and the trace says that too. A trace that would
+make more than 8,000,000 anchor points (2,000,000 on the web) is refused to protect memory, with advice:
+raise Noise, lower Paths or Colors, or pick a lower-fidelity preset. A trace keeps
+about 90 bytes an anchor; a 4000 × 3000 photo at High Fidelity Photo makes about 1.9 million.
+
 These controls use VectorCraft's existing tracing algorithm. Parameter effects follow its
 implementation; they do not claim pixel-identical results with another application.
 The terminology and general control behavior are described in the

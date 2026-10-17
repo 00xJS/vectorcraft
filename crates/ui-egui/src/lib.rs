@@ -751,6 +751,12 @@ impl VectorcraftApp {
         match &r {
             Err(e) => self.ui.status = e.clone(),
             Ok(v) => {
+                // Image Trace's notes (a large image traces more slowly, or was scaled down).
+                if id.starts_with("imageTrace.make")
+                    && let Some(w) = v["warnings"].as_array().and_then(|w| w.first()).and_then(Value::as_str)
+                {
+                    self.ui.status = w.to_string();
+                }
                 if id == "file.new" {
                     self.ui.status.clear();
                     // New Document's Pixel preview mode (Overprint Preview is the engine's).
