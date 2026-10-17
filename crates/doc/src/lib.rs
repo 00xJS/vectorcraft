@@ -695,6 +695,10 @@ pub struct Document {
     /// save time only, so changing the view never marks the document modified.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub last_view: Option<SavedView>,
+    /// View → Show Transparency Grid when the document was saved. Written at save time only,
+    /// like [`Document::last_view`]; older files open with the grid hidden.
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub transparency_grid: bool,
     /// The layers, sublayers and groups open in the Layers panel when the document was saved; they
     /// reopen that way. `None`: the default, only the top-level layers open. Written at save time
     /// only, like [`Document::last_view`].
@@ -813,6 +817,7 @@ impl Document {
             metadata: DocMetadata::default(),
             raster_effects: RasterEffectsSettings::default(),
             last_view: None,
+            transparency_grid: false,
             layers_open: None,
             color_profiles: ColorProfiles::default(),
             export_settings: Default::default(),
