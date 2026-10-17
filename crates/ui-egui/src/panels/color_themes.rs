@@ -164,7 +164,10 @@ fn create(app: &mut VectorcraftApp, ui: &mut Ui) {
     if let Some(k) = w.pressed {
         d.sel = k;
     }
-    if let Some((k, hsb)) = w.moved {
+    if let Some((k, set)) = w.moved
+        && let Some(cur) = d.colors.get(k).map(Color::to_hsb)
+    {
+        let hsb = [0, 1, 2].map(|n| set[n].unwrap_or(cur[n]));
         move_on_wheel(&mut d.colors, k, hsb, d.rule.is_some());
     }
     ui.add_space(8.0);
