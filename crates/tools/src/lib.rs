@@ -353,6 +353,12 @@ impl ToolContext<'_> {
     pub fn tol(&self, px: f64) -> f64 {
         px / self.zoom.max(1e-9)
     }
+    /// How far the view is turned (Rotate View), in degrees clockwise on screen; 0 without a
+    /// window.
+    pub fn view_angle(&self) -> f64 {
+        // `right` is one screen pixel to the right, in document units.
+        self.screen.map(|s| (-s.right.y).atan2(s.right.x).to_degrees()).filter(|a| a.is_finite()).unwrap_or(0.0)
+    }
     /// How near (document units) a smart guide target pulls: Smart Guides → Snapping Tolerance.
     pub fn snap_tol(&self) -> f64 {
         self.tol(self.snapping_tolerance)
@@ -580,6 +586,31 @@ impl Cursor {
         // y points down the page: atan2(x, -y) is 0 straight up and grows clockwise.
         let octant = (d.x.atan2(-d.y) / std::f64::consts::FRAC_PI_4).round() as i64;
         Cursor::RotateToward(octant.rem_euclid(8) as u8)
+    }
+
+    /// [`Cursor::rotate_about`] in a view turned `view` degrees clockwise
+    /// ([`ToolContext::view_angle`]): the pointer's side of `center` as it shows on screen. The
+    /// pointer's direction turns with the view before it rounds to the nearest 45°.
+    pub fn rotate_about_in_view(center: Point, p: Point, view: f64) -> Self {
+        let (sn, cs) = if view.is_finite() { view.to_radians().sin_cos() } else { (0.0, 1.0) };
+        let d = p - center;
+        // y points down the page, so this turns `d` clockwise on the page.
+        Cursor::rotate_about(center, center + Vec2::new(d.x * cs - d.y * sn, d.x * sn + d.y * cs))
+    }
+
+    /// The cursor as it shows in a view turned `deg` degrees clockwise (Rotate View): the resize
+    /// cursors and [`Cursor::RotateToward`] turn with the view to the nearest 45°, and every other
+    /// cursor stays as it is.
+    pub fn turned(self, deg: f64) -> Self {
+        const RESIZE: [Cursor; 4] = [Cursor::ResizeH, Cursor::ResizeNeSw, Cursor::ResizeV, Cursor::ResizeNwSe];
+        let k = if deg.is_finite() { (deg / 45.0).round() as i64 } else { 0 };
+        match self {
+            Cursor::RotateToward(o) => Cursor::RotateToward((i64::from(o) + k).rem_euclid(8) as u8),
+            c => match RESIZE.iter().position(|r| *r == c) {
+                Some(i) => RESIZE.get((i as i64 - k).rem_euclid(4) as usize).copied().unwrap_or(c),
+                None => c,
+            },
+        }
     }
 
     /// General › Use Precise Cursors: the drawing tools' pointers (the Pen's in every state, the
@@ -832,6 +863,13 @@ pub(crate) mod testutil {
 
     pub fn paint() -> PaintDefaults {
         PaintDefaults::default()
+    }
+
+    /// An 800 × 600 window on a view at 100% turned `deg` degrees clockwise (Rotate View): at 90°
+    /// one pixel right on screen is one point up the page.
+    pub fn turned_view(deg: f64) -> Option<ScreenFrame> {
+        let (sn, cs) = deg.to_radians().sin_cos();
+        Some(ScreenFrame { origin: Point::ORIGIN, right: Vec2::new(cs, -sn), down: Vec2::new(sn, cs), size: (800.0, 600.0) })
     }
 
     pub fn cx<'a>(d: &'a Document, s: &'a Selection, p: &'a PaintDefaults) -> ToolContext<'a> {
