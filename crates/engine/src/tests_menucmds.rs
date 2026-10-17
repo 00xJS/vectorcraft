@@ -1860,6 +1860,139 @@ fn locked_guides_lock_guide_paths() {
     assert_eq!(selected(&s), vec![b]);
 }
 
+/// A rectangle at (`x`, 0), 10 pt wide, made into a guide; nothing is selected after.
+fn guide_path(s: &mut Session, x: f64) -> NodeId {
+    let g = rect(s, x, 0.0, 10.0, 10.0);
+    sel(s, &[g]);
+    s.execute("view.guides.make", &json!({})).unwrap();
+    g
+}
+
+/// Exit Isolation Mode selects the isolated art, except a guide path while Lock Guides is on, so
+/// a move after it leaves the guide where it is.
+#[test]
+fn exit_isolation_leaves_a_locked_guide_path_deselected() {
+    let mut s = session();
+    let g = guide_path(&mut s, 0.0);
+    s.execute("view.guides.lock", &json!({"locked": true})).unwrap();
+    s.execute("object.isolate", &json!({"id": g.0})).unwrap();
+    s.execute("object.exitIsolation", &json!({})).unwrap();
+    assert!(selected(&s).is_empty());
+    let _ = s.execute("object.move", &json!({"dx": 10, "dy": 0}));
+    assert_eq!(bounds(&s, g).x0, 0.0);
+    // Lock Guides off: the guide is selected.
+    s.execute("view.guides.lock", &json!({"locked": false})).unwrap();
+    s.execute("object.isolate", &json!({"id": g.0})).unwrap();
+    s.execute("object.exitIsolation", &json!({})).unwrap();
+    assert_eq!(selected(&s), vec![g]);
+}
+
+/// Undo and Redo bring back a selection without the guides, ruler guides or guide paths, that
+/// Lock Guides has locked since, so a move after them leaves the guides where they are.
+#[test]
+fn undo_and_redo_leave_locked_guides_deselected() {
+    let mut s = session();
+    let g = guide_path(&mut s, 0.0);
+    s.execute("guide.add", &json!({"vertical": true, "pos": 100})).unwrap();
+    let select_both = |s: &mut Session| {
+        sel(s, &[g]);
+        s.execute("guide.select", &json!({"indexes": [0], "toggle": true})).unwrap();
+    };
+    select_both(&mut s);
+    s.execute("object.move", &json!({"dx": 10, "dy": 0})).unwrap();
+    assert_eq!((bounds(&s, g).x0, guides(&s)), (10.0, vec![(true, 110.0)]));
+    s.execute("view.guides.lock", &json!({"locked": true})).unwrap();
+    s.execute("edit.undo", &json!({})).unwrap();
+    assert_eq!((selected(&s), selected_guides(&s)), (vec![], vec![]), "after Undo");
+    let _ = s.execute("object.move", &json!({"dx": 10, "dy": 0}));
+    assert_eq!((bounds(&s, g).x0, guides(&s)), (0.0, vec![(true, 100.0)]));
+    // Undone with both selected, redone once they are locked.
+    s.execute("view.guides.lock", &json!({"locked": false})).unwrap();
+    select_both(&mut s);
+    s.execute("object.move", &json!({"dx": 10, "dy": 0})).unwrap();
+    s.execute("edit.undo", &json!({})).unwrap();
+    s.execute("view.guides.lock", &json!({"locked": true})).unwrap();
+    s.execute("edit.redo", &json!({})).unwrap();
+    assert_eq!((selected(&s), selected_guides(&s)), (vec![], vec![]), "after Redo");
+    let _ = s.execute("object.move", &json!({"dx": 10, "dy": 0}));
+    assert_eq!((bounds(&s, g).x0, guides(&s)), (10.0, vec![(true, 110.0)]));
+}
+
+/// Unlock All, Show All and Paste select the art they unlock, show or paste, except guide paths
+/// while Lock Guides is on.
+#[test]
+fn unlock_all_show_all_and_paste_leave_locked_guide_paths_deselected() {
+    let mut s = session();
+    let (g, h) = (guide_path(&mut s, 0.0), guide_path(&mut s, 20.0));
+    sel(&mut s, &[g]);
+    s.execute("edit.copy", &json!({})).unwrap();
+    s.execute("object.lock", &json!({})).unwrap();
+    sel(&mut s, &[h]);
+    s.execute("object.hide", &json!({})).unwrap();
+    s.execute("view.guides.lock", &json!({"locked": true})).unwrap();
+    assert_eq!(s.execute("object.unlockAll", &json!({})).unwrap()["count"], 1);
+    assert!(selected(&s).is_empty(), "after Unlock All");
+    assert_eq!(s.execute("object.showAll", &json!({})).unwrap()["count"], 1);
+    assert!(selected(&s).is_empty(), "after Show All");
+    s.execute("edit.paste", &json!({})).unwrap();
+    assert!(selected(&s).is_empty(), "after Paste");
+    // Lock Guides off: the pasted guide is selected.
+    s.execute("view.guides.lock", &json!({"locked": false})).unwrap();
+    s.execute("edit.paste", &json!({})).unwrap();
+    let [copy] = selected(&s)[..] else { panic!("the pasted guide is selected") };
+    assert!(crate::is_guide_path(&s.doc().unwrap().doc, copy));
+}
+
+/// Lock Guides deselects the guides of every open document, not only the active one's.
+#[test]
+fn lock_guides_deselects_the_guides_of_every_open_document() {
+    let mut s = session();
+    let g = guide_path(&mut s, 0.0);
+    s.execute("guide.add", &json!({"vertical": true, "pos": 100})).unwrap();
+    sel(&mut s, &[g]);
+    s.execute("guide.select", &json!({"indexes": [0], "toggle": true})).unwrap();
+    s.execute("file.new", &json!({"width": 800, "height": 600})).unwrap();
+    s.execute("view.guides.lock", &json!({"locked": true})).unwrap();
+    s.execute("document.activate", &json!({"index": 0})).unwrap();
+    assert_eq!((selected(&s), selected_guides(&s)), (vec![], vec![]));
+}
+
+/// A failed batch and a canceled undo group bring back the selection from before them, without
+/// the guide paths that Lock Guides locked inside them.
+#[test]
+fn a_failed_batch_and_a_canceled_undo_group_leave_locked_guides_deselected() {
+    let mut s = session();
+    let g = guide_path(&mut s, 0.0);
+    sel(&mut s, &[g]);
+    let steps = json!([{"command": "view.guides.lock", "params": {"locked": true}}, {"command": "object.isolate", "params": {}}]);
+    assert!(s.execute("command.batch", &json!({"commands": steps})).is_err());
+    assert!(s.guides_locked());
+    assert!(selected(&s).is_empty(), "after the failed batch");
+    s.execute("view.guides.lock", &json!({"locked": false})).unwrap();
+    sel(&mut s, &[g]);
+    s.execute("edit.undoGroup.begin", &json!({})).unwrap();
+    s.execute("object.move", &json!({"dx": 10, "dy": 0})).unwrap();
+    s.execute("view.guides.lock", &json!({"locked": true})).unwrap();
+    s.execute("edit.undoGroup.end", &json!({"cancel": true})).unwrap();
+    assert_eq!(bounds(&s, g).x0, 0.0);
+    assert!(selected(&s).is_empty(), "after the canceled undo group");
+}
+
+/// Canceling a drag or a dialog's preview brings back the selection from before it, without the
+/// guide paths that Lock Guides locked during it.
+#[test]
+fn a_canceled_interaction_leaves_locked_guides_deselected() {
+    let mut s = session();
+    let g = guide_path(&mut s, 0.0);
+    sel(&mut s, &[g]);
+    s.begin_interaction("Move").unwrap();
+    s.preview("object.move", &json!({"dx": 10, "dy": 0})).unwrap();
+    s.execute("view.guides.lock", &json!({"locked": true})).unwrap();
+    s.cancel_interaction().unwrap();
+    assert_eq!(bounds(&s, g).x0, 0.0);
+    assert!(selected(&s).is_empty());
+}
+
 fn guides(s: &Session) -> Vec<(bool, f64)> {
     s.doc().unwrap().doc.guides.iter().map(|g| (g.vertical, g.pos)).collect()
 }
