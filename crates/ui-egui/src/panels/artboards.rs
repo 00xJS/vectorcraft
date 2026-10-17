@@ -119,6 +119,23 @@ fn duplicate(app: &mut VectorcraftApp, i: usize) {
     }
 }
 
+/// Duplicate the selected artboards ([`picked`]) in one undo step (`artboard.duplicate {indices}`)
+/// and select the copies, the active artboard's copy active.
+pub(crate) fn duplicate_picked(app: &mut VectorcraftApp) {
+    let n = app.session.active().map_or(0, |d| d.doc.artboards.len());
+    let all = picked(app, n);
+    let active = selected(app, n);
+    let Ok(r) = app.run("artboard.duplicate", json!({ "indices": all })) else { return };
+    let copies: Vec<usize> =
+        r["indices"].as_array().into_iter().flatten().filter_map(Value::as_u64).filter_map(|i| usize::try_from(i).ok()).collect();
+    let Some(first) = all.iter().position(|i| *i == active).and_then(|k| copies.get(k)).or(copies.first()).copied() else { return };
+    select(app, first);
+    if app.session.tool_id() == "artboard" {
+        let rest = copies.iter().copied().filter(|c| *c != first);
+        app.session.set_tool_option("selected", &json!(std::iter::once(first).chain(rest).collect::<Vec<_>>()));
+    }
+}
+
 pub fn show(app: &mut VectorcraftApp, ui: &mut Ui) {
     let t = Tokens::get(ui.ctx());
     let abs: Vec<String> = app.session.active().map(|d| d.doc.artboards.iter().map(|a| a.name.clone()).collect()).unwrap_or_default();
@@ -241,7 +258,7 @@ pub fn menu(app: &mut VectorcraftApp, ui: &mut Ui) {
         app.run("artboard.new", json!({})).ok();
     }
     if menu_item(ui, tl!("Duplicate Artboards"), n > 0, false) {
-        duplicate(app, sel);
+        duplicate_picked(app);
     }
     if menu_item(ui, tl!("Delete Artboards"), n > 1, false) {
         delete_selected(app);
@@ -547,6 +564,48 @@ mod tests {
         let d = app.ui.dialog.take().unwrap();
         assert_eq!((d.kind.as_str(), d.f64("index", 9.0), d.f64("x", 0.0)), ("artboardOptions", 1.0, 400.0));
         assert_eq!(app.session.tool_id(), tool);
+    }
+
+    /// With two artboards selected with the Artboard tool, the panel menu's Duplicate Artboards
+    /// copies both, with their art, in one undo step, and the tool then selects the copies, the
+    /// active artboard's copy active.
+    #[test]
+    fn the_panel_menus_duplicate_artboards_copies_every_selected_artboard() {
+        let mut app = VectorcraftApp::new(Session::new(), Default::default());
+        app.session.execute("file.new", &json!({"width": 200, "height": 150})).unwrap();
+        for x in [400, 800] {
+            app.session.execute("artboard.new", &json!({"x": x, "y": 0, "width": 200, "height": 150})).unwrap();
+        }
+        for x in [10, 410] {
+            app.session.execute("shape.rectangle", &json!({"x": x, "y": 10, "width": 20, "height": 20})).unwrap();
+        }
+        app.select_tool("artboard");
+        select(&mut app, 1);
+        app.session.set_tool_option("selected", &json!([1, 0]));
+        let ctx = egui::Context::default();
+        let screen = Some(egui::Rect::from_min_size(egui::Pos2::ZERO, vec2(240.0, 400.0)));
+        let frame = |app: &mut VectorcraftApp, events: Vec<egui::Event>| {
+            let mut out = ctx.run_ui(egui::RawInput { events, screen_rect: screen, ..Default::default() }, |ui| menu(app, ui));
+            out.textures_delta.clear();
+            out.shapes
+        };
+        let item = frame(&mut app, vec![])
+            .iter()
+            .find_map(|c| match &c.shape {
+                egui::Shape::Text(t) if t.galley.text().trim_start() == "Duplicate Artboards" => Some(t.visual_bounding_rect().center()),
+                _ => None,
+            })
+            .unwrap();
+        let button = |pressed| egui::Event::PointerButton { pos: item, button: egui::PointerButton::Primary, pressed, modifiers: Default::default() };
+        frame(&mut app, vec![egui::Event::PointerMoved(item), button(true), button(false)]);
+        let d = &app.session.active().unwrap().doc;
+        let names: Vec<&str> = d.artboards.iter().map(|a| a.name.as_str()).collect();
+        assert_eq!(names, ["Artboard 1", "Artboard 2", "Artboard 3", "Artboard 1 copy", "Artboard 2 copy"]);
+        assert_eq!(d.layers[0].children().unwrap().len(), 4, "the squares and their copies");
+        assert_eq!((app.view().unwrap().artboard, app.session.tool_options()["selected"].clone()), (4, json!([4, 3])), "Artboard 2's copy is active");
+        app.run("edit.undo", json!({})).unwrap();
+        let d = &app.session.active().unwrap().doc;
+        assert_eq!((d.artboards.len(), d.layers[0].children().unwrap().len()), (3, 2), "one undo step");
     }
 
     /// Choosing the Artboard tool starts it on the active artboard, the one the panel highlights:
