@@ -24,8 +24,9 @@ pub fn step_name(lang: crate::i18n::Lang, label: &str) -> Option<String> {
     has(lang, &dotted).then(|| tr(lang, &dotted).trim_end_matches('…').to_string())
 }
 
-/// A step's name as the panel lists it: in the UI language, else as recorded.
-fn shown(label: &str) -> String {
+/// A step's name as the panel lists it: in the UI language, else as recorded. Edit › Undo and Redo
+/// name the step the same way.
+pub(crate) fn shown(label: &str) -> String {
     step_name(crate::i18n::current(), label).unwrap_or_else(|| label.to_string())
 }
 
