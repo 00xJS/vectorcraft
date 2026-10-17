@@ -225,36 +225,57 @@ crate that installed one would override whatever logger an embedder had already 
 `vectorcraft-mcp` directly means calling `vectorcraft_mcp::logging::install()` yourself if you want
 log records to reach your client.
 
-### Synchronous calls
+### Long calls: cancellation, progress and a busy engine
 
-Exports complete synchronously. A `_meta.progressToken` is harmlessly ignored, as are
-`notifications/cancelled` (including unknown request ids). There are no background export jobs
-or progress notifications; cancellation cannot interrupt a running call.
+A call runs to the end before its reply, and the engine runs one call at a time, in the order the
+lines arrived. A thread of its own reads the stream meanwhile, so the server still hears the client
+while an export runs (#2165, #2171, #2172):
+
+- **Cancellation.** `notifications/cancelled {requestId}`
+  ([spec](https://modelcontextprotocol.io/specification/2025-06-18/basic/utilities/cancellation))
+  takes a request out of the queue, or stops the one that is running, and **that request gets no
+  reply**. A running export, flatten, bake or render notices at its next checkpoint (between pages
+  and artboards, between flattened groups, while drawing objects), returns, and writes nothing: the
+  document is exactly as it was and the engine is free for the next call. An unknown, finished or
+  malformed `requestId` is ignored, and so is a cancel of `initialize`. A call without checkpoints
+  (every ordinary edit is over in milliseconds) runs to its end, but its reply is dropped all the
+  same. Against a running app (`--connect`) the server stops waiting and drops the connection, but
+  the app cannot be told to stop what it started.
+- **Progress.** A request with `_meta.progressToken` gets `notifications/progress`
+  ([spec](https://modelcontextprotocol.io/specification/2025-06-18/basic/utilities/progress)) before
+  its reply: the PDF writer reports "Writing page 2 of 5" with `progress` 2 and `total` 5, raster
+  export reports each artboard, and the PDF flattening stage reports a message without a total. `progress` only grows, updates come at most every 200 ms (the last page always),
+  and none follows the reply. A client that does not read fast enough misses updates, never the reply.
+- **A busy engine.** `ping`, `tools/list`, `resources/list`, `resources/templates/list`,
+  `prompts/list` and `prompts/get` need no engine and are answered at once, whatever is running.
+  Anything else that arrives while a call has already run for two seconds is not queued behind it:
+  it is answered with error `-32003` (`data.busy` names the running call, its request id and how
+  long it has run) and was **not run**, so the client can retry later or cancel the running call.
+  Requests that arrive sooner than that queue and are answered in order, as before, so a client
+  that sends a few quick calls together sees no difference. At most 64 lines wait; past that the
+  server stops reading until the engine catches up.
+
+`vectorcraft_mcp::Server::serve` takes the input and the output on separate threads (`Send`), and
+`Server::with_busy_after` changes the two seconds. Calling `handle_line` directly is as before:
+one line in, one reply out, no threads.
 
 ### Not implemented
-
-Everything below needs the same thing first: the server reads one line at a time and answers it with
-one reply, so **while a `tools/call` is running it neither reads an incoming line nor writes an
-outgoing one.** Progress and cancellation are therefore both meaningless as they stand, and a
-subscription could only ever be checked between calls — which is not what a client asking to be told
-about a change expects.
 
 - **`resources/subscribe` / `notifications/resources/updated`.** It would also have to be honest about
   *whose* edits it sees: comparing the undo history's length misses edits made in the app window,
   which is the main reason to run against a live document. `document.inspect`'s `revision` is the
   right signal — it is monotonic and already bumped when a document is replaced — but noticing an
   edit still means someone asking.
-- **`notifications/progress`.** It would have to be written *before* the reply it belongs to, since a
-  progress token stops meaning anything once the request has completed.
-- **`notifications/cancelled`.** It would have to be read *during* the call it cancels.
-- **`sampling/createMessage` and `elicitation/create`.** Both are server→client requests, blocked by
-  the same one-line-one-reply loop. Supporting them means being able to suspend a tool call
-  mid-flight, which is what the `2026-07-28` revision's input-requests mechanism exists for.
+- **Reading the document during a long call.** Requests that need the engine (`doc_inspect`,
+  `resources/read`, `command_list`) are refused as busy while an export runs, not answered from a
+  snapshot.
+- **`sampling/createMessage` and `elicitation/create`.** Both are server→client requests. Supporting
+  them means being able to suspend a tool call mid-flight, which is what the `2026-07-28` revision's
+  input-requests mechanism exists for.
 - **Streamable HTTP / SSE.** stdio only.
 
 `completion/complete` covers the "what could I pass here" half of the same problem, which is why it
-is here and subscriptions are not. The fix for the rest is a reader thread (or an event loop) around
-the transport — a design change rather than a feature, so it is not in this crate yet.
+is here and subscriptions are not.
 
 ## Tools
 

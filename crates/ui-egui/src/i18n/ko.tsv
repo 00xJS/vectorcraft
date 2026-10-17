@@ -4542,3 +4542,4 @@ lighting	Light	광원
 @msg	no symbol named `{n}`	이름이 `{n}`인 심볼이 없습니다
 @msg	a mask has more than one art block	마스크에 아트 블록이 두 개 이상 있습니다
 @msg	mask art ends outside a mask dictionary	마스크 아트가 마스크 사전 밖에서 끝납니다
+@msg	cancelled; nothing was changed	취소됨; 변경된 내용이 없습니다

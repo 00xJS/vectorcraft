@@ -1131,6 +1131,10 @@ impl Renderer {
         if !force && (!n.visible || f.opts.hidden.contains(&n.id)) {
             return;
         }
+        // A cancelled export stops drawing; whoever asked for the picture drops it (see `cancel`).
+        if vectorcraft_doc::cancel::is_cancelled() {
+            return;
+        }
         if force {
             // Bounds were already checked by draw_arc (or the caller wants it drawn regardless).
         } else if let Some(b) = fx::cull_bounds(f.symbols, n) {

@@ -4538,3 +4538,4 @@ theme	Appearance	Erscheinungsbild
 @msg	no symbol named `{n}`	kein Symbol namens `{n}`
 @msg	a mask has more than one art block	eine Maske enthält mehr als einen Grafikblock
 @msg	mask art ends outside a mask dictionary	die Maskengrafik endet außerhalb eines Maskenwörterbuchs
+@msg	cancelled; nothing was changed	abgebrochen; es wurde nichts geändert

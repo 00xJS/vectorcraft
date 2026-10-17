@@ -413,6 +413,8 @@ fn encode_all_of(doc: &Document, format: &str, p: &Value) -> Result<Encoded> {
     let f = super::writable(C, Some(format), None)?;
     let failed = vectorcraft_render::decode_failures();
     let mut enc = encode_files(doc, f, p)?;
+    // Baking, flattening and drawing stop early when cancelled and leave a truncated result.
+    vectorcraft_doc::cancel::check()?;
     // An image the renderer couldn't decode draws nothing: say so rather than write a picture
     // that silently lacks it.
     if f.raster && vectorcraft_render::decode_failures() > failed {
@@ -502,7 +504,10 @@ fn encode_files(doc: &Document, f: &Format, p: &Value) -> Result<Encoded> {
             };
             let mut enc = Encoded::default();
             let mut renderer = vectorcraft_render::Renderer::new();
-            for b in chosen {
+            let total = chosen.len() as u64;
+            for (done, b) in chosen.into_iter().enumerate() {
+                vectorcraft_doc::cancel::check()?;
+                vectorcraft_doc::cancel::progress(done as u64, total, &format!("Rendering artboard {} of {total}", done + 1));
                 let region = doc.artboards.get(b).ok_or_else(|| bad(C, format!("no artboard {}", b + 1)))?.rect;
                 check_format_size(f, region.width() * scale, region.height() * scale)?;
                 vectorcraft_render::raster_size(region, scale).map_err(|e| bad(C, e))?;

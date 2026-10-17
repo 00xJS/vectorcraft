@@ -258,7 +258,11 @@ pub(crate) fn set_pattern_paint(ctx: &mut RenderContext, name: &str, xf: Affine,
             let pm = Arc::new(pm);
             let (sx, sy) = (w as f64 / pw, h as f64 / ph);
             let deps = crate::fx::Reads::of_all(def.art.iter().map(|a| &**a)).any().then(|| Deps::of(doc));
+            // A cancelled export drew part of the tile: it isn't kept for later frames.
             CACHE.with(|c| {
+                if vectorcraft_doc::cancel::is_cancelled() {
+                    return;
+                }
                 let mut c = c.borrow_mut();
                 let tiles = &mut c.tiles[ink as usize];
                 let (t, bytes) = (tiles.tick(), size_of::<TileEntry>() + w as usize * h as usize * 4);

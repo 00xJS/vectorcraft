@@ -44,8 +44,11 @@ pub fn export_with_report(doc: &Document, opts: &PdfOptions) -> Result<ExportRep
 fn export_with_report_inner(doc: &Document, opts: &PdfOptions) -> Result<ExportReport, PdfError> {
     let set = &opts.settings;
     set.check()?;
+    vectorcraft_doc::cancel::check().map_err(|_| PdfError::Cancelled)?;
     // Live geometry effects export as their result; raster effects are reported below.
     let baked = vectorcraft_effects::bake_document(doc);
+    // Baking stops early when cancelled, leaving a half-baked copy that must not be written.
+    vectorcraft_doc::cancel::check().map_err(|_| PdfError::Cancelled)?;
     let doc = baked.as_ref().unwrap_or(doc);
     let pages = pages(doc, opts)?;
 
@@ -77,7 +80,11 @@ fn export_with_report_inner(doc: &Document, opts: &PdfOptions) -> Result<ExportR
     // [`MAX_PAGE_SIDE`] is written in larger units; other files have every page in points.
     let scales = set.compatibility.has_user_unit() && !set.standard.is_pdfx();
     let mut units = Vec::with_capacity(pages.len());
-    for (i, boxes) in pages {
+    let total = pages.len() as u64;
+    for (written, (i, boxes)) in pages.into_iter().enumerate() {
+        // The page count and the page being written, for a client that asked for progress.
+        vectorcraft_doc::cancel::check().map_err(|_| PdfError::Cancelled)?;
+        vectorcraft_doc::cancel::progress(written as u64 + 1, total, &format!("Writing page {} of {total}", written + 1));
         let (m, r) = (boxes.media, boxes.bleed);
         let info = if marks.page_info { crate::marks::page_info(doc, &title, i, created_at) } else { String::new() };
         let art = crate::marks::art(doc, &marks, &boxes, bleed, &info);
@@ -103,6 +110,7 @@ fn export_with_report_inner(doc: &Document, opts: &PdfOptions) -> Result<ExportR
         };
         w.page(&mut ex, &sheet).map_err(|_| PdfError::BadArtboard(i))?;
     }
+    vectorcraft_doc::cancel::check().map_err(|_| PdfError::Cancelled)?;
     let (layers, overprinted) = (ex.layers, ex.overprinted);
     w.absorb(ex);
     let (bytes, more) = w.finish()?;

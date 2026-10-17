@@ -818,7 +818,10 @@ fn plan(src: &Document, roots: &[NodeId], o: &FlattenOptions, render: bool) -> R
     let see_through: Vec<bool> = plain.iter().map(|n| n.shows_transparency() || o.draws_see_through_image(n)).collect();
     let cmyk = src.color_mode == ColorMode::Cmyk;
     let mut out = Plan { flat: vec![], kept: vec![], transparent: roots.iter().zip(&see_through).filter(|(_, t)| **t).map(|(id, _)| *id).collect() };
+    // Baking above stopped early when cancelled; each group is a place to stop (a plan changes nothing).
+    vectorcraft_doc::cancel::check()?;
     for g in overlapping(&reaches) {
+        vectorcraft_doc::cancel::check()?;
         let ids: Vec<NodeId> = g.iter().map(|&i| roots[i]).collect();
         let group = g.iter().any(|&i| see_through[i]).then(|| {
             let plain: Vec<&Node> = g.iter().map(|&i| &plain[i]).collect();
@@ -950,6 +953,8 @@ fn render_raster(doc: &Document, art: &[Node], rect: Rect, ppi: f64, clip: Optio
     );
     let mut r = vectorcraft_render::Renderer::new();
     let mut img = r.render_region(&isolated_doc(doc, art.to_vec()), region, scale, !o.preserve_alpha);
+    // The drawing stops early when cancelled: this image is not whole.
+    vectorcraft_doc::cancel::check()?;
     if o.no_transparency.is_some() && clip.is_some() && !o.preserve_alpha {
         // Without transparency the clip alone shapes the image: it is opaque, over white (its
         // edge pixels too).

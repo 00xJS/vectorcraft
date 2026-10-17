@@ -205,6 +205,9 @@ pub enum PdfError {
     Unsupported(String),
     #[error("PDF writer error: {0}")]
     Write(String),
+    /// The caller asked for the export to stop ([`vectorcraft_doc::cancel`]).
+    #[error("cancelled")]
+    Cancelled,
     #[error("cannot read PDF: {0}")]
     Parse(String),
     #[error("the PDF has no pages")]

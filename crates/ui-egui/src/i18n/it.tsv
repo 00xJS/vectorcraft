@@ -4578,3 +4578,4 @@ lighting	Light	Luce
 @msg	no symbol named `{n}`	nessun simbolo denominato `{n}`
 @msg	a mask has more than one art block	una maschera contiene più di un blocco grafico
 @msg	mask art ends outside a mask dictionary	la grafica della maschera termina fuori da un dizionario di maschera
+@msg	cancelled; nothing was changed	annullato; non è stato modificato nulla
