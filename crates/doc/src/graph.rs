@@ -430,17 +430,22 @@ impl GraphSpec {
         let cells = self.cells();
         let width = cells.iter().map(Vec::len).max().unwrap_or(0).max(self.series.len());
         let mut out = String::from(",");
-        out.push_str(&(0..width).map(|s| self.series.get(s).cloned().unwrap_or_default()).collect::<Vec<_>>().join(","));
+        // Quote a label holding a separator, quote or line break (inner quotes doubled), or one with
+        // surrounding spaces; `always` also quotes blank and numeric labels so they stay labels.
+        let field = |c: &str, always: bool| {
+            let special = c.contains([',', '\t', '"', '\n', '\r']) || c != c.trim();
+            if special || (always && (c.trim().is_empty() || c.trim().parse::<f64>().is_ok())) {
+                format!("\"{}\"", c.replace('"', "\"\""))
+            } else {
+                c.to_string()
+            }
+        };
+        out.push_str(&(0..width).map(|s| field(self.series.get(s).map(String::as_str).unwrap_or_default(), false)).collect::<Vec<_>>().join(","));
         out.push('\n');
         let labelled = !self.categories.is_empty();
         for (i, r) in cells.iter().enumerate() {
             if labelled {
-                let c = self.categories.get(i).map(String::as_str).unwrap_or_default();
-                if c.trim().is_empty() || c.trim().parse::<f64>().is_ok() || c != c.trim() {
-                    out.push_str(&format!("\"{c}\""));
-                } else {
-                    out.push_str(c);
-                }
+                out.push_str(&field(self.categories.get(i).map(String::as_str).unwrap_or_default(), true));
                 out.push(',');
             }
             out.push_str(&r.iter().map(|v| v.map(|v| v.to_string()).unwrap_or_default()).collect::<Vec<_>>().join(","));

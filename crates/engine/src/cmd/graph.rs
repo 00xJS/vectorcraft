@@ -82,20 +82,42 @@ impl Cell {
     }
 }
 
+/// Split `s` at each `sep` outside straight quotes (a `""` inside quotes toggles twice, so stays inside).
+fn split_unquoted(s: &str, sep: char) -> Vec<&str> {
+    let mut parts = vec![];
+    let mut quoted = false;
+    let mut start = 0;
+    for (i, ch) in s.char_indices() {
+        if ch == '"' {
+            quoted = !quoted;
+        } else if ch == sep && !quoted {
+            parts.push(s.get(start..i).unwrap_or_default());
+            start = i + ch.len_utf8();
+        }
+    }
+    parts.push(s.get(start..).unwrap_or_default());
+    parts
+}
+
+/// One CSV cell: a cell wholly in quotes keeps its inner text (`""` = `"`), others are trimmed.
+fn cell(c: &str) -> Cell {
+    let c = c.trim();
+    match c.strip_prefix('"').and_then(|c| c.strip_suffix('"')) {
+        Some(inner) => Cell { text: inner.replace("\"\"", "\""), quoted: true },
+        None => Cell { text: c.trim_matches('"').to_string(), quoted: false },
+    }
+}
+
 fn parse_csv(csv: &str) -> (Vec<String>, Vec<String>, Vec<Vec<Option<f64>>>) {
-    let rows: Vec<Vec<Cell>> = csv
-        .lines()
+    // Records end at line breaks outside quotes; a record is tab-separated if it has a tab outside quotes.
+    let rows: Vec<Vec<Cell>> = split_unquoted(csv, '\n')
+        .into_iter()
         .map(|l| l.trim_end_matches('\r'))
         .filter(|l| !l.trim().is_empty())
         .map(|l| {
-            let sep = if l.contains('\t') { '\t' } else { ',' };
-            l.split(sep)
-                .map(|c| {
-                    let c = c.trim();
-                    let quoted = c.len() >= 2 && c.starts_with('"') && c.ends_with('"');
-                    Cell { text: c.trim_matches('"').to_string(), quoted }
-                })
-                .collect()
+            let tabs = split_unquoted(l, '\t');
+            let parts = if tabs.len() > 1 { tabs } else { split_unquoted(l, ',') };
+            parts.into_iter().map(cell).collect()
         })
         .collect();
     let Some(first) = rows.first() else { return (vec![], vec![], vec![]) };
@@ -2368,6 +2390,30 @@ mod tests {
         let csv = super::to_csv(&g);
         let (_, _, cells) = super::parse_csv(&csv);
         assert_eq!(cells, g.cells(), "{csv}");
+    }
+
+    #[test]
+    fn labels_with_commas_quotes_and_newlines_round_trip_through_csv() {
+        let mut s = Session::new();
+        s.execute("file.new", &json!({"width": 800, "height": 800})).unwrap();
+        let series = json!(["Revenue, USD", "Say \"hi\"", "a\tb"]);
+        let categories = json!(["Doe, Jane", "2024", " padded ", "two\nlines"]);
+        let rows = json!([[1, 2, 3], [4, null, 6], [7, 8, 9], [10, 11, 12]]);
+        let r = s
+            .execute(
+                "graph.create",
+                &json!({"type": "column", "x": 20, "y": 20, "width": 300, "height": 200, "series": series, "categories": categories, "rows": rows}),
+            )
+            .unwrap();
+        let id = r["id"].as_u64().unwrap();
+        let before = s.execute("graph.setData", &json!({"id": id})).unwrap();
+        assert_eq!(before["series"], series);
+        assert_eq!(before["categories"], categories);
+        s.execute("graph.setData", &json!({"id": id, "csv": before["csv"]})).unwrap();
+        let after = s.execute("graph.setData", &json!({"id": id})).unwrap();
+        assert_eq!(after["series"], before["series"], "{}", before["csv"]);
+        assert_eq!(after["categories"], before["categories"], "{}", before["csv"]);
+        assert_eq!(after["rows"], before["rows"], "{}", before["csv"]);
     }
 
     #[test]
