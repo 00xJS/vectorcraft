@@ -5065,7 +5065,7 @@ swatch	Bright Violet	Kraftig violet
 	Resize	Tilpas størrelse
 	Scale Design	Skalér design
 	Sliding	Glidende
-	The name in the save panel was “{typed}”; VectorCraft added the file type's extension. Replacing the file overwrites its contents.	Navnet i gemmepanelet var “{typed}”; VectorCraft tilføjede filtypens filtypenavn. Hvis filen erstattes, overskrives dens indhold.
+	The name in the save panel was “{typed}”; VectorCraft added the file type's extension. Replacing the file overwrites its contents.	Navnet i gemmedialogen var »{typed}«, og VectorCraft tilføjede filtypens filtypenavn. Hvis du erstatter filen, overskrives dens indhold.
 	Uniformly Scaled	Ensartet skaleret
 	Vertically Scaled	Lodret skaleret
-	“{name}” already exists. Replace it?	“{name}” findes allerede. Vil du erstatte den?
+	“{name}” already exists. Replace it?	»{name}« findes allerede. Erstat den?

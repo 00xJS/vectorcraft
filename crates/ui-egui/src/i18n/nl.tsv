@@ -5065,7 +5065,7 @@ swatch	Bright Violet	Felviolet
 	Resize	Grootte wijzigen
 	Scale Design	Ontwerp schalen
 	Sliding	Verschuivend
-	The name in the save panel was “{typed}”; VectorCraft added the file type's extension. Replacing the file overwrites its contents.	De naam in het bewaarvenster was “{typed}”; VectorCraft heeft de extensie van het bestandstype toegevoegd. Vervangen overschrijft de inhoud van het bestand.
+	The name in the save panel was “{typed}”; VectorCraft added the file type's extension. Replacing the file overwrites its contents.	De naam in het opslagvenster was „{typed}”, en VectorCraft heeft de extensie van het bestandstype toegevoegd. Als je het bestand vervangt, wordt de inhoud overschreven.
 	Uniformly Scaled	Gelijkmatig geschaald
 	Vertically Scaled	Verticaal geschaald
-	“{name}” already exists. Replace it?	“{name}” bestaat al. Vervangen?
+	“{name}” already exists. Replace it?	„{name}” bestaat al. Vervangen?

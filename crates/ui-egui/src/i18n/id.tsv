@@ -5065,7 +5065,7 @@ swatch	Bright Violet	Violet cerah
 	Resize	Ubah ukuran
 	Scale Design	Skalakan desain
 	Sliding	Bergeser
-	The name in the save panel was “{typed}”; VectorCraft added the file type's extension. Replacing the file overwrites its contents.	Nama di panel simpan adalah “{typed}”; VectorCraft menambahkan ekstensi jenis berkas. Mengganti berkas akan menimpa isinya.
+	The name in the save panel was “{typed}”; VectorCraft added the file type's extension. Replacing the file overwrites its contents.	Nama di dialog simpan adalah “{typed}”, lalu VectorCraft menambahkan ekstensi jenis file. Mengganti file akan menimpa kontennya.
 	Uniformly Scaled	Diskalakan seragam
 	Vertically Scaled	Diskalakan vertikal
 	“{name}” already exists. Replace it?	“{name}” sudah ada. Ganti?
