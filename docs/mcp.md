@@ -473,10 +473,13 @@ markup around it: if another app changed the SVG since, `document.open` reads it
 `warnings`.
 
 Saving beyond `save_file` goes through `run_command`: `file.saveAs {path?, format?, options?, svg?}` (the document takes
-on the new file and format), `file.saveCopy` (the document keeps its path, title and modified state),
+on the new file and format; for `format: "ait"`, or a `.ait` path without `format`, it fails with an error that names
+`file.saveAsTemplate`), `file.saveCopy` (the document keeps its path, title and modified state),
 `file.saveAsTemplate {path?, format?}` (it writes a `.vctemplate`, or, for `format: "ait"` or a `.ait` path, a
-PDF-compatible `.ait` written as a `.ai` file is; both open untitled; the suggested name and the Templates folder come
-back without a path), `file.newFromTemplate {path}`, `file.revert` and `file.formatOptions {format?}` (a format's options
+PDF-compatible `.ait` written as a `.ai` file is; both open untitled; a path whose extension names another format has
+it replaced by the template's extension, and any other path that does not end in that extension has it added, so
+`card.png` is saved as `card.vctemplate` and `card` as `card.vctemplate`; the suggested name and the Templates folder
+come back without a path), `file.newFromTemplate {path}`, `file.revert` and `file.formatOptions {format?}` (a format's options
 with the values a save would use). Without a path the save commands return `{dataBase64, name, folder?, warnings}`. A document saved as SVG or PDF
 remembers its options, so the next save reuses them. A PDF opened with `pages`, `cropTo` or `password` is only part
 of the file, so Save asks for a new name instead of writing it back.

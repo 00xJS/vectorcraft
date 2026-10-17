@@ -223,7 +223,8 @@ fn templates_open_untitled() {
     let mut s = session(100.0, 100.0, 1);
     let dir = tmp_dir("tpl");
     let path = dir.join("t.vectorcraft").to_string_lossy().to_string();
-    s.execute("file.saveAsTemplate", &json!({"path": path})).unwrap();
+    // A template under a native file name still opens untitled.
+    std::fs::write(&path, b64(&s.execute("file.saveAsTemplate", &json!({})).unwrap())).unwrap();
     let r = s.execute("document.open", &json!({"path": path})).unwrap();
     assert!(r["title"].as_str().unwrap().starts_with("Untitled-"), "{r}");
     assert_eq!(s.doc().unwrap().path, None);

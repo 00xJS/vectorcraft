@@ -43,8 +43,9 @@ fn headless_opens_pdf_ai_and_templates() {
     std::fs::write(&ait, &pdf).unwrap();
     let r = text(&call_tool(&mut h, "open_file", &json!({"path": ait})));
     assert!(r["title"].as_str().unwrap().starts_with("Untitled-"), "{r}");
-    let tpl = tmp("t.vectorcraft");
-    h.call("engine.execute", json!({"command": "file.saveAsTemplate", "params": {"path": tpl}})).unwrap();
+    let saved = h.call("engine.execute", json!({"command": "file.saveAsTemplate", "params": {"path": tmp("t.vectorcraft")}})).unwrap();
+    let tpl = tmp("t.vctemplate");
+    assert_eq!(saved["path"], tpl.as_str(), "saved with the template's extension: {saved}");
     let r = text(&call_tool(&mut h, "open_file", &json!({"path": tpl})));
     assert!(r["title"].as_str().unwrap().starts_with("Untitled-"), "{r}");
     assert_eq!(h.session.doc().unwrap().path, None, "Save asks for a new name");
