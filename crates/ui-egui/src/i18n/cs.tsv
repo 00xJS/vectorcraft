@@ -3995,6 +3995,8 @@ imageTrace	Outline	Obrys
 @msg	its editing data doesn't say where its artboard is	z jeho dat pro úpravy není zřejmé, kde je pracovní plocha
 @msg	its editing data has no layers	jeho data pro úpravy nemají žádné vrstvy
 @msg	its editing data is damaged	jeho data pro úpravy jsou poškozená
+@msg	its editing data is for a {w} × {h} pt page, not the file's {pw} × {ph} pt page	jeho data pro úpravy patří ke stránce {w} × {h} pt, ne ke stránce souboru {pw} × {ph} pt
+@msg	its editing data is for a {w} × {h} pt page, the file's {pw} × {ph} pt page at {scale}	jeho data pro úpravy patří ke stránce {w} × {h} pt, tedy ke stránce souboru {pw} × {ph} pt v měřítku {scale}
 @msg	its zlib compression is damaged	jejich komprese zlib je poškozená
 @msg	its Zstandard compression is damaged	jejich komprese Zstandard je poškozená
 @msg	it decompresses to more than {_1} MB	po rozbalení mají více než {_1} MB

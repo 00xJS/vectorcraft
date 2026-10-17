@@ -1656,7 +1656,8 @@ fn effect_color_param_error_is_translated() {
 #[test]
 fn unread_layers_notes_are_translated() {
     for note in [
-        "the file's layers weren't read (its editing data is for a different page): it comes in as its page, in one layer",
+        "the file's layers weren't read (its editing data is for a 600 × 400 pt page, not the file's 612 × 792 pt page): it comes in as its page, in one layer",
+        "the file's layers weren't read from its editing data (its editing data is for a 100 × 100 pt page, the file's 1000 × 1000 pt page at 1:10): they come from its PDF part",
         "the file's layers weren't read from its editing data (its editing data is damaged): they come from its PDF part",
         "the file's layers weren't read from its editing data (its zlib compression is damaged): they come from its PDF part",
         "the file's layers weren't read from its editing data (its Zstandard compression is damaged): they come from its PDF part",

@@ -4115,7 +4115,8 @@ swatch	Bright Violet	ビビッドバイオレット
 @msg	it has too much text	テキストが多すぎます
 @msg	its editing data doesn't say where its art is	編集データにアートの位置が記録されていません
 @msg	its editing data doesn't say where its artboard is	編集データにアートボードの位置が記録されていません
-@msg	its editing data is for a different page	編集データが別のページのものです
+@msg	its editing data is for a {w} × {h} pt page, not the file's {pw} × {ph} pt page	編集データは {w} × {h} pt のページのもので、ファイルの {pw} × {ph} pt のページのものではありません
+@msg	its editing data is for a {w} × {h} pt page, the file's {pw} × {ph} pt page at {scale}	編集データは {w} × {h} pt のページのもので、ファイルの {pw} × {ph} pt のページを縮尺 {scale} にしたものです
 @msg	its page has text, and its layers have no text objects to put it in	ページにテキストがありますが、レイヤーにはそれを入れるテキストオブジェクトがありません
 @msg	the art on them differs from the page's in {_1}% of it	レイヤー上のアートの {_1}% がページのアートと異なります
 @msg	the art on them differs from the page's in {_1}% of it: they come from its editing data all the same	レイヤー上のアートの {_1}% がページのアートと異なりますが、レイヤーは編集データから読み込まれました

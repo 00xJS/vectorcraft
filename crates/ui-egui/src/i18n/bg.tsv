@@ -3623,7 +3623,8 @@ axis	Both	И двете
 @msg	its editing data doesn't say where its artboard is	данните за редакция не посочват къде е неговата работна област
 @msg	its editing data has no layers	данните за редакция нямат слоеве
 @msg	its editing data is damaged	данните за редакция са повредени
-@msg	its editing data is for a different page	данните за редакция са за друга страница
+@msg	its editing data is for a {w} × {h} pt page, not the file's {pw} × {ph} pt page	данните за редакция са за страница {w} × {h} pt, а не за страницата на файла {pw} × {ph} pt
+@msg	its editing data is for a {w} × {h} pt page, the file's {pw} × {ph} pt page at {scale}	данните за редакция са за страница {w} × {h} pt, т.е. страницата на файла {pw} × {ph} pt в мащаб {scale}
 @msg	its layers use {_1}, which aren't read yet	слоевете му използват {_1}, които все още не са прочетени
 @msg	its page has text, and its layers have no text objects to put it in	страницата му има текст, а слоевете му нямат текстови обекти, в които да го поставят
 @msg	its type is to come in as outlines, which only its page has	типът му е да се появи като контури, каквито има само страницата му

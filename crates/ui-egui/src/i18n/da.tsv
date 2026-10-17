@@ -3755,7 +3755,8 @@ imageTrace	Outline	Kontur
 @msg	its editing data doesn't say where its artboard is	dens redigeringsdata siger ikke, hvor dens tegneflade er
 @msg	its editing data has no layers	dens redigeringsdata har ingen lag
 @msg	its editing data is damaged	dens redigeringsdata er beskadiget
-@msg	its editing data is for a different page	dens redigeringsdata er til en anden side
+@msg	its editing data is for a {w} × {h} pt page, not the file's {pw} × {ph} pt page	dens redigeringsdata er til en side på {w} × {h} pt, ikke til filens side på {pw} × {ph} pt
+@msg	its editing data is for a {w} × {h} pt page, the file's {pw} × {ph} pt page at {scale}	dens redigeringsdata er til en side på {w} × {h} pt, altså filens side på {pw} × {ph} pt i skala {scale}
 @msg	its layers use {_1}, which aren't read yet	dens lag bruger {_1}, som ikke kan læses endnu
 @msg	its page has text, and its layers have no text objects to put it in	dens side har tekst, og dens lag har ingen tekstobjekter at lægge den i
 @msg	its type is to come in as outlines, which only its page has	dens tekst kommer ind som konturer, hvilket kun dens side har

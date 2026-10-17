@@ -610,8 +610,10 @@ layer, even where the page doesn't draw it. A file whose editing data can't be d
 pattern fills, placed files or anything else the reader doesn't read on a layer that shows, or whose layers look
 different from its page, opens as before: an EPS as its printed page, a `.ai` file from its PDF content (where plain
 groups open ungrouped), with a warning saying why. Layers look different when they draw an object the page doesn't (or
-miss one it draws), and, for an EPS whose page is the box of its art, when they print art outside it. With
-`textAs: "outlines"` a `.ai` file whose type shows opens from its PDF content, which has the type's outlines. A PDF
+miss one it draws), and, for an EPS whose page is the box of its art, when they print art outside it. A file whose
+editing data is for a page of another size opens the same way, and its warning gives both sizes in points, with the
+scale of the editing data's page to the file's page (1:10 for a tenth of its size) when their sides are in proportion.
+With `textAs: "outlines"` a `.ai` file whose type shows opens from its PDF content, which has the type's outlines. A PDF
 saved with Illustrator's editing data holds it in `AIPDFPrivateData` streams and opens from it as a `.ai` file does.
 
 The document then has what the file's page doesn't print: hidden objects and layers, layers that don't print, guides and
