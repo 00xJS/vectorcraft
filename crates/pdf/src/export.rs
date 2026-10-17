@@ -242,7 +242,7 @@ impl Writer {
     /// CMYK (unless the colours are converted to RGB).
     pub(crate) fn new(doc: &Document, set: &crate::PdfSettings, title: &str, created: Option<i64>, cmyk: bool) -> Result<Self, PdfError> {
         let out = ColorOut::new(doc, set)?;
-        let mut warnings = vec![];
+        let mut warnings = out.profile_notes.clone();
         // Tagged CMYK colours need the profile (PDF/A tags every colour).
         let cmyk_profile = if out.tagged { out.cmyk_icc() } else { None };
         if out.tagged && cmyk_profile.is_none() {
@@ -747,7 +747,7 @@ fn rects_overlap(a: Rect, b: Rect) -> bool {
 impl Exporter<'_> {
     /// A colour for the page, as the Output settings write it ([`ColorOut::color`]): without
     /// conversion, RGB and Lab colours of CMYK documents are separated into CMYK through the
-    /// active colour settings, so the file carries press values.
+    /// document's colour spaces, so the file carries press values.
     fn col(&mut self, c: &Color) -> krilla::color::Color {
         let cmyk_doc = self.doc.color_mode == vectorcraft_doc::ColorMode::Cmyk;
         if let (true, true, Color::Rgb { r, g, b }) = (cmyk_doc, self.convert, c) {
