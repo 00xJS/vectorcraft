@@ -25,7 +25,12 @@ fn highlight_alternate_glyphs_paints_pink_behind_a_ligature() {
     let l = d.layers[0].id;
     d.insert(Some(l), 0, n).unwrap();
 
-    let off = RenderOptions { background: Some([255, 255, 255, 255]), highlight_substitutions: true, highlight_alternate_glyphs: false, ..Default::default() };
+    let off = RenderOptions {
+        background: Some([255, 255, 255, 255]),
+        highlight_substitutions: true,
+        highlight_alternate_glyphs: false,
+        ..Default::default()
+    };
     let on = RenderOptions { highlight_alternate_glyphs: true, ..off.clone() };
     let mut r = Renderer::new();
     let without = r.render(&d, 200, 100, Affine::IDENTITY, &off);
