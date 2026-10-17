@@ -1907,7 +1907,7 @@ pub fn display_label(app: &VectorcraftApp, id: &str, label: &str) -> String {
         "edit.undo" | "edit.redo" => {
             let last = app.session.active().and_then(|d| if id == "edit.undo" { d.history.undo.last() } else { d.history.redo.last() });
             // The step's name as the History panel lists it.
-            let name = |label: &str| crate::panels::history::step_name(lang, label).unwrap_or_else(|| label.to_string());
+            let name = crate::panels::history::shown;
             match last {
                 Some(h) if id == "edit.undo" => fmt(tl!("Undo {name}"), &[("name", &name(&h.label))]),
                 Some(h) => fmt(tl!("Redo {name}"), &[("name", &name(&h.label))]),
