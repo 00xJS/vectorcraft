@@ -82,10 +82,12 @@ fn controls(app: &VectorcraftApp, ui: &mut egui::Ui, d: &mut Dialog) {
         ui.spacing_mut().item_spacing.x = 6.0;
         label(ui, tl!("Axis side"));
         let edge = d.str("edge");
-        let current = if edge == "right" { tl!("Right") } else { tl!("Left") };
+        let sides = super::effect::own_choices(REVOLVE, "edge", false).unwrap_or_default();
+        let current = sides.iter().find(|(_, v)| *v == edge).or(sides.first()).map_or("", |(l, _)| *l);
+        let labels: Vec<&str> = sides.iter().map(|(l, _)| *l).collect();
         let width = VALUE_W + rail_width(ui) + 6.0;
-        if let Some(k) = widgets::dropdown(ui, "revolve-edge", current, &[tl!("Left"), tl!("Right")], width) {
-            d.fields.insert("edge".into(), json!(if k == 0 { "left" } else { "right" }));
+        if let Some((_, v)) = widgets::dropdown(ui, "revolve-edge", current, &labels, width).and_then(|k| sides.get(k)) {
+            d.fields.insert("edge".into(), json!(v));
         }
         if reset_dot(ui, "edge", edge != "left", tl!("Left")) {
             d.fields.insert("edge".into(), json!("left"));
@@ -189,14 +191,8 @@ fn extrude_controls(ui: &mut egui::Ui, d: &mut Dialog, unit: Unit) {
     choice(ui, d, "cap", c3("Cap"), &[(json!(true), c3("Solid")), (json!(false), c3("Hollow"))]);
     ui.add_space(10.0);
     heading(ui, c3("Bevel"));
-    let shapes = [
-        (json!("none"), tl!("None")),
-        (json!("classic"), tl!("Classic")),
-        (json!("rounded"), c3("Rounded")),
-        (json!("cove"), tl!("Cove")),
-        (json!("step"), tl!("Step")),
-        (json!("ogee"), tl!("Ogee")),
-    ];
+    let shapes: Vec<(Value, &str)> =
+        super::effect::own_choices(EXTRUDE, "bevel", false).unwrap_or_default().into_iter().map(|(label, value)| (json!(value), label)).collect();
     choice(ui, d, "bevel", tl!("Bevel Shape"), &shapes);
     ui.add_enabled_ui(d.str("bevel") != "none", |ui| {
         number(ui, d, "bevelWidth", tl!("Width"), (0.0, 1000.0), "", 1, Some(unit));

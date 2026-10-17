@@ -842,6 +842,15 @@ or a boolean is refused as not a string), so the app's effect dialogs and Appear
 A document saved with such a color opens as before, and the effect draws its default color (an array of three or more
 entries reads an entry that isn't a number as 0).
 
+The `channel` of Levels and Curves must be `rgb`, `red`, `green` or `blue` (`r`, `g`, `b` and any letter case are read
+too). `effect.apply` and `effect.setParams` refuse any other value themselves in the same way, and a document saved with
+one opens as before and draws it as `rgb`:
+
+```json
+{"id": "effect.setParams", "params": {"index": 0, "params": {"channel": "alpha"}}}
+→ invalid parameters for `effect.setParams`: `channel` must be one of rgb, red, green, blue
+```
+
 A number outside the range the effect documents is still stored as given and clamped when the effect draws. A
 plug-in effect's parameters are resolved against its manifest instead, and `effect.setParams` as a step of
 `command.batch` isn't checked before the batch runs (the effect it edits may only exist once the steps before it ran);
