@@ -56,13 +56,17 @@ pub(crate) fn set_paint(ctx: &mut RenderContext, p: &Paint, bounds: Rect, f: &Fr
 /// 6614 x 59055 px, is 1.56 GB as RGBA), past the decoder's 512 MB default. The web keeps it.
 const MAX_DECODE_ALLOC: u64 = if cfg!(target_arch = "wasm32") { 512 << 20 } else { 2 << 30 };
 
-/// Images that couldn't be decoded (and so drew nothing), counted for exports to report.
-static DECODE_FAILURES: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
+thread_local! {
+    /// Images that couldn't be decoded (and so drew nothing) on this thread, counted for exports to
+    /// report.
+    static DECODE_FAILURES: std::cell::Cell<u64> = const { std::cell::Cell::new(0) };
+}
 
-/// How many images have failed to decode so far (process-wide): an export compares the count
-/// before and after to say it left images out.
+/// How many images have failed to decode on this thread so far: an export compares the count
+/// before and after it draws to say it left images out. Images that other threads (another export,
+/// the canvas, thumbnails) fail to decode meanwhile are not counted.
 pub fn decode_failures() -> u64 {
-    DECODE_FAILURES.load(std::sync::atomic::Ordering::Relaxed)
+    DECODE_FAILURES.with(std::cell::Cell::get)
 }
 
 /// `bytes` decoded within [`MAX_DECODE_ALLOC`] ([`decode_within_allowance`]); a failure is counted
@@ -70,7 +74,7 @@ pub fn decode_failures() -> u64 {
 fn decode(bytes: &[u8]) -> Option<image::DynamicImage> {
     let img = decode_within_allowance(bytes).ok();
     if img.is_none() {
-        DECODE_FAILURES.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+        DECODE_FAILURES.with(|n| n.set(n.get() + 1));
     }
     img
 }
