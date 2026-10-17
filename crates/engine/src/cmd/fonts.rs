@@ -47,7 +47,7 @@ pub fn specs() -> Vec<CommandSpec> {
             "Font List",
             [],
             None,
-            "{family?} → {families: [names]} sorted: the bundled fonts, fonts added and the fonts installed on the system (none on the web), each the family's English (canonical) name for `text.setStyle` and documents (without the system's hidden families, whose names start with a dot; they still resolve by name). Preferences › Type › Show Font Names in English only changes the UI menu labels, not this list; with family: {family, styles: [names]} (upright styles by weight, then italics; an error when the family isn't available)",
+            "{family?, style?} → {families: [names]} sorted: the bundled fonts, fonts added and the fonts installed on the system (none on the web), each the family's English (canonical) name for `text.setStyle` and documents (without the system's hidden families, whose names start with a dot; they still resolve by name). Preferences › Type › Show Font Names in English only changes the UI menu labels, not this list; with family: {family, styles: [names] (upright styles by weight, then italics; an error when the family isn't available), axes: [{tag, name, min, default, max, value, hidden}] (a variable font's variation axes, the Character panel's Variable Font sliders, with `value` the setting of `style`, else of the first style; empty for a static font; `hidden`: the font asks for the axis not to be shown)}",
             always,
             font_list
         ),
@@ -408,8 +408,9 @@ fn replace(s: &mut Session, p: &Value) -> Result<Value> {
                         .unwrap_or_else(|| r.style.font_style.clone());
                     r.style.font_family = tf.clone();
                     r.style.font_style = style;
-                    // Another font: none of the old one's versions.
+                    // Another font: none of the old one's versions or Variable Font settings.
                     r.style.font_version = None;
+                    r.style.font_axes.clear();
                     changed = true;
                     n += 1;
                 }
@@ -453,7 +454,23 @@ fn font_list(_: &mut Session, p: &Value) -> Result<Value> {
             }
             // The name as the font spells it.
             let name = db.family_list().iter().find(|f| f.eq_ignore_ascii_case(family)).cloned().unwrap_or_else(|| family.to_string());
-            Ok(json!({ "family": name, "styles": db.styles(family) }))
+            let styles = db.styles(family);
+            let style = str_param(p, "style").map(str::to_string).or_else(|| styles.first().cloned()).unwrap_or_else(|| "Regular".into());
+            let axes: Vec<Value> = db
+                .face(family, &style)
+                .map(|face| {
+                    let axes = face.axes();
+                    axes.iter()
+                        .map(|a| {
+                            json!({
+                                "tag": String::from_utf8_lossy(&a.tag), "name": a.name, "min": a.min, "default": a.default, "max": a.max,
+                                "value": face.axis_value(a.tag).unwrap_or(a.default), "hidden": a.hidden,
+                            })
+                        })
+                        .collect()
+                })
+                .unwrap_or_default();
+            Ok(json!({ "family": name, "styles": styles, "axes": axes }))
         }
         None => Ok(json!({ "families": *db.menu_family_list() })),
     }

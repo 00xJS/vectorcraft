@@ -329,11 +329,13 @@ struct Writer<'a> {
 }
 
 /// The characters type uses from one face, under one `@font-face` description: the family the
-/// type names and the weight and italic its style asks for.
+/// type names and the weight, italic and width its style asks for.
 struct FontUse {
     family: String,
     weight: u16,
     italic: bool,
+    /// The `font-stretch` percentage ([`css::font_stretch`]), as bits; `None` for the normal width.
+    stretch: Option<u64>,
     face: Arc<FontFace>,
     chars: BTreeSet<char>,
 }
@@ -689,12 +691,13 @@ impl Writer<'_> {
         match styling {
             Styling::PresentationAttributes => {
                 // CSS-only properties go in a style attribute (SVG Tiny has none: left out).
-                let (style, attrs): (Vec<_>, Vec<_>) =
-                    props.iter().partition(|(k, _)| matches!(*k, "mix-blend-mode" | "isolation" | "font-feature-settings" | "font-kerning"));
+                let (style, attrs): (Vec<_>, Vec<_>) = props.iter().partition(|(k, _)| {
+                    matches!(*k, "mix-blend-mode" | "isolation" | "font-feature-settings" | "font-variation-settings" | "font-kerning")
+                });
                 let mut s: String = attrs.iter().map(|(k, v)| format!(" {k}=\"{}\"", xml_escape(v))).collect();
                 if !style.is_empty() {
                     if self.tiny() {
-                        self.warn("SVG Tiny 1.2 has no style sheets: blend modes, isolation and font features are left out");
+                        self.warn("SVG Tiny 1.2 has no style sheets: blend modes, isolation, font features and font variation settings are left out");
                     } else {
                         s.push_str(&format!(" style=\"{}\"", xml_escape(&css::declarations(style))));
                     }
@@ -2043,10 +2046,14 @@ impl Writer<'_> {
             }
             let Some(f) = &face else { continue };
             let (weight, italic) = font_descriptor(st);
-            let at = self.fonts.iter().position(|u| u.face.id() == f.id() && (u.weight, u.italic) == (weight, italic) && u.family == st.font_family);
+            let stretch = css::font_stretch(st).map(f64::to_bits);
+            let at = self
+                .fonts
+                .iter()
+                .position(|u| u.face.id() == f.id() && (u.weight, u.italic, u.stretch) == (weight, italic, stretch) && u.family == st.font_family);
             let at = at.unwrap_or_else(|| {
                 let family = st.font_family.clone();
-                self.fonts.push(FontUse { family, weight, italic, face: f.clone(), chars: BTreeSet::new() });
+                self.fonts.push(FontUse { family, weight, italic, stretch, face: f.clone(), chars: BTreeSet::new() });
                 self.fonts.len() - 1
             });
             let Some(chars) = self.fonts.get_mut(at).map(|u| &mut u.chars) else { continue };
@@ -2065,10 +2072,30 @@ impl Writer<'_> {
     /// The `@font-face` rules of the faces type uses ([`ExportOptions::embed_fonts`]): each face
     /// subset to its characters (whole when its licence forbids subsetting, left out with a
     /// warning when it forbids embedding). Faces sharing a description cover their own
-    /// characters (`unicode-range`).
+    /// characters (`unicode-range`); where two of them share characters as well, a warning says
+    /// that browsers draw those in one of the faces.
     fn font_faces(&mut self) -> Vec<String> {
         let uses = std::mem::take(&mut self.fonts);
         let mut rules = Vec::new();
+        fn described(u: &FontUse) -> (&str, u16, bool, Option<u64>) {
+            (&u.family, u.weight, u.italic, u.stretch)
+        }
+        let mut clashing: Vec<&String> = vec![];
+        for (i, u) in uses.iter().enumerate() {
+            let clash = uses
+                .get(..i)
+                .unwrap_or_default()
+                .iter()
+                .any(|o| described(o) == described(u) && o.face.id() != u.face.id() && !o.chars.is_disjoint(&u.chars));
+            if clash && !clashing.contains(&&u.family) {
+                clashing.push(&u.family);
+            }
+        }
+        for family in clashing {
+            self.warn(&format!(
+                "type in {family} uses faces of one weight, style and width that share characters: browsers draw those characters in one of the embedded faces"
+            ));
+        }
         for u in &uses {
             let chars: Vec<char> = u.chars.iter().copied().collect();
             let name = format!("{} {}", u.face.family, u.face.style);
@@ -2079,11 +2106,12 @@ impl Writer<'_> {
             if !font.subset {
                 self.warn(&format!("the font {name} is embedded whole: its licence doesn't allow subsetting"));
             }
-            let shared = uses.iter().filter(|o| (&o.family, o.weight, o.italic) == (&u.family, u.weight, u.italic)).count() > 1;
+            let shared = uses.iter().filter(|o| described(o) == described(u)).count() > 1;
             let range = if shared { format!(";unicode-range:{}", unicode_range(&u.chars)) } else { String::new() };
+            let stretch = u.stretch.map(|w| format!(";font-stretch:{}%", fmt_num(f64::from_bits(w), 3))).unwrap_or_default();
             let (mime, format) = if font.cff { ("font/otf", "opentype") } else { ("font/ttf", "truetype") };
             rules.push(format!(
-                "@font-face{{font-family:{};font-weight:{};font-style:{};src:url(data:{mime};base64,{}) format(\"{format}\"){range}}}",
+                "@font-face{{font-family:{};font-weight:{};font-style:{}{stretch};src:url(data:{mime};base64,{}) format(\"{format}\"){range}}}",
                 css_string(&u.family),
                 u.weight,
                 if u.italic { "italic" } else { "normal" },
@@ -2142,7 +2170,7 @@ fn run_diff(base: &Props, run: Props) -> Props {
 /// on a `<tspan>`).
 fn initial_value(k: &str) -> Option<&'static str> {
     Some(match k {
-        "font-weight" | "font-style" | "font-feature-settings" => "normal",
+        "font-weight" | "font-style" | "font-stretch" | "font-feature-settings" | "font-variation-settings" => "normal",
         "stroke" | "stroke-dasharray" => "none",
         "stroke-width" | "stroke-opacity" => "1",
         "stroke-linecap" => "butt",

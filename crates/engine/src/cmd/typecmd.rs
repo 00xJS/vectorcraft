@@ -577,9 +577,10 @@ fn set_style(s: &mut Session, p: &Value) -> Result<Value> {
                 if let Some(f) = &style {
                     st.font_style = f.clone();
                 }
-                // Another font: none of the old one's versions.
+                // Another font: none of the old one's versions or Variable Font settings.
                 if font.is_some() || style.is_some() {
                     st.font_version = None;
+                    st.font_axes.clear();
                 }
                 if let Some(v) = size {
                     st.size = v;
@@ -613,10 +614,12 @@ fn set_style(s: &mut Session, p: &Value) -> Result<Value> {
                 if let Some(f) = &font {
                     st.font_family = f.clone();
                     st.font_version = None;
+                    st.font_axes.clear();
                 }
                 if let Some(f) = &style {
                     st.font_style = f.clone();
                     st.font_version = None;
+                    st.font_axes.clear();
                 }
                 if let Some(v) = size {
                     st.size = v.clamp(0.1, 1296.0);
@@ -1246,6 +1249,80 @@ mod area_tests {
         s.execute("text.setRangeStyle", &json!({"id": id, "start": 9, "end": 11, "digits": "farsi"})).unwrap();
         let set: Vec<_> = runs(&s).iter().map(|r| (r.text.clone(), r.style.digits)).collect();
         assert_eq!(set, [("صفحة ".to_string(), Digits::Default), ("12".to_string(), Digits::Farsi)]);
+    }
+
+    /// Variable Font settings (Character panel › Variable Font): a character attribute, saved only
+    /// when set, each value clamped to its axis's range, and cleared by another font or style.
+    #[test]
+    fn variable_font_settings_are_a_character_attribute_saved_only_when_set() {
+        use vectorcraft_text::test_fonts::{TWO_AXIS_FAMILY as FAMILY, two_axis_font};
+        vectorcraft_text::FontDb::global().add_font(two_axis_font().unwrap());
+        let mut s = Session::new();
+        s.execute("file.new", &json!({"width": 400, "height": 400})).unwrap();
+        let id = s.execute("text.create", &json!({"x": 10, "y": 50, "text": "lIn lIn", "font": FAMILY, "size": 40})).unwrap()["id"].as_u64().unwrap();
+        let runs = |s: &Session| match &s.doc().unwrap().doc.node(NodeId(id)).unwrap().kind {
+            NodeKind::Text(t) => t.runs.clone(),
+            _ => panic!("text"),
+        };
+        let saved = |s: &Session| serde_json::to_value(&runs(s)[0].style).unwrap().get("fontAxes").cloned();
+        let width = |s: &Session| s.doc().unwrap().doc.bounds_of(&[NodeId(id)], false).unwrap().width();
+        assert_eq!(saved(&s), None);
+        let regular = width(&s);
+        s.execute("select.set", &json!({"ids": [id]})).unwrap();
+        s.execute("text.setFormat", &json!({"fontAxes": {"wght": 650}})).unwrap();
+        assert_eq!(saved(&s), Some(json!({"wght": 650.0})));
+        assert!(width(&s) > regular * 1.1, "the type is set heavier and wider: {regular} -> {}", width(&s));
+        // Past the axis's range: its maximum; an axis the font hasn't: left out; others kept.
+        s.execute("text.setFormat", &json!({"fontAxes": {"wght": 2000, "opsz": 12, "wdth": 80}})).unwrap();
+        assert_eq!(saved(&s), Some(json!({"wdth": 80.0, "wght": 700.0})));
+        // Null goes back to the style's own setting, and so does a value equal to it.
+        s.execute("text.setFormat", &json!({"fontAxes": {"wght": null}})).unwrap();
+        assert_eq!(saved(&s), Some(json!({"wdth": 80.0})));
+        s.execute("text.setFormat", &json!({"fontAxes": {"wdth": 100}})).unwrap();
+        assert_eq!(saved(&s), None);
+        assert!((width(&s) - regular).abs() < 1e-6);
+        s.execute("edit.undo", &json!({})).unwrap();
+        assert_eq!(saved(&s), Some(json!({"wdth": 80.0})));
+        // Characters selected with the Type tool: only the range takes it.
+        s.execute("text.setRangeStyle", &json!({"id": id, "start": 4, "end": 7, "fontAxes": {"wght": 550}})).unwrap();
+        let set: Vec<_> = runs(&s).iter().map(|r| (r.text.clone(), r.style.font_axes.clone())).collect();
+        let axes = |v: &[(&str, f64)]| v.iter().map(|(t, v)| (t.to_string(), *v)).collect::<std::collections::BTreeMap<_, _>>();
+        assert_eq!(set, [("lIn ".to_string(), axes(&[("wdth", 80.0)])), ("lIn".to_string(), axes(&[("wdth", 80.0), ("wght", 550.0)]))]);
+        // A saved file keeps them.
+        let back = vectorcraft_format::load(&vectorcraft_format::save(&s.doc().unwrap().doc, false)).unwrap();
+        let NodeKind::Text(t) = &back.node(NodeId(id)).unwrap().kind else { panic!("text") };
+        assert_eq!(t.runs, runs(&s));
+        // Another style or font clears them: their settings were the old face's.
+        s.execute("text.setRangeStyle", &json!({"id": id, "start": 4, "end": 7, "style": "Bold"})).unwrap();
+        assert_eq!(runs(&s).last().map(|r| (r.style.font_style.as_str(), r.style.font_axes.is_empty())), Some(("Bold", true)));
+        s.execute("text.setStyle", &json!({"style": "Bold"})).unwrap();
+        assert!(runs(&s).iter().all(|r| r.style.font_axes.is_empty()));
+        s.execute("text.setFormat", &json!({"fontAxes": {"wdth": 75}})).unwrap();
+        s.execute("text.replaceFont", &json!({"from": {"family": FAMILY}, "to": {"family": "Inter"}})).unwrap();
+        assert!(runs(&s).iter().all(|r| r.style.font_axes.is_empty()));
+        // A static font has no axes to set.
+        s.execute("text.setFormat", &json!({"fontAxes": {"wght": 650}})).unwrap();
+        assert_eq!(saved(&s), None);
+        // A missing font keeps them as given, for when it is installed.
+        s.execute("text.setStyle", &json!({"font": "No Such Variable Sans"})).unwrap();
+        s.execute("text.setFormat", &json!({"fontAxes": {"wght": 2000}})).unwrap();
+        assert_eq!(saved(&s), Some(json!({"wght": 2000.0})));
+        for (bad, says) in
+            [(json!({"weight": 650}), "not an axis tag"), (json!({"wght": "heavy"}), "must be a number"), (json!(650), "must be an object")]
+        {
+            let err = s.execute("text.setFormat", &json!({"fontAxes": bad})).unwrap_err().to_string();
+            assert!(err.contains(says), "{err}");
+        }
+        // The axes and the setting of a style, as the sliders show them.
+        let list = s.execute("text.fontList", &json!({"family": FAMILY, "style": "Bold"})).unwrap();
+        assert_eq!(
+            list["axes"],
+            json!([
+                {"tag": "wght", "name": "Weight", "min": 400.0, "default": 400.0, "max": 700.0, "value": 700.0, "hidden": false},
+                {"tag": "wdth", "name": "Width", "min": 75.0, "default": 100.0, "max": 100.0, "value": 100.0, "hidden": false},
+            ])
+        );
+        assert_eq!(s.execute("text.fontList", &json!({"family": "Inter"})).unwrap()["axes"], json!([]));
     }
 
     #[test]

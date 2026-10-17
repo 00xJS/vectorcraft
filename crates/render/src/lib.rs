@@ -2301,9 +2301,10 @@ fn text_geom_snapped(t: &TextObject, snap: Option<Affine>) -> TextGeom {
         .runs
         .iter()
         .map(|r| match db.resolve(&r.style.font_family, &r.style.font_style) {
-            // The version the type names, when it's installed (see `FontDb::face_version`).
+            // The version the type names, when it's installed (see `FontDb::face_version`), at its
+            // Variable Font settings (see `FontDb::style_face`).
             Some((f, m)) => {
-                let face = db.face_version(&r.style.font_family, &r.style.font_style, r.style.font_version.as_deref()).unwrap_or(f);
+                let face = db.style_face(&r.style).unwrap_or(f);
                 (m == vectorcraft_text::FontMatch::Missing, Some(face.id()))
             }
             None => (true, None),
