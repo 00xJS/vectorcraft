@@ -35,15 +35,20 @@ use vectorcraft_geom::{Anchor, FillRule, PathData, Point, Rect, SubPath};
 use super::super::*;
 use super::{ArtboardPick, Encoded, Format};
 
-/// Does `p` ask for a legacy `.ai` file of version 7 (`aiVersion: "7"`)? An unknown version is an error.
-pub(super) fn wanted(cmd: &str, p: &Value) -> Result<bool> {
-    match p.get("aiVersion") {
-        None | Some(Value::Null) => Ok(false),
-        Some(Value::String(v)) if v.trim().is_empty() || v.eq_ignore_ascii_case("pdf") => Ok(false),
-        Some(Value::String(v)) if v.trim() == "7" => Ok(true),
-        Some(Value::Number(n)) if n.as_f64() == Some(7.0) => Ok(true),
-        Some(v) => Err(bad(cmd, format!("aiVersion {v}: \"pdf\" (PDF-compatible, the default) or \"7\" (legacy .ai, version 7)"))),
+/// Does `p` ask a save in `f` for a legacy `.ai` file of version 7 (`aiVersion: "7"`)? An unknown
+/// version is an error, and so is version 7 for a `.ait` template, which is PDF-compatible only.
+pub(super) fn wanted(cmd: &str, f: &Format, p: &Value) -> Result<bool> {
+    let legacy = match p.get("aiVersion") {
+        None | Some(Value::Null) => false,
+        Some(Value::String(v)) if v.trim().is_empty() || v.eq_ignore_ascii_case("pdf") => false,
+        Some(Value::String(v)) if v.trim() == "7" => true,
+        Some(Value::Number(n)) if n.as_f64() == Some(7.0) => true,
+        Some(v) => return Err(bad(cmd, format!("aiVersion {v}: \"pdf\" (PDF-compatible, the default) or \"7\" (legacy .ai, version 7)"))),
+    };
+    if legacy && f.id == "ait" {
+        return Err(bad(cmd, "aiVersion 7 writes legacy .ai files; a .ait template is always PDF-compatible"));
     }
+    Ok(legacy)
 }
 
 /// What a legacy `.ai` does with the images it can't hold (`transparentImages`).

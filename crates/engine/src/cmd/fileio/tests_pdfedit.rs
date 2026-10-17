@@ -254,6 +254,30 @@ fn exports_of_an_ait_name_save_as_template() {
     assert_eq!(writable_format(Some("ps"), None).unwrap_err(), "PostScript files can be opened but not written (see document.formats)");
 }
 
+/// Save as Template refuses `aiVersion` 7 for a `.ait`, given in `options` or flat, and writes no
+/// file; `aiVersion` "pdf" writes the PDF-compatible template.
+#[test]
+fn save_as_template_refuses_a_legacy_ait() {
+    let mut s = rich();
+    let path = tmp("legacy-ait/card.ait");
+    let dir = std::path::Path::new(&path).parent().unwrap().to_path_buf();
+    let _ = std::fs::remove_dir_all(&dir);
+    std::fs::create_dir_all(&dir).unwrap();
+    for p in [
+        json!({"path": path, "options": {"aiVersion": "7"}}),
+        json!({"path": path, "format": "ait", "aiVersion": 7}),
+        json!({"format": "ait", "options": {"aiVersion": "7"}}),
+    ] {
+        let e = s.execute("file.saveAsTemplate", &p).unwrap_err().to_string();
+        assert!(e.contains("aiVersion 7 writes legacy .ai files"), "{p}: {e}");
+    }
+    assert_eq!(std::fs::read_dir(&dir).unwrap().count(), 0, "nothing written");
+    let r = s.execute("file.saveAsTemplate", &json!({"path": path, "options": {"aiVersion": "pdf"}})).unwrap();
+    assert_eq!(r["format"], "ait", "{r}");
+    let bytes = std::fs::read(&path).unwrap();
+    assert!(bytes.starts_with(b"%PDF") && vectorcraft_pdf::editing(&bytes).is_some_and(|e| e.intact), "PDF-compatible, carrying the document");
+}
+
 #[test]
 fn standards_and_screens_leave_the_editing_data_out() {
     let mut s = rich();
