@@ -737,6 +737,8 @@ pub struct Prefs {
     pub zoom_with_mouse_wheel: bool,
     /// A horizontal drag on a numeric field or its label steps its value (#400).
     pub scrub_numeric_fields: bool,
+    /// A two-finger rotation on a Mac trackpad turns the view about the pointer once it reaches 5°.
+    pub trackpad_rotate_view: bool,
     /// Offset for Paste / duplicate (Illustrator pastes to the view centre; we offset by this).
     pub paste_offset: f64,
     // Selection & Anchor Display
@@ -992,6 +994,7 @@ impl Default for Prefs {
             scale_strokes: false,
             zoom_with_mouse_wheel: false,
             scrub_numeric_fields: true,
+            trackpad_rotate_view: true,
             paste_offset: 10.0,
             selection_tolerance: 3.0,
             object_selection_by_path_only: false,

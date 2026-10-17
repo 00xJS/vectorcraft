@@ -709,7 +709,7 @@ fn handle_input(app: &mut VectorcraftApp, ui: &Ui, resp: &egui::Response, rect: 
     });
 
     // Zoom around the pointer, and scroll ([`wheel`]): fingers pinching on a touch screen may also
-    // slide.
+    // slide. Then turn the view about the pointer for a trackpad rotation ([`trackpad_turn`]).
     if resp.hovered() {
         if (factor - 1.0).abs() > 1e-6
             && let (Some(p), Some(vm)) = (hover, app.view_mut())
@@ -721,6 +721,12 @@ fn handle_input(app: &mut VectorcraftApp, ui: &Ui, resp: &egui::Response, rect: 
         {
             let d = Xf { rect, zoom: vm.zoom, center: vm.center, rot: vm.rotation.to_radians() }.delta_to_doc(scroll);
             vm.center -= d;
+        }
+        if let Some(p) = hover
+            && let Some(deg) = trackpad_turn(ui, app.session.prefs.trackpad_rotate_view)
+            && let Some(vm) = app.view_mut()
+        {
+            rotate_about(vm, rect, p, deg);
         }
     }
 
@@ -979,6 +985,65 @@ fn zoom_about(vm: &mut View, rect: egui::Rect, p: Pos2, zoom: f64) {
     let before = Xf::new(rect, vm).to_doc(p);
     vm.zoom = zoom.clamp(0.0313, 640.0);
     vm.center += before - Xf::new(rect, vm).to_doc(p);
+}
+
+/// Turn view `vm` of the canvas `rect` by `degrees` clockwise, keeping the document point under
+/// screen point `p` where it is.
+fn rotate_about(vm: &mut View, rect: egui::Rect, p: Pos2, degrees: f64) {
+    let before = Xf::new(rect, vm).to_doc(p);
+    vm.rotation = vectorcraft_geom::normalize_deg(vm.rotation + degrees);
+    vm.center += before - Xf::new(rect, vm).to_doc(p);
+}
+
+/// How far a trackpad rotation turns before it turns the view, in degrees.
+const ROTATE_DEAD_ZONE: f64 = 5.0;
+/// How long after its last rotation event a trackpad rotation ends, in seconds.
+const ROTATE_GESTURE_END: f64 = 0.25;
+
+/// A trackpad rotation under way ([`trackpad_turn`]).
+#[derive(Clone, Copy, Debug)]
+struct TrackpadTurn {
+    /// Degrees it has turned so far, clockwise.
+    total: f64,
+    /// When its last rotation event came (egui's input time, in seconds).
+    last: f64,
+    /// It has reached [`ROTATE_DEAD_ZONE`] and turns the view.
+    turning: bool,
+}
+
+/// General › Trackpad Gesture to Rotate View (`on`): the degrees, clockwise, that a two-finger
+/// rotation on a Mac trackpad turns the view this frame. egui sends the rotation as
+/// [`egui::Event::Rotate`], from winit on macOS and from Safari's gesture events in the web build.
+/// A rotation does not turn the view until it reaches [`ROTATE_DEAD_ZONE`]; it then turns the view
+/// by all of it, and by each later event as it comes. It ends [`ROTATE_GESTURE_END`] after its last
+/// event. Rotation events that come while fingers are on a touch screen do not turn the view.
+fn trackpad_turn(ui: &Ui, on: bool) -> Option<f64> {
+    if !on {
+        return None;
+    }
+    let (deg, now) = ui.input(|i| {
+        let rad: f32 =
+            if i.multi_touch().is_some() { 0.0 } else { i.events.iter().map(|e| if let egui::Event::Rotate(r) = e { *r } else { 0.0 }).sum() };
+        (f64::from(rad).to_degrees(), i.time)
+    });
+    if deg == 0.0 || !deg.is_finite() {
+        return None;
+    }
+    let id = egui::Id::new("canvas-trackpad-turn");
+    let kept: Option<TrackpadTurn> = ui.data(|d| d.get_temp(id));
+    let mut t = kept.filter(|t| now - t.last <= ROTATE_GESTURE_END).unwrap_or(TrackpadTurn { total: 0.0, last: now, turning: false });
+    t.total += deg;
+    t.last = now;
+    let turn = if t.turning {
+        Some(deg)
+    } else if t.total.abs() >= ROTATE_DEAD_ZONE {
+        t.turning = true;
+        Some(t.total)
+    } else {
+        None
+    };
+    ui.data_mut(|d| d.insert_temp(id, t));
+    turn
 }
 
 /// One scroll bar along its axis, in screen points: the span it scrolls over (`lo..hi`) and the
@@ -5109,6 +5174,96 @@ mod tests {
             assert!((moved.x + 30.0).abs() < 0.5 && (moved.y + 24.0).abs() < 0.5, "the content follows the fingers ({wheel_zooms}): {moved:?}");
             assert_eq!(app.session.active().unwrap().doc.layers[0].children().unwrap().len(), 0, "nothing drawn");
         }
+    }
+
+    /// A canvas frame at input time `t` (seconds) with `events`, for the trackpad rotation tests.
+    fn timed_frame(app: &mut VectorcraftApp, ctx: &egui::Context, t: f64, events: Vec<egui::Event>) {
+        let raw = egui::RawInput {
+            screen_rect: Some(egui::Rect::from_min_size(Pos2::ZERO, vec2(800.0, 600.0))),
+            time: Some(t),
+            events,
+            ..Default::default()
+        };
+        let mut out = ctx.run_ui(raw, |ui| show(app, ui));
+        out.textures_delta.clear();
+    }
+
+    /// General › Trackpad Gesture to Rotate View, on by default: a two-finger rotation on a Mac
+    /// trackpad (egui's `Event::Rotate`, clockwise radians) turns the view about the pointer, also
+    /// in the frame of a pinch, which zooms about the same point. With the preference off, the view
+    /// does not turn.
+    #[test]
+    fn a_trackpad_rotation_turns_the_view_about_the_pointer() {
+        let mut app = VectorcraftApp::new(Session::new(), Default::default());
+        app.session.execute("file.new", &json!({"width": 400, "height": 300})).unwrap();
+        let ctx = egui::Context::default();
+        timed_frame(&mut app, &ctx, 0.0, vec![]);
+        let rect = app.canvas_rect.unwrap();
+        let at = rect.center() + vec2(60.0, 40.0);
+        timed_frame(&mut app, &ctx, 0.1, vec![egui::Event::PointerMoved(at)]);
+        let under = |app: &VectorcraftApp| Xf::new(rect, app.view().unwrap()).to_doc(at);
+        let before = (*app.view().unwrap(), under(&app));
+        timed_frame(&mut app, &ctx, 0.2, vec![egui::Event::Rotate(0.25)]);
+        let after = *app.view().unwrap();
+        assert!((after.rotation - before.0.rotation - 0.25f64.to_degrees()).abs() < 1e-4, "turned by 14.32°: {}", after.rotation);
+        assert!((after.zoom - before.0.zoom).abs() < 1e-12, "no zoom");
+        assert!(under(&app).distance(before.1) < 1e-6, "the point under the pointer stays: {:?}", under(&app));
+        // A pinch and a rotation in one frame, in a new gesture.
+        let before = (*app.view().unwrap(), under(&app));
+        timed_frame(&mut app, &ctx, 1.0, vec![egui::Event::Zoom(1.25), egui::Event::Rotate(0.25)]);
+        let after = *app.view().unwrap();
+        assert!((after.zoom / before.0.zoom - 1.25).abs() < 1e-6, "the pinch zooms: {}", after.zoom / before.0.zoom);
+        assert!((after.rotation - before.0.rotation - 0.25f64.to_degrees()).abs() < 1e-4, "and the rotation turns: {}", after.rotation);
+        assert!(under(&app).distance(before.1) < 1e-6, "about the same point: {:?}", under(&app));
+        app.session.execute("prefs.set", &json!({"key": "trackpadRotateView", "value": false})).unwrap();
+        let before = *app.view().unwrap();
+        timed_frame(&mut app, &ctx, 2.0, vec![egui::Event::Rotate(0.25)]);
+        timed_frame(&mut app, &ctx, 2.1, vec![egui::Event::Rotate(0.25)]);
+        let after = *app.view().unwrap();
+        assert!(after.rotation == before.rotation && after.center == before.center, "off: the view does not turn ({})", after.rotation);
+    }
+
+    /// A trackpad rotation turns the view only once it reaches 5°, so a pinch that twists a little
+    /// only zooms. It then turns the view by all of it and follows each later rotation event, until
+    /// a quarter of a second passes without one.
+    #[test]
+    fn a_trackpad_rotation_turns_nothing_until_it_reaches_five_degrees() {
+        let mut app = VectorcraftApp::new(Session::new(), Default::default());
+        app.session.execute("file.new", &json!({"width": 400, "height": 300})).unwrap();
+        let ctx = egui::Context::default();
+        timed_frame(&mut app, &ctx, 0.0, vec![]);
+        let at = app.canvas_rect.unwrap().center() + vec2(60.0, 40.0);
+        timed_frame(&mut app, &ctx, 0.1, vec![egui::Event::PointerMoved(at)]);
+        let rotate = |deg: f32| egui::Event::Rotate(deg.to_radians());
+        let zoom = app.view().unwrap().zoom;
+        timed_frame(&mut app, &ctx, 1.0, vec![egui::Event::Zoom(1.25), rotate(1.0)]);
+        assert!(app.view().unwrap().zoom > zoom * 1.2, "the pinch zooms");
+        timed_frame(&mut app, &ctx, 1.1, vec![egui::Event::Zoom(1.25), rotate(1.0)]);
+        timed_frame(&mut app, &ctx, 1.2, vec![egui::Event::Zoom(1.25), rotate(1.0)]);
+        assert_eq!(app.view().unwrap().rotation, 0.0, "3° in all does not turn the view");
+        timed_frame(&mut app, &ctx, 1.3, vec![rotate(3.0)]);
+        assert!((app.view().unwrap().rotation - 6.0).abs() < 1e-4, "6° in all turns by 6°: {}", app.view().unwrap().rotation);
+        timed_frame(&mut app, &ctx, 1.4, vec![rotate(-1.0)]);
+        assert!((app.view().unwrap().rotation - 5.0).abs() < 1e-4, "then each event turns it: {}", app.view().unwrap().rotation);
+        timed_frame(&mut app, &ctx, 2.0, vec![rotate(3.0)]);
+        assert!((app.view().unwrap().rotation - 5.0).abs() < 1e-4, "a new rotation starts under 5° again: {}", app.view().unwrap().rotation);
+    }
+
+    /// Rotation events that come while two fingers are on a touch screen (Safari on an iPad sends
+    /// them with the touches) do not turn the view.
+    #[test]
+    fn a_rotation_with_fingers_on_a_touch_screen_turns_nothing() {
+        let mut app = VectorcraftApp::new(Session::new(), Default::default());
+        app.session.execute("file.new", &json!({"width": 400, "height": 300})).unwrap();
+        let ctx = egui::Context::default();
+        timed_frame(&mut app, &ctx, 0.0, vec![]);
+        let c = app.canvas_rect.unwrap().center();
+        let touch = |n: u64, phase, pos| egui::Event::Touch { device_id: egui::TouchDeviceId(1), id: egui::TouchId(n), phase, pos, force: None };
+        timed_frame(&mut app, &ctx, 0.1, vec![egui::Event::PointerMoved(c - vec2(40.0, 0.0))]);
+        let before = app.view().unwrap().rotation;
+        let start = vec![touch(1, egui::TouchPhase::Start, c - vec2(40.0, 0.0)), touch(2, egui::TouchPhase::Start, c + vec2(40.0, 0.0))];
+        timed_frame(&mut app, &ctx, 0.2, [start, vec![egui::Event::Rotate(0.25)]].concat());
+        assert_eq!(app.view().unwrap().rotation, before, "the view does not turn");
     }
 
     /// General › Display Print Size at 100% Zoom (#394): `view.actualSize` is one document point per
