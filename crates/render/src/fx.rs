@@ -1069,7 +1069,7 @@ impl Renderer {
                 // During a drag, a larger shadow on a multithreaded context is filtered within the
                 // drag's budget (`with_filters`), and no raster is kept.
                 if f.opts.dragging && f.mt && w * h > DRAG_PIXEL_BUDGET {
-                    return false;
+                    return None;
                 }
                 let (w, h) = (w as u16, h as u16);
                 // Silhouette (the object's painted alpha, and its colors under Darkness), offset by
