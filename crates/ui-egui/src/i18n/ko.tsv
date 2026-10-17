@@ -3677,6 +3677,7 @@ theme	Appearance	외관
 @msg	{_1} files can be opened but not written (see document.formats)	{_1} 파일은 열 수 있지만 쓸 수 없습니다(document.formats 참조)
 @msg	{path}: no file system here (pass dataBase64 to open; omit the path to get dataBase64)	{path}: 여기에는 파일 시스템이 없습니다(열려면 dataBase64를 전달하고, dataBase64를 얻으려면 경로를 생략하세요)
 @msg	Save writes {_1}, not {_2}: use document.export for other formats	저장은 {_2}이(가) 아닌 {_1}(으)로 기록합니다. 다른 형식은 document.export를 사용하세요
+@msg	Save writes {_1}, not {_2}: use file.saveAsTemplate to write it	저장은 {_2}이(가) 아닌 {_1}(으)로 기록합니다. 이 형식으로 기록하려면 file.saveAsTemplate를 사용하세요
 @msg	no changes since the last save	마지막 저장 이후 변경 내용이 없습니다
 @msg	unknown format `{f}` (Save writes {_1})	알 수 없는 형식 `{f}`(저장은 {_1}(으)로 기록)
 @msg	`svg` must be an object of SVG options (see document.formats)	`svg`는 SVG 옵션 개체여야 합니다(document.formats 참조)

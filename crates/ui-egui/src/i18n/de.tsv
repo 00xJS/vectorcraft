@@ -3550,6 +3550,7 @@ theme	Appearance	Erscheinungsbild
 @msg	SVG parse error: {0}	SVG-Analysefehler: {0}
 @msg	Save for Web: the image is empty	Für Web speichern: Das Bild ist leer
 @msg	Save writes {_1}, not {_2}: use document.export for other formats	„Speichern“ schreibt {_1}, nicht {_2}: Verwenden Sie document.export für andere Formate
+@msg	Save writes {_1}, not {_2}: use file.saveAsTemplate to write it	„Speichern“ schreibt {_1}, nicht {_2}: Verwenden Sie dafür file.saveAsTemplate
 @msg	Saved recovery data for {title}	Wiederherstellungsdaten für {title} gespeichert
 @msg	Saved to User Defined: {_1}	In „Benutzerdefiniert“ gespeichert: {_1}
 @msg	Saved {path}	{path} gespeichert

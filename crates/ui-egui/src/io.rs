@@ -349,11 +349,12 @@ pub fn remember_view(app: &mut VectorcraftApp) {
     }
 }
 
-/// A path typed in a save panel: kept when its extension names a save format, or, for Save as
-/// Template (`mode`), when it names a template format (the panel's file type); otherwise `f`'s
-/// extension is added.
+/// A path typed in a save panel: kept when its extension names one of the panel's file types (a
+/// save format, or a template format for Save as Template, `mode`); otherwise `f`'s extension is
+/// added.
 fn with_save_extension(path: &str, f: &Format, mode: SaveMode) -> String {
-    with_extension(path, f.extensions[0], |g| SAVE_FORMATS.contains(&g.id) || (mode == SaveMode::Template && TEMPLATE_FORMATS.contains(&g.id)))
+    let formats = if mode == SaveMode::Template { TEMPLATE_FORMATS } else { SAVE_FORMATS };
+    with_extension(path, f.extensions[0], |g| formats.contains(&g.id))
 }
 
 /// Write every file of an export (one per artboard, linked images) for the destination `path`.

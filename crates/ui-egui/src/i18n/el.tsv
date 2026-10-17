@@ -1959,6 +1959,7 @@ axis	Both	Και τα δύο
 @msg	SVG parse error: {0}	Σφάλμα ανάλυσης SVG: {0}
 @msg	Save for Web: the image is empty	Αποθήκευση για ιστό: η εικόνα είναι κενή
 @msg	Save writes {_1}, not {_2}: use document.export for other formats	Η αποθήκευση γράφει {_1}, όχι {_2}: χρησιμοποιήστε το document.export για άλλες μορφές
+@msg	Save writes {_1}, not {_2}: use file.saveAsTemplate to write it	Η αποθήκευση γράφει {_1}, όχι {_2}: χρησιμοποιήστε το file.saveAsTemplate για να το γράψετε
 @msg	Saved recovery data for {title}	Αποθηκεύτηκαν δεδομένα ανάκτησης για το {title}
 @msg	Saved to User Defined: {_1}	Αποθηκεύτηκε στις προσαρμοσμένες ρυθμίσεις: {_1}
 @msg	Saved {path}	Αποθηκεύτηκε το {path}

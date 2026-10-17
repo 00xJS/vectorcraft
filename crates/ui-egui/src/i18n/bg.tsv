@@ -3576,6 +3576,7 @@ axis	Both	И двете
 @msg	SVG parse error: {0}	Грешка при анализ на SVG: {0}
 @msg	Save for Web: the image is empty	Запис за уеб: изображението е празно
 @msg	Save writes {_1}, not {_2}: use document.export for other formats	Записът записва {_1}, а не {_2}: използвайте document.export за други формати
+@msg	Save writes {_1}, not {_2}: use file.saveAsTemplate to write it	Записът записва {_1}, а не {_2}: използвайте file.saveAsTemplate, за да го запишете
 @msg	Saved recovery data for {title}	Запазени данни за възстановяване за {title}
 @msg	Saved to User Defined: {_1}	Запазено в Потребителски: {_1}
 @msg	Saved {path}	Записано: {path}

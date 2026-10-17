@@ -3644,6 +3644,7 @@ axis	Both	Les deux
 @msg	SVG parse error: {0}	Erreur d’analyse SVG : {0}
 @msg	Save for Web: the image is empty	Enregistrer pour le Web : l’image est vide
 @msg	Save writes {_1}, not {_2}: use document.export for other formats	Enregistrer écrit du {_1}, pas du {_2} : utilisez document.export pour les autres formats
+@msg	Save writes {_1}, not {_2}: use file.saveAsTemplate to write it	Enregistrer écrit du {_1}, pas du {_2} : utilisez file.saveAsTemplate pour l’écrire
 @msg	Saved recovery data for {title}	Données de récupération enregistrées pour {title}
 @msg	Saved to User Defined: {_1}	Enregistré dans Défini par l’utilisateur : {_1}
 @msg	Saved {path}	{path} enregistré
