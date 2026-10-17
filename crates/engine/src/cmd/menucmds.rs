@@ -664,9 +664,18 @@ fn trim_image(s: &mut Session, id: NodeId, im: ImageObject) -> Result<Value> {
         return Ok(json!({ "id": id.0, "width": im.width, "height": im.height, "trimmed": false }));
     }
     // Print rasters run to gigabytes decoded: the same allowance opening them has.
-    let mut reader = image::ImageReader::new(std::io::Cursor::new(blob.bytes.as_slice()))
-        .with_guessed_format()
-        .map_err(|_| bad(C, "the image's pixels can't be read"))?;
+    let reader = || {
+        image::ImageReader::new(std::io::Cursor::new(blob.bytes.as_slice()))
+            .with_guessed_format()
+            .map_err(|_| bad(C, "the image's pixels can't be read"))
+    };
+    // The image's size as RGBA, read from its header, is held to that allowance before anything
+    // is decoded (#1717).
+    let (w, h) = reader()?.into_dimensions().map_err(|e| bad(C, format!("the image's pixels can't be read: {e}")))?;
+    if u64::from(w) * u64::from(h) > crate::cmd::fileio::MAX_RASTER_ALLOC / 4 {
+        return Err(bad(C, format!("an image of {w} × {h} pixels is too large to draw")));
+    }
+    let mut reader = reader()?;
     let mut limits = image::Limits::default();
     limits.max_alloc = Some(crate::cmd::fileio::MAX_RASTER_ALLOC);
     reader.limits(limits);
