@@ -782,10 +782,8 @@ fn effect_editor(app: &mut VectorcraftApp, ui: &mut Ui, item: Option<usize>, k: 
                         widgets::dim_label(ui, &size.map_or_else(String::new, |(w, h)| format!("{w} × {h} px")));
                     }
                     Value::String(s) => {
-                        let mut buf = s.clone();
-                        let r = ui.add(egui::TextEdit::singleline(&mut buf).desired_width(90.0));
-                        if r.lost_focus() && buf != *s {
-                            change = Some((key.clone(), json!(buf)));
+                        if let Some(typed) = widgets::exact_text_field(ui, ("fx", item, k, key.as_str()), s, 90.0) {
+                            change = Some((key.clone(), json!(typed)));
                         }
                     }
                     // Free Distort's corners are dragged in its dialog.
@@ -1057,6 +1055,72 @@ mod tests {
         // Another effect lists its values over its defaults, as before.
         let e = Effect { id: "distort.twist".into(), params: json!({"angle": 270}), visible: true };
         assert_eq!(editor_params(&e).get("angle"), Some(&json!(270)));
+    }
+
+    /// A text field of the inline editor keeps what is typed from one frame to the next: a Drop
+    /// Shadow's color typed a character a frame and confirmed with Enter is set in one undo step.
+    /// Escape drops what is typed.
+    #[test]
+    fn the_effect_editor_keeps_text_typed_across_frames() {
+        let mut app = VectorcraftApp::new(vectorcraft_engine::Session::new(), Default::default());
+        app.run("file.new", json!({"width": 100, "height": 100})).unwrap();
+        let id = app.run("shape.rectangle", json!({"x": 0, "y": 0, "width": 20, "height": 20})).unwrap()["id"].as_u64().unwrap();
+        app.run("effect.apply", json!({"effect": "stylize.dropShadow"})).unwrap();
+        let ctx = egui::Context::default();
+        crate::theme::install_fonts(&ctx);
+        set_pstate(&ctx, "ap-fx-open-None-0", true);
+        let mut time = 0.0;
+        let mut run = |app: &mut VectorcraftApp, events: Vec<egui::Event>| {
+            time += 0.1;
+            let mut out = ctx.run_ui(egui::RawInput { events, time: Some(time), ..Default::default() }, |ui| show(app, ui));
+            out.textures_delta.clear();
+            out
+        };
+        // Every text drawn, with its center.
+        fn texts(s: &egui::Shape, out: &mut Vec<(String, egui::Pos2)>) {
+            match s {
+                egui::Shape::Text(t) => out.push((t.galley.text().to_string(), t.visual_bounding_rect().center())),
+                egui::Shape::Vec(v) => v.iter().for_each(|s| texts(s, out)),
+                _ => {}
+            }
+        }
+        let drawn = |out: &egui::FullOutput| {
+            let mut v = vec![];
+            out.shapes.iter().for_each(|c| texts(&c.shape, &mut v));
+            v
+        };
+        run(&mut app, vec![]);
+        let shown = drawn(&run(&mut app, vec![]));
+        let at = shown.iter().find(|(t, _)| t == "#000000").map(|(_, p)| *p);
+        let Some(at) = at else { panic!("no color field: {shown:?}") };
+        let button = |pressed| egui::Event::PointerButton { pos: at, button: egui::PointerButton::Primary, pressed, modifiers: Default::default() };
+        let key = |key, modifiers| egui::Event::Key { key, physical_key: None, pressed: true, repeat: false, modifiers };
+        for events in [vec![egui::Event::PointerMoved(at)], vec![button(true)], vec![button(false)]] {
+            run(&mut app, events);
+        }
+        run(&mut app, vec![key(egui::Key::A, egui::Modifiers::COMMAND)]);
+        let undo = app.session.active().unwrap().history.undo.len();
+        for ch in "#ff0000".chars() {
+            run(&mut app, vec![egui::Event::Text(ch.to_string())]);
+        }
+        let shown = drawn(&run(&mut app, vec![]));
+        assert!(shown.iter().any(|(t, _)| t == "#ff0000"), "the field shows what was typed: {shown:?}");
+        run(&mut app, vec![key(egui::Key::Enter, egui::Modifiers::NONE)]);
+        run(&mut app, vec![]);
+        let color = |app: &VectorcraftApp| app.session.active().unwrap().doc.node(NodeId(id)).unwrap().appearance.effects[0].params["color"].clone();
+        assert_eq!(color(&app), json!("#ff0000"));
+        assert_eq!(app.session.active().unwrap().history.undo.len(), undo + 1, "one undo step");
+        // Escape drops what is typed.
+        for events in [vec![button(true)], vec![button(false)]] {
+            run(&mut app, events);
+        }
+        run(&mut app, vec![egui::Event::Text("0".into())]);
+        let shown = drawn(&run(&mut app, vec![]));
+        assert!(shown.iter().any(|(t, _)| t.len() == 8 && t.starts_with('#')), "a 0 typed into the color: {shown:?}");
+        run(&mut app, vec![key(egui::Key::Escape, egui::Modifiers::NONE)]);
+        run(&mut app, vec![]);
+        assert_eq!(color(&app), json!("#ff0000"));
+        assert_eq!(app.session.active().unwrap().history.undo.len(), undo + 1);
     }
 
     #[test]
