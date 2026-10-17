@@ -84,9 +84,8 @@ pub enum PixelFx {
     /// Blur › Smart Blur (Normal mode): each pixel averaged with the neighbours within `radius`
     /// whose colour differs from its own by no more than `threshold` levels, over a grid of
     /// `samples` × `samples` neighbours at most.
-    /// The Edge Only `mode` draws the edges where neighboring pixels differ by more than
-    /// `threshold` levels in white on black, and Overlay Edge draws them in white over the Normal
-    /// result.
+    /// The Edge Only `mode` draws the edges that `threshold` and `radius` find (`blur::smart_edges`)
+    /// in white on black, and Overlay Edge draws them in white over the Normal result.
     SmartBlur { radius: f64, threshold: f64, samples: u32, mode: SmartBlurMode },
     /// Brush Strokes › Accented Edges: the edges, about `width` (1..14) wide, accented towards
     /// white chalk or black ink as `brightness` (0..50) says; `smoothness` (1..15) softens them.
@@ -388,7 +387,8 @@ impl PixelFx {
     pub fn reach(&self) -> Option<f64> {
         match *self {
             PixelFx::RadialBlur { .. } => None,
-            PixelFx::SmartBlur { radius, .. } => Some(radius),
+            PixelFx::SmartBlur { radius, mode: SmartBlurMode::Normal, .. } => Some(radius),
+            PixelFx::SmartBlur { radius, samples, .. } => Some(blur::edge_reach(radius, samples)),
             PixelFx::AccentedEdges { width, smoothness, .. } => Some(brushstrokes::accent_reach(width, smoothness)),
             // The strokes, and the softened tones that choose them.
             PixelFx::AngledStrokes { length, .. } => Some(brushstrokes::stroke_reach(length).max(brushstrokes::TONE_REACH)),

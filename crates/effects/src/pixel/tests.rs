@@ -500,6 +500,9 @@ fn outsets_follow_the_object() {
     assert!((spin.outset(b) - (far - 25.0)).abs() < 1e-9);
     assert!(fx("blur.radial", json!({"method": "zoom", "amount": 100})).outset(b) > 0.4 * far);
     assert_eq!(fx("blur.smart", json!({"radius": 4})).outset(b), 4.0);
+    assert_eq!(fx("blur.smart", json!({"radius": 4})).reach(), Some(4.0));
+    // The edge modes also read the copy blurred over a wide radius's samples.
+    assert_eq!(fx("blur.smart", json!({"radius": 4, "quality": "low", "blurMode": "edgeOnly"})).reach(), Some(5.0));
     assert_eq!(fx("sharpen.unsharpMask", json!({})).outset(b), 0.0);
     assert_eq!(spin.reach(), None);
     assert_eq!(fx("sharpen.unsharpMask", json!({"radius": 2})).reach(), Some(6.0));
@@ -656,8 +659,8 @@ fn smart_blur_normal_mode_keeps_its_pixels() {
 
 /// Smart Blur's test image: grays 56 and 64 in a checkerboard for x < 3 and 66 and 74 for x in 3..6
 /// (steps of 2 or 18 levels at x = 3, under the threshold), gray 200 from x = 6 on (steps of 126 or
-/// 134 levels). Its edges at threshold 25 are the pixels on the raster's border (transparency is
-/// beyond it) and column 6, the step's lighter side.
+/// 134 levels). Its edges at threshold 25 and radius 1 are the pixels on the raster's border
+/// (transparency is beyond it) and column 6, the step's lighter side.
 fn smart_blur_steps() -> (usize, usize, Vec<u8>, impl Fn(usize, usize) -> bool) {
     let (w, h) = (12, 8);
     let src = image(w, h, |x, y| match x {
@@ -672,16 +675,16 @@ fn smart_blur_steps() -> (usize, usize, Vec<u8>, impl Fn(usize, usize) -> bool) 
 fn smart_blur_edge_only_draws_the_edges_white_on_black() {
     let (w, h, src, edge) = smart_blur_steps();
     let mut d = src.clone();
-    fx("blur.smart", json!({"blurMode": "edgeOnly"})).apply(&mut d, w, h, &space(w, h));
+    fx("blur.smart", json!({"blurMode": "edgeOnly", "radius": 1})).apply(&mut d, w, h, &space(w, h));
     let want = image(w, h, |x, y| if edge(x, y) { [255; 4] } else { [0, 0, 0, 255] });
     assert_eq!(d, want);
-    // The radius changes only the blur.
-    let mut wide = src.clone();
-    fx("blur.smart", json!({"blurMode": "edgeOnly", "radius": 40})).apply(&mut wide, w, h, &space(w, h));
-    assert_eq!(wide, want);
+    // Under one pixel the search still takes the four nearest pixels.
+    let mut narrow = src.clone();
+    fx("blur.smart", json!({"blurMode": "edgeOnly", "radius": 0.1})).apply(&mut narrow, w, h, &space(w, h));
+    assert_eq!(narrow, want);
     // A threshold under the checkerboard's 8 levels makes its lighter squares edges too.
     let mut low = src.clone();
-    fx("blur.smart", json!({"blurMode": "edgeOnly", "threshold": 5})).apply(&mut low, w, h, &space(w, h));
+    fx("blur.smart", json!({"blurMode": "edgeOnly", "radius": 1, "threshold": 5})).apply(&mut low, w, h, &space(w, h));
     for y in 1..h - 1 {
         for x in 1..6 {
             let lighter = matches!(at(&src, w, x, y)[0], 64 | 74);
@@ -692,7 +695,7 @@ fn smart_blur_edge_only_draws_the_edges_white_on_black() {
     let (w, h) = (8, 8);
     let shape = image(w, h, |x, y| if (2..6).contains(&x) && (2..6).contains(&y) { [64, 0, 0, 128] } else { [0; 4] });
     let mut s = shape.clone();
-    fx("blur.smart", json!({"blurMode": "edgeOnly"})).apply(&mut s, w, h, &space(w, h));
+    fx("blur.smart", json!({"blurMode": "edgeOnly", "radius": 1})).apply(&mut s, w, h, &space(w, h));
     let ring = |x: usize, y: usize| (2..6).contains(&x) && (2..6).contains(&y) && !((3..5).contains(&x) && (3..5).contains(&y));
     let inside = |x: usize, y: usize| (3..5).contains(&x) && (3..5).contains(&y);
     let want = image(w, h, |x, y| match (ring(x, y), inside(x, y)) {
@@ -707,10 +710,10 @@ fn smart_blur_edge_only_draws_the_edges_white_on_black() {
 fn smart_blur_overlay_edge_draws_the_edges_white_over_the_blur() {
     let (w, h, src, edge) = smart_blur_steps();
     let mut normal = src.clone();
-    fx("blur.smart", json!({})).apply(&mut normal, w, h, &space(w, h));
+    fx("blur.smart", json!({"radius": 1})).apply(&mut normal, w, h, &space(w, h));
     assert_ne!(normal, src, "the checkerboard is blurred");
     let mut d = src.clone();
-    fx("blur.smart", json!({"blurMode": "overlayEdge"})).apply(&mut d, w, h, &space(w, h));
+    fx("blur.smart", json!({"blurMode": "overlayEdge", "radius": 1})).apply(&mut d, w, h, &space(w, h));
     for y in 0..h {
         for x in 0..w {
             let want = if edge(x, y) { [255; 4] } else { at(&normal, w, x, y) };
@@ -723,6 +726,87 @@ fn smart_blur_overlay_edge_draws_the_edges_white_over_the_blur() {
             let mut e = src.clone();
             fx("blur.smart", json!({"blurMode": mode, "radius": 1e308, "threshold": 1e308, "quality": "high"})).apply(&mut e, w, h, &s);
         }
+    }
+}
+
+/// The edges #2154 drew at any radius: a pixel is on an edge when one of its four nearest pixels
+/// (transparent beyond the raster) differs from it by more than `t` levels in a channel and its
+/// channels add up to at least that pixel's.
+fn four_neighbor_edges(src: &[u8], w: usize, h: usize, t: u8) -> Vec<bool> {
+    let px = |x: isize, y: isize| if x < 0 || y < 0 || x as usize >= w || y as usize >= h { [0; 4] } else { at(src, w, x as usize, y as usize) };
+    let sum = |p: [u8; 4]| p.iter().map(|v| u32::from(*v)).sum::<u32>();
+    let mut edges = Vec::new();
+    for y in 0..h as isize {
+        for x in 0..w as isize {
+            let c = px(x, y);
+            edges.push([(1, 0), (-1, 0), (0, 1), (0, -1)].iter().any(|(dx, dy)| {
+                let n = px(x + dx, y + dy);
+                c.iter().zip(&n).any(|(a, b)| a.abs_diff(*b) > t) && sum(c) >= sum(n)
+            }));
+        }
+    }
+    edges
+}
+
+#[test]
+fn smart_blur_edges_at_radius_one_are_the_four_neighbor_edges() {
+    let (w, h) = (48, 40);
+    let src = image(w, h, |x, y| {
+        let a = if x > 4 && y < 36 { 255 } else { 128 };
+        [((x * 5 + y) as u8).min(a), ((y * 6) as u8).min(a), (((x * y) % 97) as u8).min(a), a]
+    });
+    for t in [5, 10, 25, 60] {
+        let edges = four_neighbor_edges(&src, w, h, t);
+        assert!(edges.contains(&true) && edges.contains(&false), "threshold {t}");
+        let want: Vec<u8> = src.as_chunks::<4>().0.iter().zip(&edges).flat_map(|(p, e)| if *e { [p[3]; 4] } else { [0, 0, 0, p[3]] }).collect();
+        for radius in [0.1, 0.5, 1.0] {
+            let mut d = src.clone();
+            fx("blur.smart", json!({"blurMode": "edgeOnly", "radius": radius, "threshold": t})).apply(&mut d, w, h, &space(w, h));
+            assert_eq!(d, want, "threshold {t}, radius {radius}");
+        }
+    }
+}
+
+#[test]
+fn smart_blur_radius_widens_the_edge_search() {
+    // Gray 60 left of x = 15 and gray 200 from it on: a step of 140 levels.
+    let (w, h) = (30, 16);
+    let src = image(w, h, |x, _| grey(if x < 15 { 60 } else { 200 }));
+    for radius in [1.0, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0, 4.5] {
+        let mut d = src.clone();
+        fx("blur.smart", json!({"blurMode": "edgeOnly", "radius": radius})).apply(&mut d, w, h, &space(w, h));
+        // The pixels within `radius` of a darker one: the step's first `r` columns on its lighter
+        // side, and a band `r` wide along the raster's border (transparency is beyond it). Up to
+        // radius 4.5 the search reads no blurred copy: at 4 and 4.5 the medium quality's 7 samples
+        // across are 4/3 pixels apart, under the 2 pixels a box blur of radius 1 needs.
+        let r = radius as usize;
+        let want =
+            image(w, h, |x, y| if x < r || y < r || x >= w - r || y >= h - r || (15..15 + r).contains(&x) { [255; 4] } else { [0, 0, 0, 255] });
+        assert_eq!(d, want, "radius {radius}");
+    }
+    // Overlay Edge draws the same edges over the blur.
+    let mut normal = src.clone();
+    fx("blur.smart", json!({"radius": 3})).apply(&mut normal, w, h, &space(w, h));
+    let mut over = src.clone();
+    fx("blur.smart", json!({"blurMode": "overlayEdge", "radius": 3})).apply(&mut over, w, h, &space(w, h));
+    assert_eq!(at(&over, w, 17, 8), [255; 4]);
+    assert_eq!(at(&over, w, 18, 8), at(&normal, w, 18, 8));
+    // A wide radius reads a grid of samples, also through a blurred copy, and finds the step from
+    // the radius away, on its lighter side only.
+    let (w, h) = (260, 100);
+    let src = image(w, h, |x, _| grey(if x < 100 { 60 } else { 200 }));
+    let mut d = src.clone();
+    fx("blur.smart", json!({"blurMode": "edgeOnly", "radius": 40})).apply(&mut d, w, h, &space(w, h));
+    for (x, edge) in [(100, true), (130, true), (139, true), (170, false), (99, false), (70, false)] {
+        assert_eq!(at(&d, w, x, 50)[0] == 255, edge, "({x}, 50)");
+    }
+    // A dark band narrower than the gaps between the samples is found through the blurred copy:
+    // at x = 120 the samples fall on x = 107, 93 and 80, all light.
+    let src = image(w, h, |x, _| grey(if (100..104).contains(&x) { 60 } else { 200 }));
+    let mut d = src.clone();
+    fx("blur.smart", json!({"blurMode": "edgeOnly", "radius": 40})).apply(&mut d, w, h, &space(w, h));
+    for (x, edge) in [(104, true), (120, true), (102, false)] {
+        assert_eq!(at(&d, w, x, 50)[0] == 255, edge, "band ({x}, 50)");
     }
 }
 
