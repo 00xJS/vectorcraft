@@ -682,6 +682,18 @@ pub(crate) fn is_guide_path(d: &Document, id: NodeId) -> bool {
     d.node(id).is_some_and(|n| matches!(n.kind, NodeKind::Path { guide: true, .. }))
 }
 
+/// Deselect the ruler guides and the paths made into guides: while View → Guides → Lock Guides is
+/// on, they can't be selected (#1534), whatever selects them. → whether any was selected.
+pub(crate) fn deselect_guides(d: &Document, sel: &mut Selection) -> bool {
+    let paths: Vec<NodeId> = sel.objects.iter().copied().filter(|id| is_guide_path(d, *id)).collect();
+    let any = !paths.is_empty() || !sel.guides.is_empty();
+    for id in paths {
+        sel.remove(id);
+    }
+    sel.guides.clear();
+    any
+}
+
 /// The error of an edit that would nest objects deeper than [`vectorcraft_doc::MAX_DEPTH`].
 pub const TOO_DEEP: &str = "objects can't be nested more than 32 deep";
 const _: () = assert!(vectorcraft_doc::MAX_DEPTH == 32, "TOO_DEEP (and its catalog rows) names the cap");
@@ -1598,6 +1610,7 @@ impl Session {
         if !self.previewing && cmd::typing_in_progress(self) {
             cmd::settle_interaction(self)?;
         }
+        let guides_locked = self.menu.guides_locked;
         let st = self.doc_mut()?;
         let before = st.doc.clone();
         let before_sel = st.selection.clone();
@@ -1645,6 +1658,10 @@ impl Session {
         match result {
             Ok(v) => {
                 st.selection.prune(&st.doc);
+                // An edit that selects what it unlocks, shows or pastes leaves locked guides out.
+                if guides_locked {
+                    deselect_guides(&st.doc, &mut st.selection);
+                }
                 st.revision += 1;
                 if st.interaction.is_none() {
                     let selection = match st.history.undo.last() {
@@ -1673,10 +1690,7 @@ impl Session {
         st.selection.prune(&st.doc);
         // Lock Guides locks the paths made into guides too (#1534), whatever selects them.
         if guides_locked {
-            let locked: Vec<NodeId> = st.selection.objects.iter().copied().filter(|id| is_guide_path(&st.doc, *id)).collect();
-            for id in locked {
-                st.selection.remove(id);
-            }
+            deselect_guides(&st.doc, &mut st.selection);
         }
         // Selecting art makes its layer (or sublayer) the current one, as in the Layers panel of
         // the reference app: new art then goes beside it.
@@ -1807,7 +1821,13 @@ impl Session {
 
     pub fn cancel_interaction(&mut self) -> Result<()> {
         self.pending_paint = None;
-        self.doc_mut()?.undo_interaction();
+        let guides_locked = self.menu.guides_locked;
+        let st = self.doc_mut()?;
+        st.undo_interaction();
+        // Guides locked during the interaction stay deselected.
+        if guides_locked {
+            deselect_guides(&st.doc, &mut st.selection);
+        }
         Ok(())
     }
 
@@ -1849,6 +1869,9 @@ impl Session {
             {
                 st.doc = e.doc;
                 st.selection = Arc::unwrap_or_clone(e.selection);
+                if self.menu.guides_locked {
+                    deselect_guides(&st.doc, &mut st.selection);
+                }
                 st.revision += 1;
                 journal = Some(g.journal);
             }
