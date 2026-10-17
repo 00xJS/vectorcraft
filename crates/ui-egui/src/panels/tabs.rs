@@ -258,8 +258,10 @@ pub fn menu(app: &mut VectorcraftApp, ui: &mut Ui) {
     if sel >= stops.len() {
         sel = stops.len().saturating_sub(1);
     }
-    if menu_item(ui, tl!("Clear All Tabs"), !stops.is_empty(), false) {
-        super::paragraph::run_on_paragraphs(app, "text.tabs.clear", json!({})).ok();
+    if menu_item(ui, tl!("Clear All Tabs"), !stops.is_empty(), false)
+        && let Err(e) = super::paragraph::run_on_paragraphs(app, "text.tabs.clear", json!({}))
+    {
+        app.status(e);
     }
     if menu_item(ui, tl!("Delete Tab"), sel < stops.len(), false) {
         stops.remove(sel);
