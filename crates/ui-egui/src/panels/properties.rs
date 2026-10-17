@@ -971,7 +971,7 @@ mod tests {
 
     fn select_artboard_rows(app: &mut VectorcraftApp, ctx: &egui::Context, indices: &[usize]) {
         for (at, i) in indices.iter().enumerate() {
-            let modifiers = if at == 0 { egui::Modifiers::NONE } else { egui::Modifiers::SHIFT };
+            let modifiers = if at == 0 { egui::Modifiers::NONE } else { egui::Modifiers::COMMAND };
             artboard_deletion_click(app, ctx, super::super::artboards::show, Some(&format!("Artboard {}", i + 1)), modifiers);
         }
         let count = app.session.doc().unwrap().doc.artboards.len();
@@ -1227,7 +1227,7 @@ mod tests {
             artboard_history_new(&mut app, &ctx);
             let created = app.session.doc().unwrap().doc.clone();
             for (at, i) in order.into_iter().enumerate() {
-                let modifiers = if at == 0 { egui::Modifiers::NONE } else { egui::Modifiers::SHIFT };
+                let modifiers = if at == 0 { egui::Modifiers::NONE } else { egui::Modifiers::COMMAND };
                 artboard_deletion_click(&mut app, &ctx, super::super::artboards::show, Some(&format!("Artboard {}", i + 1)), modifiers);
             }
             let options = app.session.tool_options();
