@@ -1020,3 +1020,34 @@ fn overflow_marker_shows_with_the_selection_tool() {
     s.select_tool("selection", v).unwrap();
     assert_eq!(red(&mut s), 0, "nothing selected");
 }
+
+/// #2572: with the Selection tool, a click on the out port and a click on empty canvas thread the
+/// overflow into a new frame there, in one undo step; Escape, or another tool, drops the loaded text.
+#[test]
+fn clicking_the_out_port_then_the_canvas_threads_the_text_into_a_new_frame() {
+    let mut s = session();
+    let v = ViewInfo::default();
+    let long = "Words that fill more than the frame holds. ".repeat(20);
+    let r = s.execute("text.create", &json!({"x": 50, "y": 50, "text": long, "size": 20, "area": {"width": 100, "height": 40}})).unwrap();
+    let id = NodeId(r["id"].as_u64().unwrap());
+    s.execute("select.set", &json!({"ids": [id.0]})).unwrap();
+    s.select_tool("selection", v).unwrap();
+    let port = Point::new(150.0, 90.0 - vectorcraft_tools::text::PORT_RISE_PX);
+    let loaded = |s: &mut Session| s.cursor(Point::new(400.0, 400.0), Mods::default(), v) == vectorcraft_tools::Cursor::LoadedText;
+    click(&mut s, port.x, port.y);
+    assert!(loaded(&mut s));
+    key(&mut s, ToolKey::Escape, Mods::default());
+    assert!(!loaded(&mut s), "Escape drops the text");
+    click(&mut s, port.x, port.y);
+    s.select_tool("directSelection", v).unwrap();
+    s.select_tool("selection", v).unwrap();
+    assert!(!loaded(&mut s), "another tool drops the text");
+    let steps = undo_labels(&s).len();
+    click(&mut s, port.x, port.y);
+    click(&mut s, 400.0, 400.0);
+    let doc = &s.doc().unwrap().doc;
+    let [thread] = &doc.text_threads[..] else { panic!("one thread: {:?}", doc.text_threads) };
+    assert_eq!(thread[0], id);
+    assert_eq!(format!("{}{}", obj(&s, id).plain_text(), obj(&s, thread[1]).plain_text()), long);
+    assert_eq!(&undo_labels(&s)[steps..], ["Thread Text"]);
+}
