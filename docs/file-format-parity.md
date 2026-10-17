@@ -17,7 +17,7 @@ from the public specifications, and users' own `.ai` files are used locally only
 
 | | Illustrator | VectorCraft | Notes |
 |---|---:|---:|---|
-| Formats opened or placed | ~30 | 23 | missing: FreeHand, CorelDRAW, DWG, HEIC/HEIF, JPEG 2000, PICT, PCX, Pixar, Word `.doc`, PS |
+| Formats opened or placed | ~30 | 24 | missing: FreeHand, CorelDRAW, DWG, HEIC/HEIF, JPEG 2000, PICT, PCX, Pixar, Word `.doc`, PS |
 | Formats saved (Save As) | 6 (AI, AIT, PDF, EPS, SVG, SVGZ) | 6 + native | `.ai` written PDF-compatible (no Illustrator editing data) or as legacy version 7 (layers and groups, one artboard per file) |
 | Formats exported | ~16 | 17 | missing: DWG, 3D (OBJ/USDA/glTF); extra: GIF/PNG-8 palette export, DXF up to 2018, layered PSD |
 | **Overall (weighted by use)** | | **~75%** | `.ai` and PDF dominate the weighting |
