@@ -6,6 +6,7 @@
 //! ```
 //!
 //! `TRACE_QUALITY_MP` (default `1,4,16`) sets the megapixel sizes of the cost table.
+//! `TRACE_QUALITY_CLASS=centre-lines` selects only the code-drawn centre-line report.
 //!
 //! A yardstick: `TRACE_QUALITY_IMAGES=dir` also writes the drawings there as PNG files, and
 //! `TRACE_QUALITY_YARDSTICK=dir` measures the SVG files of the same names found there (what another
@@ -15,6 +16,9 @@
 // The peak-memory measure needs a counting global allocator.
 #![allow(unsafe_code)]
 
+mod centre_geom;
+mod centre_lines;
+mod centre_scenes;
 mod inputs;
 mod measure;
 mod raster;
@@ -347,12 +351,23 @@ fn report() -> String {
             }
         }
     }
+    md += &centre_lines::report();
     md
 }
 
 #[test]
 #[ignore = "slow: measures every preset and writes the quality report (run with --release)"]
 fn quality_report() {
+    // One ignored test owns the allocator's cost measurements. Selecting this class
+    // here avoids a second ignored test allocating concurrently with those measurements.
+    if std::env::var("TRACE_QUALITY_CLASS").as_deref() == Ok("centre-lines") {
+        let md = centre_lines::report();
+        println!("{md}");
+        if let Ok(path) = std::env::var("TRACE_QUALITY_REPORT") {
+            std::fs::write(path, md).unwrap();
+        }
+        return;
+    }
     let md = report();
     println!("{md}");
     // Gradients finds none in art that is flat colour, however it is degraded.
