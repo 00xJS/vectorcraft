@@ -426,7 +426,9 @@ The Swatches panel menu's commands: `swatch.addUsedColors {selection?, global?}`
 names Select All Unused selects), `swatch.merge {names}` (the first is kept), `swatch.ungroup {name}` and
 `swatch.sortByKind`.
 Document colour mode: `file.new {colorMode: "cmyk"}` starts a CMYK document with CMYK default swatches, and RGB
-colours applied to it (`paint.setFill`/`setStroke` colours and gradient stops, `swatch.new`) are stored as CMYK;
+colours applied to it (`paint.setFill`/`setStroke` colours and gradient stops, `paint.sampleColor`,
+`swatch.new {color}`) are stored as CMYK, converted through the color settings (`edit.colorSettings`: the CMYK
+working space and intent, as Document Color Mode converts them);
 Gray stays Gray, and `keepModel: true` keeps a colour as given. RGB documents keep colours as given. Harmonies, Edit
 Colors blends, inversions and Recolor Artwork keep each colour's model (a blend between models takes the document's).
 `swatch.new {colors: [...]}` saves several colours as swatches in one undo step. `color.harmony {color, rule, steps?, variation?, amount?}` answers what the Color
@@ -1498,7 +1500,10 @@ the source's fills and strokes on top of each target's stack (Shift+Alt-click). 
 `eyedropper.setOptions {sampleSize?, pickUp?, apply?}` (or `prefs.get`/`prefs.set` with key `eyedropper`) reads and
 sets them; a tree names flags under `appearance` (`transparency`, `fill` `{color, transparency, overprint}`, `stroke`
 `{color, transparency, overprint, weight, cap, join, miter, dash}`), `character` and `paragraph`, and a bool for a
-branch sets all of it. `paint.sampleColor {color}` puts a sampled colour (in its own model) into the active proxy.
+branch sets all of it. `paint.sampleColor {color}` puts a sampled color into the active proxy (in a CMYK document an
+RGB color is stored as CMYK, as `paint.setFill` stores it). Clicking an image samples its pixels: a CMYK image (a
+four-component JPEG, or an 8- or 16-bit chunky CMYK TIFF) gives its ink amounts as they are, and an RGB image's sRGB
+pixel is taken into the working RGB space.
 
 ```json
 {"name":"run_command","arguments":{"command":"eyedropper.setOptions","params":{"pickUp":{"appearance":{"stroke":{"weight":false}}}}}}

@@ -201,6 +201,53 @@ impl ImageBlob {
         let bytes = self.bytes.as_slice();
         if bytes.starts_with(&[0xFF, 0xD8]) { jpeg_inks(bytes) } else { tiff_inks(bytes) }
     }
+
+    /// The ink amounts around pixel (`x`, `y`) of a CMYK image, in the pixel space of an image
+    /// object of `object` (width, height) pixels: the average of the `size` × `size` pixels centered
+    /// on it, clipped to the image, as C, M, Y and K bytes. `None` outside the image and for images
+    /// [`Self::cmyk`] doesn't read. The inks of the last CMYK image are kept for the next sample
+    /// (the Eyedropper samples one image click after click), as [`Self::sample_object`] keeps its
+    /// pixels.
+    pub fn sample_cmyk_object(&self, x: f64, y: f64, object: (u32, u32), size: u32) -> Option<[u8; 4]> {
+        thread_local! {
+            static LAST: std::cell::RefCell<Option<(String, Arc<Inks>)>> = const { std::cell::RefCell::new(None) };
+        }
+        if !self.is_cmyk() {
+            return None;
+        }
+        let key = self.content_key();
+        let inks = LAST.with_borrow_mut(|last| match last {
+            Some((k, inks)) if *k == key => Some(inks.clone()),
+            _ => {
+                let inks = Arc::new(self.cmyk()?);
+                *last = Some((key, inks.clone()));
+                Some(inks)
+            }
+        })?;
+        let k = |n: u32, of: u32| n as f64 / of.max(1) as f64;
+        sample_inks(&inks, x * k(inks.width, object.0), y * k(inks.height, object.1), size)
+    }
+}
+
+/// [`ImageBlob::sample_cmyk_object`] of `inks` at (`x`, `y`) in their own pixel space.
+fn sample_inks(inks: &Inks, x: f64, y: f64, size: u32) -> Option<[u8; 4]> {
+    let (w, h) = (i64::from(inks.width), i64::from(inks.height));
+    let (cx, cy) = (x.floor() as i64, y.floor() as i64);
+    if !(0..w).contains(&cx) || !(0..h).contains(&cy) {
+        return None;
+    }
+    let r = i64::from(size.max(1)) / 2;
+    let (mut sum, mut n) = ([0u64; 4], 0u64);
+    for py in (cy - r).max(0)..=(cy + r).min(h - 1) {
+        for px in (cx - r).max(0)..=(cx + r).min(w - 1) {
+            let i = usize::try_from((py * w + px) * 4).ok()?;
+            let p = inks.data.get(i..i + 4)?;
+            sum.iter_mut().zip(p).for_each(|(s, v)| *s += u64::from(*v));
+            n += 1;
+        }
+    }
+    let c = |v: u64| ((v + n / 2) / n) as u8;
+    Some(sum.map(c))
 }
 
 /// The ink amounts of a four-component JPEG (its samples inverted back; YCCK converted to CMYK
@@ -428,6 +475,20 @@ mod tests {
         // Every image reader sees an RGB image: cyan is (0, 255, 255).
         let rgb = image::load_from_memory(&b.bytes).unwrap().to_rgb8();
         assert_eq!(rgb.get_pixel(1, 0).0, [0, 255, 255]);
+    }
+
+    #[test]
+    fn a_cmyk_image_samples_its_ink_amounts() {
+        let b = ImageBlob::cmyk_tiff(&inks()).unwrap();
+        assert_eq!(b.sample_cmyk_object(0.5, 0.5, (3, 2), 1), Some([0, 40, 100, 0]));
+        // An object of 6 × 4 pixels showing these 3 × 2: (5, 3) is the last pixel.
+        assert_eq!(b.sample_cmyk_object(5.0, 3.0, (6, 4), 1), Some([12, 34, 56, 78]));
+        // 3 × 3 around (1, 0), clipped to the image: all six pixels averaged.
+        assert_eq!(b.sample_cmyk_object(1.5, 0.5, (3, 2), 3), Some([45, 55, 69, 56]));
+        assert_eq!(b.sample_cmyk_object(3.5, 0.5, (3, 2), 1), None, "outside");
+        let mut png = Vec::new();
+        image::RgbaImage::new(2, 2).write_to(&mut Cursor::new(&mut png), image::ImageFormat::Png).unwrap();
+        assert_eq!(ImageBlob::png(png).sample_cmyk_object(0.5, 0.5, (2, 2), 1), None, "an RGB image has no inks");
     }
 
     #[test]
