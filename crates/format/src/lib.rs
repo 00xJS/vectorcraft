@@ -552,6 +552,7 @@ pub fn load_file(bytes: &[u8]) -> Result<NativeFile, FormatError> {
     // Untrusted: capped, named and pointing at objects the file has.
     doc.tidy_saved_selections();
     doc.tidy_graph_designs();
+    doc.raster_effects.add_around = doc.raster_effects.add_around.clamp(0.0, vectorcraft_doc::rastersettings::MAX_ADD_AROUND);
     let mut depth_notes = vec![];
     doc.limit_depth_noting(&mut depth_notes);
     let profiles = f.profiles.into_iter().filter_map(|(name, icc)| Some((name, bytes_of(&icc)?))).collect();

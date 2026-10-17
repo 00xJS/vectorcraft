@@ -2344,8 +2344,9 @@ written unless the whole batch succeeds puts the saves and exports last, or runs
 `document.rasterEffectsSettings` holds how raster effects (shadows, glows, blurs, feathers) become images when PDF
 export or Expand Appearance renders them: `resolution` (ppi, also New Document's `rasterEffectsPpi`), `colorModel`
 (the document's `rgb`/`cmyk`, `grayscale` or `bitmap`), `background` (`white` makes the images opaque), `antiAlias`
-(off: hard edges), `clippingMask` (the white stays under the art only), `addAround` (points of room around the art)
-and `preserveSpotColors` (stored). They are also the defaults of `object.rasterize`, whose params override them (its
+(off: hard edges), `clippingMask` (the white stays under the art only), `addAround` (0 to 1,000 points of room
+around the art; a file's value outside that range opens as the nearer end) and `preserveSpotColors` (stored). They are
+also the defaults of `object.rasterize`, whose params override them (its
 `clippingMask` puts the image in a clip group with the art's outline). No params reports them; any of them changes them
 in one undo step. PDF export renders the raster effects of every kind of object this way (paths, groups, layers, type,
 images, symbol instances, live objects, and those in opacity masks, symbols and pattern tiles): shadows and outer glows

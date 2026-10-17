@@ -2,6 +2,7 @@
 //! raster effect images they make (PDF export, Expand Appearance) and the Rasterize defaults.
 
 use serde_json::{Value, json};
+use vectorcraft_doc::rastersettings::MAX_ADD_AROUND;
 use vectorcraft_doc::{Background, Document, NodeId, NodeKind, RasterColorModel, RasterEffectsSettings};
 
 use super::*;
@@ -96,6 +97,60 @@ fn add_around_grows_the_effect_image() {
     let after = effect_image(&s.doc().unwrap().doc);
     // 36 pt on every side at 72 ppi.
     assert_eq!((after.width() - before.width(), after.height() - before.height()), (72, 72));
+}
+
+/// The transforms of the images in `doc` flattened for output.
+fn image_transforms(doc: &Document) -> Vec<[f64; 6]> {
+    let mut xfs = vec![];
+    crate::flatten_raster_effects(doc).unwrap().walk(|n| {
+        if let NodeKind::Image(im) = &n.kind {
+            xfs.push(im.xf.as_coeffs());
+        }
+    });
+    xfs
+}
+
+#[test]
+fn a_file_with_add_around_out_of_range_opens_with_it_in_range() {
+    let mut s = session();
+    shadowed(&mut s);
+    let mut d = (*s.doc().unwrap().doc).clone();
+    d.raster_effects.add_around = 1e300;
+    let back = vectorcraft_format::load(&vectorcraft_format::save_file(&d)).unwrap();
+    assert_eq!(back.raster_effects.add_around, MAX_ADD_AROUND);
+    let xfs = image_transforms(&back);
+    assert!(!xfs.is_empty() && xfs.iter().flatten().all(|c| c.is_finite()), "{xfs:?}");
+    // 1,000 pt on every side at 72 ppi.
+    assert_eq!(effect_image(&back).width() - effect_image(&s.doc().unwrap().doc).width(), 2000);
+    d.raster_effects.add_around = -5.0;
+    assert_eq!(vectorcraft_format::load(&vectorcraft_format::save_file(&d)).unwrap().raster_effects.add_around, 0.0);
+}
+
+#[test]
+fn art_too_large_for_f64_gets_no_effect_image() {
+    let mut s = session();
+    let r = shadowed(&mut s);
+    // Settings out of range in a document made without opening a file.
+    let mut d = (*s.doc().unwrap().doc).clone();
+    d.raster_effects.add_around = 1e300;
+    assert_eq!(image_transforms(&d), Vec::<[f64; 6]>::new());
+    let mut d = (*s.doc().unwrap().doc).clone();
+    let NodeKind::Path { path, live, .. } = &mut d.node_mut(r).unwrap().kind else { panic!("a path") };
+    (*path, *live) = (vectorcraft_geom::shapes::rectangle(vectorcraft_geom::Rect::new(-1e300, -1e300, 1e300, 1e300)), None);
+    assert_eq!(image_transforms(&d), Vec::<[f64; 6]>::new());
+    // Expand Appearance of it by id, with nothing selected, puts no image into the document (the
+    // rectangle at its own size gets one).
+    let normal = (*s.doc().unwrap().doc).clone();
+    let mut expanded_images = |d: Document| {
+        let st = s.doc_mut().unwrap();
+        (st.doc, st.selection) = (std::sync::Arc::new(d), Default::default());
+        s.execute("effect.expandAppearance", &json!({"ids": [r.0]})).unwrap();
+        let mut images = 0;
+        s.doc().unwrap().doc.walk(|n| images += usize::from(matches!(n.kind, NodeKind::Image(_))));
+        images
+    };
+    assert_eq!(expanded_images(normal), 1);
+    assert_eq!(expanded_images(d), 0);
 }
 
 #[test]
