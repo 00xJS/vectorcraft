@@ -4671,3 +4671,6 @@ lighting	Light	Свет
 @msg	a mask has more than one art block	маска содержит более одного блока графики
 @msg	mask art ends outside a mask dictionary	графика маски заканчивается за пределами словаря маски
 @msg	cancelled; nothing was changed	отменено; ничего не изменено
+@msg	a linked image can't become a gradient mesh: embed it first	связанное изображение нельзя превратить в сетчатый градиент: сначала встройте его
+@msg	the image has no usable size or position	у изображения нет пригодного размера или положения
+@msg	the image's pixels can't be read	не удаётся прочитать пиксели изображения

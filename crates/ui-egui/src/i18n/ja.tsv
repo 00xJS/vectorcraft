@@ -4716,3 +4716,6 @@ lighting	Light	ライト
 @msg	a mask has more than one art block	マスクに複数のアートブロックがあります
 @msg	mask art ends outside a mask dictionary	マスクのアートがマスク辞書の外で終わっています
 @msg	cancelled; nothing was changed	キャンセルしました。何も変更されていません
+@msg	a linked image can't become a gradient mesh: embed it first	リンクされた画像はグラデーションメッシュにできません: 先に埋め込んでください
+@msg	the image has no usable size or position	画像に使用できるサイズまたは位置がありません
+@msg	the image's pixels can't be read	画像のピクセルを読み取れません

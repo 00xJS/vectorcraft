@@ -5040,3 +5040,6 @@ mark-style	Japanese	Japanilainen
 @msg	a mask has more than one art block	maskissa on useampi kuin yksi grafiikkalohko
 @msg	mask art ends outside a mask dictionary	maskin grafiikka päättyy maskin sanakirjan ulkopuolelle
 @msg	cancelled; nothing was changed	peruutettu; mitään ei muutettu
+@msg	a linked image can't become a gradient mesh: embed it first	linkitetystä kuvasta ei voi tehdä liukuväriverkkoa: upota se ensin
+@msg	the image has no usable size or position	kuvalla ei ole käyttökelpoista kokoa tai sijaintia
+@msg	the image's pixels can't be read	kuvan pikseleitä ei voi lukea

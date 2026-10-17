@@ -5018,3 +5018,6 @@ mark-style	Japanese	Japonesas
 @msg	a mask has more than one art block	una máscara tiene más de un bloque de ilustración
 @msg	mask art ends outside a mask dictionary	la ilustración de la máscara termina fuera de un diccionario de máscara
 @msg	cancelled; nothing was changed	cancelado; no se ha cambiado nada
+@msg	a linked image can't become a gradient mesh: embed it first	una imagen enlazada no puede convertirse en una malla de degradado: incrústela primero
+@msg	the image has no usable size or position	la imagen no tiene un tamaño ni una posición utilizables
+@msg	the image's pixels can't be read	no se pueden leer los píxeles de la imagen

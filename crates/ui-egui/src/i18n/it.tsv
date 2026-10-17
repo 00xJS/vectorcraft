@@ -4675,3 +4675,6 @@ lighting	Light	Luce
 @msg	a mask has more than one art block	una maschera contiene più di un blocco grafico
 @msg	mask art ends outside a mask dictionary	la grafica della maschera termina fuori da un dizionario di maschera
 @msg	cancelled; nothing was changed	annullato; non è stato modificato nulla
+@msg	a linked image can't become a gradient mesh: embed it first	un’immagine collegata non può diventare una trama sfumata: incorporala prima
+@msg	the image has no usable size or position	l’immagine non ha dimensioni o posizione utilizzabili
+@msg	the image's pixels can't be read	impossibile leggere i pixel dell’immagine

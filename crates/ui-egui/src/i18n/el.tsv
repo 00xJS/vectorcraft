@@ -5028,3 +5028,6 @@ effect	Points	Σημεία
 @msg	a mask has more than one art block	η μάσκα έχει περισσότερα από ένα μπλοκ γραφικών
 @msg	mask art ends outside a mask dictionary	τα γραφικά της μάσκας τελειώνουν έξω από το λεξικό της μάσκας
 @msg	cancelled; nothing was changed	ακυρώθηκε· δεν άλλαξε τίποτα
+@msg	a linked image can't become a gradient mesh: embed it first	μια συνδεδεμένη εικόνα δεν μπορεί να γίνει πλέγμα διαβάθμισης: ενσωματώστε την πρώτα
+@msg	the image has no usable size or position	η εικόνα δεν έχει χρησιμοποιήσιμο μέγεθος ή θέση
+@msg	the image's pixels can't be read	τα εικονοστοιχεία της εικόνας δεν μπορούν να διαβαστούν
