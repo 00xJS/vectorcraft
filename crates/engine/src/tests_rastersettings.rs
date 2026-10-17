@@ -213,3 +213,48 @@ fn raster_settings_round_trip_and_old_files_load() {
     let back = vectorcraft_format::load(&bytes).unwrap();
     assert_eq!((back.raster_effects_ppi, back.raster_effects), (72.0, RasterEffectsSettings::default()));
 }
+
+/// Save the active document with the raster effects resolution `ppi` and open the file.
+fn reopen_with_ppi(s: &mut Session, ppi: f64) {
+    let mut d = (*s.doc().unwrap().doc).clone();
+    d.raster_effects_ppi = ppi;
+    let data = vectorcraft_format::base64_encode(&vectorcraft_format::save_file(&d));
+    s.execute("document.open", &json!({"name": "ppi.vectorcraft", "dataBase64": data})).unwrap();
+}
+
+#[test]
+fn a_file_with_the_resolution_out_of_range_opens_with_it_in_range() {
+    for (saved, opened, pixels) in [(0.0, 1.0, 1), (-5.0, 1.0, 1), (5000.0, 2400.0, 334), (f64::MAX, 2400.0, 334)] {
+        let mut s = session();
+        let r = id(&s.execute("shape.rectangle", &json!({"x": 50, "y": 50, "width": 10, "height": 10})).unwrap());
+        s.execute("paint.setStroke", &json!({"none": true, "ids": [r.0]})).unwrap();
+        reopen_with_ppi(&mut s, saved);
+        assert_eq!(s.doc().unwrap().doc.raster_effects_ppi, opened, "saved as {saved}");
+        assert_eq!(s.execute(C, &json!({})).unwrap()["resolution"], opened);
+        assert_eq!(s.execute("document.info", &json!({})).unwrap()["document"]["rasterEffectsPpi"], opened);
+        // Rasterize without a ppi param renders the 10 pt square at it.
+        s.execute("select.set", &json!({"ids": [r.0]})).unwrap();
+        let out = s.execute("object.rasterize", &json!({})).unwrap();
+        assert_eq!((out["width"].as_u64(), out["height"].as_u64()), (Some(pixels), Some(pixels)), "saved as {saved}");
+    }
+}
+
+#[test]
+fn a_gradient_exports_at_the_resolution_the_file_opens_with() {
+    for saved in [0.0, -5.0] {
+        let mut s = session();
+        let r = id(&s.execute("shape.rectangle", &json!({"x": 0, "y": 0, "width": 720, "height": 720})).unwrap());
+        s.execute("paint.setFill", &json!({"gradient": {"kind": "linear"}, "ids": [r.0]})).unwrap();
+        reopen_with_ppi(&mut s, saved);
+        // EMF writes the gradient as an image at the raster effects resolution: 720 pt at 1 ppi.
+        let region = vectorcraft_geom::Rect::new(0.0, 0.0, 720.0, 720.0);
+        let out = vectorcraft_metafile::export(&s.doc().unwrap().doc, region, vectorcraft_metafile::Kind::Emf).unwrap();
+        let mut sizes = vec![];
+        vectorcraft_metafile::import(&out.bytes).unwrap().document.walk(|n| {
+            if let NodeKind::Image(im) = &n.kind {
+                sizes.push((im.width, im.height));
+            }
+        });
+        assert_eq!(sizes, [(10, 10)], "saved as {saved}");
+    }
+}

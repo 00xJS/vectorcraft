@@ -226,6 +226,17 @@ fn saved_presets_live_in_the_preferences() {
 }
 
 #[test]
+fn a_saved_preset_with_the_resolution_out_of_range_reads_in_range() {
+    let mut s = Session::new();
+    let saved = json!({"newDocPresets": [{"name": "Zero", "rasterEffectsPpi": 0}, {"name": "Huge", "rasterEffectsPpi": 5000}]});
+    s.apply_prefs(serde_json::from_value(saved).unwrap());
+    let ppi: Vec<Option<f64>> = presets(&mut s, "Saved").iter().map(|p| p["rasterEffectsPpi"].as_f64()).collect();
+    assert_eq!(ppi, [Some(1.0), Some(2400.0)]);
+    s.execute("file.new", &json!({"preset": "Zero"})).unwrap();
+    assert_eq!(s.doc().unwrap().doc.raster_effects_ppi, 1.0);
+}
+
+#[test]
 fn rearrange_keeps_its_grid() {
     let mut s = new_doc(json!({"width": 100, "height": 50, "artboards": 3}));
     s.execute("artboard.rearrange", &json!({"columns": 2, "spacing": 5})).unwrap();
