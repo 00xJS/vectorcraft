@@ -72,8 +72,10 @@ contextual radial adjective. PDF/Print mark styles use `mark-style`, so `Japanes
 
 The search placeholder, Home screen, toolbar/panel tooltips and Preferences already use lookups.
 No new `tl!("literal")` keys were needed: only `cs.tsv` adds 19 AI-draft rows and revises the gradient
-template. Other catalogs fall back to English for new variable/template lookups. Native review is
-still needed, and catalog coverage does not prove that every variable in the UI is translated.
+template. Every other complete catalog (`complete_menus`) has the same rows and a `Roman` row for the
+other mark style; `complete_catalogs_translate_render_site_labels` fails when one of them lacks a row.
+Native review is still needed, and catalog coverage does not prove that every variable in the UI is
+translated.
 
 ## Not done in any language
 

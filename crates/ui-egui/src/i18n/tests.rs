@@ -1439,6 +1439,50 @@ fn czech_render_site_follow_up() {
     }
 }
 
+/// The labels in [`RENDER_SITE_ROWS`], which the UI looks up through a variable or a context that
+/// the literal scans above don't read, have a row in every complete catalog.
+#[test]
+fn complete_catalogs_translate_render_site_labels() {
+    for l in LANGUAGES.iter().filter(|l| l.complete_menus) {
+        let (entries, _) = parse_entries(l.source);
+        let rows: std::collections::HashSet<(&str, &str)> = entries.iter().map(|(ctx, src, _)| (ctx.as_str(), src.as_str())).collect();
+        let missing: Vec<_> = RENDER_SITE_ROWS.iter().filter(|row| !rows.contains(row)).collect();
+        assert!(missing.is_empty(), "{}: {} missing rows: {missing:#?}", l.code, missing.len());
+    }
+    // German's plain "Light" row is Hell (bright), and its plain "Regular" row stays in English.
+    assert_eq!(tr_ctx(de(), "lighting", "Light"), "Licht");
+    assert_eq!(tr_ctx(de(), "effect", "Regular"), "Regelmäßig");
+    assert_eq!(tr_ctx(Lang::from_code("ja").unwrap(), "mark-style", "Japanese"), "日本式");
+}
+
+/// (context, English source) of the labels [`complete_catalogs_translate_render_site_labels`]
+/// requires: the file dialogs' filter names, the status bar's timings, New Document's preset
+/// name, the contributor tooltips, the gradient kind in a swatch's description, the printer mark
+/// styles and the label of the 3D gizmo's light.
+const RENDER_SITE_ROWS: &[(&str, &str)] = &[
+    ("file-filter", "All readable files"),
+    ("file-filter", "All placeable files"),
+    ("file-filter", "Swatch libraries"),
+    ("file-filter", "Flattener presets"),
+    ("file-filter", "PDF presets"),
+    ("file-filter", "Print presets"),
+    ("file-filter", "SVG Compressed"),
+    ("file-filter", "PDF-compatible .ai"),
+    ("file-filter", "VectorCraft Template"),
+    ("file-filter", "Templates"),
+    ("diagnostics", "render"),
+    ("diagnostics", "ui"),
+    ("", "Preset {number}"),
+    ("", "PRs"),
+    ("", "@{login}: {prs}, {commits}, +{added} / −{deleted} lines (Δ {delta}), +{binary_added} / −{binary_deleted} binary assets, {first} – {last}"),
+    ("@plural", "{n} PR|{n} PRs"),
+    ("@plural", "{n} commit|{n} commits"),
+    ("gradient-kind", "Radial"),
+    ("mark-style", "Japanese"),
+    ("", "Roman"),
+    ("lighting", "Light"),
+];
+
 fn pl() -> Lang {
     Lang::from_code("pl").expect("pl registered")
 }

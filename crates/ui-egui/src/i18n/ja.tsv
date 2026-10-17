@@ -2173,6 +2173,8 @@
 	Pencil Tool	鉛筆ツール
 	Percent:	パーセント:
 	Performance	パフォーマンス
+diagnostics	render	描画
+diagnostics	ui	UI
 	Performance & Storage	パフォーマンスとストレージ
 	Permissions	権限
 	Permissions password:	権限パスワード:
@@ -2254,6 +2256,8 @@
 	Printer	プリンター
 	Printer Setup…	プリンター設定…
 	Printer mark type:	トンボの種類:
+	Roman	西洋式
+mark-style	Japanese	日本式
 	Printer profile:	プリンタープロファイル:
 	Printer:	プリンター:
 	Printers	プリンター
@@ -2484,6 +2488,7 @@
 	Save PDF Preset	PDF プリセットを保存
 	Save Perspective Grid Preset	遠近グリッドプリセットを保存
 	Save Preset	プリセットを保存
+	Preset {number}	プリセット {number}
 	Save Preset…	保存…
 	Save Print Preset	プリントプリセットを保存
 	Save Recovery Data	復帰用データを保存
@@ -3035,6 +3040,7 @@
 	{effect} is already applied	{effect} はすでに適用されています
 	{format} Options	{format} オプション
 	{kind} Gradient	{kind}グラデーション
+gradient-kind	Radial	ラジアル
 	{kind} Style Options…	{kind}スタイルオプション…
 	{kind}, {model}	{kind}、{model}
 	{name} (spot)	{name} (特色)
@@ -3175,6 +3181,16 @@
 	Symbolism Tools Options	シンボルツールオプション
 	Symbol Set Density:	シンボルセットの密度:
 	Flattener presets	分割・統合プリセット
+file-filter	All readable files	読み込めるすべてのファイル
+file-filter	All placeable files	配置できるすべてのファイル
+file-filter	Swatch libraries	スウォッチライブラリ
+file-filter	Flattener presets	分割・統合プリセット
+file-filter	PDF presets	PDF プリセット
+file-filter	Print presets	プリントプリセット
+file-filter	SVG Compressed	SVG 圧縮
+file-filter	PDF-compatible .ai	PDF 互換の .ai
+file-filter	VectorCraft Template	VectorCraft テンプレート
+file-filter	Templates	テンプレート
 	Focal Fill	焦点の塗り
 	Focal Stroke	焦点の線
 	Fractional Widths	分数幅
@@ -3474,6 +3490,10 @@ imageTrace	Outline	アウトライン
 	Table	表
 	Name (A–Z)	名前 (A–Z)
 	Merged PRs	マージされた PR
+	PRs	PR
+	@{login}: {prs}, {commits}, +{added} / −{deleted} lines (Δ {delta}), +{binary_added} / −{binary_deleted} binary assets, {first} – {last}	@{login}: {prs}、{commits}、行 +{added} / −{deleted} (Δ {delta})、バイナリアセット +{binary_added} / −{binary_deleted}、{first} – {last}
+@plural	{n} PR|{n} PRs	PR {n} 件
+@plural	{n} commit|{n} commits	コミット {n} 件
 	Commits	コミット
 	Lines added	追加した行数
 	Lines deleted	削除した行数

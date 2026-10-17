@@ -1133,6 +1133,16 @@
 	Flatten Transparency…	Объединить прозрачности…
 	Flattener preset:	Набор объединения:
 	Flattener presets	Наборы объединения
+file-filter	All readable files	Все читаемые файлы
+file-filter	All placeable files	Все файлы, которые можно поместить
+file-filter	Swatch libraries	Библиотеки образцов
+file-filter	Flattener presets	Наборы объединения
+file-filter	PDF presets	Наборы PDF
+file-filter	Print presets	Наборы печати
+file-filter	SVG Compressed	Сжатый SVG
+file-filter	PDF-compatible .ai	.ai, совместимый с PDF
+file-filter	VectorCraft Template	Шаблон VectorCraft
+file-filter	Templates	Шаблоны
 	Flattener Preview	Предварительный просмотр объединения
 	Flip Across	Отразить поперёк
 	Flip Along	Отразить вдоль
@@ -2122,6 +2132,8 @@
 	Percent:	Проценты:
 	Perceptual Scales	Перцепционные шкалы
 	Performance	Производительность
+diagnostics	render	отрисовка
+diagnostics	ui	интерфейс
 	Performance & Storage	Производительность и хранение
 	Permissions	Разрешения
 	Permissions password:	Пароль разрешений:
@@ -2226,6 +2238,8 @@
 	Print Tiling Tool	Инструмент «Разбиение для печати»
 	Printer	Принтер
 	Printer mark type:	Тип типографских меток:
+	Roman	Римский
+mark-style	Japanese	Японский
 	Printer profile:	Профиль принтера:
 	Printer Setup…	Настройка принтера…
 	Printer:	Принтер:
@@ -2564,6 +2578,7 @@
 	Save PDF Preset	Сохранить набор PDF
 	Save Perspective Grid Preset	Сохранить набор сетки перспективы
 	Save Preset	Сохранить набор
+	Preset {number}	Набор {number}
 	Save Preset…	Сохранить набор…
 	Save Print Preset	Сохранить набор печати
 	Save Recovery Data	Сохранить данные восстановления
@@ -3411,6 +3426,7 @@
 	{effect} is already applied	{effect} уже применён
 	{format} Options	Параметры {format}
 	{kind} Gradient	Градиент {kind}
+gradient-kind	Radial	Радиальный
 	{kind} Style Options…	Параметры стиля {kind}…
 	{kind}, {model}	{kind}, {model}
 	{name} (spot)	{name} (плашечный)
@@ -3526,6 +3542,10 @@ imageTrace	Outline	Контур
 	Table	Таблица
 	Name (A–Z)	Имя (А–Я)
 	Merged PRs	Объединённые PR
+	PRs	PR
+	@{login}: {prs}, {commits}, +{added} / −{deleted} lines (Δ {delta}), +{binary_added} / −{binary_deleted} binary assets, {first} – {last}	@{login}: {prs}, {commits}, строки +{added} / −{deleted} (Δ {delta}), бинарные ресурсы +{binary_added} / −{binary_deleted}, {first} – {last}
+@plural	{n} PR|{n} PRs	{n} PR|{n} PR|{n} PR
+@plural	{n} commit|{n} commits	{n} коммит|{n} коммита|{n} коммитов
 	Commits	Коммиты
 	Lines added	Добавленные строки
 	Lines deleted	Удалённые строки

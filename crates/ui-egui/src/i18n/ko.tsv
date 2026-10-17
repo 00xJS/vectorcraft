@@ -2168,6 +2168,8 @@
 	Pencil Tool	연필 도구
 	Percent:	퍼센트:
 	Performance	성능
+diagnostics	render	렌더링
+diagnostics	ui	UI
 	Performance & Storage	성능 및 저장 공간
 	Permissions	권한
 	Permissions password:	권한 암호:
@@ -2249,6 +2251,8 @@
 	Printer	프린터
 	Printer Setup…	프린터 설정…
 	Printer mark type:	프린터 표시 유형:
+	Roman	서양식
+mark-style	Japanese	일본식
 	Printer profile:	프린터 프로파일:
 	Printer:	프린터:
 	Printers	프린터
@@ -2478,6 +2482,7 @@
 	Save PDF Preset	PDF 사전 설정 저장
 	Save Perspective Grid Preset	원근 격자 사전 설정 저장
 	Save Preset	사전 설정 저장
+	Preset {number}	사전 설정 {number}
 	Save Preset…	사전 설정 저장…
 	Save Print Preset	인쇄 사전 설정 저장
 	Save Recovery Data	복구 데이터 저장
@@ -3029,6 +3034,7 @@
 	{effect} is already applied	{effect}이(가) 이미 적용되어 있습니다
 	{format} Options	{format} 옵션
 	{kind} Gradient	{kind} 그레이디언트
+gradient-kind	Radial	방사형
 	{kind} Style Options…	{kind} 스타일 옵션…
 	{kind}, {model}	{kind}, {model}
 	{name} (spot)	{name}(별색)
@@ -3168,6 +3174,16 @@
 	Symbolism Tools Options	심볼 도구 옵션
 	Symbol Set Density:	심볼 세트 밀도:
 	Flattener presets	병합 프리셋
+file-filter	All readable files	읽을 수 있는 모든 파일
+file-filter	All placeable files	가져올 수 있는 모든 파일
+file-filter	Swatch libraries	견본 라이브러리
+file-filter	Flattener presets	병합 프리셋
+file-filter	PDF presets	PDF 프리셋
+file-filter	Print presets	인쇄 프리셋
+file-filter	SVG Compressed	압축된 SVG
+file-filter	PDF-compatible .ai	PDF 호환 .ai
+file-filter	VectorCraft Template	VectorCraft 템플릿
+file-filter	Templates	템플릿
 	Focal Fill	초점 칠
 	Focal Stroke	초점 선
 	Fractional Widths	소수 너비
@@ -3463,6 +3479,10 @@ imageTrace	Outline	윤곽선
 	Table	표
 	Name (A–Z)	이름 (A–Z)
 	Merged PRs	병합된 PR
+	PRs	PR
+	@{login}: {prs}, {commits}, +{added} / −{deleted} lines (Δ {delta}), +{binary_added} / −{binary_deleted} binary assets, {first} – {last}	@{login}: {prs}, {commits}, 줄 +{added} / −{deleted} (Δ {delta}), 바이너리 에셋 +{binary_added} / −{binary_deleted}, {first} – {last}
+@plural	{n} PR|{n} PRs	PR {n}개|PR {n}개
+@plural	{n} commit|{n} commits	커밋 {n}개|커밋 {n}개
 	Commits	커밋
 	Lines added	추가된 줄
 	Lines deleted	삭제된 줄

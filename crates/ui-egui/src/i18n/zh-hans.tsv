@@ -1082,6 +1082,16 @@
 	Flatten Transparency…	拼合透明度…
 	Flattener preset:	拼合预设：
 	Flattener presets	拼合预设
+file-filter	All readable files	所有可读取的文件
+file-filter	All placeable files	所有可置入的文件
+file-filter	Swatch libraries	色板库
+file-filter	Flattener presets	拼合预设
+file-filter	PDF presets	PDF 预设
+file-filter	Print presets	打印预设
+file-filter	SVG Compressed	压缩 SVG
+file-filter	PDF-compatible .ai	PDF 兼容 .ai
+file-filter	VectorCraft Template	VectorCraft 模板
+file-filter	Templates	模板
 	Flattener Preview	拼合预览
 	Flip Across	跨轴翻转
 	Flip Along	沿轴翻转
@@ -2009,6 +2019,8 @@
 	Percent:	百分比：
 	Perceptual Scales	感知尺度
 	Performance	性能
+diagnostics	render	渲染
+diagnostics	ui	界面
 	Performance & Storage	性能和存储
 	Permissions	权限
 	Permissions password:	权限密码：
@@ -2111,6 +2123,8 @@
 	Print Tiling Tool	打印拼贴工具
 	Printer	打印机
 	Printer mark type:	打印机标记类型：
+	Roman	西式
+mark-style	Japanese	日式
 	Printer profile:	打印机配置文件：
 	Printer Setup…	打印机设置…
 	Printer:	打印机：
@@ -2443,6 +2457,7 @@
 	Save PDF Preset	保存 PDF 预设
 	Save Perspective Grid Preset	存储透视网格预设
 	Save Preset	保存预设
+	Preset {number}	预设 {number}
 	Save Preset…	存储预设…
 	Save Print Preset	保存打印预设
 	Save Recovery Data	保存恢复数据
@@ -3264,6 +3279,7 @@
 	{effect} is already applied	已应用 {effect}
 	{format} Options	{format} 选项
 	{kind} Gradient	{kind}渐变
+gradient-kind	Radial	径向
 	{kind} Style Options…	{kind}样式选项…
 	{kind}, {model}	{kind}，{model}
 	{name} (spot)	{name} (专色)
@@ -4424,6 +4440,10 @@ imageTrace	Outline	轮廓
 	Table	表格
 	Name (A–Z)	名称 (A–Z)
 	Merged PRs	已合并的 PR
+	PRs	PR
+	@{login}: {prs}, {commits}, +{added} / −{deleted} lines (Δ {delta}), +{binary_added} / −{binary_deleted} binary assets, {first} – {last}	@{login}：{prs}，{commits}，+{added} / −{deleted} 行 (Δ {delta})，+{binary_added} / −{binary_deleted} 个二进制资源，{first} – {last}
+@plural	{n} PR|{n} PRs	{n} 个 PR
+@plural	{n} commit|{n} commits	{n} 次提交
 	Commits	提交
 	Lines added	新增行数
 	Lines deleted	删除行数

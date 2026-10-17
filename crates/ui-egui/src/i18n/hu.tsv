@@ -1419,6 +1419,16 @@
 	Flatten Transparency…	Átlátszóság lapítása…
 	Flattener preset:	Lapítási előbeállítás:
 	Flattener presets	Lapítási előbeállítások
+file-filter	All readable files	Minden olvasható fájl
+file-filter	All placeable files	Minden elhelyezhető fájl
+file-filter	Swatch libraries	Színminta-könyvtárak
+file-filter	Flattener presets	Lapítási előbeállítások
+file-filter	PDF presets	PDF-előbeállítások
+file-filter	Print presets	Nyomtatási előbeállítások
+file-filter	SVG Compressed	Tömörített SVG
+file-filter	PDF-compatible .ai	PDF-kompatibilis .ai
+file-filter	VectorCraft Template	VectorCraft-sablon
+file-filter	Templates	Sablonok
 	Flattener Preview	Lapítás előnézete
 	Flip	Tükrözés
 	Flip Across	Tükrözés keresztben
@@ -2135,6 +2145,10 @@
 	Merge Selected	Kijelöltek egyesítése
 	Merge Swatches	Színminták egyesítése
 	Merged PRs	Beolvasztott PR-ek
+	PRs	PR-ek
+	@{login}: {prs}, {commits}, +{added} / −{deleted} lines (Δ {delta}), +{binary_added} / −{binary_deleted} binary assets, {first} – {last}	@{login}: {prs}, {commits}, sorok: +{added} / −{deleted} (Δ {delta}), bináris fájlok: +{binary_added} / −{binary_deleted}, {first} – {last}
+@plural	{n} PR|{n} PRs	{n} PR
+@plural	{n} commit|{n} commits	{n} commit
 	Mesh	Háló
 	Mesh Tool	Háló
 	Message:	Üzenet:
@@ -2594,6 +2608,8 @@
 	Perceptual	Észlelési
 	Perceptual Scales	Észlelési skálák
 	Performance	Teljesítmény
+diagnostics	render	renderelés
+diagnostics	ui	felület
 	Performance & Storage	Teljesítmény és tárolás
 	Permissions	Engedélyek
 	Permissions password:	Engedélyek jelszava:
@@ -2729,6 +2745,7 @@
 	Print Tiling Tool	Nyomtatási csempézés
 	Printer	Nyomtató
 	Printer mark type:	Nyomdai jelek típusa:
+mark-style	Japanese	Japán
 	Printer profile:	Nyomtatóprofil:
 	Printer Setup…	Nyomtatóbeállítás…
 	Printer:	Nyomtató:
@@ -3110,6 +3127,7 @@
 	Save PDF Preset	PDF-előbeállítás mentése
 	Save Perspective Grid Preset	Perspektivikus rács előbeállításának mentése
 	Save Preset	Előbeállítás mentése
+	Preset {number}	Előbeállítás {number}
 	Save Preset…	Előbeállítás mentése…
 	Save Print Preset	Nyomtatási előbeállítás mentése
 	Save Recovery Data	Helyreállítási adatok mentése
@@ -4094,6 +4112,7 @@
 	{folders} folder(s) and {files} file(s) searched	Átkeresett mappák: {folders}, fájlok: {files}
 	{format} Options	Formátumbeállítások: {format}
 	{kind} Gradient	Színátmenet: {kind}
+gradient-kind	Radial	Körkörös
 	{kind} Style Options…	Stílusbeállítások: {kind}…
 	{kind}, {model}	{kind}, {model}
 	{name} (spot)	{name} (direkt)
