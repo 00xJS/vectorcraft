@@ -52,40 +52,13 @@ pub fn file_info(bytes: &[u8], password: Option<&str>) -> Option<FileInfo> {
 pub(crate) fn file_info_in(pdf: &Pdf) -> FileInfo {
     let mut f = packet(pdf).and_then(|p| xmp(&p)).unwrap_or_default();
     let info = pdf.metadata();
-    let text = |b: &Option<Vec<u8>>| b.as_deref().map(info_string).map(|s| s.trim().to_string()).filter(|s| !s.is_empty());
+    let text = |b: &Option<Vec<u8>>| b.as_deref().map(text_string).map(|s| s.trim().to_string()).filter(|s| !s.is_empty());
     f.author = f.author.or_else(|| text(&info.author));
     f.description = f.description.or_else(|| text(&info.subject));
     f.keywords = f.keywords.or_else(|| text(&info.keywords).map(|k| split(&k)).filter(|k| !k.is_empty()));
     f.created = f.created.or_else(|| info.creation_date.and_then(pdf_date));
     f.modified = f.modified.or_else(|| info.modification_date.and_then(pdf_date));
     f
-}
-
-/// An information dictionary string: UTF-16 or UTF-8 with its byte order mark, as [`text_string`]
-/// reads it, else PDFDocEncoding (ISO 32000-1 Annex D, Table D.2).
-fn info_string(b: &[u8]) -> String {
-    if b.starts_with(&[0xFE, 0xFF]) || b.starts_with(&[0xEF, 0xBB, 0xBF]) {
-        return text_string(b);
-    }
-    b.iter().map(|&c| pdf_doc_char(c)).collect()
-}
-
-/// Byte `c` of a PDFDocEncoding string. It matches Latin-1 except at 0x18 to 0x1F (accents) and
-/// 0x80 to 0xA0 (punctuation, ligatures, letters and the euro sign); 0x9F has no character and
-/// stays as it is.
-fn pdf_doc_char(c: u8) -> char {
-    const ACCENTS: [char; 8] = ['\u{2D8}', '\u{2C7}', '\u{2C6}', '\u{2D9}', '\u{2DD}', '\u{2DB}', '\u{2DA}', '\u{2DC}'];
-    const HIGH: [char; 33] = [
-        '\u{2022}', '\u{2020}', '\u{2021}', '\u{2026}', '\u{2014}', '\u{2013}', '\u{192}', '\u{2044}', '\u{2039}', '\u{203A}', '\u{2212}',
-        '\u{2030}', '\u{201E}', '\u{201C}', '\u{201D}', '\u{2018}', '\u{2019}', '\u{201A}', '\u{2122}', '\u{FB01}', '\u{FB02}', '\u{141}', '\u{152}',
-        '\u{160}', '\u{178}', '\u{17D}', '\u{131}', '\u{142}', '\u{153}', '\u{161}', '\u{17E}', '\u{9F}', '\u{20AC}',
-    ];
-    let mapped = match c {
-        0x18..=0x1F => ACCENTS.get(usize::from(c - 0x18)),
-        0x80..=0xA0 => HIGH.get(usize::from(c - 0x80)),
-        _ => None,
-    };
-    mapped.copied().unwrap_or(char::from(c))
 }
 
 /// The catalog's metadata stream, decoded; `None` past [`MAX_XMP`] bytes.
