@@ -315,6 +315,17 @@ pub(crate) fn with_bounds(s: &Session, id: Option<NodeId>, mut result: Value) ->
 /// (as [`with_overflow`] finds it): the text past the end of their frames doesn't print. It names
 /// the first 20 ids and counts the rest; `None` when `ids` is empty.
 pub(crate) fn overflow_warning(ids: &[NodeId]) -> Option<String> {
+    overflow_note(ids, "doesn't print")
+}
+
+/// [`overflow_warning`] as an export that draws type gives it: the text past the end of the frames
+/// isn't drawn in the export.
+pub(crate) fn export_overflow_warning(ids: &[NodeId]) -> Option<String> {
+    overflow_note(ids, "isn't drawn in the export")
+}
+
+/// [`overflow_warning`], saying that the text past the end of the frames `left_out`.
+fn overflow_note(ids: &[NodeId], left_out: &str) -> Option<String> {
     const NAMED: usize = 20;
     let (named, rest) = ids.split_at(ids.len().min(NAMED));
     let mut list = named.iter().map(|i| i.0.to_string()).collect::<Vec<_>>().join(", ");
@@ -323,8 +334,8 @@ pub(crate) fn overflow_warning(ids: &[NodeId]) -> Option<String> {
     }
     match ids {
         [] => None,
-        [_] => Some(format!("1 text object doesn't fit its frame: the text past the end of the frame doesn't print (id {list})")),
-        _ => Some(format!("{} text objects don't fit their frames: the text past the end of each frame doesn't print (ids {list})", ids.len())),
+        [_] => Some(format!("1 text object doesn't fit its frame: the text past the end of the frame {left_out} (id {list})")),
+        _ => Some(format!("{} text objects don't fit their frames: the text past the end of each frame {left_out} (ids {list})", ids.len())),
     }
 }
 
