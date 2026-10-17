@@ -194,6 +194,48 @@ fn recent_remembers_the_last_sizes() {
     assert_eq!(presets(&mut s, "Recent").len(), 12);
 }
 
+/// A saved preset or a Recent entry whose size, artboards, spacing or bleed the preferences hold
+/// outside the range `file.new` takes reads as the nearer end of that range (a size of 0 or less
+/// reads as 1 pt), so `file.new` makes a document from it.
+#[test]
+fn a_saved_preset_with_values_out_of_range_reads_in_range() {
+    let mut s = Session::new();
+    let prefs = json!({
+        "newDocPresets": [
+            {"name": "Low", "width": -5, "height": 0, "artboards": 0, "spacing": -50, "bleed": [-5, -1, 0, 9]},
+            {"name": "High", "width": f64::MAX, "height": 200000, "spacing": f64::MAX, "bleed": [100, f64::MAX, 72, 0]},
+            {"name": "Many", "width": 10, "height": 10, "artboards": 5000, "spacing": 0},
+        ],
+        "recentNewDocs": [{"name": "Custom", "width": 100, "height": 50, "artboards": 3, "spacing": -50}],
+    });
+    s.apply_prefs(serde_json::from_value(prefs).unwrap());
+    let read = |p: &Value| {
+        let n = |v: &Value| v.as_f64().unwrap();
+        let bleed: Vec<f64> = p["bleed"].as_array().unwrap().iter().map(n).collect();
+        (n(&p["width"]), n(&p["height"]), n(&p["artboards"]), n(&p["artboardLayout"]["spacing"]), bleed)
+    };
+    let saved: Vec<_> = presets(&mut s, "Saved").iter().map(read).collect();
+    assert_eq!(
+        saved,
+        [
+            (1.0, 1.0, 1.0, 0.0, vec![0.0, 0.0, 0.0, 9.0]),
+            (163830.0, 163830.0, 1.0, 1.0e5, vec![72.0, 72.0, 72.0, 0.0]),
+            (10.0, 10.0, 1000.0, 0.0, vec![0.0; 4]),
+        ]
+    );
+    assert_eq!(read(&presets(&mut s, "Recent")[0]), (100.0, 50.0, 3.0, 0.0, vec![0.0; 4]));
+    // file.new makes each one with those values.
+    s.execute("file.new", &json!({"preset": "Low"})).unwrap();
+    assert_eq!((boards(&s), s.doc().unwrap().doc.setup.bleed), (vec![Rect::new(0.0, 0.0, 1.0, 1.0)], [0.0, 0.0, 0.0, 9.0]));
+    s.execute("file.new", &json!({"preset": "High"})).unwrap();
+    assert_eq!((boards(&s), s.doc().unwrap().doc.setup.bleed), (vec![Rect::new(0.0, 0.0, 163830.0, 163830.0)], [72.0, 72.0, 72.0, 0.0]));
+    s.execute("file.new", &json!({"preset": "Many"})).unwrap();
+    assert_eq!(boards(&s).len(), 1000);
+    let custom = presets(&mut s, "Recent").into_iter().find(|p| p["name"] == "Custom").unwrap();
+    s.execute("file.new", &custom).unwrap();
+    assert_eq!(boards(&s).iter().map(|r| r.x0).collect::<Vec<_>>(), [0.0, 100.0, 200.0], "side by side, not overlapping");
+}
+
 #[test]
 fn saved_presets_live_in_the_preferences() {
     let mut s = Session::new();
