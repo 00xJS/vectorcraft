@@ -293,6 +293,15 @@ mod tests {
     use vectorcraft_doc::{CharStyle, Effect, NodeId, TextObject};
     use vectorcraft_geom::{Point, Rect, shapes};
 
+    /// Type tests need glyph outlines, which only the optional craft-fonts build input provides.
+    fn skip_without_craft_fonts() -> bool {
+        let skip = vectorcraft_text::CRAFT_FONTS.is_empty();
+        if skip {
+            eprintln!("skipped: built without craft-fonts (set CRAFT_FONTS_DIR to a craft-fonts checkout to run it)");
+        }
+        skip
+    }
+
     fn sq(id: u64, x: f64, color: Color) -> Arc<Node> {
         Arc::new(Node::path(
             NodeId(id),
@@ -350,6 +359,9 @@ mod tests {
 
     #[test]
     fn type_changes_the_result_of_every_pathfinder_effect() {
+        if skip_without_craft_fonts() {
+            return;
+        }
         let glyphs = crate::outline_text(&type_h()).unwrap();
         let b = glyphs.geometric_bounds().unwrap();
         assert!(b.x0 < 100.0 && b.x1 > 100.0 && b.y0 > 0.0 && b.y1 < 100.0, "{b:?}");
@@ -377,6 +389,9 @@ mod tests {
 
     #[test]
     fn pieces_of_type_keep_its_paint_opacity_and_blend_mode() {
+        if skip_without_craft_fonts() {
+            return;
+        }
         let mut t = type_h();
         (t.opacity, t.blend) = (0.5, BlendMode::Multiply);
         let look = |p: &Arc<Node>| (p.appearance.fill_paint(), p.opacity, p.blend);
@@ -418,6 +433,9 @@ mod tests {
 
     #[test]
     fn type_in_a_group_keeps_its_look_when_the_groups_geometry_effects_outline_it() {
+        if skip_without_craft_fonts() {
+            return;
+        }
         use vectorcraft_color::BlendMode;
         let art = type_in_group(|t| (t.opacity, t.blend) = (0.5, BlendMode::Multiply));
         assert!(art.id == NodeId(3) && !matches!(art.kind, NodeKind::Text(_)), "{art:?}");
@@ -447,6 +465,9 @@ mod tests {
 
     #[test]
     fn a_transform_on_a_group_moves_the_gradients_of_its_type_and_not_those_placed_on_its_paths() {
+        if skip_without_craft_fonts() {
+            return;
+        }
         use vectorcraft_color::{Gradient, GradientGeom, GradientKind, GradientPaint, GradientStop};
         let stops = vec![GradientStop::new(0.0, Color::rgb(1.0, 0.0, 0.0)), GradientStop::new(1.0, Color::rgb(0.0, 0.0, 1.0))];
         let ramp = GradientPaint::new(Gradient { kind: GradientKind::Linear, stops });
