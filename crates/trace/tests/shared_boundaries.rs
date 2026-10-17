@@ -270,7 +270,7 @@ fn variants(art: &Art, n: usize, soft: bool, settings: &[Setting]) -> Vec<String
         for &(name, set) in settings {
             let mut params = params.clone();
             set(&mut params);
-            let expect = (!soft && !(tiny && name == LOOSEST.0)).then_some(counts.as_slice());
+            let expect = (!(soft || tiny && name == LOOSEST.0)).then_some(counts.as_slice());
             let (line, w) = run(art, soft, bw, &params, name, expect);
             println!("{line}");
             wrong.extend(w);

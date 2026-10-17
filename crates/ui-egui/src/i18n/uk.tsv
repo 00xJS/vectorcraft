@@ -4556,3 +4556,5 @@ lighting	Light	Світло
 	Movie Clip	Кліп
 @msg	name is empty	ім’я порожнє
 @msg	no symbol named `{n}`	немає символу з назвою `{n}`
+@msg	a mask has more than one art block	маска містить більше одного блоку графіки
+@msg	mask art ends outside a mask dictionary	графіка маски закінчується за межами словника маски

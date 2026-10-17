@@ -459,7 +459,7 @@ pub(crate) fn preview_copies(s: &mut Session, roots: &[NodeId], with_guides: boo
     if let Some(k) = &it.copies
         && Arc::ptr_eq(&k.from, &it.doc)
         && k.roots == roots
-        && (!k.selection.guides.is_empty() == has_guide_copies)
+        && (k.selection.guides.is_empty() != has_guide_copies)
     {
         return Ok(Some(k.clone()));
     }
