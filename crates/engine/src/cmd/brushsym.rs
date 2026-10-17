@@ -16,6 +16,7 @@ use vectorcraft_geom::{Affine, Point, Vec2};
 
 use super::edit::{outermost, selected_roots};
 use super::pathops::{remove_each, separate};
+use super::swatch::names_param;
 use super::*;
 use crate::EngineError;
 
@@ -65,8 +66,16 @@ pub fn specs() -> Vec<CommandSpec> {
             has_doc,
             brush_new
         ),
-        cmd!("brush.delete", "Delete Brush", [], None, "{name} delete a brush; strokes using it become plain strokes", has_doc, brush_delete),
-        cmd!("brush.duplicate", "Duplicate Brush", [], None, "{name, newName?} → {name}", has_doc, brush_duplicate),
+        cmd!(
+            "brush.delete",
+            "Delete Brush",
+            [],
+            None,
+            "{name} | {names: [name…]} delete brushes; strokes using them become plain strokes",
+            has_doc,
+            brush_delete
+        ),
+        cmd!("brush.duplicate", "Duplicate Brush", [], None, "{name, newName?} | {names: [name…]} → {name} | {names}", has_doc, brush_duplicate),
         cmd!(
             "brush.options",
             "Brush Options…",
@@ -339,10 +348,10 @@ fn merge(base: &mut Value, patch: &Value) {
     }
 }
 
-fn save_library(s: &mut Session, label: &str, lib: Vec<Brush>, rename: Option<(String, Option<String>)>) -> Result<()> {
+fn save_library(s: &mut Session, label: &str, lib: Vec<Brush>, renames: &[(String, Option<String>)]) -> Result<()> {
     s.edit(label, |d, _| {
         brush::store(d, &lib);
-        if let Some((from, to)) = rename {
+        for (from, to) in renames {
             let ids: Vec<NodeId> = {
                 let mut v = vec![];
                 d.walk(|n| {
@@ -402,7 +411,7 @@ fn brush_new(s: &mut Session, p: &Value) -> Result<Value> {
         v[k] = serde_json::to_value(&art).unwrap_or_default();
     }
     lib.push(parse_brush(C, v)?);
-    save_library(s, "New Brush", lib, None)?;
+    save_library(s, "New Brush", lib, &[])?;
     Ok(json!({ "name": name }))
 }
 
@@ -414,26 +423,35 @@ fn parse_brush(cmd: &str, v: Value) -> Result<Brush> {
 }
 
 fn brush_delete(s: &mut Session, p: &Value) -> Result<Value> {
-    let name = name_param(p, "brush.delete")?.to_string();
+    const C: &str = "brush.delete";
+    let names = names_param(p, C)?;
     let mut lib = brush::library(&s.doc()?.doc);
-    let n = lib.len();
-    lib.retain(|b| b.name != name);
-    if lib.len() == n {
-        return Err(bad("brush.delete", format!("no brush named `{name}`")));
+    if let Some(name) = names.iter().find(|n| !lib.iter().any(|b| &b.name == *n)) {
+        return Err(bad(C, format!("no brush named `{name}`")));
     }
-    save_library(s, "Delete Brush", lib, Some((name, None)))?;
+    lib.retain(|b| !names.contains(&b.name));
+    let renames: Vec<(String, Option<String>)> = names.into_iter().map(|n| (n, None)).collect();
+    save_library(s, "Delete Brush", lib, &renames)?;
     ok()
 }
 
+/// Adds a copy of each brush in `name` or `names` at the end of the library. `newName`, given
+/// without `names`, names the copy.
 fn brush_duplicate(s: &mut Session, p: &Value) -> Result<Value> {
-    let name = name_param(p, "brush.duplicate")?;
-    let mut lib = brush::library(&s.doc()?.doc);
-    let mut b = lib.iter().find(|b| b.name == name).cloned().ok_or_else(|| bad("brush.duplicate", format!("no brush named `{name}`")))?;
-    b.name = brush::unique_name(&lib, str_param(p, "newName").unwrap_or(&format!("{name} copy")));
-    let out = b.name.clone();
-    lib.push(b);
-    save_library(s, "Duplicate Brush", lib, None)?;
-    Ok(json!({ "name": out }))
+    const C: &str = "brush.duplicate";
+    let names = names_param(p, C)?;
+    let before = brush::library(&s.doc()?.doc);
+    let mut lib = before.clone();
+    let mut out = vec![];
+    for name in &names {
+        let mut b = before.iter().find(|b| &b.name == name).cloned().ok_or_else(|| bad(C, format!("no brush named `{name}`")))?;
+        let new_name = str_param(p, "newName").filter(|_| p.get("names").is_none()).map_or_else(|| format!("{name} copy"), str::to_string);
+        b.name = brush::unique_name(&lib, &new_name);
+        out.push(b.name.clone());
+        lib.push(b);
+    }
+    save_library(s, "Duplicate Brush", lib, &[])?;
+    Ok(if p.get("names").is_some() { json!({ "names": out }) } else { json!({ "name": out.first() }) })
 }
 
 fn brush_options(s: &mut Session, p: &Value) -> Result<Value> {
@@ -458,7 +476,7 @@ fn brush_options(s: &mut Session, p: &Value) -> Result<Value> {
     lib[i] = parse_brush(C, v)?;
     let out = lib[i].name.clone();
     let rename = new_name.map(|nn| (name, Some(nn)));
-    save_library(s, "Brush Options", lib, rename)?;
+    save_library(s, "Brush Options", lib, rename.as_slice())?;
     Ok(json!({ "name": out }))
 }
 
