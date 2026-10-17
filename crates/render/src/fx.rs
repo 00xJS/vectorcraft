@@ -879,7 +879,7 @@ impl Renderer {
         off.flush();
         let mut pm = vello_cpu::Pixmap::new(w, h);
         off.render(&mut pm, &mut self.resources);
-        if !self.shadows.get(&old).is_some_and(|e| silhouette(&pm, colored) == e.made.pixels) {
+        if self.shadows.get(&old).is_none_or(|e| silhouette(&pm, colored) != e.made.pixels) {
             return;
         }
         if let Some(mut e) = self.shadows.remove(&old) {

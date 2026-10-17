@@ -4536,3 +4536,5 @@ theme	Appearance	Erscheinungsbild
 	Movie Clip	Movieclip
 @msg	name is empty	Name ist leer
 @msg	no symbol named `{n}`	kein Symbol namens `{n}`
+@msg	a mask has more than one art block	eine Maske enthält mehr als einen Grafikblock
+@msg	mask art ends outside a mask dictionary	die Maskengrafik endet außerhalb eines Maskenwörterbuchs

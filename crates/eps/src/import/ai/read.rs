@@ -272,6 +272,7 @@ enum Kind {
     Group,
     Compound,
     Clip,
+    Mask,
     Obj(Box<Obj>),
 }
 
@@ -290,6 +291,8 @@ struct Frame {
     base: usize,
     /// The clipping paths' indexes among the children.
     clips: Vec<usize>,
+    /// A compound member group explicitly declares its subpaths' winding with `D`.
+    compound_members: bool,
 }
 
 /// What a reader of a pattern's definition has of its head, `(name) llx lly urx ury`: the operands
@@ -383,6 +386,8 @@ struct Reader<'a> {
     clip_fills: HashSet<NodeId>,
     /// Groups closed as an object's drawn look (`9 () XW`).
     looks: HashSet<NodeId>,
+    /// Legacy compound member groups, even when followed by the generic `9 () XW` marker.
+    compound_groups: HashSet<NodeId>,
     /// The gradient mesh being read (`/Mesh X!` … `/End X!`), and whether it started on a `%_` line.
     mesh: Option<(super::mesh::MeshReader, bool)>,
     /// The art styles (`%AI9_BeginArtStyles`), by name.
@@ -425,9 +430,6 @@ const IGNORED: &[&str] = &[
     "Xh",
     "XH",
     "XF",
-    "D",
-    "X=",
-    "X+",
     "Bc",
     "XP",
     "Np",
@@ -529,6 +531,7 @@ impl<'a> Reader<'a> {
             hidden_ids: HashSet::new(),
             clip_fills: HashSet::new(),
             looks: HashSet::new(),
+            compound_groups: HashSet::new(),
             group_ended: false,
             layer_state: None,
             styles: HashMap::new(),
@@ -785,7 +788,16 @@ impl<'a> Reader<'a> {
             self.ensure_space();
         }
         let base = if matches!(kind, Kind::Obj(_)) { self.stack.len() } else { self.frames.last().map_or(0, |f| f.base) };
-        self.frames.push(Frame { kind, children: Vec::new(), hidden, after: self.after_object, gs: self.gs.clone(), base, clips: Vec::new() });
+        self.frames.push(Frame {
+            kind,
+            children: Vec::new(),
+            hidden,
+            after: self.after_object,
+            gs: self.gs.clone(),
+            base,
+            clips: Vec::new(),
+            compound_members: false,
+        });
         self.after_object = false;
         Ok(())
     }
@@ -836,7 +848,7 @@ impl<'a> Reader<'a> {
             "*U" => self.close(what, |k| matches!(k, Kind::Compound))?,
             _ => self.close(what, |k| matches!(k, Kind::Clip))?,
         };
-        let Frame { kind, children: kids, gs, clips, hidden: opened_hidden, .. } = f;
+        let Frame { kind, children: kids, gs, clips, hidden: opened_hidden, compound_members, .. } = f;
         // A group holding only clipping paths (`q … u <path> W n U … Q`) doesn't clip on its own: `u`/`U` don't save
         // the graphics state as `q`/`Q` do, so its paths clip the clipping group around it, as the file's PDF part draws it.
         if matches!(kind, Kind::Group)
@@ -878,6 +890,9 @@ impl<'a> Reader<'a> {
         };
         if clipping && let Some(f) = self.frames.last_mut() {
             f.clips.push(f.children.len());
+        }
+        if compound_members {
+            self.compound_groups.insert(node.id);
         }
         self.add(node, opened_hidden || hidden)?;
         if let Some(p) = painted {
@@ -994,6 +1009,16 @@ impl<'a> Reader<'a> {
                 return Ok(());
             }
             ";" => return self.end_obj(),
+            "X=" => {
+                if !matches!(self.frames.last(), Some(Frame { kind: Kind::Obj(o), .. }) if o.ty == "Mask") {
+                    // `X=` also introduces legacy text frame art, read by `text_frames`.
+                    return Ok(());
+                }
+                self.end_path_quietly();
+                return self.open(Kind::Mask, hidden);
+            }
+            "X+" if self.frames.iter().any(|f| matches!(f.kind, Kind::Mask)) => return self.end_mask(),
+            "X+" => return Ok(()),
             _ => {}
         }
         // What follows an object (its name, transparency and style) ends with anything else. The
@@ -1105,6 +1130,19 @@ impl<'a> Reader<'a> {
                 }
             }
             "d" => self.dash(&vals),
+            "D" => {
+                // The published Adobe Illustrator File Format Specification (version 3.0), §6.8,
+                // permits `u` groups of compound members.
+                // Their explicit winding declarations describe subpaths, not separate paints;
+                // modern streams can also end these groups with `9 () XW`.
+                let n = self.frames.len();
+                if n >= 2
+                    && self.frames.get(n - 2).is_some_and(|f| matches!(f.kind, Kind::Compound))
+                    && let Some(f) = self.frames.last_mut().filter(|f| matches!(f.kind, Kind::Group))
+                {
+                    f.compound_members = true;
+                }
+            }
             // Transparency and state.
             "Xy" => self.transparency(&vals),
             // A group's own state (`Xd`, `6 () XW`) without an `Xy` keeps the current transparency, as
@@ -1221,6 +1259,23 @@ impl<'a> Reader<'a> {
         self.open(Kind::Obj(Box::new(Obj { ty, ..Obj::default() })), hidden)?;
         // A dictionary's state starts afresh (styles set theirs inside).
         self.gs = GState::default();
+        Ok(())
+    }
+
+    /// Capture mask art in document coordinates, without adding it to the owner's siblings.
+    fn end_mask(&mut self) -> Result<(), String> {
+        self.end_path_quietly();
+        let f = self.close("X+", |k| matches!(k, Kind::Mask))?;
+        let (children, clip) = self.clip_first(f.children, &f.clips);
+        let art = self.new_node(NodeKind::Group { children, clip }, &f.gs);
+        self.gs = f.gs;
+        self.after_object = f.after;
+        let Some(Frame { kind: Kind::Obj(o), .. }) = self.frames.last_mut() else {
+            return Err("mask art ends outside a mask dictionary".into());
+        };
+        if o.art.replace(Arc::new(art)).is_some() {
+            return Err("a mask has more than one art block".into());
+        }
         Ok(())
     }
 
@@ -1379,13 +1434,19 @@ impl<'a> Reader<'a> {
     /// An object's dictionary: its name (`AIArtName`, or the XML id `AI10_ArtUID`), and the
     /// opacity mask it may carry.
     fn art_dictionary(&mut self, o: &Obj) {
-        // A mask (`/Mask`, keyed `AI9_Mask`): its art is on `X=` … `X+` lines, and drawing the
-        // object without it shows what the mask hides, so it must be named (#2004). A mask that
-        // is disabled changes nothing.
-        if let Some(mask) = o.obj("AI9_Mask").or_else(|| o.obj("Mask"))
-            && mask.nums("Disabled").first().copied() != Some(1.0)
-        {
-            self.unreadable("opacity masks");
+        if let Some(mask) = o.obj("AI9_Mask").or_else(|| o.obj("Mask")) {
+            if let Some(art) = &mask.art {
+                let on = |key: &str| mask.nums(key).first().copied() == Some(1.0);
+                let value =
+                    OpacityMask { art: art.clone(), clip: on("Clipping"), invert: on("Inverted"), disabled: on("Disabled"), linked: on("Linked") };
+                if let Some(n) = self.last_object().filter(|n| !matches!(n.kind, NodeKind::Layer { .. })) {
+                    n.extras_mut().mask = Some(Box::new(value));
+                } else if !on("Disabled") {
+                    self.unreadable("opacity masks without an owning object");
+                }
+            } else if mask.nums("Disabled").first().copied() != Some(1.0) {
+                self.unreadable("opacity masks without readable art");
+            }
         }
         let name = match o.text("AIArtName") {
             Some(name) => name,
@@ -1542,7 +1603,11 @@ impl<'a> Reader<'a> {
         let style = vals.iter().rev().find_map(V::text).unwrap_or_default();
         let after = std::mem::take(&mut self.after_object);
         if code == 9.0
-            && let Some(look) = self.frames.last().and_then(|f| f.children.last()).filter(|n| matches!(n.kind, NodeKind::Group { .. }))
+            && let Some(look) = self
+                .frames
+                .last()
+                .and_then(|f| f.children.last())
+                .filter(|n| matches!(n.kind, NodeKind::Group { .. }) && !self.compound_groups.contains(&n.id))
         {
             self.looks.insert(look.id);
         }
