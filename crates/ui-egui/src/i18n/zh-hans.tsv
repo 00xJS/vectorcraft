@@ -1652,6 +1652,19 @@ file-filter	Templates	模板
 	Move Slices	移动切片
 	Move Spine Point	移动脊线点
 	Reshape Spine Segment	整形脊线线段
+@msg	select a blend or give `id`	请选择一个混合对象，或给出 `id`
+@msg	not a blend	不是混合对象
+@msg	the blend has no spine	混合对象没有脊线
+@msg	the spine has no segments	脊线没有线段
+@msg	no such spine point	没有此脊线点
+@msg	no such spine segment	没有此脊线线段
+@msg	a key object sits on that point	该点上有关键对象
+@msg	a spine keeps at least two points	脊线至少保留两个点
+@msg	missing number `{key}`	缺少数字 `{key}`
+@msg	index must be ≥ 0	index 不能为负数
+@msg	x and y must be finite	x 和 y 必须是有限值
+@msg	t, dx and dy must be finite	t、dx 和 dy 必须是有限值
+@msg	handle must be in or out	handle 必须是 in 或 out
 	Move Swatch	移动色板
 	Move Up	上移
 	Move…	移动…

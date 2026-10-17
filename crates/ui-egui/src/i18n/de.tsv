@@ -3636,6 +3636,7 @@ theme	Appearance	Erscheinungsbild
 @msg	a freeform gradient keeps at least one point	ein Freiformverlauf behält mindestens einen Punkt
 @msg	a gradient needs at least two stops	ein Verlauf braucht mindestens zwei Farbstopps
 @msg	a graphic style named `{to}` already exists	ein Grafikstil namens `{to}` ist bereits vorhanden
+@msg	a key object sits on that point	auf diesem Punkt liegt ein Basisobjekt
 @msg	a page is missing	eine Seite fehlt
 @msg	a page out of range	eine Seite außerhalb des Bereichs
 @msg	a page tree kid isn't a reference	ein untergeordneter Eintrag des Seitenbaums ist keine Referenz
@@ -3643,6 +3644,7 @@ theme	Appearance	Erscheinungsbild
 @msg	a page's placement is not finite	die Platzierung einer Seite ist nicht endlich
 @msg	a preset named `{_1}` exists	eine Vorgabe namens `{_1}` ist bereits vorhanden
 @msg	a slice size must be a positive number of points	eine Slice-Größe muss eine positive Anzahl von Punkt sein
+@msg	a spine keeps at least two points	eine Achse behält mindestens zwei Punkte
 @msg	a stream runs past the end	ein Datenstrom reicht über das Ende hinaus
 @msg	a stream's length is wrong	die Länge eines Datenstroms ist falsch
 @msg	a stream's length isn't a number	die Länge eines Datenstroms ist keine Zahl
@@ -3704,11 +3706,13 @@ theme	Appearance	Erscheinungsbild
 @msg	give horizontal or vertical	geben Sie horizontal oder vertical an
 @msg	give the path `id` and the width point `index`	geben Sie die `id` des Pfads und den `index` des Breitenpunkts an
 @msg	guides are locked	die Hilfslinien sind gesperrt
+@msg	handle must be in or out	handle muss in oder out sein
 @msg	image '{key}' has no pixels and was left out	das Bild '{key}' hat keine Pixel und wurde ausgelassen
 @msg	image data `{_1}` is missing	die Bilddaten `{_1}` fehlen
 @msg	image would be too large; lower the resolution	das Bild wäre zu groß; verringern Sie die Auflösung
 @msg	index must be a number or first, previous, next or last	index muss eine Zahl oder first, previous, next oder last sein
 @msg	index must be a number or first, previous, next or last, not `{other}`	index muss eine Zahl oder first, previous, next oder last sein, nicht `{other}`
+@msg	index must be ≥ 0	index darf nicht negativ sein
 @msg	installing from a path is not available on the web; pass the module as `dataBase64`	die Installation aus einem Pfad ist im Web nicht verfügbar; übergeben Sie das Modul als `dataBase64`
 @msg	internal error in `{cmd}`: {msg} (the document was left as it was before; please report this bug)	interner Fehler in `{cmd}`: {msg} (das Dokument wurde im vorherigen Zustand belassen; bitte melden Sie diesen Fehler)
 @msg	internal error: {msg} (please report this bug)	interner Fehler: {msg} (bitte melden Sie diesen Fehler)
@@ -3728,6 +3732,7 @@ theme	Appearance	Erscheinungsbild
 @msg	missing `name`	`name` fehlt
 @msg	missing `tool`	`tool` fehlt
 @msg	missing index	der Index fehlt
+@msg	missing number `{key}`	die Zahl `{key}` fehlt
 @msg	multiple windows land with M11.5	mehrere Fenster kommen mit M11.5
 @msg	name the file	benennen Sie die Datei
 @msg	no CSS to copy: select objects with CSS of their own	kein CSS zum Kopieren: Wählen Sie Objekte mit eigenem CSS aus
@@ -3809,6 +3814,8 @@ theme	Appearance	Erscheinungsbild
 @msg	no such recent font	keine solche zuletzt verwendete Schrift
 @msg	no such saved selection	keine solche gespeicherte Auswahl
 @msg	no such segment	kein solches Segment
+@msg	no such spine point	kein solcher Achsenpunkt
+@msg	no such spine segment	kein solches Achsensegment
 @msg	no such subpath	kein solcher Teilpfad
 @msg	no such user library	keine solche Benutzerbibliothek
 @msg	no such view	keine solche Ansicht
@@ -3824,6 +3831,7 @@ theme	Appearance	Erscheinungsbild
 @msg	not a DXF drawing	keine DXF-Zeichnung
 @msg	not a VectorCraft file: {0}	keine VectorCraft-Datei: {0}
 @msg	not a VectorCraft shortcut set (missing `overrides`)	kein VectorCraft-Tastaturbefehlssatz (`overrides` fehlt)
+@msg	not a blend	keine Angleichung
 @msg	not a graphic style library (format `{_1}`)	keine Grafikstil-Bibliothek (Format `{_1}`)
 @msg	not a shortcut set: the text doesn't start with a slash name and an opening brace	kein Tastaturbefehlssatz: Der Text beginnt nicht mit einem Namen mit Schrägstrich und einer öffnenden geschweiften Klammer
 @msg	not a stored central record	kein gespeicherter zentraler Eintrag
@@ -3880,6 +3888,7 @@ theme	Appearance	Erscheinungsbild
 @msg	select (or target) objects whose appearance isn't basic	wählen Sie Objekte aus (oder als Ziel), deren Aussehen nicht einfach ist
 @msg	select a Live Paint group	wählen Sie eine Interaktiv-malen-Gruppe aus
 @msg	select a blend	wählen Sie eine Angleichung aus
+@msg	select a blend or give `id`	wählen Sie eine Angleichung aus oder geben Sie `id` an
 @msg	select a clip group	wählen Sie eine Schnittgruppe aus
 @msg	select a gradient mesh	wählen Sie ein Verlaufsgitter aus
 @msg	select a linked image: an embedded one has no file	wählen Sie ein verknüpftes Bild aus: Ein eingebettetes hat keine Datei
@@ -3913,6 +3922,7 @@ theme	Appearance	Erscheinungsbild
 @msg	stop {i} needs `offset`	Farbstopp {i} braucht `offset`
 @msg	stop {i} needs a valid `color`	Farbstopp {i} braucht eine gültige `color`
 @msg	stop {i}: `{k}` must be a number	Farbstopp {i}: `{k}` muss eine Zahl sein
+@msg	t, dx and dy must be finite	t, dx und dy müssen endlich sein
 @msg	the EMF header is damaged	der EMF-Header ist beschädigt
 @msg	the PDF has no pages	die PDF-Datei hat keine Seiten
 @msg	the PDF is no longer loaded	die PDF-Datei ist nicht mehr geladen
@@ -3925,6 +3935,7 @@ theme	Appearance	Erscheinungsbild
 @msg	the art is too light for any dots	die Grafik ist zu hell für Rasterpunkte
 @msg	the artboard to fit must be a positive size up to {_1} pt	die einzupassende Zeichenfläche muss eine positive Größe bis {_1} pt haben
 @msg	the background worker stopped	der Hintergrundprozess wurde beendet
+@msg	the blend has no spine	die Angleichung hat keine Achse
 @msg	the compressed file unpacks to more than {_1} MB	die komprimierte Datei entpackt sich auf mehr als {_1} MB
 @msg	the document has never been saved	das Dokument wurde noch nie gespeichert
 @msg	the document has no artboard	das Dokument hat keine Zeichenfläche
@@ -3965,6 +3976,7 @@ theme	Appearance	Erscheinungsbild
 @msg	the selected stroke's profile is already listed as {_1}	das Profil der ausgewählten Kontur ist bereits als {_1} aufgeführt
 @msg	the selection has no URL (or they differ)	die Auswahl hat keine URL (oder die URLs unterscheiden sich)
 @msg	the selection isn't in perspective	die Auswahl ist nicht in der Perspektive
+@msg	the spine has no segments	die Achse hat keine Segmente
 @msg	the stroke has no weight	die Kontur hat keine Stärke
 @msg	the thumbnail image is malformed	das Miniaturbild ist fehlerhaft
 @msg	the top object must be a path, compound path or text object to use as a clipping mask	das oberste Objekt muss ein Pfad, ein zusammengesetzter Pfad oder ein Textobjekt sein, um als Schnittmaske zu dienen
@@ -4003,6 +4015,7 @@ theme	Appearance	Erscheinungsbild
 @msg	version {0} files can't be compressed: only version {COMPRESSED_SINCE} and later open compressed files	Dateien der Version {0} können nicht komprimiert werden: Erst Version {COMPRESSED_SINCE} und neuer öffnen komprimierte Dateien
 @msg	width and height are at least 1 pixel	Breite und Höhe betragen mindestens 1 Pixel
 @msg	workspace name can't be empty	der Name des Arbeitsbereichs darf nicht leer sein
+@msg	x and y must be finite	x und y müssen endlich sein
 @msg	{C}: no effect at index {from}	{C}: kein Effekt bei Index {from}
 @msg	{_1} failed: {e}	{_1} ist fehlgeschlagen: {e}
 @msg	{_1} files can be opened but not written (see document.formats)	{_1}-Dateien können geöffnet, aber nicht geschrieben werden (siehe document.formats)

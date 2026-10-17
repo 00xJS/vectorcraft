@@ -3732,6 +3732,7 @@ axis	Both	Оба
 @msg	a freeform gradient keeps at least one point	произвольный градиент сохраняет как минимум одну точку
 @msg	a gradient needs at least two stops	градиенту нужны как минимум две точки перехода
 @msg	a graphic style named `{to}` already exists	графический стиль с именем `{to}` уже существует
+@msg	a key object sits on that point	в этой точке находится ключевой объект
 @msg	a page is missing	страница отсутствует
 @msg	a page out of range	страница вне диапазона
 @msg	a page tree kid isn't a reference	потомок дерева страниц не является ссылкой
@@ -3739,6 +3740,7 @@ axis	Both	Оба
 @msg	a page's placement is not finite	размещение страницы не конечно
 @msg	a preset named `{_1}` exists	набор с именем `{_1}` уже существует
 @msg	a slice size must be a positive number of points	размер фрагмента должен быть положительным числом пунктов
+@msg	a spine keeps at least two points	остов сохраняет как минимум две точки
 @msg	a stream runs past the end	поток выходит за конец
 @msg	a stream's length is wrong	длина потока неверна
 @msg	a stream's length isn't a number	длина потока не является числом
@@ -3800,11 +3802,13 @@ axis	Both	Оба
 @msg	give horizontal or vertical	укажите horizontal или vertical
 @msg	give the path `id` and the width point `index`	укажите `id` контура и `index` точки ширины
 @msg	guides are locked	направляющие заблокированы
+@msg	handle must be in or out	handle должен быть in или out
 @msg	image '{key}' has no pixels and was left out	изображение '{key}' не имеет пикселей и было пропущено
 @msg	image data `{_1}` is missing	данные изображения `{_1}` отсутствуют
 @msg	image would be too large; lower the resolution	изображение было бы слишком большим; уменьшите разрешение
 @msg	index must be a number or first, previous, next or last	index должен быть числом или first, previous, next, last
 @msg	index must be a number or first, previous, next or last, not `{other}`	index должен быть числом или first, previous, next, last, а не `{other}`
+@msg	index must be ≥ 0	index не может быть отрицательным
 @msg	installing from a path is not available on the web; pass the module as `dataBase64`	установка из пути недоступна в web; передайте модуль как `dataBase64`
 @msg	internal error in `{cmd}`: {msg} (the document was left as it was before; please report this bug)	внутренняя ошибка в `{cmd}`: {msg} (документ оставлен в прежнем состоянии; пожалуйста, сообщите об этой ошибке)
 @msg	internal error: {msg} (please report this bug)	внутренняя ошибка: {msg} (пожалуйста, сообщите об этой ошибке)
@@ -3824,6 +3828,7 @@ axis	Both	Оба
 @msg	missing `name`	отсутствует `name`
 @msg	missing `tool`	отсутствует `tool`
 @msg	missing index	отсутствует index
+@msg	missing number `{key}`	отсутствует число `{key}`
 @msg	multiple windows land with M11.5	несколько окон появятся в M11.5
 @msg	name the file	дайте файлу имя
 @msg	no CSS to copy: select objects with CSS of their own	нет CSS для копирования: выделите объекты с собственным CSS
@@ -3904,6 +3909,8 @@ axis	Both	Оба
 @msg	no such recent font	такого последнего шрифта нет
 @msg	no such saved selection	такого сохранённого выделения нет
 @msg	no such segment	такого сегмента нет
+@msg	no such spine point	такой точки остова нет
+@msg	no such spine segment	такого сегмента остова нет
 @msg	no such subpath	такого вложенного контура нет
 @msg	no such user library	такой пользовательской библиотеки нет
 @msg	no such view	такого вида нет
@@ -3919,6 +3926,7 @@ axis	Both	Оба
 @msg	not a DXF drawing	не является чертежом DXF
 @msg	not a VectorCraft file: {0}	не является файлом VectorCraft: {0}
 @msg	not a VectorCraft shortcut set (missing `overrides`)	не является набором сочетаний клавиш VectorCraft (отсутствует `overrides`)
+@msg	not a blend	это не переход
 @msg	not a graphic style library (format `{_1}`)	не является библиотекой графических стилей (формат `{_1}`)
 @msg	not a shortcut set: the text doesn't start with a slash name and an opening brace	это не набор сочетаний клавиш: текст не начинается с имени с косой чертой и открывающей фигурной скобки
 @msg	not a stored central record	не является сохранённой центральной записью
@@ -3975,6 +3983,7 @@ axis	Both	Оба
 @msg	select (or target) objects whose appearance isn't basic	выделите (или укажите как объект) объекты, оформление которых не является основным
 @msg	select a Live Paint group	выделите группу быстрой заливки
 @msg	select a blend	выделите переход
+@msg	select a blend or give `id`	выделите переход или укажите `id`
 @msg	select a clip group	выделите группу обрезки
 @msg	select a gradient mesh	выделите градиентную сетку
 @msg	select a linked image: an embedded one has no file	выделите связанное изображение: у внедрённого нет файла
@@ -4008,6 +4017,7 @@ axis	Both	Оба
 @msg	stop {i} needs `offset`	точке перехода {i} нужен `offset`
 @msg	stop {i} needs a valid `color`	точке перехода {i} нужен допустимый `color`
 @msg	stop {i}: `{k}` must be a number	точка перехода {i}: `{k}` должно быть числом
+@msg	t, dx and dy must be finite	t, dx и dy должны быть конечными
 @msg	the EMF header is damaged	заголовок EMF повреждён
 @msg	the PDF has no pages	в PDF нет страниц
 @msg	the PDF is no longer loaded	PDF больше не загружен
@@ -4020,6 +4030,7 @@ axis	Both	Оба
 @msg	the art is too light for any dots	рисунок слишком светлый для каких-либо точек
 @msg	the artboard to fit must be a positive size up to {_1} pt	монтажная область для вписывания должна иметь положительный размер до {_1} пт
 @msg	the background worker stopped	фоновый процесс остановлен
+@msg	the blend has no spine	у перехода нет остова
 @msg	the compressed file unpacks to more than {_1} MB	сжатый файл распаковывается более чем в {_1} МБ
 @msg	the document has never been saved	документ никогда не сохранялся
 @msg	the document has no artboard	в документе нет монтажной области
@@ -4060,6 +4071,7 @@ axis	Both	Оба
 @msg	the selected stroke's profile is already listed as {_1}	профиль выбранной обводки уже указан как {_1}
 @msg	the selection has no URL (or they differ)	у выделения нет URL (или они различаются)
 @msg	the selection isn't in perspective	выделение не в перспективе
+@msg	the spine has no segments	у остова нет сегментов
 @msg	the stroke has no weight	у обводки нет толщины
 @msg	the thumbnail image is malformed	изображение миниатюры повреждено
 @msg	the top object must be a path, compound path or text object to use as a clipping mask	верхний объект должен быть контуром, составным контуром или текстовым объектом, чтобы использовать его как маску обрезки
@@ -4098,6 +4110,7 @@ axis	Both	Оба
 @msg	version {0} files can't be compressed: only version {COMPRESSED_SINCE} and later open compressed files	файлы версии {0} не могут быть сжаты: только версия {COMPRESSED_SINCE} и новее открывают сжатые файлы
 @msg	width and height are at least 1 pixel	ширина и высота должны быть не менее 1 пикселя
 @msg	workspace name can't be empty	имя рабочей среды не может быть пустым
+@msg	x and y must be finite	x и y должны быть конечными
 @msg	{C}: no effect at index {from}	{C}: нет эффекта с индексом {from}
 @msg	{_1} failed: {e}	{_1} завершился с ошибкой: {e}
 @msg	{_1} files can be opened but not written (see document.formats)	файлы {_1} можно открыть, но не записать (см. document.formats)

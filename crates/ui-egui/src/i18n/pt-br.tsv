@@ -3310,6 +3310,7 @@ axis	Both	Ambos
 @msg	a freeform gradient keeps at least one point	um gradiente de forma livre mantém pelo menos um ponto
 @msg	a gradient needs at least two stops	um gradiente precisa de pelo menos duas paradas
 @msg	a graphic style named `{to}` already exists	já existe um estilo gráfico chamado `{to}`
+@msg	a key object sits on that point	há um objeto-chave nesse ponto
 @msg	a page is missing	falta uma página
 @msg	a page out of range	uma página fora do intervalo
 @msg	a page tree kid isn't a reference	um filho da árvore de páginas não é uma referência
@@ -3317,6 +3318,7 @@ axis	Both	Ambos
 @msg	a page's placement is not finite	a posição de uma página não é finita
 @msg	a preset named `{_1}` exists	já existe uma predefinição chamada `{_1}`
 @msg	a slice size must be a positive number of points	o tamanho de uma fatia deve ser um número positivo de pontos
+@msg	a spine keeps at least two points	uma coluna mantém pelo menos dois pontos
 @msg	a stream runs past the end	um fluxo passa do fim
 @msg	a stream's length is wrong	o comprimento de um fluxo está errado
 @msg	a stream's length isn't a number	o comprimento de um fluxo não é um número
@@ -3373,11 +3375,13 @@ axis	Both	Ambos
 @msg	give corners of the path: anchors between two straight sides	informe cantos do traçado: âncoras entre dois lados retos
 @msg	give the path `id` and the width point `index`	informe o `id` do traçado e o `index` do ponto de largura
 @msg	guides are locked	as guias estão bloqueadas
+@msg	handle must be in or out	handle deve ser in ou out
 @msg	image '{key}' has no pixels and was left out	a imagem '{key}' não tem pixels e foi omitida
 @msg	image data `{_1}` is missing	os dados da imagem `{_1}` estão ausentes
 @msg	image would be too large; lower the resolution	a imagem ficaria grande demais; reduza a resolução
 @msg	index must be a number or first, previous, next or last	index deve ser um número ou first, previous, next ou last
 @msg	index must be a number or first, previous, next or last, not `{other}`	index deve ser um número ou first, previous, next ou last, não `{other}`
+@msg	index must be ≥ 0	index não pode ser negativo
 @msg	installing from a path is not available on the web; pass the module as `dataBase64`	instalar a partir de um caminho não está disponível na web; passe o módulo como `dataBase64`
 @msg	internal error in `{cmd}`: {msg} (the document was left as it was before; please report this bug)	erro interno em `{cmd}`: {msg} (o documento foi mantido como estava; relate este bug)
 @msg	internal error: {msg} (please report this bug)	erro interno: {msg} (relate este bug)
@@ -3397,6 +3401,7 @@ axis	Both	Ambos
 @msg	missing `name`	falta `name`
 @msg	missing `tool`	falta `tool`
 @msg	missing index	falta o índice
+@msg	missing number `{key}`	falta o número `{key}`
 @msg	multiple windows land with M11.5	várias janelas chegam com o M11.5
 @msg	name the file	dê um nome ao arquivo
 @msg	no CSS to copy: select objects with CSS of their own	não há CSS para copiar: selecione objetos que tenham CSS próprio
@@ -3477,6 +3482,8 @@ axis	Both	Ambos
 @msg	no such recent font	fonte recente inexistente
 @msg	no such saved selection	seleção salva inexistente
 @msg	no such segment	segmento inexistente
+@msg	no such spine point	ponto da coluna inexistente
+@msg	no such spine segment	segmento da coluna inexistente
 @msg	no such subpath	subtraçado inexistente
 @msg	no such user library	biblioteca do usuário inexistente
 @msg	no such view	vista inexistente
@@ -3492,6 +3499,7 @@ axis	Both	Ambos
 @msg	not a DXF drawing	não é um desenho DXF
 @msg	not a VectorCraft file: {0}	não é um arquivo do VectorCraft: {0}
 @msg	not a VectorCraft shortcut set (missing `overrides`)	não é um conjunto de atalhos do VectorCraft (falta `overrides`)
+@msg	not a blend	não é uma mesclagem
 @msg	not a graphic style library (format `{_1}`)	não é uma biblioteca de estilos gráficos (formato `{_1}`)
 @msg	not a stored central record	não é um registro central armazenado
 @msg	not a valid plug-in module: {0}	não é um módulo de plug-in válido: {0}
@@ -3546,6 +3554,7 @@ axis	Both	Ambos
 @msg	select (or target) objects whose appearance isn't basic	selecione (ou direcione) objetos cuja aparência não seja básica
 @msg	select a Live Paint group	selecione um grupo de Pintura dinâmica
 @msg	select a blend	selecione uma mesclagem
+@msg	select a blend or give `id`	selecione uma mesclagem ou informe seu `id`
 @msg	select a clip group	selecione um grupo de recorte
 @msg	select a gradient mesh	selecione uma malha de gradiente
 @msg	select a linked image: an embedded one has no file	selecione uma imagem vinculada: uma incorporada não tem arquivo
@@ -3579,6 +3588,7 @@ axis	Both	Ambos
 @msg	stop {i} needs `offset`	a parada {i} precisa de `offset`
 @msg	stop {i} needs a valid `color`	a parada {i} precisa de uma `color` válida
 @msg	stop {i}: `{k}` must be a number	parada {i}: `{k}` deve ser um número
+@msg	t, dx and dy must be finite	t, dx e dy devem ser finitos
 @msg	the EMF header is damaged	o cabeçalho EMF está danificado
 @msg	the PDF has no pages	o PDF não tem páginas
 @msg	the PDF is no longer loaded	o PDF não está mais carregado
@@ -3591,6 +3601,7 @@ axis	Both	Ambos
 @msg	the art is too light for any dots	a arte é clara demais para gerar pontos
 @msg	the artboard to fit must be a positive size up to {_1} pt	a prancheta a ajustar deve ter um tamanho positivo de até {_1} pt
 @msg	the background worker stopped	o processo em segundo plano parou
+@msg	the blend has no spine	a mesclagem não tem coluna
 @msg	the compressed file unpacks to more than {_1} MB	o arquivo compactado se expande para mais de {_1} MB
 @msg	the document has never been saved	o documento nunca foi salvo
 @msg	the document has no artboard	o documento não tem prancheta
@@ -3631,6 +3642,7 @@ axis	Both	Ambos
 @msg	the selected stroke's profile is already listed as {_1}	o perfil do traço selecionado já está listado como {_1}
 @msg	the selection has no URL (or they differ)	a seleção não tem URL (ou elas diferem)
 @msg	the selection isn't in perspective	a seleção não está em perspectiva
+@msg	the spine has no segments	a coluna não tem segmentos
 @msg	the stroke has no weight	o traço não tem espessura
 @msg	the thumbnail image is malformed	a imagem em miniatura está malformada
 @msg	the top object must be a path, compound path or text object to use as a clipping mask	o objeto superior deve ser um traçado, traçado composto ou objeto de texto para ser usado como máscara de recorte
@@ -3669,6 +3681,7 @@ axis	Both	Ambos
 @msg	version {0} files can't be compressed: only version {COMPRESSED_SINCE} and later open compressed files	arquivos da versão {0} não podem ser compactados: somente a versão {COMPRESSED_SINCE} e posteriores abrem arquivos compactados
 @msg	width and height are at least 1 pixel	largura e altura têm pelo menos 1 pixel
 @msg	workspace name can't be empty	o nome do espaço de trabalho não pode estar vazio
+@msg	x and y must be finite	x e y devem ser finitos
 @msg	{C}: no effect at index {from}	{C}: nenhum efeito no índice {from}
 @msg	{_1} failed: {e}	{_1} falhou: {e}
 @msg	{_1} files can be opened but not written (see document.formats)	arquivos {_1} podem ser abertos, mas não gravados (veja document.formats)

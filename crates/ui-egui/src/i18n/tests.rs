@@ -1236,6 +1236,73 @@ fn align_reflect_and_shear_param_errors_are_translated() {
     }
 }
 
+/// The parameter errors of the blend spine commands (Move Spine Point, Reshape Spine Segment, Add
+/// Spine Point and Delete Spine Point, which Direct Selection, the Pen and the Anchor Point tool
+/// send), whose text the scan above doesn't read, are translated whole in each language of
+/// [`COMPLETE_MESSAGES`] and in Bulgarian.
+#[test]
+fn blend_spine_param_errors_are_translated() {
+    use serde_json::json;
+    use vectorcraft_engine::{EngineError, Session};
+    let mut s = Session::new();
+    s.execute("file.new", &json!({})).unwrap();
+    let rectangle =
+        |s: &mut Session, x: u64, y: u64| s.execute("shape.rectangle", &json!({"x": x, "y": y, "width": 10, "height": 10})).unwrap()["id"].clone();
+    let blend = |s: &mut Session, y: u64| {
+        let keys = [0, 100].map(|x| rectangle(s, x, y));
+        s.execute("object.blend.make", &json!({"ids": keys, "steps": 1})).unwrap()["id"].clone()
+    };
+    // `replaced` gives a new blend a new spine. `ring`'s spine is a closed path of two points with
+    // both keys on the first, and `dot`'s spine is a single point.
+    let replaced = |s: &mut Session, y: u64, anchors: serde_json::Value, closed: bool| {
+        let b = blend(s, y);
+        let path = s.execute("path.create", &json!({"anchors": anchors, "closed": closed})).unwrap()["id"].clone();
+        s.execute("select.set", &json!({"ids": [b, path]})).unwrap();
+        s.execute("object.blend.replaceSpine", &json!({})).unwrap();
+        b
+    };
+    let ring = replaced(&mut s, 200, json!([{"x": 0, "y": 205}, {"x": 100, "y": 205}]), true);
+    let dot = replaced(&mut s, 400, json!([{"x": 0, "y": 405}]), false);
+    let other = rectangle(&mut s, 0, 600);
+    let b = blend(&mut s, 0);
+    s.execute("select.set", &json!({"ids": [b]})).unwrap();
+    let mut errors = Vec::new();
+    for (cmd, p, want) in [
+        ("object.blend.spine.moveAnchor", json!({}), "missing number `anchor`"),
+        ("object.blend.spine.moveAnchor", json!({"anchor": -1, "x": 0, "y": 0}), "index must be ≥ 0"),
+        ("object.blend.spine.moveAnchor", json!({"anchor": 0, "x": 1e12, "y": 0}), "x and y must be finite"),
+        ("object.blend.spine.moveAnchor", json!({"anchor": 0, "x": 0, "y": 0, "handle": "up"}), "handle must be in or out"),
+        ("object.blend.spine.moveAnchor", json!({"anchor": 5, "x": 0, "y": 0}), "no such spine point"),
+        ("object.blend.spine.moveAnchor", json!({"id": other, "anchor": 0, "x": 0, "y": 0}), "not a blend"),
+        ("object.blend.spine.reshapeSegment", json!({"segment": 0, "dx": 1e12}), "t, dx and dy must be finite"),
+        ("object.blend.spine.reshapeSegment", json!({"segment": 5, "dy": 10}), "no such spine segment"),
+        ("object.blend.spine.removeAnchor", json!({"anchor": 0}), "a key object sits on that point"),
+        ("object.blend.spine.removeAnchor", json!({"id": ring, "anchor": 1}), "a spine keeps at least two points"),
+        ("object.blend.spine.addAnchor", json!({"id": dot, "x": 0, "y": 0}), "the blend has no spine"),
+    ] {
+        let e = s.execute(cmd, &p).unwrap_err();
+        assert!(matches!(&e, EngineError::BadParams { msg, .. } if msg == want), "{cmd} {p}: {e}");
+        errors.push(e);
+    }
+    s.execute("select.none", &json!({})).unwrap();
+    let e = s.execute("object.blend.spine.moveAnchor", &json!({"anchor": 0, "x": 0, "y": 0})).unwrap_err();
+    assert!(matches!(&e, EngineError::BadParams { msg, .. } if msg == "select a blend or give `id`"), "{e}");
+    errors.push(e);
+    // No command leaves a blend with a pinned spine of one point, so this one is built here.
+    errors.push(EngineError::BadParams { cmd: "object.blend.spine.addAnchor".into(), msg: "the spine has no segments".into() });
+    let mut untranslated = Vec::new();
+    for e in &errors {
+        let EngineError::BadParams { msg, .. } = e else { panic!("{e}") };
+        for code in COMPLETE_MESSAGES.iter().chain(&["bg"]) {
+            let shown = message(Lang::from_code(code).unwrap(), &e.to_string());
+            if shown.contains(msg.as_str()) {
+                untranslated.push(format!("{code}: {shown}"));
+            }
+        }
+    }
+    assert!(untranslated.is_empty(), "untranslated spine errors:\n{}", untranslated.join("\n"));
+}
+
 /// The errors for a parameter key a command doesn't take (#1442), whose text the scan above
 /// doesn't read, are translated whole in each language of [`COMPLETE_MESSAGES`].
 #[test]

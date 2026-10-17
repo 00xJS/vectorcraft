@@ -3678,6 +3678,7 @@ theme	Appearance	Εμφάνιση
 @msg	a freeform gradient keeps at least one point	το ντεγκραντέ ελεύθερης μορφής χρειάζεται τουλάχιστον ένα σημείο
 @msg	a gradient needs at least two stops	το ντεγκραντέ χρειάζεται τουλάχιστον δύο σημεία χρώματος
 @msg	a graphic style named `{to}` already exists	υπάρχει ήδη στυλ γραφικών με όνομα `{to}`
+@msg	a key object sits on that point	σε αυτό το σημείο βρίσκεται βασικό αντικείμενο
 @msg	a page is missing	λείπει μια σελίδα
 @msg	a page out of range	η σελίδα βρίσκεται εκτός εύρους
 @msg	a page tree kid isn't a reference	το θυγατρικό στοιχείο του δέντρου σελίδων δεν είναι αναφορά
@@ -3685,6 +3686,7 @@ theme	Appearance	Εμφάνιση
 @msg	a page's placement is not finite	η τοποθέτηση της σελίδας δεν έχει πεπερασμένες τιμές
 @msg	a preset named `{_1}` exists	υπάρχει ήδη προεπιλογή με όνομα `{_1}`
 @msg	a slice size must be a positive number of points	το μέγεθος τομής πρέπει να είναι θετικός αριθμός στιγμών
+@msg	a spine keeps at least two points	απαιτούνται τουλάχιστον δύο σημεία κεντρικής καμπύλης
 @msg	a stream runs past the end	η ροή υπερβαίνει το τέλος
 @msg	a stream's length is wrong	το μήκος ροής είναι λανθασμένο
 @msg	a stream's length isn't a number	το μήκος ροής δεν είναι αριθμός
@@ -3743,11 +3745,13 @@ theme	Appearance	Εμφάνιση
 @msg	give horizontal or vertical	δώστε οριζόντια ή κατακόρυφη κατεύθυνση
 @msg	give the path `id` and the width point `index`	δώστε το `id` διαδρομής και το `index` σημείου πλάτους
 @msg	guides are locked	οι οδηγοί είναι κλειδωμένοι
+@msg	handle must be in or out	το handle πρέπει να είναι in ή out
 @msg	image '{key}' has no pixels and was left out	η εικόνα '{key}' δεν περιέχει εικονοστοιχεία και παραλείφθηκε
 @msg	image data `{_1}` is missing	λείπουν τα δεδομένα εικόνας `{_1}`
 @msg	image would be too large; lower the resolution	η εικόνα θα ήταν υπερβολικά μεγάλη· μειώστε την ανάλυση
 @msg	index must be a number or first, previous, next or last	ο δείκτης πρέπει να είναι αριθμός ή first, previous, next ή last
 @msg	index must be a number or first, previous, next or last, not `{other}`	ο δείκτης πρέπει να είναι αριθμός ή first, previous, next ή last, όχι `{other}`
+@msg	index must be ≥ 0	ο δείκτης δεν μπορεί να είναι αρνητικός
 @msg	installing from a path is not available on the web; pass the module as `dataBase64`	η εγκατάσταση από διαδρομή δεν υποστηρίζεται στο web· περάστε το πρόσθετο ως `dataBase64`
 @msg	internal error in `{cmd}`: {msg} (the document was left as it was before; please report this bug)	εσωτερικό σφάλμα στην εντολή `{cmd}`: {msg} (το έγγραφο έμεινε αμετάβλητο· αναφέρετε το σφάλμα)
 @msg	internal error: {msg} (please report this bug)	εσωτερικό σφάλμα: {msg} (αναφέρετε το σφάλμα)
@@ -3767,6 +3771,7 @@ theme	Appearance	Εμφάνιση
 @msg	missing `name`	λείπει το `name`
 @msg	missing `tool`	λείπει το `tool`
 @msg	missing index	λείπει ο δείκτης
+@msg	missing number `{key}`	λείπει ο αριθμός `{key}`
 @msg	multiple windows land with M11.5	τα πολλαπλά παράθυρα θα προστεθούν στην έκδοση M11.5
 @msg	name the file	δώστε όνομα στο αρχείο
 @msg	no CSS to copy: select objects with CSS of their own	δεν υπάρχει CSS για αντιγραφή: επιλέξτε αντικείμενα με δικό τους CSS
@@ -3847,6 +3852,8 @@ theme	Appearance	Εμφάνιση
 @msg	no such recent font	δεν υπάρχει τέτοια πρόσφατη γραμματοσειρά
 @msg	no such saved selection	δεν υπάρχει τέτοια αποθηκευμένη επιλογή
 @msg	no such segment	δεν υπάρχει τέτοιο τμήμα
+@msg	no such spine point	δεν υπάρχει τέτοιο σημείο κεντρικής καμπύλης
+@msg	no such spine segment	δεν υπάρχει τέτοιο τμήμα κεντρικής καμπύλης
 @msg	no such subpath	δεν υπάρχει τέτοια υποδιαδρομή
 @msg	no such user library	δεν υπάρχει τέτοια βιβλιοθήκη χρήστη
 @msg	no such view	δεν υπάρχει τέτοια προβολή
@@ -3862,6 +3869,7 @@ theme	Appearance	Εμφάνιση
 @msg	not a DXF drawing	δεν είναι σχέδιο DXF
 @msg	not a VectorCraft file: {0}	δεν είναι αρχείο VectorCraft: {0}
 @msg	not a VectorCraft shortcut set (missing `overrides`)	δεν είναι σύνολο συντομεύσεων VectorCraft (λείπει το `overrides`)
+@msg	not a blend	δεν είναι ανάμειξη
 @msg	not a graphic style library (format `{_1}`)	δεν είναι βιβλιοθήκη στυλ γραφικών (μορφή `{_1}`)
 @msg	not a shortcut set: the text doesn't start with a slash name and an opening brace	δεν είναι σύνολο συντομεύσεων: το κείμενο δεν αρχίζει με όνομα μετά από κάθετο και ανοιχτή αγκύλη
 @msg	not a stored central record	δεν είναι αποθηκευμένη κεντρική εγγραφή
@@ -3918,6 +3926,7 @@ theme	Appearance	Εμφάνιση
 @msg	select (or target) objects whose appearance isn't basic	επιλέξτε (ή στοχεύστε) αντικείμενα των οποίων η εμφάνιση δεν είναι βασική
 @msg	select a Live Paint group	επιλέξτε ομάδα δυναμικής βαφής
 @msg	select a blend	επιλέξτε ανάμειξη
+@msg	select a blend or give `id`	επιλέξτε ανάμειξη ή δώστε το `id`
 @msg	select a clip group	επιλέξτε ομάδα αποκοπής
 @msg	select a gradient mesh	επιλέξτε πλέγμα ντεγκραντέ
 @msg	select a linked image: an embedded one has no file	επιλέξτε συνδεδεμένη εικόνα: η ενσωματωμένη δεν έχει αρχείο
@@ -3950,6 +3959,7 @@ theme	Appearance	Εμφάνιση
 @msg	stop {i} needs `offset`	το σημείο χρώματος {i} χρειάζεται `offset`
 @msg	stop {i} needs a valid `color`	το σημείο χρώματος {i} χρειάζεται έγκυρο `color`
 @msg	stop {i}: `{k}` must be a number	σημείο χρώματος {i}: το `{k}` πρέπει να είναι αριθμός
+@msg	t, dx and dy must be finite	τα t, dx και dy πρέπει να είναι πεπερασμένα
 @msg	the EMF header is damaged	η κεφαλίδα EMF είναι κατεστραμμένη
 @msg	the PDF has no pages	το PDF δεν περιέχει σελίδες
 @msg	the PDF is no longer loaded	το PDF δεν είναι πλέον φορτωμένο
@@ -3962,6 +3972,7 @@ theme	Appearance	Εμφάνιση
 @msg	the art is too light for any dots	το σχέδιο είναι πολύ ανοιχτόχρωμο για δημιουργία κουκκίδων
 @msg	the artboard to fit must be a positive size up to {_1} pt	ο πίνακας σχεδίασης προς προσαρμογή πρέπει να έχει θετικό μέγεθος έως {_1} pt
 @msg	the background worker stopped	η διεργασία παρασκηνίου σταμάτησε
+@msg	the blend has no spine	η ανάμειξη στερείται κεντρικής καμπύλης
 @msg	the compressed file unpacks to more than {_1} MB	το αποσυμπιεσμένο αρχείο υπερβαίνει τα {_1} MB
 @msg	the document has never been saved	το έγγραφο δεν έχει αποθηκευτεί ποτέ
 @msg	the document has no artboard	το έγγραφο δεν έχει πίνακα σχεδίασης
@@ -4002,6 +4013,7 @@ theme	Appearance	Εμφάνιση
 @msg	the selected stroke's profile is already listed as {_1}	το προφίλ του επιλεγμένου περιγράμματος υπάρχει ήδη ως {_1}
 @msg	the selection has no URL (or they differ)	η επιλογή δεν έχει URL (ή τα URL διαφέρουν)
 @msg	the selection isn't in perspective	η επιλογή δεν βρίσκεται σε προοπτική
+@msg	the spine has no segments	δεν υπάρχουν τμήματα κεντρικής καμπύλης
 @msg	the stroke has no weight	το περίγραμμα δεν έχει πάχος
 @msg	the thumbnail image is malformed	η εικόνα μικρογραφίας δεν έχει έγκυρη μορφή
 @msg	the top object must be a path, compound path or text object to use as a clipping mask	το ανώτερο αντικείμενο πρέπει να είναι διαδρομή, σύνθετη διαδρομή ή αντικείμενο κειμένου για χρήση ως μάσκα αποκοπής
@@ -4040,6 +4052,7 @@ theme	Appearance	Εμφάνιση
 @msg	version {0} files can't be compressed: only version {COMPRESSED_SINCE} and later open compressed files	τα αρχεία έκδοσης {0} δεν μπορούν να συμπιεστούν: μόνο η έκδοση {COMPRESSED_SINCE} και νεότερες ανοίγουν συμπιεσμένα αρχεία
 @msg	width and height are at least 1 pixel	το πλάτος και το ύψος πρέπει να είναι τουλάχιστον 1 εικονοστοιχείο
 @msg	workspace name can't be empty	το όνομα χώρου εργασίας δεν μπορεί να είναι κενό
+@msg	x and y must be finite	τα x και y πρέπει να είναι πεπερασμένα
 @msg	{C}: no effect at index {from}	{C}: δεν υπάρχει εφέ στον δείκτη {from}
 @msg	{_1} failed: {e}	η ενέργεια {_1} απέτυχε: {e}
 @msg	{_1} files can be opened but not written (see document.formats)	τα αρχεία {_1} μπορούν να ανοιχτούν αλλά όχι να αποθηκευτούν (δείτε document.formats)
