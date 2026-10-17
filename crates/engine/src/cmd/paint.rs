@@ -301,7 +301,7 @@ fn new_color_model(s: &Session, p: &Value) -> Option<vectorcraft_color::cms::Mod
 /// `c` in `model` ([`new_color_model`]) when it is an RGB color, converted through the color
 /// settings (the working spaces and their intent) as Document Color Mode converts it. Other colors
 /// are returned as given.
-fn stored_color(model: Option<vectorcraft_color::cms::Model>, c: Color) -> Color {
+pub(crate) fn stored_color(model: Option<vectorcraft_color::cms::Model>, c: Color) -> Color {
     match (c, model) {
         (Color::Rgb { .. }, Some(m)) => {
             let cms = vectorcraft_color::cms::active();

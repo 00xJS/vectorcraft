@@ -743,7 +743,10 @@ Freeform gradients: `paint.editGradient {kind: "freeform"}` places four or more 
 object (coloured along the stops; `mode: "points"|"lines"` is the Draw toggle). `paint.freeform.get` lists the points
 (document coordinates), lines and the selected point; `paint.freeform.addPoint {at, color?, opacity?, spread?,
 line?}`, `setPoint {index?, …}`, `deletePoint {index?}`, `addLine {points}`, `splitLine {line, segment, t?}` and
-`selectPoint {index|null}` edit them (`index` defaults to the selected point; each edit is one undo step). With the
+`selectPoint {index|null}` edit them (`index` defaults to the selected point; each edit is one undo step). The color
+of a point colored along the stops, of a point `splitLine` adds and of a point `addPoint` adds without `color` is a mix
+of the colors around it (the two stops, the line's two points, or all the points) in the color model those colors
+share, so CMYK stops and points give CMYK points. With the
 Gradient tool on a freeform gradient a click on a point selects it (drag to move it), a click on a line adds a point
 on it, a click elsewhere on the art adds a point (in Lines mode joined to the selected one), and Delete removes the
 selected point:
@@ -1821,7 +1824,10 @@ outlines strokes into filled paths; `fill` (on) expands gradient fills: with `gr
 no seams show; concentric ellipses for a radial one, largest first; just the bands when stops are translucent), with
 `gradient: "mesh"` into a gradient mesh that paints the gradient (columns or rings where its colour changes, sharp at
 coincident stops), each inside a clip group shaped like the object. A freeform gradient becomes a mesh shaped like the
-object either way. Expanded colours keep the colour model their stops share. `fill` also expands pattern fills: each
+object either way. Expanded colours keep the colour model their stops share. Expand mixes a freeform gradient's point
+colors in the model they share to color the mesh points; it mixes C, M, Y and K as inks. When the models differ, the
+colors mix in display RGB and are stored in the working RGB space, and a CMYK document stores them as CMYK through the
+color settings. `fill` also expands pattern fills: each
 becomes the pattern's tiles that reach the object's box, placed by the pattern's transform, in a clip group shaped like
 the object that isolates their blending, with the fill's opacity, blend mode and effects; the object's other fills
 and strokes stay on copies of it in paint order. The tiles' stroke weights and effect distances scale with the
@@ -1841,7 +1847,7 @@ box, as the canvas paints the fill; the expanded art does not keep them. With `f
 stay live. `object.expand.info` answers which options have something to expand in the selection
 (`{object, fill, stroke, gradient}`; `gradient` says whether Fill has a gradient fill, which Expand Gradient To
 applies to), and `object.mesh.create` on a gradient-filled object colours the mesh points as the
-gradient paints them.
+gradient paints them, with the colors Object › Expand gives them.
 
 ```json
 {"name":"run_command","arguments":{"command":"object.expand","params":{"stroke":false,"gradient":"mesh"}}}
