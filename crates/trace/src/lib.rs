@@ -562,7 +562,7 @@ fn trace_paths(img: &Raster, params: &TraceParams, max_anchors: usize) -> Result
         }
         rest
     });
-    let mut q = quantize(without.as_ref().unwrap_or(img), params);
+    let (mut q, rare) = quantize::quantize_keeping(without.as_ref().unwrap_or(img), params);
     drop(without);
     // Each gradient is a palette entry of its own (its colour: the gradient's middle).
     let mut gradients: Vec<Option<TracedGradient>> = vec![None; q.palette.len()];
@@ -578,7 +578,9 @@ fn trace_paths(img: &Raster, params: &TraceParams, max_anchors: usize) -> Result
         gradients.extend(found.into_iter().map(Some));
     }
     drop(grays);
-    denoise(&mut q.labels, w, h, params.noise as usize);
+    // Noise clears specks, not the regions of a rare colour Automatic kept on purpose.
+    let keep: Vec<bool> = q.palette.iter().map(|c| rare.contains(c)).collect();
+    quantize::denoise_keeping(&mut q.labels, w, h, params.noise as usize, &keep);
     // Pixel count per palette entry, and the box its pixels lie in.
     let mut counts = vec![0usize; q.palette.len()];
     let mut boxes: Vec<Option<(usize, usize, usize, usize)>> = vec![None; q.palette.len()];
