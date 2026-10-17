@@ -110,13 +110,14 @@ use serde_json::{Value, json};
 pub use color_picker::open as open_color_picker;
 pub use document_setup::open as open_document_setup;
 pub use effect::open as open_effect_dialog;
-pub(crate) use effect::{FILM_GRAIN_FIELDS, SHADES};
+pub(crate) use effect::{FILM_GRAIN_FIELDS, SHADES, shown_choices};
 pub use export_as::open as open_export_as;
 pub use export_for_screens::open as open_export_for_screens;
 pub(crate) use export_for_screens::{
     KIND as EXPORT_FOR_SCREENS, formats as screen_formats, open_assets as open_export_for_screens_assets, saved_options as screen_saved_options,
     saved_rows as screen_saved_rows,
 };
+pub(crate) use form::humanize;
 pub(crate) use new_document::preset_name;
 pub use new_document::{open as open_new_document, preset_card};
 pub use png_options::open as open_raster_options;

@@ -284,12 +284,9 @@ pub(super) fn param_fields(
                 continue;
             }
             if let Some(options) = choices(&k) {
-                // In the "effect" context: some languages read the plain Soft, Horizontal and
-                // Vertical (Grain's types) as type settings.
-                let shown = |label: &'static str| crate::i18n::tr_ctx(crate::i18n::current(), "effect", label);
                 let cur = v.as_str().unwrap_or_default();
-                let label = options.iter().find(|(_, value)| *value == cur).map_or(cur, |(l, _)| shown(l));
-                let labels: Vec<&str> = options.iter().map(|(l, _)| shown(l)).collect();
+                let label = options.iter().find(|(_, value)| *value == cur).map_or(cur, |(l, _)| choice_label(l));
+                let labels: Vec<&str> = options.iter().map(|(l, _)| choice_label(l)).collect();
                 if let Some((_, value)) = crate::widgets::dropdown_names(ui, ("fx-choice", &k), label, &labels, 140.0).and_then(|i| options.get(i)) {
                     d.fields.insert(k, json!(value));
                     changed = true;
@@ -341,6 +338,12 @@ pub(super) fn param_fields(
         }
     });
     changed
+}
+
+/// The label of one of [`param_fields`]' choices in the UI language, in the "effect" context: some
+/// languages read the plain Soft, Horizontal and Vertical (Grain's types) as type settings.
+pub(super) fn choice_label(label: &'static str) -> &'static str {
+    crate::i18n::tr_ctx(crate::i18n::current(), "effect", label)
 }
 
 /// A number typed in a command's dialog as JSON: a whole number as an integer, as counts are read
@@ -404,7 +407,7 @@ pub(super) fn schema_fields(ui: &mut egui::Ui, d: &mut Dialog, specs: &[(String,
 }
 
 /// A field label from its camelCase key (`miterLimit` → "Miter Limit:").
-pub(super) fn humanize(k: &str) -> String {
+pub(crate) fn humanize(k: &str) -> String {
     let mut s = String::new();
     for (i, c) in k.chars().enumerate() {
         if i == 0 {

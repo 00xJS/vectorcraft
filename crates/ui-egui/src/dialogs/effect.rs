@@ -213,11 +213,11 @@ const GLASS: &str = "distort.glass";
 /// loaded, and Load Texture… with the loaded texture's size. Returns whether the values differ from
 /// those last previewed.
 fn glass_fields(app: &mut VectorcraftApp, ui: &mut egui::Ui, d: &mut Dialog) -> bool {
-    use vectorcraft_effects::pixel::{GLASS_TEXTURES, GLASS_TEXTURES_LOADED, TEXTURE_IMAGE, texture};
+    use vectorcraft_effects::pixel::{TEXTURE_IMAGE, texture};
     // The stored texture is shown as its size, not as a text field.
     let stored = d.fields.remove(TEXTURE_IMAGE);
     let size = stored.as_ref().and_then(Value::as_str).and_then(texture).map(|t| t.size());
-    let menu: form::Choices = if size.is_some() { &GLASS_TEXTURES_LOADED } else { &GLASS_TEXTURES };
+    let menu = glass_textures(size.is_some());
     let doc = vectorcraft_effects::effect_info(GLASS).map(|e| e.params).unwrap_or_default();
     let unit = app.session.general_unit();
     let pick = |k: &str| if k == "texture" { Some(menu) } else { choices(GLASS, k) };
@@ -240,6 +240,12 @@ fn glass_fields(app: &mut VectorcraftApp, ui: &mut egui::Ui, d: &mut Dialog) -> 
         app.status(e);
     }
     values_changed(d)
+}
+
+/// Glass's Texture menu, ending with Loaded Texture once a texture is `loaded`.
+fn glass_textures(loaded: bool) -> form::Choices {
+    use vectorcraft_effects::pixel::{GLASS_TEXTURES, GLASS_TEXTURES_LOADED};
+    if loaded { &GLASS_TEXTURES_LOADED } else { &GLASS_TEXTURES }
 }
 
 /// Glass's Load Texture…: an image file the user picks, read into `textureImage` as Glass stores
@@ -278,6 +284,26 @@ fn choices(effect: &str, key: &str) -> Option<form::Choices> {
         ("distort.roughen" | "distort.zigZag", "points") => Some(&[("Smooth", "smooth"), ("Corner", "corner")]),
         _ => None,
     }
+}
+
+/// The values that parameter `key` of applied effect `effect` picks from, as its dialog lists
+/// them, as (label, value): our own effects' labels in the UI language, a plug-in's choices as the
+/// plug-in names them. Glass's Texture menu ends with Loaded Texture when the effect's values
+/// `params` hold a loaded texture. `None` for a parameter that is not one of these lists.
+pub(crate) fn shown_choices(effect: &str, key: &str, params: &Map<String, Value>) -> Option<Vec<(String, String)>> {
+    if let Some(plugin) = vectorcraft_plugins::effect::installed(effect) {
+        return plugin.manifest().params.iter().find(|(k, _)| k == key).and_then(|(_, spec)| match spec {
+            vectorcraft_plugins::ParamSpec::Choice { options, .. } => Some(options.iter().map(|o| (o.clone(), o.clone())).collect()),
+            _ => None,
+        });
+    }
+    let options = if effect == GLASS && key == "texture" {
+        use vectorcraft_effects::pixel::{TEXTURE_IMAGE, texture};
+        glass_textures(params.get(TEXTURE_IMAGE).and_then(Value::as_str).and_then(texture).is_some())
+    } else {
+        choices(effect, key)?
+    };
+    Some(options.iter().map(|(label, value)| (form::choice_label(label).to_string(), value.to_string())).collect())
 }
 
 /// Where parameter `key` comes in the effect's parameter documentation `doc` (`{radius: …,
