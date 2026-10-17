@@ -665,7 +665,8 @@ fn cursor_icon(c: Cursor) -> egui::CursorIcon {
         | Cursor::Scissors
         | Cursor::ScissorsNotAllowed
         | Cursor::MeshAdd
-        | Cursor::PuppetPin => cursor_icon(c.stand_in().unwrap_or(Cursor::Crosshair)),
+        | Cursor::PuppetPin
+        | Cursor::LoadedText => cursor_icon(c.stand_in().unwrap_or(Cursor::Crosshair)),
     }
 }
 
@@ -2127,8 +2128,9 @@ impl HiddenMarks {
     }
 }
 
-/// Text threads of the selected frames: a line from each frame's out port (bottom right) to the
-/// next frame's in port (top left), like Illustrator's thread indicators.
+/// Text threads of the selected frames: a line from each frame's out port (on its right side,
+/// just above the bottom right, where the tools draw the red one) to the next frame's in port (top
+/// left), like Illustrator's thread indicators.
 fn thread_overlay(app: &VectorcraftApp, p: &egui::Painter, xf: &Xf) {
     let Some(st) = app.session.active() else { return };
     for thread in &st.doc.text_threads {
@@ -2138,7 +2140,8 @@ fn thread_overlay(app: &VectorcraftApp, p: &egui::Painter, xf: &Xf) {
         let color = c32(st.doc.layer_color(thread[0]));
         let frames: Vec<vectorcraft_geom::Rect> = thread.iter().filter_map(|id| st.doc.node(*id).and_then(|n| n.geometric_bounds())).collect();
         for w in frames.windows(2) {
-            let (out, inp) = (xf.to_screen(Point::new(w[0].x1, w[0].y1)), xf.to_screen(Point::new(w[1].x0, w[1].y0)));
+            let rise = (vectorcraft_tools::text::PORT_RISE_PX / xf.zoom.max(1e-9)).min(w[0].height() / 2.0);
+            let (out, inp) = (xf.to_screen(Point::new(w[0].x1, w[0].y1 - rise)), xf.to_screen(Point::new(w[1].x0, w[1].y0)));
             p.line_segment([out, inp], Stroke::new(1.0, color));
             for port in [out, inp] {
                 p.rect_filled(egui::Rect::from_center_size(port, egui::vec2(7.0, 7.0)), 0.0, Color32::WHITE);
