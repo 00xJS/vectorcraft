@@ -319,9 +319,9 @@ pub fn menu(app: &mut VectorcraftApp, ui: &mut Ui) {
     }
 }
 
-/// Variables panel: Import Data Sets… — pick a CSV and run `dataset.import`.
+/// Variables panel: Import Data Sets… opens a file dialog for a comma- or tab-separated file and runs `dataset.import` on the chosen file.
 fn import_datasets(app: &mut VectorcraftApp) {
-    let pick = crate::FilePick { filters: vec![("CSV", &["csv", "txt"])], ..Default::default() };
+    let pick = crate::FilePick { filters: vec![("CSV", &["csv", "tsv", "txt"])], ..Default::default() };
     let Some(path) = crate::picks::open(app, &pick) else { return };
     if let Err(e) = app.run("dataset.import", json!({"path": path})) {
         app.status(e);
