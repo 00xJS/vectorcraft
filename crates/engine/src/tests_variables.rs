@@ -370,6 +370,79 @@ fn make_dynamic_errors_name_the_command() {
     assert!(e.contains("`variable.makeTextDynamic`") && e.contains("is not type"), "{e}");
 }
 
+/// Lock Variables refuses defining, deleting and renaming variables, Make … Dynamic included,
+/// while binding, unbinding and the dataset commands still run.
+#[test]
+fn locked_variables_refuse_new_deleted_and_renamed_variables() {
+    let mut s = session();
+    let t = text(&mut s, "Alice");
+    let r = rect(&mut s);
+    s.execute("variable.define", &json!({"name": "Name", "kind": "text"})).unwrap();
+    s.execute("variable.define", &json!({"name": "Show", "kind": "visibility"})).unwrap();
+    assert_eq!(s.execute("variable.list", &json!({})).unwrap()["locked"], false);
+    assert_eq!(s.execute("variable.lock", &json!({})).unwrap()["locked"], true, "without `locked` it toggles");
+    assert_eq!(s.execute("variable.list", &json!({})).unwrap()["locked"], true);
+
+    s.execute("select.set", &json!({"ids": [t.0]})).unwrap();
+    for (cmd, p) in [
+        ("variable.define", json!({"name": "Other", "kind": "text"})),
+        ("variable.delete", json!({"names": ["Name"]})),
+        ("variable.rename", json!({"name": "Name", "newName": "Renamed"})),
+        ("variable.makeTextDynamic", json!({})),
+        ("variable.makeVisibilityDynamic", json!({})),
+    ] {
+        let e = s.execute(cmd, &p).unwrap_err();
+        assert!(matches!(&e, EngineError::Disabled(_, why) if why == "variables are locked"), "{cmd}: {e}");
+    }
+    let names = |s: &mut Session| {
+        s.execute("variable.list", &json!({})).unwrap()["variables"].as_array().unwrap().iter().map(|v| v["name"].clone()).collect::<Vec<_>>()
+    };
+    assert_eq!(names(&mut s), [json!("Name"), json!("Show")], "the variables are as they were");
+
+    // Binding and unbinding still work, and so do the datasets.
+    s.execute("variable.bind", &json!({"variable": "Name", "ids": [t.0]})).unwrap();
+    s.execute("variable.bind", &json!({"variable": "Show", "ids": [r.0]})).unwrap();
+    s.execute("variable.unbind", &json!({"ids": [r.0], "variable": "Show"})).unwrap();
+    s.execute("dataset.capture", &json!({})).unwrap();
+    s.execute("dataset.new", &json!({"name": "Bob", "values": {"Name": "Bob"}})).unwrap();
+    s.execute("dataset.import", &json!({"csv": "name,Name\nCarol,Carol\n"})).unwrap();
+    s.execute("dataset.select", &json!({"name": "Carol"})).unwrap();
+    assert_eq!(plain(&s, t), "Carol");
+
+    // Unlocking lets a variable be defined again; `locked` sets the state rather than toggling.
+    assert_eq!(s.execute("variable.lock", &json!({"locked": false})).unwrap()["locked"], false);
+    assert_eq!(s.execute("variable.lock", &json!({"locked": false})).unwrap()["locked"], false);
+    s.execute("variable.define", &json!({"name": "Other", "kind": "text"})).unwrap();
+}
+
+/// Locking is an undo step only when it changes the state, and the lock is saved with the
+/// document: a file saved locked opens locked, and a file without the key opens unlocked.
+#[test]
+fn the_variables_lock_is_an_undo_step_and_is_saved() {
+    let mut s = session();
+    let steps = |s: &Session| s.doc().unwrap().history.undo.len();
+    let before = steps(&s);
+    s.execute("variable.lock", &json!({"locked": true})).unwrap();
+    assert_eq!(steps(&s), before + 1);
+    s.execute("variable.lock", &json!({"locked": true})).unwrap();
+    assert_eq!(steps(&s), before + 1, "locking locked variables is not a step");
+    assert!(s.doc().unwrap().is_dirty());
+
+    let saved = vectorcraft_format::save(&s.doc().unwrap().doc, false);
+    assert!(vectorcraft_format::load(&saved).unwrap().variables.locked, "a document saved locked opens locked");
+    let mut v: Value = serde_json::from_slice(&saved).unwrap();
+    assert_eq!(v["document"]["variables"]["locked"], true);
+    v["document"]["variables"].as_object_mut().unwrap().remove("locked");
+    assert!(!vectorcraft_format::load(&serde_json::to_vec(&v).unwrap()).unwrap().variables.locked, "a file without the key opens unlocked");
+
+    s.execute("edit.undo", &json!({})).unwrap();
+    assert!(!s.doc().unwrap().doc.variables.locked, "undo unlocks");
+    let v: Value = serde_json::from_slice(&vectorcraft_format::save(&s.doc().unwrap().doc, false)).unwrap();
+    assert!(v["document"].get("variables").is_none_or(|v| v.get("locked").is_none()), "unlocked variables write no key: {v}");
+    s.execute("edit.redo", &json!({})).unwrap();
+    assert!(s.doc().unwrap().doc.variables.locked, "redo locks again");
+}
+
 /// Capture Data Set records what the art holds now, which is how rows are made — the art is
 /// edited and captured, rather than the values typed.
 #[test]

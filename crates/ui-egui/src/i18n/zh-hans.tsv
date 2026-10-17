@@ -3204,6 +3204,9 @@ mark-style	Japanese	日式
 	Variables	变量
 	New Variable	新建变量
 	Delete Variable	删除变量
+	Lock Variables	锁定变量
+	Unlock Variables	解锁变量
+@msg	variables are locked	变量已锁定
 	List Variables	列出变量
 	Bind Variable	绑定变量
 	Unbind Variable	解除变量绑定

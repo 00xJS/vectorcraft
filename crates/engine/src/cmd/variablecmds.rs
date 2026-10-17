@@ -29,6 +29,19 @@ const MAX_CSV_BYTES: usize = 1_048_576;
 const MAX_CSV_ROWS: usize = 1_000;
 const MAX_CSV_COLS: usize = 256;
 
+/// Lock Variables refuses New Variable, Delete Variable, Rename Variable (Variable Options) and
+/// Make … Dynamic; binding, unbinding and the dataset commands still run.
+fn variables_unlocked(s: &Session) -> std::result::Result<(), String> {
+    has_doc(s)?;
+    if s.active().is_some_and(|st| st.doc.variables.locked) { Err("variables are locked".into()) } else { Ok(()) }
+}
+
+/// Make … Dynamic needs a selection, and defines a variable, which Lock Variables refuses.
+fn selection_and_unlocked(s: &Session) -> std::result::Result<(), String> {
+    has_selection(s)?;
+    variables_unlocked(s)
+}
+
 fn var_name(p: &Value, cmd: &str) -> Result<String> {
     named(str_param(p, "name"), "name", cmd)
 }
@@ -232,7 +245,21 @@ fn list(s: &mut Session, _p: &Value) -> Result<Value> {
             json!({"name": v.name, "kind": v.kind.label(), "bindings": bindings})
         })
         .collect();
-    Ok(json!({"variables": variables}))
+    Ok(json!({"variables": variables, "locked": st.doc.variables.locked}))
+}
+
+/// Lock Variables: without `locked` it toggles. Setting the state the document already has
+/// does not edit the document or add an undo step.
+fn lock(s: &mut Session, p: &Value) -> Result<Value> {
+    let was = s.doc()?.doc.variables.locked;
+    let locked = bool_or(p, "locked", !was);
+    if locked != was {
+        s.edit(if locked { "Lock Variables" } else { "Unlock Variables" }, |d, _| {
+            d.variables.locked = locked;
+            Ok(())
+        })?;
+    }
+    Ok(json!({"locked": locked}))
 }
 
 fn bind(s: &mut Session, p: &Value) -> Result<Value> {
@@ -812,8 +839,8 @@ pub fn specs() -> Vec<CommandSpec> {
             "New Variable…",
             ["Window", "Variables"],
             None,
-            "{name, kind: text|visibility|image|graph} define a variable (graph: CSV data on a graph root)",
-            has_doc,
+            "{name, kind: text|visibility|image|graph} define a variable (graph: CSV data on a graph root); refused while the variables are locked",
+            variables_unlocked,
             define
         ),
         cmd!(
@@ -821,8 +848,8 @@ pub fn specs() -> Vec<CommandSpec> {
             "Delete Variable",
             ["Window", "Variables"],
             None,
-            "{names?} delete variables with their bindings and values (default: the highlighted one)",
-            has_doc,
+            "{names?} delete variables with their bindings and values (default: the highlighted one); refused while the variables are locked",
+            variables_unlocked,
             delete
         ),
         cmd!(
@@ -830,18 +857,18 @@ pub fn specs() -> Vec<CommandSpec> {
             "Rename Variable",
             ["Window", "Variables"],
             None,
-            "{name, newName} rename a variable, with its bindings and its values in every dataset",
-            has_doc,
+            "{name, newName} rename a variable, with its bindings and its values in every dataset; refused while the variables are locked",
+            variables_unlocked,
             rename
         ),
-        cmd!(query "variable.list", "List Variables", [], None, "{} → variables with kinds and binding counts", has_doc, list),
+        cmd!(query "variable.list", "List Variables", [], None, "{} → variables with kinds and binding counts, and whether they are locked → {variables, locked}", has_doc, list),
         cmd!(
             "variable.makeTextDynamic",
             "Make Text Dynamic",
             ["Window", "Variables"],
             None,
-            "{} define a text variable over the selection, named after it and bound to it",
-            has_selection,
+            "{} define a text variable over the selection, named after it and bound to it; refused while the variables are locked",
+            selection_and_unlocked,
             |s, _| make_dynamic(s, VariableKind::Text, "Text")
         ),
         cmd!(
@@ -849,8 +876,8 @@ pub fn specs() -> Vec<CommandSpec> {
             "Make Visibility Dynamic",
             ["Window", "Variables"],
             None,
-            "{} define a visibility variable over the selection, named after it and bound to it",
-            has_selection,
+            "{} define a visibility variable over the selection, named after it and bound to it; refused while the variables are locked",
+            selection_and_unlocked,
             |s, _| make_dynamic(s, VariableKind::Visibility, "Visibility")
         ),
         cmd!(
@@ -858,8 +885,8 @@ pub fn specs() -> Vec<CommandSpec> {
             "Make Image Dynamic",
             ["Window", "Variables"],
             None,
-            "{} define an image variable over the selection, named after it and bound to it",
-            has_selection,
+            "{} define an image variable over the selection, named after it and bound to it; refused while the variables are locked",
+            selection_and_unlocked,
             |s, _| make_dynamic(s, VariableKind::Image, "Image")
         ),
         cmd!(
@@ -867,8 +894,8 @@ pub fn specs() -> Vec<CommandSpec> {
             "Make Graph Dynamic",
             ["Window", "Variables"],
             None,
-            "{} define a graph variable over the selected graph root(s), named after it and bound to it; each dataset row supplies CSV as graph.setData",
-            has_selection,
+            "{} define a graph variable over the selected graph root(s), named after it and bound to it; each dataset row supplies CSV as graph.setData; refused while the variables are locked",
+            selection_and_unlocked,
             |s, _| make_dynamic(s, VariableKind::Graph, "Graph")
         ),
         cmd!(
@@ -888,6 +915,15 @@ pub fn specs() -> Vec<CommandSpec> {
             "{ids?, variable?} drop bindings (default: the selection): `variable` drops that one, else every variable the object has",
             has_doc,
             unbind
+        ),
+        cmd!(
+            "variable.lock",
+            "Lock Variables",
+            ["Window", "Variables"],
+            None,
+            "{locked?: bool} lock or unlock the variables (default: toggle); saved with the document; a change is one undo step. While locked, variable.define, variable.delete, variable.rename and variable.make…Dynamic are refused; binding, unbinding and the dataset commands still run → {locked}",
+            has_doc,
+            lock
         ),
         cmd!(
             "variable.highlight",

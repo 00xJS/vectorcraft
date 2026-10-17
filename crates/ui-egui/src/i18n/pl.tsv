@@ -601,6 +601,8 @@
 	New Variable…	Nowa zmienna…
 	Unbind Variable	Odłącz zmienną
 	Delete Variable	Usuń zmienną
+	Lock Variables	Zablokuj zmienne
+	Unlock Variables	Odblokuj zmienne
 	New Data Set…	Nowy zestaw danych…
 	Edit Data Set…	Edytuj zestaw danych…
 	Delete Data Set	Usuń zestaw danych
@@ -4239,6 +4241,7 @@ imageTrace	Outline	Kontur
 @msg	unknown tool or command `{key}`	nieznane narzędzie lub polecenie `{key}`
 @msg	unknown workspace (one of {_1})	nieznany obszar roboczy (jeden z: {_1})
 @msg	unsupported: {0}	nieobsługiwane: {0}
+@msg	variables are locked	zmienne są zablokowane
 @msg	version {0} files can't be compressed: only version {COMPRESSED_SINCE} and later open compressed files	plików w wersji {0} nie można kompresować: skompresowane pliki otwierają tylko wersje {COMPRESSED_SINCE} i nowsze
 @msg	width and height are at least 1 pixel	szerokość i wysokość muszą wynosić co najmniej 1 piksel
 @msg	workspace name can't be empty	nazwa obszaru roboczego nie może być pusta

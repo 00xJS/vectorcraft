@@ -2093,6 +2093,7 @@ file-filter	Templates	Sablonok
 	Lock Others	Többi zárolása
 	Lock Slices	Szeletek zárolása
 	Lock Station Point	Nézőpont zárolása
+	Lock Variables	Változók zárolása
 	Logo 1000×1000	Logó 1000×1000
 	Long Lines	Hosszú vonalak
 	Long Strokes	Hosszú vonások
@@ -3956,6 +3957,7 @@ mark-style	Japanese	Japán
 	Unlock All Layers	Összes réteg zárolásának feloldása
 	Unlock Grid	Rács zárolásának feloldása
 	Unlock Guides	Segédvonalak zárolásának feloldása
+	Unlock Variables	Változók zárolásának feloldása
 	Unnamed Objects	Névtelen objektumok
 	Unprintable margin:	Nem nyomtatható margó:
 	Unsharp Mask	Életlenítő maszk
@@ -4841,6 +4843,7 @@ imageTrace	Outline	Körvonal
 @msg	unsupported: {0}	nem támogatott: {0}
 @msg	Updated {_1} image(s)	Frissített képek: {_1}
 @msg	Updated {_1} linked file(s) changed on disk	Frissített, a lemezen módosult csatolt fájlok: {_1}
+@msg	variables are locked	a változók zárolva vannak
 @msg	VectorCraft doesn't search other apps' or the system's folders: {path}	a VectorCraft nem keres más alkalmazások és a rendszer mappáiban: {path}
 @msg	VectorCraft doesn't search the Shared or Public folder in Users: {path}	a VectorCraft nem keres a Users alatti Shared és Public mappában: {path}
 @msg	VectorCraft failed to start: {e}	A VectorCraft nem tudott elindulni: {e}

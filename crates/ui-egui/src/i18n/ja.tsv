@@ -615,6 +615,8 @@
 	Variables	変数
 	New Variable	新規変数
 	Delete Variable	変数を削除
+	Lock Variables	変数をロック
+	Unlock Variables	変数をロック解除
 	List Variables	変数一覧
 	Bind Variable	変数をバインド
 	Unbind Variable	変数のバインドを解除
@@ -3769,6 +3771,7 @@ swatch	Bright Violet	ビビッドバイオレット
 @msg	{command} didn't create an object	{command} でオブジェクトが作成されませんでした
 @msg	Make Guides: select paths	ガイドを作成: パスを選択してください
 @msg	Release Guides: no guides	ガイドを解除: ガイドがありません
+@msg	variables are locked	変数がロックされています
 @msg	guides are locked	ガイドがロックされています
 @msg	handle must be in or out	handle には in または out を指定してください
 @msg	no saved selection recalled	保存した選択範囲を呼び出していません
