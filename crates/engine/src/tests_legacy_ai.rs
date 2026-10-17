@@ -3,6 +3,7 @@
 
 use serde_json::{Value, json};
 
+use super::tests_menucmds::place_undecodable_png;
 use super::*;
 use crate::tests_links::Folder;
 
@@ -260,6 +261,47 @@ fn a_transparent_image_is_flattened_with_the_art_under_it_which_stays() {
         assert!(a.iter().zip(b).all(|(a, b)| a.abs_diff(*b) <= 3), "{before:?} {printed:?}");
     }
     assert_eq!(colour_at(page, 10.0, 20.0), [255, 0, 0], "the square outside the image");
+}
+
+/// How many of reply `r`'s warnings say that an image couldn't be decoded, as raster exports do.
+fn undecoded_notes(r: &Value) -> usize {
+    warnings(r).iter().filter(|w| *w == "an image couldn't be decoded and is missing from the picture").count()
+}
+
+#[test]
+fn a_flattened_image_that_cant_be_decoded_is_noted_once() {
+    let mut s = Session::new();
+    s.execute("file.new", &json!({"width": 200, "height": 100})).unwrap();
+    s.execute("artboard.new", &json!({"x": 0, "y": 0, "width": 200, "height": 100, "name": "B"})).unwrap();
+    let cut = place_undecodable_png(&mut s);
+    s.execute("transparency.set", &json!({"ids": [cut.0], "opacity": 50})).unwrap();
+    // Both artboards flatten it.
+    let r = s.execute("file.saveCopy", &json!({"format": "ai", "aiVersion": "7"})).unwrap();
+    assert_eq!(r["files"].as_array().map(Vec::len), Some(2), "{r}");
+    assert!(warnings(&r).iter().any(|w| w.contains("flattened with the art under them")), "{r}");
+    assert_eq!(undecoded_notes(&r), 1, "{r}");
+}
+
+#[test]
+fn an_image_that_cant_be_decoded_with_an_expanded_effect_is_noted() {
+    let mut s = Session::new();
+    s.execute("file.new", &json!({"width": 200, "height": 100})).unwrap();
+    let cut = place_undecodable_png(&mut s);
+    s.execute("effect.apply", &json!({"effect": "blur.gaussian", "params": {"radius": 3}, "ids": [cut.0]})).unwrap();
+    // Left out rather than flattened: only expanding the blur draws it.
+    let r = s.execute("file.saveCopy", &json!({"format": "ai", "aiVersion": "7", "transparentImages": "omit"})).unwrap();
+    assert_eq!(undecoded_notes(&r), 1, "{r}");
+}
+
+#[test]
+fn images_that_decode_give_no_decode_note() {
+    let mut s = shadow_over_square();
+    s.execute("effect.apply", &json!({"effect": "blur.gaussian", "params": {"radius": 3}})).unwrap(); // the blue image
+    for mode in ["flatten", "omit"] {
+        let r = s.execute("file.saveCopy", &json!({"format": "ai", "aiVersion": "7", "transparentImages": mode})).unwrap();
+        assert!(warnings(&r).iter().any(|w| w.contains("transparent images")), "{r}");
+        assert_eq!(undecoded_notes(&r), 0, "{r}");
+    }
 }
 
 #[test]
