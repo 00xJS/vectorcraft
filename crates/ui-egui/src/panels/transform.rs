@@ -365,15 +365,18 @@ pub fn set_pref(app: &mut VectorcraftApp, key: &str, on: bool) {
 pub fn menu(app: &mut VectorcraftApp, ui: &mut Ui) {
     let hidden: bool = pstate(ui.ctx(), "xf-hide-options");
     let has = super::selection_len(app) > 0;
+    // The flips mirror across the panel's reference point, as its flip buttons do.
+    let refi: usize = ui.data(|d| d.get_temp(egui::Id::new("refpt"))).unwrap_or(4);
+    let origin = app.selection_box().map(|b| b.reference_point(refi)).map(|p| json!([p.x, p.y]));
     if menu_item(ui, if hidden { tl!("Show Options") } else { tl!("Hide Options") }, true, false) {
         set_pstate(ui.ctx(), "xf-hide-options", !hidden);
     }
     ui.separator();
     if menu_item(ui, tl!("Flip Horizontal"), has, false) {
-        app.run("object.reflect", json!({"axis": "vertical"})).ok();
+        app.run("object.reflect", json!({"axis": "vertical", "origin": origin})).ok();
     }
     if menu_item(ui, tl!("Flip Vertical"), has, false) {
-        app.run("object.reflect", json!({"axis": "horizontal"})).ok();
+        app.run("object.reflect", json!({"axis": "horizontal", "origin": origin})).ok();
     }
     ui.separator();
     let ss = app.session.prefs.scale_strokes;
@@ -522,6 +525,28 @@ mod tests {
         let Some(path) = n.path_data() else { panic!("a path") };
         let xs: Vec<f64> = path.subpaths[0].anchors.iter().map(|a| a.p.x).collect();
         assert_eq!(xs, [20.0, 150.0, 120.0, 20.0]);
+    }
+
+    /// #2398: the panel menu's Flip Horizontal and Flip Vertical mirror the selection across the
+    /// reference point, as the panel's flip buttons do, not across its centre.
+    #[test]
+    fn menu_flips_keep_the_reference_point() {
+        use crate::panels::tests_appearance::{click, frame_events};
+        let mut app = VectorcraftApp::new(vectorcraft_engine::Session::new(), Default::default());
+        app.run("file.new", json!({"width": 300, "height": 300})).unwrap();
+        app.run("shape.rectangle", json!({"x": 20, "y": 30, "width": 100, "height": 50})).unwrap();
+        let ctx = egui::Context::default();
+        crate::theme::install_fonts(&ctx);
+        // Top-right reference point: (120, 30).
+        ctx.data_mut(|d| d.insert_temp(egui::Id::new("refpt"), 2usize));
+        let flip = |app: &mut VectorcraftApp, item: &str| {
+            let texts = frame_events(&ctx, app, vec![], menu);
+            let r = texts.iter().find(|(t, _)| t.trim_start() == item).unwrap_or_else(|| panic!("{item} in {texts:?}")).1;
+            click(&ctx, app, r.center(), menu);
+            app.selection_box().unwrap().rect
+        };
+        assert_eq!(flip(&mut app, "Flip Horizontal"), Rect::new(120.0, 30.0, 220.0, 80.0));
+        assert_eq!(flip(&mut app, "Flip Vertical"), Rect::new(120.0, -20.0, 220.0, 30.0));
     }
 
     #[test]
