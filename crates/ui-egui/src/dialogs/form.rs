@@ -480,20 +480,8 @@ pub(super) fn slider_w(
     });
 }
 
-/// The rail and value field of [`slider`] without its label (for a row that draws its own).
-#[allow(dead_code)]
-pub(super) fn slider_field(
-    ui: &mut egui::Ui,
-    d: &mut Dialog,
-    key: &str,
-    range: std::ops::RangeInclusive<f64>,
-    suffix: &str,
-    track: &dyn Fn(f32) -> egui::Color32,
-) {
-    slider_field_named(ui, d, key, "", range, suffix, track);
-}
-
-/// [`slider_field`] whose rail screen readers call `name` (the row's label, already translated).
+/// The rail and value field of [`slider`] without its label (for a row that draws its own); screen
+/// readers call the rail `name` (the row's label, already translated).
 pub(super) fn slider_field_named(
     ui: &mut egui::Ui,
     d: &mut Dialog,
@@ -511,14 +499,9 @@ pub(super) fn slider_field_named(
     }
 }
 
-/// The rail of [`slider_field`] alone: dragging it sets the number `d.fields[key]` to a whole
-/// number in `range` (a value past the range shows at its end until the rail moves).
-#[allow(dead_code)]
-pub(super) fn slider_rail(ui: &mut egui::Ui, d: &mut Dialog, key: &str, range: std::ops::RangeInclusive<f64>, track: &dyn Fn(f32) -> egui::Color32) {
-    slider_rail_named(ui, d, key, "", range, track);
-}
-
-/// [`slider_rail`] that screen readers call `name` (already translated).
+/// The rail of [`slider_field_named`] alone: dragging it sets the number `d.fields[key]` to a
+/// whole number in `range` (a value past the range shows at its end until the rail moves); screen
+/// readers call it `name` (already translated).
 pub(super) fn slider_rail_named(
     ui: &mut egui::Ui,
     d: &mut Dialog,
