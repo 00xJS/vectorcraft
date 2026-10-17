@@ -58,7 +58,8 @@ const MAX_SLOTS: usize = 5000;
 const MAX_PIECES: usize = 2000;
 /// Most bytes of text in the text objects of the layers (a story named twice counts twice).
 const MAX_TEXT: usize = 16 << 20;
-/// Most pairs of a text object and a piece of the page's type compared.
+/// Most pairs of a text object and a piece of the page's type compared, and of a glyph the page
+/// kept as outlines and a node of the page's type.
 const MAX_PAIRS: usize = 4_000_000;
 
 /// `names` for a note: the first few, and how many more.
@@ -978,6 +979,8 @@ fn build(data: &[u8], visible: Option<&Document>, page: Page, outlined: bool, tr
     });
     let visible = small.as_ref().or(visible);
     let (mut shown, mut hidden) = (vec![], vec![]);
+    // The glyphs the page kept as outlines that no text object of it takes in, one by one.
+    let mut lone: Vec<Vec<Arc<Node>>> = vec![];
     let mut frame = None;
     if let Some(visible) = visible {
         let art_box = match page {
@@ -998,13 +1001,19 @@ fn build(data: &[u8], visible: Option<&Document>, page: Page, outlined: bool, tr
                 text_objects(c, l.visible, &mut shown, &mut hidden);
             }
         }
+        let taken: BTreeSet<NodeId> = shown.iter().chain(&hidden).flatten().map(|n| n.id).collect();
+        visible.walk(|n| {
+            if vectorcraft_pdf::is_glyph_outlines(n) && !taken.contains(&n.id) {
+                lone.push(vec![Arc::new(n.clone())]);
+            }
+        });
         // A `.ai` read as its PDF part has a page for each artboard, in a row: the type on each
         // goes where the layers have that artboard.
         let pages: Vec<Rect> = visible.artboards.iter().map(|a| a.rect).collect();
         let same =
             |(a, p): (&vectorcraft_doc::Artboard, &Rect)| (a.rect.width() - p.width()).abs() <= 0.5 && (a.rect.height() - p.height()).abs() <= 0.5;
         let boards = (pages.len() == doc.artboards.len() && doc.artboards.iter().zip(&pages).all(same)).then_some(&doc.artboards);
-        for object in shown.iter_mut().chain(hidden.iter_mut()) {
+        for object in shown.iter_mut().chain(hidden.iter_mut()).chain(lone.iter_mut()) {
             // The page with most of it, the first for what is on none.
             let on = extent(object).and_then(|r| {
                 let inside = |p: &Rect| p.intersect(r).area().max(0.0);
@@ -1066,6 +1075,15 @@ fn build(data: &[u8], visible: Option<&Document>, page: Page, outlined: bool, tr
     let template = template.map(|t| ((t[0] + t[2]) / 2.0, (t[1] + t[3]) / 2.0));
     let mut notes = warnings;
     let content = plan(&infos, &stories, template, to_doc, [&shown, &hidden], &mut notes);
+    // The glyphs left out with the rest of the page's art, and how many text objects take type of
+    // the page right next to them (not counted past `MAX_PAIRS` comparisons).
+    let compared = lone.len().saturating_mul(shown.iter().chain(&hidden).map(Vec::len).sum());
+    let missing: Vec<Rect> = if compared > MAX_PAIRS { vec![] } else { lone.iter().filter_map(|g| extent(g)).collect() };
+    let next_to_missing = |n: &Arc<Node>| {
+        matches!(n.kind, NodeKind::Text(_))
+            && n.visual_bounds().is_some_and(|b| missing.iter().any(|r| !b.inflate(OUTLINE_REACH, OUTLINE_REACH).intersect(*r).is_zero_area()))
+    };
+    let short = content.iter().filter(|c| matches!(c, Content::Page(p) | Content::Made(_, _, _, p) if p.iter().any(next_to_missing))).count();
     let mut empty = 0;
     let mut layers = std::mem::take(&mut doc.layers);
     let mut made = vec![];
@@ -1080,6 +1098,9 @@ fn build(data: &[u8], visible: Option<&Document>, page: Page, outlined: bool, tr
     }
     if empty > 0 {
         notes.push(format!("{empty} {}", if frame.is_some() { TEXT_LEFT_OUT } else { TYPE_LEFT_OUT }));
+    }
+    if short > 0 {
+        notes.push(format!("{short} {PAGE_TYPE_WITHOUT_OUTLINES}"));
     }
     if !hidden_unread.is_empty() {
         notes.push(format!("{ART_LEFT_OUT} ({}), left out of them", few(hidden_unread)));
@@ -1136,6 +1157,9 @@ const MADE: &str = "\u{1}made";
 const MAX_WEIGHED: usize = 12;
 /// The text objects the file keeps that the page doesn't draw.
 const UNSEEN_TEXT: &str = "text objects that the file keeps but its page doesn't draw (what is left of type turned to outlines) are left out";
+/// The text objects that hold the page's type next to glyphs the page kept as outlines, which are
+/// left out.
+const PAGE_TYPE_WITHOUT_OUTLINES: &str = "text objects hold their type as the page draws it, without the characters the page has only as outlines";
 /// How much more of the page (0 to 1) the layers may differ without a text object and still look no worse.
 const UNSEEN_MARGIN: f64 = 5e-5;
 
