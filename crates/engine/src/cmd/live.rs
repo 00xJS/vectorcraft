@@ -402,16 +402,20 @@ const DEFAULT_DISTANCE: f64 = 10.0;
 
 fn spacing_param(p: &Value, cmd: &str, current: BlendSpacing) -> Result<BlendSpacing> {
     let num = |k: &str| p.get(k).and_then(Value::as_f64);
+    let steps = |k: &str, n: f64| whole(n, k, cmd).map(|n| BlendSpacing::Steps(n as u32));
     let mode = str_param(p, "spacing");
     let value = num("value");
     let sp = match mode {
         Some("smooth") | Some("smoothColor") => BlendSpacing::SmoothColor,
-        Some("steps") => BlendSpacing::Steps(value.or(num("steps")).unwrap_or(DEFAULT_STEPS as f64) as u32),
+        Some("steps") => match value {
+            Some(v) => steps("value", v)?,
+            None => steps("steps", num("steps").unwrap_or(DEFAULT_STEPS as f64))?,
+        },
         Some("distance") => BlendSpacing::Distance(value.or(num("distance")).unwrap_or(DEFAULT_DISTANCE)),
         Some(o) => return Err(bad(cmd, format!("unknown spacing `{o}` (smooth|steps|distance)"))),
         None => {
             if let Some(n) = num("steps") {
-                BlendSpacing::Steps(n as u32)
+                steps("steps", n)?
             } else if let Some(d) = num("distance") {
                 BlendSpacing::Distance(d)
             } else if bool_or(p, "smooth", false) {
@@ -959,14 +963,15 @@ fn envelope(id: NodeId, content: Vec<Arc<Node>>, kind: EnvelopeKind, (options, f
     Node::new(id, NodeKind::Envelope { content, kind: Box::new(kind), fidelity, editing: false, options, frame: Box::new(Affine::IDENTITY) })
 }
 
-/// `rows` and `cols` (or `columns`), 1..50 each, defaulting to `default`.
+/// `rows` and `cols` (or `columns`), whole numbers 1..50 each, defaulting to `default`.
 fn rows_cols(p: &Value, cmd: &str, default: (u32, u32)) -> Result<(u32, u32)> {
     let rows = f64_or(p, "rows", default.0 as f64);
-    let cols = f64_or(p, "cols", f64_or(p, "columns", default.1 as f64));
+    let cols_key = if p.get("cols").and_then(Value::as_f64).is_some() { "cols" } else { "columns" };
+    let cols = f64_or(p, cols_key, default.1 as f64);
     if !(1.0..=50.0).contains(&rows) || !(1.0..=50.0).contains(&cols) {
         return Err(bad(cmd, "rows and cols must be 1..50"));
     }
-    Ok((rows as u32, cols as u32))
+    Ok((whole(rows, "rows", cmd)? as u32, whole(cols, cols_key, cmd)? as u32))
 }
 
 fn env_make_warp(s: &mut Session, p: &Value) -> Result<Value> {
@@ -1303,7 +1308,7 @@ fn env_edit_contents(s: &mut Session, p: &Value) -> Result<Value> {
 fn env_set_mesh_point(s: &mut Session, p: &Value) -> Result<Value> {
     const C: &str = "object.envelope.setMeshPoint";
     let id = id_param(p, "id").ok_or_else(|| bad(C, "missing `id`"))?;
-    let index = f64_req(p, "index", C)? as usize;
+    let index = index_param(p, "index", C)?;
     let q = Point::new(f64_req(p, "x", C)?, f64_req(p, "y", C)?);
     let handle = handle_param(p, C)?;
     s.edit("Move Envelope Point", |d, _| {
@@ -1466,7 +1471,12 @@ fn index_param(p: &Value, key: &str, cmd: &str) -> Result<usize> {
     if i < 0.0 {
         return Err(bad(cmd, "index must be ≥ 0"));
     }
-    Ok(i as usize)
+    Ok(whole(i, key, cmd)? as usize)
+}
+
+/// `x`, the value of `key`, when it is a whole number, and an error otherwise.
+fn whole(x: f64, key: &str, cmd: &str) -> Result<f64> {
+    if x.fract() == 0.0 { Ok(x) } else { Err(bad(cmd, format!("`{key}` must be a whole number"))) }
 }
 
 fn mesh_set_color(s: &mut Session, p: &Value) -> Result<Value> {

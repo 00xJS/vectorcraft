@@ -94,6 +94,28 @@ fn blend_specified_steps_count() {
     assert_eq!(steps_of(&s, g).len(), 5);
 }
 
+/// Specified Steps that are not a whole number are an error, in Make and in Blend Options, and
+/// nothing changes; 4.0 is a whole number of steps.
+#[test]
+fn blend_steps_that_are_not_a_whole_number_are_refused() {
+    let mut s = session();
+    let (_, _, g) = blend(&mut s, json!({"steps": 3}));
+    let (a, b) = (rect(&mut s, 0.0, 50.0, 10.0, 10.0), rect(&mut s, 100.0, 50.0, 10.0, 10.0));
+    let n = undo_len(&s);
+    for p in [json!({"ids": [a.0, b.0], "steps": 2.5}), json!({"ids": [a.0, b.0], "spacing": "steps", "value": 2.5})] {
+        let key = if p.get("value").is_some() { "value" } else { "steps" };
+        let r = s.execute("object.blend.make", &p);
+        assert!(matches!(&r, Err(EngineError::BadParams { msg, .. }) if *msg == format!("`{key}` must be a whole number")), "{p}: {r:?}");
+    }
+    sel(&mut s, &[g]);
+    for p in [json!({"steps": 2.5}), json!({"spacing": "steps", "value": 1.5})] {
+        assert!(s.execute("object.blend.options", &p).is_err(), "{p}");
+    }
+    assert_eq!((undo_len(&s), steps_of(&s, g).len()), (n, 5), "nothing changed");
+    s.execute("object.blend.options", &json!({"steps": 4.0})).unwrap();
+    assert_eq!(steps_of(&s, g).len(), 6);
+}
+
 #[test]
 fn blend_mid_step_interpolates_geometry_and_colour() {
     let mut s = session();
@@ -580,6 +602,36 @@ fn mesh_add_line_and_delete_point() {
     let m = mesh_of(&s, a);
     assert_eq!((m.rows, m.cols), (1, 1));
     assert!(s.execute("object.mesh.deletePoint", &json!({"id": a.0, "index": 0})).is_err(), "corner lines can't go");
+}
+
+/// A mesh point `index`, and `rows`, `cols` or `columns` for Create Gradient Mesh, that is not a
+/// whole number is an error that changes nothing; 4.0 names point 4.
+#[test]
+fn mesh_commands_refuse_an_index_or_count_that_is_not_a_whole_number() {
+    let mut s = session();
+    let a = rect(&mut s, 0.0, 0.0, 100.0, 100.0);
+    let b = rect(&mut s, 200.0, 0.0, 100.0, 100.0);
+    sel(&mut s, &[a]);
+    s.execute("object.mesh.create", &json!({"rows": 2, "cols": 2})).unwrap();
+    let (before, n) = (mesh_of(&s, a), undo_len(&s));
+    sel(&mut s, &[b]);
+    for (key, p) in [("rows", json!({"rows": 2.5})), ("cols", json!({"cols": 1.5})), ("columns", json!({"columns": 3.25}))] {
+        let r = s.execute("object.mesh.create", &p);
+        assert!(matches!(&r, Err(EngineError::BadParams { msg, .. }) if *msg == format!("`{key}` must be a whole number")), "{p}: {r:?}");
+    }
+    assert!(matches!(node(&s, b).kind, NodeKind::Path { .. }), "still a path");
+    for (cmd, p) in [
+        ("object.mesh.setPointColor", json!({"id": a.0, "index": 4.5, "color": "#00ff00"})),
+        ("object.mesh.movePoint", json!({"id": a.0, "index": 4.5, "x": 10, "y": 10})),
+        ("object.mesh.movePoint", json!({"id": a.0, "index": 3.5, "x": 10, "y": 10, "handle": 0})),
+        ("object.mesh.deletePoint", json!({"id": a.0, "index": 4.5})),
+    ] {
+        let r = s.execute(cmd, &p);
+        assert!(matches!(&r, Err(EngineError::BadParams { msg, .. }) if msg == "`index` must be a whole number"), "{cmd} {p}: {r:?}");
+    }
+    assert_eq!((mesh_of(&s, a), undo_len(&s)), (before, n), "nothing changed");
+    s.execute("object.mesh.movePoint", &json!({"id": a.0, "index": 4.0, "x": 40, "y": 60})).unwrap();
+    assert_eq!(mesh_of(&s, a).points[4].p, Point::new(40.0, 60.0));
 }
 
 #[test]
