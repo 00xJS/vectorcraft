@@ -3611,7 +3611,9 @@ to `object.setBounds`, which scales the other dimension by the same factor; agen
 
 ## Plug-ins
 
-WebAssembly plug-ins ([plugins.md](plugins.md)) are installed per process and reached through commands:
+WebAssembly plug-ins ([plugins.md](plugins.md)) are reached through commands; the desktop app and an unconfined
+`vectorcraft-cli` keep the ones `plugin.install` installs in a `Plug-ins` folder next to the preferences and install
+them again at startup (`plugin.remove` deletes them there):
 `plugin.install {path | dataBase64}` installs one, `plugin.list` / `plugin.info {id}` describe them (parameters,
 schema, defaults). An object filter runs on the selected paths and compound paths with `plugin.run {id, params}` (one
 undo step; it may change, delete or add objects, and the result is selected). A live-effect plug-in is an effect with
