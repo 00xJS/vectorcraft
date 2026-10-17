@@ -163,7 +163,9 @@ tool option `stop` (the tool to return to; `tool.setOption {key: "stop", value: 
 samples the colour there into the selected stop (`paint.sampleColor {color, stop}`) and switches back. Dragging a
 swatch, a Fill/Stroke proxy or the panel's gradient thumbnail onto art runs `paint.setFill` / `paint.setStroke` (the
 active proxy) with the paint's params and the object's `ids`; a colour dropped on the panel's ramp adds or recolours
-a stop.
+a stop. Alt-clicking a color swatch in the Swatches panel recolors the selected stop as a drop on it does
+(`paint.editGradient {stops}`), or the selected point of a freeform gradient (`paint.freeform.setPoint`); with no stop
+or point selected, it paints the inactive Fill or Stroke.
 
 Freeform gradients: double-clicking a point with the Gradient tool opens the same `gradientStop` popover on the selected
 point (`paint.freeform.selectPoint`); its fields are `color` (hex), `opacity` and `spread` (percentages), applied by
