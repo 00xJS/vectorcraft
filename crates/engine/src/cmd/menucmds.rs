@@ -224,8 +224,9 @@ fn reset_bounding_box(s: &mut Session, _: &Value) -> Result<Value> {
 fn above(s: &mut Session, lock: bool) -> Result<Value> {
     let roots = selected_roots(s)?;
     let d = &s.doc()?.doc;
+    let symbols = d.symbol_boxes();
     // `selected` holds each selected object's visual bounds, by layer, with the index there of its
-    // ancestor directly inside the layer.
+    // ancestor directly inside the layer. Symbol instances are measured by their art.
     let mut selected: BTreeMap<NodeId, Vec<(usize, Rect)>> = BTreeMap::new();
     for id in &roots {
         let Some(layer) = d.layer_of(*id) else { continue };
@@ -233,7 +234,7 @@ fn above(s: &mut Session, lock: bool) -> Result<Value> {
         let anc = d.ancestry(*id).unwrap_or_default();
         let Some(pos) = anc.iter().position(|a| *a == layer) else { continue };
         let top = anc.get(pos + 1).copied().unwrap_or(*id);
-        let Some(b) = d.node(*id).and_then(|n| n.visual_bounds()) else { continue };
+        let Some(b) = d.node(*id).and_then(|n| n.visual_bounds_with(&symbols)) else { continue };
         let Some((_, idx, _)) = d.position(top) else { continue };
         selected.entry(layer).or_default().push((idx, b));
     }
@@ -253,7 +254,7 @@ fn above(s: &mut Session, lock: bool) -> Result<Value> {
             if under.is_empty() || roots.contains(&n.id) {
                 continue;
             }
-            if n.visual_bounds().is_some_and(|nb| under.iter().any(|b| nb.intersect(*b).area() > 0.0 || nb.contains(b.center()))) {
+            if n.visual_bounds_with(&symbols).is_some_and(|nb| under.iter().any(|b| nb.intersect(*b).area() > 0.0 || nb.contains(b.center()))) {
                 hits.insert(n.id);
             }
         }
@@ -366,8 +367,11 @@ fn transform_each_as(s: &mut Session, p: &Value, label: &str) -> Result<Value> {
     }
     let ids = s.edit(label, |d, sel| {
         let targets = if copy { duplicate_in(d, sel, &roots, Affine::IDENTITY)? } else { roots.clone() };
-        for id in &targets {
-            let Some(b) = d.node(*id).and_then(|n| n.geometric_bounds()) else { continue };
+        // Measure each object's geometric bounds first, with symbol instances measured by their art.
+        let symbols = d.symbol_boxes();
+        let boxes: Vec<Option<Rect>> = targets.iter().map(|id| d.node(*id).and_then(|n| n.geometric_bounds_with(&symbols))).collect();
+        for (id, b) in targets.iter().zip(boxes) {
+            let Some(b) = b else { continue };
             let (mut k_sh, mut k_sv, mut k_mh, mut k_mv, mut k_rot) = (sh, sv, mh, mv, rot);
             if random {
                 k_sh = 100.0 + (sh - 100.0) * rng.next();
@@ -898,9 +902,11 @@ fn convert_to_shape(s: &mut Session, _: &Value) -> Result<Value> {
 fn convert_to_artboards(s: &mut Session, _: &Value) -> Result<Value> {
     let roots = selected_roots(s)?;
     let n = s.edit("Convert to Artboards", |d, sel| {
+        // Measure each object's geometric bounds first, with symbol instances measured by their art.
+        let symbols = d.symbol_boxes();
+        let boxes: Vec<(NodeId, Rect)> = roots.iter().filter_map(|id| Some((*id, d.node(*id)?.geometric_bounds_with(&symbols)?))).collect();
         let mut converted = vec![];
-        for id in &roots {
-            let Some(b) = d.node(*id).and_then(|n| n.geometric_bounds()) else { continue };
+        for (id, b) in boxes {
             if b.width() <= 0.0 || b.height() <= 0.0 {
                 continue;
             }
@@ -912,7 +918,7 @@ fn convert_to_artboards(s: &mut Session, _: &Value) -> Result<Value> {
                 show_center_mark: false,
                 show_cross_hairs: false,
             });
-            converted.push(*id);
+            converted.push(id);
         }
         if converted.is_empty() {
             return Err(EngineError::Other("Convert to Artboards: selection has no area".into()));
@@ -964,8 +970,10 @@ fn rearrange_artboards(s: &mut Session, p: &Value) -> Result<Value> {
     if deltas.iter().all(|dl| dl.x.abs() <= 1e-9 && dl.y.abs() <= 1e-9) {
         return Ok(json!({ "artboards": count, "rows": rows, "columns": cols }));
     }
-    // With moveArtwork, each top-level object moves with the artboard its center is on; locked and
+    // With moveArtwork, each top-level object moves with the artboard its center is on, with symbol
+    // instances measured by their art as `Document::art_on_artboard` measures them; locked and
     // hidden art moves only when prefs moveLockedWithArtboard is on.
+    let symbols = d.symbol_boxes();
     let art: Vec<(NodeId, Vec2)> = if move_art {
         d.layers
             .iter()
@@ -973,7 +981,7 @@ fn rearrange_artboards(s: &mut Session, p: &Value) -> Result<Value> {
             .flat_map(|l| l.children().into_iter().flatten())
             .filter(|n| n.rides_with_artboard(locked_and_hidden))
             .filter_map(|n| {
-                let c = n.geometric_bounds()?.center();
+                let c = n.geometric_bounds_with(&symbols)?.center();
                 let dl = *rects.iter().position(|r| r.contains(c)).and_then(|i| deltas.get(i))?;
                 (dl != Vec2::ZERO).then_some((n.id, dl))
             })

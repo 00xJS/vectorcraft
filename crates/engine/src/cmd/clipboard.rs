@@ -109,7 +109,9 @@ impl Clipboard {
             // The nearest enclosing layer (or sublayer).
             source_layers.push(anc.iter().rev().skip(1).find_map(|a| d.node(*a).filter(|l| l.is_layer())).and_then(|l| l.name.clone()));
         }
-        let bounds = nodes.iter().filter_map(Node::visual_bounds).reduce(|a, b| a.union(b));
+        // Symbol instances are measured by their art.
+        let symbols = d.symbol_boxes();
+        let bounds = nodes.iter().filter_map(|n| n.visual_bounds_with(&symbols)).reduce(|a, b| a.union(b));
         // Art on no artboard has no source artboard: in-place pastes put it back where it was (#1924).
         let board = bounds.and_then(|b| d.artboard_at(b.center()));
         Self {
@@ -127,9 +129,13 @@ impl Clipboard {
         Self::gather(src, nodes)
     }
 
-    /// Union of the objects' visual bounds.
+    /// Union of the objects' visual bounds, with symbol instances measured by the art of the
+    /// symbols the clipboard holds.
     pub fn bounds(&self) -> Option<Rect> {
-        self.nodes.iter().filter_map(Node::visual_bounds).reduce(|a, b| a.union(b))
+        let mut d = Document::new(100.0, 100.0);
+        d.symbols = self.symbols.clone();
+        let symbols = d.symbol_boxes();
+        self.nodes.iter().filter_map(|n| n.visual_bounds_with(&symbols)).reduce(|a, b| a.union(b))
     }
 
     /// The swatch name conflicts pasting into `st` raises, as (pasted, document) swatches: none
