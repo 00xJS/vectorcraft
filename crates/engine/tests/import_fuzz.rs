@@ -1641,6 +1641,20 @@ proptest! {
         r.map_err(|msg| TestCaseError::fail(format!("placing hostile PostScript panicked: {msg}")))?;
     }
 
+    /// Hostile PostScript programs in `.ps` files whose header is only `%!`: opened, placed, and
+    /// pasted as a copied file is.
+    #[test]
+    fn ps_hostile_programs_never_panic(tokens in prop::collection::vec(arb_ps_token(), 0..60)) {
+        let ps = format!("%!\n{}\nshowpage\n", tokens.join(" "));
+        survive("hostile .ps", || vectorcraft_engine::cmd::fileio::load("x.ps", ps.as_bytes()).ok().map(|l| l.doc))?;
+        let r = catch_quiet(|| {
+            let mut s = rich_session();
+            let _ = no_panic(s.execute("file.place", &json!({"name": "x.ps", "dataBase64": vectorcraft_format::base64_encode(ps.as_bytes())})));
+        });
+        r.map_err(|msg| TestCaseError::fail(format!("placing a hostile .ps panicked: {msg}")))?;
+        paste_from_elsewhere("clipboard.importEps", json!({"dataBase64": vectorcraft_format::base64_encode(ps.as_bytes())}))?;
+    }
+
     /// Damaged or hostile CMYK images (a CMYK JPEG, an image with a key color): read as images,
     /// or as an error.
     #[test]

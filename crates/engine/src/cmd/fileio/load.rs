@@ -76,9 +76,10 @@ pub fn detect(name: &str, bytes: &[u8]) -> Option<&'static Format> {
         return format("svgz");
     }
     if vectorcraft_pdf::is_postscript(bytes) {
-        // PostScript (.eps, and .ai saved without PDF compatibility) by any name; .ai and .ait
-        // keep their meaning (a template), read as PostScript all the same.
-        return by_name.filter(|f| matches!(f.id, "ai" | "ait")).or_else(|| format("eps"));
+        // PostScript (.eps, .ps, and .ai saved without PDF compatibility) by any name; .ai, .ait
+        // and .ps keep their meaning (a template, a PostScript file), read as PostScript all the
+        // same.
+        return by_name.filter(|f| matches!(f.id, "ai" | "ait" | "ps")).or_else(|| format("eps"));
     }
     if bytes.starts_with(b"%PDF") {
         // .ai and .ait files are PDF inside; the extension keeps the template meaning.
@@ -197,8 +198,8 @@ pub fn load_with(name: &str, bytes: &[u8], opts: &LoadOptions) -> Result<Loaded>
     let mut converted = false;
     let mut preview_only = false;
     let (mut doc, mut warnings, restored) = match format.id {
-        // EPS and PostScript .ai: the document our EPS files carry, else the PostScript read.
-        _ if format.id == "eps" || vectorcraft_pdf::is_postscript(bytes) => {
+        // EPS, .ps and PostScript .ai: the document our EPS files carry, else the PostScript read.
+        _ if matches!(format.id, "eps" | "ps") || vectorcraft_pdf::is_postscript(bytes) => {
             let editing = vectorcraft_eps::has_native(bytes).then_some((true, || vectorcraft_eps::native(bytes)));
             restore_or_import(editing, || {
                 let r = vectorcraft_eps::import_with(bytes, opts.editing_data).map_err(|e| err(format!("can't open `{}`: {e}", file_name(name))))?;

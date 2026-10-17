@@ -1042,9 +1042,9 @@ mod tests {
             .collect()
     }
 
-    /// Finder offers the app for every file File › Open reads (#295, #354) but Photoshop documents
-    /// (`UNASSOCIATED_EXTS`), takes over no other app's files, and hands them to the app rather than
-    /// to AppKit's document machinery.
+    /// Finder offers the app for every file File › Open reads (#295, #354) but those with an
+    /// extension in `UNASSOCIATED_EXTS`, takes over no other app's files, and hands them to the app
+    /// rather than to AppKit's document machinery.
     #[test]
     fn the_macos_bundle_opens_every_readable_format() {
         let plist = include_str!("../../../packaging/macos/Info.plist.in");
