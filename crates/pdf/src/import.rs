@@ -951,8 +951,17 @@ fn mean_scale(a: Affine) -> f64 {
     a.determinant().abs().sqrt()
 }
 
+/// Width a PDF line width of 0 imports as, points: a print hairline. In PDF `0 w` is the thinnest
+/// line the device can draw (ISO 32000-1, 8.4.3.2), not no line.
+const HAIRLINE: f64 = 0.25;
+
+/// Document width of the stroke `p` drawn at `scale`: `0 w` becomes a [`HAIRLINE`].
+fn line_width(p: &StrokeProps, scale: f64) -> f64 {
+    if p.line_width == 0.0 { HAIRLINE } else { p.line_width as f64 * scale }
+}
+
 fn stroke_layer(paint: Paint, opacity: f32, p: &StrokeProps, scale: f64) -> StrokeLayer {
-    let mut st = StrokeLayer::new(paint, p.line_width as f64 * scale);
+    let mut st = StrokeLayer::new(paint, line_width(p, scale));
     st.opacity = opacity;
     st.cap = match p.line_cap {
         kurbo::Cap::Butt => LineCap::Butt,
@@ -1733,7 +1742,7 @@ impl<'p> Builder<'p> {
             None => named(&info.face),
         };
         let (paint, opacity) = self.paint(paint, stroke.is_some(), self.walked(true));
-        let stroke = stroke.map(|p| (paint.clone(), p.line_width as f64 * scale));
+        let stroke = stroke.map(|p| (paint.clone(), line_width(p, scale)));
         let look = Look {
             font: key,
             family: info.family,
@@ -1850,7 +1859,7 @@ impl<'a> Device<'a> for Builder<'_> {
         let (paint, opacity) = self.paint(paint, stroke, walked);
         // A gradient that doesn't extend past its ends paints only between them.
         let width = match draw_mode {
-            PathDrawMode::Stroke(p) => p.line_width as f64 * mean_scale(transform),
+            PathDrawMode::Stroke(p) => line_width(p, mean_scale(transform)),
             PathDrawMode::Fill(_) => 0.0,
         };
         let band = shading.and_then(|sp| extend_clip(sp, bp.bounding_box().inflate(width, width)));
