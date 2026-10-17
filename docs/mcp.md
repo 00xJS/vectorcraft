@@ -3662,7 +3662,9 @@ same dialog, and its OK also draws a flare there. The Artboard tool's are the ac
 (dialog `artboardOptions`; the Artboard tool's active artboard while it is in use, else the window's), a graph tool's
 the selected graph's Graph Type (an error without one), a Symbolism tool's the Symbolism Tools Options (dialog
 `symbolismOptions`: `diameter` in points, `intensity` and `density` 1–10, one brush for the eight tools) and the
-Magic Wand tool's its panel.
+Magic Wand tool's its panel. `ui.newArtboard` (Alt-click on the Artboards panel's New Artboard) opens Artboard Options
+for a new artboard, with `new: true` and the name, position and size that `artboard.new {}` would give it. OK runs
+`artboard.new` with the fields and makes the new artboard the active one, and Cancel adds no artboard.
 
 ```json
 {"name":"run_command","arguments":{"command":"tool.setOption","params":{"tool":"flare","values":{"rays":24,"ringsOn":false}}}}
