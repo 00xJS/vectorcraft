@@ -1770,20 +1770,20 @@ fn node_outline(n: &Node, symbols: &SymbolBoxes) -> BezPath {
 /// The width of the key object's outline (Align to Key Object), thicker than the selection's.
 const KEY_OUTLINE: f32 = 2.5;
 
-/// The most anchor points the selection's outlines and anchors, and the hover highlight, are drawn
-/// for: an Image Trace of a photo selects hundreds of thousands of paths at once, whose outlines
-/// would make a mesh larger than the GPU takes in one buffer (#525).
+/// The most points ([`overlay_points`]) the selection's outlines and anchors, and the hover
+/// highlight, are drawn for: an Image Trace of a photo selects hundreds of thousands of paths at
+/// once, and selecting all of an opened PDF can select as many type objects, images and gradient
+/// mesh pieces. Their outlines would make a mesh larger than the GPU takes in one buffer (#525,
+/// #2460).
 const OVERLAY_MAX_ANCHORS: usize = 100_000;
 
-/// Whether `nodes` have more than [`OVERLAY_MAX_ANCHORS`] anchor points to outline (counting
-/// stops there).
+/// Whether `nodes` have more than [`OVERLAY_MAX_ANCHORS`] points to outline ([`overlay_points`];
+/// counting stops there).
 fn too_many_anchors<'a>(nodes: impl IntoIterator<Item = &'a Node>) -> bool {
     fn over(n: &Node, left: &mut usize) -> bool {
-        if let NodeKind::Path { path, .. } = &n.kind {
-            match left.checked_sub(path.anchor_count()) {
-                Some(l) => *left = l,
-                None => return true,
-            }
+        match left.checked_sub(overlay_points(n)) {
+            Some(l) => *left = l,
+            None => return true,
         }
         // A clip group counts only its clipping path, the one child `walk_drawn` visits.
         if n.clips() {
@@ -1794,6 +1794,30 @@ fn too_many_anchors<'a>(nodes: impl IntoIterator<Item = &'a Node>) -> bool {
     }
     let mut left = OVERLAY_MAX_ANCHORS;
     nodes.into_iter().any(|n| over(n, &mut left))
+}
+
+/// The points counted for `n` itself, without its children, toward [`OVERLAY_MAX_ANCHORS`]: a
+/// path's anchors; the anchors of area type's frame or of type on a path's path; the four corners
+/// of the box that area type or type on a path in perspective, images, symbol instances and
+/// placed documents show; six for point type, its box's corners and the ends of the baseline
+/// marker a selected one shows; and the points and the ends of the mesh lines of a gradient mesh
+/// or an envelope.
+fn overlay_points(n: &Node) -> usize {
+    match &n.kind {
+        NodeKind::Path { path, .. } => path.anchor_count(),
+        NodeKind::Text(t) => match &t.kind {
+            vectorcraft_doc::TextKind::Point => 6,
+            _ if n.extras().perspective.is_some() => 4,
+            vectorcraft_doc::TextKind::Area { frame } => frame.anchor_count(),
+            vectorcraft_doc::TextKind::OnPath { path, .. } => path.anchor_count(),
+        },
+        NodeKind::Image(_) | NodeKind::SymbolInstance { .. } | NodeKind::PlacedDocument(_) => 4,
+        NodeKind::Mesh(m) => m.lines().anchor_count() + m.points.len(),
+        NodeKind::Envelope { .. } => {
+            vectorcraft_doc::live::envelope_overlay(n).map_or(0, |(lines, grid)| lines.anchor_count() + grid.map_or(0, |g| g.points.len()))
+        }
+        _ => 0,
+    }
 }
 
 /// [`Node::walk`] over what a selection highlight shows: an envelope's content is left out (the
@@ -3947,6 +3971,98 @@ mod tests {
         assert!(points > 200 && squares > 200, "{points} outline points, {squares} squares");
     }
 
+    /// #2460: type, images, symbol instances, gradient meshes and envelopes count toward the
+    /// points the overlay outlines, as paths' anchors do. 32,768 of one kind (an opened PDF can
+    /// hold as many type lines, images or mesh pieces) add only the selection's bounds to the
+    /// frame's mesh, under 100 vertices; one alone adds its outline.
+    #[test]
+    fn a_huge_selection_of_type_images_symbols_or_meshes_shows_its_bounds() {
+        for kind in ["point type", "area type", "type on a path", "image", "symbol", "mesh", "envelope"] {
+            let mut app = VectorcraftApp::new(Session::new(), Default::default());
+            app.session.execute("file.new", &json!({"width": 400, "height": 300})).unwrap();
+            app.ui.task_bar = false;
+            // The Rectangle tool draws nothing of its own (no bounding box, no type on a path
+            // brackets): only the selection's overlay changes the frame.
+            app.select_tool("rectangle");
+            match kind {
+                "point type" => {
+                    app.session.execute("text.create", &json!({"x": 20, "y": 40, "text": "Type"})).unwrap();
+                }
+                "area type" => {
+                    let area = json!({"width": 150, "height": 20});
+                    app.session.execute("text.create", &json!({"x": 20, "y": 40, "text": "Type", "area": area})).unwrap();
+                }
+                "type on a path" => {
+                    let path = app.session.execute("path.create", &json!({"d": "M20 100 L140 100 L260 100 L380 100"})).unwrap()["id"].clone();
+                    app.session.execute("text.createInPath", &json!({"path": path, "mode": "onPath", "text": "Type"})).unwrap();
+                }
+                "image" => {
+                    let data = vectorcraft_format::base64_encode(&crate::tests_sysclip::blue_png());
+                    app.run("file.place", json!({"name": "blue.png", "dataBase64": data, "link": false, "at": [200, 150]})).unwrap();
+                }
+                "symbol" => {
+                    app.session.execute("shape.rectangle", &json!({"x": 10, "y": 10, "width": 40, "height": 20})).unwrap();
+                    app.session.execute("symbol.new", &json!({})).unwrap();
+                }
+                "mesh" => {
+                    app.session.execute("shape.rectangle", &json!({"x": 150, "y": 50, "width": 30, "height": 20})).unwrap();
+                    app.session.execute("object.mesh.create", &json!({"rows": 1, "cols": 1})).unwrap();
+                }
+                _ => {
+                    app.session.execute("shape.rectangle", &json!({"x": 150, "y": 50, "width": 30, "height": 20})).unwrap();
+                    app.session.execute("object.envelope.makeWithMesh", &json!({"rows": 1, "cols": 1})).unwrap();
+                }
+            }
+            let ctx = egui::Context::default();
+            // The vertices that selecting everything adds to the frame's mesh.
+            let overlay = |app: &mut VectorcraftApp| {
+                app.session.execute("select.none", &json!({})).unwrap();
+                let none = frame_vertices(app, &ctx);
+                app.session.execute("select.all", &json!({})).unwrap();
+                frame_vertices(app, &ctx).saturating_sub(none)
+            };
+            let one = overlay(&mut app);
+            assert!(one > 0, "{kind}: one shows its outline");
+            for _ in 0..15 {
+                app.session.execute("select.all", &json!({})).unwrap();
+                app.run("edit.duplicate", json!({})).unwrap();
+            }
+            let many = overlay(&mut app);
+            assert_eq!(app.session.active().unwrap().selection.objects.len(), 32_768, "{kind}");
+            assert!(many < 100, "{kind}: 32,768 show the selection's bounds, not {many} vertices");
+        }
+    }
+
+    /// #2460: a group of 32,768 images is too much to outline: under the pointer it is not
+    /// highlighted, and as the key object its outline is its bounds.
+    #[test]
+    fn a_group_of_too_many_images_has_no_hover_outline_and_a_key_outline_of_its_bounds() {
+        let mut app = VectorcraftApp::new(Session::new(), Default::default());
+        app.session.execute("file.new", &json!({"width": 400, "height": 300})).unwrap();
+        let data = vectorcraft_format::base64_encode(&crate::tests_sysclip::blue_png());
+        app.run("file.place", json!({"name": "blue.png", "dataBase64": data, "link": false, "at": [200, 150]})).unwrap();
+        for _ in 0..15 {
+            app.session.execute("select.all", &json!({})).unwrap();
+            app.run("edit.duplicate", json!({})).unwrap();
+        }
+        app.session.execute("select.all", &json!({})).unwrap();
+        let group = app.session.execute("object.group", &json!({})).unwrap()["id"].clone();
+        app.session.execute("shape.rectangle", &json!({"x": 20, "y": 20, "width": 30, "height": 30})).unwrap();
+        app.select_tool("selection");
+        app.session.execute("select.none", &json!({})).unwrap();
+        let ctx = egui::Context::default();
+        frame(&mut app, &ctx, vec![]);
+        let over = Xf::new(app.canvas_rect.unwrap(), app.view().unwrap()).to_screen(Point::new(200.0, 150.0));
+        let lines = |app: &mut VectorcraftApp, width: f32| {
+            frame(app, &ctx, vec![egui::Event::PointerMoved(over)]);
+            shapes(app, &ctx).iter().filter(|s| matches!(s, Shape::Path(ps) if ps.stroke.width == width)).count()
+        };
+        assert_eq!(lines(&mut app, 1.5), 0, "no hover outline");
+        app.session.execute("select.all", &json!({})).unwrap();
+        app.session.execute("select.key", &json!({"id": group})).unwrap();
+        assert_eq!(lines(&mut app, KEY_OUTLINE), 1, "the key object's bounds");
+    }
+
     /// #1111: a selected gradient mesh shows its mesh lines and points to the selection tools, not
     /// only to the Mesh tool.
     #[test]
@@ -3997,6 +4113,17 @@ mod tests {
         let (shapes, mut delta) = frame_output(app, ctx);
         delta.clear();
         shapes
+    }
+
+    /// Two headless canvas frames → the vertices of the second one's tessellated mesh, which the
+    /// GPU takes in one buffer.
+    fn frame_vertices(app: &mut VectorcraftApp, ctx: &egui::Context) -> usize {
+        frame(app, ctx, vec![]);
+        let raw = egui::RawInput { screen_rect: Some(egui::Rect::from_min_size(Pos2::ZERO, vec2(800.0, 600.0))), ..Default::default() };
+        let mut out = ctx.run_ui(raw, |ui| show(app, ui));
+        out.textures_delta.clear();
+        let mesh = |p: &egui::ClippedPrimitive| if let egui::epaint::Primitive::Mesh(m) = &p.primitive { m.vertices.len() } else { 0 };
+        ctx.tessellate(out.shapes, out.pixels_per_point).iter().map(mesh).sum()
     }
 
     /// One headless canvas frame → the shapes drawn (`Shape::Vec`s flattened) and the textures
