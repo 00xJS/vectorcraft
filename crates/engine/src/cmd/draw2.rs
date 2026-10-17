@@ -201,6 +201,16 @@ fn subpath_len(sp: &SubPath) -> f64 {
     PathData::single(sp.clone()).to_bezpath().segments().map(|s| s.arclen(0.01)).sum()
 }
 
+/// The bound, in points, on the length of a `path.reshapeSegment` delta and on the x and y of a
+/// point given to `path.convertAnchor` or `path.freehand`. The blend spine commands set the same
+/// bound (`object.blend.spine.reshapeSegment`, `object.blend.spine.moveAnchor`).
+const MAX_INPUT: f64 = 1e9;
+
+/// Whether `q` is finite and its x and y are each smaller than [`MAX_INPUT`] in size.
+fn within_input_bound(q: Point) -> bool {
+    q.x.is_finite() && q.y.is_finite() && q.x.abs() < MAX_INPUT && q.y.abs() < MAX_INPUT
+}
+
 fn usize_req(p: &Value, key: &str, cmd: &str) -> Result<usize> {
     p.get(key).and_then(Value::as_u64).map(|v| v as usize).ok_or_else(|| bad(cmd, format!("missing integer `{key}`")))
 }
@@ -541,6 +551,9 @@ fn fit_freehand(pts: &[Point], tol: f64, closed: bool) -> SubPath {
 fn freehand(s: &mut Session, p: &Value) -> Result<Value> {
     const C: &str = "path.freehand";
     let samples = samples_param(p, "points", C)?;
+    if samples.iter().any(|(q, _)| !within_input_bound(*q)) {
+        return Err(bad(C, "x and y must be finite"));
+    }
     let pressure = stroke_pressure(&samples);
     let mut pts: Vec<Point> = samples.into_iter().map(|(pt, _)| pt).collect();
     let tol = f64_or(p, "fidelity", 1.5).clamp(0.05, 100.0);
@@ -857,6 +870,9 @@ fn convert_anchor(s: &mut Session, p: &Value) -> Result<Value> {
         (Some(x), Some(y)) => Some(Point::new(x, y)),
         _ => None,
     };
+    if target.is_some_and(|q| !within_input_bound(q)) {
+        return Err(bad(C, "x and y must be finite"));
+    }
     s.edit("Convert Anchor Point", |d, _| {
         let path = path_mut(d, id)?;
         let sp = path.subpaths.get_mut(si).ok_or_else(|| EngineError::Other("no such subpath".into()))?;
@@ -886,7 +902,7 @@ fn reshape_segment(s: &mut Session, p: &Value) -> Result<Value> {
     let seg = usize_req(p, "segment", C)?;
     let t = f64_or(p, "t", 0.5).clamp(0.05, 0.95);
     let dv = Vec2::new(f64_or(p, "dx", 0.0), f64_or(p, "dy", 0.0));
-    if !(dv.x.is_finite() && dv.y.is_finite()) {
+    if !(dv.x.is_finite() && dv.y.is_finite() && dv.hypot() < MAX_INPUT) {
         return Err(bad(C, "invalid delta"));
     }
     let perpendicular = bool_or(p, "perpendicular", false);

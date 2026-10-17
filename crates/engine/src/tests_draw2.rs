@@ -811,6 +811,44 @@ fn draw2_commands_reject_bad_params() {
     }
 }
 
+#[test]
+fn path_commands_refuse_a_delta_or_point_of_1e9_pt_or_more() {
+    // `path.reshapeSegment` refuses a delta of 1e9 pt or longer, and `path.convertAnchor` and
+    // `path.freehand` refuse a point whose x or y is 1e9 pt or more in size, also for a path that is
+    // not selected: the document stays as it was, with no undo step. A delta just under that bound,
+    // at t 0.05 or 0.95, leaves every handle and the path's bounds finite.
+    let mut s = session();
+    let id = curve(&mut s);
+    s.execute("select.none", &json!({})).unwrap();
+    let finite = |s: &Session| {
+        paths(s).iter().all(|(_, pd)| {
+            let mut points = pd.subpaths.iter().flat_map(|sp| &sp.anchors).flat_map(|a| [a.p, a.h_in, a.h_out]);
+            points.all(|q| q.x.is_finite() && q.y.is_finite()) && pd.control_bounds().is_none_or(|b| b.width().is_finite() && b.height().is_finite())
+        })
+    };
+    let h = 1e308;
+    for (cmd, p) in [
+        ("path.reshapeSegment", json!({"id": id.0, "segment": 0, "t": 0.95, "dx": h, "dy": 0})),
+        ("path.reshapeSegment", json!({"id": id.0, "segment": 0, "t": 0.05, "dx": 0, "dy": -h})),
+        ("path.reshapeSegment", json!({"id": id.0, "segment": 0, "t": 0.95, "dx": 0, "dy": h, "perpendicular": true})),
+        ("path.reshapeSegment", json!({"id": id.0, "segment": 0, "t": 0.5, "dx": 1e9, "dy": 0})),
+        ("path.convertAnchor", json!({"id": id.0, "anchor": 0, "to": "smooth", "x": h, "y": -h})),
+        ("path.freehand", json!({"points": [[0, 0], [h, 0], [-h, h], [h, h]], "keepSelected": false})),
+        ("path.freehand", json!({"points": [[0, 0], [h, 0], [-h, h]], "keepSelected": false, "extend": {"id": id.0, "end": "end"}})),
+    ] {
+        let before = s.doc().unwrap().doc.clone();
+        let undo = s.doc().unwrap().history.undo.len();
+        assert!(s.execute(cmd, &p).is_err(), "{cmd} {p}");
+        assert!(s.doc().unwrap().doc == before && finite(&s), "{cmd} {p} changed the document");
+        assert_eq!(s.doc().unwrap().history.undo.len(), undo, "{cmd} left an undo step");
+    }
+    for (t, perpendicular) in [(0.05, false), (0.95, false), (0.05, true), (0.95, true)] {
+        let p = json!({"id": id.0, "segment": 0, "t": t, "dx": 0, "dy": 9.9e8, "perpendicular": perpendicular});
+        s.execute("path.reshapeSegment", &p).unwrap();
+        assert!(finite(&s), "{p}: {:?}", path(&s, id));
+    }
+}
+
 /// A curve from (100, 100) to (300, 100) whose first anchor has an out handle at (150, 100).
 fn curve(s: &mut Session) -> NodeId {
     let anchors = json!([{"x": 100, "y": 100, "out": [150, 100]}, {"x": 300, "y": 100, "in": [250, 100]}]);
