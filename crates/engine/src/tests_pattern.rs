@@ -179,6 +179,50 @@ fn options_rename_updates_swatch_and_paints() {
     assert!(matches!(node(&s, big).appearance.fill_paint(), Paint::Pattern { pattern, .. } if pattern == "Spots"));
 }
 
+/// Pattern Options refuses a new name that a swatch of another kind, a second swatch of the
+/// pattern or a color group has, and takes a name that only the pattern's own swatch has.
+#[test]
+fn options_rename_refuses_a_name_another_swatch_has() {
+    let mut s = session();
+    make_dots(&mut s);
+    s.execute("swatch.new", &json!({"name": "Brick", "color": "#aa3300"})).unwrap();
+    s.execute("swatch.newGroup", &json!({"name": "Mine", "colors": ["#0000ff"]})).unwrap();
+    // "Dots copy": a second swatch of the pattern.
+    s.execute("swatch.duplicate", &json!({"name": "Dots"})).unwrap();
+    for taken in [" Brick ", "Mine", "Dots copy", "[Registration]"] {
+        let e = s.execute("pattern.options", &json!({"name": "Dots", "newName": taken})).unwrap_err().to_string();
+        assert!(e.contains(&format!("a swatch or color group named `{}` exists", taken.trim())), "{e}");
+    }
+    assert!(doc(&s).pattern("Dots").is_some());
+    let named = |s: &Session, n: &str| doc(s).swatches_iter().filter(|w| w.name == n).count();
+    assert_eq!((named(&s, "Brick"), named(&s, "Dots"), named(&s, "Dots copy")), (1, 1, 1));
+    // The pattern's own swatch, renamed in Swatch Options: the pattern can take its name.
+    s.execute("swatch.delete", &json!({"name": "Dots copy"})).unwrap();
+    s.execute("swatch.edit", &json!({"name": "Dots", "newName": "Spots"})).unwrap();
+    assert_eq!(s.execute("pattern.options", &json!({"name": "Dots", "newName": "Spots"})).unwrap()["name"], "Spots");
+    assert_eq!(named(&s, "Spots"), 1);
+    assert!(matches!(&doc(&s).swatch("Spots").unwrap().paint, Paint::Pattern { pattern, .. } if pattern == "Spots"));
+    // With no swatch of the pattern under its name, a color group's name is still refused.
+    s.execute("swatch.edit", &json!({"name": "Spots", "newName": "Spot Tiles"})).unwrap();
+    assert!(s.execute("pattern.options", &json!({"name": "Spots", "newName": "Mine"})).is_err());
+}
+
+/// Renaming a pattern renames only its own swatches: a color swatch that has the pattern's old
+/// name keeps it, and art linked to that swatch stays linked.
+#[test]
+fn options_rename_leaves_other_swatches_of_the_old_name() {
+    let mut s = session();
+    make_dots(&mut s);
+    s.execute("swatch.edit", &json!({"name": "Dots", "newName": "Dot Tiles"})).unwrap();
+    s.execute("swatch.new", &json!({"name": "Dots", "color": "#3366cc", "global": true})).unwrap();
+    let r = rect(&mut s, 100.0, 100.0, 20.0, 20.0);
+    s.execute("paint.setFill", &json!({"ids": [r.0], "swatch": "Dots"})).unwrap();
+    s.execute("pattern.options", &json!({"name": "Dots", "newName": "Spots"})).unwrap();
+    assert!(doc(&s).swatch("Dots").is_some_and(|w| matches!(w.paint, Paint::Solid { .. })), "the color swatch keeps its name");
+    assert!(matches!(&doc(&s).swatch("Dot Tiles").unwrap().paint, Paint::Pattern { pattern, .. } if pattern == "Spots"));
+    assert!(matches!(node(&s, r).appearance.fill_paint(), Paint::Solid { swatch: Some(l), .. } if l == "Dots"));
+}
+
 #[test]
 fn delete_pattern_unpaints_objects() {
     let mut s = session();
@@ -301,6 +345,20 @@ fn made_copied_and_renamed_patterns_trim_their_names() {
     let names: Vec<&str> = doc(&s).patterns.iter().map(|p| p.name.as_str()).collect();
     assert_eq!(names, ["Dots", "Grid", "Spots", "New Pattern 1", "New Pattern 2", "Lines", " Old ", "Old copy"]);
     assert!(doc(&s).swatch("Spots").is_some() && doc(&s).swatch(" Spots ").is_none());
+}
+
+/// Make and Save a Copy number a name that a color group has, as they number a swatch's name
+/// (swatches and color groups share one namespace).
+#[test]
+fn made_and_copied_patterns_number_a_color_groups_name() {
+    let mut s = session();
+    s.execute("swatch.newGroup", &json!({"name": "Mine", "colors": ["#0000ff"]})).unwrap();
+    s.execute("swatch.newGroup", &json!({"name": "New Pattern 1", "colors": ["#00ff00"]})).unwrap();
+    let r = rect(&mut s, 0.0, 0.0, 10.0, 10.0);
+    assert_eq!(s.execute("object.pattern.make", &json!({"ids": [r.0], "name": "Mine", "edit": false})).unwrap()["name"], "Mine 2");
+    assert_eq!(s.execute("object.pattern.make", &json!({"ids": [r.0], "edit": false})).unwrap()["name"], "New Pattern 2");
+    s.execute("object.pattern.edit", &json!({"name": "Mine 2"})).unwrap();
+    assert_eq!(s.execute("object.pattern.saveCopy", &json!({"name": "Mine"})).unwrap()["name"], "Mine 3");
 }
 
 #[test]

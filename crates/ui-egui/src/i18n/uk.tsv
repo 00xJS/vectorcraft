@@ -3863,6 +3863,7 @@ axis	Both	Обидві
 @msg	a page tree node has no kids	вузол дерева сторінок не має нащадків
 @msg	a page's placement is not finite	розміщення сторінки не звісно
 @msg	a preset named `{_1}` exists	набір з іменем `{_1}` вже існує
+@msg	a swatch or color group named `{n}` exists	зразок або колірна група з ім’ям `{n}` вже існує
 @msg	a slice size must be a positive number of points	розмір фрагмента має бути позитивним числом пунктів
 @msg	a spine keeps at least two points	вісь зберігає як мінімум дві точки
 @msg	a stream runs past the end	потік виходить за кінець

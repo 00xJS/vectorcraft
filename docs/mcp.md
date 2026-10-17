@@ -1581,9 +1581,12 @@ In pattern editing mode the tile edge (`pattern.options {showTileEdge}`) and the
 `patternTileEdgeColor`.
 
 `object.pattern.make {name?}`, `object.pattern.saveCopy {name?}` and `pattern.options {newName?}` trim the white space
-around the name they are given. The first two number a name that a pattern or swatch has ("Dots 2"), and
-`pattern.options` refuses a name that another pattern has. A blank name gives "New Pattern N" in
-`object.pattern.make` and "`<pattern>` copy" in `object.pattern.saveCopy`, and `pattern.options` keeps the name.
+around the name they are given. The first two number a name that a pattern, a swatch or a color group has ("Dots 2"),
+and `pattern.options` refuses a name that another pattern, a swatch or a color group has. It takes a name that only the
+pattern's own swatches have (a name Swatch Options gave the pattern's swatch, for example) when none of them still has
+the old name. A rename gives the new name to the pattern's swatches that had the old one; any other swatch that has the
+old name keeps it. A blank name gives "New Pattern N" in `object.pattern.make` and "`<pattern>` copy" in
+`object.pattern.saveCopy`, and `pattern.options` keeps the name.
 
 ```json
 {"name":"run_command","arguments":{"command":"pattern.options","params":{"showSwatchBounds":true}}}

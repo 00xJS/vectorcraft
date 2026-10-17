@@ -3992,6 +3992,7 @@ imageTrace	Outline	轮廓
 @msg	no plug-in {id} is installed	未安装增效工具 {id}
 @msg	{_1} is a live effect (Effect › Plug-ins)	{_1} 是实时效果 (效果 › 增效工具)
 @msg	a preset named `{_1}` exists	名为 `{_1}` 的预设已存在
+@msg	a swatch or color group named `{n}` exists	名为 `{n}` 的色板或颜色组已存在
 @msg	no print preset named `{base}`	没有名为 `{base}` 的打印预设
 @msg	no print preset named `{name}`	没有名为 `{name}` 的打印预设
 @msg	no saved print preset named `{name}` ({DEFAULT_PRESET} is protected: start a new one from it)	没有名为 `{name}` 的已保存打印预设 ({DEFAULT_PRESET} 受保护：请以它为基础新建一个)

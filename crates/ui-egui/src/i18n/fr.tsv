@@ -3837,6 +3837,7 @@ axis	Both	Les deux
 @msg	a page tree node has no kids	un nœud de l’arborescence des pages n’a pas d’enfants
 @msg	a page's placement is not finite	la position d’une page n’est pas finie
 @msg	a preset named `{_1}` exists	un paramètre prédéfini nommé `{_1}` existe déjà
+@msg	a swatch or color group named `{n}` exists	une nuance ou un groupe de couleurs nommé `{n}` existe déjà
 @msg	a slice size must be a positive number of points	la taille d’une tranche doit être un nombre de points positif
 @msg	a spine keeps at least two points	une dorsale garde au moins deux points
 @msg	a stream runs past the end	un flux dépasse la fin du fichier

@@ -3905,6 +3905,7 @@ imageTrace	Outline	Contour
 @msg	a page tree node has no kids	een knooppunt van de paginaboom heeft geen kinderen
 @msg	a page's placement is not finite	de plaatsing van een pagina is niet eindig
 @msg	a preset named `{_1}` exists	er bestaat een voorinstelling met de naam `{_1}`
+@msg	a swatch or color group named `{n}` exists	er bestaat een kleurstaal of kleurgroep met de naam `{n}`
 @msg	a slice size must be a positive number of points	een slicegrootte moet een positief aantal punten zijn
 @msg	a stream runs past the end	een stream loopt voorbij het einde
 @msg	a stream's length is wrong	de lengte van een stream is onjuist

@@ -3777,6 +3777,7 @@ theme	Appearance	Erscheinungsbild
 @msg	a page tree node has no kids	ein Knoten des Seitenbaums hat keine untergeordneten Einträge
 @msg	a page's placement is not finite	die Platzierung einer Seite ist nicht endlich
 @msg	a preset named `{_1}` exists	eine Vorgabe namens `{_1}` ist bereits vorhanden
+@msg	a swatch or color group named `{n}` exists	ein Farbfeld oder eine Farbgruppe namens `{n}` ist bereits vorhanden
 @msg	a slice size must be a positive number of points	eine Slice-Größe muss eine positive Anzahl von Punkt sein
 @msg	a spine keeps at least two points	eine Achse behält mindestens zwei Punkte
 @msg	a stream runs past the end	ein Datenstrom reicht über das Ende hinaus

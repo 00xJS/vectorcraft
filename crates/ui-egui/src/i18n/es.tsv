@@ -3840,6 +3840,7 @@ axis	Both	Ambos
 @msg	a page tree node has no kids	un nodo del árbol de páginas no tiene hijos
 @msg	a page's placement is not finite	la posición de una página no es finita
 @msg	a preset named `{_1}` exists	ya existe un preajuste llamado `{_1}`
+@msg	a swatch or color group named `{n}` exists	ya existe una muestra o un grupo de colores llamado `{n}`
 @msg	a slice size must be a positive number of points	el tamaño de un sector debe ser un número positivo de puntos
 @msg	a spine keeps at least two points	un eje conserva al menos dos puntos
 @msg	a stream runs past the end	un flujo se extiende más allá del final

@@ -4142,6 +4142,7 @@ imageTrace	Outline	Obrys
 @msg	a page tree node has no kids	uzel stromu stránek nemá potomky
 @msg	a page's placement is not finite	umístění stránky není konečné
 @msg	a preset named `{_1}` exists	přednastavení s názvem `{_1}` existuje
+@msg	a swatch or color group named `{n}` exists	položka vzorníku nebo skupina barev s názvem `{n}` existuje
 @msg	a slice size must be a positive number of points	velikost řezu musí být kladný počet bodů
 @msg	a spine keeps at least two points	páteř si ponechává alespoň dva body
 @msg	a stream runs past the end	datový proud přesahuje konec souboru
