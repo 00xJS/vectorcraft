@@ -1131,8 +1131,8 @@ impl<'a> Reader<'a> {
             }
             "d" => self.dash(&vals),
             "D" => {
-                // The published format §6.8 permits `u` groups of compound members:
-                // https://www.moon-soft.com/program/FORMAT/graphics/ai30.pdf
+                // The published Adobe Illustrator File Format Specification (version 3.0), §6.8,
+                // permits `u` groups of compound members.
                 // Their explicit winding declarations describe subpaths, not separate paints;
                 // modern streams can also end these groups with `9 () XW`.
                 let n = self.frames.len();
