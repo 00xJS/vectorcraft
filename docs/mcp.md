@@ -2220,7 +2220,8 @@ art). Pass any of these keys to change them in one undo step; `document.setUnits
 
 `file.new` takes everything New Document sets: `preset` (a name from `file.newPresets`), `name`, `width`/`height`
 (points, or lengths such as `"210 mm"`), `units`, `orientation`, `artboards` with `artboardLayout {layout, columns,
-spacing, rightToLeft}`, `bleed`, `backgroundContents`, `colorMode`, `rasterEffectsPpi` and `previewMode`.
+spacing, rightToLeft}`, `bleed`, `backgroundContents`, `colorMode`, `rasterEffectsPpi` (1 to 2,400; a saved preset's
+value outside that range is read as the nearer end) and `previewMode`.
 `file.newPresets {category?}` lists the categories and presets (Recent: the last sizes used; Saved: the user's presets,
 kept in the preferences by `file.newPresets.save` and removed by `file.newPresets.delete`). A listed preset can be
 passed straight back to `file.new`. Print presets and sizes without `units` start in `unitsGeneral`; screen presets
@@ -2342,7 +2343,8 @@ written unless the whole batch succeeds puts the saves and exports last, or runs
 ## Document Raster Effects Settings
 
 `document.rasterEffectsSettings` holds how raster effects (shadows, glows, blurs, feathers) become images when PDF
-export or Expand Appearance renders them: `resolution` (ppi, also New Document's `rasterEffectsPpi`), `colorModel`
+export or Expand Appearance renders them: `resolution` (1 to 2,400 ppi, also New Document's `rasterEffectsPpi`; a
+file's value outside that range opens as the nearer end), `colorModel`
 (the document's `rgb`/`cmyk`, `grayscale` or `bitmap`), `background` (`white` makes the images opaque), `antiAlias`
 (off: hard edges), `clippingMask` (the white stays under the art only), `addAround` (0 to 1,000 points of room
 around the art; a file's value outside that range opens as the nearer end) and `preserveSpotColors` (stored). They are
