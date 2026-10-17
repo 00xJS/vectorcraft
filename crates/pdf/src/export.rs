@@ -69,14 +69,16 @@ fn export_with_report_inner(doc: &Document, opts: &PdfOptions, left_out: &mut Ha
     let pages = pages(doc, opts)?;
 
     let title = crate::pdfx::title(set.standard, opts.title.clone().unwrap_or_else(|| doc.title.clone()));
-    let created_at = opts.created.or_else(vectorcraft_doc::metadata::now_unix);
+    // The time of writing (none on the web) dates the editing data and the page information.
+    let now = vectorcraft_doc::metadata::now_unix();
+    let created_at = opts.created.or(now);
     crate::pdfx::require_date(set.standard, created_at)?;
     let mut w = Writer::new(doc, set, &title, created_at, doc.color_mode == vectorcraft_doc::ColorMode::Cmyk)?;
     // Preserve Editing: the native document as an embedded file (`check` refused PDF/A with it).
     let mut warnings = set.warnings();
     let native = opts.native.as_deref().filter(|_| set.preserve_editing);
     if let Some(native) = native {
-        w.pdf.document_mut().embed_file(crate::editing::embedded_file(native, set.compression.compress_text, created_at.map(date_time)));
+        w.pdf.document_mut().embed_file(crate::editing::embedded_file(native, set.compression.compress_text, now.map(date_time)));
     } else if set.preserve_editing {
         warnings.push("Preserve editing needs the native document, which wasn't given: the PDF reopens as plain artwork".into());
     }
@@ -103,7 +105,7 @@ fn export_with_report_inner(doc: &Document, opts: &PdfOptions, left_out: &mut Ha
         vectorcraft_doc::cancel::check().map_err(|_| PdfError::Cancelled)?;
         vectorcraft_doc::cancel::progress(written as u64 + 1, total, &format!("Writing page {} of {total}", written + 1));
         let (m, r) = (boxes.media, boxes.bleed);
-        let info = if marks.page_info { crate::marks::page_info(doc, &title, i, created_at) } else { String::new() };
+        let info = if marks.page_info { crate::marks::page_info(doc, &title, i, now) } else { String::new() };
         let art = crate::marks::art(doc, &marks, &boxes, bleed, &info);
         // The page is the media box, y down from its top-left corner (like ours), in units of
         // `unit` points.
@@ -132,6 +134,11 @@ fn export_with_report_inner(doc: &Document, opts: &PdfOptions, left_out: &mut Ha
     w.absorb(ex);
     let (bytes, more) = w.finish(left_out)?;
     let bytes = crate::forms::finish(bytes, doc, set, layers, overprinted)?;
+    // The writer gives the file its creation date as its modification date too.
+    let bytes = match opts.modified.filter(|m| Some(*m) != created_at) {
+        Some(modified) => crate::post::modification_date(bytes, modified)?,
+        None => bytes,
+    };
     warnings.extend(more);
     let bytes = crate::post::user_units(bytes, &units)?;
     let bytes = crate::post::finish(bytes, opts, native.is_some(), &mut warnings)?;

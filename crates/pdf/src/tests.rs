@@ -826,6 +826,30 @@ fn creation_date_written() {
 }
 
 #[test]
+fn a_later_modification_date_is_written_beside_the_creation_date() {
+    let d = doc(100.0, 100.0);
+    // 2020-01-01 00:00:00 and 2026-10-17 14:03:00 UTC.
+    let (created, modified) = (1_577_836_800, 1_792_245_780);
+    for standard in [Standard::None, Standard::PdfX1a, Standard::PdfX3, Standard::PdfX4, Standard::PdfA2b] {
+        let mut o = PdfOptions { created: Some(created), modified: Some(modified), ..PdfOptions::uncompressed() };
+        (o.settings.standard, o.settings.compatibility) = (standard, standard.version());
+        let bytes = export(&d, &o).unwrap();
+        let t = String::from_utf8_lossy(&bytes);
+        assert!(t.contains("/CreationDate(D:20200101000000Z)") && t.contains("/ModDate(D:20261017140300Z)"), "{standard:?}: document information");
+        let info = file_info(&bytes, None).unwrap();
+        assert_eq!((info.created, info.modified), (Some(created), Some(modified)), "{standard:?}: XMP");
+        // PDF/A files record when they were saved and converted: at the time of writing too.
+        assert_eq!(t.contains("<stEvt:when>2026-10-17T14:03:00"), standard == Standard::PdfA2b, "{standard:?}");
+        assert!(!t.contains("<stEvt:when>2020"), "{standard:?}");
+        assert_eq!(import(&bytes).unwrap().artboards.len(), 1, "{standard:?}: the file reads back");
+    }
+    // Without a modification date, the file is modified when it was created.
+    let bytes = export(&d, &PdfOptions { created: Some(created), ..PdfOptions::uncompressed() }).unwrap();
+    assert!(String::from_utf8_lossy(&bytes).contains("/ModDate(D:20200101000000Z)"));
+    assert_eq!(file_info(&bytes, None).unwrap().modified, Some(created));
+}
+
+#[test]
 fn opacity_mask_exports_as_luminosity_soft_mask() {
     let mut d = doc(100.0, 100.0);
     let mut n = rect_node(Rect::new(10.0, 10.0, 90.0, 90.0), Color::rgb(1.0, 0.0, 0.0));
