@@ -174,6 +174,27 @@ fn effect_preview_is_kept_as_one_undo_step() {
     assert_eq!(app.session.doc().unwrap().doc, before);
 }
 
+/// Drop Shadow's Color typed as text the effect can't draw: OK returns the error and keeps the
+/// dialog open, with Preview on or off, and the document stays as it was.
+#[test]
+fn effect_dialog_refuses_a_color_it_cannot_draw() {
+    for preview in [true, false] {
+        let mut app = app();
+        app.run("shape.rectangle", json!({"x": 10, "y": 10, "width": 50, "height": 50})).unwrap();
+        app.run("select.all", json!({})).unwrap();
+        let before = app.session.doc().unwrap().doc.clone();
+        app.run("effect.dialog", json!({"effect": "stylize.dropShadow"})).unwrap();
+        let d = app.ui.dialog.as_mut().unwrap();
+        d.fields.insert("preview".into(), json!(preview));
+        d.fields.insert("color".into(), json!("not-a-color"));
+        frame(&mut app, Default::default());
+        let e = confirm(&mut app).unwrap_err();
+        assert!(e.contains("`color` must be a #rrggbb color"), "preview {preview}: {e}");
+        assert!(app.ui.dialog.is_some() && app.last_effect.is_none(), "preview {preview}");
+        assert_eq!(app.session.doc().unwrap().doc, before, "preview {preview}");
+    }
+}
+
 #[test]
 fn raster_filter_dialogs_preview_and_apply() {
     for (effect, key, value) in [

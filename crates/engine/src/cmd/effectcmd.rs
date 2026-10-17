@@ -138,6 +138,7 @@ pub(crate) fn apply(s: &mut Session, p: &Value) -> Result<Value> {
     if !params.is_null() && !params.is_object() {
         return Err(bad(C, "`params` must be an object"));
     }
+    super::params::check_effect_color(C, id, &params)?;
     // Crop Marks take their style from the preferences when applied.
     if id == effects::CROP_MARKS && params.get("style").is_none() {
         params["style"] = json!(s.crop_mark_style().id());
@@ -313,7 +314,11 @@ fn set_params(s: &mut Session, p: &Value) -> Result<Value> {
         .transpose()?;
     let visible = p.get("visible").and_then(Value::as_bool);
     let item = item_target(s, p, C)?;
-    if set_params_effects(s, p).iter().any(|e| e == GLASS) {
+    let edited = set_params_effects(s, p);
+    for effect in &edited {
+        super::params::check_effect_color(C, effect, &params)?;
+    }
+    if edited.iter().any(|e| e == GLASS) {
         load_texture(&mut params, C)?;
     }
     for id in appearance_targets(s, p)? {

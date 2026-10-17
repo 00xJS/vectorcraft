@@ -3579,6 +3579,7 @@ theme	Appearance	Erscheinungsbild
 @msg	`{id}` has no envelope dialog	`{id}` hat kein Hüllendialogfeld
 @msg	`{keep}` is not a side of this axis	`{keep}` ist keine Seite dieser Achse
 @msg	`{key}` must be `auto` or a language code such as `en` or `zh-hant`	`{key}` muss `auto` oder ein Sprachcode wie `en` oder `zh-hant` sein
+@msg	`{key}` must be a #rrggbb color	`{key}` muss eine Farbe der Form #rrggbb sein
 @msg	`{key}` must be a #rrggbb colour	`{key}` muss eine Farbe der Form #rrggbb sein
 @msg	`{key}` must be a number	`{key}` muss eine Zahl sein
 @msg	`{key}` must be a string	`{key}` muss eine Zeichenfolge sein

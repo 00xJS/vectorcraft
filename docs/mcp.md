@@ -815,13 +815,29 @@ is refused the same way:
 → invalid parameters for `effect.apply`: unknown parameter `blurr`; the command takes: radius
 ```
 
+The `color` of Drop Shadow, Inner Glow, Outer Glow and Shift to Color must be one the effect can read: a hex color
+(`#rrggbb`, `#rgb` or `#rrggbbaa`, with or without the `#`), `black`, `white`, `red`, `green` or `blue`, `[r, g, b]`
+(three numbers, each read on a 0 to 1 scale), or a color object (`{"model": "rgb", "r": 1, "g": 0, "b": 0}`).
+`effect.apply` and `effect.setParams` refuse any other value themselves (where the parameter check runs first, a number
+or a boolean is refused as not a string), so the app's effect dialogs and Appearance panel, a step of
+`command.batch` and a replayed journal get the same error, and the document and its undo history stay as they were:
+
+```json
+{"id": "effect.setParams", "params": {"index": 0, "params": {"color": "#ff00"}}}
+→ invalid parameters for `effect.setParams`: `color` must be a #rrggbb color
+```
+
+A document saved with such a color opens as before, and the effect draws its default color (an array of three or more
+entries reads an entry that isn't a number as 0).
+
 A number outside the range the effect documents is still stored as given and clamped when the effect draws. A
 plug-in effect's parameters are resolved against its manifest instead, and `effect.setParams` as a step of
-`command.batch` isn't checked (the effect it edits may only exist once the steps before it ran). A description with a `…` entry takes more keys than it lists: those of the command it names
+`command.batch` isn't checked before the batch runs (the effect it edits may only exist once the steps before it ran);
+the command still refuses an effect `color` it can't read. A description with a `…` entry takes more keys than it lists: those of the command it names
 (`…settings as file.new`), or any key when it names none, as `document.export` and `document.save` do for the options
 of the format they write (one object can carry several formats' options). A command that takes its own reply back
 (`document.setup`, `text.areaOptions`) says so the same way. The app's own journal isn't checked: an action or
-journal recorded by an older version replays as it did.
+journal recorded by an older version replays as it did, except for an effect `color` that the effect can't read.
 
 A step can use an earlier step's result, in `run` as in the `command_batch` tool. A parameter string that is exactly
 `$N` or `$N.path` takes that value from the result of step `N` (counting from 0, in the order they ran; `run --in`'s

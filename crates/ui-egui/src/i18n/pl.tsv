@@ -3791,6 +3791,7 @@ imageTrace	Outline	Kontur
 @msg	`{id}` has no envelope dialog	`{id}` nie ma okna dialogowego koperty
 @msg	`{keep}` is not a side of this axis	`{keep}` nie jest stroną tej osi
 @msg	`{key}` must be `auto` or a language code such as `en` or `zh-hant`	`{key}` musi mieć wartość `auto` lub kod języka, np. `en` albo `zh-hant`
+@msg	`{key}` must be a #rrggbb color	`{key}` musi być kolorem #rrggbb
 @msg	`{key}` must be a #rrggbb colour	`{key}` musi być kolorem #rrggbb
 @msg	`{key}` must be a number	`{key}` musi być liczbą
 @msg	`{key}` must be a string	`{key}` musi być ciągiem znaków

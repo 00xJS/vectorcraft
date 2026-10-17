@@ -3675,6 +3675,7 @@ axis	Both	Оба
 @msg	`{id}` has no envelope dialog	`{id}` не имеет диалогового окна оболочки
 @msg	`{keep}` is not a side of this axis	`{keep}` не является стороной этой оси
 @msg	`{key}` must be `auto` or a language code such as `en` or `zh-hant`	`{key}` должно быть `auto` или кодом языка, например `en` или `zh-hant`
+@msg	`{key}` must be a #rrggbb color	`{key}` должно быть цветом #rrggbb
 @msg	`{key}` must be a #rrggbb colour	`{key}` должно быть цветом #rrggbb
 @msg	`{key}` must be a number	`{key}` должно быть числом
 @msg	`{key}` must be a string	`{key}` должно быть строкой

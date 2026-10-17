@@ -3605,6 +3605,7 @@ axis	Both	Båda
 @msg	`{id}` has no envelope dialog	`{id}` har ingen dialogruta för kuvert
 @msg	`{keep}` is not a side of this axis	`{keep}` är inte en sida av den här axeln
 @msg	`{key}` must be `auto` or a language code such as `en` or `zh-hant`	`{key}` måste vara `auto` eller en språkkod som `en` eller `zh-hant`
+@msg	`{key}` must be a #rrggbb color	`{key}` måste vara en färg i formatet #rrggbb
 @msg	`{key}` must be a #rrggbb colour	`{key}` måste vara en färg i formatet #rrggbb
 @msg	`{key}` must be a number	`{key}` måste vara ett tal
 @msg	`{key}` must be a string	`{key}` måste vara en sträng
