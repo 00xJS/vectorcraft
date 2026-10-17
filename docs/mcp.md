@@ -1875,6 +1875,9 @@ point at `t` by `dx`, `dy`: a smooth anchor at either end stays smooth, its othe
 With `perpendicular: true` (Shift held during the drag) both of the segment's handles stand at right angles to the
 line between its anchors, on the same side and at the same length, and the point at `t` lies as far from that line
 as the point moved by `dx`, `dy` does; a segment whose anchors coincide bends as it does without `perpendicular`.
+`path.reshapeSegment` refuses a delta of 1e9 pt or longer ("invalid delta"), as `object.blend.spine.reshapeSegment`
+does. `path.convertAnchor` (its `x`, `y`) and `path.freehand` (each of its `points`) refuse a point whose x or y is
+1e9 pt or more in size ("x and y must be finite").
 
 A `pointer_gesture` with `mods: {cmd: true}` held at the press, with any tool but the selection tools (Command on
 macOS, Ctrl elsewhere), drags with the selection tool chosen last (`select_tool`), or Direct Selection with the Pen,
