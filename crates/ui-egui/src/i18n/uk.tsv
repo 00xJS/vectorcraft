@@ -501,6 +501,7 @@
 	Color Model:	Колірна модель:
 	Color Models	Колірні моделі
 	Color Picker	Палітра кольорів
+	Color wheel	Колірне коло
 	Color Picker…	Палітра кольорів…
 	Color Reduction:	Скорочення кількості кольорів:
 	Color Settings	Налаштування кольору
@@ -1193,6 +1194,10 @@
 	glyph {id}	гліф {id}
 	Glyphs	Гліфи
 	Go to Artboard	Перейти до монтажної області
+	First Artboard	Перша монтажна область
+	Previous Artboard	Попередня монтажна область
+	Next Artboard	Наступна монтажна область
+	Last Artboard	Остання монтажна область
 	Go To Link	Перейти за посиланням
 	GPL palettes keep solid colours only, as RGB.	Палітри GPL зберігають лише суцільні кольори RGB.
 	GPU Performance	Продуктивність GPU
@@ -4336,6 +4341,7 @@ axis	Both	Обидві
 	Reset all	Скинути все
 	Reset to default	Відновити типове значення
 	Reset all Revolve settings to their defaults.	Відновити типові значення всіх параметрів обертання.
+	Step up or down	Крок угору або вниз
 	Drag values or labels. Double-click a value to type.	Перетягуйте значення або підписи. Двічі клацніть значення, щоб увести його.
 	Drag rings to rotate. Shift snaps to 15°.	Перетягуйте кільця для обертання. Shift задає крок 15°.
 	Drag the light, or its rings. Shift snaps to 15°.	Перетягуйте джерело світла або його кільця. Shift задає крок 15°.

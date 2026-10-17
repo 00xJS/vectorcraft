@@ -467,6 +467,7 @@
 	Color Model:	Μοντέλο χρώματος:
 	Color Models	Μοντέλα χρώματος
 	Color Picker	Επιλογέας χρώματος
+	Color wheel	Χρωματικός τροχός
 	Color Picker…	Επιλογέας χρώματος…
 	Color Reduction:	Μείωση χρωμάτων:
 	Color Settings	Ρυθμίσεις χρωμάτων
@@ -1138,6 +1139,10 @@
 	glyph {id}	γλύφος {id}
 	Glyphs	Γλύφοι
 	Go to Artboard	Μετάβαση στον πίνακα σχεδίασης
+	First Artboard	Πρώτος πίνακας σχεδίασης
+	Previous Artboard	Προηγούμενος πίνακας σχεδίασης
+	Next Artboard	Επόμενος πίνακας σχεδίασης
+	Last Artboard	Τελευταίος πίνακας σχεδίασης
 	Go To Link	Μετάβαση στη σύνδεση
 	GPL palettes keep solid colours only, as RGB.	Οι παλέτες GPL διατηρούν μόνο συμπαγή χρώματα σε RGB.
 	GPU Performance	Απόδοση GPU
@@ -4236,6 +4241,7 @@ theme	Appearance	Εμφάνιση
 	Reset all	Επαναφορά όλων
 	Reset to default	Επαναφορά στην προεπιλογή
 	Reset all Revolve settings to their defaults.	Επαναφορά όλων των ρυθμίσεων περιστροφής γύρω από άξονα στις προεπιλογές.
+	Step up or down	Ένα βήμα πάνω ή κάτω
 	Drag values or labels. Double-click a value to type.	Σύρετε τιμές ή ετικέτες. Κάντε διπλό κλικ σε μια τιμή για πληκτρολόγηση.
 	Drag rings to rotate. Shift snaps to 15°.	Σύρετε τους δακτυλίους για περιστροφή. Με Shift γίνεται προσκόλληση ανά 15°.
 	Drag the light, or its rings. Shift snaps to 15°.	Σύρετε την πηγή φωτός ή τους δακτυλίους της. Με Shift γίνεται προσκόλληση ανά 15°.

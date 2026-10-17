@@ -761,7 +761,7 @@ fn effect_editor(app: &mut VectorcraftApp, ui: &mut Ui, item: Option<usize>, k: 
                 }
                 match v {
                     Value::Bool(b) => {
-                        if widgets::check(ui, "", *b, true) {
+                        if widgets::check_box(ui, label, *b, true) {
                             change = Some((key.clone(), json!(!b)));
                         }
                     }

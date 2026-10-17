@@ -463,6 +463,7 @@
 	Color Model:	Modelo de Cor:
 	Color Models	Modelos de Cor
 	Color Picker	Seletor de Cores
+	Color wheel	Roda de cores
 	Color Picker…	Seletor de Cores…
 	Color Reduction:	Redução de Cores:
 	Color Settings	Configurações de Cor
@@ -1055,6 +1056,10 @@
 	Glyphs	Glifos
 	Go To Link	Ir para o Link
 	Go to Artboard	Ir para Mesa de Trabalho
+	First Artboard	Primeira mesa de trabalho
+	Previous Artboard	Mesa de trabalho anterior
+	Next Artboard	Próxima mesa de trabalho
+	Last Artboard	Última mesa de trabalho
 	Gradient	Gradiente
 	Gradient Fill: click to apply, drag onto art	Preenchimento de Gradiente: clique para aplicar, arraste sobre a arte
 	Gradient Finishes	Finalizações de Gradiente
@@ -2923,6 +2928,7 @@ imageTrace	Outline	Contorno
 	Reset all	Redefinir tudo
 	Reset to default	Restaurar padrão
 	Reset all Revolve settings to their defaults.	Restaurar os valores padrão de todas as configurações de revolução.
+	Step up or down	Aumentar ou diminuir um passo
 	Drag values or labels. Double-click a value to type.	Arraste os valores ou rótulos. Clique duas vezes em um valor para digitá-lo.
 	Drag rings to rotate. Shift snaps to 15°.	Arraste os anéis para girar. Shift ajusta em incrementos de 15°.
 	Drag the light, or its rings. Shift snaps to 15°.	Arraste a luz ou seus anéis. Shift ajusta em incrementos de 15°.

@@ -218,7 +218,7 @@ pub(super) fn grid(ui: &mut egui::Ui, d: &mut Dialog, unit: Unit) {
                 let max = vectorcraft_geom::shapes::GRID_SKEW_MAX;
                 row_label(ui, tl!("Skew:"));
                 ui.vertical(|ui| {
-                    ui.horizontal(|ui| slider_field(ui, d, &k, -max..=max, "%", &|_| rail));
+                    ui.horizontal(|ui| slider_field_named(ui, d, &k, tl!("Skew:"), -max..=max, "%", &|_| rail));
                     rail_ends(ui, ends);
                 });
                 ui.end_row();
@@ -315,7 +315,7 @@ pub(super) fn param_fields(
                     });
                 }
                 Value::Bool(b) => {
-                    if crate::widgets::check(ui, "", b, true) {
+                    if crate::widgets::check_box(ui, &humanized(&k), b, true) {
                         d.fields.insert(k, json!(!b));
                         changed = true;
                     }
@@ -384,7 +384,7 @@ pub(super) fn schema_fields(ui: &mut egui::Ui, d: &mut Dialog, specs: &[(String,
                 }
                 ParamSpec::Bool { .. } => {
                     let b = cur.as_bool().unwrap_or(false);
-                    crate::widgets::check(ui, "", b, true).then(|| json!(!b))
+                    crate::widgets::check_box(ui, &humanize(k), b, true).then(|| json!(!b))
                 }
                 ParamSpec::Choice { options, .. } => {
                     let labels: Vec<&str> = options.iter().map(String::as_str).collect();
@@ -476,33 +476,43 @@ pub(super) fn slider_w(
     let t = Tokens::get(ui.ctx());
     ui.horizontal(|ui| {
         ui.add_sized([label_w, 22.0], egui::Label::new(egui::RichText::new(tl!(label)).color(t.text)));
-        slider_field(ui, d, key, range, suffix, track);
+        slider_field_named(ui, d, key, tl!(label), range, suffix, track);
     });
 }
 
-/// The rail and value field of [`slider`] without its label (for a row that draws its own).
-pub(super) fn slider_field(
+/// The rail and value field of [`slider`] without its label (for a row that draws its own); screen
+/// readers call the rail `name` (the row's label, already translated).
+pub(super) fn slider_field_named(
     ui: &mut egui::Ui,
     d: &mut Dialog,
     key: &str,
+    name: &str,
     range: std::ops::RangeInclusive<f64>,
     suffix: &str,
     track: &dyn Fn(f32) -> egui::Color32,
 ) {
     let (min, max) = (*range.start(), *range.end());
     let v = d.f64(key, 0.0).clamp(min, max);
-    slider_rail(ui, d, key, range, track);
+    slider_rail_named(ui, d, key, name, range, track);
     if let Some(n) = crate::widgets::plain_field(ui, ("dlg-field", key), v, suffix, 0, 52.0).map(|x| x.round().clamp(min, max)).filter(|n| *n != v) {
         d.fields.insert(key.into(), json!(n));
     }
 }
 
-/// The rail of [`slider_field`] alone: dragging it sets the number `d.fields[key]` to a whole
-/// number in `range` (a value past the range shows at its end until the rail moves).
-pub(super) fn slider_rail(ui: &mut egui::Ui, d: &mut Dialog, key: &str, range: std::ops::RangeInclusive<f64>, track: &dyn Fn(f32) -> egui::Color32) {
+/// The rail of [`slider_field_named`] alone: dragging it sets the number `d.fields[key]` to a
+/// whole number in `range` (a value past the range shows at its end until the rail moves); screen
+/// readers call it `name` (already translated).
+pub(super) fn slider_rail_named(
+    ui: &mut egui::Ui,
+    d: &mut Dialog,
+    key: &str,
+    name: &str,
+    range: std::ops::RangeInclusive<f64>,
+    track: &dyn Fn(f32) -> egui::Color32,
+) {
     let (min, max) = (*range.start(), *range.end());
     let v = d.f64(key, 0.0).clamp(min, max);
-    let (dragged, _) = crate::widgets::color_slider(ui, ("dlg-slider", key), ((v - min) / (max - min)) as f32, SLIDER_WIDTH, track);
+    let (dragged, _) = crate::widgets::color_slider_named(ui, ("dlg-slider", key), name, ((v - min) / (max - min)) as f32, SLIDER_WIDTH, track);
     if let Some(n) = dragged.map(|x| (min + x as f64 * (max - min)).round()).filter(|n| *n != v) {
         d.fields.insert(key.into(), json!(n));
     }

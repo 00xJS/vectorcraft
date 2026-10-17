@@ -747,6 +747,7 @@
 	Reset all	Resetuj wszystko
 	Reset to default	Przywróć domyślne
 	Reset all Revolve settings to their defaults.	Przywróć domyślne wartości wszystkich ustawień obrotu.
+	Step up or down	Zwiększ lub zmniejsz o krok
 	Drag values or labels. Double-click a value to type.	Przeciągaj wartości lub etykiety. Kliknij dwukrotnie wartość, aby ją wpisać.
 	Drag rings to rotate. Shift snaps to 15°.	Przeciągaj pierścienie, aby obracać. Shift przyciąga co 15°.
 	Drag the light, or its rings. Shift snaps to 15°.	Przeciągaj światło lub jego pierścienie. Shift przyciąga co 15°.
@@ -792,6 +793,10 @@ lighting	Light	Światło
 	Export Keyboard Shortcuts…	Eksportuj skróty klawiaturowe…
 	File Info Dialog	Okno informacji o pliku
 	Go to Artboard	Przejdź do obszaru kompozycji
+	First Artboard	Pierwszy obszar kompozycji
+	Previous Artboard	Poprzedni obszar kompozycji
+	Next Artboard	Następny obszar kompozycji
+	Last Artboard	Ostatni obszar kompozycji
 	Graphic Style Options…	Opcje stylu graficznego…
 	Symbol Options	Opcje symbolu
 	Symbol Options…	Opcje symbolu…
@@ -1843,6 +1848,7 @@ lighting	Light	Światło
 	Variation:	Odchylenie:
 	Color Models	Modele kolorów
 	Color Picker	Próbnik kolorów
+	Color wheel	Koło kolorów
 	Color Swatches	Próbki kolorów
 	Only Web Colors	Tylko kolory WWW
 	Original: click to restore	Oryginał: kliknij, aby przywrócić
