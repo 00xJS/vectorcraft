@@ -776,6 +776,23 @@ fn invalid_dash_pattern_strokes_solid() {
     }
 }
 
+/// An image that can't be decoded is counted on the thread that tried to decode it: an export
+/// compares [`decode_failures`] before and after it draws, so another thread's failure meanwhile is
+/// not its own.
+#[test]
+fn decode_failures_counts_this_threads_images_only() {
+    let undecodable = || paint::decode_pixmap(b"\x89PNG\r\n\x1a\n").is_none();
+    let before = decode_failures();
+    let other = std::thread::spawn(move || {
+        let start = decode_failures();
+        undecodable() && decode_failures() == start + 1
+    });
+    assert!(other.join().unwrap(), "counted on the other thread");
+    assert_eq!(decode_failures(), before, "the other thread's failure");
+    assert!(undecodable());
+    assert_eq!(decode_failures(), before + 1, "this thread's failure");
+}
+
 /// An image drawn larger than its pixels samples smoothly, or with `smooth_images` off each screen
 /// pixel takes its nearest image pixel (Pixel Preview with File Handling › Display Bitmaps as
 /// Anti-aliased Images off, #394).

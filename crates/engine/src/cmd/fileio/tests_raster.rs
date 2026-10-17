@@ -218,6 +218,53 @@ fn an_image_opens_at_the_size_its_resolution_declares() {
 }
 
 #[test]
+fn a_raster_export_says_nothing_of_images_another_thread_could_not_decode() {
+    // While another thread keeps exporting a document whose image can't be decoded (two exports at
+    // once, or the canvas drawing such a document), PNG exports of art with no image report
+    // nothing, and every export on the other thread still reports its own image.
+    use std::sync::atomic::{AtomicBool, Ordering};
+    use vectorcraft_doc::{ImageBlob, ImageObject, Node, NodeKind};
+    let mut broken = vectorcraft_doc::Document::new(40.0, 20.0);
+    broken.images.insert("broken".into(), ImageBlob::new("image/png", b"\x89PNG\r\n\x1a\n".to_vec()));
+    let im = ImageObject {
+        key: "broken".into(),
+        width: 2,
+        height: 1,
+        xf: vectorcraft_geom::Affine::scale(20.0),
+        link: None,
+        placement: Default::default(),
+    };
+    let (id, layer) = (broken.alloc_id(), broken.layers[0].id);
+    broken.insert(Some(layer), 0, Node::new(id, NodeKind::Image(Box::new(im)))).unwrap();
+    let mut s = session(400.0, 400.0, 1);
+    s.execute("shape.ellipse", &json!({"x": 20, "y": 20, "width": 360, "height": 360})).unwrap();
+    let says_so = |w: &[Value]| w.iter().any(|w| w.as_str().is_some_and(|w| w.contains("couldn't be decoded")));
+    let stop = AtomicBool::new(false);
+    let (tx, rx) = std::sync::mpsc::channel();
+    // Nothing in the scope panics, so the other thread is always told to stop.
+    let (theirs, ours) = std::thread::scope(|scope| {
+        let other = scope.spawn(|| {
+            let mut warned = vec![];
+            while !stop.load(Ordering::Relaxed) {
+                let w = encode_with_warnings(&broken, "png", &json!({})).map(|(_, w)| w.into_iter().map(Value::from).collect::<Vec<_>>());
+                warned.push(w.is_ok_and(|w| says_so(&w)));
+                let _ = tx.send(());
+            }
+            warned
+        });
+        let started = rx.recv_timeout(std::time::Duration::from_secs(60)).is_ok();
+        let ours: Vec<Option<bool>> = (0..5)
+            .map(|_| s.execute("document.export", &json!({"format": "png"})).ok().map(|r| says_so(r["warnings"].as_array().map_or(&[], |w| w))))
+            .collect();
+        stop.store(true, Ordering::Relaxed);
+        (other.join().ok(), started.then_some(ours))
+    });
+    let theirs = theirs.expect("the other thread's exports");
+    assert!(!theirs.is_empty() && theirs.iter().all(|w| *w), "the other thread's exports: {theirs:?}");
+    assert_eq!(ours.expect("the other thread started"), vec![Some(false); 5], "exports with no image");
+}
+
+#[test]
 fn a_raster_export_says_when_an_image_could_not_be_decoded() {
     // A PNG whose header reads (so it places at its size) but whose pixel data is cut short:
     // the renderer can't decode it and draws nothing, which the export must say.
