@@ -516,6 +516,7 @@
 	Condition identifier:	條件識別碼：
 	Conflict {n} of {count}	衝突 {n}／{count}
 	Connect Selected End Points	連接所選端點
+	Connect	連接
 	Consolidate All Windows	合併所有視窗
 	Constrain Angle	強制角度
 	Constrain Width and Height Proportions	強制寬度與高度比例

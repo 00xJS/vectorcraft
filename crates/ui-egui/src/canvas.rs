@@ -2879,11 +2879,17 @@ fn task_bar(app: &mut VectorcraftApp, ui: &mut Ui, xf: &Xf) {
             items.push((tl!("Image Trace"), "image", TASK_BAR_IMAGE_TRACE));
             items.push((tl!("Crop Image"), "dc-pf-crop", "ui.cropImage"));
         }
-        // Direct-selected anchors take the place of a path's Offset Path and Simplify.
+        // Direct-selected anchors take the place of a path's Offset Path and Simplify. For them the bar
+        // offers Remove, Connect, Cut and Convert to corner or smooth, as the reference app does
+        // (<https://helpx.adobe.com/illustrator/desktop/get-started/learn-the-basics/contextual-task-bar-overview.html>).
+        // These run the same commands as the Control bar's anchor buttons.
         let anchors = !st.selection.anchors.is_empty();
         if anchors {
             items.push((tl!("Remove Anchor Points"), "pen-tool-delete", "path.removeAnchors"));
+            items.push((tl!("Connect"), "dc-join", "path.join"));
             items.push((tl!("Cut Path"), "scissors", "path.cutAtAnchors"));
+            items.push((tl!("Corner"), "dc-anchor", TASK_BAR_TO_CORNER));
+            items.push((tl!("Smooth"), "dc-anchor-smooth", TASK_BAR_TO_SMOOTH));
         }
         if n > 1 {
             items.push((tl!("Group"), "group", "object.group"));
@@ -3031,6 +3037,9 @@ fn task_bar(app: &mut VectorcraftApp, ui: &mut Ui, xf: &Xf) {
         Some((TASK_BAR_ARTBOARD_OPTIONS, _)) => crate::menus::invoke(app, "tool.options", json!({"tool": "artboard"})),
         Some((TASK_BAR_DUPLICATE_ARTBOARDS, _)) => crate::panels::artboards::duplicate_picked(app),
         Some((TASK_BAR_REARRANGE_ARTBOARDS, _)) => crate::panels::artboards::open_rearrange(app),
+        // Corner and Smooth convert the direct-selected anchors, as the Control bar's buttons do.
+        Some((TASK_BAR_TO_CORNER, _)) => crate::menus::invoke(app, "path.convertAnchors", json!({"to": "corner"})),
+        Some((TASK_BAR_TO_SMOOTH, _)) => crate::menus::invoke(app, "path.convertAnchors", json!({"to": "smooth"})),
         Some((c, p)) => crate::menus::invoke(app, c, p),
         None => {}
     }
@@ -3044,6 +3053,10 @@ const TASK_BAR_ARTBOARD_OPTIONS: &str = "taskBar.artboardOptions";
 const TASK_BAR_DUPLICATE_ARTBOARDS: &str = "taskBar.duplicateArtboards";
 /// The Contextual Task Bar's Rearrange All button with the Artboard tool.
 const TASK_BAR_REARRANGE_ARTBOARDS: &str = "taskBar.rearrangeArtboards";
+/// The Contextual Task Bar's Corner button for direct-selected anchors.
+const TASK_BAR_TO_CORNER: &str = "taskBar.toCorner";
+/// The Contextual Task Bar's Smooth button for direct-selected anchors.
+const TASK_BAR_TO_SMOOTH: &str = "taskBar.toSmooth";
 
 #[cfg(test)]
 mod tests {
@@ -6607,6 +6620,49 @@ mod tests {
         assert_eq!(app.session.tool_options()["selected"], json!([4, 3]), "the copies are selected, artboard 3's copy active");
         app.run("edit.undo", json!({})).unwrap();
         assert_eq!(boards(&app), before, "one undo step");
+    }
+
+    /// With anchors direct-selected, the Contextual Task Bar offers Remove Anchor Points, Connect,
+    /// Cut Path, Corner and Smooth. Smooth and Corner convert the selected anchor, Cut Path opens
+    /// the path there and Connect closes it again, as the Control bar's anchor buttons do.
+    #[test]
+    fn the_task_bar_connects_cuts_and_converts_direct_selected_anchors() {
+        let mut app = VectorcraftApp::new(Session::new(), Default::default());
+        app.session.execute("file.new", &json!({"width": 400, "height": 300})).unwrap();
+        let id = app.session.execute("shape.rectangle", &json!({"x": 150, "y": 100, "width": 100, "height": 80})).unwrap()["id"].as_u64().unwrap();
+        app.select_tool("directSelection");
+        app.run("select.anchors", json!({"id": id, "anchors": [[0, 1]]})).unwrap();
+        let ctx = egui::Context::default();
+        let names = |app: &mut VectorcraftApp| task_bar_labels(app, &ctx).into_iter().map(|(t, _)| t).collect::<Vec<_>>();
+        assert_eq!(names(&mut app), ["Remove Anchor Points", "Connect", "Cut Path", "Corner", "Smooth", "Duplicate"]);
+        let press = |app: &mut VectorcraftApp, label: &str| {
+            let labels = task_bar_labels(app, &ctx);
+            let at = labels.iter().find(|(t, _)| t == label).unwrap_or_else(|| panic!("{label} in {labels:?}")).1.center();
+            let button =
+                |pressed| egui::Event::PointerButton { pos: at, button: egui::PointerButton::Primary, pressed, modifiers: Default::default() };
+            frame(app, &ctx, vec![egui::Event::PointerMoved(at)]);
+            frame(app, &ctx, vec![button(true)]);
+            frame(app, &ctx, vec![button(false)]);
+        };
+        let subpath = |app: &VectorcraftApp| {
+            app.session.active().unwrap().doc.node(vectorcraft_doc::NodeId(id)).unwrap().path_data().unwrap().subpaths[0].clone()
+        };
+        let last_undo = |app: &VectorcraftApp| app.session.active().unwrap().history.undo.last().unwrap().label.clone();
+        press(&mut app, "Smooth");
+        let a = subpath(&app).anchors[1];
+        assert!(a.has_in() && a.has_out(), "smooth: {a:?}");
+        assert_eq!(last_undo(&app), "Convert Anchor Points");
+        press(&mut app, "Corner");
+        let a = subpath(&app).anchors[1];
+        assert!(!a.has_in() && !a.has_out(), "corner: {a:?}");
+        press(&mut app, "Cut Path");
+        assert_eq!(last_undo(&app), "Cut Path");
+        let sp = subpath(&app);
+        assert!(!sp.closed && sp.anchors.len() == 5, "the rectangle opens at the anchor: {sp:?}");
+        press(&mut app, "Connect");
+        assert_eq!(last_undo(&app), "Join");
+        let sp = subpath(&app);
+        assert!(sp.closed && sp.anchors.len() == 4, "the ends join again: {sp:?}");
     }
 
     /// The Contextual Task Bar's handle drags it: unpinned it keeps that offset as it follows the

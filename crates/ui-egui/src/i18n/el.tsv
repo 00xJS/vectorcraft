@@ -506,6 +506,7 @@
 	Condition identifier:	Αναγνωριστικό συνθήκης:
 	Conflict {n} of {count}	Διένεξη {n} από {count}
 	Connect Selected End Points	Σύνδεση επιλεγμένων τελικών σημείων
+	Connect	Σύνδεση
 	Consolidate All Windows	Συγχώνευση όλων των παραθύρων
 	Constrain Angle	Περιορισμός γωνίας
 	Constrain Width and Height Proportions	Διατήρηση αναλογιών πλάτους και ύψους

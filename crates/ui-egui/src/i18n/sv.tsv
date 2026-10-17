@@ -534,6 +534,7 @@
 	Condition identifier:	Villkorsidentifierare:
 	Conflict {n} of {count}	Konflikt {n} av {count}
 	Connect Selected End Points	Sammanfoga markerade slutpunkter
+	Connect	Sammanfoga
 	Consolidate All Windows	Samla alla fönster
 	Constrain Angle	Begränsa vinkel
 	Constrain Width and Height Proportions	Behåll proportioner för bredd och höjd

@@ -732,6 +732,7 @@
 	Condition identifier:	Feltételazonosító:
 	Conflict {n} of {count}	Ütközés: {n}/{count}
 	Connect Selected End Points	Kijelölt végpontok összekötése
+	Connect	Összekötés
 	Consolidate All Windows	Összes ablak egyesítése
 	Constrain	Korlátozás
 	Constrain Angle	Korlátozási szög

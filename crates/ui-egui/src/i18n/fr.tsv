@@ -548,6 +548,7 @@
 	Condition identifier:	Identifiant de condition :
 	Conflict {n} of {count}	Conflit {n} sur {count}
 	Connect Selected End Points	Relier les extrémités sélectionnées
+	Connect	Relier
 	Consolidate All Windows	Regrouper toutes les fenêtres
 	Constrain Angle	Contraindre l’angle
 	Constrain Width and Height Proportions	Conserver les proportions de largeur et de hauteur
