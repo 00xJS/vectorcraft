@@ -99,7 +99,7 @@ pub mod text_import;
 mod tiff_bmp_tga;
 pub mod tile_edge_color;
 mod tools;
-mod transform;
+pub(crate) mod transform;
 pub mod transform_each;
 pub mod variables;
 mod warp_effect;

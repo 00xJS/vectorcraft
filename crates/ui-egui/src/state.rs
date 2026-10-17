@@ -452,6 +452,10 @@ pub struct UiState {
     /// dialog opens on them (#1152).
     #[serde(default)]
     pub offset_path: Value,
+    /// The Move dialog's checkboxes as it was last confirmed with (copy, objects, preview; null:
+    /// never used): it opens with them.
+    #[serde(default)]
+    pub move_options: Value,
     /// The DXF Import Options chosen last (fit, scaleLineweights, center, mergeLayers; null:
     /// never used).
     #[serde(default)]
@@ -781,6 +785,7 @@ impl Default for UiState {
             dxf_options: Value::Null,
             eps_options: Value::Null,
             offset_path: Value::Null,
+            move_options: Value::Null,
             dxf_import: Value::Null,
             home: None,
             layers_panel: Default::default(),

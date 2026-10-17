@@ -177,7 +177,9 @@ for `eyedropper` it opens Eyedropper Options, an `eyedropperOptions` dialog (fie
 `appearance.copyFrom` copies). For `hand` it fits the artboard in the window (`view.fitArtboard`) and for `zoom` it
 shows 100% (`view.actualSize`). For `rotate`, `scale`, `reflect` and `shear` it opens the same dialog as Object ›
 Transform (dialog kind = the tool id), or fails with `nothing selected`. For `selection`, `directSelection` and
-`groupSelection` it opens the Move dialog (kind `move`), with the same failure. `ui.key` Enter with one of those seven
+`groupSelection` it opens the Move dialog (kind `move`), with the same failure; Move opens on the offset of the last
+drag or Move (`dx`, `dy`) and with the `copy`, `objects` and `preview` it was last confirmed with (its `patterns` is
+the `transformPatternTiles` preference, which its OK sets). `ui.key` Enter with one of those seven
 tools opens its dialog too (nothing happens without a selection), with the transform tools' `origin` at their reference
 point. Gradient tool handles snap to anchors, edges and smart guides; Shift constrains them to 45° steps from the
 `constrainAngle` preference.
