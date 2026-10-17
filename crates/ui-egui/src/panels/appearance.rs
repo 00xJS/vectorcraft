@@ -743,7 +743,7 @@ fn effect_editor(app: &mut VectorcraftApp, ui: &mut Ui, item: Option<usize>, k: 
         for (key, v) in &params {
             ui.horizontal(|ui| {
                 let label = param_label(key, built_in);
-                ui.add_sized(vec2(84.0, 22.0), egui::Label::new(egui::RichText::new(label).size(11.5).color(t.text)).truncate());
+                ui.add_sized(vec2(84.0, 22.0), egui::Label::new(egui::RichText::new(label.as_str()).size(11.5).color(t.text)).truncate());
                 if e.id == "stylize.dropShadow" && key == "shade" {
                     let cur = v.as_str().unwrap_or_default();
                     for (label, value) in crate::dialogs::SHADES {
@@ -774,7 +774,7 @@ fn effect_editor(app: &mut VectorcraftApp, ui: &mut Ui, item: Option<usize>, k: 
                 }
                 match v {
                     Value::Bool(b) => {
-                        if widgets::check_box(ui, label, *b, true) {
+                        if widgets::check_box(ui, &label, *b, true) {
                             change = Some((key.clone(), json!(!b)));
                         }
                     }
