@@ -3676,6 +3676,7 @@ axis	Both	Ambos
 @msg	`{id}` has no envelope dialog	`{id}` no tiene cuadro de diálogo de envolvente
 @msg	`{keep}` is not a side of this axis	`{keep}` no es un lado de este eje
 @msg	`{key}` must be `auto` or a language code such as `en` or `zh-hant`	`{key}` debe ser `auto` o un código de idioma como `en` o `zh-hant`
+@msg	`{key}` must be a #rrggbb color	`{key}` debe ser un color #rrggbb
 @msg	`{key}` must be a #rrggbb colour	`{key}` debe ser un color #rrggbb
 @msg	`{key}` must be a number	`{key}` debe ser un número
 @msg	`{key}` must be a string	`{key}` debe ser un texto

@@ -4169,6 +4169,7 @@ imageTrace	Outline	Körvonal
 @msg	`{id}` has no envelope dialog	ennek nincs burkoló-párbeszédablaka: `{id}`
 @msg	`{keep}` is not a side of this axis	`{keep}` nem ennek a tengelynek az oldala
 @msg	`{key}` must be `auto` or a language code such as `en` or `zh-hant`	`{key}`: `auto` vagy nyelvkód kell, például `en` vagy `zh-hant`
+@msg	`{key}` must be a #rrggbb color	`{key}`: #rrggbb szín kell
 @msg	`{key}` must be a #rrggbb colour	`{key}`: #rrggbb szín kell
 @msg	`{key}` must be a number	`{key}`: szám kell
 @msg	`{key}` must be a string	`{key}`: szöveg kell

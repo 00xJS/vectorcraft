@@ -3663,6 +3663,7 @@ axis	Both	Обидві
 @msg	`{id}` has no envelope dialog	`{id}` не має діалогового вікна оболонки
 @msg	`{keep}` is not a side of this axis	`{keep}` не є стороною цієї осі
 @msg	`{key}` must be `auto` or a language code such as `en` or `zh-hant`	`{key}` має бути `auto` або кодом мови, наприклад `en` або `zh-hant`
+@msg	`{key}` must be a #rrggbb color	`{key}` має бути кольором #rrggbb
 @msg	`{key}` must be a #rrggbb colour	`{key}` має бути кольором #rrggbb
 @msg	`{key}` must be a number	`{key}` має бути числом
 @msg	`{key}` must be a string	`{key}` має бути рядком

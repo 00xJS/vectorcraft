@@ -3800,6 +3800,7 @@ theme	Appearance	Giao diện
 @msg	`{id}` has no envelope dialog	`{id}` không có hộp thoại Envelope
 @msg	`{keep}` is not a side of this axis	`{keep}` không phải là một cạnh của trục này
 @msg	`{key}` must be `auto` or a language code such as `en` or `zh-hant`	`{key}` phải là `auto` hoặc mã ngôn ngữ như `en` hoặc `zh-hant`
+@msg	`{key}` must be a #rrggbb color	`{key}` phải là màu #rrggbb
 @msg	`{key}` must be a #rrggbb colour	`{key}` phải là màu #rrggbb
 @msg	`{key}` must be a number	`{key}` phải là một số
 @msg	`{key}` must be a string	`{key}` phải là một chuỗi

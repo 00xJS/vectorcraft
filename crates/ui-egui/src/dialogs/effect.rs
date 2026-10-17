@@ -604,26 +604,14 @@ fn command(d: &Dialog) -> (&'static str, Value) {
 
 fn confirm(app: &mut VectorcraftApp, d: &Dialog) -> Result<Value, String> {
     let (cmd, p) = command(d);
-    if super::warp_effect::is_warp(&d.str("__effect")) {
-        let r = form::commit_preview(app, cmd, p.clone())?;
-        if cmd == "effect.apply" {
-            app.last_effect = Some((d.str("__effect"), p["params"].clone()));
-        }
-        return Ok(r);
-    }
-    let r = if app.session.in_interaction() {
-        // Live preview already applied: keep it (the interaction commits as one undo step).
-        let _ = app.session.preview(cmd, &p);
-        app.session.commit_interaction().map(|_| Value::Null).map_err(|e| e.to_string())
-    } else {
-        app.run(cmd, p.clone())
-    };
+    // A live preview commits as one undo step. When the command refuses the values (a Color the
+    // effect can't draw), the dialog stays open and the error is returned.
+    let r = form::commit_preview(app, cmd, p.clone())?;
     // Last Effect repeats applied effects, not edits.
     if cmd == "effect.apply" {
         app.last_effect = Some((d.str("__effect"), p["params"].clone()));
     }
-    app.ui.dialog = None;
-    r
+    Ok(r)
 }
 
 #[cfg(test)]

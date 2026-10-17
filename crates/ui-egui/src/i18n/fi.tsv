@@ -3903,6 +3903,7 @@ imageTrace	Outline	Ääriviiva
 @msg	`{id}` has no envelope dialog	`{id}`: ei vääristyskuoren valintaikkunaa
 @msg	`{keep}` is not a side of this axis	`{keep}` ei ole tämän akselin puoli
 @msg	`{key}` must be `auto` or a language code such as `en` or `zh-hant`	`{key}` on oltava `auto` tai kielikoodi, kuten `en` tai `zh-hant`
+@msg	`{key}` must be a #rrggbb color	`{key}` on oltava #rrggbb-väri
 @msg	`{key}` must be a #rrggbb colour	`{key}` on oltava #rrggbb-väri
 @msg	`{key}` must be a number	`{key}` on oltava luku
 @msg	`{key}` must be a string	`{key}` on oltava merkkijono
