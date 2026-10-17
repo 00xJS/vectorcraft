@@ -1051,6 +1051,7 @@
 	Color Model:	カラーモデル:
 	Color Models	カラーモデル
 	Color Picker	カラーピッカー
+	Color wheel	カラーホイール
 	Color Picker…	カラーピッカー…
 	Color Reduction:	カラー減色:
 	Color Settings	カラー設定
@@ -1513,6 +1514,10 @@
 	Global Process Color	グローバルプロセスカラー
 	Go To Link	リンク元へ移動
 	Go to Artboard	アートボードへ移動
+	First Artboard	最初のアートボード
+	Previous Artboard	前のアートボード
+	Next Artboard	次のアートボード
+	Last Artboard	最後のアートボード
 	Gradient Fill: click to apply, drag onto art	グラデーションの塗り: クリックで適用、アートにドラッグ
 	Gradient Mesh	グラデーションメッシュ
 	Gradient Tool	グラデーションツール
@@ -4396,6 +4401,7 @@ effect	Vertical	垂直
 	Reset all	すべてリセット
 	Reset to default	初期値に戻す
 	Reset all Revolve settings to their defaults.	回転体のすべての設定を初期値に戻します。
+	Step up or down	1 段階ずつ増減
 	Drag values or labels. Double-click a value to type.	数値やラベルをドラッグして調整。数値をダブルクリックすると入力できます。
 	Drag rings to rotate. Shift snaps to 15°.	リングをドラッグして回転。Shiftで15°刻みに調整。
 	Drag the light, or its rings. Shift snaps to 15°.	ライトやリングをドラッグ。Shiftで15°刻みに調整。

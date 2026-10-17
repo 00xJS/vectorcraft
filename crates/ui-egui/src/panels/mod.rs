@@ -385,13 +385,13 @@ pub(crate) fn paint_chip(app: &mut VectorcraftApp, ui: &mut Ui, stroke: bool, si
     let (fill, stroke_paint) = current_paints(app);
     let mixed = mixed_paints(app, ui.ctx());
     let (paint, mixed) = if stroke { (stroke_paint, mixed.1) } else { (fill, mixed.0) };
-    let resp = crate::widgets::chip_button(ui, size, chevron, |ui, chip| {
-        crate::widgets::proxy_chip(ui, chip, &paint, mixed, stroke.then_some(size * 0.25));
-    });
-    let resp = resp.on_hover_text(if stroke {
-        "Stroke: click for swatches, Shift-click for the color mixer"
+    let tip = if stroke {
+        tl!("Stroke: click for swatches, Shift-click for the color mixer")
     } else {
-        "Fill: click for swatches, Shift-click for the color mixer"
+        tl!("Fill: click for swatches, Shift-click for the color mixer")
+    };
+    let resp = crate::widgets::chip_button_named(ui, size, chevron, tip, |ui, chip| {
+        crate::widgets::proxy_chip(ui, chip, &paint, mixed, stroke.then_some(size * 0.25));
     });
     if resp.clicked() {
         app.run("paint.toggleActive", json!({ "fill": !stroke })).ok();

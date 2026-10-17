@@ -492,6 +492,7 @@
 	Color Model:	Цветен модел:
 	Color Models	Цветни модели
 	Color Picker	Палитра с цвят
+	Color wheel	Цветово колело
 	Color Picker…	Палитра с цвят…
 	Color Reduction:	Намаляване на цветовете:
 	Color Settings	Цветови настройки
@@ -1175,6 +1176,10 @@
 	glyph {id}	глиф {id}
 	Glyphs	Глифи
 	Go to Artboard	Към работна област
+	First Artboard	Първа работна област
+	Previous Artboard	Предишна работна област
+	Next Artboard	Следваща работна област
+	Last Artboard	Последна работна област
 	Go To Link	Към връзката
 	GPL palettes keep solid colours only, as RGB.	Палитрите GPL запазват само плътни цветове като RGB.
 	GPU Performance	Производителност на графичния процесор
@@ -4284,6 +4289,7 @@ effect	Soft	Меко
 	Reset all	Нулиране на всичко
 	Reset to default	Връщане към по подразбиране
 	Reset all Revolve settings to their defaults.	Нулиране на всички настройки за въртене към техните стойности по подразбиране.
+	Step up or down	Стъпка нагоре или надолу
 	Drag values or labels. Double-click a value to type.	Плъзнете стойности или етикети. Кликнете двукратно върху стойност за въвеждане.
 	Drag rings to rotate. Shift snaps to 15°.	Плъзнете пръстените за завъртане. Shift прилепва към 15°.
 	Drag the light, or its rings. Shift snaps to 15°.	Плъзнете светлината или нейните пръстени. Shift прилепва към 15°.

@@ -505,6 +505,7 @@
 	Color Model:	Цветовая модель:
 	Color Models	Цветовые модели
 	Color Picker	Палитра цветов
+	Color wheel	Цветовой круг
 	Color Picker…	Палитра цветов…
 	Color Reduction:	Сокращение числа цветов:
 	Color Settings	Настройки цвета
@@ -1197,6 +1198,10 @@
 	glyph {id}	глиф {id}
 	Glyphs	Глифы
 	Go to Artboard	Перейти к монтажной области
+	First Artboard	Первая монтажная область
+	Previous Artboard	Предыдущая монтажная область
+	Next Artboard	Следующая монтажная область
+	Last Artboard	Последняя монтажная область
 	Go To Link	Перейти по ссылке
 	GPL palettes keep solid colours only, as RGB.	Палитры GPL сохраняют только сплошные цвета в RGB.
 	GPU Performance	Производительность GPU
@@ -4352,6 +4357,7 @@ axis	Both	Оба
 	Reset all	Сбросить всё
 	Reset to default	Вернуть значение по умолчанию
 	Reset all Revolve settings to their defaults.	Возвращает все настройки вращения профиля к значениям по умолчанию.
+	Step up or down	Шаг вверх или вниз
 	Drag values or labels. Double-click a value to type.	Перетаскивайте значения или подписи. Для ввода дважды щёлкните значение.
 	Drag rings to rotate. Shift snaps to 15°.	Перетаскивайте кольца для вращения. Shift задаёт шаг 15°.
 	Drag the light, or its rings. Shift snaps to 15°.	Перетаскивайте источник света или кольца. Shift задаёт шаг 15°.

@@ -507,6 +507,7 @@
 	Color Model:	Modelo de color:
 	Color Models	Modelos de color
 	Color Picker	Selector de color
+	Color wheel	Rueda de color
 	Color Picker…	Selector de color…
 	Color Reduction:	Reducción de colores:
 	Color Settings	Ajustes de color
@@ -1200,6 +1201,10 @@
 	glyph {id}	glifo {id}
 	Glyphs	Glifos
 	Go to Artboard	Ir a mesa de trabajo
+	First Artboard	Primera mesa de trabajo
+	Previous Artboard	Mesa de trabajo anterior
+	Next Artboard	Mesa de trabajo siguiente
+	Last Artboard	Última mesa de trabajo
 	Go To Link	Ir al vínculo
 	GPL palettes keep solid colours only, as RGB.	Las paletas GPL solo conservan colores sólidos, en RGB.
 	GPU Performance	Rendimiento de GPU
@@ -4351,6 +4356,7 @@ axis	Both	Ambos
 	Reset all	Restablecer todo
 	Reset to default	Restablecer valor predeterminado
 	Reset all Revolve settings to their defaults.	Restablece todos los ajustes de revolución a sus valores predeterminados.
+	Step up or down	Subir o bajar un paso
 	Drag values or labels. Double-click a value to type.	Arrastra los valores o las etiquetas. Haz doble clic en un valor para escribir.
 	Drag rings to rotate. Shift snaps to 15°.	Arrastra los anillos para girar. Shift ajusta a pasos de 15°.
 	Drag the light, or its rings. Shift snaps to 15°.	Arrastra la luz o sus anillos. Shift ajusta a pasos de 15°.

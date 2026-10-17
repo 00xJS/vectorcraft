@@ -592,6 +592,7 @@
 	Color Model:	Mô hình màu:
 	Color Models	Các mô hình màu
 	Color Picker	Bộ chọn màu
+	Color wheel	Bánh xe màu
 	Color Picker…	Bộ chọn màu…
 	Color Reduction:	Giảm màu:
 	Color Settings	Cài đặt màu
@@ -960,6 +961,7 @@
 	Drag to move	Kéo để di chuyển
 	Drag to move out of the set	Kéo để tách khỏi bộ
 	Drag to the window's left edge to dock	Kéo đến cạnh trái cửa sổ để neo
+	Step up or down	Tăng hoặc giảm một bước
 	Drag values or labels. Double-click a value to type.	Kéo giá trị hoặc nhãn. Bấm đúp vào giá trị để nhập.
 	Draw	Vẽ
 	Draw Behind	Vẽ phía sau
@@ -1377,6 +1379,10 @@
 	glyph {id}	Glyph {id}
 	Glyphs	Glyph
 	Go to Artboard	Đến bảng vẽ
+	First Artboard	Bảng vẽ đầu tiên
+	Previous Artboard	Bảng vẽ trước
+	Next Artboard	Bảng vẽ tiếp theo
+	Last Artboard	Bảng vẽ cuối cùng
 	Go To Link	Đến liên kết
 	Good	Tốt
 	GPL palettes keep solid colours only, as RGB.	Bảng màu GPL chỉ lưu màu đặc theo RGB.

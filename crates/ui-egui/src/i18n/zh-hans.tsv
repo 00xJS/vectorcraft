@@ -462,6 +462,7 @@
 	Color Model:	颜色模型：
 	Color Models	颜色模型
 	Color Picker	拾色器
+	Color wheel	色轮
 	Color Picker…	颜色选择器…
 	Color Reduction:	色彩缩减：
 	Color Settings	颜色设置
@@ -1146,6 +1147,10 @@
 	glyph {id}	字符 {id}
 	Glyphs	字形
 	Go to Artboard	前往画板
+	First Artboard	第一个画板
+	Previous Artboard	上一个画板
+	Next Artboard	下一个画板
+	Last Artboard	最后一个画板
 	Go To Link	转到链接
 	GPL palettes keep solid colours only, as RGB.	GPL 调板仅保留为 RGB 的纯色。
 	GPU Performance	GPU 性能
@@ -3930,6 +3935,7 @@ effect	Vertical	垂直
 	Reset all	全部重置
 	Reset to default	重置为默认值
 	Reset all Revolve settings to their defaults.	将所有旋转成形设置重置为默认值。
+	Step up or down	逐级增减
 	Drag values or labels. Double-click a value to type.	拖动数值或标签。双击数值即可输入。
 	Drag rings to rotate. Shift snaps to 15°.	拖动圆环旋转。按住 Shift 以 15° 为步长调整。
 	Drag the light, or its rings. Shift snaps to 15°.	拖动光源或圆环。按住 Shift 以 15° 为步长调整。

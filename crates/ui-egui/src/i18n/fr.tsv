@@ -508,6 +508,7 @@
 	Color Model:	Modèle colorimétrique :
 	Color Models	Modèles colorimétriques
 	Color Picker	Sélecteur de couleurs
+	Color wheel	Roue chromatique
 	Color Picker…	Sélecteur de couleurs…
 	Color Reduction:	Réduction des couleurs :
 	Color Settings	Paramètres de couleur
@@ -1199,6 +1200,10 @@
 	glyph {id}	glyphe {id}
 	Glyphs	Glyphes
 	Go to Artboard	Atteindre le plan de travail
+	First Artboard	Premier plan de travail
+	Previous Artboard	Plan de travail précédent
+	Next Artboard	Plan de travail suivant
+	Last Artboard	Dernier plan de travail
 	Go To Link	Atteindre le lien
 	GPL palettes keep solid colours only, as RGB.	Les palettes GPL ne conservent que les couleurs unies, en RVB.
 	GPU Performance	Performances GPU
@@ -4361,6 +4366,7 @@ effect	Soft	Doux
 	Reset all	Tout réinitialiser
 	Reset to default	Valeur par défaut
 	Reset all Revolve settings to their defaults.	Rétablir les valeurs par défaut de tous les réglages de révolution.
+	Step up or down	Augmenter ou diminuer d’un cran
 	Drag values or labels. Double-click a value to type.	Faites glisser les valeurs ou les libellés. Double-cliquez sur une valeur pour la saisir.
 	Drag rings to rotate. Shift snaps to 15°.	Faites glisser les anneaux pour tourner. Maj contraint par pas de 15°.
 	Drag the light, or its rings. Shift snaps to 15°.	Faites glisser la lumière ou ses anneaux. Maj contraint par pas de 15°.

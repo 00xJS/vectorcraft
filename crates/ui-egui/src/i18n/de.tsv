@@ -492,6 +492,7 @@
 	Color Model:	Farbmodell:
 	Color Models	Farbmodelle
 	Color Picker	Farbwähler
+	Color wheel	Farbkreis
 	Color Picker…	Farbwähler…
 	Color Reduction:	Farbreduktion:
 	Color Settings	Farbeinstellungen
@@ -1183,6 +1184,10 @@
 	glyph {id}	Glyphe {id}
 	Glyphs	Glyphen
 	Go to Artboard	Gehe zu Zeichenfläche
+	First Artboard	Erste Zeichenfläche
+	Previous Artboard	Vorherige Zeichenfläche
+	Next Artboard	Nächste Zeichenfläche
+	Last Artboard	Letzte Zeichenfläche
 	Go To Link	Gehe zu Verknüpfung
 	GPL palettes keep solid colours only, as RGB.	GPL-Paletten enthalten nur einfarbige Farben, als RGB.
 	GPU Performance	GPU-Leistung
@@ -4304,6 +4309,7 @@ theme	Appearance	Erscheinungsbild
 	Drag rings to rotate. Shift snaps to 15°.	Ziehen Sie die Ringe, um zu drehen. Mit Shift in 15°-Schritten.
 	Drag the light, or its rings. Shift snaps to 15°.	Ziehen Sie das Licht oder seine Ringe. Mit Shift in 15°-Schritten.
 	Drag values or labels. Double-click a value to type.	Ziehen Sie Werte oder Beschriftungen. Doppelklicken Sie auf einen Wert, um ihn einzugeben.
+	Step up or down	Schrittweise erhöhen oder verringern
 	Intensity	Intensität
 	Keep visible surfaces only when expanding	Beim Umwandeln nur sichtbare Flächen behalten
 	Lighting	Beleuchtung

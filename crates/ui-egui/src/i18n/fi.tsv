@@ -789,6 +789,7 @@
 	Reset all	Palauta kaikki
 	Reset to default	Palauta oletus
 	Reset all Revolve settings to their defaults.	Palauta kaikki pyöräytysasetukset oletusarvoihin.
+	Step up or down	Askel ylös tai alas
 	Drag values or labels. Double-click a value to type.	Vedä arvoja tai nimiöitä. Kirjoita arvo kaksoisnapsauttamalla.
 	Drag rings to rotate. Shift snaps to 15°.	Kierrä vetämällä renkaita. Vaihto kohdistaa 15°:n välein.
 	Drag the light, or its rings. Shift snaps to 15°.	Vedä valoa tai sen renkaita. Vaihto kohdistaa 15°:n välein.
@@ -834,6 +835,10 @@ lighting	Light	Valo
 	Export Keyboard Shortcuts…	Vie pikanäppäimet…
 	File Info Dialog	Tiedoston tiedot -valintaikkuna
 	Go to Artboard	Siirry piirtoalustaan
+	First Artboard	Ensimmäinen piirtoalusta
+	Previous Artboard	Edellinen piirtoalusta
+	Next Artboard	Seuraava piirtoalusta
+	Last Artboard	Viimeinen piirtoalusta
 	Graphic Style Options…	Grafiikkatyylin asetukset…
 	Symbol Options	Symbolin asetukset
 	Symbol Options…	Symbolin asetukset…
@@ -1896,6 +1901,7 @@ lighting	Light	Valo
 	Variation	Vaihtelu
 	Color Models	Värijärjestelmät
 	Color Picker	Värinvalitsin
+	Color wheel	Väriympyrä
 	Color Swatches	Värimallit
 	Only Web Colors	Vain verkkovärit
 	Original: click to restore	Alkuperäinen: palauta napsauttamalla

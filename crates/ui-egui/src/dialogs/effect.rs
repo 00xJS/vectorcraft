@@ -428,7 +428,7 @@ fn zig_zag_fields(ui: &mut egui::Ui, d: &mut Dialog, unit: vectorcraft_doc::Unit
     widgets::subheader(ui, tl!("Options"));
     // Size is a share of the object's size (Relative) or a distance (Absolute).
     widgets::label_row(ui, tl!("Size:"), LABEL_W, |ui| {
-        form::slider_rail(ui, d, "size", 0.0..=100.0, &track);
+        form::slider_rail_named(ui, d, "size", tl!("Size:"), 0.0..=100.0, &track);
         if !relative {
             form::length(ui, d, "size", unit, FIELD_W);
         } else if let Some(n) = widgets::range_field(ui, ("zz", "size"), d.f64("size", 10.0), 0.0..=100.0, "%", 0, FIELD_W) {
@@ -444,7 +444,7 @@ fn zig_zag_fields(ui: &mut egui::Ui, d: &mut Dialog, unit: vectorcraft_doc::Unit
         }
     });
     widgets::label_row(ui, tl!("Ridges per segment:"), LABEL_W, |ui| {
-        form::slider_rail(ui, d, "ridges", 0.0..=100.0, &track);
+        form::slider_rail_named(ui, d, "ridges", tl!("Ridges per segment:"), 0.0..=100.0, &track);
         if let Some(n) = widgets::range_field(ui, ("zz", "ridges"), d.f64("ridges", 4.0), 0.0..=100.0, "", 0, FIELD_W) {
             d.fields.insert("ridges".into(), json!(n));
         }

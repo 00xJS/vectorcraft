@@ -1046,6 +1046,7 @@
 	Color Model:	색상 모델:
 	Color Models	색상 모델
 	Color Picker	색상 피커
+	Color wheel	색상환
 	Color Picker…	색상 피커…
 	Color Reduction:	색상 감소:
 	Color Settings	색상 설정
@@ -1508,6 +1509,10 @@
 	Global Process Color	전역 프로세스 색상
 	Go To Link	링크로 이동
 	Go to Artboard	아트보드로 이동
+	First Artboard	첫 아트보드
+	Previous Artboard	이전 아트보드
+	Next Artboard	다음 아트보드
+	Last Artboard	마지막 아트보드
 	Gradient Fill: click to apply, drag onto art	그레이디언트 칠: 클릭하여 적용, 아트웍에 끌어 놓기
 	Gradient Mesh	그레이디언트 메시
 	Gradient Tool	그레이디언트 도구
@@ -4322,6 +4327,7 @@ effect	Vertical	세로
 	Reset all	모두 재설정
 	Reset to default	기본값으로 재설정
 	Reset all Revolve settings to their defaults.	모든 회전체 설정을 기본값으로 재설정합니다.
+	Step up or down	한 단계 올리기 또는 내리기
 	Drag values or labels. Double-click a value to type.	값이나 레이블을 드래그하세요. 값을 더블클릭하면 입력할 수 있습니다.
 	Drag rings to rotate. Shift snaps to 15°.	링을 드래그해 회전하세요. Shift를 누르면 15°씩 스냅됩니다.
 	Drag the light, or its rings. Shift snaps to 15°.	조명이나 링을 드래그하세요. Shift를 누르면 15°씩 스냅됩니다.

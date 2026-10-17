@@ -679,6 +679,7 @@
 	Color Model:	Színmodell:
 	Color Models	Színmodellek
 	Color Picker	Színválasztó
+	Color wheel	Színkör
 	Color Picker…	Színválasztó…
 	Color Reduction:	Színcsökkentés:
 	Color Settings	Színbeállítások
@@ -1075,6 +1076,7 @@
 	Drag to move	Húzással áthelyezhető
 	Drag to move out of the set	Húzással kivehető a csoportból
 	Drag to the window's left edge to dock	Dokkoláshoz húzd az ablak bal szélére
+	Step up or down	Léptetés fel vagy le
 	Drag values or labels. Double-click a value to type.	Húzd az értékeket vagy a címkéket. Gépeléshez kattints duplán egy értékre.
 	Draw	Rajzolás
 	Draw Behind	Rajzolás mögé
@@ -1502,6 +1504,10 @@
 	glyph {id}	glifa {id}
 	Glyphs	Glifák
 	Go to Artboard	Ugrás rajztáblára
+	First Artboard	Első rajztábla
+	Previous Artboard	Előző rajztábla
+	Next Artboard	Következő rajztábla
+	Last Artboard	Utolsó rajztábla
 	Go to Conflict	Ugrás az ütközésre
 	Go To Link	Ugrás a csatoláshoz
 	Good	Jó

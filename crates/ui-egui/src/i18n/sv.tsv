@@ -494,6 +494,7 @@
 	Color Model:	Färgmodell:
 	Color Models	Färgmodeller
 	Color Picker	Färgväljare
+	Color wheel	Färghjul
 	Color Picker…	Färgväljare…
 	Color Reduction:	Färgreducering:
 	Color Settings	Färginställningar
@@ -1177,6 +1178,10 @@
 	glyph {id}	glyf {id}
 	Glyphs	Glyfer
 	Go to Artboard	Gå till rityta
+	First Artboard	Första ritytan
+	Previous Artboard	Föregående rityta
+	Next Artboard	Nästa rityta
+	Last Artboard	Sista ritytan
 	Go To Link	Gå till länk
 	GPL palettes keep solid colours only, as RGB.	GPL-paletter sparar bara enfärgade färger, som RGB.
 	GPU Performance	GPU-prestanda
@@ -4283,6 +4288,7 @@ effect	Soft	Mjuk
 	Reset all	Återställ alla
 	Reset to default	Återställ till standard
 	Reset all Revolve settings to their defaults.	Återställ alla inställningar för Rotera runt axel till standardvärdena.
+	Step up or down	Ett steg upp eller ned
 	Drag values or labels. Double-click a value to type.	Dra i värden eller etiketter. Dubbelklicka på ett värde för att skriva.
 	Drag rings to rotate. Shift snaps to 15°.	Dra i ringarna för att rotera. Shift fäster i steg om 15°.
 	Drag the light, or its rings. Shift snaps to 15°.	Dra i ljuset eller dess ringar. Shift fäster i steg om 15°.
