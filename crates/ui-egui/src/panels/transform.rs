@@ -50,26 +50,42 @@ pub fn artboard_rect(r: Rect, refi: usize, x: Option<f64>, y: Option<f64>, w: Op
     Rect::new(x0, y0, x0 + nw, y0 + nh)
 }
 
+/// The reference point the Transform panel and the Control bar share (0 to 8, the center by default).
+pub fn reference_index(ui: &Ui) -> usize {
+    ui.data(|d| d.get_temp(egui::Id::new("refpt"))).unwrap_or(4)
+}
+
+/// The shared reference point's locator; a click on it chooses another point.
+pub fn reference_locator(ui: &mut Ui, refi: usize) {
+    if let Some(i) = widgets::reference_point(ui, refi) {
+        ui.data_mut(|d| d.insert_temp(egui::Id::new("refpt"), i));
+    }
+}
+
+/// Set artboard `index` (now at `r`) to a new X, Y, W or H from reference point `refi`
+/// ([`artboard_rect`]) with `artboard.setProps`, passing the Artboard tool's Move and Scale Artwork
+/// with Artboard options as `moveArt` and `scaleArt`; an error is shown in the status bar.
+pub fn set_artboard(app: &mut VectorcraftApp, index: usize, r: Rect, refi: usize, xywh: [Option<f64>; 4], link: bool) {
+    let [x, y, w, h] = xywh;
+    let n = artboard_rect(r, refi, x, y, w, h, link);
+    let scale_art = crate::panels::artboards::scale_art(app);
+    let move_art = crate::panels::artboards::move_art(app);
+    let p = json!({"index": index, "x": n.x0, "y": n.y0, "width": n.width(), "height": n.height(), "scaleArt": scale_art, "moveArt": move_art});
+    if let Err(e) = app.run("artboard.setProps", p) {
+        app.status(e);
+    }
+}
+
 /// The Artboard tool's view of the panel: the active artboard's position and size.
 fn artboard_fields(app: &mut VectorcraftApp, ui: &mut Ui, index: usize, r: Rect) {
     let units = app.session.general_unit();
     let origin = app.ruler_origin();
-    let refi: usize = ui.data(|d| d.get_temp(egui::Id::new("refpt"))).unwrap_or(4);
+    let refi = reference_index(ui);
     let link = proportional(app, ui);
     let rp = vectorcraft_geom::reference_point(r, refi);
-    let set = |app: &mut VectorcraftApp, x, y, w, h| {
-        let n = artboard_rect(r, refi, x, y, w, h, link);
-        let scale_art = crate::panels::artboards::scale_art(app);
-        let move_art = crate::panels::artboards::move_art(app);
-        let p = json!({"index": index, "x": n.x0, "y": n.y0, "width": n.width(), "height": n.height(), "scaleArt": scale_art, "moveArt": move_art});
-        if let Err(e) = app.run("artboard.setProps", p) {
-            app.status(e);
-        }
-    };
+    let set = |app: &mut VectorcraftApp, x, y, w, h| set_artboard(app, index, r, refi, [x, y, w, h], link);
     ui.horizontal(|ui| {
-        if let Some(i) = widgets::reference_point(ui, refi) {
-            ui.data_mut(|d| d.insert_temp(egui::Id::new("refpt"), i));
-        }
+        reference_locator(ui, refi);
         ui.add_space(4.0);
         egui::Grid::new("xfp-ab-grid").num_columns(4).spacing([4.0, 6.0]).min_col_width(0.0).show(ui, |ui| {
             widgets::dim_label(ui, "X:");

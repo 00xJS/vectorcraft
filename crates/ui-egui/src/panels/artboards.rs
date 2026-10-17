@@ -14,15 +14,105 @@ use crate::widgets::{self, menu_item};
 use crate::{VectorcraftApp, icons};
 
 /// The Artboard tool's Move Artwork with Artboard and Scale Artwork with Artboard options (#602) as
-/// check boxes: the Control bar and Properties show them while the tool is in use.
+/// check boxes: the Control bar ([`control_bar`]) and Properties show them while the tool is in use.
 pub(crate) fn art_options(app: &mut VectorcraftApp, ui: &mut Ui) {
+    art_option_boxes(app, ui, false);
+}
+
+/// [`art_options`], or with `compact` the boxes alone, each option's name in its tooltip.
+fn art_option_boxes(app: &mut VectorcraftApp, ui: &mut Ui, compact: bool) {
     let opts = app.session.tool_options();
     for (key, label, default) in [("moveArt", tl!("Move Artwork with Artboard"), true), ("scaleArt", tl!("Scale Artwork with Artboard"), false)] {
         let on = opts[key].as_bool().unwrap_or(default);
-        if widgets::check(ui, label, on, true) {
+        let toggled = if compact { widgets::check_tip(ui, "", on, true, label) } else { widgets::check(ui, label, on, true) };
+        if toggled {
             app.run("tool.setOption", json!({ "key": key, "value": !on })).ok();
         }
     }
+}
+
+/// The room Move and Scale Artwork with Artboard need with their labels in the Control bar; with
+/// less, the boxes show alone.
+const ART_OPTIONS_WIDTH: f32 = 370.0;
+
+/// The room the Control bar's inline reference point and X/Y/W/H fields for an artboard need; with
+/// less, they show only in the Transform link's popover.
+const INLINE_FIELDS_WIDTH: f32 = 480.0;
+
+/// The Control bar while the Artboard tool is in use, in place of the object controls: the active
+/// artboard's preset and orientation, New Artboard and Delete Artboard, its name, Artboard Options,
+/// Rearrange All Artboards and the Transform link (the Transform panel in a popover), which all fit
+/// in the narrowest window; then Move and Scale Artwork with Artboard (the boxes alone, with their
+/// names in tooltips, when the bar is short of room) and, while the bar has room, the reference
+/// point the Transform panel also uses with the artboard's X and Y, and its W and H with the
+/// Constrain Width and Height Proportions link. Each control runs the command its Properties panel
+/// or Transform panel counterpart runs. Returns false, and draws nothing, while another tool is in
+/// use.
+pub(crate) fn control_bar(app: &mut VectorcraftApp, ui: &mut Ui) -> bool {
+    if app.session.tool_id() != "artboard" {
+        return false;
+    }
+    let t = Tokens::get(ui.ctx());
+    let n = app.session.active().map_or(0, |d| d.doc.artboards.len());
+    let i = selected(app, n);
+    let Some(ab) = app.session.active().and_then(|d| d.doc.artboards.get(i)).cloned() else { return true };
+    let r = ab.rect;
+    super::properties::artboard_size_row(app, ui, i, r.width(), r.height());
+    if widgets::icon_button(ui, "dc-new-item", tl!("New Artboard"), false, 24.0).clicked() && app.run("artboard.new", json!({})).is_ok() {
+        select(app, n);
+    }
+    if widgets::icon_button_enabled(ui, "trash-2", tl!("Delete Artboard"), false, n > 1, 24.0).clicked() {
+        delete_selected(app);
+    }
+    ui.separator();
+    // The field shows the name as it is (names are never translated). A new name is applied on Enter
+    // or a click elsewhere, and an empty field or Escape keeps the old one, as in the Properties panel.
+    ui.label(egui::RichText::new(tl!("Name:")).size(12.0).color(t.text));
+    if let Some(name) = widgets::text_field(ui, ("cb-ab", "name"), Some(&ab.name), 120.0, 1).filter(|n| !n.is_empty()) {
+        app.run("artboard.setProps", json!({"index": i, "name": name})).ok();
+    }
+    if widgets::icon_button(ui, "dc-artboard-options", tl!("Artboard Options"), false, 24.0).clicked() {
+        app.run("tool.options", json!({"tool": "artboard"})).ok();
+    }
+    if widgets::icon_button_enabled(ui, "dc-rearrange", tl!("Rearrange All Artboards"), false, n > 1, 24.0).clicked() {
+        open_rearrange(app);
+    }
+    ui.separator();
+    super::transform::link(app, ui);
+    ui.separator();
+    art_option_boxes(app, ui, ui.available_width() < ART_OPTIONS_WIDTH);
+    if ui.available_width() < INLINE_FIELDS_WIDTH {
+        return true;
+    }
+    ui.separator();
+    let units = app.session.general_unit();
+    let origin = app.ruler_origin();
+    let refi = super::transform::reference_index(ui);
+    super::transform::reference_locator(ui, refi);
+    let link = super::transform::proportional(app, ui);
+    let rp = vectorcraft_geom::reference_point(r, refi);
+    for (k, lbl, v) in [("x", "X:", rp.x - origin.x), ("y", "Y:", rp.y - origin.y), ("width", "W:", r.width()), ("height", "H:", r.height())] {
+        // The W/H link sits between W and H.
+        if k == "height" {
+            super::transform::constrain_link(app, ui);
+        }
+        widgets::field_label(ui, egui::RichText::new(tl!(lbl)).size(12.0).color(t.text_dim));
+        let set = if matches!(k, "width" | "height") {
+            widgets::size_field(ui, ("cb-ab", k), Some(v), units, 80.0)
+        } else {
+            widgets::num_field(ui, ("cb-ab", k), Some(v), units, 80.0)
+        };
+        if let Some(nv) = set {
+            let xywh = match k {
+                "x" => [Some(nv + origin.x), None, None, None],
+                "y" => [None, Some(nv + origin.y), None, None],
+                "width" => [None, None, Some(nv), None],
+                _ => [None, None, None, Some(nv)],
+            };
+            super::transform::set_artboard(app, i, r, refi, xywh, link);
+        }
+    }
+    true
 }
 
 /// Whether artboards resized while the Artboard tool is in use take their art along (its Scale
@@ -606,6 +696,266 @@ mod tests {
         app.run("edit.undo", json!({})).unwrap();
         let d = &app.session.active().unwrap().doc;
         assert_eq!((d.artboards.len(), d.layers[0].children().unwrap().len()), (3, 2), "one undo step");
+    }
+
+    /// One headless frame of the Control bar, 2,000 points wide, with `events` → the texts painted,
+    /// with their rects.
+    fn bar_frame(app: &mut VectorcraftApp, ctx: &egui::Context, events: Vec<egui::Event>) -> Vec<(String, egui::Rect)> {
+        bar_frame_in(app, ctx, events, 2000.0)
+    }
+
+    /// [`bar_frame`] in a window `width` points wide.
+    fn bar_frame_in(app: &mut VectorcraftApp, ctx: &egui::Context, events: Vec<egui::Event>, width: f32) -> Vec<(String, egui::Rect)> {
+        let screen = egui::Rect::from_min_size(egui::Pos2::ZERO, vec2(width, 300.0));
+        let mut out =
+            ctx.run_ui(egui::RawInput { screen_rect: Some(screen), events, ..Default::default() }, |ui| crate::chrome::control_bar(app, ui));
+        out.textures_delta.clear();
+        out.shapes
+            .iter()
+            .filter_map(|c| match &c.shape {
+                egui::Shape::Text(t) => Some((t.galley.text().to_string(), egui::Rect::from_min_size(t.pos, t.galley.size()))),
+                _ => None,
+            })
+            .collect()
+    }
+
+    /// A context with the app's fonts, which the Control bar's label uses.
+    fn bar_context() -> egui::Context {
+        let ctx = egui::Context::default();
+        crate::theme::install_fonts(&ctx);
+        ctx
+    }
+
+    /// Two frames of the Control bar → the texts the second one painted.
+    fn bar_texts(app: &mut VectorcraftApp, ctx: &egui::Context) -> Vec<(String, egui::Rect)> {
+        bar_frame(app, ctx, vec![]);
+        bar_frame(app, ctx, vec![])
+    }
+
+    /// Where `label` is painted in `texts`.
+    fn text_rect(texts: &[(String, egui::Rect)], label: &str) -> egui::Rect {
+        texts.iter().find(|(t, _)| t == label).map(|(_, r)| *r).unwrap_or_else(|| panic!("no {label:?} in {texts:?}"))
+    }
+
+    /// A press and a release at `at` on the Control bar, a frame each.
+    fn bar_click(app: &mut VectorcraftApp, ctx: &egui::Context, at: egui::Pos2) {
+        let button = |pressed| egui::Event::PointerButton { pos: at, button: egui::PointerButton::Primary, pressed, modifiers: Default::default() };
+        bar_frame(app, ctx, vec![egui::Event::PointerMoved(at), button(true)]);
+        bar_frame(app, ctx, vec![button(false)]);
+    }
+
+    /// Click the Control bar's field at `at`, select all of it, type `typed` and press Enter.
+    fn bar_type(app: &mut VectorcraftApp, ctx: &egui::Context, at: egui::Pos2, typed: &str) {
+        let key = |key, modifiers| vec![egui::Event::Key { key, physical_key: None, pressed: true, repeat: false, modifiers }];
+        bar_click(app, ctx, at);
+        bar_frame(app, ctx, key(egui::Key::A, egui::Modifiers::COMMAND));
+        bar_frame(app, ctx, vec![egui::Event::Text(typed.into())]);
+        bar_frame(app, ctx, key(egui::Key::Enter, egui::Modifiers::NONE));
+        bar_frame(app, ctx, vec![]);
+    }
+
+    /// The Control bar's clickable widgets of the last frame that lie between x `from` and `to`,
+    /// left to right.
+    fn bar_buttons(ctx: &egui::Context, from: f32, to: f32) -> Vec<egui::Rect> {
+        let mut all: Vec<egui::Rect> = ctx.viewport(|vp| {
+            vp.prev_pass
+                .widgets
+                .layers()
+                .flat_map(|(_, w)| w.iter())
+                .filter(|w| w.sense.senses_click() && w.rect.left() >= from && w.rect.right() <= to)
+                .map(|w| w.rect)
+                .collect()
+        });
+        all.sort_by(|a, b| a.left().total_cmp(&b.left()));
+        all
+    }
+
+    /// The artboards' rectangles, the undo steps and the artboards' names.
+    fn boards(app: &VectorcraftApp) -> (Vec<vectorcraft_geom::Rect>, usize, Vec<String>) {
+        let st = app.session.active().unwrap();
+        (st.doc.artboards.iter().map(|a| a.rect).collect(), st.history.undo.len(), st.doc.artboards.iter().map(|a| a.name.clone()).collect())
+    }
+
+    /// With the Artboard tool in use, the Control bar shows the active artboard's controls in place
+    /// of the object controls: its preset, name, the Transform link, Move and Scale Artwork with
+    /// Artboard, X, Y, W and H, left to right, and in a narrow window the link without the fields.
+    /// Another tool shows the object controls.
+    #[test]
+    fn the_control_bar_shows_the_artboard_tools_controls() {
+        let mut app = VectorcraftApp::new(Session::new(), Default::default());
+        app.run("file.new", json!({"width": 200, "height": 100, "units": "Points"})).unwrap();
+        app.run("shape.rectangle", json!({"x": 10, "y": 10, "width": 20, "height": 20})).unwrap();
+        let ctx = bar_context();
+        let has = |texts: &[(String, egui::Rect)], s: &str| texts.iter().any(|(t, _)| t == s);
+        let texts = bar_texts(&mut app, &ctx);
+        assert!(has(&texts, "Opacity:") && !has(&texts, "Name:") && !has(&texts, "Preset:"), "{texts:?}");
+        app.select_tool("artboard");
+        let texts = bar_texts(&mut app, &ctx);
+        let order = [
+            "Artboard",
+            "Preset:",
+            "Name:",
+            "Artboard 1",
+            "Transform",
+            "Move Artwork with Artboard",
+            "Scale Artwork with Artboard",
+            "X:",
+            "Y:",
+            "W:",
+            "200 pt",
+            "H:",
+        ];
+        let lefts: Vec<f32> = order.iter().map(|s| text_rect(&texts, s).left()).collect();
+        assert!(lefts.windows(2).all(|w| w[0] < w[1]), "{order:?} at {lefts:?}");
+        for s in ["Opacity:", "Stroke:"] {
+            assert!(!has(&texts, s), "{s}: {texts:?}");
+        }
+        // In a window that leaves 300 points right of Scale Artwork with Artboard, the inline fields
+        // go (X: would start inside the window).
+        let width = text_rect(&texts, "Scale Artwork with Artboard").right() + 300.0;
+        bar_frame_in(&mut app, &ctx, vec![], width);
+        let texts = bar_frame_in(&mut app, &ctx, vec![], width);
+        assert!(has(&texts, "Scale Artwork with Artboard") && !has(&texts, "X:") && !has(&texts, "W:"), "{texts:?}");
+        // In the app's narrowest window, 800 points wide, the name and the Transform link still fit,
+        // and a click on the link shows the artboard's X, Y, W and H in the Transform panel's popover.
+        let narrow = |app: &mut VectorcraftApp, events| bar_frame_in(app, &ctx, events, 800.0);
+        narrow(&mut app, vec![]);
+        let texts = narrow(&mut app, vec![]);
+        let link = text_rect(&texts, "Transform");
+        assert!(link.right() < 790.0 && text_rect(&texts, "Artboard 1").right() < link.left(), "{texts:?}");
+        // Move and Scale Artwork with Artboard show as their boxes alone, inside the window, and the
+        // second one turns Scale Artwork with Artboard on.
+        assert!(!has(&texts, "Move Artwork with Artboard"), "{texts:?}");
+        let boxes = bar_buttons(&ctx, link.right(), 790.0);
+        assert_eq!(boxes.len(), 2, "{boxes:?}");
+        let scale = |app: &VectorcraftApp| app.session.tool_options()["scaleArt"].as_bool();
+        assert_eq!(scale(&app), Some(false));
+        let press = |pressed| egui::Event::PointerButton {
+            pos: boxes[1].center(),
+            button: egui::PointerButton::Primary,
+            pressed,
+            modifiers: Default::default(),
+        };
+        narrow(&mut app, vec![egui::Event::PointerMoved(boxes[1].center()), press(true)]);
+        narrow(&mut app, vec![press(false)]);
+        assert_eq!(scale(&app), Some(true));
+        narrow(&mut app, vec![]);
+        let button =
+            |pressed| egui::Event::PointerButton { pos: link.center(), button: egui::PointerButton::Primary, pressed, modifiers: Default::default() };
+        narrow(&mut app, vec![egui::Event::PointerMoved(link.center()), button(true)]);
+        narrow(&mut app, vec![button(false)]);
+        let texts = narrow(&mut app, vec![]);
+        assert!(has(&texts, "W:") && has(&texts, "200 pt"), "the popover: {texts:?}");
+    }
+
+    /// The Control bar's W resizes the active artboard about the reference point in one undo step:
+    /// about its center at first, and from its top-left corner once the locator's top-left point is
+    /// chosen.
+    #[test]
+    fn the_control_bar_resizes_the_active_artboard_about_the_reference_point() {
+        let mut app = VectorcraftApp::new(Session::new(), Default::default());
+        app.run("file.new", json!({"width": 200, "height": 100, "units": "Points", "artboards": 2})).unwrap();
+        app.select_tool("artboard");
+        select(&mut app, 1);
+        let ctx = bar_context();
+        let (before, undo, _) = boards(&app);
+        let w = text_rect(&bar_texts(&mut app, &ctx), "W:");
+        bar_type(&mut app, &ctx, egui::pos2(w.right() + 40.0, w.center().y), "300");
+        let b = before[1];
+        let mut want = before.clone();
+        want[1] = vectorcraft_geom::Rect::new(b.x0 - 50.0, b.y0, b.x1 + 50.0, b.y1);
+        assert_eq!(boards(&app).0, want, "Artboard 2 widens about its center");
+        assert_eq!(boards(&app).1, undo + 1, "one undo step");
+        app.run("edit.undo", json!({})).unwrap();
+        assert_eq!(boards(&app).0, before);
+        // The locator's points are the 9-point-square buttons; the top-left one is drawn first.
+        let texts = bar_texts(&mut app, &ctx);
+        let points: Vec<egui::Rect> = bar_buttons(&ctx, 0.0, text_rect(&texts, "X:").left())
+            .into_iter()
+            .filter(|r| (r.width() - 9.0).abs() < 0.5 && (r.height() - 9.0).abs() < 0.5)
+            .collect();
+        let top_left = points.iter().min_by(|a, b| (a.top(), a.left()).partial_cmp(&(b.top(), b.left())).unwrap()).unwrap();
+        bar_click(&mut app, &ctx, top_left.center());
+        assert_eq!(ctx.data(|d| d.get_temp::<usize>(egui::Id::new("refpt"))), Some(0), "the shared reference point is the top-left one");
+        let w = text_rect(&bar_texts(&mut app, &ctx), "W:");
+        bar_type(&mut app, &ctx, egui::pos2(w.right() + 40.0, w.center().y), "300");
+        want[1] = vectorcraft_geom::Rect::new(b.x0, b.y0, b.x0 + 300.0, b.y1);
+        assert_eq!(boards(&app).0, want, "Artboard 2 widens from its left edge");
+    }
+
+    /// The Control bar's Portrait and Landscape buttons swap the active artboard's width and height,
+    /// its top-left corner staying put, in one undo step each.
+    #[test]
+    fn the_control_bar_orientation_swaps_width_and_height() {
+        let mut app = VectorcraftApp::new(Session::new(), Default::default());
+        app.run("file.new", json!({"width": 200, "height": 100, "units": "Points"})).unwrap();
+        app.select_tool("artboard");
+        let ctx = bar_context();
+        let (_, undo, _) = boards(&app);
+        // Between "Preset:" and "Name:", the buttons that take a click: the preset menu, Portrait,
+        // Landscape and New Artboard (Delete Artboard is disabled with one artboard).
+        let buttons = |app: &mut VectorcraftApp| {
+            let texts = bar_texts(app, &ctx);
+            bar_buttons(&ctx, text_rect(&texts, "Preset:").right(), text_rect(&texts, "Name:").left())
+        };
+        let b = buttons(&mut app);
+        bar_click(&mut app, &ctx, b[b.len() - 3].center());
+        assert_eq!((boards(&app).0, boards(&app).1), (vec![vectorcraft_geom::Rect::new(0.0, 0.0, 100.0, 200.0)], undo + 1), "Portrait");
+        let b = buttons(&mut app);
+        bar_click(&mut app, &ctx, b[b.len() - 2].center());
+        assert_eq!((boards(&app).0, boards(&app).1), (vec![vectorcraft_geom::Rect::new(0.0, 0.0, 200.0, 100.0)], undo + 2), "Landscape");
+    }
+
+    /// Typing a name into the Control bar's Name field and pressing Enter renames the active
+    /// artboard alone, in one undo step.
+    #[test]
+    fn the_control_bar_name_field_renames_the_active_artboard() {
+        let mut app = VectorcraftApp::new(Session::new(), Default::default());
+        app.run("file.new", json!({"width": 200, "height": 100, "artboards": 2})).unwrap();
+        app.select_tool("artboard");
+        select(&mut app, 1);
+        let ctx = bar_context();
+        let (_, undo, _) = boards(&app);
+        let name = text_rect(&bar_texts(&mut app, &ctx), "Artboard 2");
+        bar_type(&mut app, &ctx, name.center(), "Cover");
+        assert_eq!((boards(&app).2, boards(&app).1), (vec!["Artboard 1".to_string(), "Cover".to_string()], undo + 1));
+        app.run("edit.undo", json!({})).unwrap();
+        assert_eq!(boards(&app).2, ["Artboard 1", "Artboard 2"]);
+    }
+
+    /// The Control bar's New Artboard adds an artboard and makes it the active one, Artboard Options
+    /// opens the active artboard's options, Rearrange All Artboards opens its dialog, and Delete
+    /// Artboard deletes the selected artboard.
+    #[test]
+    fn the_control_bar_adds_deletes_and_opens_artboard_dialogs() {
+        let mut app = VectorcraftApp::new(Session::new(), Default::default());
+        app.run("file.new", json!({"width": 200, "height": 100})).unwrap();
+        app.select_tool("artboard");
+        let ctx = bar_context();
+        let texts = bar_texts(&mut app, &ctx);
+        // With one artboard Delete Artboard is disabled, so New Artboard is the last button before
+        // "Name:"; with two, Delete Artboard is.
+        let (preset, name) = (text_rect(&texts, "Preset:").right(), text_rect(&texts, "Name:").left());
+        let b = bar_buttons(&ctx, preset, name);
+        bar_click(&mut app, &ctx, b[b.len() - 1].center());
+        assert_eq!((boards(&app).2.len(), selected(&app, 2)), (2, 1), "New Artboard adds Artboard 2 and makes it active");
+        // Artboard Options and Rearrange All Artboards: the two buttons between the name and the
+        // Transform link.
+        let texts = bar_texts(&mut app, &ctx);
+        let between =
+            |texts: &[(String, egui::Rect)]| bar_buttons(&ctx, text_rect(texts, "Artboard 2").right(), text_rect(texts, "Transform").left());
+        let options = between(&texts)[0];
+        bar_click(&mut app, &ctx, options.center());
+        let d = app.ui.dialog.take().unwrap();
+        assert_eq!((d.kind.as_str(), d.f64("index", 9.0)), ("artboardOptions", 1.0));
+        let texts = bar_texts(&mut app, &ctx);
+        let rearrange = between(&texts)[1];
+        bar_click(&mut app, &ctx, rearrange.center());
+        assert_eq!(app.ui.dialog.take().map(|d| d.kind), Some(crate::dialogs::rearrange_artboards::KIND.to_string()));
+        bar_texts(&mut app, &ctx);
+        let b = bar_buttons(&ctx, preset, name);
+        bar_click(&mut app, &ctx, b[b.len() - 1].center());
+        assert_eq!(boards(&app).2, ["Artboard 1"], "Delete Artboard deletes Artboard 2");
     }
 
     /// Choosing the Artboard tool starts it on the active artboard, the one the panel highlights:
