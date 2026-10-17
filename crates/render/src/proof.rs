@@ -103,7 +103,7 @@ impl PartialEq for Plates {
     }
 }
 
-/// What [`prepare`] does to the fills and strokes of each node: overprinting ones multiply
+/// What [`prepare`] does to the fills and strokes of each node: overprinting ones darken
 /// ([`darken_overprints`]), and with Separations Preview every color shows as the visible plates
 /// print it ([`plate_color`]).
 struct How<'a> {
