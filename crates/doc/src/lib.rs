@@ -786,6 +786,14 @@ fn yes() -> bool {
     true
 }
 
+/// Is point `p` on the artboard at `rect`, its edges included, within a millionth of a point? This
+/// is the rule [`Document::art_on_artboard`] applies to art flush with an edge (#890), where
+/// `Rect::contains` leaves out the right and bottom edges.
+pub fn artboard_holds(rect: Rect, p: Point) -> bool {
+    let r = rect.inflate(1e-6, 1e-6);
+    r.x0 <= p.x && p.x <= r.x1 && r.y0 <= p.y && p.y <= r.y1
+}
+
 /// Listed nodes by parent: the parent's index path (empty for the top-level layers), then the index
 /// of each listed child in it, in order, with the child's place in the list.
 type Places = BTreeMap<Vec<usize>, Vec<(usize, usize)>>;
@@ -1356,9 +1364,23 @@ impl Document {
         let symbols = self.symbol_boxes();
         self.layers.iter().fold(None, |acc, l| vectorcraft_geom::union_opt(acc, l.visual_bounds_with(&symbols)))
     }
-    /// Artboard index containing point `p` (topmost = last).
+    /// Artboard index containing point `p` (topmost = last), its edges included
+    /// ([`Document::artboard_holding`]).
     pub fn artboard_at(&self, p: Point) -> Option<usize> {
-        self.artboards.iter().rposition(|a| a.rect.contains(p))
+        self.artboard_holding(p, true)
+    }
+    /// Index of the artboard that holds point `p`: the first (the last when `topmost`) that holds it
+    /// inside or on its left or top edge, else the first (the last) that holds it by
+    /// [`artboard_holds`]: on its right or bottom edge, or within a millionth of a point outside an
+    /// edge. On an edge two artboards share, the artboard to the right of it or below it holds the
+    /// point.
+    pub fn artboard_holding(&self, p: Point, topmost: bool) -> Option<usize> {
+        let pick = |on: &dyn Fn(Rect) -> bool| {
+            let on = |i: &usize| self.artboards.get(*i).is_some_and(|a| on(a.rect));
+            let mut all = 0..self.artboards.len();
+            if topmost { all.rfind(on) } else { all.find(on) }
+        };
+        pick(&|r| r.contains(p)).or_else(|| pick(&|r| artboard_holds(r, p)))
     }
     /// The art that moves with an artboard at `rect`: top-level objects (children of layers and
     /// sublayers) lying entirely inside it, with symbol instances measured by their art. Locked and
@@ -1837,6 +1859,40 @@ mod tests {
         d.insert(Some(layer), 0, Node::new(id, NodeKind::SymbolInstance { symbol: "Box".into(), xf: Affine::translate((2.0, 2.0)) })).unwrap();
         // The art, (2, 2) to (12, 12), lies inside; the 20 × 20 square, (-8, -8) to (12, 12), doesn't.
         assert_eq!(d.art_on_artboard(Rect::new(0.0, 0.0, 15.0, 15.0), false), vec![id]);
+    }
+
+    #[test]
+    fn artboard_at_counts_the_right_and_bottom_edges() {
+        // Artboard 0 is (0, 0) to (100, 100), artboard 1 is to its right and artboard 2 below it.
+        let mut d = Document::new(100.0, 100.0);
+        for rect in [Rect::new(100.0, 0.0, 200.0, 100.0), Rect::new(0.0, 100.0, 100.0, 200.0)] {
+            let mut a = d.artboards[0].clone();
+            a.rect = rect;
+            d.artboards.push(a);
+        }
+        let held = |d: &Document, x: f64, y: f64| (d.artboard_at(Point::new(x, y)), d.artboard_holding(Point::new(x, y), false));
+        // Each artboard's own right and bottom edges, edges with roundoff, and points beyond them.
+        assert_eq!(held(&d, 200.0, 50.0), (Some(1), Some(1)), "right edge");
+        assert_eq!(held(&d, 150.0, 100.0), (Some(1), Some(1)), "bottom edge");
+        assert_eq!(held(&d, 200.0, 100.0), (Some(1), Some(1)), "bottom right corner");
+        assert_eq!(held(&d, 100.0, 150.0), (Some(2), Some(2)), "right edge");
+        assert_eq!(held(&d, 50.0, 200.0 + 1e-9), (Some(2), Some(2)), "roundoff past the bottom edge");
+        assert_eq!(held(&d, -1e-9, 50.0), (Some(0), Some(0)), "roundoff past the left edge");
+        assert_eq!(held(&d, 200.001, 50.0), (None, None));
+        assert_eq!(held(&d, 50.0, 200.001), (None, None));
+        // On an edge two artboards share, the artboard to the right of it or below it holds the
+        // point, in either list order.
+        assert_eq!(held(&d, 100.0, 50.0), (Some(1), Some(1)));
+        assert_eq!(held(&d, 50.0, 100.0), (Some(2), Some(2)));
+        d.artboards.swap(0, 1);
+        assert_eq!(held(&d, 100.0, 50.0), (Some(0), Some(0)));
+        // Where two artboards overlap, the topmost holds the point, or the first one when not
+        // `topmost`.
+        let mut inner = d.artboards[1].clone();
+        inner.rect = Rect::new(10.0, 10.0, 90.0, 90.0);
+        d.artboards.push(inner);
+        assert_eq!(held(&d, 50.0, 50.0), (Some(3), Some(1)));
+        assert_eq!(held(&d, 90.0, 50.0), (Some(1), Some(1)), "inside artboard 1, on the right edge of artboard 3");
     }
 
     #[test]

@@ -330,6 +330,23 @@ fn rearrange_lays_out_by_layout_and_order() {
     }
 }
 
+/// Art centered on an artboard's right or bottom edge moves with that artboard, and art on the edge
+/// two artboards share moves with the artboard to the right of it.
+#[test]
+fn rearrange_moves_art_centered_on_an_artboard_edge() {
+    let mut s = new_doc(json!({"width": 100, "height": 50, "artboards": 2, "artboardLayout": {"layout": "row", "spacing": 0}}));
+    assert_eq!(boards(&s), [Rect::new(0.0, 0.0, 100.0, 50.0), Rect::new(100.0, 0.0, 200.0, 50.0)]);
+    let mut line = |x1: f64, y1: f64, x2: f64, y2: f64| {
+        NodeId(s.execute("shape.line", &json!({"x1": x1, "y1": y1, "x2": x2, "y2": y2})).unwrap()["id"].as_u64().unwrap())
+    };
+    let (bottom, right, shared) = (line(10.0, 50.0, 40.0, 50.0), line(200.0, 10.0, 200.0, 40.0), line(100.0, 10.0, 100.0, 40.0));
+    // Right to left, artboard 0 moves 100 pt right and artboard 1 moves 100 pt left.
+    s.execute("artboard.rearrange", &json!({"layout": "row", "order": "rightToLeft", "spacing": 0})).unwrap();
+    assert_eq!(boards(&s), [Rect::new(100.0, 0.0, 200.0, 50.0), Rect::new(0.0, 0.0, 100.0, 50.0)]);
+    let x0 = |id: NodeId| s.doc().unwrap().doc.node(id).unwrap().geometric_bounds().unwrap().x0;
+    assert_eq!((x0(bottom), x0(right), x0(shared)), (110.0, 100.0, 0.0));
+}
+
 /// `byColumn: true` is Grid by Column; without `moveArtwork` the art stays; bad values are errors.
 #[test]
 fn rearrange_aliases_and_rejects_bad_values() {

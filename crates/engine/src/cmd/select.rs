@@ -264,7 +264,10 @@ fn all_on_artboard(s: &mut Session, p: &Value) -> Result<Value> {
     let ids: Vec<NodeId> = selectable(&st.doc, st.isolation)
         .into_iter()
         .filter(|id| {
-            st.doc.node(*id).and_then(|n| n.geometric_bounds_with(&symbols)).is_some_and(|b| b.intersect(r).area() > 0.0 || r.contains(b.center()))
+            st.doc
+                .node(*id)
+                .and_then(|n| n.geometric_bounds_with(&symbols))
+                .is_some_and(|b| b.intersect(r).area() > 0.0 || vectorcraft_doc::artboard_holds(r, b.center()))
         })
         .collect();
     s.select(|_, sel| sel.set(ids.iter().copied()))?;

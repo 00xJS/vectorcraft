@@ -448,9 +448,9 @@ fn place(s: &mut Session, p: &Value) -> Result<Value> {
     )
 }
 
-/// The artboard under `at`, else the first.
+/// The artboard under `at` (its edges included, [`Document::artboard_holding`]), else the first.
 fn board_at(d: &Document, at: Option<Point>) -> Option<Rect> {
-    at.and_then(|c| d.artboards.iter().find(|a| a.rect.contains(c))).or(d.artboards.first()).map(|a| a.rect)
+    at.and_then(|c| d.artboard_holding(c, false)).and_then(|i| d.artboards.get(i)).or(d.artboards.first()).map(|a| a.rect)
 }
 
 /// Placed type's frame without `rect` or Replace: the artboard under `at` (else the first) less a

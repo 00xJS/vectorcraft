@@ -982,7 +982,7 @@ fn rearrange_artboards(s: &mut Session, p: &Value) -> Result<Value> {
             .filter(|n| n.rides_with_artboard(locked_and_hidden))
             .filter_map(|n| {
                 let c = n.geometric_bounds_with(&symbols)?.center();
-                let dl = *rects.iter().position(|r| r.contains(c)).and_then(|i| deltas.get(i))?;
+                let dl = *d.artboard_holding(c, false).and_then(|i| deltas.get(i))?;
                 (dl != Vec2::ZERO).then_some((n.id, dl))
             })
             .collect()

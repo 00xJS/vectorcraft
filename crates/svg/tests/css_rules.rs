@@ -70,6 +70,26 @@ fn rectangle_gives_background_border_and_radius() {
     );
 }
 
+/// An object centered on an artboard's right or bottom edge is positioned from that artboard's
+/// top-left corner; on the edge two artboards share, from the one to the right of it.
+#[test]
+fn position_is_from_the_artboard_whose_edge_holds_the_center() {
+    let mut d = doc();
+    // Artboard 2 is (500, 0) to (900, 300); artboard 3 starts at its right edge.
+    for rect in [Rect::new(500.0, 0.0, 900.0, 300.0), Rect::new(900.0, 0.0, 1000.0, 300.0)] {
+        let mut a = d.artboards[0].clone();
+        a.rect = rect;
+        d.artboards.push(a);
+    }
+    let opts = CssOptions { position: true, ..CssOptions::default() };
+    for ((x, y), want) in [((980.0, 100.0), ("80px", "100px")), ((600.0, 280.0), ("100px", "280px")), ((880.0, 100.0), ("-20px", "100px"))] {
+        let n = rect(&mut d, (x, y, 40.0, 40.0), 0.0);
+        let id = add(&mut d, n);
+        let r = one(&d, id, &opts);
+        assert_eq!((prop(&r, "left"), prop(&r, "top")), (Some(want.0), Some(want.1)), "at ({x}, {y})");
+    }
+}
+
 #[test]
 fn live_corners_give_per_corner_radii_and_only_round_ones() {
     let mut d = doc();

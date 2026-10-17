@@ -199,7 +199,7 @@ impl CssUnits {
 pub struct CssOptions {
     pub units: CssUnits,
     /// `position: absolute` with `left` and `top` from the top-left corner of the object's
-    /// artboard (the one its centre is on, else the first).
+    /// artboard (the one its centre is on, its edges included, else the first).
     pub position: bool,
     /// `width` and `height`.
     pub dimensions: bool,
@@ -381,7 +381,7 @@ impl Rules<'_> {
         let Some(b) = b else { return p };
         if self.opts.position {
             let c = b.center();
-            let ab = self.doc.artboards.iter().find(|a| a.rect.contains(c)).or_else(|| self.doc.artboards.first());
+            let ab = self.doc.artboard_holding(c, false).and_then(|i| self.doc.artboards.get(i)).or_else(|| self.doc.artboards.first());
             let origin = ab.map_or(Point::ZERO, |a| Point::new(a.rect.x0, a.rect.y0));
             p.push(("position", "absolute".into()));
             p.push(("left", self.len(b.x0 - origin.x)));
