@@ -43,7 +43,7 @@ pub fn specs() -> Vec<CommandSpec> {
             "Character / Paragraph",
             [],
             None,
-            "{ids?|id?, kerning?: 1/1000 em|\"auto\", baselineShift?: pt, hScale?: %, vScale?: %, rotation?: deg, underline?, strikethrough?, allCaps?, smallCaps?: bool, position?: \"normal\"|\"superscript\"|\"subscript\" (sizes from Document Setup), leftIndent?, rightIndent?, firstLineIndent?, spaceBefore?, spaceAfter?: pt (±1296), hyphenate?: bool, wordsLongerThan?: letters 1..25 (5), afterFirst?, beforeLast?: letters 1..15 (3), hyphenLimit?: lines 0..25 (0: no limit), hyphenationZone?: pt 0..1296 (0; Single-line Composer only), hyphenateCapitalized?: bool (true) (Paragraph panel menu › Hyphenation…: only words longer than wordsLongerThan break, keeping afterFirst letters before the hyphen and beforeLast after it; at most hyphenLimit lines in a row end with a hyphen; a line whose text already ends within hyphenationZone of its right edge breaks before the next word instead of hyphenating it; the counts are rounded, and every value is clamped to its range), mojikumi?: \"none\"|\"lineEndHalf\" (Japanese punctuation spacing), kinsoku?: \"none\"|\"hard\"|\"soft\" (Kinsoku Set: Soft lets 々, ー and small kana start a line), direction?: \"auto\"|\"leftToRight\"|\"rightToLeft\" (paragraph direction; auto: from each paragraph's first strong character), leadingModel?: \"romanBaseline\"|\"emBoxTop\" (leading measured baseline to baseline, or em box top to top), charAlign?: \"romanBaseline\"|\"emBoxTop\"|\"emBoxCenter\"|\"emBoxBottom\"|\"icfTop\"|\"icfBottom\" (where characters smaller than the largest on their line line up with it), proportionalMetrics?: bool (full-width glyphs on the font's proportional widths: `palt` in horizontal type, `vpal` in vertical type), digits?: \"default\"|\"arabic\"|\"hindi\"|\"farsi\" (Character panel menu › Digits: the numeral system every digit is drawn in, whatever was typed), burasagari?: \"none\"|\"standard\"|\"forced\" (Paragraph panel menu › Burasagari None/Regular/Force: an East Asian comma or full stop ending an area type line hangs outside it: when it doesn't fit, or always; new type: \"standard\"), composer?: \"singleLine\"|\"everyLine\" (line breaking, Every-line by default), start?: byte, end?: byte} (baselineShift is in document points and hScale includes the object transform; groups include their text descendants; with a range: the character attributes style that range and the paragraph attributes apply to the paragraphs it touches; without: all the text)",
+            "{ids?|id?, kerning?: 1/1000 em|\"auto\", baselineShift?: pt, hScale?: %, vScale?: %, rotation?: deg, underline?, strikethrough?, allCaps?, smallCaps?: bool, position?: \"normal\"|\"superscript\"|\"subscript\" (sizes from Document Setup), leftIndent?, rightIndent?, firstLineIndent?, spaceBefore?, spaceAfter?: pt (±1296), hyphenate?: bool, wordsLongerThan?: letters 1..25 (5), afterFirst?, beforeLast?: letters 1..15 (3), hyphenLimit?: lines 0..25 (0: no limit), hyphenationZone?: pt 0..1296 (0; Single-line Composer only), hyphenateCapitalized?: bool (true) (Paragraph panel menu › Hyphenation…: only words longer than wordsLongerThan break, keeping afterFirst letters before the hyphen and beforeLast after it; at most hyphenLimit lines in a row end with a hyphen; a line whose text already ends within hyphenationZone of its right edge breaks before the next word instead of hyphenating it; the counts are rounded, and every value is clamped to its range), mojikumi?: \"none\"|\"lineEndHalf\" (Japanese punctuation spacing), kinsoku?: \"none\"|\"hard\"|\"soft\" (Kinsoku Set: Soft lets 々, ー and small kana start a line), direction?: \"auto\"|\"leftToRight\"|\"rightToLeft\" (paragraph direction; auto: from each paragraph's first strong character), leadingModel?: \"romanBaseline\"|\"emBoxTop\" (leading measured baseline to baseline, or em box top to top), charAlign?: \"romanBaseline\"|\"emBoxTop\"|\"emBoxCenter\"|\"emBoxBottom\"|\"icfTop\"|\"icfBottom\" (where characters smaller than the largest on their line line up with it), proportionalMetrics?: bool (full-width glyphs on the font's proportional widths: `palt` in horizontal type, `vpal` in vertical type), digits?: \"default\"|\"arabic\"|\"hindi\"|\"farsi\" (Character panel menu › Digits: the numeral system every digit is drawn in, whatever was typed), fontAxes?: {\"wght\": 650, …} (Character panel › Variable Font, as text.setRangeStyle: each axis named set in its units and clamped to its range, null back to the style's own setting), burasagari?: \"none\"|\"standard\"|\"forced\" (Paragraph panel menu › Burasagari None/Regular/Force: an East Asian comma or full stop ending an area type line hangs outside it: when it doesn't fit, or always; new type: \"standard\"), composer?: \"singleLine\"|\"everyLine\" (line breaking, Every-line by default), start?: byte, end?: byte} (baselineShift is in document points and hScale includes the object transform; groups include their text descendants; with a range: the character attributes style that range and the paragraph attributes apply to the paragraphs it touches; without: all the text)",
             has_doc,
             set_format
         ),
@@ -276,6 +276,7 @@ fn set_format(s: &mut Session, p: &Value) -> Result<Value> {
         "charAlign",
         "proportionalMetrics",
         "digits",
+        "fontAxes",
         "burasagari",
         "composer",
     ];
@@ -293,6 +294,7 @@ fn set_format(s: &mut Session, p: &Value) -> Result<Value> {
     let (position, small_caps) = super::docsetup::script_params(p, &s.doc()?.doc.setup, C)?;
     let char_align = super::textedit::char_align_param(p, C)?;
     let digits = super::textedit::digits_param(p, C)?;
+    let font_axes = super::textedit::font_axes_param(p, C)?;
     let mojikumi = match p.get("mojikumi") {
         None => None,
         Some(v) => Some(match v.as_str() {
@@ -377,6 +379,9 @@ fn set_format(s: &mut Session, p: &Value) -> Result<Value> {
         }
         if let Some(v) = flag("proportionalMetrics") {
             st.proportional_metrics = v;
+        }
+        if let Some(v) = &font_axes {
+            super::textedit::change_font_axes(st, v);
         }
     };
     s.edit("Character", |d, _| {

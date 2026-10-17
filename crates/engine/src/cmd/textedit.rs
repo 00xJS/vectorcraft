@@ -27,7 +27,7 @@ pub fn specs() -> Vec<CommandSpec> {
             "Character",
             [],
             None,
-            "{id? (default: the one selected type object), start?: byte, end?: byte (default: all text), font?, style?, size?: pt, leading?: pt|\"auto\", tracking?, kerning?: 1/1000 em|\"auto\", baselineShift?: pt, hScale?: %, vScale?: %, rotation?: deg, fill?: colour|\"none\", stroke?: colour|\"none\", strokeWidth?: pt, strokeOptions?: {weight?, cap?, join?, miterLimit?, align?, dash?, dashOffset?, alignDashes?} (as stroke.set: the character stroke), underline?, strikethrough?, allCaps?: bool, smallCaps?: bool, position?: \"normal\"|\"superscript\"|\"subscript\" (sizes from Document Setup), features?: [\"dlig\", \"-liga\", …], charAlign?: \"romanBaseline\"|\"emBoxTop\"|\"emBoxCenter\"|\"emBoxBottom\"|\"icfTop\"|\"icfBottom\", proportionalMetrics?: bool (full-width glyphs on the font's proportional widths: `palt` in horizontal type, `vpal` in vertical type), digits?: \"default\"|\"arabic\"|\"hindi\"|\"farsi\" (Character panel menu › Digits: the numeral system every digit is drawn in, whatever was typed)} style a character range (size/leading/baselineShift are document points and hScale includes the object transform; runs are split at the range ends) → {id, runs}",
+            "{id? (default: the one selected type object), start?: byte, end?: byte (default: all text), font?, style?, size?: pt, leading?: pt|\"auto\", tracking?, kerning?: 1/1000 em|\"auto\", baselineShift?: pt, hScale?: %, vScale?: %, rotation?: deg, fill?: colour|\"none\", stroke?: colour|\"none\", strokeWidth?: pt, strokeOptions?: {weight?, cap?, join?, miterLimit?, align?, dash?, dashOffset?, alignDashes?} (as stroke.set: the character stroke), underline?, strikethrough?, allCaps?: bool, smallCaps?: bool, position?: \"normal\"|\"superscript\"|\"subscript\" (sizes from Document Setup), features?: [\"dlig\", \"-liga\", …], charAlign?: \"romanBaseline\"|\"emBoxTop\"|\"emBoxCenter\"|\"emBoxBottom\"|\"icfTop\"|\"icfBottom\", proportionalMetrics?: bool (full-width glyphs on the font's proportional widths: `palt` in horizontal type, `vpal` in vertical type), digits?: \"default\"|\"arabic\"|\"hindi\"|\"farsi\" (Character panel menu › Digits: the numeral system every digit is drawn in, whatever was typed), fontAxes?: {\"wght\": 650, …} (Character panel › Variable Font: the setting of each variation axis named, in the axis's units and clamped to its range; null: back to the style's own setting; other axes keep theirs; tags the font has no axis for are left out; a font or style change clears them; text.fontList {family, style} lists the axes)} style a character range (size/leading/baselineShift are document points and hScale includes the object transform; runs are split at the range ends) → {id, runs}",
             has_doc,
             set_range_style
         ),
@@ -255,6 +255,7 @@ pub(crate) struct CharChange {
     char_align: Option<vectorcraft_doc::CharAlign>,
     proportional_metrics: Option<bool>,
     digits: Option<vectorcraft_doc::Digits>,
+    font_axes: Option<AxisChange>,
 }
 
 /// `digits: "default"|"arabic"|"hindi"|"farsi"` → the numeral system the digits are drawn in.
@@ -268,6 +269,60 @@ pub(crate) fn digits_param(p: &Value, cmd: &str) -> Result<Option<vectorcraft_do
         Some("farsi") => Digits::Farsi,
         _ => return Err(bad(cmd, "`digits` must be \"default\", \"arabic\", \"hindi\" or \"farsi\"")),
     }))
+}
+
+/// Variable Font settings to change: by axis tag, a value in the axis's units, or `None` to go
+/// back to the style's own setting of that axis.
+pub(crate) type AxisChange = std::collections::BTreeMap<String, Option<f64>>;
+
+/// `fontAxes: {"wght": 650, "wdth": null, …}` → the Variable Font settings to change. A tag is four
+/// printable ASCII characters (`wght`); a value is a number, or null.
+pub(crate) fn font_axes_param(p: &Value, cmd: &str) -> Result<Option<AxisChange>> {
+    let Some(v) = p.get("fontAxes").filter(|v| !v.is_null()) else { return Ok(None) };
+    let obj = v.as_object().ok_or_else(|| bad(cmd, "`fontAxes` must be an object of axis tags and values, such as {\"wght\": 650}"))?;
+    let mut out = AxisChange::new();
+    for (tag, value) in obj {
+        if tag.len() != 4 || !tag.bytes().all(|b| (0x20..=0x7e).contains(&b)) {
+            return Err(bad(cmd, format!("`{tag}` is not an axis tag: a tag is four characters, such as \"wght\"")));
+        }
+        let value = match value {
+            Value::Null => None,
+            v => Some(v.as_f64().filter(|v| v.is_finite()).ok_or_else(|| bad(cmd, format!("the value of axis `{tag}` must be a number or null")))?),
+        };
+        out.insert(tag.clone(), value);
+    }
+    Ok(Some(out))
+}
+
+/// Change the Variable Font settings of `st` by `change`. With its font available, a value is
+/// clamped to its axis's range, a tag its font has no axis for is left out, and a value equal to
+/// the style's own setting is removed; with the font missing, the values are kept as given.
+pub(crate) fn change_font_axes(st: &mut CharStyle, change: &AxisChange) {
+    let db = vectorcraft_text::FontDb::global();
+    let face = match db.resolve(&st.font_family, &st.font_style) {
+        Some((f, m)) if m != vectorcraft_text::FontMatch::Missing => {
+            Some(db.face_version(&st.font_family, &st.font_style, st.font_version.as_deref()).unwrap_or(f))
+        }
+        _ => None,
+    };
+    let axes = face.as_ref().map(|f| f.axes()).unwrap_or_default();
+    for (tag, value) in change {
+        let Some(v) = value else {
+            st.font_axes.remove(tag);
+            continue;
+        };
+        let Some(face) = &face else {
+            st.font_axes.insert(tag.clone(), *v);
+            continue;
+        };
+        let Some(axis) = axes.iter().find(|a| a.tag.as_slice() == tag.as_bytes()) else { continue };
+        let v = v.clamp(f64::from(axis.min.min(axis.max)), f64::from(axis.max.max(axis.min)));
+        if face.axis_value(axis.tag).is_some_and(|own| f64::from(own) == v) {
+            st.font_axes.remove(tag);
+        } else {
+            st.font_axes.insert(tag.clone(), v);
+        }
+    }
 }
 
 /// `features: ["dlig", "-liga", …]` → the canonical tag list (differences from the defaults).
@@ -358,6 +413,7 @@ impl CharChange {
             char_align: char_align_param(p, cmd)?,
             proportional_metrics: flag("proportionalMetrics"),
             digits: digits_param(p, cmd)?,
+            font_axes: font_axes_param(p, cmd)?,
         };
         if c.size.is_some_and(|v| v <= 0.0) {
             return Err(bad(cmd, "size must be positive"));
@@ -388,6 +444,7 @@ impl CharChange {
             && self.char_align.is_none()
             && self.proportional_metrics.is_none()
             && self.digits.is_none()
+            && self.font_axes.is_none()
     }
 
     fn localize(&mut self, t: &TextObject, cmd: &str) -> Result<()> {
@@ -416,9 +473,13 @@ impl CharChange {
         if let Some(v) = &self.style {
             st.font_style = v.clone();
         }
-        // Another font: none of the old one's versions.
+        // Another font: none of the old one's versions or Variable Font settings.
         if self.font.is_some() || self.style.is_some() {
             st.font_version = None;
+            st.font_axes.clear();
+        }
+        if let Some(v) = &self.font_axes {
+            change_font_axes(st, v);
         }
         if let Some(v) = self.size {
             st.size = v;
@@ -484,7 +545,8 @@ impl CharChange {
 }
 
 /// Type › Enable Missing Glyph Protection: after a font change, the characters of `runs` their new
-/// font has no glyph for, but their font `before` the change had, keep that font.
+/// font has no glyph for, but their font `before` the change had, keep that font: its family,
+/// style, version and Variable Font settings.
 pub(crate) fn protect_missing_glyphs(before: &[TextRun], runs: &mut Vec<TextRun>) {
     fn chars(runs: &[TextRun]) -> impl Iterator<Item = (usize, char, &CharStyle)> {
         runs.iter()
@@ -503,7 +565,8 @@ pub(crate) fn protect_missing_glyphs(before: &[TextRun], runs: &mut Vec<TextRun>
             .or_insert_with(|| db.face_version(&st.font_family, &st.font_style, st.font_version.as_deref()));
         face.as_ref().map(|f| f.covers(c))
     };
-    // Byte ranges that keep a font (family, style).
+    // Byte ranges that keep a font (family, style, version and Variable Font settings).
+    let font = |st: &CharStyle| (st.font_family.clone(), st.font_style.clone(), st.font_version.clone(), st.font_axes.clone());
     let mut keep: Vec<(usize, usize, &CharStyle)> = vec![];
     for ((at, c, old), (_, _, new)) in chars(before).zip(chars(runs)) {
         let changed = (&old.font_family, &old.font_style) != (&new.font_family, &new.font_style);
@@ -512,7 +575,7 @@ pub(crate) fn protect_missing_glyphs(before: &[TextRun], runs: &mut Vec<TextRun>
         }
         let end = at + c.len_utf8();
         match keep.last_mut() {
-            Some((_, e, st)) if *e == at && (&st.font_family, &st.font_style) == (&old.font_family, &old.font_style) => *e = end,
+            Some((_, e, st)) if *e == at && font(st) == font(old) => *e = end,
             _ => keep.push((at, end, old)),
         }
     }
@@ -520,6 +583,8 @@ pub(crate) fn protect_missing_glyphs(before: &[TextRun], runs: &mut Vec<TextRun>
         edit::style_range(runs, a, b, |st| {
             st.font_family.clone_from(&old.font_family);
             st.font_style.clone_from(&old.font_style);
+            st.font_version.clone_from(&old.font_version);
+            st.font_axes.clone_from(&old.font_axes);
         });
     }
 }

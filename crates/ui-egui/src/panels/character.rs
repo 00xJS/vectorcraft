@@ -533,6 +533,72 @@ pub(crate) fn font_pickers(app: &mut VectorcraftApp, ui: &mut Ui, s: &CharStyle,
     }
 }
 
+/// The Variable Font button, `width` wide, shown when the font of style `s` is a variable font: it
+/// opens the font's axis sliders ([`axis_sliders`]).
+fn variable_font(app: &mut VectorcraftApp, ui: &mut Ui, s: &CharStyle, width: f32) {
+    let Some(face) = vectorcraft_text::FontDb::global().face_version(&s.font_family, &s.font_style, s.font_version.as_deref()) else { return };
+    if face.axes().iter().all(|a| a.hidden) {
+        return;
+    }
+    let resp = widgets::flat_button(ui, tl!("Variable Font"), width);
+    widgets::popover(&resp, resp.clicked(), |ui| {
+        ui.set_width(240.0);
+        axis_sliders(app, ui, &face);
+    });
+}
+
+/// One slider and field per axis of `face`'s variable font (the axes it asks to hide left out),
+/// named as the font names it: each sets that axis of the text the panel acts on
+/// (`text.setFormat {fontAxes}`, or `text.setRangeStyle` while the Type tool edits text), one undo
+/// step per drag. A blank field: the text's settings of that axis differ.
+pub(crate) fn axis_sliders(app: &mut VectorcraftApp, ui: &mut Ui, face: &vectorcraft_text::FontFace) {
+    let t = Tokens::get(ui.ctx());
+    let db = vectorcraft_text::FontDb::global();
+    for axis in face.axes().into_iter().filter(|a| !a.hidden) {
+        let tag = String::from_utf8_lossy(&axis.tag).into_owned();
+        // Each character style's setting: its own, else its face's (a named instance's, or the default).
+        let setting = |s: &CharStyle| {
+            s.font_axes.get(&tag).copied().or_else(|| {
+                let face = db.face_version(&s.font_family, &s.font_style, s.font_version.as_deref())?;
+                face.axis_value(axis.tag).map(f64::from)
+            })
+        };
+        let value = shared(app, setting).flatten();
+        let (min, max) = (f64::from(axis.min.min(axis.max)), f64::from(axis.max.max(axis.min)));
+        ui.horizontal(|ui| {
+            let label = widgets::dim_name(ui, &axis.name);
+            crate::scrub::note_label(ui, label.rect);
+            ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                if let Some(v) = widgets::spin_plain(ui, ("ch-axis-field", axis.tag), value, "", 1, 72.0, 1.0, min, &[]) {
+                    axes_cmd(app, json!({ &tag: v.clamp(min, max) }), widgets::Live::Released);
+                }
+            });
+        });
+        let at = value.map_or(0.0, |v| if max > min { ((v - min) / (max - min)) as f32 } else { 0.0 });
+        let (picked, phase) = widgets::color_slider_named(ui, ("ch-axis", axis.tag), &axis.name, at, ui.available_width(), &|_| t.button_border);
+        if let Some(p) = picked {
+            let v = ((min + f64::from(p) * (max - min)) * 10.0).round() / 10.0;
+            axes_cmd(app, json!({ &tag: v }), phase);
+        }
+    }
+}
+
+/// Set Variable Font settings `axes` on the text the panel acts on, live while a slider drags.
+fn axes_cmd(app: &mut VectorcraftApp, axes: Value, phase: widgets::Live) {
+    match text_editing(app) {
+        Some((id, a, b)) => {
+            end_typing(app);
+            let mut q = json!({"id": id.0, "fontAxes": axes});
+            if b > a {
+                q["start"] = json!(a);
+                q["end"] = json!(b);
+            }
+            super::live_run(app, "Character", "text.setRangeStyle", q, phase);
+        }
+        None => super::live_run(app, "Character", "text.setFormat", json!({ "fontAxes": axes }), phase),
+    }
+}
+
 /// The Control bar's type controls while type is selected or edited: the Character link (the
 /// Character panel in a popover), the font family and style menus and the Font Size combo.
 pub(crate) fn control_bar(app: &mut VectorcraftApp, ui: &mut Ui) {
@@ -557,6 +623,7 @@ pub fn show(app: &mut VectorcraftApp, ui: &mut Ui) {
     };
     let w = ui.available_width();
     font_pickers(app, ui, &s, ("ch-font", "ch-style"), (w - 4.0, w - 4.0));
+    variable_font(app, ui, &s, w - 4.0);
     ui.add_space(2.0);
     let hidden = pstate::<bool>(ui.ctx(), "ch-hide-options");
     metrics_grid(app, ui, "ch-grid", &s, w, !hidden);
@@ -858,6 +925,75 @@ mod tests {
         app.session.set_tool_option("select", &json!({"start": 2, "end": 4}));
         set_kerning(&mut app, json!(30));
         assert_eq!((kerning(&app, 1), kerning(&app, 2), kerning(&app, 3)), (Some(-50.0), Some(30.0), Some(30.0)));
+    }
+
+    /// A variable font gets the Variable Font button, which opens one slider per axis named as the
+    /// font names it; a drag along one sets that axis of the selected type in one undo step.
+    #[test]
+    fn variable_fonts_get_a_slider_per_axis() {
+        use vectorcraft_text::test_fonts::{TWO_AXIS_FAMILY, two_axis_font};
+        let db = vectorcraft_text::FontDb::global();
+        db.add_font(two_axis_font().unwrap());
+        let mut app = VectorcraftApp::new(Session::new(), Default::default());
+        app.run("file.new", json!({"width": 300, "height": 200})).unwrap();
+        let plain = app.run("text.create", json!({"x": 20, "y": 50, "text": "Static"})).unwrap()["id"].clone();
+        let id = app.run("text.create", json!({"x": 20, "y": 120, "text": "lIn", "font": TWO_AXIS_FAMILY})).unwrap()["id"].clone();
+        app.run("select.set", json!({"ids": [plain]})).unwrap();
+        assert!(!crate::tests_labels::painted_text(&mut app, show).contains("Variable Font"), "a static font");
+        app.run("select.set", json!({"ids": [id]})).unwrap();
+        assert!(crate::tests_labels::painted_text(&mut app, show).contains("Variable Font"));
+        let face = db.face(TWO_AXIS_FAMILY, "Regular").unwrap();
+        let text = crate::tests_labels::painted_text(&mut app, |app, ui| axis_sliders(app, ui, &face));
+        assert!(text.contains("Weight\n") && text.contains("Width\n") && text.contains("400") && text.contains("100"), "{text}");
+        // The labels are the font's names in every interface language, not catalog words (ja
+        // translates the interface's Weight as 線幅, the stroke weight).
+        crate::i18n::set_current(crate::i18n::Lang::from_code("ja").unwrap());
+        let text = crate::tests_labels::painted_text(&mut app, |app, ui| axis_sliders(app, ui, &face));
+        crate::i18n::set_current(crate::i18n::Lang::EN);
+        assert!(text.contains("Weight\n") && text.contains("Width\n") && !text.contains("線幅"), "{text}");
+        // Screen readers name each slider by its axis.
+        let tree = crate::widgets::accessibility_tests::tree(|ui| axis_sliders(&mut app, ui, &face));
+        for name in ["Weight", "Width"] {
+            assert!(tree.iter().any(|n| n.role() == egui::accesskit::Role::Slider && n.label() == Some(name)), "{name}");
+        }
+        // Drag the Weight slider from its start to past its end.
+        let ctx = egui::Context::default();
+        let frame = |app: &mut VectorcraftApp, events: Vec<egui::Event>| {
+            let mut slider = None;
+            let input = egui::RawInput { events, ..Default::default() };
+            ctx.run_ui(input, |ui| {
+                axis_sliders(app, ui, &face);
+                slider = ctx.read_response(ui.id().with(("ch-axis", *b"wght"))).map(|r| r.rect);
+            })
+            .textures_delta
+            .clear();
+            slider
+        };
+        frame(&mut app, vec![]);
+        let r = frame(&mut app, vec![]).expect("the Weight slider is drawn");
+        let none = egui::Modifiers::NONE;
+        let (from, to) = (egui::pos2(r.left() + 4.0, r.center().y), egui::pos2(r.right() + 20.0, r.center().y));
+        let button = |pos, pressed| egui::Event::PointerButton { pos, button: egui::PointerButton::Primary, pressed, modifiers: none };
+        frame(&mut app, vec![egui::Event::PointerMoved(from), button(from, true)]);
+        for i in 1..=4 {
+            frame(&mut app, vec![egui::Event::PointerMoved(from + (to - from) * i as f32 / 4.0)]);
+        }
+        frame(&mut app, vec![button(to, false)]);
+        frame(&mut app, vec![]);
+        let axes = |app: &VectorcraftApp| shared(app, |s| s.font_axes.clone()).unwrap();
+        assert_eq!(axes(&app).into_iter().collect::<Vec<_>>(), [("wght".to_string(), 700.0)]);
+        app.run("edit.undo", json!({})).unwrap();
+        assert!(axes(&app).is_empty(), "one undo step");
+        // Regular and Bold selected: the weights differ and the field is blank; the widths agree.
+        let bold = app.run("text.create", json!({"x": 20, "y": 160, "text": "lIn", "font": TWO_AXIS_FAMILY, "style": "Bold"})).unwrap()["id"].clone();
+        app.run("select.set", json!({"ids": [id, bold]})).unwrap();
+        let text = crate::tests_labels::painted_text(&mut app, |app, ui| axis_sliders(app, ui, &face));
+        assert!(!text.contains("400") && !text.contains("700") && text.contains("100"), "{text}");
+        // Reset Panel leaves the settings, as it leaves the font and style.
+        app.run("select.set", json!({"ids": [id]})).unwrap();
+        app.run("text.setFormat", json!({"fontAxes": {"wght": 650}})).unwrap();
+        reset_panel(&mut app);
+        assert_eq!(axes(&app).into_iter().collect::<Vec<_>>(), [("wght".to_string(), 650.0)]);
     }
 
     /// Bold and Italic pick the family's own faces by name, and toggle back (#724).

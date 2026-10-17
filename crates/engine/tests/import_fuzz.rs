@@ -368,6 +368,7 @@ fn arb_svg_attr() -> impl Strategy<Value = String> {
         "kerning",
         "writing-mode",
         "font-weight",
+        "font-variation-settings",
         "text-anchor",
         "side",
         "path",
@@ -393,6 +394,7 @@ fn arb_svg_attr() -> impl Strategy<Value = String> {
         "onclick",
         "onload",
     ]);
+    let axes = prop::sample::select(vec!["wght", "wdth", "opsz", "wd", "slnt!", ""]);
     let value = prop_oneof![
         arb_num(),
         prop::collection::vec(arb_num(), 0..7).prop_map(|v| v.join(" ")),
@@ -401,6 +403,9 @@ fn arb_svg_attr() -> impl Strategy<Value = String> {
         prop::collection::vec((prop::sample::select(vec!["M", "L", "C", "Q", "A", "Z", "H", "V", "S", "T", "m", "a"]), arb_num()), 0..12)
             .prop_map(|v| v.iter().map(|(c, n)| format!("{c}{n} {n}")).collect::<Vec<_>>().join(" ")),
         prop::collection::vec(arb_num(), 0..2).prop_map(|v| format!("{}%", v.join(""))),
+        // Variable font axis settings, well formed or not.
+        prop::collection::vec((axes, arb_num()), 0..5).prop_map(|v| v.iter().map(|(t, n)| format!("'{t}' {n}")).collect::<Vec<_>>().join(", ")),
+        prop::sample::select(vec!["normal", "initial", "unset"]).prop_map(str::to_string),
         // Colours (Lab too), mask options and links.
         prop::collection::vec(arb_num(), 0..4).prop_map(|v| format!("lab({})", v.join(" "))),
         prop::sample::select(vec!["noclip invert", "invert", "noclip", "alpha", "luminance", "url(#e)", "#e", "#zz", "none", "currentColor"])

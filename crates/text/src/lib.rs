@@ -525,6 +525,8 @@ pub fn logical_order(visual: &str) -> Option<(Vec<usize>, bool)> {
 #[cfg(test)]
 mod tests;
 #[cfg(test)]
+mod tests_axes;
+#[cfg(test)]
 mod tests_bidi;
 #[cfg(test)]
 mod tests_combos;

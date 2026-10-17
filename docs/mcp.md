@@ -3550,6 +3550,27 @@ not kerned). Off by default and saved only when on. One undo step.
 {"name":"run_command","arguments":{"command":"text.setFormat","params":{"proportionalMetrics":true}}}
 ```
 
+## Variable fonts
+
+`text.setFormat {fontAxes: {"wght": 650}}` (the selected type, or `ids`) and `text.setRangeStyle {id, start, end,
+fontAxes}` (a range) set variation axes of a variable font, as the Character panel's Variable Font sliders do: each tag
+named takes the value given, in the axis's own units and clamped to its range, in place of the style's setting of that
+axis, and `null` sets it back to the style's setting. The other axes keep their settings. A tag the font has no axis for is
+left out, and a value equal to the style's setting is not kept; for a font that isn't installed the values are kept as
+given. Layout, outlines, the substituted-glyph highlight and PDF export use the font instanced at the settings; SVG export
+writes them as `font-variation-settings` (and the `wght` setting as the weight, the `wdth` setting as `font-stretch`) and
+embeds the font instanced there, with a warning when embedded faces of one weight, style and width share characters; SVG
+import reads `font-variation-settings` back. Another font or style (`text.setStyle {font, style}`, `text.setRangeStyle
+{font, style}`, `text.replaceFont`, and a character style applied or redefined with another font unless it sets them)
+clears the settings, and Missing Glyph Protection keeps them on the characters that keep their font. They are saved as
+`fontAxes` only when set, and a character style captured from type (`charStyle.new`, `charStyle.redefine`) sets them
+explicitly, `{}` for none. Each command is one undo step.
+
+```json
+{"name":"run_command","arguments":{"command":"text.fontList","params":{"family":"Bahnschrift","style":"Regular"}}}
+{"name":"run_command","arguments":{"command":"text.setFormat","params":{"fontAxes":{"wght":650,"wdth":87.5}}}}
+```
+
 ## Digits
 
 `text.setFormat {digits: "default"|"arabic"|"hindi"|"farsi"}` (the selected type, or `ids`) and `text.setRangeStyle {id,
@@ -3720,7 +3741,9 @@ lists every family available, the installed ones included, each by its English (
 `text.setStyle {font}` and documents use — without the system's hidden families, whose names start with "."
 (macOS's ".SF NS", ".LastResort"), which still resolve when a document names them. Preferences › Type › Show Font
 Names in English (`fontNamesInEnglish`) only changes the UI menu labels, not this list. With `family` it gives that
-family's styles (upright by weight, then italics) and fails when the family isn't available. `text.rescanFonts`
+family's styles (upright by weight, then italics) and fails when the family isn't available; `axes` lists a variable
+font's variation axes (`tag`, `name`, `min`, `default`, `max`, `hidden`, and `value`, the setting of `style`, else of the
+first style), empty for a static font. `text.rescanFonts`
 (Character panel menu › Refresh Font List) scans the font folders again, for fonts installed or removed since the app
 started: type set in a font that became available redraws in it, and type set in a family that was removed redraws in
 the fallback font and is listed as missing, without editing the document. The app does so by

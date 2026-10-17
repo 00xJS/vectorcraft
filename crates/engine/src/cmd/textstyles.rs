@@ -141,6 +141,7 @@ pub fn char_attrs(v: &CharStyle) -> Map<String, Value> {
     let mut m = to_attrs(v);
     for (k, x) in [
         ("font_version", json!(v.font_version)),
+        ("fontAxes", json!(v.font_axes)),
         ("leading", json!(v.leading)),
         ("kerning", json!(v.kerning)),
         ("features", json!(v.features)),
@@ -250,6 +251,21 @@ fn restyle<T: Serialize + DeserializeOwned + Clone>(
     serde_json::from_value(Value::Object(m)).unwrap_or_else(|_| cur.clone())
 }
 
+/// `st`, written over `before` by a character style's `attrs`: when its font or style changed,
+/// it keeps none of the old one's versions or Variable Font settings unless the style sets them.
+fn font_change(before: &CharStyle, mut st: CharStyle, attrs: &Map<String, Value>) -> CharStyle {
+    if st.font_family == before.font_family && st.font_style == before.font_style {
+        return st;
+    }
+    if st.font_version.as_ref().is_some_and(|v| attrs.get("font_version") != Some(&json!(v))) {
+        st.font_version = None;
+    }
+    if !st.font_axes.is_empty() && attrs.get("fontAxes") != Some(&json!(st.font_axes)) {
+        st.font_axes.clear();
+    }
+    st
+}
+
 /// Every text object id in the document.
 fn all_text(d: &Document) -> Vec<NodeId> {
     let mut v = vec![];
@@ -293,7 +309,7 @@ fn update_users(d: &mut Document, kind: Kind, name: &str, old: &Map<String, Valu
             Kind::Char => {
                 for r in &mut t.runs {
                     if r.style.style_name == target {
-                        r.style = restyle(&r.style, char_attrs, old, new);
+                        r.style = font_change(&r.style, restyle(&r.style, char_attrs, old, new), new);
                         changed = true;
                     }
                 }
@@ -447,7 +463,7 @@ fn apply(s: &mut Session, p: &Value, kind: Kind) -> Result<Value> {
     // Characters: Normal then the style over the defaults (clear) or over the current attributes.
     let char_fn = |cur: &CharStyle| -> Result<CharStyle> {
         let base = if clear { with_attrs(&CharStyle::default(), &normal, &c)? } else { cur.clone() };
-        let mut st = with_attrs(&base, &attrs, &c)?;
+        let mut st = font_change(&base, with_attrs(&base, &attrs, &c)?, &attrs);
         st.style_name = style_name.clone();
         Ok(st)
     };
@@ -825,6 +841,72 @@ mod tests {
         s.execute("charStyle.setAttrs", &json!({"name": "Body", "attrs": {"charAlign": "romanBaseline"}})).unwrap();
         assert_eq!((kerning(&s), aligns(&s)), ([Some(10.0), Some(10.0), Some(60.0)], [CharAlign::RomanBaseline; 3]));
         assert_eq!(Value::Object(s.doc().unwrap().doc.char_styles[0].attrs.clone()), json!({"charAlign": "romanBaseline"}));
+    }
+
+    /// A style captured from type without Variable Font settings sets none explicitly (`{}`):
+    /// applying it clears type's settings, and redefining it from type whose settings were reset
+    /// resets the type that uses it.
+    #[test]
+    fn variable_font_settings_are_captured_explicitly() {
+        use vectorcraft_text::test_fonts::{TWO_AXIS_FAMILY, two_axis_font};
+        vectorcraft_text::FontDb::global().add_font(two_axis_font().unwrap());
+        let (mut s, source) = session_with_text("Source");
+        let linked = s.execute("text.create", &json!({"x": 10, "y": 90, "text": "Linked"})).unwrap()["id"].as_u64().unwrap();
+        let ids = [source, linked];
+        s.execute("text.setStyle", &json!({"ids": ids, "font": TWO_AXIS_FAMILY})).unwrap();
+        s.execute("charStyle.new", &json!({"name": "Body", "id": source})).unwrap();
+        assert_eq!(s.doc().unwrap().doc.char_styles[0].attrs.get("fontAxes"), Some(&json!({})));
+        s.execute("text.setFormat", &json!({"ids": [linked], "fontAxes": {"wght": 650}})).unwrap();
+        s.execute("charStyle.apply", &json!({"name": "Body", "ids": ids})).unwrap();
+        let wght = |s: &Session| ids.map(|id| runs(s, id)[0].style.font_axes.get("wght").copied());
+        assert_eq!(wght(&s), [None, None], "applying the style clears the settings");
+        for (set, want) in [(json!(650), Some(650.0)), (json!(null), None)] {
+            s.execute("text.setFormat", &json!({"ids": [source], "fontAxes": {"wght": set}})).unwrap();
+            s.execute("charStyle.redefine", &json!({"name": "Body", "id": source})).unwrap();
+            assert_eq!(wght(&s), [want, want], "redefined from {set}");
+        }
+    }
+
+    /// A style that changes the font, applied or redefined, leaves none of the old font's
+    /// version and Variable Font settings, unless the style sets them.
+    #[test]
+    fn another_font_from_a_style_clears_the_old_fonts_version_and_settings() {
+        use vectorcraft_text::test_fonts::{TWO_AXIS_FAMILY, two_axis_font};
+        vectorcraft_text::FontDb::global().add_font(two_axis_font().unwrap());
+        let (mut s, id) = session_with_text("Source");
+        let set_variable = |s: &mut Session| {
+            s.execute("text.setStyle", &json!({"ids": [id], "font": TWO_AXIS_FAMILY})).unwrap();
+            s.execute("text.setFormat", &json!({"ids": [id], "fontAxes": {"wght": 650}})).unwrap();
+            s.edit("version", |d, _| {
+                if let Some(t) = text_mut(d, NodeId(id)) {
+                    t.runs.iter_mut().for_each(|r| r.style.font_version = Some("Version 2.000".into()));
+                }
+                Ok(())
+            })
+            .unwrap();
+        };
+        let font = |s: &Session| {
+            let st = runs(s, id)[0].style.clone();
+            (st.font_family, st.font_version, st.font_axes.get("wght").copied())
+        };
+        set_variable(&mut s);
+        s.execute("charStyle.new", &json!({"name": "Plain", "attrs": {"font_family": "Inter"}})).unwrap();
+        s.execute("charStyle.new", &json!({"name": "Same", "attrs": {"size": 20}})).unwrap();
+        s.execute("charStyle.apply", &json!({"name": "Same", "id": id})).unwrap();
+        assert_eq!(font(&s), (TWO_AXIS_FAMILY.to_string(), Some("Version 2.000".to_string()), Some(650.0)), "the same font keeps them");
+        s.execute("charStyle.apply", &json!({"name": "Plain", "id": id})).unwrap();
+        assert_eq!(font(&s), ("Inter".to_string(), None, None));
+        // A style that sets the settings keeps its own.
+        s.execute("charStyle.new", &json!({"name": "Heavy", "attrs": {"font_family": TWO_AXIS_FAMILY, "fontAxes": {"wght": 600}}})).unwrap();
+        s.execute("charStyle.apply", &json!({"name": "Heavy", "id": id})).unwrap();
+        assert_eq!(font(&s), (TWO_AXIS_FAMILY.to_string(), None, Some(600.0)));
+        // Redefined to another font: its users' settings and versions go too.
+        s.execute("charStyle.new", &json!({"name": "Sans", "attrs": {"font_family": TWO_AXIS_FAMILY}})).unwrap();
+        s.execute("charStyle.apply", &json!({"name": "Sans", "id": id})).unwrap();
+        set_variable(&mut s);
+        assert_eq!(runs(&s, id)[0].style.style_name.as_deref(), Some("Sans"));
+        s.execute("charStyle.setAttrs", &json!({"name": "Sans", "attrs": {"font_family": "Inter"}})).unwrap();
+        assert_eq!(font(&s), ("Inter".to_string(), None, None));
     }
 
     #[test]
