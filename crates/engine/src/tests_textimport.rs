@@ -52,8 +52,8 @@ fn crlf_with_returns_removed_places_one_paragraph_per_block_as_area_type() {
 }
 
 /// Placed at a point on an artboard's right or bottom edge, the frame takes that artboard's size less
-/// a 36 pt margin on each side; on the edge two artboards share, it takes the size of the artboard to
-/// the right of it.
+/// a 36 pt margin on each side; on the edge two artboards share, away from its ends, it takes the
+/// size of the artboard to the right of it.
 #[test]
 fn type_placed_on_an_artboard_edge_takes_that_artboards_frame() {
     let mut s = session();

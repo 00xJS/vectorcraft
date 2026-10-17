@@ -1373,7 +1373,8 @@ impl Document {
     /// inside or on its left or top edge, else the first (the last) that holds it by
     /// [`artboard_holds`]: on its right or bottom edge, or within a millionth of a point outside an
     /// edge. On an edge two artboards share, the artboard to the right of it or below it holds the
-    /// point.
+    /// point, except at the end of the edge that lies on that artboard's bottom or right edge, such
+    /// as the point where both artboards' bottom edges meet; there the first (the last) holds it.
     pub fn artboard_holding(&self, p: Point, topmost: bool) -> Option<usize> {
         let pick = |on: &dyn Fn(Rect) -> bool| {
             let on = |i: &usize| self.artboards.get(*i).is_some_and(|a| on(a.rect));
@@ -1881,9 +1882,13 @@ mod tests {
         assert_eq!(held(&d, 200.001, 50.0), (None, None));
         assert_eq!(held(&d, 50.0, 200.001), (None, None));
         // On an edge two artboards share, the artboard to the right of it or below it holds the
-        // point, in either list order.
+        // point, in either list order, except at the end of the edge that lies on that artboard's
+        // bottom or right edge.
         assert_eq!(held(&d, 100.0, 50.0), (Some(1), Some(1)));
         assert_eq!(held(&d, 50.0, 100.0), (Some(2), Some(2)));
+        // The bottom edges of artboards 0 and 1 meet at (100, 100), which is also artboard 2's top
+        // right corner: the first holds the point, or the last when `topmost`.
+        assert_eq!(held(&d, 100.0, 100.0), (Some(2), Some(0)), "shared corner");
         d.artboards.swap(0, 1);
         assert_eq!(held(&d, 100.0, 50.0), (Some(0), Some(0)));
         // Where two artboards overlap, the topmost holds the point, or the first one when not

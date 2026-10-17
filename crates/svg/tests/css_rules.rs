@@ -71,7 +71,8 @@ fn rectangle_gives_background_border_and_radius() {
 }
 
 /// An object centered on an artboard's right or bottom edge is positioned from that artboard's
-/// top-left corner; on the edge two artboards share, from the one to the right of it.
+/// top-left corner; on the edge two artboards share, away from its ends, from the one to the right
+/// of it.
 #[test]
 fn position_is_from_the_artboard_whose_edge_holds_the_center() {
     let mut d = doc();

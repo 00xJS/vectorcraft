@@ -330,8 +330,8 @@ fn rearrange_lays_out_by_layout_and_order() {
     }
 }
 
-/// Art centered on an artboard's right or bottom edge moves with that artboard, and art on the edge
-/// two artboards share moves with the artboard to the right of it.
+/// Art centered on an artboard's right or bottom edge moves with that artboard, and art centered on
+/// the edge two artboards share, away from its ends, moves with the artboard to the right of it.
 #[test]
 fn rearrange_moves_art_centered_on_an_artboard_edge() {
     let mut s = new_doc(json!({"width": 100, "height": 50, "artboards": 2, "artboardLayout": {"layout": "row", "spacing": 0}}));
