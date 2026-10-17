@@ -541,6 +541,7 @@
 	Condition identifier:	Ідентифікатор умови:
 	Conflict {n} of {count}	Конфлікт {n} з {count}
 	Connect Selected End Points	З’єднати обрані кінцеві точки
+	Connect	З’єднати
 	Consolidate All Windows	Об’єднати всі вікна
 	Constrain Angle	Обмежити кут
 	Constrain Width and Height Proportions	Зберігати пропорції ширини та висоти

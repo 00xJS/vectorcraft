@@ -637,6 +637,7 @@
 	Condition identifier:	Mã định danh điều kiện:
 	Conflict {n} of {count}	Xung đột {n} trong {count}
 	Connect Selected End Points	Nối các điểm cuối đã chọn
+	Connect	Nối
 	Consolidate All Windows	Hợp nhất tất cả cửa sổ
 	Constrain	Giữ tỷ lệ
 	Constrain Angle	Ràng buộc góc

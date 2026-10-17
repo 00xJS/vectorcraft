@@ -532,6 +532,7 @@
 	Condition identifier:	Идентификатор на условие:
 	Conflict {n} of {count}	Конфликт {n} от {count}
 	Connect Selected End Points	Свързване на избраните крайни точки
+	Connect	Свързване
 	Consolidate All Windows	Обединяване на всички прозорци
 	Constrain Angle	Заключване на ъгъла
 	Constrain Width and Height Proportions	Запазване на пропорциите на ширина и височина

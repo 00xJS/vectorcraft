@@ -502,6 +502,7 @@
 	Condition identifier:	条件识别码：
 	Conflict {n} of {count}	冲突 {n}／{count}
 	Connect Selected End Points	连接所选端点
+	Connect	连接
 	Consolidate All Windows	合并所有窗口
 	Constrain Angle	约束角度
 	Constrain Width and Height Proportions	约束宽高比例

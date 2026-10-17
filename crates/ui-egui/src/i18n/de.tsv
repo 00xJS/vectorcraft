@@ -532,6 +532,7 @@
 	Condition identifier:	Kennung der Ausgabebedingung:
 	Conflict {n} of {count}	Konflikt {n} von {count}
 	Connect Selected End Points	Ausgewählte Endpunkte verbinden
+	Connect	Verbinden
 	Consolidate All Windows	Alle Fenster zusammenführen
 	Constrain Angle	Winkelbeschränkung
 	Constrain Width and Height Proportions	Proportionen von Breite und Höhe beibehalten
