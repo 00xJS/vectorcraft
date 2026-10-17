@@ -417,8 +417,10 @@ fn encode_all_of(doc: &Document, format: &str, p: &Value) -> Result<Encoded> {
     vectorcraft_doc::cancel::check()?;
     // An image the renderer couldn't decode draws nothing: say so rather than write a picture
     // that silently lacks it.
-    if f.raster && vectorcraft_render::decode_failures() > failed {
-        enc.warnings.push("an image couldn't be decoded and is missing from the picture".into());
+    if f.raster
+        && let Some(w) = crate::cmd::rasterfx::undecoded_warning(failed)
+    {
+        enc.warnings.push(w.into());
     }
     // Formats that draw type: missing fonts come out in the fallback font (PDF and SVG say so
     // themselves: SVG only when it outlines or embeds fonts).

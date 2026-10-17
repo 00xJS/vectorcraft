@@ -159,6 +159,12 @@ fn render(doc: &Document, nodes: Vec<Node>, region: Rect, scale: f64, anti_alias
     r.render_region_with(&tmp, region, scale, &RenderOptions { skip_templates: true, anti_alias, supersample: true, ..Default::default() })
 }
 
+/// The note for pixels drawn since [`vectorcraft_render::decode_failures`] stood at `failed`, when
+/// an image among them couldn't be decoded and so drew nothing; `None` otherwise.
+pub(crate) fn undecoded_warning(failed: u64) -> Option<&'static str> {
+    (vectorcraft_render::decode_failures() > failed).then_some("an image couldn't be decoded and is missing from the picture")
+}
+
 /// Pixels per point of raster effects rendered as images (the document's raster effects
 /// resolution).
 pub(crate) fn effects_scale(doc: &Document) -> f64 {

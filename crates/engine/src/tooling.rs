@@ -543,7 +543,11 @@ impl Session {
                     self.cancel_interaction()?
                 }
                 Action::Exec(cmd, p) => {
-                    self.execute(&cmd, &p)?;
+                    // A command's warning (Crop Image's when the image couldn't be decoded) goes to the
+                    // status bar too.
+                    if let Some(w) = self.execute(&cmd, &p)?.get("warning").and_then(Value::as_str) {
+                        ui.push(UiRequest::Status(w.to_string()));
+                    }
                 }
                 Action::Dialog(k, p) => ui.push(UiRequest::Dialog(k, p)),
                 Action::SwitchTool(t) => ui.push(UiRequest::SwitchTool(t)),

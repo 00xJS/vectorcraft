@@ -766,6 +766,11 @@ impl VectorcraftApp {
                     r.insert(0, font.to_string());
                     r.truncate(MAX_RECENT_FONTS);
                 }
+                // A command's warning (Rasterize's when an image couldn't be decoded) shows in the
+                // status bar, as a tool preview's does.
+                if let Some(w) = v.get("warning").and_then(Value::as_str) {
+                    self.ui.status = w.to_string();
+                }
             }
         }
         r

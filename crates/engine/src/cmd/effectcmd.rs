@@ -59,7 +59,7 @@ pub fn specs() -> Vec<CommandSpec> {
             "Expand Appearance",
             ["Object"],
             None,
-            "{ids?|id?: [..], target?} turn each object's appearance into objects: every fill and stroke becomes an object of its own (strokes outlined, brushed strokes their brush art) grouped in paint order under the object's id and transparency, geometry effects are baked, raster effects become an embedded image (shadows and outer glows below the art; blur, feather and inner glow replace it), type with effects or fills of its own is outlined; Crop Marks become a group of the object and its marks; a group's or layer's own fills and strokes become objects among its members, which are expanded too. Hidden fills, strokes and effects are dropped. Enabled when a selected or targeted object's appearance isn't basic (`ids` then pick which objects) → {ids}",
+            "{ids?|id?: [..], target?} turn each object's appearance into objects: every fill and stroke becomes an object of its own (strokes outlined, brushed strokes their brush art) grouped in paint order under the object's id and transparency, geometry effects are baked, raster effects become an embedded image (shadows and outer glows below the art; blur, feather and inner glow replace it), type with effects or fills of its own is outlined; Crop Marks become a group of the object and its marks; a group's or layer's own fills and strokes become objects among its members, which are expanded too. Hidden fills, strokes and effects are dropped. Enabled when a selected or targeted object's appearance isn't basic (`ids` then pick which objects) → {ids, warning? (an image in the art couldn't be decoded, as object.rasterize says)}",
             can_expand,
             expand_appearance
         ),
@@ -551,6 +551,7 @@ pub(crate) fn expand_node(d: &mut Document, id: NodeId, brushes: &[vectorcraft_b
 
 fn expand_appearance(s: &mut Session, p: &Value) -> Result<Value> {
     let roots = appearance_targets(s, p)?;
+    let failed = vectorcraft_render::decode_failures();
     let ids = s.edit("Expand Appearance", |d, _| {
         let brushes = vectorcraft_brush::library(d);
         let mut out = vec![];
@@ -562,7 +563,12 @@ fn expand_appearance(s: &mut Session, p: &Value) -> Result<Value> {
         }
         Ok(out)
     })?;
-    Ok(json!({ "ids": ids_json(&ids) }))
+    let mut out = json!({ "ids": ids_json(&ids) });
+    // Raster effects become images rendered from the art.
+    if let Some(w) = rasterfx::undecoded_warning(failed) {
+        out["warning"] = json!(w);
+    }
+    Ok(out)
 }
 
 #[cfg(test)]

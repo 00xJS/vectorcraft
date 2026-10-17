@@ -38,6 +38,24 @@ fn sel(s: &mut Session, ids: &[NodeId]) {
     s.execute("select.set", &json!({"ids": ids.iter().map(|i| i.0).collect::<Vec<_>>()})).unwrap();
 }
 
+/// A placed 64 × 32 px PNG whose header reads (so it places at its size) but whose pixel data is
+/// cut short: the renderer can't decode it and draws nothing.
+pub(crate) fn place_undecodable_png(s: &mut Session) -> NodeId {
+    let mut png = Vec::new();
+    image::RgbaImage::from_pixel(64, 32, image::Rgba([200, 30, 30, 255]))
+        .write_to(&mut std::io::Cursor::new(&mut png), image::ImageFormat::Png)
+        .unwrap();
+    let idat = png.windows(4).position(|w| w == b"IDAT").unwrap();
+    png.truncate(idat + 8);
+    let r = s.execute("file.place", &json!({"name": "cut.png", "dataBase64": vectorcraft_format::base64_encode(&png)})).unwrap();
+    NodeId(r["ids"][0].as_u64().unwrap())
+}
+
+/// Whether reply `r` warns that an image couldn't be decoded, as raster exports do.
+pub(crate) fn warns_undecoded(r: &Value) -> bool {
+    r["warning"].as_str() == Some("an image couldn't be decoded and is missing from the picture")
+}
+
 fn fill(s: &mut Session, id: NodeId, hex: &str) {
     s.execute("paint.setFill", &json!({"ids": [id.0], "color": hex})).unwrap();
 }
@@ -551,6 +569,29 @@ fn rasterize_replaces_selection_with_image() {
     let b = n.geometric_bounds().unwrap();
     assert!(close(b.x0, vb.x0) && close(b.y0, vb.y0) && b.width() >= vb.width());
     assert_eq!(selected(&s), vec![img]);
+}
+
+#[test]
+fn rasterize_says_when_an_image_could_not_be_decoded() {
+    let mut s = session();
+    let a = rect(&mut s, 10.0, 20.0, 40.0, 30.0);
+    let cut = place_undecodable_png(&mut s);
+    sel(&mut s, &[a, cut]);
+    let r = s.execute("object.rasterize", &json!({"ppi": 72})).unwrap();
+    assert!(warns_undecoded(&r), "{r}");
+    // The image still replaces the selection.
+    assert!(matches!(node(&s, id_of(&r)).kind, NodeKind::Image(_)));
+    assert!(s.doc().unwrap().doc.node(a).is_none() && s.doc().unwrap().doc.node(cut).is_none());
+}
+
+#[test]
+fn crop_image_says_when_the_image_could_not_be_decoded() {
+    let mut s = session();
+    let cut = place_undecodable_png(&mut s);
+    sel(&mut s, &[cut]);
+    let b = bounds(&s, cut);
+    let r = s.execute("object.cropImage", &json!({"rect": [b.x0, b.y0, b.width() / 2.0, b.height()]})).unwrap();
+    assert!(warns_undecoded(&r), "{r}");
 }
 
 #[test]

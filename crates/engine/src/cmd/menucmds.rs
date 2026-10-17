@@ -94,7 +94,7 @@ pub fn specs() -> Vec<CommandSpec> {
             "Rasterize…",
             ["Object"],
             None,
-            "{ppi?, background?: transparent|white|black|\"#rrggbb\", antiAlias?: none|art|type (text snapped to pixels)|bool, padding?|addAround?: pt (0–1000), colorModel?: \"rgb\"|\"cmyk\"|\"grayscale\"|\"bitmap\", clippingMask?: bool (a clip group with the art's outline)} replace the selection with an embedded PNG image; each defaults to document.rasterEffectsSettings → {id (the image, or its clip group), width, height}",
+            "{ppi?, background?: transparent|white|black|\"#rrggbb\", antiAlias?: none|art|type (text snapped to pixels)|bool, padding?|addAround?: pt (0–1000), colorModel?: \"rgb\"|\"cmyk\"|\"grayscale\"|\"bitmap\", clippingMask?: bool (a clip group with the art's outline)} replace the selection with an embedded PNG image; each defaults to document.rasterEffectsSettings → {id (the image, or its clip group), width, height, warning?: \"an image couldn't be decoded and is missing from the picture\" (as raster exports say)}",
             has_selection,
             rasterize
         ),
@@ -112,7 +112,7 @@ pub fn specs() -> Vec<CommandSpec> {
             "Crop Image",
             ["Object"],
             None,
-            "{rect?: [x, y, width, height] | trim?: true (to the pixels that aren't fully transparent, pixel for pixel; an image with none to cut is left as it is, trimmed: false)} crop the selected image (default: to the artboard it sits on) → {id, width, height, trimmed? (with trim)}",
+            "{rect?: [x, y, width, height] | trim?: true (to the pixels that aren't fully transparent, pixel for pixel; an image with none to cut is left as it is, trimmed: false)} crop the selected image (default: to the artboard it sits on) → {id, width, height, trimmed? (with trim), warning? (without trim: the image couldn't be decoded, as object.rasterize says)}",
             has_image,
             crop_image
         ),
@@ -422,21 +422,24 @@ pub(crate) fn unique_key(d: &vectorcraft_doc::Document, stem: &str) -> String {
     }
 }
 
-/// `doc` rendered over `region` with `opts` as a PNG in colour model `color`.
+/// `doc` rendered over `region` with `opts` as a PNG in colour model `color`, with the note that an
+/// image in it couldn't be decoded ([`super::rasterfx::undecoded_warning`]).
 fn render_png(
     doc: &vectorcraft_doc::Document,
     region: Rect,
     scale: f64,
     opts: &vectorcraft_render::RenderOptions,
     color: RasterColorModel,
-) -> Result<(Vec<u8>, u32, u32)> {
+) -> Result<(Vec<u8>, u32, u32, Option<&'static str>)> {
     if region.width() * region.height() * scale * scale > MAX_PIXELS || region.width() * scale > 65535.0 || region.height() * scale > 65535.0 {
         return Err(EngineError::Other("image would be too large; lower the resolution".into()));
     }
     let mut r = vectorcraft_render::Renderer::new();
+    let failed = vectorcraft_render::decode_failures();
     let mut img = r.render_region_with(doc, region, scale, opts);
+    let warning = super::rasterfx::undecoded_warning(failed);
     RasterEffectsSettings { color_model: color, ..Default::default() }.finish_pixels(&mut img.pixels);
-    Ok((img.to_png().map_err(EngineError::Other)?, img.width, img.height))
+    Ok((img.to_png().map_err(EngineError::Other)?, img.width, img.height, warning))
 }
 
 fn rasterize(s: &mut Session, p: &Value) -> Result<Value> {
@@ -493,7 +496,7 @@ fn rasterize(s: &mut Session, p: &Value) -> Result<Value> {
         .flatten()
         .map(|(bp, rule)| (PathData::from_bezpath(&bp), rule));
     let tmp = isolated_doc(&st.doc, nodes);
-    let (png, w, h) = render_png(&tmp, region, scale, &raster.render_options(RasterFormat::Png), look.color_model)?;
+    let (png, w, h, warning) = render_png(&tmp, region, scale, &raster.render_options(RasterFormat::Png), look.color_model)?;
     if roots.is_empty() {
         return Err(bad(C, "nothing selected"));
     }
@@ -511,7 +514,11 @@ fn rasterize(s: &mut Session, p: &Value) -> Result<Value> {
         sel.set([id]);
         Ok(id)
     })?;
-    Ok(json!({ "id": id.0, "width": w, "height": h }))
+    let mut out = json!({ "id": id.0, "width": w, "height": h });
+    if let Some(w) = warning {
+        out["warning"] = json!(w);
+    }
+    Ok(out)
 }
 
 fn has_image(s: &Session) -> std::result::Result<(), String> {
@@ -648,7 +655,8 @@ fn crop_image(s: &mut Session, p: &Value) -> Result<Value> {
     bare.visible = true;
     let tmp = isolated_doc(&st.doc, vec![bare]);
     let region = Rect::new(r.x0, r.y0, r.x0 + (r.width() * scale).round().max(1.0) / scale, r.y0 + (r.height() * scale).round().max(1.0) / scale);
-    let (png, w, h) = render_png(&tmp, region, scale, &RasterExportOptions::default().render_options(RasterFormat::Png), RasterColorModel::Document)?;
+    let (png, w, h, warning) =
+        render_png(&tmp, region, scale, &RasterExportOptions::default().render_options(RasterFormat::Png), RasterColorModel::Document)?;
     s.edit("Crop Image", |d, _| {
         let key = unique_key(d, "crop");
         d.images.insert(key.clone(), vectorcraft_doc::ImageBlob::new("image/png", png));
@@ -664,7 +672,11 @@ fn crop_image(s: &mut Session, p: &Value) -> Result<Value> {
         }
         Ok(())
     })?;
-    Ok(json!({ "id": id.0, "width": w, "height": h }))
+    let mut out = json!({ "id": id.0, "width": w, "height": h });
+    if let Some(w) = warning {
+        out["warning"] = json!(w);
+    }
+    Ok(out)
 }
 
 /// Crop Image's trim: the image cut to the box of its pixels that aren't fully transparent, the

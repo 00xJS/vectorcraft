@@ -1482,7 +1482,9 @@ opacity masks or raster effects reach (clipped to those regions with `clipComple
 `preset` is `high`, `medium` (the default) or `low`; option keys (`balance` 0–100, `lineArtPpi`, `gradientPpi`,
 `textToOutlines`, `strokesToOutlines`, `clipComplexRegions`, `antiAlias`, `preserveAlpha`, `preserveOverprints`)
 override it, at the top level or in `options`. `balance: 0` rasterizes everything; lower balances rasterize groups
-that split into many regions. The result reports `{ids, vector, rasterized, options}`.
+that split into many regions. The result reports `{ids, vector, rasterized, options}`. When an image in the art
+can't be decoded, the image that replaces the art does not show it, and the result also carries `warning`: "an image
+couldn't be decoded and is missing from the picture", the note raster exports give.
 
 ```json
 {"name":"run_command","arguments":{"command":"object.flattenTransparency","params":{"ids":[12,15],"preset":"high"}}}
@@ -1605,7 +1607,8 @@ document's raster effects resolution (shadows and outer glows under the art; a b
 the object with the image). Type with a geometry effect (Outline Object included) or with fills and strokes of its own
 is outlined; type that has no fills or strokes of its own and whose only effects are shadows or outer glows stays
 type, with the image under it. A group's or layer's own fills and strokes become objects among its members, and its
-members are expanded too.
+members are expanded too. The result is `{ids}`; when an image in the art can't be decoded, the images made from
+raster effects do not show it, and the result also carries the `warning` that Flatten Transparency gives.
 
 ```json
 {"name":"run_command","arguments":{"command":"effect.expandAppearance","params":{"ids":[12]}}}
@@ -2520,6 +2523,8 @@ in one undo step. PDF export renders the raster effects of every kind of object 
 images, symbol instances, live objects, and those in opacity masks, symbols and pattern tiles): shadows and outer glows
 go in an image under the untouched vector art, other effects replace the object with its image, and a path whose
 fills or strokes carry effects is written as one piece per fill and stroke, so only the affected ones become images.
+When an image in the art can't be decoded, `object.rasterize` and `object.cropImage` (without `trim`) make their image
+without it, and their results carry the `warning` that Flatten Transparency gives.
 
 ```json
 {"name":"run_command","arguments":{"command":"document.rasterEffectsSettings","params":{"resolution":"high","background":"white","addAround":36}}}
@@ -3612,7 +3617,9 @@ effects keep their colours.
 ## Vector halftone
 
 `object.vectorHalftone` turns the selection into vector dots, lines or shapes sized by its
-tone (mono, or CMYK screens multiplied over each other), clipped to the art's outline by default:
+tone (mono, or CMYK screens multiplied over each other), clipped to the art's outline by default. An image in the
+art that can't be decoded is sampled as blank (no dots, or full dots with `invert`), and the result carries the
+`warning` that Flatten Transparency gives:
 
 ```json
 {"name":"run_command","arguments":{"command":"object.vectorHalftone","params":{"shape":"circle","frequency":25,"angle":45,"mode":"cmyk"}}}

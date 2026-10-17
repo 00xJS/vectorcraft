@@ -585,11 +585,20 @@ pub(super) fn preview_result(
 }
 
 /// OK of a dialog using [`preview`]: keep the previewed `cmd` as one undo step (or run it when no
-/// preview runs) and close. On an error the dialog stays open.
+/// preview runs) and close; the command's warning shows in the status bar either way. On an error
+/// the dialog stays open.
 pub(super) fn commit_preview(app: &mut crate::VectorcraftApp, cmd: &str, params: Value) -> Result<Value, String> {
     let r = if app.session.in_interaction() {
         match app.session.preview(cmd, &params) {
-            Ok(_) => app.session.commit_interaction().map(|_| Value::Null).map_err(|e| e.to_string()),
+            Ok(v) => {
+                let r = app.session.commit_interaction().map(|_| Value::Null).map_err(|e| e.to_string());
+                if r.is_ok()
+                    && let Some(w) = v.get("warning").and_then(Value::as_str)
+                {
+                    app.status(w.to_string());
+                }
+                r
+            }
             Err(e) => Err(e.to_string()),
         }
     } else {
