@@ -1932,12 +1932,13 @@ proptest! {
 // ---------- print presets files ----------
 
 /// Import print presets from `data`, then lay out (and print, when short) the rich document with
-/// each one imported.
+/// each one imported, by its settings and by its name.
 fn print_presets(what: &str, data: &str) -> Result<(), TestCaseError> {
     survive_library(what, "print.presets.import", data, |s, r| {
         let list = no_panic(s.execute("print.presets.list", &json!({}))).unwrap_or_default();
         for name in r["imported"].as_array().into_iter().flatten() {
             let Some(p) = list["presets"].as_array().into_iter().flatten().find(|p| &p["name"] == name) else { continue };
+            let _ = no_panic(s.execute("print.preview", &json!({ "preset": name })));
             let settings = json!({ "settings": p["settings"] });
             let pages = no_panic(s.execute("print.preview", &settings)).ok().and_then(|v| v["pages"].as_u64());
             let _ = no_panic(s.execute("print.setup", &settings));
