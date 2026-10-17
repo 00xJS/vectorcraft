@@ -27,6 +27,18 @@ fn snap1(v: f64, edges: [f64; 2], tol: f64) -> f64 {
     edges.into_iter().filter(|e| (e - v).abs() <= tol).min_by(|a, b| (a - v).abs().total_cmp(&(b - v).abs())).unwrap_or(v)
 }
 
+/// Index of the first artboard holding `p`: one that holds it inside or on its left or top edge,
+/// else one that holds it on its right or bottom edge or within a millionth of a point outside an
+/// edge (the edges `Document::art_on_artboard` counts).
+fn artboard_holding(cx: &ToolContext, p: Point) -> Option<usize> {
+    let rects = || cx.doc.artboards.iter().map(|a| a.rect);
+    let holds = |r: Rect| {
+        let r = r.inflate(1e-6, 1e-6);
+        r.x0 <= p.x && p.x <= r.x1 && r.y0 <= p.y && p.y <= r.y1
+    };
+    rects().position(|r| r.contains(p)).or_else(|| rects().position(holds))
+}
+
 impl Tool for PrintTilingTool {
     fn id(&self) -> &'static str {
         "printTiling"
@@ -39,7 +51,7 @@ impl Tool for PrintTilingTool {
     fn pointer(&mut self, cx: &ToolContext, ev: &PointerEvent) -> Vec<Action> {
         match ev.kind {
             PointerKind::Down => {
-                let hit = cx.doc.artboards.iter().position(|a| a.rect.contains(ev.pos));
+                let hit = artboard_holding(cx, ev.pos);
                 self.drag = Some((hit, hit.and_then(|i| cx.doc.artboards.get(i)).map(|a| a.rect)));
                 (self.began, self.last) = (false, ev.pos);
                 vec![]
@@ -98,7 +110,7 @@ impl Tool for PrintTilingTool {
 
 #[cfg(test)]
 mod tests {
-    use serde_json::json;
+    use serde_json::{Value, json};
     use vectorcraft_doc::Selection;
 
     use super::*;
@@ -133,5 +145,32 @@ mod tests {
         t.pointer(&c, &ev(PointerKind::Drag, 20.0, 20.0));
         assert_eq!(t.key(&c, ToolKey::Escape, Mods::default()), vec![Action::Cancel]);
         assert_eq!(crate::create("printTiling").id(), "printTiling");
+    }
+
+    #[test]
+    fn a_press_on_an_artboards_right_or_bottom_edge_drags_from_that_artboard() {
+        // Artboard 0 is (0, 0) to (500, 500). Artboard 1 is (500, 0) to (800, 200), and its left edge lies on artboard 0's right edge.
+        let (mut d, _) = doc_with_rect();
+        let mut ab = d.artboards[0].clone();
+        ab.rect = Rect::new(500.0, 0.0, 800.0, 200.0);
+        d.artboards.push(ab);
+        let (s, pd) = (Selection::default(), paint());
+        let c = cx(&d, &s, &pd);
+        // What a drag to 3 pt up and left of a press at (x, y) previews: the corner snaps to the
+        // edges of the artboard the press picked.
+        let drag = |x: f64, y: f64| {
+            let mut t = PrintTilingTool::default();
+            t.pointer(&c, &ev(PointerKind::Down, x, y));
+            t.pointer(&c, &ev(PointerKind::Drag, x - 3.0, y - 3.0)).pop()
+        };
+        let preview =
+            |origin: [f64; 2], artboard: Value| Some(Action::Preview("print.tiling.set".into(), json!({ "origin": origin, "artboard": artboard })));
+        assert_eq!(drag(800.0, 100.0), preview([800.0, 97.0], json!(1)), "artboard 1's right edge");
+        assert_eq!(drag(650.0, 200.0), preview([647.0, 200.0], json!(1)), "artboard 1's bottom edge");
+        assert_eq!(drag(800.0, 200.0), preview([800.0, 200.0], json!(1)), "artboard 1's bottom right corner");
+        assert_eq!(drag(300.0, 500.0), preview([297.0, 500.0], json!(0)), "artboard 0's bottom edge");
+        assert_eq!(drag(500.0, 100.0), preview([500.0, 97.0], json!(1)), "the shared edge: the artboard to its right");
+        assert_eq!(drag(800.0 + 1e-9, 100.0), preview([800.0, 97.0], json!(1)), "roundoff past the edge");
+        assert_eq!(drag(800.001, 100.0), preview([800.001 - 3.0, 97.0], Value::Null), "beyond the edge");
     }
 }
