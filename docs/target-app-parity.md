@@ -422,7 +422,8 @@ Moved from the ROADMAP's "Shipped so far" on 2026-10-10. Update it when a featur
 
 - **Architecture:** 19+ crates with enforced layering (`cargo xtask layers`). Every action is a command (~400 engine + ~50 UI). Undo is unlimited via structural sharing. `command.batch` runs several commands as one transaction.
 - **Automation:**
-  - Variables: Update Data Set writes what the art holds into the active data set for the variables that data set holds, and keeps the data set's value for a variable whose objects are locked or inside a hidden or locked layer or group; `dataset.update {all: true}` also adds the other variables that the art reports a value for.
+  - Variables: Update Data Set writes what the art holds into the active data set for the variables that data set holds, and keeps the data set's value for a variable whose objects are locked or inside a locked layer or group; `dataset.update {all: true}` also adds the other variables that the art reports a value for.
+  - Variables: `dataset.select`, `dataset.next` and `dataset.prev` rewrite type and apply the other values on hidden objects and in hidden layers and groups, which stay hidden unless a visibility value shows them, so a layer shown later holds the selected data set's text; objects that are locked or in a locked layer or group are skipped.
   - Variables: `dataset.select`, `dataset.next` and `dataset.prev` name the area type and type on a path whose text they rewrote and that doesn't fit, in the reply's `overflow` key, as `text.setText` does.
   - Actions panel (record/playback, persisted), generic parameter dialogs for every "…" command.
   - Batch… over data sets names each file after the document and the data set (`action.batch`). It writes `/`, `\` and `:` in the data set's name as `-`, and adds `-2`, `-3`… to a name an earlier data set used.
