@@ -2903,7 +2903,9 @@ format its options. On every platform, `/`, `\`, `:`, `<`, `>`, `"`, `|`, `?`, `
 prefix, a suffix, a name pattern or an item's name become `-` in file and folder names, a folder name ends without
 periods or spaces, and a Windows device name (`CON`, `PRN`, `AUX`, `NUL`, `COM1` to `COM9`, `LPT1` to `LPT9`) that
 is the whole name or comes before its first period gets a `-` after it (`CON-.png`). The document remembers the last
-params: `document.exportSettings`.
+params: `document.exportSettings`. As in `document.export`,
+the reply's `warnings` lists the notes of every file exported (an image that couldn't be decoded, type written in the
+fallback font…), each note once; the export still writes or returns every file.
 
 Batch exports (#1935):
 - **What:** `layers: [id…]` (each layer's art alone) or `selection: "one" | "each"` instead of artboards
