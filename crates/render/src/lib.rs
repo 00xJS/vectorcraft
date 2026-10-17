@@ -1773,12 +1773,12 @@ impl Renderer {
             return;
         }
         let tb = t.xf.transform_rect_bbox(g.bounds);
-        // Overprinting characters multiply per draw, like overprinting fills and strokes
+        // Overprinting characters darken per draw, like overprinting fills and strokes
         // ([`proof`]); the object blend mode is Normal here or applied by an enclosing layer.
         let overprints = proof::overprints(f.opts);
         let overprint = |ctx: &mut RenderContext, on: bool| {
             if overprints {
-                ctx.set_blend_mode(if on { blend_mode(vectorcraft_color::BlendMode::Multiply) } else { BlendMode::default() });
+                ctx.set_blend_mode(if on { blend_mode(vectorcraft_color::BlendMode::Darken) } else { BlendMode::default() });
             }
         };
         // The object's own fills and strokes paint the whole outline: those below the Characters

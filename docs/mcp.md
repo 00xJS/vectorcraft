@@ -1107,7 +1107,7 @@ Each fill and stroke (and each character's fill and stroke) can overprint: its i
 of knocking them out. `object.setOverprint {fill?, stroke?, item?, ids?}` sets it (groups set their contents, type its
 characters too; `item` aims at one appearance item) and `attributes.info {ids?}` reads it back (`null` where the
 objects differ). Overprint Preview (`view.overprintPreview`) and Separations Preview show it; rendering approximates
-it by multiplying. Older files that listed Overprint Black objects in the document get the flags on load.
+it by darkening (the stronger ink of each plate wins, so a colour overprinting itself stays that colour). Older files that listed Overprint Black objects in the document get the flags on load.
 PDF export writes them with `advanced.overprint: "preserve"` (the default): each overprinting fill and stroke sets a
 graphics state with `/OP true /op true /OPM 1` (`/OPM 0` in PDF/A). With `discardWhiteOverprint` (`document.setup`, on by
 default) white ones knock out instead; `"discard"` writes none.
@@ -3049,7 +3049,7 @@ The Print dialog's Advanced section and the printer profile are print settings t
 `file.print`): `advanced: {printAsBitmap, overprints: preserve|discard|simulate, flattenerPreset}` and `color:
 {profile}`. In composite output, `preserve` writes overprinting fills and strokes with an overprinting graphics state
 (`/OP`, as PDF export does), `discard` makes overprinting fills and strokes knock out and `simulate` prints them
-as Overprint Preview shows them (multiplied); either way the file has no overprint left. Separations always keep
+as Overprint Preview shows them (darkened); either way the file has no overprint left. Separations always keep
 overprints. `flattenerPreset` (High Resolution, Medium Resolution, Low Resolution or a saved preset,
 `flattener.presets.list`) flattens transparency before printing, as Object → Flatten Transparency does; empty, a
 PDF keeps it live (PostScript, which has none, uses `file.print`'s `flattenerPreset`, else this one, else medium).
