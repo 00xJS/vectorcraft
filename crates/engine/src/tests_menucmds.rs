@@ -357,6 +357,30 @@ fn transform_each_random_is_deterministic_with_seed() {
     assert!(x.x0.abs() <= 50.0 && x.width() == 100.0);
 }
 
+/// A `reference` or `seed` that is not a whole number (a fraction, a negative number or a string) is an error naming
+/// the key, and the object stays as it was; a `reference` of 0.0 is the top-left point.
+#[test]
+fn transform_each_refuses_a_reference_or_seed_that_is_not_a_whole_number() {
+    let mut s = session();
+    let a = rect(&mut s, 0.0, 0.0, 100.0, 100.0);
+    sel(&mut s, &[a]);
+    let before = (undo_len(&s), bounds(&s, a));
+    for (p, msg) in [
+        (json!({"scaleH": 50, "reference": 2.5}), "`reference` must be a whole number"),
+        (json!({"scaleH": 50, "reference": -1}), "`reference` must be a whole number"),
+        (json!({"scaleH": 50, "reference": "0"}), "`reference` must be a number, not \"0\""),
+        (json!({"moveH": 50, "random": true, "seed": 7.5}), "`seed` must be a whole number"),
+        (json!({"moveH": 50, "random": true, "seed": -7}), "`seed` must be a whole number"),
+        (json!({"moveH": 50, "random": true, "seed": "7"}), "`seed` must be a number, not \"7\""),
+    ] {
+        let r = s.execute("object.transformEach", &p);
+        assert!(matches!(&r, Err(EngineError::BadParams { msg: m, .. }) if m == msg), "{p}: {r:?}");
+        assert_eq!((undo_len(&s), bounds(&s, a)), before, "{p}");
+    }
+    s.execute("object.transformEach", &json!({"scaleH": 50, "scaleV": 50, "reference": 0.0})).unwrap();
+    assert_eq!(bounds(&s, a), Rect::new(0.0, 0.0, 50.0, 50.0));
+}
+
 /// #1910: Transform Each's Reflect X flips left-right; Reflect Y flips top-bottom (same as
 /// Effect › Distort › Transform and Illustrator's Transform Each checkboxes).
 #[test]
@@ -703,6 +727,27 @@ fn convert_to_artboards_and_rearrange() {
     let d = &s.doc().unwrap().doc;
     assert_eq!(d.artboards[1].rect, Rect::new(0.0, 650.0, 200.0, 750.0));
     assert_eq!(bounds(&s, b), Rect::new(50.0, 675.0, 60.0, 685.0));
+}
+
+/// Rearrange All Artboards refuses `columns` that are not a whole number (a fraction, a negative number or a string),
+/// and the artboards stay where they were; 1.0, as the Rearrange All Artboards dialog sends a count, is one column.
+#[test]
+fn rearrange_refuses_columns_that_are_not_a_whole_number() {
+    let mut s = session();
+    s.execute("artboard.new", &json!({"x": 1000, "y": 0, "width": 400, "height": 300})).unwrap();
+    let boards = |s: &Session| s.doc().unwrap().doc.artboards.iter().map(|a| a.rect).collect::<Vec<_>>();
+    let before = (boards(&s), undo_len(&s));
+    for (p, msg) in [
+        (json!({"columns": 1.5}), "`columns` must be a whole number"),
+        (json!({"columns": -1}), "`columns` must be a whole number"),
+        (json!({"columns": "1"}), "`columns` must be a number, not \"1\""),
+    ] {
+        let r = s.execute("artboard.rearrange", &p);
+        assert!(matches!(&r, Err(EngineError::BadParams { msg: m, .. }) if m == msg), "{p}: {r:?}");
+        assert_eq!((boards(&s), undo_len(&s)), before, "{p}");
+    }
+    let r = s.execute("artboard.rearrange", &json!({"columns": 1.0, "spacing": 50})).unwrap();
+    assert_eq!((r["rows"].clone(), r["columns"].clone()), (json!(2), json!(1)));
 }
 
 /// Fit to Artwork Bounds fits each artboard it is given to the art on it, in one undo step: an

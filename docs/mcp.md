@@ -844,6 +844,12 @@ of the format they write (one object can carry several formats' options). A comm
 (`document.setup`, `text.areaOptions`) says so the same way. The app's own journal isn't checked: an action or
 journal recorded by an older version replays as it did, except for an effect `color` that the effect can't read.
 
+`object.createObjectMosaic` (`columns`, `rows`), `object.transformEach` (`reference`, `seed`) and `artboard.rearrange`
+(`columns`) take whole numbers, written `4` or `4.0`. A fraction or a negative number is refused with
+`` `columns` must be a whole number ``. A string or another value that is not a number is refused with
+`` `columns` must be a number, not "4" ``. Each message names the key that was given, and the command then changes
+nothing.
+
 A step can use an earlier step's result, in `run` as in the `command_batch` tool. A parameter string that is exactly
 `$N` or `$N.path` takes that value from the result of step `N` (counting from 0, in the order they ran; `run --in`'s
 open isn't a step), and `$last…` from the step before. A path goes into objects by key and arrays by index:
