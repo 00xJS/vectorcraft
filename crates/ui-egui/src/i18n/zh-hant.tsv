@@ -1325,6 +1325,90 @@ file-filter	Templates	範本
 	History	步驟記錄
 	History Options…	步驟記錄選項…
 	History States	步驟記錄狀態
+# History panel: the names of undo steps (`every_undo_label_is_translated`).
+	Apply Data Set	套用資料集
+	Area Type	區域文字
+	Bloat	膨脹
+	Cancel Pattern Editing	取消圖樣編輯
+	Copy Appearance	複製外觀
+	Copy Guide	複製參考線
+	Copy in Perspective	在透視中複製
+	Create Slice from Selection	從選取範圍建立切片
+	Create Slices from Guides	從參考線建立切片
+	Delete All Slices	刪除所有切片
+	Delete Data Sets	刪除資料集
+	Delete Graphic Styles	刪除繪圖樣式
+	Delete Guide	刪除參考線
+	Delete Guides	刪除參考線
+	Delete Slice	刪除切片
+	Delete Style	刪除樣式
+	Delete Variables	刪除變數
+	Delete View	刪除檢視
+	Done Editing Pattern	完成圖樣編輯
+	Duplicate Rows	製作列複本
+	Edit Perspective Grid	編輯透視格點
+	Expand Blend	展開漸變
+	Expand Envelope	展開封套
+	Expand Image Trace	展開影像描圖
+	Expand Live Paint	展開即時上色
+	Grid Repeat	格點重複
+	Image Trace (Make and Expand)	影像描圖 (製作並展開)
+	Live Shape	即時形狀
+	Make Blend	製作漸變
+	Make Dynamic	使其動態化
+	Make Intertwine	製作交織
+	Make Live Paint	製作即時上色
+	Make Pattern	製作圖樣
+	Make Slice	製作切片
+	Make Text Wrap	製作文字繞圖
+	Merge Live Paint	合併即時上色
+	Mesh Point Color	網格點顏色
+	Mirror Repeat	鏡射重複
+	Move Envelope Point	移動封套點
+	Move Plane and Copy Objects	移動平面並複製物件
+	Move Plane and Objects	移動平面和物件
+	Move Slice	移動切片
+	Move Type on a Path	移動路徑文字
+	New Guide	新增參考線
+	Pen	筆型
+	Place from Library	從資料庫置入
+	Pucker	縮攏
+	Radial Repeat	放射狀重複
+	Rearrange Artboards	重新排列工作區域
+	Release Blend	釋放漸變
+	Release Envelope	釋放封套
+	Release Image Trace	釋放影像描圖
+	Release Intertwine	釋放交織
+	Release Live Paint	釋放即時上色
+	Release Repeat	釋放重複
+	Release Slice	釋放切片
+	Release Text Wrap	釋放文字繞圖
+	Release Threaded Text	釋放串連文字
+	Rename Design	重新命名設計
+	Rename Style	重新命名樣式
+	Rename View	重新命名檢視
+	Reorder Appearance	重新排序外觀
+	Reorder Artboards	重新排序工作區域
+	Reshape Spine	改變脊線外框
+	Resize Artboard	調整工作區域大小
+	Resize Slice	調整切片大小
+	Resize Type Area	調整文字區域大小
+	Scale in Perspective	在透視中縮放
+	Scallop	扇形化
+	Shape Builder Delete	形狀建立 (刪除)
+	Sort Swatches	排序色票
+	Symbol Screener	符號濾色器
+	Symbol Scruncher	符號緊縮器
+	Symbol Shifter	符號移位器
+	Symbol Sizer	符號縮放器
+	Symbol Spinner	符號旋轉器
+	Symbol Stainer	符號染色器
+	Symbol Styler	符號樣式器
+	Text Orientation	文字方向
+	Thread Text	串連文字
+	Twirl	旋轉扭曲
+	Typing	輸入文字
+	Wrinkle	皺摺
 	Hollow	空心
 	Home	首頁
 	Horizon Height:	地平線高度：

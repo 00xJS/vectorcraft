@@ -1353,6 +1353,90 @@ file-filter	Templates	Modelli
 	History	Cronologia
 	History Options…	Opzioni cronologia…
 	History States	Stati cronologia
+# History panel: the names of undo steps (`every_undo_label_is_translated`).
+	Apply Data Set	Applica set di dati
+	Area Type	Testo in area
+	Bloat	Gonfia
+	Cancel Pattern Editing	Annulla modifica motivo
+	Copy Appearance	Copia aspetto
+	Copy Guide	Copia guida
+	Copy in Perspective	Copia in prospettiva
+	Create Slice from Selection	Crea sezione dalla selezione
+	Create Slices from Guides	Crea sezioni da guide
+	Delete All Slices	Elimina tutte le sezioni
+	Delete Data Sets	Elimina set di dati
+	Delete Graphic Styles	Elimina stili grafici
+	Delete Guide	Elimina guida
+	Delete Guides	Elimina guide
+	Delete Slice	Elimina sezione
+	Delete Style	Elimina stile
+	Delete Variables	Elimina variabili
+	Delete View	Elimina vista
+	Done Editing Pattern	Termina modifica motivo
+	Duplicate Rows	Duplica righe
+	Edit Perspective Grid	Modifica griglia prospettica
+	Expand Blend	Espandi fusione
+	Expand Envelope	Espandi involucro
+	Expand Image Trace	Espandi ricalco immagine
+	Expand Live Paint	Espandi pittura dinamica
+	Grid Repeat	Ripetizione griglia
+	Image Trace (Make and Expand)	Ricalco immagine (crea ed espandi)
+	Live Shape	Forma dinamica
+	Make Blend	Crea fusione
+	Make Dynamic	Rendi dinamico
+	Make Intertwine	Crea intreccio
+	Make Live Paint	Crea pittura dinamica
+	Make Pattern	Crea motivo
+	Make Slice	Crea sezione
+	Make Text Wrap	Crea testo attorno
+	Merge Live Paint	Unisci pittura dinamica
+	Mesh Point Color	Colore punto trama
+	Mirror Repeat	Ripetizione speculare
+	Move Envelope Point	Sposta punto involucro
+	Move Plane and Copy Objects	Sposta piano e copia oggetti
+	Move Plane and Objects	Sposta piano e oggetti
+	Move Slice	Sposta sezione
+	Move Type on a Path	Sposta testo su tracciato
+	New Guide	Nuova guida
+	Pen	Penna
+	Place from Library	Inserisci da libreria
+	Pucker	Contrai
+	Radial Repeat	Ripetizione radiale
+	Rearrange Artboards	Ridisponi tavole da disegno
+	Release Blend	Rilascia fusione
+	Release Envelope	Rilascia involucro
+	Release Image Trace	Rilascia ricalco immagine
+	Release Intertwine	Rilascia intreccio
+	Release Live Paint	Rilascia pittura dinamica
+	Release Repeat	Rilascia ripetizione
+	Release Slice	Rilascia sezione
+	Release Text Wrap	Rilascia testo attorno
+	Release Threaded Text	Rilascia testo concatenato
+	Rename Design	Rinomina design
+	Rename Style	Rinomina stile
+	Rename View	Rinomina vista
+	Reorder Appearance	Riordina aspetto
+	Reorder Artboards	Riordina tavole da disegno
+	Reshape Spine	Rimodella dorsale
+	Resize Artboard	Ridimensiona tavola da disegno
+	Resize Slice	Ridimensiona sezione
+	Resize Type Area	Ridimensiona area di testo
+	Scale in Perspective	Scala in prospettiva
+	Scallop	Smerla
+	Shape Builder Delete	Generatore forme (elimina)
+	Sort Swatches	Ordina campioni
+	Symbol Screener	Trasparenza simboli
+	Symbol Scruncher	Addensamento simboli
+	Symbol Shifter	Spostamento simboli
+	Symbol Sizer	Ridimensionamento simboli
+	Symbol Spinner	Rotazione simboli
+	Symbol Stainer	Colorazione simboli
+	Symbol Styler	Stile simboli
+	Text Orientation	Orientamento testo
+	Thread Text	Concatena testo
+	Twirl	Vortice
+	Typing	Digitazione
+	Wrinkle	Grinza
 	Hollow	Vuoto
 	Home	Home
 	Horizon Height:	Altezza orizzonte:

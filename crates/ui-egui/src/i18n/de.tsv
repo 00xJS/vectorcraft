@@ -1336,6 +1336,90 @@ file-filter	Templates	Vorlagen
 	History	Protokoll
 	History Options…	Protokolloptionen…
 	History States	Protokollschritte
+# History panel: the names of undo steps (`every_undo_label_is_translated`).
+	Apply Data Set	Datensatz anwenden
+	Area Type	Flächentext
+	Bloat	Aufblasen
+	Cancel Pattern Editing	Musterbearbeitung abbrechen
+	Copy Appearance	Aussehen kopieren
+	Copy Guide	Hilfslinie kopieren
+	Copy in Perspective	In Perspektive kopieren
+	Create Slice from Selection	Slice aus Auswahl erstellen
+	Create Slices from Guides	Slices aus Hilfslinien erstellen
+	Delete All Slices	Alle Slices löschen
+	Delete Data Sets	Datensätze löschen
+	Delete Graphic Styles	Grafikstile löschen
+	Delete Guide	Hilfslinie löschen
+	Delete Guides	Hilfslinien löschen
+	Delete Slice	Slice löschen
+	Delete Style	Format löschen
+	Delete Variables	Variablen löschen
+	Delete View	Ansicht löschen
+	Done Editing Pattern	Musterbearbeitung beenden
+	Duplicate Rows	Zeilen duplizieren
+	Edit Perspective Grid	Perspektivenraster bearbeiten
+	Expand Blend	Angleichung umwandeln
+	Expand Envelope	Hülle umwandeln
+	Expand Image Trace	Bildnachzeichner umwandeln
+	Expand Live Paint	„Interaktiv malen“ umwandeln
+	Grid Repeat	Rasterwiederholung
+	Image Trace (Make and Expand)	Bildnachzeichner (erstellen und umwandeln)
+	Live Shape	Interaktive Form
+	Make Blend	Angleichung erstellen
+	Make Dynamic	Dynamisch machen
+	Make Intertwine	Verflechtung erstellen
+	Make Live Paint	„Interaktiv malen“ erstellen
+	Make Pattern	Muster erstellen
+	Make Slice	Slice erstellen
+	Make Text Wrap	Textumfluss erstellen
+	Merge Live Paint	„Interaktiv malen“ zusammenfügen
+	Mesh Point Color	Farbe des Gitterpunkts
+	Mirror Repeat	Spiegelwiederholung
+	Move Envelope Point	Hüllenpunkt verschieben
+	Move Plane and Copy Objects	Perspektivebene verschieben und Objekte kopieren
+	Move Plane and Objects	Perspektivebene und Objekte verschieben
+	Move Slice	Slice verschieben
+	Move Type on a Path	Pfadtext verschieben
+	New Guide	Neue Hilfslinie
+	Pen	Zeichenstift
+	Place from Library	Aus Bibliothek platzieren
+	Pucker	Zusammenziehen
+	Radial Repeat	Radiale Wiederholung
+	Rearrange Artboards	Zeichenflächen neu anordnen
+	Release Blend	Angleichung zurückwandeln
+	Release Envelope	Hülle zurückwandeln
+	Release Image Trace	Bildnachzeichner zurückwandeln
+	Release Intertwine	Verflechtung zurückwandeln
+	Release Live Paint	„Interaktiv malen“ zurückwandeln
+	Release Repeat	Wiederholung zurückwandeln
+	Release Slice	Slice zurückwandeln
+	Release Text Wrap	Textumfluss zurückwandeln
+	Release Threaded Text	Verketteten Text zurückwandeln
+	Rename Design	Design umbenennen
+	Rename Style	Format umbenennen
+	Rename View	Ansicht umbenennen
+	Reorder Appearance	Aussehen neu anordnen
+	Reorder Artboards	Reihenfolge der Zeichenflächen ändern
+	Reshape Spine	Achse umformen
+	Resize Artboard	Größe der Zeichenfläche ändern
+	Resize Slice	Slice-Größe ändern
+	Resize Type Area	Größe der Textfläche ändern
+	Scale in Perspective	In Perspektive skalieren
+	Scallop	Ausbuchten
+	Shape Builder Delete	Formerstellung (Löschen)
+	Sort Swatches	Farbfelder sortieren
+	Symbol Screener	Symbol transparent gestalten
+	Symbol Scruncher	Symbol stauchen
+	Symbol Shifter	Symbol verschieben
+	Symbol Sizer	Symbol skalieren
+	Symbol Spinner	Symbol drehen
+	Symbol Stainer	Symbol färben
+	Symbol Styler	Symbol gestalten
+	Text Orientation	Textrichtung
+	Thread Text	Text verketten
+	Twirl	Strudel
+	Typing	Texteingabe
+	Wrinkle	Zerknittern
 	Hollow	Hohl
 	Home	Start
 	Horizon Height:	Horizonthöhe:

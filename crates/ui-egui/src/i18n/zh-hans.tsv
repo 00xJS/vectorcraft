@@ -1295,6 +1295,84 @@ file-filter	Templates	模板
 	History	历史记录
 	History Options…	历史记录选项…
 	History States	历史记录步数
+# History panel: the names of undo steps (`every_undo_label_is_translated`).
+	Apply Data Set	应用数据集
+	Bloat	膨胀
+	Cancel Pattern Editing	取消图案编辑
+	Copy Appearance	复制外观
+	Copy Guide	复制参考线
+	Copy in Perspective	在透视中复制
+	Create Slice from Selection	从选区创建切片
+	Create Slices from Guides	从参考线创建切片
+	Delete All Slices	删除所有切片
+	Delete Data Sets	删除数据集
+	Delete Graphic Styles	删除图形样式
+	Delete Guide	删除参考线
+	Delete Guides	删除参考线
+	Delete Slice	删除切片
+	Delete Style	删除样式
+	Delete Variables	删除变量
+	Delete View	删除视图
+	Done Editing Pattern	完成图案编辑
+	Duplicate Rows	复制行
+	Edit Perspective Grid	编辑透视网格
+	Expand Blend	扩展混合
+	Expand Envelope	扩展封套
+	Expand Image Trace	扩展图像描摹
+	Expand Live Paint	扩展实时上色
+	Grid Repeat	网格重复
+	Live Shape	实时形状
+	Make Blend	创建混合
+	Make Dynamic	使其动态化
+	Make Intertwine	创建交织
+	Make Live Paint	创建实时上色
+	Make Pattern	创建图案
+	Make Slice	创建切片
+	Merge Live Paint	合并实时上色
+	Mesh Point Color	网格点颜色
+	Mirror Repeat	镜像重复
+	Move Envelope Point	移动封套点
+	Move Plane and Copy Objects	移动平面并复制对象
+	Move Plane and Objects	移动平面和对象
+	Move Slice	移动切片
+	Move Type on a Path	移动路径文字
+	New Guide	新建参考线
+	Place from Library	从库置入
+	Pucker	收缩
+	Radial Repeat	径向重复
+	Rearrange Artboards	重新排列画板
+	Release Blend	释放混合
+	Release Envelope	释放封套
+	Release Intertwine	释放交织
+	Release Live Paint	释放实时上色
+	Release Repeat	释放重复
+	Release Slice	释放切片
+	Release Threaded Text	释放串接文本
+	Rename Design	重命名设计
+	Rename Style	重命名样式
+	Rename View	重命名视图
+	Reorder Appearance	重新排序外观
+	Reorder Artboards	重新排序画板
+	Reshape Spine	整形脊线
+	Resize Artboard	调整画板大小
+	Resize Slice	调整切片大小
+	Resize Type Area	调整文字区域大小
+	Scale in Perspective	在透视中缩放
+	Scallop	扇贝
+	Shape Builder Delete	形状生成器 (删除)
+	Sort Swatches	排序色板
+	Symbol Screener	符号透明度
+	Symbol Scruncher	符号紧缩
+	Symbol Shifter	符号移位
+	Symbol Sizer	符号缩放
+	Symbol Spinner	符号旋转
+	Symbol Stainer	符号着色
+	Symbol Styler	符号样式
+	Text Orientation	文字方向
+	Thread Text	串接文本
+	Twirl	旋转扭曲
+	Typing	输入文字
+	Wrinkle	褶皱
 	Hollow	空心
 	Home	主页
 	Horizon Height:	地平线高度：

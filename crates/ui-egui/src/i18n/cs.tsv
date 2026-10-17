@@ -1512,6 +1512,76 @@ lighting	Light	Světlo
 	{percent}% opacity	krytí {percent} %
 	History Options…	Možnosti historie…
 	Open a document to see its history.	Otevřete dokument, abyste viděli jeho historii.
+# History panel: the names of undo steps (`every_undo_label_is_translated`).
+	Apply Data Set	Použít sadu dat
+	Cancel Pattern Editing	Zrušit úpravy vzorku
+	Copy Appearance	Kopírovat vzhled
+	Copy Guide	Kopírovat vodítko
+	Copy in Perspective	Kopírovat v perspektivě
+	Create Slice from Selection	Vytvořit řez z výběru
+	Create Slices from Guides	Vytvořit řezy z vodítek
+	Delete All Slices	Odstranit všechny řezy
+	Delete Data Sets	Odstranit sady dat
+	Delete Graphic Styles	Odstranit grafické styly
+	Delete Guide	Odstranit vodítko
+	Delete Guides	Odstranit vodítka
+	Delete Slice	Odstranit řez
+	Delete Style	Odstranit styl
+	Delete Variables	Odstranit proměnné
+	Delete View	Odstranit zobrazení
+	Done Editing Pattern	Dokončit úpravy vzorku
+	Duplicate Rows	Duplikovat řádky
+	Edit Perspective Grid	Upravit perspektivní mřížku
+	Expand Blend	Rozložit prolnutí
+	Expand Envelope	Rozložit obálku
+	Expand Image Trace	Rozložit vektorizaci obrazu
+	Expand Live Paint	Rozložit živou malbu
+	Live Shape	Živý tvar
+	Make Blend	Vytvořit prolnutí
+	Make Dynamic	Nastavit jako dynamické
+	Make Intertwine	Vytvořit propletení
+	Make Live Paint	Vytvořit živou malbu
+	Make Pattern	Vytvořit vzorek
+	Make Slice	Vytvořit řez
+	Merge Live Paint	Sloučit živou malbu
+	Mesh Point Color	Barva bodu sítě
+	Move Envelope Point	Přesunout bod obálky
+	Move Plane and Copy Objects	Posunout rovinu a kopírovat objekty
+	Move Plane and Objects	Posunout rovinu a objekty
+	Move Slice	Přesunout řez
+	Move Type on a Path	Přesunout text na cestě
+	New Guide	Nové vodítko
+	Place from Library	Umístit z knihovny
+	Rearrange Artboards	Přeuspořádat pracovní plochy
+	Release Blend	Uvolnit prolnutí
+	Release Envelope	Uvolnit obálku
+	Release Intertwine	Uvolnit propletení
+	Release Live Paint	Uvolnit živou malbu
+	Release Repeat	Uvolnit opakování
+	Release Slice	Uvolnit řez
+	Release Threaded Text	Uvolnit zřetězený text
+	Rename Design	Přejmenovat návrh
+	Rename Style	Přejmenovat styl
+	Rename View	Přejmenovat zobrazení
+	Reorder Appearance	Změnit pořadí vzhledu
+	Reorder Artboards	Změnit pořadí pracovních ploch
+	Reshape Spine	Přetvarovat páteř
+	Resize Artboard	Změnit velikost pracovní plochy
+	Resize Slice	Změnit velikost řezu
+	Resize Type Area	Změnit velikost oblasti textu
+	Scale in Perspective	Změnit měřítko v perspektivě
+	Shape Builder Delete	Tvorba tvarů (odstranění)
+	Sort Swatches	Seřadit vzorník
+	Symbol Screener	Průhlednost symbolů
+	Symbol Scruncher	Zhuštění symbolů
+	Symbol Shifter	Posun symbolů
+	Symbol Sizer	Velikost symbolů
+	Symbol Spinner	Otáčení symbolů
+	Symbol Stainer	Obarvení symbolů
+	Symbol Styler	Stylování symbolů
+	Text Orientation	Orientace textu
+	Thread Text	Zřetězit text
+	Typing	Psaní
 	Abutting	Sousedící
 	Black and White	Černobílé
 	Corners	Rohy

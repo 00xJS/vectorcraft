@@ -1318,6 +1318,76 @@
 	History	История
 	History Options…	Опции за историята…
 	History States	Състояния на историята
+# History panel: the names of undo steps (`every_undo_label_is_translated`).
+	Apply Data Set	Прилагане на набор от данни
+	Cancel Pattern Editing	Отказ от редактирането на мостра
+	Copy Appearance	Копиране на външния вид
+	Copy Guide	Копиране на водач
+	Copy in Perspective	Копиране в перспектива
+	Create Slice from Selection	Създаване на отрязък от селекцията
+	Create Slices from Guides	Създаване на отрязъци от водачи
+	Delete All Slices	Изтриване на всички отрязъци
+	Delete Data Sets	Изтриване на набори от данни
+	Delete Graphic Styles	Изтриване на графични стилове
+	Delete Guide	Изтриване на водач
+	Delete Guides	Изтриване на водачи
+	Delete Slice	Изтриване на отрязък
+	Delete Style	Изтриване на стил
+	Delete Variables	Изтриване на променливи
+	Delete View	Изтриване на изглед
+	Done Editing Pattern	Край на редактирането на мостра
+	Duplicate Rows	Дублиране на редове
+	Edit Perspective Grid	Редактиране на перспективна мрежа
+	Expand Blend	Разширяване на преливането
+	Expand Envelope	Разширяване на обвивката
+	Expand Image Trace	Разширяване на трасирането на изображение
+	Expand Live Paint	Разширяване на динамичното оцветяване
+	Live Shape	Динамична фигура
+	Make Blend	Създаване на преливане
+	Make Dynamic	Превръщане в динамично
+	Make Intertwine	Създаване на преплитане
+	Make Live Paint	Създаване на динамично оцветяване
+	Make Pattern	Създаване на мостра
+	Make Slice	Създаване на отрязък
+	Merge Live Paint	Сливане на динамично оцветяване
+	Mesh Point Color	Цвят на точка от мрежата
+	Move Envelope Point	Преместване на точка от обвивката
+	Move Plane and Copy Objects	Преместване на равнината и копиране на обектите
+	Move Plane and Objects	Преместване на равнината и обектите
+	Move Slice	Преместване на отрязък
+	Move Type on a Path	Преместване на текст по пътя
+	New Guide	Нов водач
+	Place from Library	Вмъкване от библиотека
+	Rearrange Artboards	Пренареждане на работните области
+	Release Blend	Освобождаване на преливане
+	Release Envelope	Освобождаване на обвивка
+	Release Intertwine	Освобождаване на преплитане
+	Release Live Paint	Освобождаване на динамично оцветяване
+	Release Repeat	Освобождаване на повторение
+	Release Slice	Освобождаване на отрязък
+	Release Threaded Text	Освобождаване на свързан текст
+	Rename Design	Преименуване на дизайн
+	Rename Style	Преименуване на стил
+	Rename View	Преименуване на изглед
+	Reorder Appearance	Пренареждане на външния вид
+	Reorder Artboards	Промяна на реда на работните области
+	Reshape Spine	Промяна на формата на оста
+	Resize Artboard	Преоразмеряване на работна област
+	Resize Slice	Преоразмеряване на отрязък
+	Resize Type Area	Преоразмеряване на текстова област
+	Scale in Perspective	Мащабиране в перспектива
+	Shape Builder Delete	Създател на фигури (изтриване)
+	Sort Swatches	Сортиране на образци
+	Symbol Screener	Филтър на символи
+	Symbol Scruncher	Свиване на символи
+	Symbol Shifter	Преместване на символи
+	Symbol Sizer	Мащабиране на символи
+	Symbol Spinner	Завъртане на символи
+	Symbol Stainer	Оцветяване на символи
+	Symbol Styler	Стил на символи
+	Text Orientation	Ориентация на текста
+	Thread Text	Свързване на текст
+	Typing	Въвеждане на текст
 	Hollow	Кух
 	Home	Начало
 	Horizon Height:	Височина на хоризонта:

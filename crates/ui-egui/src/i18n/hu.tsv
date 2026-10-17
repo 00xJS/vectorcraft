@@ -1717,6 +1717,76 @@ file-filter	Templates	Sablonok
 	History	Előzmények
 	History Options…	Előzmények beállításai…
 	History States	Előzmények lépésszáma
+# History panel: the names of undo steps (`every_undo_label_is_translated`).
+	Apply Data Set	Adatkészlet alkalmazása
+	Cancel Pattern Editing	Mintázatszerkesztés megszakítása
+	Copy Appearance	Megjelenés másolása
+	Copy Guide	Segédvonal másolása
+	Copy in Perspective	Másolás perspektívában
+	Create Slice from Selection	Szelet létrehozása a kijelölésből
+	Create Slices from Guides	Szeletek létrehozása segédvonalakból
+	Delete All Slices	Összes szelet törlése
+	Delete Data Sets	Adatkészletek törlése
+	Delete Graphic Styles	Grafikai stílusok törlése
+	Delete Guide	Segédvonal törlése
+	Delete Guides	Segédvonalak törlése
+	Delete Slice	Szelet törlése
+	Delete Style	Stílus törlése
+	Delete Variables	Változók törlése
+	Delete View	Nézet törlése
+	Done Editing Pattern	Mintázatszerkesztés befejezése
+	Duplicate Rows	Sorok kettőzése
+	Edit Perspective Grid	Perspektivikus rács szerkesztése
+	Expand Blend	Összemosás kibontása
+	Expand Envelope	Burkoló kibontása
+	Expand Image Trace	Képvektorizálás kibontása
+	Expand Live Paint	Élő festés kibontása
+	Live Shape	Élő alakzat
+	Make Blend	Összemosás létrehozása
+	Make Dynamic	Dinamikussá tétel
+	Make Intertwine	Összefonás létrehozása
+	Make Live Paint	Élő festés létrehozása
+	Make Pattern	Mintázat létrehozása
+	Make Slice	Szelet létrehozása
+	Merge Live Paint	Élő festés összeolvasztása
+	Mesh Point Color	Hálópont színe
+	Move Envelope Point	Burkolópont áthelyezése
+	Move Plane and Copy Objects	Sík áthelyezése és objektumok másolása
+	Move Plane and Objects	Sík és objektumok áthelyezése
+	Move Slice	Szelet áthelyezése
+	Move Type on a Path	Útvonalszöveg áthelyezése
+	New Guide	Új segédvonal
+	Place from Library	Elhelyezés könyvtárból
+	Rearrange Artboards	Rajztáblák átrendezése
+	Release Blend	Összemosás megszüntetése
+	Release Envelope	Burkoló megszüntetése
+	Release Intertwine	Összefonás megszüntetése
+	Release Live Paint	Élő festés megszüntetése
+	Release Repeat	Ismétlés megszüntetése
+	Release Slice	Szelet megszüntetése
+	Release Threaded Text	Láncolt szöveg megszüntetése
+	Rename Design	Minta átnevezése
+	Rename Style	Stílus átnevezése
+	Rename View	Nézet átnevezése
+	Reorder Appearance	Megjelenés átrendezése
+	Reorder Artboards	Rajztáblák sorrendjének módosítása
+	Reshape Spine	Gerinc átformálása
+	Resize Artboard	Rajztábla átméretezése
+	Resize Slice	Szelet átméretezése
+	Resize Type Area	Szövegterület átméretezése
+	Scale in Perspective	Méretezés perspektívában
+	Shape Builder Delete	Alakzatépítő (törlés)
+	Sort Swatches	Színminták rendezése
+	Symbol Screener	Szimbólumhalványító
+	Symbol Scruncher	Szimbólumtömörítő
+	Symbol Shifter	Szimbólumtoló
+	Symbol Sizer	Szimbólumméretező
+	Symbol Spinner	Szimbólumforgató
+	Symbol Stainer	Szimbólumszínező
+	Symbol Styler	Szimbólumstilizáló
+	Text Orientation	Szöveg iránya
+	Thread Text	Szöveg láncolása
+	Typing	Gépelés
 	Hold	Nyomva tartás
 	Hollow	Üreges
 	Home	Kezdőképernyő
