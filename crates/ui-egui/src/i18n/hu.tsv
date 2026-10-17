@@ -5062,3 +5062,6 @@ imageTrace	Outline	Körvonal
 @msg	a mask has more than one art block	egy maszk egynél több grafikai blokkot tartalmaz
 @msg	mask art ends outside a mask dictionary	a maszk grafikája a maszk szótárán kívül ér véget
 @msg	cancelled; nothing was changed	megszakítva; semmi sem változott
+@msg	a linked image can't become a gradient mesh: embed it first	csatolt kép nem alakítható színátmenetes hálóvá: előbb ágyazza be
+@msg	the image has no usable size or position	a képnek nincs használható mérete vagy helyzete
+@msg	the image's pixels can't be read	a kép képpontjai nem olvashatók

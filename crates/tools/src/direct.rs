@@ -33,7 +33,7 @@
 use std::borrow::Cow;
 
 use serde_json::{Value, json};
-use vectorcraft_doc::hit::{HitKind, hit_test};
+use vectorcraft_doc::hit::{HitKind, compound_part_at, hit_test};
 use vectorcraft_doc::{AnchorRef, Node, NodeId, NodeKind, Selection};
 use vectorcraft_geom::{Anchor, PathData, Point, Rect, Vec2};
 
@@ -425,10 +425,15 @@ impl Tool for DirectSelectionTool {
                     self.state = State::Idle;
                     return out;
                 }
-                let Some(h) = hit_test(cx.doc, p, cx.hit_options()) else {
+                let Some(mut h) = hit_test(cx.doc, p, cx.hit_options()) else {
                     self.state = State::Marquee { start: p, cur: p, toggle: ev.mods.shift, enclosed: false };
                     return vec![];
                 };
+                // A compound path's paths are picked one at a time, below the compound path (#2441).
+                if let Some(part) = cx.doc.node(h.leaf).and_then(|n| compound_part_at(n, p, tol)) {
+                    h.ancestry.push(part);
+                    h.leaf = part;
+                }
                 // Walk up from the leaf: select the first ancestor not yet selected (below the layer).
                 // Stop at the isolated object: the next group up is outside isolation mode.
                 let chain: Vec<NodeId> = h.ancestry.iter().skip(1).rev().copied().take_while(|id| in_scope(cx.doc, cx.isolation, *id)).collect();
@@ -1329,6 +1334,37 @@ mod tests {
                 Action::Exec("guide.select".into(), json!({"indexes": [0], "toggle": true})),
             ]
         );
+    }
+
+    /// #2441: Group Selection picks one path of a compound path (the outer shape or a hole);
+    /// a second click on it adds the compound path, like a group around a member.
+    #[test]
+    fn group_selection_picks_a_path_of_a_compound_path() {
+        let mut d = vectorcraft_doc::Document::new(500.0, 500.0);
+        let l = d.layers[0].id;
+        let (outer, hole, compound) = (d.alloc_id(), d.alloc_id(), d.alloc_id());
+        let rect = |id, a: f64, b: f64| {
+            std::sync::Arc::new(vectorcraft_doc::Node::path(id, vectorcraft_geom::shapes::rectangle(Rect::new(a, a, b, b)), Default::default()))
+        };
+        let mut c = vectorcraft_doc::Node::new(
+            compound,
+            vectorcraft_doc::NodeKind::Compound {
+                children: vec![rect(outer, 0.0, 200.0), rect(hole, 50.0, 150.0)],
+                rule: vectorcraft_geom::FillRule::EvenOdd,
+            },
+        );
+        c.appearance = vectorcraft_doc::Appearance::default_art().into();
+        d.insert(Some(l), 0, c).unwrap();
+        let p = paint();
+        let none = Selection::default();
+        let click = |s: &Selection, x, y| DirectSelectionTool::new(true).pointer(&cx(&d, s, &p), &PointerEvent::new(PointerKind::Down, x, y));
+        let set = |id: NodeId| vec![Action::Exec("select.set".into(), json!({"ids": [id.0]}))];
+        assert_eq!(click(&none, 25.0, 100.0), set(outer), "the fill between the outline and the hole");
+        assert_eq!(click(&none, 50.0, 100.0), set(hole), "the hole's outline");
+        assert!(click(&none, 100.0, 100.0).is_empty(), "inside the hole nothing is hit");
+        let mut s = Selection::default();
+        s.set([outer]);
+        assert_eq!(click(&s, 25.0, 100.0), vec![Action::Exec("select.add".into(), json!({"ids": [compound.0]}))]);
     }
 
     /// A path inside an inner group, a sibling path outside it, and the groups' ids.

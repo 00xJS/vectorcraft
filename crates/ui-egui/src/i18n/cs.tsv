@@ -5076,3 +5076,6 @@ mark-style	Japanese	Japonské
 @msg	a mask has more than one art block	maska má více než jeden blok kresby
 @msg	mask art ends outside a mask dictionary	kresba masky končí mimo slovník masky
 @msg	cancelled; nothing was changed	zrušeno; nic nebylo změněno
+@msg	a linked image can't become a gradient mesh: embed it first	propojený obraz nelze převést na síť přechodu: nejprve jej vložte
+@msg	the image has no usable size or position	obraz nemá použitelnou velikost ani polohu
+@msg	the image's pixels can't be read	pixely obrazu nelze přečíst

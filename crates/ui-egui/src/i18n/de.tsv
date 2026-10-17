@@ -4637,3 +4637,6 @@ effect	Regular	Regelmäßig
 @msg	a mask has more than one art block	eine Maske enthält mehr als einen Grafikblock
 @msg	mask art ends outside a mask dictionary	die Maskengrafik endet außerhalb eines Maskenwörterbuchs
 @msg	cancelled; nothing was changed	abgebrochen; es wurde nichts geändert
+@msg	a linked image can't become a gradient mesh: embed it first	ein verknüpftes Bild kann kein Verlaufsgitter werden: Betten Sie es zuerst ein
+@msg	the image has no usable size or position	das Bild hat keine verwendbare Größe oder Position
+@msg	the image's pixels can't be read	die Pixel des Bildes können nicht gelesen werden

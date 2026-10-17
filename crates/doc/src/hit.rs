@@ -470,6 +470,20 @@ fn hit_any(n: &Node, p: Point, opt: HitOptions, symbols: &SymbolBoxes) -> Option
     }
 }
 
+/// The path of compound path `n` under `p`, for the Group Selection tool: the one whose outline is
+/// within `tol`, else the innermost one whose area holds `p` (a hole inside an outer shape, an
+/// island inside a hole). `None` when `n` isn't a compound path or no part is under `p`.
+pub fn compound_part_at(n: &Node, p: Point, tol: f64) -> Option<NodeId> {
+    let NodeKind::Compound { children, rule } = &n.kind else { return None };
+    let parts: Vec<_> = children.iter().rev().filter_map(|c| c.path_data().map(|pd| (c.id, pd.to_bezpath(), pd.bounds()))).collect();
+    if let Some((id, ..)) = parts.iter().find(|(_, bp, _)| stroke_contains(bp, 0.0, tol, p)) {
+        return Some(*id);
+    }
+    // The innermost by the size of its box.
+    let size = |b: &Option<Rect>| b.map_or(f64::INFINITY, |b| b.area());
+    parts.iter().filter(|(_, bp, _)| fill_contains(bp, *rule, p)).min_by(|a, b| size(&a.2).total_cmp(&size(&b.2))).map(|(id, ..)| *id)
+}
+
 /// Objects (children of layers, or of `scope` in isolation mode) touched by a marquee rect. Symbol
 /// instances are measured by their art ([`Node::geometric_bounds_with`]). The art of a clip group
 /// or of a layer with a clipping mask counts only when the marquee meets the region its clipping
