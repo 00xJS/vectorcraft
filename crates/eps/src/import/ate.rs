@@ -550,6 +550,11 @@ impl Story {
         self.text.len()
     }
 
+    /// The story's characters, with `\r` ending paragraphs and `\x03` ending lines.
+    pub(super) fn text(&self) -> &str {
+        &self.text
+    }
+
     /// The point frame's matrix (the first frame's, when it is one), else the identity.
     fn matrix(&self) -> [f64; 6] {
         match self.frames.first() {
