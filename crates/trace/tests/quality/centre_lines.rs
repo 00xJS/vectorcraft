@@ -109,7 +109,7 @@ fn evaluate(sc: &Scene, input: &'static str, cov: &[f32]) -> Metrics {
             [v, v, v, 255]
         })
         .collect();
-    let img = Raster::new(sc.w as u32, sc.h as u32, rgba);
+    let img = Raster::new(sc.w as u32, sc.h as u32, rgba).unwrap();
     let params = TraceParams { strokes: true, fills: true, stroke_width: sc.wmax, ignore_white: true, noise: 4, ..TraceParams::default() };
     let t0 = Instant::now();
     let res = trace_within(&img, &params, super::MAX_ANCHORS).unwrap();

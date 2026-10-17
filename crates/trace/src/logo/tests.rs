@@ -57,7 +57,7 @@ fn render(w: u32, h: u32, blur: f64, shade: impl Fn(f64, f64) -> Option<[u8; 3]>
         let un = |v: f64| if a > 1e-9 { ((v / a) * 255.0).round().clamp(0.0, 255.0) as u8 } else { 0 };
         rgba.extend_from_slice(&[un(p[0]), un(p[1]), un(p[2]), (a * 255.0).round().clamp(0.0, 255.0) as u8]);
     }
-    Raster::new(w, h, rgba)
+    Raster::new(w, h, rgba).unwrap()
 }
 
 const RED: [u8; 3] = [210, 40, 50];
@@ -235,12 +235,12 @@ fn assert_sane(res: &TraceResult, w: u32, h: u32) {
 fn degenerate_images_are_fine() {
     let p = logo_params();
     for (w, h, img) in [
-        (0, 0, Raster::new(0, 0, vec![])),
-        (1, 1, Raster::new(1, 1, vec![200, 30, 30, 255])),
-        (3, 3, Raster::new(3, 3, vec![0; 36])),
-        (2, 2, Raster::new(2, 2, vec![255; 16])),
-        (5, 1, Raster::new(5, 1, vec![9; 20])),
-        (1, 7, Raster::new(1, 7, vec![130; 28])),
+        (0, 0, Raster::new(0, 0, vec![]).unwrap()),
+        (1, 1, Raster::new(1, 1, vec![200, 30, 30, 255]).unwrap()),
+        (3, 3, Raster::new(3, 3, vec![0; 36]).unwrap()),
+        (2, 2, Raster::new(2, 2, vec![255; 16]).unwrap()),
+        (5, 1, Raster::new(5, 1, vec![9; 20]).unwrap()),
+        (1, 7, Raster::new(1, 7, vec![130; 28]).unwrap()),
     ] {
         match trace_within(&img, &p, 1000) {
             Ok(res) => assert_sane(&res, w, h),
@@ -398,7 +398,7 @@ fn random_small_images_and_settings_never_panic() {
                 });
             }
         }
-        let img = Raster::new(w, h, rgba);
+        let img = Raster::new(w, h, rgba).unwrap();
         let p = TraceParams {
             paths: weird[(next() % 8) as usize],
             corners: weird[(next() % 8) as usize],
