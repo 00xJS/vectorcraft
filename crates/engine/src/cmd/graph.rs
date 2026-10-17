@@ -192,7 +192,9 @@ fn drop_empty_rows(g: &mut GraphSpec) {
 
 fn fmt_value(v: f64) -> String {
     if (v - v.round()).abs() < 1e-9 {
-        format!("{}", v.round() as i64)
+        // Beyond the i64 range the cast would saturate; every f64 that large is a whole number, so
+        // `{:.0}` prints its exact digits.
+        if v.abs() < 9e18 { format!("{}", v.round() as i64) } else { format!("{v:.0}") }
     } else {
         format!("{:.2}", v).trim_end_matches('0').trim_end_matches('.').to_string()
     }
@@ -1899,6 +1901,16 @@ mod tests {
     use vectorcraft_doc::{CharStyle, GraphKind, GraphSpec, NodeKind};
 
     use crate::{NodeId, Session};
+
+    #[test]
+    fn fmt_value_does_not_saturate_beyond_i64() {
+        assert_eq!(super::fmt_value(1e19), "10000000000000000000");
+        assert_eq!(super::fmt_value(2e19), "20000000000000000000");
+        assert_eq!(super::fmt_value(-2e19), "-20000000000000000000");
+        assert_eq!(super::fmt_value(42.0), "42");
+        assert_eq!(super::fmt_value(-0.0), "0");
+        assert_eq!(super::fmt_value(2.5), "2.5");
+    }
 
     fn graph(s: &mut Session, ty: &str) -> NodeId {
         let csv = ",2024,2025\nQ1,3,2\nQ2,5,4\nQ3,-1,6";
