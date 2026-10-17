@@ -1157,6 +1157,69 @@ proptest! {
     }
 }
 
+// ---------- data set CSV files ----------
+
+/// A document with a text, a visibility and a graph variable, each bound to an object, and two
+/// data sets.
+fn merge_session() -> vectorcraft_engine::Session {
+    let mut s = vectorcraft_engine::Session::new();
+    s.execute("file.new", &json!({"width": 200, "height": 200})).unwrap();
+    let id = |r: Value| r["id"].as_u64().unwrap();
+    let t = id(s.execute("text.create", &json!({"x": 10, "y": 10, "text": "One"})).unwrap());
+    let r = id(s.execute("shape.rectangle", &json!({"x": 10, "y": 40, "width": 50, "height": 40})).unwrap());
+    let graph = json!({"type": "column", "x": 80, "y": 10, "width": 100, "height": 80, "csv": ",Sales\nA,1\nB,2"});
+    let g = id(s.execute("graph.create", &graph).unwrap());
+    for (name, kind, object) in [("Title", "text", t), ("Show", "visibility", r), ("Chart", "graph", g)] {
+        s.execute("variable.define", &json!({"name": name, "kind": kind})).unwrap();
+        s.execute("variable.bind", &json!({"variable": name, "ids": [object]})).unwrap();
+    }
+    s.execute("dataset.new", &json!({"name": "A", "values": {"Title": "Two, \"quoted\"\nlines", "Show": true, "Chart": ",Q\nX,3"}})).unwrap();
+    s.execute("dataset.new", &json!({"name": "B", "values": {"Title": " padded ", "Show": false}})).unwrap();
+    s
+}
+
+/// [`merge_session`]'s data sets exported as CSV, made once.
+fn saved_datasets() -> String {
+    static TEXT: std::sync::OnceLock<String> = std::sync::OnceLock::new();
+    TEXT.get_or_init(|| merge_session().execute("dataset.export", &json!({})).unwrap()["csv"].as_str().unwrap().to_string()).clone()
+}
+
+/// `dataset.import` with `params` on [`merge_session`]'s document, the first three data sets it
+/// read selected in turn and every data set exported again; the document then renders and exports.
+fn datasets(what: &str, params: Value) -> Result<(), TestCaseError> {
+    survive(what, || {
+        let mut s = merge_session();
+        if let Ok(r) = no_panic(s.execute("dataset.import", &params)) {
+            for name in r["names"].as_array().into_iter().flatten().take(3) {
+                let _ = no_panic(s.execute("dataset.select", &json!({"name": name})));
+            }
+        }
+        let _ = no_panic(s.execute("dataset.export", &json!({})));
+        Some((*s.doc().ok()?.doc).clone())
+    })
+}
+
+proptest! {
+    #![proptest_config(config())]
+
+    #[test]
+    fn dataset_csv_garbage_never_panics(s in ".{0,300}", head in prop::sample::select(vec!["", "name,Title,Show,Chart\n", "Title\tShow\tChart\n", "name\tTitle\n", "Show,Chart\n"])) {
+        datasets("data set CSV garbage", json!({"csv": format!("{head}{s}")}))?;
+    }
+
+    #[test]
+    fn dataset_csv_bytes_never_panic(bytes in prop::collection::vec(any::<u8>(), 0..300)) {
+        datasets("data set CSV bytes", json!({"dataBase64": vectorcraft_format::base64_encode(&bytes)}))?;
+    }
+
+    #[test]
+    fn mutated_dataset_csvs_never_panic(cut in 0usize..200, edits in prop::collection::vec(arb_edit(), 0..10), tabs in any::<bool>()) {
+        let text = saved_datasets();
+        let text = if tabs { text.replace(',', "\t") } else { text };
+        datasets("mutated data set CSV", json!({"csv": mutate_text(&text, cut, &edits)}))?;
+    }
+}
+
 // ---------- shortcut sets ----------
 
 /// Shortcut set `bytes` read with `shortcutSet.read`, with import matches saved to annotate it: an

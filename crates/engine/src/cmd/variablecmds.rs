@@ -5,8 +5,9 @@
 //! variable, or a graph root to a `graph` variable (CSV data), put a row of values in
 //! each dataset, and `dataset.select` swaps the whole document to that row in one undo
 //! step. `dataset.import` / `dataset.export` move those rows as CSV (header: `name`
-//! then variable names). Agents reach every command through `run_command`, like all
-//! engine commands.
+//! then variable names); import also reads tab-separated files and files without the
+//! `name` column. Agents reach every command through `run_command`, like all engine
+//! commands.
 
 use std::collections::{BTreeMap, BTreeSet};
 
@@ -535,16 +536,61 @@ fn datasets_csv_bytes(p: &Value, cmd: &str) -> Result<Vec<u8>> {
     Ok(bytes)
 }
 
-/// Parse a datasets CSV into rows of cells (no header interpretation yet): commas between cells,
-/// `"` quotes a cell (doubled inside), which may then hold commas and line breaks, as
-/// [`csv_escape`] writes them. An unquoted cell is trimmed. A quoted cell keeps what its quotes
-/// hold as written, spaces included, and drops white space after the closing quote at the end
-/// of the cell. Blank lines are skipped.
-fn parse_datasets_csv(text: &str, cmd: &str) -> Result<Vec<Vec<String>>> {
+/// A row of a datasets CSV: the file line it starts on, and its cells.
+type CsvRow = (usize, Vec<String>);
+
+/// Whether a datasets CSV separates its cells with tabs: its header row (the first line that
+/// isn't blank), read with tabs between cells, has a tab outside quotes and no comma outside
+/// quotes.
+fn tab_separated(text: &str) -> bool {
+    // `start`: nothing but `\r` read yet in this cell. `blank`: no cell on this line holds
+    // anything but white space yet.
+    let (mut in_quotes, mut start, mut blank, mut tab) = (false, true, true, false);
+    let mut chars = text.chars().peekable();
+    while let Some(c) = chars.next() {
+        match c {
+            '"' if in_quotes => {
+                if chars.peek() == Some(&'"') {
+                    chars.next();
+                    blank = false;
+                } else {
+                    in_quotes = false;
+                }
+            }
+            '"' if start => in_quotes = true,
+            c if in_quotes => blank &= c.is_whitespace(),
+            ',' => return false,
+            '\t' => {
+                tab = true;
+                start = true;
+                continue;
+            }
+            '\r' => continue,
+            '\n' if blank => {
+                tab = false;
+                start = true;
+                continue;
+            }
+            '\n' => return tab,
+            c => blank &= c.is_whitespace(),
+        }
+        start = false;
+    }
+    tab
+}
+
+/// Parse a datasets CSV into rows of cells (no header interpretation yet). Cells are separated
+/// by commas, or by tabs when [`tab_separated`] says so. `"` quotes a cell (doubled inside),
+/// which may then hold separators and line breaks, as [`csv_escape`] writes them. An unquoted
+/// cell is trimmed. A quoted cell keeps what its quotes hold as written, spaces included, and
+/// drops white space after the closing quote at the end of the cell. Blank lines are skipped.
+fn parse_datasets_csv(text: &str, cmd: &str) -> Result<Vec<CsvRow>> {
     let text = text.strip_prefix('\u{feff}').unwrap_or(text);
+    let sep = if tab_separated(text) { '\t' } else { ',' };
     let (mut rows, mut row, mut cur) = (Vec::new(), Vec::<String>::new(), String::new());
-    // `closed`: where the closing quote of a quoted cell falls in `cur`.
-    let (mut in_quotes, mut closed, mut line) = (false, None, 1usize);
+    // `closed`: where the closing quote of a quoted cell falls in `cur`. `start`: the line the
+    // current row starts on.
+    let (mut in_quotes, mut closed, mut line, mut start) = (false, None, 1usize, 1usize);
     let mut chars = text.chars().peekable();
     loop {
         let c = chars.next();
@@ -559,12 +605,12 @@ fn parse_datasets_csv(text: &str, cmd: &str) -> Result<Vec<Vec<String>>> {
                 }
             }
             Some('"') if cur.is_empty() => in_quotes = true,
-            Some(',') if !in_quotes => row.push(end_csv_cell(&mut cur, &mut closed)),
+            Some(ch) if ch == sep && !in_quotes => row.push(end_csv_cell(&mut cur, &mut closed)),
             Some('\r') if !in_quotes => {}
             Some('\n') | None if !in_quotes => {
                 row.push(end_csv_cell(&mut cur, &mut closed));
                 if row.iter().any(|c| !c.trim().is_empty()) {
-                    rows.push(std::mem::take(&mut row));
+                    rows.push((start, std::mem::take(&mut row)));
                     // +1 for the header.
                     if rows.len() > MAX_CSV_ROWS + 1 {
                         return Err(bad(cmd, format!("more than {MAX_CSV_ROWS} data rows")));
@@ -575,6 +621,7 @@ fn parse_datasets_csv(text: &str, cmd: &str) -> Result<Vec<Vec<String>>> {
                     return Ok(rows);
                 }
                 line += 1;
+                start = line;
             }
             None => return Err(bad(cmd, format!("line {line}: unclosed quote"))),
             Some(c) => {
@@ -659,27 +706,27 @@ fn datasets_to_csv(vars: &Variables) -> String {
     out
 }
 
-/// Import datasets from CSV: first column `name`, remaining headers are variable names.
-/// Existing rows of the same name are replaced; new names are appended. One undo step.
+/// Import datasets from CSV. A first header cell `name` makes the first column the dataset
+/// names; the other headers are variable names. Without it, every header is a variable name
+/// and the rows take the first free names "Data Set 1", "Data Set 2" and so on. Existing rows
+/// of the same name are replaced; new names are appended. One undo step.
 fn dataset_import(s: &mut Session, p: &Value) -> Result<Value> {
     const C: &str = "dataset.import";
     let bytes = datasets_csv_bytes(p, C)?;
     let text = std::str::from_utf8(&bytes).map_err(|_| bad(C, "CSV is not UTF-8"))?;
     let rows = parse_datasets_csv(text, C)?;
-    let Some(header) = rows.first() else {
+    let Some((_, header)) = rows.first() else {
         return Err(bad(C, "CSV is empty"));
     };
-    if header.first().map(|h| h.trim().eq_ignore_ascii_case("name")) != Some(true) {
-        return Err(bad(C, "first header cell must be `name`"));
-    }
+    let name_column = header.first().is_some_and(|h| h.trim().eq_ignore_ascii_case("name"));
     let (kinds, existing_names) = {
         let st = s.doc()?;
         let kinds: BTreeMap<String, VariableKind> = st.doc.variables.variables.iter().map(|v| (v.name.clone(), v.kind)).collect();
-        let existing: Vec<String> = st.doc.variables.datasets.iter().map(|d| d.name.clone()).collect();
+        let existing: BTreeSet<String> = st.doc.variables.datasets.iter().map(|d| d.name.clone()).collect();
         (kinds, existing)
     };
     let mut columns: Vec<(usize, String, VariableKind)> = Vec::new();
-    for (i, h) in header.iter().enumerate().skip(1) {
+    for (i, h) in header.iter().enumerate().skip(usize::from(name_column)) {
         let name = h.trim();
         if name.is_empty() {
             return Err(bad(C, format!("empty header in column {}", i + 1)));
@@ -691,19 +738,25 @@ fn dataset_import(s: &mut Session, p: &Value) -> Result<Value> {
         return Err(bad(C, "CSV has a header but no data rows"));
     }
     let mut parsed: Vec<DataSet> = Vec::new();
-    for (r_i, row) in rows.iter().enumerate().skip(1) {
-        let line = r_i + 1;
-        let raw_name = row.first().map(|c| c.trim()).unwrap_or("");
+    // The names of the rows read so far, and the last number given to a row without a name.
+    let (mut seen, mut number) = (BTreeSet::new(), 0usize);
+    for &(line, ref row) in rows.iter().skip(1) {
+        let raw_name = if name_column { row.first().map_or("", |c| c.trim()) } else { "" };
         let name = if raw_name.is_empty() {
-            // Same numbering as Capture Data Set when a row leaves the name blank.
-            (1..)
-                .map(|n| format!("Data Set {n}"))
-                .find(|n| parsed.iter().all(|d| d.name != *n) && !existing_names.iter().any(|e| e == n))
-                .unwrap_or_else(|| format!("Data Set {line}"))
+            // Same numbering as Capture Data Set when a row leaves the name blank or the file has
+            // no name column. The search starts after the last number given.
+            let (n, name) = (number + 1..)
+                .map(|n| (n, format!("Data Set {n}")))
+                .find(|(_, n)| !seen.contains(n) && !existing_names.contains(n))
+                .unwrap_or_else(|| (line, format!("Data Set {line}")));
+            number = n;
+            name
+        } else if raw_name.chars().count() > MAX_NAME {
+            return Err(bad(C, format!("line {line}: `name` is longer than {MAX_NAME} characters")));
         } else {
-            named(Some(raw_name), "name", C)?
+            raw_name.to_string()
         };
-        if parsed.iter().any(|d| d.name == name) {
+        if !seen.insert(name.clone()) {
             return Err(bad(C, format!("line {line}: dataset `{name}` appears twice")));
         }
         let mut values = BTreeMap::new();
@@ -937,7 +990,7 @@ pub fn specs() -> Vec<CommandSpec> {
             "Import Data Sets…",
             ["Window", "Variables"],
             None,
-            "{path? | data? | dataBase64? | csv?} load datasets from CSV (header: name, then variable names; one row per dataset). Rows whose name already exists are replaced → {imported, updated, names}",
+            "{path? | data? | dataBase64? | csv?} load datasets from CSV, comma- or tab-separated (header: name, then variable names; one row per dataset; without the name column every header is a variable and the rows take the first free names Data Set 1, 2…). Rows whose name already exists are replaced → {imported, updated, names}",
             has_doc,
             dataset_import
         ),

@@ -1083,7 +1083,10 @@ already walks Image Trace. Short agent entry points:
 - Data sets: `dataset.list`, `dataset.new {name, values?}`, `dataset.set {name, values?}`, `dataset.rename`,
   `dataset.delete`, `dataset.capture`, `dataset.update`, `dataset.select {name}`, `dataset.next` /
   `dataset.prev` (each `dataset.select` / next / prev is one undo step over every bound object), `dataset.import {path|data|dataBase64|csv}` /
-  `dataset.export {path?}` (CSV: `name`, then one column per variable).
+  `dataset.export {path?}` (CSV: `name`, then one column per variable). `dataset.import` also reads tab-separated
+  files, and files whose first header cell isn't `name`: every header cell is then a variable, and the rows take the
+  first free names `Data Set 1`, `Data Set 2` and so on. An import error about a row's values or name gives the file
+  line the row starts on.
 - Batch: `action.batch {commands, source?: folder|datasets, folder?, destination?: none|saveAndClose|folder,
   destinationFolder?, overrideOpen?, overrideSave?, overrideExport?, includeSubdirs?, stopOnError?}` plays an
   action on every file in a folder or every data set (the Actions panel menu's Batch…).
