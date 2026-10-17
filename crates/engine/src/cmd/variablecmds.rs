@@ -61,9 +61,8 @@ fn names_param(p: &Value, cmd: &str, fallback: Option<String>, nothing: &str) ->
     }
 }
 
-/// Refuse what a variable of `kind` can't drive: art that is locked or on a hidden or locked
-/// layer is not the document's to rewrite; a text variable only drives type; an image variable
-/// only drives an image object.
+/// Refuse what a variable of `kind` can't be bound to: art that is locked or on a hidden or locked
+/// layer; a text variable only drives type; an image variable only drives an image object.
 fn check_bindable(doc: &vectorcraft_doc::Document, ids: &[NodeId], kind: VariableKind, cmd: &str) -> Result<()> {
     for id in ids {
         match doc.node(*id) {
@@ -369,8 +368,8 @@ fn dataset_capture(s: &mut Session, p: &Value) -> Result<Value> {
 }
 
 /// Update Data Set: write what the bound objects hold now into the row that is active, for each
-/// variable the row holds. A variable whose objects report no value (locked, inside a hidden or
-/// locked layer or group, or gone) keeps the row's value. With `all`, every other variable the
+/// variable the row holds. A variable whose objects report no value (locked, inside a locked
+/// layer or group, or gone) keeps the row's value. With `all`, every other variable the
 /// objects report a value for is added to the row. Without an active row there is nothing to
 /// update, so say so rather than picking one.
 fn dataset_update(s: &mut Session, p: &Value) -> Result<Value> {
@@ -439,28 +438,6 @@ fn apply_dataset(s: &mut Session, name: &str) -> Result<Value> {
         for v in &d.variables.variables {
             pairs.extend(d.variables.objects_of(&v.name).into_iter().map(|id| (id, v.name.clone())));
         }
-        // The row's values go in three passes: the visibility values that show an object,
-        // outermost object first; the other values, in definition order; the visibility values
-        // that hide an object, innermost object first. An object inside a group is then rewritten
-        // after the row shows the group and before the row hides it. An object with several
-        // visibility variables goes in the pass of the last one's value, and each pass keeps
-        // definition order otherwise.
-        let mut shows = std::collections::HashMap::new();
-        for (id, var) in &pairs {
-            let kind = d.variables.variable(var).map(|v| v.kind);
-            if let (Some(VariableKind::Visibility), Some(DataValue::Visible(show))) = (kind, ds.values.get(var)) {
-                shows.insert(*id, *show);
-            }
-        }
-        let depths = d.index_paths(shows.keys().copied());
-        pairs.sort_by_cached_key(|(id, var)| {
-            let depth = depths.get(id).map_or(0, Vec::len);
-            match (d.variables.variable(var).map(|v| v.kind), shows.get(id)) {
-                (Some(VariableKind::Visibility), Some(true)) => (0, depth),
-                (Some(VariableKind::Visibility), Some(false)) => (2, usize::MAX - depth),
-                _ => (1, 0),
-            }
-        });
         let mut applied = 0usize;
         let mut skipped = 0usize;
         // Collects the type objects whose text the row rewrote, for the reply's `overflow`.
@@ -476,10 +453,10 @@ fn apply_dataset(s: &mut Session, name: &str) -> Result<Value> {
                     continue;
                 }
             };
-            // Locked art, art on a locked or hidden layer, and text whose object is gone, can't
-            // be rewritten: skipped and counted, like the rest. A hidden object is rewritten: a
-            // row that hid it shows it again.
-            if !d.variable_target(id) {
+            // Locked art, art in a locked layer or group, and text whose object is gone, can't be
+            // rewritten: skipped and counted, like the rest. Hidden art is rewritten, in a hidden
+            // layer or group too, and stays hidden unless a visibility value shows it.
+            if !d.dataset_target(id) {
                 skipped += 1;
                 continue;
             }
@@ -946,7 +923,7 @@ pub fn specs() -> Vec<CommandSpec> {
             "Update Data Set",
             ["Window", "Variables"],
             None,
-            "{all?: bool} write what the bound objects hold now into the active dataset, for each variable the dataset holds; a variable whose objects report no value (locked, inside a hidden or locked layer or group, or gone) keeps the dataset's value. `all: true` also adds every other variable the objects report a value for; `left` names the variables it didn't write → {values, left}",
+            "{all?: bool} write what the bound objects hold now into the active dataset, for each variable the dataset holds; a variable whose objects report no value (locked, inside a locked layer or group, or gone) keeps the dataset's value. `all: true` also adds every other variable the objects report a value for; `left` names the variables it didn't write → {values, left}",
             has_doc,
             dataset_update
         ),

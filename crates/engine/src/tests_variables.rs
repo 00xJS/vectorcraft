@@ -688,6 +688,70 @@ fn a_hidden_object_comes_back_and_is_captured_hidden() {
     s.execute("variable.bind", &json!({"variable": "More", "ids": [r.0]})).unwrap();
 }
 
+/// A row selected while a layer is hidden rewrites the type on it and applies its other values,
+/// and leaves the layer hidden: showing the layer shows that row's text. A layer that is locked
+/// as well as hidden is still left alone.
+#[test]
+fn a_row_rewrites_type_on_a_hidden_layer_but_not_on_a_locked_one() {
+    let mut s = session();
+    let layer = NodeId(s.execute("layer.new", &json!({})).unwrap()["id"].as_u64().unwrap());
+    let t = text(&mut s, "Alice");
+    let r = rect(&mut s);
+    s.execute("variable.define", &json!({"name": "Name", "kind": "text"})).unwrap();
+    s.execute("variable.define", &json!({"name": "Show", "kind": "visibility"})).unwrap();
+    s.execute("variable.bind", &json!({"variable": "Name", "ids": [t.0]})).unwrap();
+    s.execute("variable.bind", &json!({"variable": "Show", "ids": [r.0]})).unwrap();
+    s.execute("dataset.new", &json!({"name": "A", "values": {"Name": "Alice", "Show": true}})).unwrap();
+    s.execute("dataset.new", &json!({"name": "B", "values": {"Name": "Bob", "Show": false}})).unwrap();
+    s.execute("dataset.select", &json!({"name": "A"})).unwrap();
+
+    s.execute("layer.setProps", &json!({"id": layer.0, "visible": false})).unwrap();
+    let v = s.execute("dataset.select", &json!({"name": "B"})).unwrap();
+    assert_eq!((v["applied"].as_u64(), v["skipped"].as_u64()), (Some(2), Some(0)), "{v}");
+    let doc = &s.doc().unwrap().doc;
+    assert_eq!(plain(&s, t), "Bob", "the type on the hidden layer holds the row's text");
+    assert!(!doc.node(r).unwrap().visible, "the row's visibility value applies on the hidden layer");
+    assert!(!doc.node(layer).unwrap().visible, "the row leaves the layer hidden");
+    let sets = s.execute("dataset.list", &json!({})).unwrap();
+    let matching: Vec<&Value> = sets["datasets"].as_array().unwrap().iter().filter(|d| d["matches"] == json!(true)).map(|d| &d["name"]).collect();
+    assert_eq!(matching, [&json!("B")], "only the row the hidden art holds matches: {sets}");
+    s.execute("layer.setProps", &json!({"id": layer.0, "visible": true})).unwrap();
+    assert_eq!(plain(&s, t), "Bob", "showing the layer shows the row's text");
+
+    // Locked and hidden: the row skips both objects and the type keeps its text.
+    s.execute("layer.setProps", &json!({"id": layer.0, "visible": false, "locked": true})).unwrap();
+    let v = s.execute("dataset.select", &json!({"name": "A"})).unwrap();
+    assert_eq!((v["applied"].as_u64(), v["skipped"].as_u64()), (Some(0), Some(2)), "{v}");
+    assert_eq!(plain(&s, t), "Bob", "the type on the locked layer keeps its text");
+    assert!(!s.doc().unwrap().doc.node(r).unwrap().visible);
+}
+
+/// Type inside a hidden group is rewritten too, and List and Capture Data Set read it.
+#[test]
+fn a_row_rewrites_type_in_a_hidden_group_and_capture_reads_it() {
+    let mut s = session();
+    let t = text(&mut s, "Alice");
+    let other = rect(&mut s);
+    let g = group(&mut s, &[t, other]);
+    s.execute("variable.define", &json!({"name": "Name", "kind": "text"})).unwrap();
+    s.execute("variable.bind", &json!({"variable": "Name", "ids": [t.0]})).unwrap();
+    s.execute("dataset.new", &json!({"name": "A", "values": {"Name": "Alice"}})).unwrap();
+    s.execute("dataset.new", &json!({"name": "B", "values": {"Name": "Bob"}})).unwrap();
+    s.execute("object.setProps", &json!({"ids": [g.0], "visible": false})).unwrap();
+
+    let v = s.execute("dataset.select", &json!({"name": "B"})).unwrap();
+    assert_eq!((v["applied"].as_u64(), v["skipped"].as_u64()), (Some(1), Some(0)), "{v}");
+    assert_eq!(plain(&s, t), "Bob");
+    assert!(!s.doc().unwrap().doc.node(g).unwrap().visible, "the group stays hidden");
+
+    let sets = s.execute("dataset.list", &json!({})).unwrap();
+    let matches: Vec<&Value> = sets["datasets"].as_array().unwrap().iter().map(|d| &d["matches"]).collect();
+    assert_eq!(matches, [&json!(false), &json!(true)], "the art holds B's text, not A's: {sets}");
+    let v = s.execute("dataset.capture", &json!({"name": "C"})).unwrap();
+    let sets = s.execute("dataset.list", &json!({})).unwrap();
+    assert_eq!(sets["datasets"][2]["values"], json!({"Name": {"text": "Bob"}}), "{v}: {sets}");
+}
+
 /// A row that hides selected objects deselects them, the key object included. Undo shows them
 /// and selects them again with the key object.
 #[test]
