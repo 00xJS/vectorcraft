@@ -5091,3 +5091,9 @@ mark-style	Japanese	Japonesas
 @msg	a linked image can't become a gradient mesh: embed it first	una imagen enlazada no puede convertirse en una malla de degradado: incrústela primero
 @msg	the image has no usable size or position	la imagen no tiene un tamaño ni una posición utilizables
 @msg	the image's pixels can't be read	no se pueden leer los píxeles de la imagen
+	Persistent	Persistente
+	Library Panel Options	Opciones del panel de biblioteca
+@msg	Persistent libraries not found: {files}	No se encontraron bibliotecas persistentes: {files}
+@msg	`{given}` isn't a library panel (see window.swatchLibrary)	`{given}` no es un panel de biblioteca (consulte window.swatchLibrary)
+@msg	library panel `{given}` isn't open	el panel de biblioteca `{given}` no está abierto
+@msg	too many library panels were opened in this session	se abrieron demasiados paneles de biblioteca en esta sesión

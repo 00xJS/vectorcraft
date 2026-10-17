@@ -4742,3 +4742,9 @@ theme	Appearance	Giao diện
 @msg	a linked image can't become a gradient mesh: embed it first	không thể biến ảnh liên kết thành lưới chuyển sắc: hãy nhúng ảnh trước
 @msg	the image has no usable size or position	ảnh không có kích thước hoặc vị trí dùng được
 @msg	the image's pixels can't be read	không đọc được các điểm ảnh của ảnh
+	Persistent	Lưu giữ
+	Library Panel Options	Tùy chọn bảng thư viện
+@msg	Persistent libraries not found: {files}	Không tìm thấy thư viện lưu giữ: {files}
+@msg	`{given}` isn't a library panel (see window.swatchLibrary)	`{given}` không phải là bảng thư viện (xem window.swatchLibrary)
+@msg	library panel `{given}` isn't open	bảng thư viện `{given}` chưa được mở
+@msg	too many library panels were opened in this session	đã mở quá nhiều bảng thư viện trong phiên này

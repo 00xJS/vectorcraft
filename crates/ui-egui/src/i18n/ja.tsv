@@ -4803,3 +4803,9 @@ lighting	Light	ライト
 @msg	a linked image can't become a gradient mesh: embed it first	リンクされた画像はグラデーションメッシュにできません: 先に埋め込んでください
 @msg	the image has no usable size or position	画像に使用できるサイズまたは位置がありません
 @msg	the image's pixels can't be read	画像のピクセルを読み取れません
+	Persistent	永続
+	Library Panel Options	ライブラリパネルオプション
+@msg	Persistent libraries not found: {files}	永続ライブラリが見つかりません: {files}
+@msg	`{given}` isn't a library panel (see window.swatchLibrary)	`{given}` はライブラリパネルではありません (window.swatchLibrary を参照)
+@msg	library panel `{given}` isn't open	ライブラリパネル `{given}` は開いていません
+@msg	too many library panels were opened in this session	このセッションで開いたライブラリパネルが多すぎます

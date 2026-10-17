@@ -12,7 +12,7 @@ use serde_json::{Value, json};
 use vectorcraft_engine::Session;
 
 use crate::panels::graphic_styles::GraphicStyleLibraries;
-use crate::panels::library_panel::library_menu;
+use crate::panels::library_panel::{self, library_menu};
 use crate::panels::swatches::SwatchLibraries;
 use crate::picks::{self, PickRequest};
 use crate::state::Dialog;
@@ -232,10 +232,10 @@ fn other_swatch_library_asks_off_the_ui_thread() {
     click(&mut app, "Other Library…", library_menu::<SwatchLibraries>);
     assert!(matches!(shown.requests().as_slice(), [PickRequest::Open(_)]));
     poll(&mut app);
-    assert!(app.ui.library_panel.is_none() && app.ui.status.is_empty(), "{}", app.ui.status);
+    assert!(library_panel::last_open(&app.ui).is_none() && app.ui.status.is_empty(), "{}", app.ui.status);
     shown.answer(&[&file]);
     poll(&mut app);
-    let open = app.ui.library_panel.clone().unwrap_or_else(|| panic!("no library open: {}", app.ui.status));
+    let open = library_panel::last_open(&app.ui).cloned().unwrap_or_else(|| panic!("no library open: {}", app.ui.status));
     assert_eq!(open.kind, "swatches");
     let (_, lib) = vectorcraft_engine::cmd::swatchlib::library(&app.session, &open.id).unwrap();
     assert!(lib.swatch("Signal").is_some(), "{}", open.id);
@@ -255,7 +255,7 @@ fn other_graphic_style_library_asks_off_the_ui_thread() {
     assert!(matches!(shown.requests().as_slice(), [PickRequest::Open(_)]));
     shown.answer(&[&file]);
     poll(&mut app);
-    let open = app.ui.library_panel.clone().unwrap_or_else(|| panic!("no library open: {}", app.ui.status));
+    let open = library_panel::last_open(&app.ui).cloned().unwrap_or_else(|| panic!("no library open: {}", app.ui.status));
     assert_eq!(open.kind, "graphicStyles");
     let (_, lib) = vectorcraft_engine::cmd::stylelib::library(&app.session, &open.id).unwrap();
     assert!(lib.style("Poster Look").is_some(), "{}", open.id);

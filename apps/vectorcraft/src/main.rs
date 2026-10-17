@@ -875,6 +875,8 @@ fn main() -> std::process::ExitCode {
                 app.session.swatch_libraries.set_user_dir(swatches);
                 let styles = prefs_path().and_then(|p| Some(p.parent()?.join("Graphic Styles").to_string_lossy().to_string()));
                 app.session.style_libraries.set_user_dir(styles);
+                // With the User Defined libraries listed, the persistent library panels reopen.
+                vectorcraft_ui_egui::panels::library_panel::restore(&mut app);
                 // So do the Libraries panel's libraries; runs without preferences (agents' test
                 // runs) keep theirs for the session only, never touching the user's.
                 if prefs_enabled() {

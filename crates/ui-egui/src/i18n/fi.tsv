@@ -5113,3 +5113,9 @@ mark-style	Japanese	Japanilainen
 @msg	a linked image can't become a gradient mesh: embed it first	linkitetystä kuvasta ei voi tehdä liukuväriverkkoa: upota se ensin
 @msg	the image has no usable size or position	kuvalla ei ole käyttökelpoista kokoa tai sijaintia
 @msg	the image's pixels can't be read	kuvan pikseleitä ei voi lukea
+	Persistent	Pysyvä
+	Library Panel Options	Kirjastopaneelin asetukset
+@msg	Persistent libraries not found: {files}	Pysyviä kirjastoja ei löytynyt: {files}
+@msg	`{given}` isn't a library panel (see window.swatchLibrary)	`{given}` ei ole kirjastopaneeli (katso window.swatchLibrary)
+@msg	library panel `{given}` isn't open	kirjastopaneeli `{given}` ei ole auki
+@msg	too many library panels were opened in this session	tässä istunnossa on avattu liian monta kirjastopaneelia

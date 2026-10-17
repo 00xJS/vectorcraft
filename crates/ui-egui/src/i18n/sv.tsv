@@ -5105,3 +5105,9 @@ theme	Appearance	Utseende
 @msg	a linked image can't become a gradient mesh: embed it first	en länkad bild kan inte bli ett övertoningsnät: bädda in den först
 @msg	the image has no usable size or position	bilden har ingen användbar storlek eller position
 @msg	the image's pixels can't be read	bildens pixlar kan inte läsas
+	Persistent	Beständig
+	Library Panel Options	Alternativ för bibliotekspanelen
+@msg	Persistent libraries not found: {files}	Beständiga bibliotek hittades inte: {files}
+@msg	`{given}` isn't a library panel (see window.swatchLibrary)	`{given}` är inte en bibliotekspanel (se window.swatchLibrary)
+@msg	library panel `{given}` isn't open	bibliotekspanelen `{given}` är inte öppen
+@msg	too many library panels were opened in this session	för många bibliotekspaneler har öppnats i den här sessionen

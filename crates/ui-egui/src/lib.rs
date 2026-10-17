@@ -1387,6 +1387,7 @@ impl VectorcraftApp {
         if self.ui.toolbar && self.ui.screen_mode < 3 {
             toolbar::show(self, ui);
         }
+        panels::library_panel::tidy(self);
         if self.ui.dock && self.ui.screen_mode < 3 {
             dock::show(self, ui);
         }
@@ -1398,7 +1399,6 @@ impl VectorcraftApp {
         });
         dock::floating_panel(self, &ctx);
         floating::show(self, &ctx);
-        panels::library_panel::show_window(self, &ctx);
         dialogs::show(self, &ctx);
         palette::show(self, &ctx);
         if self.custom_titlebar {

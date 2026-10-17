@@ -5148,3 +5148,9 @@ theme	Appearance	Apparence
 @msg	a linked image can't become a gradient mesh: embed it first	une image liée ne peut pas devenir un filet de dégradé : incorporez-la d’abord
 @msg	the image has no usable size or position	l’image n’a ni taille ni position utilisables
 @msg	the image's pixels can't be read	impossible de lire les pixels de l’image
+	Persistent	Persistante
+	Library Panel Options	Options du panneau de bibliothèque
+@msg	Persistent libraries not found: {files}	Bibliothèques persistantes introuvables : {files}
+@msg	`{given}` isn't a library panel (see window.swatchLibrary)	`{given}` n’est pas un panneau de bibliothèque (voir window.swatchLibrary)
+@msg	library panel `{given}` isn't open	le panneau de bibliothèque `{given}` n’est pas ouvert
+@msg	too many library panels were opened in this session	trop de panneaux de bibliothèque ont été ouverts dans cette session

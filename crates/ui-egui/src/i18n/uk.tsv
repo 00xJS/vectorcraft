@@ -4742,3 +4742,9 @@ lighting	Light	Світло
 @msg	a linked image can't become a gradient mesh: embed it first	зв’язане зображення не можна перетворити на сітчастий градієнт: спочатку вбудуйте його
 @msg	the image has no usable size or position	зображення не має придатного розміру чи положення
 @msg	the image's pixels can't be read	не вдається прочитати пікселі зображення
+	Persistent	Постійна
+	Library Panel Options	Параметри панелі бібліотеки
+@msg	Persistent libraries not found: {files}	Постійні бібліотеки не знайдено: {files}
+@msg	`{given}` isn't a library panel (see window.swatchLibrary)	`{given}` — не панель бібліотеки (див. window.swatchLibrary)
+@msg	library panel `{given}` isn't open	панель бібліотеки `{given}` не відкрита
+@msg	too many library panels were opened in this session	у цьому сеансі відкрито забагато панелей бібліотек

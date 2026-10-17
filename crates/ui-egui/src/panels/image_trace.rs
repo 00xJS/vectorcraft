@@ -53,7 +53,7 @@ fn library_label(app: &VectorcraftApp, key: &str) -> String {
 fn library_list(app: &VectorcraftApp, ui: &mut Ui, current: &str) -> Option<String> {
     let document = menu_item(ui, swatches::DOCUMENT_SWATCHES, true, current == DOCUMENT_SWATCHES).then(|| DOCUMENT_SWATCHES.to_string());
     ui.separator();
-    library_panel::library_items(ui, &swatches::colour_libraries(app), Some(current)).or(document)
+    library_panel::library_items(ui, &swatches::colour_libraries(app), &|id| id == current).or(document)
 }
 
 /// Panel state: the preset name, the current parameters, the view and the last result's counts.

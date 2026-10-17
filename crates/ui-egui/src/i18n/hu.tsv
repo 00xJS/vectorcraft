@@ -5135,3 +5135,9 @@ imageTrace	Outline	Körvonal
 @msg	a linked image can't become a gradient mesh: embed it first	csatolt kép nem alakítható színátmenetes hálóvá: előbb ágyazza be
 @msg	the image has no usable size or position	a képnek nincs használható mérete vagy helyzete
 @msg	the image's pixels can't be read	a kép képpontjai nem olvashatók
+	Persistent	Állandó
+	Library Panel Options	Könyvtárpanel beállításai
+@msg	Persistent libraries not found: {files}	Nem találhatók állandó könyvtárak: {files}
+@msg	`{given}` isn't a library panel (see window.swatchLibrary)	A(z) `{given}` nem könyvtárpanel (lásd: window.swatchLibrary)
+@msg	library panel `{given}` isn't open	a(z) `{given}` könyvtárpanel nincs megnyitva
+@msg	too many library panels were opened in this session	ebben a munkamenetben túl sok könyvtárpanel nyílt meg

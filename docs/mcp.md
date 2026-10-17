@@ -1399,6 +1399,34 @@ with); without `path` it returns `{data}`, and `user: true` saves into the user 
 file, or another document's graphic styles, as a library to add from; a file in the user library folder, or a file
 with the same extension and bytes as one there, loads as that User Defined library.
 
+## Library panels
+
+Each swatch or graphic style library opens in a read-only panel of its own (#2603), as in Illustrator, and
+several can be open at once. `window.swatchLibrary {library}` and `window.graphicStyleLibrary {library}`
+(remote mode, `invoke_menu`) open one floating, or bring its panel forward when it is already open, and answer
+`{open, panel, name, count}`; `library: null` closes every panel of that kind. The panel id is
+`library:<kind>:<library id>` (`library:swatches:pastels`, `library:graphicStyles:hand-drawn`,
+`library:swatches:loaded/C:/Palettes/Brand.ase`), and the panel commands take it like any other panel's:
+`window.panel.float {panel, onto?, x?, y?}` groups or moves it, `window.panel.dock {panel}` docks it,
+`window.panel.close {panel}` closes it. `window.swatchLibrary.other {path}` and `window.graphicStyleLibrary.other
+{path}` load a file and open it the same way.
+
+`ui.libraryPanel {panel, library?, view?, showFind?, persistent?}` sets one panel: `library` shows another library
+of its kind in that panel (what Previous Library and Next Library do; a library open in a panel of its own is
+brought forward instead), `view` is `smallThumb`, `mediumThumb`, `largeThumb`, `smallList` or `largeList`,
+`showFind` shows or hides the find field, and `persistent: true` is the panel menu's Persistent: the panel
+reopens when the app starts, with its view and find field, where the saved layout had it (or floating). A
+library loaded from a file is read again from its path; one whose file is gone is left out, and the status bar
+says which. A closed persistent panel can still be set, so `persistent: false` stops it reopening. The reply
+is `{panel, kind, library, view, showFind, persistent, open}`, and `ui.inspect` lists every panel's settings
+under `ui.library_panels`.
+
+```json
+{"name":"invoke_menu","arguments":{"command":"window.swatchLibrary","params":{"library":"pastels"}}}
+{"name":"invoke_menu","arguments":{"command":"ui.libraryPanel","params":{"panel":"library:swatches:pastels","view":"smallList","persistent":true}}}
+{"name":"invoke_menu","arguments":{"command":"window.panel.close","params":{"panel":"library:swatches:pastels"}}}
+```
+
 ## Libraries
 
 The Libraries panel's libraries hold graphics, colours and character and paragraph styles that any document can use.
