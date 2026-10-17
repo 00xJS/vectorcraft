@@ -5213,3 +5213,7 @@ imageTrace	Outline	კონტური
 	Note Paper	ჩანაწერების ქაღალდი
 	Water Paper…	სველი ქაღალდი…
 	Water Paper	სველი ქაღალდი
+
+# Artboard tool hints (#2497)
+	 on the canvas to create one (	 ტილოზე — ახლის შესაქმნელად (
+	 selects several, or draws one inside an artboard)	 რამდენიმეს მონიშნავს ან ახალს სამუშაო დაფის შიგნით ხატავს)
