@@ -34,6 +34,73 @@ fn last(w: &Written) -> String {
     w.borrow().last().cloned().unwrap_or_default()
 }
 
+/// The file types each save panel was asked to show.
+type Shown = Rc<RefCell<Vec<Vec<(&'static str, &'static [&'static str])>>>>;
+
+/// An app with a document whose save panel records the file types it shows and answers the
+/// suggested name in `/tmp`.
+fn panel_app() -> (VectorcraftApp, Shown) {
+    let shown = Shown::default();
+    let s = shown.clone();
+    let services = Services {
+        write: Some(Box::new(|_: &str, _: &[u8]| Ok(()))),
+        pick_save: Some(Box::new(move |pick: &FilePick| {
+            s.borrow_mut().push(pick.filters.clone());
+            Some(format!("/tmp/{}", pick.name))
+        })),
+        ..Default::default()
+    };
+    let mut app = VectorcraftApp::new(Session::new(), services);
+    app.run("file.new", json!({"width": 100, "height": 100})).unwrap();
+    app.run("shape.rectangle", json!({"x": 10, "y": 10, "width": 30, "height": 20})).unwrap();
+    (app, shown)
+}
+
+/// The file types the last save panel showed.
+fn last_shown(s: &Shown) -> Vec<(&'static str, &'static [&'static str])> {
+    s.borrow().last().cloned().unwrap_or_default()
+}
+
+/// Document Info's, the libraries', the presets', the CSS, the PostScript and the shortcut saves
+/// show the one file type they write in the save panel, as Save and Export show theirs.
+#[test]
+fn save_panels_show_the_file_type_they_write() {
+    use vectorcraft_engine::cmd::{flatten, pdfcmds, perspgrid, printpresets};
+    let (mut app, shown) = panel_app();
+    app.run("docInfo.save", json!({})).unwrap();
+    assert_eq!(last_shown(&shown), [("Text", &["txt"][..])], "Document Info › Save");
+    for format in ["vcswatches", "gpl", "ase", "css"] {
+        app.run("ui.saveSwatchLibrary", json!({})).unwrap();
+        app.ui.dialog.as_mut().unwrap().fields.insert("format".into(), json!(format));
+        crate::dialogs::confirm(&mut app).unwrap();
+        let label = if format == "css" { "CSS" } else { "Swatch libraries" };
+        assert_eq!(last_shown(&shown), [(label, &[format][..])], "Save Swatch Library as .{format}");
+    }
+    app.run("ui.saveGraphicStyleLibrary", json!({})).unwrap();
+    crate::dialogs::confirm(&mut app).unwrap();
+    assert_eq!(last_shown(&shown), [("Graphic Style Libraries", &["vcstyles"][..])], "Save Graphic Style Library");
+    let id = app.run("library.create", json!({"name": "Brand"})).unwrap()["id"].as_str().unwrap().to_string();
+    io::save_command_output_named(&mut app, "library.export", "Brand.vclibrary", json!({"library": id})).unwrap();
+    assert_eq!(last_shown(&shown), [("Libraries", &["vclibrary"][..])], "Libraries panel › Export Library…");
+    app.run("css.exportFile", json!({"scope": "all"})).unwrap();
+    assert_eq!(last_shown(&shown), [("CSS", &["css"][..])], "CSS Properties › Export All…");
+    app.run("file.print", json!({"format": "postscript"})).unwrap();
+    assert_eq!(last_shown(&shown), [("PostScript", &["ps"][..])], "Print to a PostScript file");
+    app.run("shortcuts.export", json!({})).unwrap();
+    assert_eq!(last_shown(&shown), [("Shortcut sets", &["json"][..])], "Keyboard Shortcuts › Export…");
+    let presets = [
+        ("pdf.preset.save", json!({"name": "Mine"}), "pdf.preset.export", "PDF presets", pdfcmds::PRESET_EXTS),
+        ("print.presets.save", json!({"name": "Mine"}), "print.presets.export", "Print presets", printpresets::PRESET_EXTS),
+        ("flattener.presets.save", json!({"name": "Mine"}), "flattener.presets.export", "Flattener presets", flatten::PRESET_EXTS),
+        ("perspective.presets.save", json!({"name": "Mine"}), "perspective.presets.export", "Perspective grid presets", perspgrid::PRESET_EXTS),
+    ];
+    for (save, params, export, label, exts) in presets {
+        app.run(save, params).unwrap();
+        io::save_command_output(&mut app, export, exts[0], json!({"names": ["Mine"]})).unwrap();
+        assert_eq!(last_shown(&shown), [(label, exts)], "{export}: the presets dialog's Export…");
+    }
+}
+
 #[test]
 fn saves_add_the_format_extension_to_a_bare_name() {
     let (mut app, w) = saving_app("/tmp/Untitled-1");
