@@ -82,9 +82,12 @@ enum Drag {
         held: f32,
         moved: bool,
     },
+    /// A Rotate View tool drag, or a Space+Shift drag with any tool. With `snaps` (the Rotate
+    /// View tool), Shift rounds the angle to 15°.
     RotateView {
         start_angle: f64,
         start_rot: f64,
+        snaps: bool,
     },
     /// A Selection tool move dragged off the canvas: the panels get the art
     /// ([`widgets::PanelDrag::Art`]).
@@ -526,12 +529,18 @@ pub fn show(app: &mut VectorcraftApp, ui: &mut Ui) {
     if resp.hovered() {
         let m = ui.input(|i| i.modifiers);
         let space = ui.input(|i| i.key_down(egui::Key::Space));
-        let panning = matches!(ui.data(|d| d.get_temp::<Drag>(drag_id())), Some(Drag::Pan { .. }));
+        let drag = ui.data(|d| d.get_temp::<Drag>(drag_id()));
+        let panning = matches!(drag, Some(Drag::Pan { .. }));
         let zooming = if space { m.command } else { app.session.tool_id() == "zoom" };
+        // A rotating drag keeps its cursor when Shift is let go.
+        let rotating =
+            matches!(drag, Some(Drag::RotateView { .. })) || if space { m.shift && !m.command } else { app.session.tool_id() == "rotateView" };
         // The hand and the magnifier are drawn like the tool cursors below: Windows has no
         // system cursor for them (winit shows the four-headed move cursor for Grab).
         let view_cursor = if panning {
             Some(Cursor::HandGrab)
+        } else if rotating {
+            Some(Cursor::Rotate)
         } else if zooming {
             Some(if m.alt { Cursor::ZoomOut } else { Cursor::ZoomIn })
         } else if space || app.session.tool_id() == "hand" {
@@ -735,10 +744,11 @@ fn handle_input(app: &mut VectorcraftApp, ui: &Ui, resp: &egui::Response, rect: 
     }
 
     let tool = app.session.tool_id();
-    // Held, Space is the Hand tool for the moment, and Cmd+Space the Zoom tool (with Alt, zooming
-    // out), whatever the tool.
+    // Held, Space is the Hand tool for the moment, Space+Shift is the Rotate View tool and
+    // Cmd+Space is the Zoom tool (with Alt, zooming out), whatever the tool.
     let zoom_mode = if space { m.command } else { tool == "zoom" };
-    let pan_mode = if space { !m.command } else { tool == "hand" };
+    let rotate_mode = if space { m.shift && !m.command } else { tool == "rotateView" };
+    let pan_mode = if space { !m.command && !m.shift } else { tool == "hand" };
     let middle_pan = matches!(drag, Some(Drag::Pan { middle: true, .. }));
     // egui counts a press a few pixels outside the canvas as on it (its interaction radius): only a
     // press on the canvas itself reaches the tools, else it would land at the canvas's centre.
@@ -761,9 +771,9 @@ fn handle_input(app: &mut VectorcraftApp, ui: &Ui, resp: &egui::Response, rect: 
                 if animated_zoom(&app.session.prefs) { Drag::ZoomScrub { start: p, held: 0.0, moved: false } } else { Drag::ZoomBox { start: p } }
             } else if pan_mode {
                 Drag::Pan { start: p, center: v.center, middle: false }
-            } else if tool == "rotateView" {
+            } else if rotate_mode {
                 let c = rect.center();
-                Drag::RotateView { start_angle: (p.y - c.y).atan2(p.x - c.x) as f64, start_rot: v.rotation }
+                Drag::RotateView { start_angle: (p.y - c.y).atan2(p.x - c.x) as f64, start_rot: v.rotation, snaps: !space }
             } else {
                 // Cmd with another tool drags with the selection tool used last (the session lends it).
                 let ev = PointerEvent { kind: PointerKind::Down, pos: xf.to_doc(p), mods: mods(m, space), pressure: pen_pressure(ui, true) };
@@ -795,11 +805,11 @@ fn handle_input(app: &mut VectorcraftApp, ui: &Ui, resp: &egui::Response, rect: 
                         vm.center = center - d;
                     }
                 }
-                Drag::RotateView { start_angle, start_rot } => {
+                Drag::RotateView { start_angle, start_rot, snaps } => {
                     let c = rect.center();
                     let a = (p.y - c.y).atan2(p.x - c.x) as f64;
                     let mut deg = start_rot + (a - start_angle).to_degrees();
-                    if m.shift {
+                    if snaps && m.shift {
                         deg = (deg / 15.0).round() * 15.0;
                     }
                     if let Some(vm) = app.view_mut() {
@@ -5115,6 +5125,88 @@ mod tests {
         let after = *app.view().unwrap();
         assert_eq!(after.zoom, before.zoom);
         assert!((after.center.x - (before.center.x - 30.0 / before.zoom)).abs() < 1e-6, "{before:?} → {after:?}");
+    }
+
+    #[test]
+    fn space_shift_drag_rotates_the_view_whatever_the_tool() {
+        use egui::{Event, Modifiers};
+        let mut app = VectorcraftApp::new(Session::new(), Default::default());
+        app.session.execute("file.new", &json!({"width": 400, "height": 300})).unwrap();
+        app.select_tool("rectangle");
+        let ctx = egui::Context::default();
+        frame(&mut app, &ctx, vec![]);
+        let c = app.canvas_rect.unwrap().center();
+        let space = |pressed, modifiers| Event::Key { key: egui::Key::Space, physical_key: None, pressed, repeat: false, modifiers };
+        let button = |pos, pressed, modifiers| Event::PointerButton { pos, button: egui::PointerButton::Primary, pressed, modifiers };
+        // `drag` drags from `from` to `to` with `held` down, and with Space as well when `with_space`.
+        let drag = |app: &mut VectorcraftApp, held: Modifiers, with_space: bool, from: Pos2, to: Pos2| {
+            let keys = |pressed| if with_space { vec![space(pressed, held)] } else { vec![] };
+            frame(app, &ctx, [vec![Event::ModifiersChanged(held)], keys(true), vec![Event::PointerMoved(from)]].concat());
+            frame(app, &ctx, vec![button(from, true, held)]);
+            frame(app, &ctx, vec![Event::PointerMoved(to)]);
+            frame(app, &ctx, vec![button(to, false, held)]);
+            frame(app, &ctx, [keys(false), vec![Event::ModifiersChanged(Modifiers::NONE)]].concat());
+        };
+        // `at(deg)` is the point 100 points from the canvas center, `deg` degrees clockwise from the right.
+        let at = |deg: f32| c + 100.0 * vec2(deg.to_radians().cos(), deg.to_radians().sin());
+        let before = *app.view().unwrap();
+        drag(&mut app, Modifiers::SHIFT, true, at(0.0), at(90.0));
+        let after = *app.view().unwrap();
+        assert!((after.rotation - 90.0).abs() < 1e-3, "{after:?}");
+        assert_eq!((after.center, after.zoom), (before.center, before.zoom), "the view turns about its center");
+        assert_eq!(app.session.active().unwrap().doc.art_bounds(), None, "the Rectangle tool drew nothing");
+        // Shift does not round the angle: 90° and 20° more make 110°, not 105°.
+        drag(&mut app, Modifiers::SHIFT, true, at(0.0), at(20.0));
+        assert!((app.view().unwrap().rotation - 110.0).abs() < 1e-3, "{:?}", app.view());
+        // Space alone still pans, and Cmd+Shift+Space still zooms.
+        let v = *app.view().unwrap();
+        drag(&mut app, Modifiers::NONE, true, c, c + vec2(30.0, 0.0));
+        let panned = *app.view().unwrap();
+        assert_eq!((panned.rotation, panned.zoom), (v.rotation, v.zoom));
+        assert_ne!(panned.center, v.center, "Space pans");
+        drag(&mut app, Modifiers::COMMAND | Modifiers::SHIFT, true, c, c);
+        assert_eq!(app.view().unwrap().zoom, crate::state::next_zoom(v.zoom, true), "Cmd+Shift+Space click zooms in");
+        assert_eq!(app.view().unwrap().rotation, v.rotation);
+        // The Rotate View tool's Shift still rounds to 15°.
+        app.select_tool("rotateView");
+        app.view_mut().unwrap().rotation = 0.0;
+        drag(&mut app, Modifiers::SHIFT, false, at(0.0), at(20.0));
+        assert_eq!(app.view().unwrap().rotation, 15.0);
+        drag(&mut app, Modifiers::NONE, false, at(0.0), at(20.0));
+        assert!((app.view().unwrap().rotation - 35.0).abs() < 1e-3, "{:?}", app.view());
+    }
+
+    #[test]
+    fn the_rotate_cursor_shows_for_space_shift_and_the_rotate_view_tool() {
+        use egui::{CursorIcon, Event, Modifiers};
+        let mut app = VectorcraftApp::new(Session::new(), Default::default());
+        app.session.execute("file.new", &json!({"width": 400, "height": 300})).unwrap();
+        app.select_tool("rectangle");
+        let ctx = egui::Context::default();
+        frame(&mut app, &ctx, vec![]);
+        let c = app.canvas_rect.unwrap().center();
+        // `shown` returns the system cursor the canvas sets over a window without the focus. On macOS
+        // the window paints the glyph only with the focus, and on the other desktop builds (not
+        // Wayland, which the tests do not set) the window sets the system cursor next to the bitmap.
+        let shown = |app: &mut VectorcraftApp, events: Vec<Event>| {
+            let screen_rect = Some(egui::Rect::from_min_size(Pos2::ZERO, vec2(800.0, 600.0)));
+            let mut out = ctx.run_ui(egui::RawInput { screen_rect, focused: false, events, ..Default::default() }, |ui| show(app, ui));
+            out.textures_delta.clear();
+            out.platform_output.cursor_icon
+        };
+        let space = |pressed, modifiers| Event::Key { key: egui::Key::Space, physical_key: None, pressed, repeat: false, modifiers };
+        let button = |pos, pressed| Event::PointerButton { pos, button: egui::PointerButton::Primary, pressed, modifiers: Modifiers::SHIFT };
+        assert_ne!(shown(&mut app, vec![Event::PointerMoved(c)]), CursorIcon::Alias);
+        assert_eq!(shown(&mut app, vec![Event::ModifiersChanged(Modifiers::SHIFT), space(true, Modifiers::SHIFT)]), CursorIcon::Alias);
+        // Shift let go during the drag keeps the rotate cursor; after it, Space shows the hand.
+        shown(&mut app, vec![button(c, true)]);
+        assert_eq!(shown(&mut app, vec![Event::ModifiersChanged(Modifiers::NONE), Event::PointerMoved(c + vec2(20.0, 30.0))]), CursorIcon::Alias);
+        assert_eq!(shown(&mut app, vec![button(c + vec2(20.0, 30.0), false)]), CursorIcon::Grab);
+        // Cmd+Shift+Space zooms.
+        assert_eq!(shown(&mut app, vec![Event::ModifiersChanged(Modifiers::COMMAND | Modifiers::SHIFT)]), CursorIcon::ZoomIn);
+        assert_ne!(shown(&mut app, vec![space(false, Modifiers::NONE), Event::ModifiersChanged(Modifiers::NONE)]), CursorIcon::Alias);
+        app.select_tool("rotateView");
+        assert_eq!(shown(&mut app, vec![Event::PointerMoved(c)]), CursorIcon::Alias, "the Rotate View tool");
     }
 
     #[test]
