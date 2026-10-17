@@ -1664,7 +1664,8 @@ fn c32(rgb: [u8; 3]) -> Color32 {
 }
 
 /// Outline of a node for highlighting (paths, compound children, area type frames, other
-/// text/image bounds, symbol instances' bounds measured by their art from `symbols`).
+/// text/image bounds, symbol instances' bounds measured by their art from `symbols`; a clip
+/// group's clipping path only, as [`walk_drawn`] visits it).
 fn node_outline(n: &Node, symbols: &SymbolBoxes) -> BezPath {
     let mut bp = BezPath::new();
     walk_drawn(n, &mut |c| match &c.kind {
@@ -1719,6 +1720,10 @@ fn too_many_anchors<'a>(nodes: impl IntoIterator<Item = &'a Node>) -> bool {
                 None => return true,
             }
         }
+        // A clip group counts only its clipping path, the one child `walk_drawn` visits.
+        if n.clips() {
+            return n.children().and_then(|children| children.first()).is_some_and(|clip| over(clip, left));
+        }
         !matches!(n.kind, NodeKind::Envelope { .. })
             && n.children().into_iter().flatten().skip(usize::from(n.extras().shaper.is_some())).any(|c| over(c, left))
     }
@@ -1727,10 +1732,17 @@ fn too_many_anchors<'a>(nodes: impl IntoIterator<Item = &'a Node>) -> bool {
 }
 
 /// [`Node::walk`] over what a selection highlight shows: an envelope's content is left out (the
-/// envelope shows its mesh instead).
+/// envelope shows its mesh instead), and a clip group or clipping layer shows only its clipping
+/// path, its first child, not the art the path clips (#2422).
 fn walk_drawn<'a>(n: &'a Node, f: &mut impl FnMut(&'a Node)) {
     f(n);
     if matches!(n.kind, NodeKind::Envelope { .. }) {
+        return;
+    }
+    if n.clips() {
+        if let Some(clip) = n.children().and_then(|children| children.first()) {
+            walk_drawn(clip, f);
+        }
         return;
     }
     for c in n.children().into_iter().flatten().skip(usize::from(n.extras().shaper.is_some())) {
@@ -3067,6 +3079,148 @@ mod tests {
         let bounds = node_outline(g, &symbols).bounding_box();
         assert!((bounds.x0 - 100.0).abs() < 0.01 && (bounds.x1 - 200.0).abs() < 0.01, "{bounds:?}");
         assert_eq!(node_outline(st.doc.node(line).unwrap(), &symbols).bounding_box().x0, 50.0, "an isolated original still shows its full outline");
+    }
+
+    /// A clip group made from scratch: a 320 × 40 image and a 300 × 200 ellipse, both reaching
+    /// outside a 100 × 100 square at (100, 100) that clips them, and a rectangle beside them. The
+    /// task bar and rulers are off. → the app, the clip group, the ellipse and the rectangle.
+    fn clip_group_app() -> (VectorcraftApp, serde_json::Value, serde_json::Value, serde_json::Value) {
+        let mut app = VectorcraftApp::new(Session::new(), Default::default());
+        app.run("file.new", json!({"width": 400, "height": 300})).unwrap();
+        app.ui.task_bar = false;
+        app.ui.view.rulers = false;
+        let img = image::RgbaImage::from_pixel(320, 40, image::Rgba([200, 120, 40, 255]));
+        let mut png = vec![];
+        img.write_to(&mut std::io::Cursor::new(&mut png), image::ImageFormat::Png).unwrap();
+        let data = vectorcraft_format::base64_encode(&png);
+        app.run("file.place", json!({"name": "texture.png", "dataBase64": data, "link": false, "at": [150, 150]})).unwrap();
+        let image = json!(app.session.active().unwrap().selection.objects[0].0);
+        let ellipse = app.run("shape.ellipse", json!({"x": 0, "y": 50, "width": 300, "height": 200})).unwrap()["id"].clone();
+        let square = app.run("shape.rectangle", json!({"x": 100, "y": 100, "width": 100, "height": 100})).unwrap()["id"].clone();
+        app.run("select.set", json!({"ids": [image, ellipse, square]})).unwrap();
+        let group = app.run("object.clippingMask.make", json!({})).unwrap()["id"].clone();
+        let beside = app.run("shape.rectangle", json!({"x": 330, "y": 20, "width": 50, "height": 50})).unwrap()["id"].clone();
+        (app, group, ellipse, beside)
+    }
+
+    /// The screen points of what one frame draws in `color` with lines `width` px wide: outlines and
+    /// the bounding box, and with `width` 1 the anchors and the bounding box's handles too.
+    fn drawn_in(app: &mut VectorcraftApp, ctx: &egui::Context, color: Color32, width: f32) -> Vec<Pos2> {
+        let solid = egui::epaint::ColorMode::Solid(color);
+        let mut at = vec![];
+        for s in shapes(app, ctx) {
+            match s {
+                Shape::Path(ps) if ps.stroke.color == solid && ps.stroke.width == width => at.extend(ps.points),
+                Shape::Rect(r) if width == 1.0 && (r.fill == color || (r.stroke.color == color && r.stroke.width == width)) => {
+                    at.extend([r.rect.min, r.rect.max]);
+                }
+                _ => {}
+            }
+        }
+        at
+    }
+
+    /// #2422: a selected clip group shows its clipping path's outline and anchors, the bounding
+    /// box of what shows, and not the art the path clips; so do its hover highlight and its key
+    /// object outline.
+    #[test]
+    fn a_selected_clip_group_shows_its_clipping_path_not_its_hidden_art() {
+        let (mut app, group, _, beside) = clip_group_app();
+        let ctx = egui::Context::default();
+        frame(&mut app, &ctx, vec![]);
+        let xf = Xf::new(app.canvas_rect.unwrap(), app.view().unwrap());
+        let color = c32(app.session.active().unwrap().doc.layer_color(vectorcraft_doc::NodeId(group.as_u64().unwrap())));
+        // The square on screen. `inside` allows 8 px around it for the anchors and the bounding box's handles.
+        let clip = egui::Rect::from_two_pos(xf.to_screen(Point::new(100.0, 100.0)), xf.to_screen(Point::new(200.0, 200.0)));
+        // Each case that draws nothing, or draws outside the square.
+        let mut wrong = vec![];
+        let mut inside = |at: Vec<Pos2>, what: &str| {
+            if at.is_empty() || !at.iter().all(|q| clip.expand(8.0).contains(*q)) {
+                wrong.push(format!("{what}: {at:?}"));
+            }
+        };
+        for tool in ["selection", "directSelection", "groupSelection"] {
+            app.select_tool(tool);
+            app.run("select.set", json!({"ids": [group]})).unwrap();
+            inside(drawn_in(&mut app, &ctx, color, 1.0), tool);
+        }
+        app.select_tool("selection");
+        app.run("select.set", json!({"ids": [group, beside]})).unwrap();
+        app.run("select.key", json!({"id": group})).unwrap();
+        inside(drawn_in(&mut app, &ctx, color, KEY_OUTLINE), "the key object");
+        app.run("select.none", json!({})).unwrap();
+        frame(&mut app, &ctx, vec![egui::Event::PointerMoved(xf.to_screen(Point::new(150.0, 150.0)))]);
+        inside(drawn_in(&mut app, &ctx, color, 1.5), "the hover highlight");
+        assert!(wrong.is_empty(), "drawn outside {clip:?}:\n{}", wrong.join("\n"));
+    }
+
+    /// #2422: a clip group whose hidden art has more anchors than the overlay draws (#525) still
+    /// shows its clipping path's anchors and hover highlight.
+    #[test]
+    fn a_clip_group_over_a_huge_path_shows_its_clipping_path() {
+        let mut app = VectorcraftApp::new(Session::new(), Default::default());
+        app.run("file.new", json!({"width": 400, "height": 300})).unwrap();
+        app.ui.task_bar = false;
+        app.ui.view.rulers = false;
+        let n = OVERLAY_MAX_ANCHORS + 10;
+        let points = (0..n).map(|i| format!("L{} {}", 20.0 + 360.0 * i as f64 / n as f64, 100 + (i % 2) * 50)).collect::<String>();
+        let huge = app.run("path.create", json!({"d": format!("M20 20 {points} Z")})).unwrap()["id"].clone();
+        let square = app.run("shape.rectangle", json!({"x": 100, "y": 100, "width": 100, "height": 100})).unwrap()["id"].clone();
+        app.run("select.set", json!({"ids": [huge, square]})).unwrap();
+        let group = app.run("object.clippingMask.make", json!({})).unwrap()["id"].clone();
+        let color = c32(app.session.active().unwrap().doc.layer_color(vectorcraft_doc::NodeId(group.as_u64().unwrap())));
+        let ctx = egui::Context::default();
+        frame(&mut app, &ctx, vec![]);
+        let xf = Xf::new(app.canvas_rect.unwrap(), app.view().unwrap());
+        app.select_tool("selection");
+        app.run("select.set", json!({"ids": [group]})).unwrap();
+        let anchors = shapes(&mut app, &ctx).iter().filter(|s| matches!(s, Shape::Rect(r) if r.fill == color)).count();
+        app.run("select.none", json!({})).unwrap();
+        frame(&mut app, &ctx, vec![egui::Event::PointerMoved(xf.to_screen(Point::new(150.0, 150.0)))]);
+        let hovered = !drawn_in(&mut app, &ctx, color, 1.5).is_empty();
+        assert_eq!((anchors, hovered), (4, true), "the square's four anchors, and the hover highlight");
+    }
+
+    /// #2422: the art inside a clip group still shows its whole outline when it is picked on its
+    /// own: by Edit Contents, by a Direct Selection or Group Selection click, and in isolation mode;
+    /// so does its Group Selection hover highlight.
+    #[test]
+    fn the_art_a_clip_group_clips_shows_whole_when_picked() {
+        let (mut app, group, ellipse, _) = clip_group_app();
+        let ctx = egui::Context::default();
+        frame(&mut app, &ctx, vec![]);
+        let xf = Xf::new(app.canvas_rect.unwrap(), app.view().unwrap());
+        let color = c32(app.session.active().unwrap().doc.layer_color(vectorcraft_doc::NodeId(group.as_u64().unwrap())));
+        // Something is drawn at the ellipse's left and right ends, outside the square.
+        let reaches = |at: &[Pos2], what: &str| {
+            let (left, right) = (xf.to_screen(Point::new(0.0, 150.0)).x, xf.to_screen(Point::new(300.0, 150.0)).x);
+            assert!(at.iter().any(|q| (q.x - left).abs() < 2.0) && at.iter().any(|q| (q.x - right).abs() < 2.0), "{what}: {at:?}");
+        };
+        app.select_tool("selection");
+        app.run("select.set", json!({"ids": [group]})).unwrap();
+        app.run("object.clippingMask.editContents", json!({})).unwrap();
+        reaches(&drawn_in(&mut app, &ctx, color, 1.0), "Edit Contents");
+        app.run("select.none", json!({})).unwrap();
+        app.select_tool("directSelection");
+        let view = app.view_info();
+        for kind in [PointerKind::Down, PointerKind::Up] {
+            app.session.pointer(&PointerEvent::new(kind, 150.0, 120.0), view).unwrap();
+        }
+        assert_eq!(app.session.active().unwrap().selection.objects, vec![vectorcraft_doc::NodeId(ellipse.as_u64().unwrap())]);
+        reaches(&drawn_in(&mut app, &ctx, color, 1.0), "a Direct Selection click");
+        app.run("select.none", json!({})).unwrap();
+        app.select_tool("groupSelection");
+        frame(&mut app, &ctx, vec![egui::Event::PointerMoved(xf.to_screen(Point::new(150.0, 120.0)))]);
+        reaches(&drawn_in(&mut app, &ctx, color, 1.5), "the Group Selection hover highlight");
+        for kind in [PointerKind::Down, PointerKind::Up] {
+            app.session.pointer(&PointerEvent::new(kind, 150.0, 120.0), view).unwrap();
+        }
+        assert_eq!(app.session.active().unwrap().selection.objects, vec![vectorcraft_doc::NodeId(ellipse.as_u64().unwrap())]);
+        reaches(&drawn_in(&mut app, &ctx, color, 1.0), "a Group Selection click");
+        app.select_tool("selection");
+        app.run("object.isolate", json!({"id": group})).unwrap();
+        app.run("select.all", json!({})).unwrap();
+        reaches(&drawn_in(&mut app, &ctx, color, 1.0), "isolation mode");
     }
 
     /// A Shaper Group's mode widget, drawn for the Shaper and Selection tools with selection edges
