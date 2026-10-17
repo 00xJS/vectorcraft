@@ -502,6 +502,7 @@ Moved from the ROADMAP's "Shipped so far" on 2026-10-10. Update it when a featur
     Duplicate Artboards, the Artboard tool's Alt-drag and Paste give the new artboard an id that no other artboard has, also when an artboard's id is the largest possible value (#1718). Deleting the copy or the original then leaves the other's guides.
   - **Editing type:** double-clicking type with a selection tool switches to the Type tool with the caret where it was clicked.
   - **Temporary tools:** Cmd with any other tool drags with the selection tool used last (Selection, Direct Selection or Group Selection). Held Space pans and Cmd+Space zooms (Cmd+Alt+Space out) whatever the tool.
+    A Space+Shift drag rotates the view whatever the tool, as a Rotate View tool drag does, and Shift does not round the angle to 15°.
   - **Swatches panel clicks:** Ctrl/Cmd-clicking New Swatch makes a spot color, and Ctrl/Cmd+Shift-clicking it makes a global process color.
   - **Panel drag and drop:** art dragged off the canvas onto the Symbols panel becomes a symbol, onto the Swatches panel a pattern swatch and onto the Brushes panel an Art brush; a symbol dragged onto the canvas places an instance where it is dropped, and a brush dragged onto a path is applied to it.
     In the Swatches panel, Alt-dragging a swatch onto another swatch of its kind (not a tint swatch) replaces that swatch's color, gradient or pattern, and the swatch keeps its name and place.
