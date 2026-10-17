@@ -181,11 +181,16 @@ mod tests {
     #[test]
     fn a_theme_is_usable_directly_or_through_inherits_and_missing_otherwise() {
         let files = ["/i/Bibata/cursors/left_ptr", "/i/Breeze/index.theme", "/i/Loop/index.theme"];
-        let exists = |p: &Path| p.to_str().is_some_and(|p| files.contains(&p));
-        let read = |p: &Path| match p.to_str()? {
-            "/i/Breeze/index.theme" => Some("[Icon Theme]\nInherits=Other, Bibata\n".to_owned()),
-            "/i/Loop/index.theme" => Some("Inherits=Loop\n".to_owned()),
-            _ => None,
+        // Compared as paths, so the joins match on Windows too, where they use `\`.
+        let exists = |p: &Path| files.iter().any(|f| Path::new(f) == p);
+        let read = |p: &Path| {
+            if p == Path::new("/i/Breeze/index.theme") {
+                Some("[Icon Theme]\nInherits=Other, Bibata\n".to_owned())
+            } else if p == Path::new("/i/Loop/index.theme") {
+                Some("Inherits=Loop\n".to_owned())
+            } else {
+                None
+            }
         };
         let with = |theme: &'static str| {
             move |n: &str| (n == "XCURSOR_PATH").then(|| OsString::from("/i")).or((n == "XCURSOR_THEME").then(|| OsString::from(theme)))
