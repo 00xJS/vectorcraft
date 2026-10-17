@@ -4619,3 +4619,4 @@ lighting	Light	ライト
 @msg	no symbol named `{n}`	`{n}` という名前のシンボルはありません
 @msg	a mask has more than one art block	マスクに複数のアートブロックがあります
 @msg	mask art ends outside a mask dictionary	マスクのアートがマスク辞書の外で終わっています
+@msg	cancelled; nothing was changed	キャンセルしました。何も変更されていません

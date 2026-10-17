@@ -4953,3 +4953,4 @@ effect	Points	Σημεία
 @msg	no symbol named `{n}`	κανένα σύμβολο με όνομα `{n}`
 @msg	a mask has more than one art block	η μάσκα έχει περισσότερα από ένα μπλοκ γραφικών
 @msg	mask art ends outside a mask dictionary	τα γραφικά της μάσκας τελειώνουν έξω από το λεξικό της μάσκας
+@msg	cancelled; nothing was changed	ακυρώθηκε· δεν άλλαξε τίποτα

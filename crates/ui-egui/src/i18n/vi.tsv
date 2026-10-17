@@ -4558,3 +4558,4 @@ theme	Appearance	Giao diện
 @msg	no symbol named `{n}`	không có biểu tượng nào tên `{n}`
 @msg	a mask has more than one art block	mặt nạ có nhiều hơn một khối đồ họa
 @msg	mask art ends outside a mask dictionary	đồ họa mặt nạ kết thúc bên ngoài từ điển mặt nạ
+@msg	cancelled; nothing was changed	đã hủy; không có gì thay đổi

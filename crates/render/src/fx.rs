@@ -1284,7 +1284,10 @@ impl Renderer {
             }
         }
         let image = std::sync::Arc::new(pm);
-        if let Some(((key, made), inputs)) = key.zip(made).zip(inputs) {
+        // A cancelled export drew part of the content: that raster isn't kept for later frames.
+        if !vectorcraft_doc::cancel::is_cancelled()
+            && let Some(((key, made), inputs)) = key.zip(made).zip(inputs)
+        {
             let anchor = content.reach.origin();
             let p = f.view * anchor;
             let rel = (x0 - p.x, y0 - p.y);
