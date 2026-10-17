@@ -2618,7 +2618,7 @@ pub fn menu_tree_named(english_names: bool) -> Vec<(&'static str, Vec<Item>)> {
                         c("Type…", "graph.setType"),
                         c("Data…", "graph.setData"),
                         c("Design…", "graph.design"),
-                        todo("Column…"),
+                        c("Column…", "graph.column"),
                         c("Marker…", "graph.marker"),
                     ],
                 ),
@@ -3425,9 +3425,13 @@ pub fn invoke(app: &mut VectorcraftApp, id: &str, p: Value) {
         }
         return;
     }
-    // Object → Graph → Design… / Marker…: the document's graph designs.
-    if matches!(id, "graph.design" | "graph.marker") && p.as_object().is_none_or(|o| o.is_empty()) {
-        let r = if id == "graph.design" { crate::dialogs::graph_design::open_design(app) } else { crate::dialogs::graph_design::open_marker(app) };
+    // Object → Graph → Design… / Column… / Marker…: the document's graph designs.
+    if matches!(id, "graph.design" | "graph.column" | "graph.marker") && p.as_object().is_none_or(|o| o.is_empty()) {
+        let r = match id {
+            "graph.design" => crate::dialogs::graph_design::open_design(app),
+            "graph.column" => crate::dialogs::graph_design::open_column(app),
+            _ => crate::dialogs::graph_design::open_marker(app),
+        };
         if let Err(e) = r {
             app.status(e);
         }

@@ -3224,6 +3224,16 @@ file-filter	Templates	템플릿
 	Delete Design	디자인 삭제
 	Paste Design	디자인 붙여넣기
 	Select Unused	사용하지 않는 항목 선택
+	Graph Column	그래프 막대
+	Column Type:	막대 유형:
+	Vertically Scaled	세로로 크기 조절
+	Uniformly Scaled	균일하게 크기 조절
+	Repeating	반복
+	Sliding	슬라이드
+	Each Design Represents:	디자인당 값:
+	For Fractions:	나머지 처리:
+	Chop Design	디자인 자르기
+	Scale Design	디자인 크기 조절
 	Import Data…	데이터 가져오기…
 	Transpose	행/열 바꾸기
 	Switch x/y	x/y 전환

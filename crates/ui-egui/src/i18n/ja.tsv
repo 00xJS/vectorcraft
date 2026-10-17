@@ -3231,6 +3231,16 @@ file-filter	Templates	テンプレート
 	Delete Design	デザインを削除
 	Paste Design	デザインをペースト
 	Select Unused	未使用を選択
+	Graph Column	グラフの棒
+	Column Type:	棒の種類:
+	Vertically Scaled	垂直方向に拡大・縮小
+	Uniformly Scaled	縦横比を保持して拡大・縮小
+	Repeating	繰り返し
+	Sliding	スライド
+	Each Design Represents:	各デザインの値:
+	For Fractions:	端数の処理:
+	Chop Design	デザインを切り取る
+	Scale Design	デザインを拡大・縮小
 	Import Data…	データを読み込み…
 	Transpose	行と列を入れ替え
 	Switch x/y	X/Y を入れ替え

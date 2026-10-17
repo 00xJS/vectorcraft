@@ -1239,6 +1239,16 @@
 	Delete Design	Eliminar diseño
 	Paste Design	Pegar diseño
 	Select Unused	Seleccionar no utilizados
+	Graph Column	Columna de gráfico
+	Column Type:	Tipo de columna:
+	Vertically Scaled	Escalado vertical
+	Uniformly Scaled	Escalado uniforme
+	Repeating	Repetición
+	Sliding	Deslizante
+	Each Design Represents:	Cada diseño representa:
+	For Fractions:	Para fracciones:
+	Chop Design	Recortar diseño
+	Scale Design	Escalar diseño
 	Import Data…	Importar datos…
 	Transpose	Transponer
 	Switch x/y	Intercambiar x/y

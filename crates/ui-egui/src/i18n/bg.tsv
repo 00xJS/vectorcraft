@@ -1214,6 +1214,16 @@
 	Delete Design	Изтриване на дизайн
 	Paste Design	Поставяне на дизайн
 	Select Unused	Избиране на неизползваните
+	Graph Column	Колона на диаграма
+	Column Type:	Тип колона:
+	Vertically Scaled	Мащабиране по вертикала
+	Uniformly Scaled	Пропорционално мащабиране
+	Repeating	Повтаряне
+	Sliding	Плъзгане
+	Each Design Represents:	Всеки дизайн представлява:
+	For Fractions:	За дробни части:
+	Chop Design	Отрязване на дизайна
+	Scale Design	Мащабиране на дизайна
 	Import Data…	Импортиране на данни…
 	Transpose	Транспониране
 	Switch x/y	Размяна на x/y

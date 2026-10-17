@@ -1238,6 +1238,16 @@
 	Delete Design	Supprimer la conception
 	Paste Design	Coller la conception
 	Select Unused	Sélectionner les éléments inutilisés
+	Graph Column	Colonne de graphe
+	Column Type:	Type de colonne :
+	Vertically Scaled	Mise à l’échelle verticale
+	Uniformly Scaled	Mise à l’échelle uniforme
+	Repeating	Répétition
+	Sliding	Glissement
+	Each Design Represents:	Chaque conception représente :
+	For Fractions:	Pour les fractions :
+	Chop Design	Rogner la conception
+	Scale Design	Mettre la conception à l’échelle
 	Import Data…	Importer des données…
 	Transpose	Transposer
 	Switch x/y	Permuter x/y

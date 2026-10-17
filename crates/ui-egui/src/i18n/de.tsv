@@ -1232,6 +1232,16 @@ file-filter	Templates	Vorlagen
 	Delete Design	Design löschen
 	Paste Design	Design einfügen
 	Select Unused	Nicht verwendete auswählen
+	Graph Column	Diagrammsäule
+	Column Type:	Säulentyp:
+	Vertically Scaled	Vertikal skaliert
+	Uniformly Scaled	Gleichmäßig skaliert
+	Repeating	Wiederholend
+	Sliding	Gleitend
+	Each Design Represents:	Jedes Design entspricht:
+	For Fractions:	Für Bruchteile:
+	Chop Design	Design abschneiden
+	Scale Design	Design skalieren
 	Import Data…	Daten importieren…
 	Transpose	Transponieren
 	Switch x/y	x/y vertauschen

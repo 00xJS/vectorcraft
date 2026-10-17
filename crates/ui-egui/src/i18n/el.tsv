@@ -1177,6 +1177,16 @@
 	Delete Design	Διαγραφή σχεδίου
 	Paste Design	Επικόλληση σχεδίου
 	Select Unused	Επιλογή μη χρησιμοποιημένων
+	Graph Column	Στήλη γραφήματος
+	Column Type:	Τύπος στήλης:
+	Vertically Scaled	Κλιμακωμένο κατακόρυφα
+	Uniformly Scaled	Κλιμακωμένο ομοιόμορφα
+	Repeating	Επαναλαμβανόμενο
+	Sliding	Ολισθαίνον
+	Each Design Represents:	Κάθε σχέδιο αντιστοιχεί σε:
+	For Fractions:	Για κλάσματα:
+	Chop Design	Περικοπή σχεδίου
+	Scale Design	Κλιμάκωση σχεδίου
 	Import Data…	Εισαγωγή δεδομένων…
 	Transpose	Αντιμετάθεση
 	Switch x/y	Εναλλαγή x/y

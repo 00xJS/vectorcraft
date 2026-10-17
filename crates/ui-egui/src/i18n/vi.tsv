@@ -1425,9 +1425,19 @@ file-filter	Templates	Mẫu
 	Grainy Dots	Chấm hạt
 	Grain…	Hạt…
 	Graph	Biểu đồ
+	Graph Column	Cột biểu đồ
 	Graph Data	Dữ liệu biểu đồ
 	Graph Design	Thiết kế biểu đồ
 	Graph Marker	Ký hiệu biểu đồ
+	Column Type:	Loại cột:
+	Vertically Scaled	Co giãn theo chiều dọc
+	Uniformly Scaled	Co giãn đều
+	Repeating	Lặp lại nhiều lần
+	Sliding	Trượt
+	Each Design Represents:	Mỗi thiết kế biểu thị:
+	For Fractions:	Với phần lẻ:
+	Chop Design	Cắt thiết kế
+	Scale Design	Co giãn thiết kế
 	Graph Type	Loại biểu đồ
 	Graphic	Đồ họa
 	Graphic Style	Kiểu đồ họa

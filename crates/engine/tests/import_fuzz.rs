@@ -3566,6 +3566,8 @@ fn art_by_name_survives(what: &str, doc: Document) {
         ("graph.design", json!({"paste": "deep"})),
         ("graph.create", json!({"type": "line", "x": 10, "y": 10, "width": 80, "height": 60})),
         ("graph.marker", json!({"design": "deep"})),
+        ("graph.create", json!({"type": "column", "x": 10, "y": 10, "width": 80, "height": 60})),
+        ("graph.column", json!({"design": "deep", "columnType": "repeating", "each": 1})),
         ("graph.design", json!({"new": "again"})),
         ("edit.copy", json!({})),
         ("edit.paste", json!({})),

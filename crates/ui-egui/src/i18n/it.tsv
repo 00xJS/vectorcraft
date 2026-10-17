@@ -1248,6 +1248,16 @@ file-filter	Templates	Modelli
 	Delete Design	Elimina design
 	Paste Design	Incolla design
 	Select Unused	Seleziona non utilizzati
+	Graph Column	Colonna del grafico
+	Column Type:	Tipo di colonna:
+	Vertically Scaled	Ridimensionato verticalmente
+	Uniformly Scaled	Ridimensionato uniformemente
+	Repeating	Ripetuto
+	Sliding	Scorrevole
+	Each Design Represents:	Ogni design rappresenta:
+	For Fractions:	Per le frazioni:
+	Chop Design	Taglia design
+	Scale Design	Ridimensiona design
 	Import Data…	Importa dati…
 	Transpose	Trasponi
 	Switch x/y	Scambia x/y
