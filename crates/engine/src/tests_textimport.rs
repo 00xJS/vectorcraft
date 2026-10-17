@@ -51,6 +51,22 @@ fn crlf_with_returns_removed_places_one_paragraph_per_block_as_area_type() {
     assert!(close(frame, Rect::new(10.0, 20.0, 110.0, 70.0)), "{frame:?}");
 }
 
+/// Placed at a point on an artboard's right or bottom edge, the frame takes that artboard's size less
+/// a 36 pt margin on each side; on the edge two artboards share, away from its ends, it takes the
+/// size of the artboard to the right of it.
+#[test]
+fn type_placed_on_an_artboard_edge_takes_that_artboards_frame() {
+    let mut s = session();
+    let mut wide = s.doc().unwrap().doc.artboards[0].clone();
+    wide.rect = Rect::new(400.0, 0.0, 600.0, 200.0);
+    std::sync::Arc::make_mut(&mut s.doc_mut().unwrap().doc).artboards.push(wide);
+    for at in [[600.0, 100.0], [500.0, 200.0], [400.0, 100.0]] {
+        let r = place_text(&mut s, b"Edge", json!({ "at": at }));
+        let frame = placed(&s, &r).1;
+        assert!(close(frame, Rect::from_center_size((at[0], at[1]), (128.0, 128.0))), "{at:?}: {frame:?}");
+    }
+}
+
 #[test]
 fn text_files_report_and_queue_with_their_options() {
     let mut s = session();

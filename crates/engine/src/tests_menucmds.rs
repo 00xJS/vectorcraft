@@ -1300,6 +1300,23 @@ fn select_all_in_pattern_and_mask_editing_selects_the_art_being_edited() {
     }
 }
 
+/// All on Active Artboard takes a line on the artboard's right or bottom edge, as it takes one on
+/// the left or top edge. A line on the edge two artboards share is on both.
+#[test]
+fn select_all_on_artboard_takes_lines_on_its_right_and_bottom_edges() {
+    let mut s = Session::new();
+    s.execute("file.new", &json!({"width": 100, "height": 50, "artboards": 2, "artboardLayout": {"layout": "row", "spacing": 0}})).unwrap();
+    let mut line = |x1: f64, y1: f64, x2: f64, y2: f64| id_of(&s.execute("shape.line", &json!({"x1": x1, "y1": y1, "x2": x2, "y2": y2})).unwrap());
+    let (bottom, right, shared) = (line(10.0, 50.0, 40.0, 50.0), line(200.0, 10.0, 200.0, 40.0), line(100.0, 10.0, 100.0, 40.0));
+    line(200.5, 10.0, 200.5, 40.0);
+    let mut on = |i: u64| {
+        s.execute("select.allOnArtboard", &json!({"artboard": i})).unwrap();
+        selected(&s)
+    };
+    assert_eq!(on(0), vec![bottom, shared]);
+    assert_eq!(on(1), vec![right, shared]);
+}
+
 #[test]
 fn save_and_recall_selection() {
     let mut s = session();

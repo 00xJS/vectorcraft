@@ -484,7 +484,7 @@ impl Tool for ArtboardTool {
             }
             .turned(cx.view_angle());
         }
-        if cx.doc.artboards.iter().any(|a| a.rect.contains(p)) { Cursor::Move } else { Cursor::Crosshair }
+        if cx.doc.artboard_at(p).is_some() { Cursor::Move } else { Cursor::Crosshair }
     }
 
     fn options(&self) -> Value {
@@ -727,6 +727,22 @@ mod tests {
         let v = preview_params(&t.pointer(&c, &ev(PointerKind::Drag, 713.0, 100.0)));
         assert_eq!((v["width"].as_f64(), v["scaleArt"].as_bool()), (Some(113.0), Some(true)));
         assert!((v["height"].as_f64().unwrap() - 113.0).abs() < 1e-9);
+    }
+
+    /// Over an artboard's right or bottom edge the cursor shows Move and a click selects that
+    /// artboard, as on its left or top edge.
+    #[test]
+    fn a_click_on_an_artboards_right_or_bottom_edge_selects_it() {
+        let d = two_boards();
+        let (s, p) = (Selection::default(), paint());
+        let c = cx(&d, &s, &p);
+        for at in [Point::new(800.0, 100.0), Point::new(700.0, 200.0)] {
+            let mut t = ArtboardTool::default();
+            assert_eq!(t.cursor(&c, at, Mods::default()), Cursor::Move, "{at:?}");
+            t.pointer(&c, &ev(PointerKind::Down, at.x, at.y));
+            t.pointer(&c, &ev(PointerKind::Up, at.x, at.y));
+            assert_eq!(t.options()["selected"], json!([1]), "{at:?}");
+        }
     }
 
     /// A proportional resize never asks for a side under 1 pt, which the command would lengthen
