@@ -538,6 +538,53 @@ fn image_roundtrip() {
     assert_eq!(decoded.get_pixel(3, 0).0, [0, 0, 0, 255]);
 }
 
+/// A 4 × 2 red image encoded as `format`, cut short `keep` bytes past the first `tag` in it: its
+/// header reads, and its pixel data can't be decoded.
+fn cut_image(format: image::ImageFormat, tag: &[u8], keep: usize) -> Vec<u8> {
+    let mut out = vec![];
+    image::RgbaImage::from_pixel(4, 2, image::Rgba([255, 0, 0, 255])).write_to(&mut std::io::Cursor::new(&mut out), format).unwrap();
+    let at = out.windows(tag.len()).position(|w| w == tag).expect("tag");
+    out.truncate(at + tag.len() + keep);
+    out
+}
+
+/// An image whose pixel data can't be decoded (a PNG, GIF or WebP whose header reads) is left out
+/// of the PDF and of a print job, with one note however many there are, and the rest of the page is
+/// written.
+#[test]
+fn an_image_whose_pixels_cant_be_decoded_is_left_out_with_one_note() {
+    const NOTE: &str = "an image couldn't be decoded and is missing from the picture";
+    let mut d = doc(200.0, 300.0);
+    let blobs = [
+        ("good", ImageBlob::new("image/png", tiny_png())),
+        ("png", ImageBlob::new("image/png", cut_image(image::ImageFormat::Png, b"IDAT", 4))),
+        ("png2", ImageBlob::new("image/png", cut_image(image::ImageFormat::Png, b"IDAT", 6))),
+        ("gif", ImageBlob::new("image/gif", cut_image(image::ImageFormat::Gif, b"GIF89a", 7))),
+        ("webp", ImageBlob::new("image/webp", cut_image(image::ImageFormat::WebP, b"VP8L", 9))),
+    ];
+    for (i, (key, blob)) in blobs.into_iter().enumerate() {
+        d.images.insert(key.into(), blob);
+        let xf = Affine::translate((20.0, 20.0 + 50.0 * i as f64)) * Affine::scale(10.0);
+        let im = ImageObject { key: key.into(), width: 4, height: 2, xf, link: None, placement: Default::default() };
+        add(&mut d, Node::new(NodeId(0), NodeKind::Image(Box::new(im))));
+    }
+    add(&mut d, rect_node(Rect::new(100.0, 100.0, 150.0, 150.0), Color::BLACK));
+    let written = |bytes: &[u8]| {
+        let back = import(bytes).expect("import");
+        let l = leaves(&back);
+        let images: Vec<Rect> = l.iter().filter(|n| matches!(n.kind, NodeKind::Image(_))).filter_map(|n| n.geometric_bounds()).collect();
+        (images, l.iter().filter(|n| n.path_data().is_some()).count())
+    };
+    let r = export_with_report(&d, &PdfOptions::default()).expect("export");
+    assert_eq!(r.warnings, [NOTE]);
+    let (images, paths) = written(&r.bytes);
+    assert!(images.len() == 1 && close(images[0], Rect::new(20.0, 20.0, 60.0, 40.0), 0.01), "{images:?}");
+    assert_eq!(paths, 1);
+    let p = print(&d, &PrintOptions::default()).expect("print");
+    assert_eq!(p.warnings.iter().filter(|w| *w == NOTE).count(), 1, "{:?}", p.warnings);
+    assert_eq!(written(&p.bytes).0.len(), 1);
+}
+
 /// #2023: a group's Transform effect copies an image among its members as it does the paths: the
 /// PDF draws the image three times, where the effect put it.
 #[test]
