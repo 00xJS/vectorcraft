@@ -17,8 +17,9 @@
 //!   to Outline and the row's layer to Preview (`layer.outlineOthers`), or switches every layer to
 //!   Preview when the others are in Outline (`layer.previewAll`).
 //! - Dragging rows moves them above, below or into a layer or group (`layer.move`, a drop line or
-//!   a box shows where); Alt copies them. A dimmed copy of the row follows the pointer. Dropped on
-//!   the trash they are deleted, on New Layer duplicated.
+//!   a box shows where); Alt copies them. A dimmed copy of the row follows the pointer. Layers
+//!   dropped in the empty space under the last row go below the bottom layer. Dropped on the trash
+//!   they are deleted, on New Layer duplicated.
 //! - The triangle opens or closes a row; Alt-click does the same to everything inside it.
 //! - Double-clicking a name renames it; double-clicking elsewhere on a row opens its options.
 //! - A target circle targets its layer, group or object (`layer.target`); dragging it onto another
@@ -619,6 +620,29 @@ pub fn show(app: &mut VectorcraftApp, ui: &mut Ui) {
     }
     // The column drag: live while it lasts, one undo step when the button is released.
     let released = ui.input(|i| i.pointer.any_released());
+    // Layers dragged into the empty space under the last row go below the bottom layer (there is
+    // no row there to take the drop).
+    let below = list_rect.top() - scrolled.inner.state.offset.y + list.len() as f32 * view.h;
+    if query.is_empty()
+        && !app.ui.layers_filter.is_on()
+        && let Some(drag) = egui::DragAndDrop::payload::<LayersDrag>(ui.ctx())
+        && let LayersDrag::Rows(ids) = &*drag
+        && let Some(bottom) = doc.layers.first()
+        && !ids.is_empty()
+        && !ids.contains(&bottom.id)
+        && ids.iter().all(|i| doc.node(*i).is_some_and(Node::is_layer))
+        && let Some(p) = ui.input(|i| i.pointer.hover_pos())
+        && list_rect.contains(p)
+        && p.y > below
+    {
+        let stroke = Stroke::new(2.0, view.t.accent);
+        ui.painter().line_segment([egui::pos2(list_rect.left(), below), egui::pos2(list_rect.right(), below)], stroke);
+        if released {
+            let copy = ui.input(|i| i.modifiers.alt);
+            let ids: Vec<u64> = ids.iter().map(|i| i.0).collect();
+            out.actions.push(("layer.move".into(), json!({"ids": ids, "target": bottom.id.0, "place": "below", "copy": copy})));
+        }
+    }
     let changed = out.column.is_some();
     let column = out.column.take().unwrap_or_else(|| view.column.clone());
     if let Some(c) = column.as_ref().filter(|_| changed || released) {
@@ -2440,6 +2464,21 @@ mod tests {
             assert!(e.starts_with(&format!("`{key}` must be an array of these names: ")), "{bad}: {e}");
         }
         assert_eq!(app.run("ui.layersFilter", json!({})).unwrap(), json!({"objects": ["paths", "guides"], "layers": []}), "unchanged");
+    }
+
+    #[test]
+    fn dragging_a_layer_into_the_empty_space_under_the_rows_moves_it_to_the_bottom() {
+        let mut app = VectorcraftApp::new(Session::new(), Default::default());
+        app.session.execute("file.new", &json!({"width": 200, "height": 200})).unwrap();
+        app.session.execute("layer.new", &json!({"top": true})).unwrap();
+        let ids = |app: &VectorcraftApp| app.session.active().unwrap().doc.layers.iter().map(|l| l.id).collect::<Vec<_>>();
+        let [bottom, top] = ids(&app)[..] else { panic!("two layers") };
+        let ctx = egui::Context::default();
+        // Rows: the top layer, the bottom layer, then empty space.
+        let (circles, _) = frame(&mut app, &ctx, vec![], false);
+        assert_eq!(circles.len(), 2);
+        drag(&mut app, &ctx, egui::pos2(150.0, circles[0].y), egui::pos2(150.0, circles[1].y + 3.0 * ROW_MEDIUM), false);
+        assert_eq!(ids(&app), vec![top, bottom], "the top layer is now the bottom one");
     }
 
     #[test]
