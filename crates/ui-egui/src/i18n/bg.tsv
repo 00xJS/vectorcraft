@@ -3266,6 +3266,8 @@
 	Variables	Променливи
 	New Variable	Нова променлива
 	Delete Variable	Изтриване на променлива
+	Lock Variables	Заключване на променливите
+	Unlock Variables	Отключване на променливите
 	List Variables	Списък с променливи
 	Bind Variable	Свързване на променлива
 	Unbind Variable	Отвързване на променлива
@@ -4046,6 +4048,7 @@ axis	Both	И двете
 @msg	unknown tool or command `{key}`	непознат инструмент или команда `{key}`
 @msg	unknown workspace (one of {_1})	непознато работно пространство (едно от {_1})
 @msg	unsupported: {0}	не се поддържа: {0}
+@msg	variables are locked	променливите са заключени
 @msg	version {0} files can't be compressed: only version {COMPRESSED_SINCE} and later open compressed files	файловете от версия {0} не могат да бъдат компресирани: само версия {COMPRESSED_SINCE} и по-нови отварят компресирани файлове
 @msg	width and height are at least 1 pixel	ширината и височината са най-малко 1 пиксел
 @msg	workspace name can't be empty	името на работното пространство не може да бъде празно

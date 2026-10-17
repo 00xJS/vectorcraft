@@ -3345,6 +3345,8 @@ mark-style	Japanese	Giapponese
 	Variables	Variabili
 	New Variable	Nuova variabile
 	Delete Variable	Elimina variabile
+	Lock Variables	Blocca variabili
+	Unlock Variables	Sblocca variabili
 	List Variables	Elenca variabili
 	Bind Variable	Collega variabile
 	Unbind Variable	Scollega variabile
@@ -4146,6 +4148,7 @@ axis	Both	Entrambi
 @msg	unknown tool or command `{key}`	strumento o comando sconosciuto `{key}`
 @msg	unknown workspace (one of {_1})	area di lavoro sconosciuta (una delle seguenti: {_1})
 @msg	unsupported: {0}	non supportato: {0}
+@msg	variables are locked	le variabili sono bloccate
 @msg	version {0} files can't be compressed: only version {COMPRESSED_SINCE} and later open compressed files	i file della versione {0} non possono essere compressi: solo la versione {COMPRESSED_SINCE} e successive aprono file compressi
 @msg	width and height are at least 1 pixel	larghezza e altezza sono di almeno 1 pixel
 @msg	workspace name can't be empty	il nome dell'area di lavoro non può essere vuoto

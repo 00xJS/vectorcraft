@@ -3325,6 +3325,8 @@ mark-style	Japanese	日式
 	Variables	變數
 	New Variable	新增變數
 	Delete Variable	刪除變數
+	Lock Variables	鎖定變數
+	Unlock Variables	解除鎖定變數
 	List Variables	列出變數
 	Bind Variable	綁定變數
 	Unbind Variable	解除變數綁定

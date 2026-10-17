@@ -3338,6 +3338,8 @@ effect	Points	Точки
 	Variables	Змінні
 	New Variable	Нова змінна
 	Delete Variable	Видалити змінну
+	Lock Variables	Заблокувати змінні
+	Unlock Variables	Розблокувати змінні
 	List Variables	Перерахувати змінні
 	Bind Variable	Прив'язати змінну
 	Unbind Variable	Відв'язати змінну
@@ -4130,6 +4132,7 @@ axis	Both	Обидві
 @msg	unknown tool or command `{key}`	невідомий інструмент або команда `{key}`
 @msg	unknown workspace (one of {_1})	невідоме робоче середовище (одна з: {_1})
 @msg	unsupported: {0}	не підтримується: {0}
+@msg	variables are locked	змінні заблоковані
 @msg	version {0} files can't be compressed: only version {COMPRESSED_SINCE} and later open compressed files	файли версії {0} не можуть бути стиснуті: тільки версія {COMPRESSED_SINCE} і новіші відкривають стислі файли
 @msg	width and height are at least 1 pixel	ширина та висота повинні бути не менше 1 пікселя
 @msg	workspace name can't be empty	ім’я робочого середовища не може бути порожнім

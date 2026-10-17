@@ -644,6 +644,8 @@
 	New Variable…	Uusi muuttuja…
 	Unbind Variable	Pura muuttujan sidonta
 	Delete Variable	Poista muuttuja
+	Lock Variables	Lukitse muuttujat
+	Unlock Variables	Avaa muuttujien lukitus
 	New Data Set…	Uusi tietojoukko…
 	Edit Data Set…	Muokkaa tietojoukkoa…
 	Delete Data Set	Poista tietojoukko
@@ -4342,6 +4344,7 @@ imageTrace	Outline	Ääriviiva
 @msg	unknown tool or command `{key}`	tuntematon työkalu tai komento `{key}`
 @msg	unknown workspace (one of {_1})	tuntematon työtila (jokin seuraavista: {_1})
 @msg	unsupported: {0}	ei tuettu: {0}
+@msg	variables are locked	muuttujat on lukittu
 @msg	version {0} files can't be compressed: only version {COMPRESSED_SINCE} and later open compressed files	version {0} tiedostoja ei voi pakata: pakattuja tiedostoja voi avata vain versiosta {COMPRESSED_SINCE} alkaen
 @msg	width and height are at least 1 pixel	leveys ja korkeus ovat vähintään 1 pikseli
 @msg	workspace name can't be empty	työtilan nimi ei voi olla tyhjä

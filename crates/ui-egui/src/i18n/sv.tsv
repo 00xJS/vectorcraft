@@ -3266,6 +3266,8 @@
 	Variables	Variabler
 	New Variable	Ny variabel
 	Delete Variable	Radera variabel
+	Lock Variables	Lås variabler
+	Unlock Variables	Lås upp variabler
 	List Variables	Lista variabler
 	Bind Variable	Bind variabel
 	Unbind Variable	Koppla bort variabel
@@ -4045,6 +4047,7 @@ axis	Both	Båda
 @msg	unknown tool or command `{key}`	okänt verktyg eller kommando `{key}`
 @msg	unknown workspace (one of {_1})	okänd arbetsyta (en av {_1})
 @msg	unsupported: {0}	stöds inte: {0}
+@msg	variables are locked	variablerna är låsta
 @msg	version {0} files can't be compressed: only version {COMPRESSED_SINCE} and later open compressed files	filer i version {0} kan inte komprimeras: endast version {COMPRESSED_SINCE} och senare kan öppna komprimerade filer
 @msg	width and height are at least 1 pixel	bredd och höjd är minst 1 pixel
 @msg	workspace name can't be empty	arbetsytans namn får inte vara tomt

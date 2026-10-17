@@ -3341,6 +3341,8 @@ mark-style	Japanese	Японский
 	Variables	Переменные
 	New Variable	Новая переменная
 	Delete Variable	Удалить переменную
+	Lock Variables	Заблокировать переменные
+	Unlock Variables	Разблокировать переменные
 	List Variables	Перечислить переменные
 	Bind Variable	Привязать переменную
 	Unbind Variable	Отвязать переменную
@@ -4142,6 +4144,7 @@ axis	Both	Оба
 @msg	unknown tool or command `{key}`	неизвестный инструмент или команда `{key}`
 @msg	unknown workspace (one of {_1})	неизвестная рабочая среда (одна из: {_1})
 @msg	unsupported: {0}	не поддерживается: {0}
+@msg	variables are locked	переменные заблокированы
 @msg	version {0} files can't be compressed: only version {COMPRESSED_SINCE} and later open compressed files	файлы версии {0} не могут быть сжаты: только версия {COMPRESSED_SINCE} и новее открывают сжатые файлы
 @msg	width and height are at least 1 pixel	ширина и высота должны быть не менее 1 пикселя
 @msg	workspace name can't be empty	имя рабочей среды не может быть пустым

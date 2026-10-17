@@ -4047,6 +4047,7 @@ theme	Appearance	Erscheinungsbild
 @msg	unknown tool or command `{key}`	unbekanntes Werkzeug oder unbekannter Befehl `{key}`
 @msg	unknown workspace (one of {_1})	unbekannter Arbeitsbereich (einer von {_1})
 @msg	unsupported: {0}	nicht unterstützt: {0}
+@msg	variables are locked	die Variablen sind gesperrt
 @msg	version {0} files can't be compressed: only version {COMPRESSED_SINCE} and later open compressed files	Dateien der Version {0} können nicht komprimiert werden: Erst Version {COMPRESSED_SINCE} und neuer öffnen komprimierte Dateien
 @msg	width and height are at least 1 pixel	Breite und Höhe betragen mindestens 1 Pixel
 @msg	workspace name can't be empty	der Name des Arbeitsbereichs darf nicht leer sein
@@ -4313,6 +4314,8 @@ theme	Appearance	Erscheinungsbild
 	Highlight Variable	Variable hervorheben
 	New Variable	Neue Variable
 	Delete Variable	Variable löschen
+	Lock Variables	Variablen sperren
+	Unlock Variables	Variablen entsperren
 	List Variables	Variablen auflisten
 	Bind Variable	Variable binden
 	Unbind Variable	Variable lösen

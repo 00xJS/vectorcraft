@@ -653,6 +653,8 @@
 	New Variable…	Nová proměnná…
 	Unbind Variable	Zrušit přiřazení proměnné
 	Delete Variable	Odstranit proměnnou
+	Lock Variables	Zamknout proměnné
+	Unlock Variables	Odemknout proměnné
 	New Data Set…	Nová sada dat…
 	Edit Data Set…	Upravit sadu dat…
 	Delete Data Set	Odstranit sadu dat
@@ -4420,6 +4422,7 @@ imageTrace	Outline	Obrys
 @msg	unknown tool or command `{key}`	neznámý nástroj nebo příkaz `{key}`
 @msg	unknown workspace (one of {_1})	neznámý pracovní prostor (jeden z {_1})
 @msg	unsupported: {0}	nepodporováno: {0}
+@msg	variables are locked	proměnné jsou zamčené
 @msg	version {0} files can't be compressed: only version {COMPRESSED_SINCE} and later open compressed files	soubory verze {0} nelze komprimovat: komprimované soubory otevírá až verze {COMPRESSED_SINCE} a novější
 @msg	width and height are at least 1 pixel	šířka i výška jsou alespoň 1 obrazový bod
 @msg	workspace name can't be empty	název pracovního prostoru nesmí být prázdný

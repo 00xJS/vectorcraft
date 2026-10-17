@@ -116,6 +116,10 @@ pub struct Variables {
     pub bindings: BTreeMap<NodeId, BTreeSet<String>>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub active_dataset: Option<String>,
+    /// Lock Variables: while set, variables can't be defined, deleted or renamed. Objects can
+    /// still be bound to them and unbound, and datasets still change and apply.
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub locked: bool,
 }
 
 impl Variables {
