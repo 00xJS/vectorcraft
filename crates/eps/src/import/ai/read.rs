@@ -870,7 +870,9 @@ impl<'a> Reader<'a> {
         let mut painted = None;
         let node = match kind {
             // A compound path holding a group (its drawn look) is that look: its paths paint apart.
-            Kind::Compound if kids.iter().any(|k| self.looks.contains(&k.id)) => {
+            // Some files mark every group so, the plain one holding the subpaths too (#980): one
+            // paint for all its paths keeps it one compound path, its holes cut.
+            Kind::Compound if kids.iter().any(|k| self.looks.contains(&k.id) && paints_apart(k)) => {
                 let (children, clip) = self.clip_first(kids, &clips);
                 self.new_node(NodeKind::Group { children, clip }, &gs)
             }
@@ -2201,6 +2203,19 @@ fn ungrouped(kids: Vec<Node>) -> Vec<Node> {
         }
     }
     out
+}
+
+/// Whether `look`'s paths don't all paint the same.
+fn paints_apart(look: &Node) -> bool {
+    fn leaves<'a>(n: &'a Node, out: &mut Vec<&'a Node>) {
+        match &n.kind {
+            NodeKind::Group { children, .. } => children.iter().for_each(|c| leaves(c, out)),
+            _ => out.push(n),
+        }
+    }
+    let mut paths = vec![];
+    leaves(look, &mut paths);
+    paths.windows(2).any(|w| matches!(w, [a, b] if a.appearance != b.appearance))
 }
 
 fn path_rule(n: &Node) -> FillRule {
