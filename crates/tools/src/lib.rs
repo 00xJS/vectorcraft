@@ -494,6 +494,8 @@ pub enum Cursor {
     ZoomOut,
     Eyedropper,
     NotAllowed,
+    /// A long operation (opening a file, a background save or export): the OS wait cursor.
+    Busy,
     /// Over the gradient annotator's bar: a click adds a stop.
     AddStop,
     /// A gradient stop dragged off the bar: releasing deletes it.
