@@ -416,10 +416,10 @@ fn apply(app: &mut VectorcraftApp, tgt: &Target, c: Color, phase: Live, behind: 
             if let Some(s) = stops.get_mut(*index) {
                 s.set_color(c, None);
             }
-            super::gradient::set_stops(app, &stops, None, phase);
+            super::gradient::set_stops_keeping_models(app, &stops, None, phase);
         }
         Target::Point { index, .. } if !behind => {
-            let p = json!({"index": index, "color": color_json(&c), "stroke": !app.session.fill_active});
+            let p = json!({"index": index, "color": color_json(&c), "stroke": !app.session.fill_active, "keepModel": true});
             live_run(app, "Color", "paint.freeform.setPoint", p, phase);
         }
         _ => {
@@ -814,6 +814,29 @@ mod tests {
         let Paint::Gradient(g) = crate::panels::current_paints(&app).0 else { panic!("still a gradient") };
         let hex: Vec<String> = g.gradient.stops.iter().map(|s| s.color.to_hex()).collect();
         assert_eq!(hex, ["#ffffff", "#ff0000"]);
+    }
+
+    /// In a CMYK document the sliders keep the model picked in the panel for a gradient stop and a
+    /// freeform point, as they do for a solid fill.
+    #[test]
+    fn a_gradient_stop_and_a_freeform_point_keep_the_panels_model_in_a_cmyk_document() {
+        let mut app = app();
+        app.run("file.documentColorMode", json!({"mode": "cmyk"})).unwrap();
+        let stops = json!([{"offset": 0, "color": {"c": 0, "m": 0, "y": 0, "k": 0}}, {"offset": 1, "color": {"c": 0, "m": 100, "y": 100, "k": 0}}]);
+        app.run("paint.setFill", json!({"gradient": {"stops": stops}})).unwrap();
+        app.select_tool("gradient");
+        app.run("gradient.selectStop", json!({"index": 1})).unwrap();
+        let orange = Color::rgb8(255, 128, 0);
+        let tgt = target_with(&app, false);
+        apply(&mut app, &tgt, orange, Live::Released, false);
+        let Paint::Gradient(g) = crate::panels::current_paints(&app).0 else { panic!("still a gradient") };
+        assert_eq!(g.gradient.stops[1].color, orange);
+        app.run("paint.editGradient", json!({"kind": "freeform"})).unwrap();
+        let tgt = target_with(&app, false);
+        assert!(matches!(tgt, Target::Point { index: 0, .. }), "a freeform point is the target");
+        apply(&mut app, &tgt, orange, Live::Released, false);
+        let Paint::Gradient(g) = crate::panels::current_paints(&app).0 else { panic!("still a gradient") };
+        assert_eq!(g.freeform.map(|f| f.points[0].color), Some(orange));
     }
 
     fn paints_hex(app: &VectorcraftApp) -> (String, String) {
