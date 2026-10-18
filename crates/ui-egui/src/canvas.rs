@@ -2348,12 +2348,19 @@ fn selection_overlay(app: &mut VectorcraftApp, p: &egui::Painter, xf: &Xf, curve
                 }
             }
             for (si, ai, a) in path.anchors() {
-                let sel = match partial {
-                    Some(set) => set.contains(&(si, ai)),
-                    None => !direct || c.id == *id,
+                // An object selected whole has all its anchors selected, and so do the paths inside a
+                // group, compound path or clip group selected whole. Direction handles show only on a
+                // path that is selected itself: those are the handles that `handle_anchors` in
+                // `vectorcraft-tools` lets the tools drag.
+                let (sel, handles_shown) = match partial {
+                    Some(set) => {
+                        let sel = set.contains(&(si, ai));
+                        (sel, sel)
+                    }
+                    None => (true, direct && c.id == *id),
                 };
                 let sp = xf.to_screen(a.p);
-                if !curvature && sel && (direct || partial.is_some()) {
+                if !curvature && handles_shown {
                     with_handles += 1;
                     let sides = path.subpaths.get(si).map(|subpath| st.selection.handle_sides(c.id, si, ai, subpath)).unwrap_or((true, true));
                     handles.extend(
@@ -4251,6 +4258,79 @@ mod tests {
         let painted = shapes(&mut app, &ctx);
         assert!(!painted.iter().any(|s| matches!(s, Shape::LineSegment {stroke,..} if stroke.color == color)));
         assert_eq!(app.session.doc().unwrap().doc, before);
+    }
+
+    /// A group, a compound path or a clip group selected whole has every anchor selected, and Direct
+    /// Selection, the Pen and the anchor point tools draw its anchors filled, as they draw the anchors
+    /// of a path selected whole. They do the same after Group Selection clicks select a path and then its group.
+    /// Direction handles still show only on a path selected itself.
+    #[test]
+    fn the_anchors_of_a_container_selected_whole_draw_selected() {
+        let mut app = VectorcraftApp::new(Session::new(), Default::default());
+        app.run("file.new", json!({"width": 400, "height": 300})).unwrap();
+        app.ui.task_bar = false;
+        app.ui.view.rulers = false;
+        let rect = |app: &mut VectorcraftApp, x: i32, y: i32| {
+            app.run("shape.rectangle", json!({"x": x, "y": y, "width": 60, "height": 60})).unwrap()["id"].clone()
+        };
+        let in_group = rect(&mut app, 20, 20);
+        let ellipse = app.run("shape.ellipse", json!({"x": 100, "y": 20, "width": 60, "height": 60})).unwrap()["id"].clone();
+        app.run("select.set", json!({"ids": [in_group, ellipse]})).unwrap();
+        let group = app.run("object.group", json!({})).unwrap()["id"].clone();
+        let (c1, c2) = (rect(&mut app, 200, 20), rect(&mut app, 220, 40));
+        app.run("select.set", json!({"ids": [c1, c2]})).unwrap();
+        let compound = app.run("object.compoundPath.make", json!({})).unwrap()["id"].clone();
+        let hidden = app.run("shape.ellipse", json!({"x": 20, "y": 150, "width": 200, "height": 100})).unwrap()["id"].clone();
+        let square = rect(&mut app, 60, 170);
+        app.run("select.set", json!({"ids": [hidden, square]})).unwrap();
+        let clip = app.run("object.clippingMask.make", json!({})).unwrap()["id"].clone();
+        let lone = app.run("shape.ellipse", json!({"x": 300, "y": 150, "width": 60, "height": 60})).unwrap()["id"].clone();
+        let color = c32(app.session.active().unwrap().doc.layer_color(vectorcraft_doc::NodeId(lone.as_u64().unwrap())));
+        let ctx = egui::Context::default();
+        // Filled and hollow anchor squares, and direction handle lines, drawn in the layer color.
+        let looks = |app: &mut VectorcraftApp| {
+            let painted = shapes(app, &ctx);
+            let small = |r: &egui::epaint::RectShape| r.rect.width() < 12.0;
+            let filled = painted.iter().filter(|s| matches!(s, Shape::Rect(r) if small(r) && r.fill == color)).count();
+            let hollow = painted.iter().filter(|s| matches!(s, Shape::Rect(r) if small(r) && r.fill == Color32::WHITE)).count();
+            let handles = painted.iter().filter(|s| matches!(s, Shape::LineSegment { stroke, .. } if stroke.color == color)).count();
+            (filled, hollow, handles)
+        };
+        let mut wrong = vec![];
+        for tool in ["directSelection", "pen", "addAnchor", "deleteAnchor", "anchorPoint"] {
+            app.select_tool(tool);
+            // What is selected, and what it shows: the lone ellipse selected whole is the reference
+            // (four anchors with two handles each, and its center point, filled too).
+            for (what, ids, want) in [
+                ("a path", json!([lone]), (5, 0, 8)),
+                ("a group", json!([group]), (8, 0, 0)),
+                ("a compound path", json!([compound]), (8, 0, 0)),
+                ("a clip group", json!([clip]), (4, 0, 0)),
+            ] {
+                app.run("select.set", json!({ "ids": ids })).unwrap();
+                let got = looks(&mut app);
+                if got != want {
+                    wrong.push(format!("{tool}, {what}: (filled, hollow, handles) {got:?}, want {want:?}"));
+                }
+            }
+        }
+        app.run("select.none", json!({})).unwrap();
+        app.select_tool("groupSelection");
+        let view = app.view_info();
+        for _ in 0..2 {
+            for kind in [PointerKind::Down, PointerKind::Up] {
+                app.session.pointer(&PointerEvent::new(kind, 20.0, 50.0), view).unwrap();
+            }
+        }
+        let id = |v: &serde_json::Value| vectorcraft_doc::NodeId(v.as_u64().unwrap());
+        assert_eq!(app.session.active().unwrap().selection.objects, vec![id(&in_group), id(&group)]);
+        app.select_tool("directSelection");
+        // The rectangle's anchors and center point, then the group's eight anchors, four of them over the rectangle's.
+        let got = looks(&mut app);
+        if got != (13, 0, 0) {
+            wrong.push(format!("a Group Selection click on a path, then on its group: {got:?}, want (13, 0, 0)"));
+        }
+        assert!(wrong.is_empty(), "{}", wrong.join("\n"));
     }
 
     /// View › Pixel Preview: magnified, the art shows as the document pixels it rasterizes to (one
