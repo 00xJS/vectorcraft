@@ -207,7 +207,7 @@ pub fn specs() -> Vec<CommandSpec> {
             "Move Guide",
             [],
             None,
-            "{index, pos: pt} | {dx?, dy?: pt, copy?: bool} put ruler guide `index` at `pos`, or move the selected guides (vertical ones by dx, horizontal ones by dy); copy leaves them and selects the moved copies",
+            "{index, pos: pt, vertical?: bool} | {dx?, dy?: pt, copy?: bool} put ruler guide `index` at `pos` (and swap its orientation when `vertical` is given), or move the selected guides (vertical ones by dx, horizontal ones by dy); copy leaves them and selects the moved copies",
             guides_unlocked,
             guide_move
         ),
@@ -769,6 +769,9 @@ pub(crate) fn guide_move(s: &mut Session, p: &Value) -> Result<Value> {
         s.edit("Move Guide", |d, _| {
             if let Some(g) = d.guides.get_mut(i) {
                 g.pos = pos;
+                if p.get("vertical").is_some() {
+                    g.vertical = bool_or(p, "vertical", false);
+                }
             }
             Ok(())
         })?;
