@@ -211,7 +211,9 @@ fn ids_of(g: &FloatingPanels) -> Vec<&'static str> {
 
 /// The dock tabs left in the dock, in tab order.
 pub fn docked_tabs(ui: &UiState) -> impl Iterator<Item = DockTab> + '_ {
-    DockTab::ALL.into_iter().filter(|t| group_of(ui, t.info().0).is_none())
+    let order: Vec<DockTab> =
+        if ui.dock_tab_order.is_empty() { DockTab::ALL.to_vec() } else { ui.dock_tab_order.clone() };
+    order.into_iter().filter(|t| group_of(ui, t.info().0).is_none())
 }
 
 /// The dock tab the tabbed group shows: the chosen one, or the first left when it floats.
@@ -566,6 +568,8 @@ enum Action {
     Detach(usize, f32),
     /// Float this panel out of its group; its tab began this far right.
     Tear(&'static str, f32),
+    /// Reorder tabs in floating group `gi` from index `from` to `to`.
+    Reorder(usize, usize, usize),
     /// Float the docked column of this group, its top-left corner this far from the pointer.
     Undock(usize, Vec2),
 }
@@ -654,6 +658,18 @@ fn apply(app: &mut VectorcraftApp, ctx: &egui::Context, action: Option<Action>) 
         }
         Some(Action::Detach(gi, left)) => detach(app, ctx, gi, left),
         Some(Action::Tear(id, left)) => tear(app, ctx, &[id], id, strip_grab(ctx, left)),
+        Some(Action::Reorder(gi, from, to)) => {
+            if let Some(g) = app.ui.floating_panels.get_mut(gi)
+                && from < g.panels.len()
+                && to < g.panels.len()
+                && from != to
+            {
+                let active = g.panels.get(g.active).cloned();
+                let panel = g.panels.remove(from);
+                g.panels.insert(to.min(g.panels.len()), panel);
+                g.active = active.and_then(|id| g.panels.iter().position(|p| *p == id)).unwrap_or(0);
+            }
+        }
         Some(Action::Undock(gi, grab)) => {
             let Some(at) = ctx.input(|i| i.pointer.interact_pos()) else { return };
             let Some(id) = set_of(&app.ui, gi).first().and_then(|&i| shown(&app.ui, i)) else { return };
@@ -889,12 +905,14 @@ fn draw_groups(
         let names: Vec<_> = g.ids.iter().zip(&labels).map(|(&id, label)| (id, label.as_str())).collect();
         let selected = g.ids.iter().position(|&id| id == g.active).unwrap_or(0);
         let out = dock::panel_tabs(ui, &format!("native-set-tabs-{}", g.gi), tab_area, &names, selected, theme::semibold(12.0), false);
-        for (j, resp) in out.responses {
-            let Some(&id) = g.ids.get(j) else { continue };
-            if resp.double_clicked() {
+        for (j, resp) in &out.responses {
+            let Some(&id) = g.ids.get(*j) else { continue };
+            if let Some((from, to)) = dock::tab_reorder_on_release(strip, pointer, resp, &out.responses) {
+                *action = Some(Action::Reorder(g.gi, from, to));
+            } else if resp.double_clicked() {
                 *action = Some(Action::Collapse(g.gi));
             } else if resp.clicked() {
-                *action = Some(Action::Activate(g.gi, j));
+                *action = Some(Action::Activate(g.gi, *j));
             } else if lone && resp.drag_started() {
                 *action = Some(match alone {
                     Some(pos) => Action::Move(id, pos),
@@ -1238,6 +1256,18 @@ mod tests {
         fn groups(&self) -> Vec<Vec<&str>> {
             self.app.ui.floating_panels.iter().map(|g| g.panels.iter().map(String::as_str).collect()).collect()
         }
+    }
+
+    #[test]
+    fn floating_group_tabs_reorder_horizontally_within_the_strip() {
+        let mut h = Harness::new();
+        h.drag(h.icons()[2].center(), pos2(500.0, 250.0));
+        h.drag(h.icons()[0].center(), h.shared_tab("swatches").center());
+        assert_eq!(h.groups(), [["swatches", "color"]]);
+        let tabs = h.widgets(|r| h.group("swatches").contains_rect(r) && r.height() == 32.0);
+        assert_eq!(tabs.len(), 2);
+        h.drag(tabs[1].center(), tabs[0].center());
+        assert_eq!(h.groups(), [["color", "swatches"]]);
     }
 
     #[test]

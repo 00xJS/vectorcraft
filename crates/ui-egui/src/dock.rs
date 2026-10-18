@@ -4,7 +4,7 @@
 //! group to icons at the top of the icon column (`window.collapseDock`); the arrow above the column
 //! then expands it again.
 
-use egui::{CornerRadius, Rect, Sense, Stroke, Ui, vec2};
+use egui::{CornerRadius, Pos2, Rect, Sense, Stroke, Ui, vec2};
 use serde_json::json;
 
 use crate::state::{DockTab, ICON_PANEL_GROUPS, ICON_PANELS};
@@ -242,13 +242,16 @@ fn tab_strip(app: &mut VectorcraftApp, ui: &mut Ui, active: DockTab) -> bool {
     let menu = Rect::from_center_size(strip.right_center() - vec2(14.0, 0.0), vec2(16.0, 16.0));
     let area = Rect::from_min_max(strip.min, egui::pos2((menu.left() - 4.0).max(strip.left()), strip.bottom() - 1.0));
     let out = panel_tabs(ui, "docktab", area, &names, selected, theme::semibold(12.5), true);
-    for (i, resp) in out.responses {
-        let Some(&tab) = tabs.get(i) else { continue };
+    let pointer = ui.input(|i| i.pointer.interact_pos());
+    for (i, resp) in &out.responses {
+        let Some(&tab) = tabs.get(*i) else { continue };
         let id = tab.info().0;
-        if resp.clicked() {
+        if let Some((from, to)) = tab_reorder_on_release(strip, pointer, resp, &out.responses) {
+            apply_dock_tab_reorder(app, &tabs, from, to);
+        } else if resp.clicked() {
             app.ui.dock_tab = tab;
         }
-        crate::panel_docking::legacy_tab(app, ui, id, &resp);
+        crate::panel_docking::legacy_tab_in_strip(app, ui, id, &resp, Some(strip));
     }
     if let Some(tab) = out.picked.and_then(|i| tabs.get(i)).copied() {
         app.ui.dock_tab = tab;
@@ -271,6 +274,49 @@ fn tab_strip(app: &mut VectorcraftApp, ui: &mut Ui, active: DockTab) -> bool {
 
 /// App styling and overflow menus around the shared tab fitting/interaction components. Docking
 /// and floating groups consume the responses themselves, preserving their different drag rules.
+/// Drag a tab onto another tab in the same strip to reorder (pointer still on the strip at release).
+pub(crate) fn tab_reorder_on_release(
+    strip: Rect,
+    pointer: Option<Pos2>,
+    source: &egui::Response,
+    tabs: &[(usize, egui::Response)],
+) -> Option<(usize, usize)> {
+    if !source.drag_stopped() {
+        return None;
+    }
+    let Some(pointer) = pointer.filter(|p| p.is_finite()) else { return None };
+    if !strip.expand(4.0).contains(pointer) {
+        return None;
+    }
+    if source.drag_delta().length() < 2.0 {
+        return None;
+    }
+    let from = tabs.iter().find(|(_, r)| r.id == source.id).map(|(i, _)| *i)?;
+    let to = tabs.iter().find(|(_, r)| r.rect.contains(pointer)).map(|(i, _)| *i)?;
+    (from != to).then_some((from, to))
+}
+
+fn apply_dock_tab_reorder(app: &mut VectorcraftApp, visible: &[DockTab], from: usize, to: usize) {
+    let Some(from_tab) = visible.get(from) else { return };
+    let Some(to_tab) = visible.get(to) else { return };
+    if app.ui.docking.is_some() {
+        if let Err(error) = app.run(
+            "window.panel.move",
+            json!({ "panel": from_tab.info().0, "anchor": to_tab.info().0, "before": to_tab.info().0 }),
+        ) {
+            app.ui.status = error;
+        }
+        return;
+    }
+    let mut order: Vec<DockTab> = floating::docked_tabs(&app.ui).collect();
+    if from >= order.len() || to >= order.len() {
+        return;
+    }
+    let item = order.remove(from);
+    order.insert(to, item);
+    app.ui.dock_tab_order = order;
+}
+
 pub(crate) struct PanelTabs {
     pub responses: Vec<(usize, egui::Response)>,
     pub picked: Option<usize>,
@@ -690,6 +736,27 @@ mod tests {
         fn arrow(&self) -> egui::Pos2 {
             egui::pos2(SCREEN.x - 10.0, HEADER / 2.0)
         }
+
+        fn dock_tabs(&self) -> Vec<Rect> {
+            let dock = self.ctx.data(|d| d.get_temp::<Rect>(floating::dock_rect_id())).unwrap();
+            let mut tabs: Vec<Rect> =
+                widget_rects(&self.ctx, vec2(40.0, 32.0)).filter(|r| (31.0..=34.0).contains(&r.height()) && dock.contains_rect(*r)).collect();
+            tabs.sort_by(|a, b| a.left().total_cmp(&b.left()));
+            tabs
+        }
+
+        fn drag(&mut self, from: Pos2, to: Pos2) {
+            let button = |pos, pressed| {
+                egui::Event::PointerButton { pos, button: egui::PointerButton::Primary, pressed, modifiers: egui::Modifiers::NONE }
+            };
+            self.frame(vec![egui::Event::PointerMoved(from)]);
+            self.frame(vec![button(from, true)]);
+            for k in 1..=8 {
+                self.frame(vec![egui::Event::PointerMoved(from + (to - from) * (k as f32 / 8.0))]);
+            }
+            self.frame(vec![button(to, false)]);
+            self.settle();
+        }
     }
 
     fn icon_panel_count() -> usize {
@@ -799,6 +866,18 @@ mod tests {
         assert!(open.is_some(), "an icon panel pops out beside the expanded dock");
         h.click(egui::pos2(SCREEN.x - 100.0, 300.0));
         assert_eq!(h.app.ui.open_panel, None, "a click in the docked group puts {open:?} away");
+    }
+
+    #[test]
+    fn dock_tab_strip_drags_reorder_tabs_horizontally() {
+        let mut h = Harness::new();
+        let tabs = h.dock_tabs();
+        assert_eq!(tabs.len(), 3);
+        h.drag(tabs[2].center(), tabs[0].center());
+        let order: Vec<_> = floating::docked_tabs(&h.app.ui).map(|t| t.info().0).collect();
+        assert_eq!(order, ["libraries", "properties", "layers"]);
+        let saved: crate::state::UiState = serde_json::from_slice(&serde_json::to_vec(&h.app.ui).unwrap()).unwrap();
+        assert_eq!(saved.dock_tab_order, h.app.ui.dock_tab_order);
     }
 
     #[test]
