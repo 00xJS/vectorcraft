@@ -8,6 +8,7 @@ use vectorcraft_doc::{Node, NodeKind, SymbolBoxes, Unit};
 use vectorcraft_geom::{Affine, BezPath, PathEl, Point, Rect};
 use vectorcraft_tools::{Cursor, Mods, Overlay, PointerEvent, PointerKind};
 
+use crate::opening;
 use crate::state::View;
 use crate::theme::{self, Tokens};
 use crate::{CacheKey, VectorcraftApp, now_ms, widgets};
@@ -536,6 +537,10 @@ pub fn show(app: &mut VectorcraftApp, ui: &mut Ui) {
     artboard_name_editor(app, ui, &xf);
     // Cursor.
     if resp.hovered() {
+        if opening::long_operation_busy(app) {
+            ui.ctx().set_cursor_icon(cursor_icon(Cursor::Busy));
+            return;
+        }
         let m = ui.input(|i| i.modifiers);
         let space = ui.input(|i| i.key_down(egui::Key::Space));
         let drag = ui.data(|d| d.get_temp::<Drag>(drag_id()));
@@ -638,6 +643,7 @@ fn cursor_icon(c: Cursor) -> egui::CursorIcon {
         Cursor::ZoomOut => C::ZoomOut,
         Cursor::Eyedropper => C::Crosshair,
         Cursor::NotAllowed => C::NotAllowed,
+        Cursor::Busy => C::Progress,
         Cursor::AddStop => C::Copy,
         Cursor::RemoveStop => C::NotAllowed,
         Cursor::Slice => C::Crosshair,
