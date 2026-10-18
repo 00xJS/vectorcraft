@@ -296,6 +296,12 @@ fn box_hit(cx: &ToolContext, b: &OrientedBox, p: Point) -> Option<BoxHit> {
     in_rotate_zone(b.rect, lp, tol, cx.tol(18.0)).map(|_| BoxHit::Rotate)
 }
 
+/// Whether the current selection's bounding-box handle is under `p`, using the same geometry as
+/// the Selection tool's press handling.
+pub(crate) fn bbox_handle_at(cx: &ToolContext, p: Point) -> bool {
+    cx.show_bbox && selection_box(cx).is_some_and(|b| matches!(box_hit(cx, &b, p), Some(BoxHit::Handle(_))))
+}
+
 /// How near (screen points) the pointer must come to an object's centre or anchor for Smart Guides
 /// to label it while hovering.
 const HOVER_REACH: f64 = 6.0;

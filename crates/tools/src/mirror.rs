@@ -56,6 +56,11 @@ impl MirrorAxis {
         if axis.ends.iter().any(|q| q.distance(p) <= cx.tol(9.0)) {
             return Some((axis, true));
         }
+        // The center is its own move handle. Keep it ahead of bounding-box handles when the two
+        // happen to overlap; the rest of the axis line yields to those handles below.
+        if axis.center.distance(p) <= cx.tol(7.0) {
+            return Some((axis, false));
+        }
         let d = axis.ends[1] - axis.ends[0];
         let length = d.hypot();
         if !length.is_finite() || length <= 0.0 {
@@ -63,7 +68,7 @@ impl MirrorAxis {
         }
         let unit = d / length;
         let along = (p - axis.ends[0]).dot(unit).clamp(0.0, length);
-        ((axis.ends[0] + unit * along).distance(p) <= cx.tol(7.0)).then_some((axis, false))
+        ((axis.ends[0] + unit * along).distance(p) <= cx.tol(7.0) && !crate::select::bbox_handle_at(cx, p)).then_some((axis, false))
     }
 }
 

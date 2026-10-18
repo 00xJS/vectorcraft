@@ -5041,6 +5041,34 @@ mod tests {
         }
     }
 
+    #[test]
+    fn top_bounding_box_handle_scales_a_default_mirror_repeat() {
+        let mut app = VectorcraftApp::new(Session::new(), Default::default());
+        app.run("file.new", json!({"width": 400, "height": 300})).unwrap();
+        app.run("shape.rectangle", json!({"x": 100, "y": 100, "width": 100, "height": 100})).unwrap();
+        app.run("object.repeat.mirror", json!({})).unwrap();
+        app.ui.task_bar = false;
+        app.ui.view.rulers = false;
+        let ctx = egui::Context::default();
+        frame(&mut app, &ctx, vec![]);
+
+        let initial = app.selection_bounds().unwrap();
+        let bx = app.selection_box().unwrap();
+        let top = bx.to_doc() * vectorcraft_tools::bbox::Handle::Top.pos(bx.rect);
+        let xf = Xf::new(app.canvas_rect.unwrap(), app.view().unwrap());
+        let from = xf.to_screen(top);
+        let to = from + vec2(0.0, -30.0);
+        let button = |pos, pressed| egui::Event::PointerButton { pos, button: egui::PointerButton::Primary, pressed, modifiers: Default::default() };
+
+        frame(&mut app, &ctx, vec![egui::Event::PointerMoved(from), button(from, true)]);
+        frame(&mut app, &ctx, vec![egui::Event::PointerMoved(to)]);
+        frame(&mut app, &ctx, vec![button(to, false)]);
+
+        let scaled = app.selection_bounds().unwrap();
+        assert!(scaled.height() > initial.height() + 10.0, "Top handle should scale the repeat: {initial:?} -> {scaled:?}");
+        assert!((scaled.width() - initial.width()).abs() < 0.01, "Top handle should not scale width: {initial:?} -> {scaled:?}");
+    }
+
     /// #1236: Curvature edits points, so existing paths show one circular marker per point and
     /// no direction handles; switching back to Direct Selection keeps its normal handles.
     #[test]
