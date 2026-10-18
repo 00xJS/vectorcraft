@@ -3309,6 +3309,73 @@ mod tests {
         assert!(wrong.is_empty(), "drawn outside {clip:?}:\n{}", wrong.join("\n"));
     }
 
+    /// A group of four clip groups, each a placed image larger than the rounded square that clips
+    /// it: one click with the Selection tool selects the group, which shows the four squares'
+    /// outlines and no image's rectangle, and a bounding box that is the union of the squares.
+    #[test]
+    fn a_group_of_clipped_images_shows_its_masks_and_their_bounds() {
+        let mut app = VectorcraftApp::new(Session::new(), Default::default());
+        app.run("file.new", json!({"width": 600, "height": 300})).unwrap();
+        app.ui.task_bar = false;
+        app.ui.view.rulers = false;
+        let img = image::RgbaImage::from_pixel(160, 160, image::Rgba([40, 120, 200, 255]));
+        let mut png = vec![];
+        img.write_to(&mut std::io::Cursor::new(&mut png), image::ImageFormat::Png).unwrap();
+        let data = vectorcraft_format::base64_encode(&png);
+        // Masks 100 × 100 at x = 20, 150, 280, 410; each image reaches 30 past its mask on every side.
+        let masks: Vec<Rect> = (0..4).map(|i| Rect::new(20.0 + 130.0 * i as f64, 100.0, 120.0 + 130.0 * i as f64, 200.0)).collect();
+        let mut clips = vec![];
+        for m in &masks {
+            app.run("file.place", json!({"name": "photo.png", "dataBase64": data, "link": false, "at": [m.center().x, m.center().y]})).unwrap();
+            let image = json!(app.session.active().unwrap().selection.objects[0].0);
+            let mask = app.run("shape.rectangle", json!({"x": m.x0, "y": m.y0, "width": 100, "height": 100, "radius": 16})).unwrap()["id"].clone();
+            app.run("select.set", json!({"ids": [image, mask]})).unwrap();
+            clips.push(app.run("object.clippingMask.make", json!({})).unwrap()["id"].clone());
+        }
+        app.run("select.set", json!({"ids": clips})).unwrap();
+        let group = vectorcraft_doc::NodeId(app.run("object.group", json!({})).unwrap()["id"].as_u64().unwrap());
+        app.run("select.none", json!({})).unwrap();
+        let union = masks.iter().copied().reduce(|a, b| a.union(b)).unwrap();
+        let ctx = egui::Context::default();
+        frame(&mut app, &ctx, vec![]);
+        let xf = Xf::new(app.canvas_rect.unwrap(), app.view().unwrap());
+        // One click on a visible part of the second image selects the whole group.
+        app.select_tool("selection");
+        let view = app.view_info();
+        for kind in [PointerKind::Down, PointerKind::Up] {
+            app.session.pointer(&PointerEvent::new(kind, 200.0, 150.0), view).unwrap();
+        }
+        assert_eq!(app.session.active().unwrap().selection.objects, vec![group]);
+        // The bounding box, the bounds and the transform box fit the masks, not the images.
+        let close =
+            |r: Option<Rect>| r.is_some_and(|r| [r.x0 - union.x0, r.y0 - union.y0, r.x1 - union.x1, r.y1 - union.y1].iter().all(|d| d.abs() < 1e-9));
+        let st = app.session.active().unwrap();
+        assert!(close(st.doc.node(group).unwrap().geometric_bounds()), "the group's bounds");
+        assert!(close(app.selection_box().map(|b| b.rect)), "the bounding box");
+        // Everything drawn in the layer's colour lies on a mask: on its outline, its anchors or the
+        // bounding box round them (8 px for the anchors and the box's handles).
+        let color = c32(app.session.active().unwrap().doc.layer_color(group));
+        let screen = |r: Rect| egui::Rect::from_two_pos(xf.to_screen(Point::new(r.x0, r.y0)), xf.to_screen(Point::new(r.x1, r.y1)));
+        let drawn = drawn_in(&mut app, &ctx, color, 1.0);
+        assert!(!drawn.is_empty());
+        let near_a_mask = |q: &Pos2| masks.iter().any(|m| screen(*m).expand(8.0).contains(*q));
+        let on_the_box = |q: &Pos2| {
+            let b = screen(union);
+            b.expand(8.0).contains(*q) && !b.shrink(8.0).contains(*q)
+        };
+        let stray: Vec<_> = drawn.iter().filter(|q| !near_a_mask(q) && !on_the_box(q)).collect();
+        assert!(stray.is_empty(), "drawn off the masks: {stray:?}");
+        // Each mask's outline is drawn: points on its left and right edges.
+        for m in &masks {
+            let r = screen(*m);
+            let on = |x: f32| drawn.iter().any(|q| (q.x - x).abs() < 1.0 && q.y > r.min.y + 16.0 && q.y < r.max.y - 16.0);
+            assert!(on(r.min.x) && on(r.max.x), "the outline of {m:?}");
+        }
+        // No image's rectangle: nothing along the images' top edge, 30 points above the masks.
+        let top = xf.to_screen(Point::new(0.0, union.y0 - 30.0)).y;
+        assert!(!drawn.iter().any(|q| (q.y - top).abs() < 0.5), "the images' top edge at y {top}");
+    }
+
     /// #2422: a clip group whose hidden art has more anchors than the overlay draws (#525) still
     /// shows its clipping path's anchors and hover highlight.
     #[test]
