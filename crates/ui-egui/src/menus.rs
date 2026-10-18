@@ -1249,6 +1249,7 @@ pub fn run_ui_command(app: &mut VectorcraftApp, id: &str, p: &Value) -> Option<R
         "view.snapToPoint" => flag(&mut app.ui.view.snap_to_point),
         "view.zoomIn" | "view.zoomOut" => {
             let up = id == "view.zoomIn";
+            let print = app.session.prefs.display_print_size;
             // Selection & Anchor Display › Zoom to Selection: the selection comes to the middle.
             let focus = if app.session.prefs.zoom_to_selection { app.selection_box().map(|b| b.center()) } else { None };
             match app.view_mut() {
@@ -1257,13 +1258,14 @@ pub fn run_ui_command(app: &mut VectorcraftApp, id: &str, p: &Value) -> Option<R
                     if let Some(c) = focus {
                         v.center = c;
                     }
-                    Ok(json!({"zoom": v.zoom * 100.0}))
+                    Ok(json!({"zoom": crate::state::zoom_display_percent(v.zoom, print)}))
                 }
                 None => Err("no document".into()),
             }
         }
         "view.setZoom" => {
-            let z = p.get("zoom").and_then(Value::as_f64).unwrap_or(100.0) / 100.0;
+            let print = app.session.prefs.display_print_size;
+            let z = crate::state::zoom_from_display_percent(p.get("zoom").and_then(Value::as_f64).unwrap_or(100.0), print);
             let center =
                 p.get("center").and_then(Value::as_array).and_then(|a| Some(vectorcraft_geom::Point::new(a.first()?.as_f64()?, a.get(1)?.as_f64()?)));
             match app.view_mut() {
