@@ -880,6 +880,14 @@ journal recorded by an older version replays as it did, except for an effect `co
 `` `columns` must be a number, not "4" ``. Each message names the key that was given, and the command then changes
 nothing.
 
+The blend, envelope and gradient mesh commands refuse a string or another value that is not a number with the same
+message, as in `` `steps` must be a number, not "8" ``, and change nothing: `steps`, `distance` and `value` in
+`object.blend.make` and `object.blend.options`; `bend`, `h`, `v`, `horizontalDistortion` and `verticalDistortion` in
+`object.envelope.makeWithWarp`, `resetWithWarp` and `options`; `rows`, `cols` and `columns` in
+`object.envelope.makeWithMesh`, `resetWithMesh` and `object.mesh.create`; `fidelity` in `object.envelope.options`;
+`highlight` in `object.mesh.create`; and `opacity` in `object.mesh.setPointColor`. A null is read as a key left out.
+`object.mesh.create` refuses an `at` that is not two numbers with `` `at` must be [x, y] ``.
+
 A step can use an earlier step's result, in `run` as in the `command_batch` tool. A parameter string that is exactly
 `$N` or `$N.path` takes that value from the result of step `N` (counting from 0, in the order they ran; `run --in`'s
 open isn't a step), and `$last…` from the step before. A path goes into objects by key and arrays by index:
