@@ -370,54 +370,59 @@ fn typed_number(x: f64) -> Value {
 }
 
 /// Editor for a plug-in's parameters from its schema (plug-in filter and effect dialogs): numbers
-/// within their range, whole numbers, checkboxes and dropdowns, in declaration order. Returns
-/// true when a value changed. The labels (from the parameter keys) and choices are the plug-in's
-/// text, shown as they are.
+/// within their range, whole numbers, checkboxes and dropdowns, in declaration order, a row each.
+/// Returns true when a value changed. The labels (from the parameter keys) and choices are the
+/// plug-in's text, shown as they are. A plug-in may declare more of them
+/// ([`MAX_PARAMS`](vectorcraft_plugins::manifest::MAX_PARAMS)) than the window has room for, and
+/// the rows then scroll ([`super::modal::scrolled_rows`]).
 pub(super) fn schema_fields(ui: &mut egui::Ui, d: &mut Dialog, specs: &[(String, vectorcraft_plugins::ParamSpec)]) -> bool {
     use vectorcraft_plugins::ParamSpec;
     let t = Tokens::get(ui.ctx());
     let mut changed = false;
-    egui::Grid::new("plugin-grid").num_columns(2).spacing([12.0, 8.0]).show(ui, |ui| {
-        for (k, spec) in specs {
-            ui.label(egui::RichText::new(humanize(k)).color(t.text));
-            let cur = d.fields.get(k).cloned().unwrap_or_else(|| spec.default_value());
-            let new = match spec {
-                ParamSpec::Number { min, max, .. } => {
-                    let x = cur.as_f64().unwrap_or(*min);
-                    crate::widgets::range_field(ui, ("plugin-num", k), x, *min..=*max, "", 2, 100.0).map(|x| json!(x))
-                }
-                ParamSpec::Int { min, max, .. } => {
-                    let x = cur.as_i64().unwrap_or(*min).clamp(*min, *max);
-                    // An f64 holds every whole number up to 2^53, so the numeric field (arrows, wheel, arithmetic) is exact there.
-                    // Past it, the number typed is read as an integer.
-                    const EXACT: i64 = 1 << 53;
-                    if -EXACT <= *min && *max <= EXACT {
-                        crate::widgets::range_field(ui, ("plugin-int", k), x as f64, *min as f64..=*max as f64, "", 0, 100.0).map(|x| json!(x as i64))
-                    } else {
-                        let shown = x.to_string();
-                        crate::widgets::take_dialog_focus(ui, ui.id().with(("plugin-int", k)), &shown);
-                        crate::widgets::text_field(ui, ("plugin-int", k), Some(&shown), 100.0, 1)
-                            .and_then(|text| text.parse::<i64>().ok())
-                            .map(|x| json!(x.clamp(*min, *max)))
+    super::modal::scrolled_rows(ui, "plugin-fields", |ui| {
+        egui::Grid::new("plugin-grid").num_columns(2).spacing([12.0, 8.0]).show(ui, |ui| {
+            for (k, spec) in specs {
+                ui.label(egui::RichText::new(humanize(k)).color(t.text));
+                let cur = d.fields.get(k).cloned().unwrap_or_else(|| spec.default_value());
+                let new = match spec {
+                    ParamSpec::Number { min, max, .. } => {
+                        let x = cur.as_f64().unwrap_or(*min);
+                        crate::widgets::range_field(ui, ("plugin-num", k), x, *min..=*max, "", 2, 100.0).map(|x| json!(x))
                     }
+                    ParamSpec::Int { min, max, .. } => {
+                        let x = cur.as_i64().unwrap_or(*min).clamp(*min, *max);
+                        // An f64 holds every whole number up to 2^53, so the numeric field (arrows, wheel, arithmetic) is exact there.
+                        // Past it, the number typed is read as an integer.
+                        const EXACT: i64 = 1 << 53;
+                        if -EXACT <= *min && *max <= EXACT {
+                            crate::widgets::range_field(ui, ("plugin-int", k), x as f64, *min as f64..=*max as f64, "", 0, 100.0)
+                                .map(|x| json!(x as i64))
+                        } else {
+                            let shown = x.to_string();
+                            crate::widgets::take_dialog_focus(ui, ui.id().with(("plugin-int", k)), &shown);
+                            crate::widgets::text_field(ui, ("plugin-int", k), Some(&shown), 100.0, 1)
+                                .and_then(|text| text.parse::<i64>().ok())
+                                .map(|x| json!(x.clamp(*min, *max)))
+                        }
+                    }
+                    ParamSpec::Bool { .. } => {
+                        let b = cur.as_bool().unwrap_or(false);
+                        crate::widgets::check_box(ui, &humanize(k), b, true).then(|| json!(!b))
+                    }
+                    ParamSpec::Choice { options, .. } => {
+                        let labels: Vec<&str> = options.iter().map(String::as_str).collect();
+                        crate::widgets::dropdown_names(ui, ("plugin-choice", k), cur.as_str().unwrap_or_default(), &labels, 140.0)
+                            .and_then(|i| options.get(i))
+                            .map(|o| json!(o))
+                    }
+                };
+                if let Some(v) = new {
+                    d.fields.insert(k.clone(), v);
+                    changed = true;
                 }
-                ParamSpec::Bool { .. } => {
-                    let b = cur.as_bool().unwrap_or(false);
-                    crate::widgets::check_box(ui, &humanize(k), b, true).then(|| json!(!b))
-                }
-                ParamSpec::Choice { options, .. } => {
-                    let labels: Vec<&str> = options.iter().map(String::as_str).collect();
-                    crate::widgets::dropdown_names(ui, ("plugin-choice", k), cur.as_str().unwrap_or_default(), &labels, 140.0)
-                        .and_then(|i| options.get(i))
-                        .map(|o| json!(o))
-                }
-            };
-            if let Some(v) = new {
-                d.fields.insert(k.clone(), v);
-                changed = true;
+                ui.end_row();
             }
-            ui.end_row();
-        }
+        });
     });
     changed
 }
