@@ -562,9 +562,11 @@ Long-tail commands:
 PDF files take the Save PDF dialog's options: `preset`, `standard`, `compatibility`, the General toggles and the
 `compression`, `marks`, `bleed`, `output`, `advanced` and `security` sections (`list_commands` with filter `exportPdf`
 documents every field). `document.exportPdf` and `export` (format `pdf`, the options in `options`) return `warnings`:
-options accepted but not applied yet, and features approximated or left out. A standard with a PDF version it doesn't
-allow is refused (PDF/A-2b at 1.3 or 2.0, PDF/X-4 above 1.6, PDF/X-1a and PDF/X-3 above 1.4); choosing a
-standard without giving `compatibility` sets its version (PDF 1.3 for PDF/X-1a and PDF/X-3).
+options accepted but not applied yet, and features approximated or left out. An image whose pixel data can't be
+decoded (a PNG cut short) is left out of the pages, and `warnings` holds the note "an image couldn't be decoded and
+is missing from the picture" once, as raster exports give it; `.ai` saves and `file.print` do the same. A standard with a
+PDF version it doesn't allow is refused (PDF/A-2b at 1.3 or 2.0, PDF/X-4 above 1.6, PDF/X-1a and PDF/X-3 above 1.4);
+choosing a standard without giving `compatibility` sets its version (PDF 1.3 for PDF/X-1a and PDF/X-3).
 A `security` password encrypts the file (RC4 40-bit at PDF 1.3, RC4 128-bit at 1.4–1.5, AES-128 at 1.6, AES-256 at
 1.7 and 2.0) with its permissions; either password opens it (`document.open {password}`), and a password with PDF/A or PDF/X is refused.
 Pattern fills and strokes are written as their tiles clipped to the area they paint (a stroke's outline, with its
