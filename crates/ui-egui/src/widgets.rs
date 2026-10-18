@@ -2613,11 +2613,13 @@ mod combo_keyboard_tests {
     }
 
     fn frame(ctx: &egui::Context, events: Vec<egui::Event>, picked: &mut Option<usize>) {
-        let _ = ctx.run_ui(egui::RawInput { events, ..Default::default() }, |ui| {
+        let mut out = ctx.run_ui(egui::RawInput { events, ..Default::default() }, |ui| {
             if let Some(i) = dropdown(ui, "combo-test", "One", &["One", "Two", "Three"], 200.0) {
                 *picked = Some(i);
             }
         });
+        // No renderer takes the font atlas updates in a test; dropping them unapplied panics.
+        out.textures_delta.clear();
     }
 
     /// An option picked with the keyboard closes the list (it used to stay open and keep the keys).
