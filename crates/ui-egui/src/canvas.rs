@@ -2412,16 +2412,16 @@ fn selection_overlay(app: &mut VectorcraftApp, p: &egui::Painter, xf: &Xf, curve
         {
             anchor_square(p, xf.to_screen(b.center()), color, true, anchor(false));
         }
-        // Point type: baseline marker (area type shows its frame instead, which may not be a
-        // rectangle, and type on a path its path).
+        // Point type: each line's baseline, where a click selects it (`hit`), whatever its
+        // alignment and rotation, and the anchor (area type shows its frame instead, which may
+        // not be a rectangle, and type on a path its path).
         if let NodeKind::Text(tx) = &n.kind
             && matches!(tx.kind, vectorcraft_doc::TextKind::Point)
         {
-            let o = xf.to_screen(tx.xf * Point::ZERO);
-            let b = n.geometric_bounds().unwrap_or_default();
-            let e = xf.to_screen(Point::new(b.x1, (tx.xf * Point::ZERO).y));
-            p.line_segment([o, e], Stroke::new(1.0, color));
-            p.circle_filled(o, 2.5, color);
+            for (a, b) in tx.baselines() {
+                p.line_segment([xf.to_screen(tx.xf * a), xf.to_screen(tx.xf * b)], Stroke::new(1.0, color));
+            }
+            p.circle_filled(xf.to_screen(tx.xf * Point::ZERO), 2.5, color);
         }
     }
     if app.session.prefs.show_handles_multiple_anchors || with_handles <= 1 {
@@ -3535,6 +3535,42 @@ mod tests {
         let raw = egui::RawInput { screen_rect: Some(egui::Rect::from_min_size(Pos2::ZERO, vec2(800.0, 600.0))), events, ..Default::default() };
         let mut out = ctx.run_ui(raw, |ui| show(app, ui));
         out.textures_delta.clear();
+    }
+
+    /// The baseline marker of selected point type runs under the line, wherever its alignment
+    /// puts the anchor: under centred and right-aligned type too, not from the anchor rightwards
+    /// (#2879).
+    #[test]
+    fn point_type_baselines_run_under_the_line_whatever_its_alignment() {
+        for justify in ["left", "center", "right"] {
+            let mut app = VectorcraftApp::new(Session::new(), Default::default());
+            app.run("file.new", json!({"width": 600, "height": 300})).unwrap();
+            app.ui.task_bar = false;
+            app.ui.view.rulers = false;
+            let made = app.run("text.create", json!({"x": 300, "y": 150, "text": "Baseline marker", "size": 24, "justify": justify})).unwrap();
+            let id = vectorcraft_doc::NodeId(made["id"].as_u64().unwrap());
+            app.run("select.set", json!({"ids": [id.0]})).unwrap();
+            let ctx = egui::Context::default();
+            frame(&mut app, &ctx, vec![]);
+            let xf = Xf::new(app.canvas_rect.unwrap(), app.view().unwrap());
+            let st = app.session.active().unwrap();
+            let b = st.doc.node(id).unwrap().geometric_bounds().unwrap();
+            let color = c32(st.doc.layer_color(id));
+            let y = xf.to_screen(Point::new(0.0, 150.0)).y;
+            let (left, right) = (xf.to_screen(Point::new(b.x0, 150.0)).x, xf.to_screen(Point::new(b.x1, 150.0)).x);
+            let on: Vec<f32> = shapes(&mut app, &ctx)
+                .into_iter()
+                .filter_map(|s| match s {
+                    Shape::LineSegment { points, stroke } if stroke.color == color => Some(points),
+                    _ => None,
+                })
+                .flatten()
+                .filter(|q| (q.y - y).abs() < 0.5)
+                .map(|q| q.x)
+                .collect();
+            let (lo, hi) = on.iter().fold((f32::MAX, f32::MIN), |(lo, hi), x| (lo.min(*x), hi.max(*x)));
+            assert!((lo - left).abs() < 3.0 && (hi - right).abs() < 3.0, "{justify}: the baseline runs {lo}..{hi}, the type {left}..{right}");
+        }
     }
 
     /// A click with the Selection tool inside an artboard makes it the active one, and Paste in
