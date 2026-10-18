@@ -188,9 +188,24 @@ fn invisible_text_is_reported_when_left_out() {
     for text_as in [TextAs::Text, TextAs::Outlines] {
         let r = open(invisible, text_as);
         assert!(r.warnings.iter().any(|w| w == crate::INVISIBLE_TEXT_NOTE), "{text_as:?}: {:?}", r.warnings);
-        let mut kept = 0;
-        r.document.walk(|n| kept += usize::from(matches!(n.kind, NodeKind::Text(_) | NodeKind::Path { .. } | NodeKind::Compound { .. })));
-        assert!(kept >= 1, "{text_as:?}: the visible line still comes in");
+        // What came in: the type's text, and where the art lies. On the 60 pt page the visible
+        // line (baseline 10 pt up) lies 35–50 pt down, the invisible one (40 pt up) 5–20 pt down.
+        let (mut text, mut tops) = (String::new(), vec![]);
+        r.document.walk(|n| {
+            if let NodeKind::Text(t) = &n.kind {
+                text.push_str(&t.plain_text());
+            }
+            if matches!(n.kind, NodeKind::Text(_) | NodeKind::Path { .. } | NodeKind::Compound { .. })
+                && let Some(b) = n.visual_bounds()
+            {
+                tops.push(b.y0);
+            }
+        });
+        if text_as == TextAs::Text {
+            assert!(text.contains("CA") && !text.contains("AB"), "{text_as:?}: {text:?}");
+        }
+        assert!(!tops.is_empty(), "{text_as:?}: the visible line still comes in");
+        assert!(tops.iter().all(|y| *y > 25.0), "{text_as:?}: only the visible line's art, tops at {tops:?}");
         let visible = open("BT /F1 20 Tf 1 0 0 1 10 10 Tm (CA) Tj ET", text_as);
         assert!(!visible.warnings.iter().any(|w| w == crate::INVISIBLE_TEXT_NOTE), "{text_as:?}: {:?}", visible.warnings);
     }
