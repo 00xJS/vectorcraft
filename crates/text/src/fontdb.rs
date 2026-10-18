@@ -1611,6 +1611,12 @@ impl FontDb {
         Self::new(FontPaths::Fixed(font_dirs))
     }
 
+    /// Same scan paths as [`FontDb::global`] (platform lister and font folders), for tests.
+    #[cfg(test)]
+    pub(crate) fn for_system_scan_test() -> Self {
+        Self::new(FontPaths::System)
+    }
+
     fn new(font_paths: FontPaths) -> Self {
         let mut faces = Vec::new();
         // Bundled fonts first, then explicitly supplied craft-fonts faces: Japanese (Mincho

@@ -331,6 +331,25 @@ fn service_font() -> PathBuf {
     std::env::temp_dir().join(format!("vc-sysfonts-{}-service", std::process::id())).join(".29457")
 }
 
+/// Fonts a font service activates after the first scan are picked up on the next check (#2576).
+#[test]
+fn the_database_tells_when_a_font_service_adds_a_font() {
+    use std::sync::Mutex;
+    static FILES: Mutex<Vec<String>> = Mutex::new(Vec::new());
+    set_platform_font_files(|| FILES.lock().unwrap_or_else(|e| e.into_inner()).clone());
+    let file = service_font();
+    std::fs::create_dir_all(file.parent().unwrap()).unwrap();
+    let db = FontDb::for_system_scan_test();
+    assert!(!db.installed_fonts_changed());
+    db.load_system_fonts();
+    assert!(!db.has_family("Service Sans3"));
+    std::fs::write(&file, renamed_to("SourceSans3-Regular.ttf", "Service Sans3")).unwrap();
+    *FILES.lock().unwrap_or_else(|e| e.into_inner()) = vec![file.to_string_lossy().into_owned()];
+    assert!(db.installed_fonts_changed(), "a font a font service activated since the scan");
+    db.load_system_fonts();
+    assert!(db.has_family("Service Sans3"));
+}
+
 /// The fonts a font service (Adobe Fonts on Windows, through DirectWrite) loads in place are
 /// cataloged: named by the platform's lister, read whatever their file is called (#579).
 #[test]
