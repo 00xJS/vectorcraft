@@ -3636,6 +3636,7 @@ axis	Both	Ambos
 @msg	object {id} is not a path	o objeto {id} não é um traçado
 @msg	page size {w} × {h}	tamanho da página {w} × {h}
 @msg	page {0} does not exist (the PDF has {1})	a página {0} não existe (o PDF tem {1})
+@msg	thumbnail: no page {n} (the file has 1)	thumbnail: a página {n} não existe (o arquivo tem 1)
 @msg	paste unavailable	colar indisponível
 @msg	path is already closed	o traçado já está fechado
 @msg	paths contain invalid coordinates	os traçados contêm coordenadas inválidas

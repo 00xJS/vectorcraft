@@ -640,7 +640,9 @@ Opening a PDF (or `.ai`) imports every page as an artboard and layer; `document.
 `cropTo` (`bounding` (the art's bounds), `art`, `crop` (default), `trim`, `bleed`, `media`: the box each artboard gets;
 with `trim` the bleed box round it becomes the document's bleed, and a PDF-compatible `.ai` or a PDF saved with its editing data opens on its trim boxes for
 `crop`, its crop box taking the bleed in) and `password` for an encrypted file. `document.pdfInfo` reads a file without opening it: the page count, each page's
-size and boxes, `needsPassword`, and with `thumbnail: n` a PNG of page n. A page whose `UserUnit` (PDF 1.6) is above 1
+size and boxes, `needsPassword`, and with `thumbnail: n` a PNG of page n. It reads a PostScript file (an EPS, a `.ps`
+file, a `.ai` in PostScript form) as one page the size of its bounding box (a US Letter page without one), with an
+empty `boxes`, and `thumbnail: 1` shows what that page prints. A page whose `UserUnit` (PDF 1.6) is above 1
 opens at its size in points, the file's numbers times the `UserUnit` (one above 75,000 counts as 75,000), and
 `document.pdfInfo` gives its size and boxes in points too. A `.ai` whose editing data has its artboards in the units of
 such a page opens from that data at the page's size.

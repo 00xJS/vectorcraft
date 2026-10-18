@@ -4713,6 +4713,7 @@ imageTrace	Outline	Körvonal
 @msg	Packaged {n} file(s){note}	Becsomagolt fájlok: {n}{note}
 @msg	page size {w} × {h}	oldalméret: {w} × {h}
 @msg	page {0} does not exist (the PDF has {1})	nincs ilyen oldal: {0} (a PDF oldalszáma: {1})
+@msg	thumbnail: no page {n} (the file has 1)	thumbnail: nincs ilyen oldal: {n} (a fájl oldalszáma: 1)
 @msg	panel group is empty	a panelcsoport üres
 @msg	panel must name a registered panel	a panel egy regisztrált panelt kell megnevezzen
 @msg	paste unavailable	a beillesztés nem érhető el

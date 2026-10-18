@@ -3911,6 +3911,7 @@ imageTrace	Outline	轮廓
 @msg	cannot read PDF: {0}	无法读取 PDF：{0}
 @msg	invalid PDF setting: {0}	PDF 设置无效：{0}
 @msg	page {0} does not exist (the PDF has {1})	页面 {0} 不存在 (该 PDF 有 {1} 页)
+@msg	thumbnail: no page {n} (the file has 1)	thumbnail：页面 {n} 不存在 (该文件有 1 页)
 @msg	the PDF has no pages	该 PDF 没有页面
 @msg	the PDF is password-protected: give its password	该 PDF 受密码保护：请提供其密码
 @msg	the PDF password is wrong	PDF 密码错误

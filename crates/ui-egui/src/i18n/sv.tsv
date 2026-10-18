@@ -3980,6 +3980,7 @@ axis	Both	Båda
 @msg	object {id} is not a selected top-level object	objekt {id} är inte ett markerat objekt på toppnivå
 @msg	page size {w} × {h}	sidstorlek {w} × {h}
 @msg	page {0} does not exist (the PDF has {1})	sidan {0} finns inte (PDF-filen har {1})
+@msg	thumbnail: no page {n} (the file has 1)	thumbnail: sidan {n} finns inte (filen har 1)
 @msg	paste unavailable	inklistring är inte tillgänglig
 @msg	path is already closed	banan är redan sluten
 @msg	paths contain invalid coordinates	banorna innehåller ogiltiga koordinater

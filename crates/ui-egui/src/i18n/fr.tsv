@@ -4052,6 +4052,7 @@ axis	Both	Les deux
 @msg	object {id} is not a selected top-level object	l’objet {id} n’est pas un objet sélectionné de premier niveau
 @msg	page size {w} × {h}	format de page {w} × {h}
 @msg	page {0} does not exist (the PDF has {1})	la page {0} n’existe pas (le PDF en a {1})
+@msg	thumbnail: no page {n} (the file has 1)	thumbnail : la page {n} n’existe pas (le fichier en a 1)
 @msg	paste unavailable	collage indisponible
 @msg	path is already closed	le tracé est déjà fermé
 @msg	paths contain invalid coordinates	les tracés contiennent des coordonnées non valides

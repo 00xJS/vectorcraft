@@ -4356,6 +4356,7 @@ imageTrace	Outline	Obrys
 @msg	object {id} is not a selected top-level object	objekt {id} není vybraný objekt nejvyšší úrovně
 @msg	page size {w} × {h}	velikost stránky {w} × {h}
 @msg	page {0} does not exist (the PDF has {1})	stránka {0} neexistuje (PDF jich má {1})
+@msg	thumbnail: no page {n} (the file has 1)	thumbnail: stránka {n} neexistuje (soubor má 1)
 @msg	paste unavailable	vložení není k dispozici
 @msg	path is already closed	cesta už je uzavřená
 @msg	paths contain invalid coordinates	cesty obsahují neplatné souřadnice
