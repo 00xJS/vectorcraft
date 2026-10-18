@@ -17,7 +17,7 @@ from the public specifications, and users' own `.ai` files are used locally only
 
 | | Illustrator | VectorCraft | Notes |
 |---|---:|---:|---|
-| Formats opened or placed | ~30 | 24 | missing: FreeHand, CorelDRAW, DWG, HEIC/HEIF, JPEG 2000, PICT, PCX, Pixar, Word `.doc`, PS |
+| Formats opened or placed | ~30 | 25 | missing: FreeHand, CorelDRAW, DWG, HEIC/HEIF, JPEG 2000, PICT, PCX, Pixar, Word `.doc`, PS |
 | Formats saved (Save As) | 6 (AI, AIT, PDF, EPS, SVG, SVGZ) | 6 + native | `.ai` written PDF-compatible (no Illustrator editing data) or as legacy version 7 (layers and groups, one artboard per file) |
 | Formats exported | ~16 | 17 | missing: DWG, 3D (OBJ/USDA/glTF); extra: GIF/PNG-8 palette export, DXF up to 2018, layered PSD |
 | **Overall (weighted by use)** | | **~75%** | `.ai` and PDF dominate the weighting |
@@ -101,7 +101,7 @@ the app's own editing copy of a file (an EPS after its `%%EOF`, a `.ai`'s `AIPri
 | EMF / WMF | open, export | yes | yes | an oversized embedded PNG or JPEG is refused from its header, before any pixels are decoded (#1776) |
 | PSD | open, place, export | yes (merged image, every mode and depth) | yes (layered, max editability) | placing as layers (Photoshop Import Options) missing; the embedded ICC profile's tags are 4-byte aligned (#1584) |
 | PSB | open | yes (merged image) | no | |
-| PNG / JPEG / GIF / BMP / TIFF / Targa | open, export | yes (Targa: export only) | yes; TIFF is also selectable in Export for Screens and Asset Export with its existing options | Targa import missing; TIFF: grayscale with an alpha channel or other extra channels reads (#1466 in part), and so do files that store each channel as its own plane (PlanarConfiguration 2), CMYK ones with their ink amounts, and 1-bit files compressed with CCITT Group 3 (Compression 2 and 3, one- and two-dimensional rows); the ICC profiles embedded in JPEG and TIFF have 4-byte aligned tags (#1584); PNG export marks its colours as sRGB (`embedIcc`, an `sRGB` chunk; no ICC profile is embedded, #2221) |
+| PNG / JPEG / GIF / BMP / TIFF / Targa | open, place, export | yes (Targa: `.tga`, `.vda`, `.icb` and `.vst`, raw or run-length encoded, with a 16-bit file's one-bit alpha) | yes; TIFF is also selectable in Export for Screens and Asset Export with its existing options | Targa: `tests_tiffbmp.rs`, `tests_links.rs`; TIFF: grayscale with an alpha channel or other extra channels reads (#1466 in part), and so do files that store each channel as its own plane (PlanarConfiguration 2), CMYK ones with their ink amounts, and 1-bit files compressed with CCITT Group 3 (Compression 2 and 3, one- and two-dimensional rows); the ICC profiles embedded in JPEG and TIFF have 4-byte aligned tags (#1584); PNG export marks its colours as sRGB (`embedIcc`, an `sRGB` chunk; no ICC profile is embedded, #2221) |
 | WebP | export (Export for Screens) | yes | yes (lossless only; lossy written lossless with a warning) | |
 | HEIC / HEIF | open, place | no | no | |
 | JPEG 2000 | open, place | no | no | |
