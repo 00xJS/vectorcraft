@@ -654,9 +654,10 @@ impl<'a> Scene<'a> {
                     pts.pop();
                 }
                 self.polyline(&pts, sub.closed, style, width);
-            } else if self.circular(&sub, style) {
-                // Native circles/arcs are preferred by CAD/CAM software and are available even
-                // in R12. Non-circular curves continue through the existing SPLINE/polyline path.
+            } else if (v.handles() || width.is_none()) && self.circular(&sub, style) {
+                // Native circles/arcs are preferred by CAD/CAM software. In R12, however, a
+                // stroked curve must stay on the flattened POLYLINE path so groups 40/41 retain
+                // its width. Non-circular curves continue through the existing fallback.
             } else if v.handles() {
                 self.spline(&sub, style);
             } else {
@@ -720,6 +721,14 @@ impl<'a> Scene<'a> {
     /// Write a safely recognized circular subpath as a native DXF CIRCLE or ARC. Returns false
     /// when the curve is not circular enough, leaving the caller to write it as a spline/polyline.
     fn circular(&mut self, sub: &Sub, style: &EntityStyle) -> bool {
+        let Some(last) = sub.segs.last().map(|s| s.end()) else { return false };
+        let geometrically_closed = last.distance(sub.start) <= 1e-9;
+        // ClosePath can add an implicit straight closing edge. Do not replace that geometry with
+        // a full CIRCLE; likewise, an open curve that returns to its start is not an ARC. Check
+        // before fitting, updating extents or allocating an entity handle.
+        if sub.closed != geometrically_closed {
+            return false;
+        }
         let Some(circle) = circular_subpath(sub) else { return false };
         let centre = self.to_dxf * circle.centre;
         let radius = circle.radius * self.k.abs();
@@ -755,12 +764,8 @@ impl<'a> Scene<'a> {
             return true;
         }
 
-        let Some(end) = sub.segs.last().map(|s| s.end()) else { return false };
-        if end.distance(sub.start) <= 1e-9 {
-            return false;
-        }
         let start = self.to_dxf * sub.start;
-        let end = self.to_dxf * end;
+        let end = self.to_dxf * last;
         let middle = self.to_dxf * circle.samples[circle.samples.len() / 2];
         let mut a0 = angle_deg(start, centre);
         let mut a1 = angle_deg(end, centre);
