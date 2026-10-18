@@ -22,6 +22,7 @@ pub mod guides;
 pub mod intertwine;
 pub mod meshblend;
 pub mod meshedit;
+pub mod mirror;
 pub mod params;
 pub mod pathtype;
 pub mod pen;
