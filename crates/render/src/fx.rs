@@ -2389,12 +2389,13 @@ mod tests {
         }
         let opts = RenderOptions { background: Some([255, 255, 255, 255]), ..Default::default() };
         let mut frames = vec![];
-        for threads in [Some(0), Some(1), Some(4), Some(8)] {
-            crate::set_default_threads(threads);
+        // The test sets each renderer's count. `set_default_threads` would also change the count of the
+        // renderers that other tests create while this one runs.
+        for threads in [0, 1, 4, 8] {
             let mut r = Renderer::new();
+            r.threads = threads;
             frames.push(r.render(&d, 1200, 900, Affine::scale(6.0), &opts).pixels);
         }
-        crate::set_default_threads(None);
         assert!(frames.windows(2).all(|w| w[0] == w[1]), "the thread count changed pixels");
     }
 
@@ -2852,8 +2853,15 @@ mod tests {
         let still = RenderOptions { background: Some([255, 255, 255, 255]), ..Default::default() };
         let live = RenderOptions { interacting: true, ..still.clone() };
         let drag = RenderOptions { dragging: true, ..live.clone() };
-        let fresh = Renderer::new().render(&d, 1600, 1000, view, &still).pixels;
-        let mut r = Renderer::new();
+        // Every renderer here has 3 threads on any machine. A drag renders drop shadows within its
+        // budget only with `threads` above 0.
+        let threaded = || {
+            let mut r = Renderer::new();
+            r.threads = 3;
+            r
+        };
+        let fresh = threaded().render(&d, 1600, 1000, view, &still).pixels;
+        let mut r = threaded();
         let _ = r.render(&base, 1600, 1000, view, &still);
         assert_eq!(r.stats.previewed, 0);
         let dragged = r.render(&d, 1600, 1000, view, &drag).pixels;
@@ -2873,14 +2881,14 @@ mod tests {
         let id = scaled.layers[0].children().unwrap()[0].id;
         scaled.node_mut(id).unwrap().transform(Affine::scale_about(1.05, vectorcraft_geom::Point::new(35.0, 33.0)), false);
         let view = Affine::translate((800.0, 500.0)) * Affine::scale(40.0) * Affine::translate((-35.0, -33.0));
-        let mut r = Renderer::new();
+        let mut r = threaded();
         let _ = r.render(&shadowed, 1600, 1000, view, &still);
         let kept = r.shadows.len();
         assert_eq!((kept, r.stats.previewed), (1, 0), "a still frame keeps the shadow's raster");
         let _ = r.render(&scaled, 1600, 1000, view, &drag);
         assert_eq!((r.shadows.len(), r.stats.previewed), (kept, 1), "the scaled shadow");
         let after = r.render(&scaled, 1600, 1000, view, &still).pixels;
-        assert!(after == Renderer::new().render(&scaled, 1600, 1000, view, &still).pixels, "the frame after the drag");
+        assert!(after == threaded().render(&scaled, 1600, 1000, view, &still).pixels, "the frame after the drag");
     }
 
     /// While interacting, a group holding a symbol instance whose art lies outside the 20 × 20
