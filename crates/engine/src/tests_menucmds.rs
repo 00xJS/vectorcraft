@@ -1054,6 +1054,23 @@ fn select_color_matches_fill_and_stroke_without_a_selection() {
     s.execute("select.none", &json!({})).unwrap();
     s.execute("select.reselect", &json!({})).unwrap();
     assert_eq!(selected(&s), vec![a]);
+    // A compound path reads as its own paint, never its members'.
+    let outer = rect(&mut s, 100.0, 0.0, 50.0, 50.0);
+    let inner = rect(&mut s, 110.0, 10.0, 20.0, 20.0);
+    fill(&mut s, outer, "#000000");
+    fill(&mut s, inner, "#000000");
+    sel(&mut s, &[outer, inner]);
+    let compound = id_of(&s.execute("object.compoundPath.make", &json!({})).unwrap());
+    assert_eq!(pick(&mut s, json!({"fill": "#000000"})), vec![a, t, compound]);
+    fill(&mut s, compound, "#ff0000");
+    assert_eq!(pick(&mut s, json!({"fill": "#000000"})), vec![a, t]);
+    assert_eq!(pick(&mut s, json!({"fill": "#ff0000"})), vec![c, compound]);
+    // Type without characters reads as the default character fill, black.
+    let empty = text(&mut s, "x");
+    if let Some(NodeKind::Text(t)) = std::sync::Arc::make_mut(&mut s.doc_mut().unwrap().doc).node_mut(empty).map(|n| &mut n.kind) {
+        t.runs.clear();
+    }
+    assert_eq!(pick(&mut s, json!({"fill": "#000000"})), vec![a, t, empty]);
     assert!(s.execute("select.color", &json!({})).is_err());
     assert!(s.execute("select.color", &json!({"fill": "not a colour"})).is_err());
 }

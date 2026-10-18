@@ -550,7 +550,14 @@ fn select_color(s: &mut Session, p: &Value) -> Result<Value> {
         return Err(bad(C, "give `fill`, `stroke` or both"));
     }
     let reads_as = |paint: Paint, hex: Option<&str>| hex.is_none_or(|h| paint.color().is_some_and(|c| c.to_hex() == h));
-    select_where(s, C, p, |_, n| !n.is_container() && reads_as(fill_of(n), fill.as_deref()) && reads_as(stroke_of(n).0, stroke.as_deref()))
+    select_where(s, C, p, |d, n| paint_reported(d, n) && reads_as(fill_of(n), fill.as_deref()) && reads_as(stroke_of(n).0, stroke.as_deref()))
+}
+
+/// Does `document.inspect` report a fill and stroke for `n`? A compound path's are its own, though
+/// it holds its members, and its members report none.
+fn paint_reported(d: &Document, n: &Node) -> bool {
+    let compound = |n: &Node| matches!(n.kind, NodeKind::Compound { .. });
+    compound(n) || (!n.is_container() && !d.parent_of(n.id).and_then(|p| d.node(p)).is_some_and(compound))
 }
 
 fn same(s: &mut Session, cmd: &str, eq: impl Fn(&Node, &Node) -> bool) -> Result<Value> {
