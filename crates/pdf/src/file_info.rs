@@ -11,6 +11,8 @@ use crate::import_scan::text_string;
 
 /// The longest XMP packet read, in bytes once decoded; a longer one is left out.
 const MAX_XMP: usize = 8 << 20;
+/// The deepest the elements of an XMP packet may nest; a packet nested deeper is left out.
+const MAX_NESTING: usize = 256;
 
 const RDF: &str = "http://www.w3.org/1999/02/22-rdf-syntax-ns#";
 const XML: &str = "http://www.w3.org/XML/1998/namespace";
@@ -94,9 +96,14 @@ fn packet(pdf: &Pdf) -> Option<Vec<u8>> {
     (data.len() <= MAX_XMP).then(|| data.into_owned())
 }
 
-/// The File Info fields of an XMP packet; `None` when it isn't XML in UTF-8 or UTF-16.
+/// The File Info fields of an XMP packet; `None` when it isn't XML in UTF-8 or UTF-16, or when its
+/// elements nest more than [`MAX_NESTING`] deep.
 fn xmp(packet: &[u8]) -> Option<FileInfo> {
     let text = xml_text(packet)?;
+    // roxmltree parses nested elements recursively.
+    if nesting(&text) > MAX_NESTING {
+        return None;
+    }
     let xml = roxmltree::Document::parse(&text).ok()?;
     // The resource's own descriptions: those right under `rdf:RDF`, not the ones inside a value.
     let descriptions: Vec<Node<'_, '_>> = xml
@@ -137,6 +144,50 @@ fn xml_text(b: &[u8]) -> Option<String> {
         [0xFF, 0xFE, ..] | [b'<', 0, ..] => utf16(false),
         _ => std::str::from_utf8(b.strip_prefix(&[0xEF, 0xBB, 0xBF]).unwrap_or(b)).ok().map(str::to_string),
     }
+}
+
+/// How deep the elements of `xml` nest: start tags less end tags, at most, outside comments,
+/// CDATA sections, processing instructions, declarations and quoted attribute values.
+fn nesting(xml: &str) -> usize {
+    let b = xml.as_bytes();
+    let (mut depth, mut most, mut i) = (0usize, 0usize, 0usize);
+    // The index just past the first `end` at or after `from` (the end of the text if none).
+    let past = |from: usize, end: &[u8]| {
+        b.get(from..).and_then(|rest| rest.windows(end.len()).position(|w| w == end)).map_or(b.len(), |at| from + at + end.len())
+    };
+    while let Some(at) = b.get(i..).and_then(|rest| rest.iter().position(|&c| c == b'<')) {
+        let start = i + at;
+        let rest = b.get(start..).unwrap_or_default();
+        if rest.starts_with(b"<!--") {
+            i = past(start + 4, b"-->");
+        } else if rest.starts_with(b"<![CDATA[") {
+            i = past(start + 9, b"]]>");
+        } else if rest.starts_with(b"<?") {
+            i = past(start + 2, b"?>");
+        } else if rest.starts_with(b"<!") || rest.starts_with(b"</") {
+            depth = depth.saturating_sub(usize::from(rest.starts_with(b"</")));
+            i = past(start + 2, b">");
+        } else {
+            // A start tag: up to its `>` outside quotes; `/>` closes it at once.
+            let mut j = start + 1;
+            let mut quote = None;
+            while let Some(&c) = b.get(j) {
+                match (quote, c) {
+                    (None, b'"' | b'\'') => quote = Some(c),
+                    (Some(q), _) if c == q => quote = None,
+                    (None, b'>') => break,
+                    _ => {}
+                }
+                j += 1;
+            }
+            if b.get(j.saturating_sub(1)) != Some(&b'/') {
+                depth += 1;
+                most = most.max(depth);
+            }
+            i = j + 1;
+        }
+    }
+    most
 }
 
 /// The values of property `ns` `name` on the first of `descriptions` that gives it: an attribute
