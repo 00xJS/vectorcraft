@@ -131,7 +131,7 @@ pub(super) fn chalk_charcoal(px: &mut [[u8; 4]], w: usize, h: usize, space: &Pix
         let chalk_mask = ramp((light - 0.5) / 0.22) * chalk_amt * (0.55 + 0.45 * chalk_grain);
         let down = (0.9 * charcoal_mask).clamp(0.0, 1.0) as f32;
         let up = (0.8 * chalk_mask).clamp(0.0, 1.0) as f32;
-        let mut grey = f32::from(luma(straight(*p)));
+        let mut grey = luma(straight(*p));
         grey *= 1.0 - down;
         grey += (1.0 - grey) * up;
         *p = premultiply([grey, grey, grey], f32::from(p[3]) / 255.0);
