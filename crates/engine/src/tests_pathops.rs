@@ -205,6 +205,49 @@ fn a_group_selected_alone_is_combined_member_by_member() {
     assert_eq!((bounds.x0, bounds.x1), (0.0, 10.0), "the back member less the front one");
 }
 
+/// #2178: Unite on separated shapes should group them so Object › Ungroup releases each piece.
+#[test]
+fn pathfinder_unite_non_overlapping_grouped_shapes_stay_ungroupable() {
+    let mut s = session();
+    let a = rect(&mut s, 0.0, 0.0, 20.0, 20.0);
+    let b = rect(&mut s, 30.0, 0.0, 20.0, 20.0);
+    s.execute("select.set", &json!({"ids": [a.0, b.0]})).unwrap();
+    let g = NodeId(s.execute("object.group", &json!({})).unwrap()["id"].as_u64().unwrap());
+    let layer = s.doc().unwrap().doc.parent_of(g).unwrap();
+    s.execute("object.pathfinder.unite", &json!({})).unwrap();
+    let result = s.doc().unwrap().selection.objects[0];
+    assert!(matches!(node(&s, result).kind, NodeKind::Group { .. }));
+    assert_eq!(node(&s, result).children().unwrap().len(), 2);
+    s.execute("object.ungroup", &json!({})).unwrap();
+    let d = &s.doc().unwrap().doc;
+    assert!(d.node(g).is_none());
+    assert_eq!(s.doc().unwrap().selection.len(), 2);
+    for id in &s.doc().unwrap().selection.objects {
+        assert_eq!(d.parent_of(*id), Some(layer));
+    }
+}
+
+/// #2178: each connected island stays one object; holes stay with their outer contour, not separate group children.
+#[test]
+fn pathfinder_unite_groups_disjoint_islands_not_subpaths_of_one_island() {
+    let mut s = session();
+    let outer = rect(&mut s, 0.0, 0.0, 40.0, 40.0);
+    let hole = rect(&mut s, 10.0, 10.0, 10.0, 10.0);
+    s.execute("select.set", &json!({"ids": [outer.0, hole.0]})).unwrap();
+    let ring = NodeId(s.execute("object.compoundPath.make", &json!({})).unwrap()["id"].as_u64().unwrap());
+    let separate = rect(&mut s, 60.0, 0.0, 20.0, 20.0);
+    s.execute("select.set", &json!({"ids": [ring.0, separate.0]})).unwrap();
+    s.execute("object.group", &json!({})).unwrap();
+    s.execute("object.pathfinder.unite", &json!({})).unwrap();
+    let result = s.doc().unwrap().selection.objects[0];
+    let g = node(&s, result);
+    assert!(matches!(g.kind, NodeKind::Group { .. }));
+    let kids = g.children().unwrap();
+    assert_eq!(kids.len(), 2);
+    let subpath_counts: Vec<usize> = kids.iter().map(|c| path_of(&s, c.id).0.subpaths.len()).collect();
+    assert_eq!(subpath_counts, [2, 1]);
+}
+
 #[test]
 fn unite_with_group() {
     let mut s = session();

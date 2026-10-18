@@ -300,6 +300,7 @@ fn shape_node_styled(d: &mut Document, path: PathData, style: &Style) -> Node {
     n
 }
 
+
 /// Whether `ids` are separate objects, as [`Document::remove_many`] and [`Document::insert_beside`]
 /// take them: each one is in the tree and listed once, and none lies inside another listed one.
 pub(crate) fn separate(d: &Document, ids: &[NodeId]) -> bool {
@@ -464,14 +465,29 @@ fn run_pf(s: &mut Session, op: PathfinderOp) -> Result<Value> {
             let r =
                 results.into_iter().find(|r| !r.path.is_empty()).ok_or_else(|| EngineError::Other(format!("{label} produced an empty result")))?;
             let style = styles.get(r.key as usize).ok_or_else(|| EngineError::Other(format!("{label}: lost track of a shape's style")))?;
-            let mut n = shape_node_styled(d, r.path, style);
-            n.name = match op {
-                // A subtraction keeps its surviving source's identity, even when unnamed.
+            let name = match op {
                 PathfinderOp::MinusFront => names.first().cloned().flatten(),
                 PathfinderOp::MinusBack => names.last().cloned().flatten(),
                 _ => names.into_iter().flatten().next(),
             };
-            n
+            let path = r.path;
+            if op == PathfinderOp::Unite {
+                let pieces = super::draw2::components(&path);
+                if pieces.len() > 1 {
+                    let children = pieces.into_iter().map(|p| Arc::new(shape_node_styled(d, p, style))).collect();
+                    let mut g = Node::group(d.alloc_id(), children);
+                    g.name = name;
+                    g
+                } else {
+                    let mut n = shape_node_styled(d, path, style);
+                    n.name = name;
+                    n
+                }
+            } else {
+                let mut n = shape_node_styled(d, path, style);
+                n.name = name;
+                n
+            }
         } else {
             let mut children = vec![];
             for r in results {
