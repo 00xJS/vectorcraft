@@ -124,6 +124,7 @@ fn lines_of_clusters(lines: &[&[(usize, usize, f64)]], rtl: bool) -> TextLayout 
                 gid: 0,
                 xf: Affine::IDENTITY,
                 rtl,
+                scale: 1.0,
             });
             x += advance;
         }
