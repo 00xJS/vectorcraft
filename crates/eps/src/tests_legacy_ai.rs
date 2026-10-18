@@ -316,14 +316,15 @@ fn images_below_a_square(images: bool) -> Document {
     doc
 }
 
-/// Each image the file holds (§8.4): the lines from `%AI5_File:` to `%AI5_EndRaster`.
+/// Each image the file holds (§8.4): the lines from `%AI5_File:` to the line after
+/// `%AI5_EndRaster`.
 fn rasters(text: &str) -> Vec<Vec<&str>> {
     let lines: Vec<&str> = text.lines().collect();
     let mut out = vec![];
     for (i, l) in lines.iter().enumerate() {
         if *l == "%AI5_File:" {
             let end = lines[i..].iter().position(|l| *l == "%AI5_EndRaster").map(|n| i + n).unwrap();
-            out.push(lines[i..=end].to_vec());
+            out.push(lines[i..=(end + 1).min(lines.len() - 1)].to_vec());
         }
     }
     out
@@ -332,8 +333,9 @@ fn rasters(text: &str) -> Vec<Vec<&str>> {
 /// Every image, in a clipping group, a group or neither, is written as §8.1's syntax and §8.4's
 /// examples write one: `%AI5_File:`, `%AI5_BeginRaster`, the matrix with a space inside each
 /// bracket and the operands on the `XI` line, the samples in hex on comment lines of 60 digits,
-/// `%AI5_EndRaster`. The art after the images is written as it is without them, and the file
-/// reads back with its layers, clipping group, images and square (#2692).
+/// `%AI5_EndRaster`. A line `F`, which the examples do not show, follows each image. The art
+/// after the images is written as it is without them, and the file reads back with its layers,
+/// clipping group, images and square (#2692, #2830).
 #[test]
 fn images_are_written_in_the_form_the_specification_shows() {
     let out = write(&images_below_a_square(true));
@@ -341,8 +343,8 @@ fn images_are_written_in_the_form_the_specification_shows() {
     let images = rasters(&text);
     assert_eq!(images.len(), 3, "{text}");
     for lines in &images {
-        let [file, begin, xi, data @ .., end] = lines.as_slice() else { panic!("{lines:?}") };
-        assert_eq!((*file, *begin, *end), ("%AI5_File:", "%AI5_BeginRaster", "%AI5_EndRaster"));
+        let [file, begin, xi, data @ .., end, paint] = lines.as_slice() else { panic!("{lines:?}") };
+        assert_eq!((*file, *begin, *end, *paint), ("%AI5_File:", "%AI5_BeginRaster", "%AI5_EndRaster", "F"));
         let matrix = xi.strip_prefix("[ ").and_then(|l| l.strip_suffix(" ] 0 0 16 16 16 16 8 3 0 0 0 0 XI")).unwrap_or_else(|| panic!("{xi}"));
         assert_eq!(matrix.split(' ').filter(|v| v.parse::<f64>().is_ok()).count(), 6, "{xi}");
         let digits: Vec<&str> = data.iter().map(|l| l.strip_prefix('%').unwrap_or_else(|| panic!("{l}"))).collect();
@@ -352,9 +354,10 @@ fn images_are_written_in_the_form_the_specification_shows() {
         assert_eq!(digits.concat().len(), 16 * 16 * 3 * 2);
     }
     // The clipping group: `q`, the clipping path painted `h W n` (§5.6.2), the image, `Q`; the
-    // group: `u`, the image, `U`.
-    assert!(text.contains("\nh\nW\nn\n%AI5_File:\n") && text.contains("\n%AI5_EndRaster\nQ\n"), "{text}");
-    assert!(text.contains("\nu\n%AI5_File:\n") && text.contains("\n%AI5_EndRaster\nU\n"), "{text}");
+    // group: `u`, the image, `U`; the loose image, then the layer's end.
+    assert!(text.contains("\nh\nW\nn\n%AI5_File:\n") && text.contains("\n%AI5_EndRaster\nF\nQ\n"), "{text}");
+    assert!(text.contains("\nu\n%AI5_File:\n") && text.contains("\n%AI5_EndRaster\nF\nU\n"), "{text}");
+    assert!(text.contains("\n%AI5_EndRaster\nF\nLB\n"), "{text}");
     let layer = |t: &str| -> String {
         let at = t.find("(Above) Ln\n").unwrap();
         t[at..].split("%AI5_EndLayer--").next().unwrap().to_string()
@@ -367,8 +370,11 @@ fn images_are_written_in_the_form_the_specification_shows() {
     let below = children(&doc.layers[0]);
     assert_eq!(below.len(), 3, "{below:#?}");
     let NodeKind::Group { children: window, clip: true } = &below[0].kind else { panic!("{:?}", below[0].kind) };
+    assert_eq!(window.len(), 2, "{window:#?}");
     assert!(matches!(window[0].kind, NodeKind::Path { clipping: true, .. }) && matches!(window[1].kind, NodeKind::Image(_)), "{window:#?}");
-    assert!(matches!(&below[1].kind, NodeKind::Group { children, clip: false } if matches!(children[0].kind, NodeKind::Image(_))));
+    assert!(
+        matches!(&below[1].kind, NodeKind::Group { children, clip: false } if children.len() == 1 && matches!(children[0].kind, NodeKind::Image(_)))
+    );
     assert!(matches!(below[2].kind, NodeKind::Image(_)));
     let above = children(&doc.layers[1]);
     assert_eq!(above.len(), 1);
