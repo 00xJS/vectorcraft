@@ -1981,8 +1981,8 @@ fn panel_drop(app: &mut VectorcraftApp, ui: &Ui, resp: &egui::Response, xf: &Xf)
 
 fn hover_highlight(app: &VectorcraftApp, p: &egui::Painter, xf: &Xf) {
     let Some(h) = app.hover_doc else { return };
-    // Smart Guides › Object Highlighting: a Smart Guides display option, so it needs them on.
-    if !app.ui.view.smart_guides || !app.session.prefs.object_highlighting {
+    // Smart Guides › Object Highlighting: a Smart Guides display option, so it needs them on and Snap to Grid and Pixel Preview off.
+    if !app.ui.view.smart_guides || !app.session.prefs.object_highlighting || app.ui.view.snap_to_grid || app.ui.view.pixel_preview {
         return;
     }
     if app.session.tool_busy() || !matches!(app.session.tool_id(), "selection" | "directSelection" | "groupSelection") {
@@ -5272,6 +5272,37 @@ mod tests {
         assert!(dots(&mut app).is_empty(), "off: none for two anchors");
         select(&mut app, json!([[0, 1]]));
         assert_eq!(dots(&mut app).len(), 2, "one anchor still shows them");
+    }
+
+    /// Smart Guides › Object Highlighting (#394): the outline of the object under the pointer does not
+    /// show with View › Snap to Grid or View › Pixel Preview on, even with Smart Guides and the option on.
+    #[test]
+    fn snap_to_grid_and_pixel_preview_hide_the_hover_outline() {
+        let mut app = VectorcraftApp::new(Session::new(), Default::default());
+        app.session.execute("file.new", &json!({"width": 400, "height": 300})).unwrap();
+        let id = app.session.execute("shape.rectangle", &json!({"x": 100, "y": 100, "width": 100, "height": 100})).unwrap()["id"].as_u64().unwrap();
+        app.session.execute("select.none", &json!({})).unwrap();
+        let ctx = egui::Context::default();
+        frame(&mut app, &ctx, vec![]);
+        let rect = app.canvas_rect.unwrap();
+        let over = Xf::new(rect, app.view().unwrap()).to_screen(Point::new(150.0, 150.0));
+        let layer = egui::epaint::ColorMode::Solid(c32(app.session.active().unwrap().doc.layer_color(vectorcraft_doc::NodeId(id))));
+        let outlines = |app: &mut VectorcraftApp| {
+            frame(app, &ctx, vec![egui::Event::PointerMoved(over)]);
+            shapes(app, &ctx).iter().filter(|s| matches!(s, Shape::Path(ps) if ps.stroke.width == 1.5 && ps.stroke.color == layer)).count()
+        };
+        assert!(app.ui.view.smart_guides && app.session.prefs.object_highlighting);
+        assert!(outlines(&mut app) > 0, "highlighted with Snap to Grid and Pixel Preview off");
+        app.run("view.snapToGrid", json!({})).unwrap();
+        assert!(app.ui.view.snap_to_grid);
+        assert_eq!(outlines(&mut app), 0, "Snap to Grid on");
+        app.run("view.snapToGrid", json!({})).unwrap();
+        assert!(outlines(&mut app) > 0, "Snap to Grid off again");
+        app.run("view.pixelPreview", json!({})).unwrap();
+        assert!(app.ui.view.pixel_preview);
+        assert_eq!(outlines(&mut app), 0, "Pixel Preview on");
+        app.run("view.pixelPreview", json!({})).unwrap();
+        assert!(outlines(&mut app) > 0, "Pixel Preview off again");
     }
 
     /// Smart Guides › Object Highlighting (#394): the outline of the object under the pointer
