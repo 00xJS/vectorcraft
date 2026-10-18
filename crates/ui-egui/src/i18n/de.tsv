@@ -4385,6 +4385,9 @@ theme	Appearance	Erscheinungsbild
 @msg	not a PSD file	keine PSD-Datei
 @msg	Multichannel PSD files can't be read: save it in RGB, CMYK or Grayscale mode	PSD-Dateien im Mehrkanalmodus können nicht gelesen werden: Speichern Sie die Datei im RGB-, CMYK- oder Graustufenmodus
 @msg	the PSD file has an unknown colour mode ({m})	die PSD-Datei hat einen unbekannten Farbmodus ({m})
+@msg	the PSD file is cut short	die PSD-Datei ist unvollständig
+@msg	the PSD file's header is damaged	der Header der PSD-Datei ist beschädigt
+@msg	the PSD file's image data can't be read: {e}	die Bilddaten der PSD-Datei können nicht gelesen werden: {e}
 @msg	the PSD file's image data uses an unknown compression ({m})	die Bilddaten der PSD-Datei verwenden eine unbekannte Komprimierung ({m})
 @msg	the PSD image is too large to read ({_1} × {_2} pixels)	das PSD-Bild ist zu groß zum Lesen ({_1} × {_2} Pixel)
 @msg	zipped 32-bit PSD image data with prediction can't be read	ZIP-komprimierte 32-Bit-PSD-Bilddaten mit Vorhersage können nicht gelesen werden
@@ -4636,6 +4639,7 @@ lighting	Light	Licht
 	Top Right	Oben rechts
 	Bottom Right	Unten rechts
 effect	Regular	Regelmäßig
+effect	Soft	Weich
 	Bottom Left	Unten links
 # Corner Radius: a field per corner of a live rectangle.
 	Single Corner Radius	Einheitlicher Eckenradius
