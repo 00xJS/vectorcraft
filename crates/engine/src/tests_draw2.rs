@@ -849,6 +849,33 @@ fn path_commands_refuse_a_delta_or_point_of_1e9_pt_or_more() {
     }
 }
 
+#[test]
+fn a_selected_curve_whose_handles_are_near_1e308_is_refused() {
+    // The canvas check measures a selected curve whose handles are near ±1e308 by its control
+    // points, so `path.create` refuses such a curve, given as anchors or as path data: the document
+    // stays as it was, with no undo step.
+    let mut s = session();
+    curve(&mut s);
+    let h = 1e308;
+    for p in [
+        json!({"anchors": [{"x": 100, "y": 100, "out": [150, h]}, {"x": 300, "y": 100, "in": [250, h]}]}),
+        json!({"anchors": [{"x": 100, "y": 100, "out": [150, -h]}, {"x": 300, "y": 100, "in": [250, h]}]}),
+        json!({"anchors": [{"x": 100, "y": 100, "out": [1.7e308, 100]}, {"x": 300, "y": 100}]}),
+        json!({"d": "M100 100 C150 1e308 250 1e308 300 100"}),
+    ] {
+        let before = s.doc().unwrap().doc.clone();
+        let undo = s.doc().unwrap().history.undo.len();
+        let e = s.execute("path.create", &p).unwrap_err().to_string();
+        assert!(e.contains("exceed the canvas"), "{p}: {e}");
+        assert!(s.doc().unwrap().doc == before, "{p} changed the document");
+        assert_eq!(s.doc().unwrap().history.undo.len(), undo, "{p} left an undo step");
+    }
+    // A curve whose handles stay on the canvas is kept.
+    let p = json!({"anchors": [{"x": 100, "y": 100, "out": [150, 3e6]}, {"x": 300, "y": 100, "in": [250, 3e6]}]});
+    let id = NodeId(s.execute("path.create", &p).unwrap()["id"].as_u64().unwrap());
+    assert!(path(&s, id).bounds().is_some_and(|b| b.y1 > 2e6));
+}
+
 /// A curve from (100, 100) to (300, 100) whose first anchor has an out handle at (150, 100).
 fn curve(s: &mut Session) -> NodeId {
     let anchors = json!([{"x": 100, "y": 100, "out": [150, 100]}, {"x": 300, "y": 100, "in": [250, 100]}]);

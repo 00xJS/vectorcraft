@@ -1940,7 +1940,10 @@ line between its anchors, on the same side and at the same length, and the point
 as the point moved by `dx`, `dy` does; a segment whose anchors coincide bends as it does without `perpendicular`.
 `path.reshapeSegment` refuses a delta of 1e9 pt or longer ("invalid delta"), as `object.blend.spine.reshapeSegment`
 does. `path.convertAnchor` (its `x`, `y`) and `path.freehand` (each of its `points`) refuse a point whose x or y is
-1e9 pt or more in size ("x and y must be finite").
+1e9 pt or more in size ("x and y must be finite"). The canvas check after an edit measures a segment of a selected
+path by its control points when one of them has an x or y that is infinite or larger in size than `f64::MAX / 16`
+(about 1.1e307), so an edit that leaves such a path selected, `path.create` included, fails with "result would exceed
+the canvas (coordinates out of range)".
 
 A `pointer_gesture` with `mods: {cmd: true}` held at the press, with any tool but the selection tools (Command on
 macOS, Ctrl elsewhere), drags with the selection tool chosen last (`select_tool`), or Direct Selection with the Pen,
