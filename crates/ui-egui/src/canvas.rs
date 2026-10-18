@@ -503,6 +503,7 @@ pub fn show(app: &mut VectorcraftApp, ui: &mut Ui) {
     if app.ui.view.edges && !revolve_edit {
         hover_highlight(app, &painter, &xf);
         selection_overlay(app, &painter, &xf, overlays.iter().any(|o| matches!(o, Overlay::CurvePoint { .. })));
+        mirror_axis_overlay(app, &painter, &xf);
         if app.ui.view.text_threads {
             thread_overlay(app, &painter, &xf);
         }
@@ -2264,6 +2265,32 @@ fn shaper_widget_overlay(app: &VectorcraftApp, p: &egui::Painter, xf: &Xf) {
         let arrow = vec![c + vec2(3.0 * d, 0.0), c + vec2(-2.0 * d, -3.0), c + vec2(-2.0 * d, 3.0)];
         p.add(Shape::convex_polygon(arrow, color, Stroke::NONE));
     }
+}
+
+/// High-contrast live controls, using the same geometry as the Selection tool's hit testing.
+fn mirror_axis_overlay(app: &VectorcraftApp, p: &egui::Painter, xf: &Xf) {
+    if app.session.tool_id() != "selection" || !app.ui.view.bounding_box {
+        return;
+    }
+    let Some(st) = app.session.active() else { return };
+    let Some(axis) = vectorcraft_tools::mirror::MirrorAxis::of(&st.doc, &st.selection, xf.zoom) else { return };
+    let t = Tokens::get(p.ctx());
+    let ends = axis.ends.map(|q| xf.to_screen(q));
+    let center = xf.to_screen(axis.center);
+    if !center.is_finite() || !ends.iter().all(|p| p.is_finite()) {
+        return;
+    }
+    if let Some((a, b)) = clip_segment(ends[0], ends[1], xf.rect) {
+        p.line_segment([a, b], Stroke::new(5.0, t.measure_bg));
+        p.line_segment([a, b], Stroke::new(2.0, t.selection));
+    }
+    for end in ends {
+        p.circle_filled(end, vectorcraft_tools::mirror::HANDLE_RADIUS, t.measure_bg);
+        p.circle_stroke(end, vectorcraft_tools::mirror::HANDLE_RADIUS, Stroke::new(2.0, t.selection));
+    }
+    let handle = egui::Rect::from_center_size(center, vec2(12.0, 12.0));
+    p.rect_filled(handle, 2.0, t.selection);
+    p.rect_stroke(handle, 2.0, Stroke::new(2.0, t.measure_bg), StrokeKind::Outside);
 }
 
 fn selection_overlay(app: &mut VectorcraftApp, p: &egui::Painter, xf: &Xf, curve_points_from_tool: bool) {
@@ -4931,6 +4958,115 @@ mod tests {
         app.session.execute("prefs.set", &json!({"key": "anchorSize", "value": 7})).unwrap();
         let big = sizes(&mut app);
         assert!(big.contains(&8.0) && big.contains(&10.0) && !big.contains(&4.0), "4 points bigger at 7: {big:?}");
+    }
+
+    #[test]
+    fn mirror_axis_tracks_selection_options_and_view_without_editing_art() {
+        let mut app = VectorcraftApp::new(Session::new(), Default::default());
+        app.run("file.new", json!({"width": 400, "height": 300})).unwrap();
+        app.run("shape.rectangle", json!({"x": 100, "y": 100, "width": 60, "height": 80})).unwrap();
+        let id = app.run("object.repeat.mirror", json!({})).unwrap()["id"].as_u64().unwrap();
+        let ctx = egui::Context::default();
+        let axis = |app: &mut VectorcraftApp| {
+            let color = Tokens::get(&ctx).selection;
+            shapes(app, &ctx)
+                .into_iter()
+                .filter_map(|s| match s {
+                    Shape::LineSegment { points, stroke } if stroke.color == color && stroke.width == 2.0 => Some(points),
+                    _ => None,
+                })
+                .collect::<Vec<_>>()
+        };
+        let before = serde_json::to_value(&app.session.active().unwrap().doc).unwrap();
+        let lines = axis(&mut app);
+        assert_eq!(lines.len(), 1);
+        let xf = Xf::new(app.canvas_rect.unwrap(), app.view().unwrap());
+        assert!(lines[0][0].distance(xf.to_screen(Point::new(170.0, 100.0)) - vec2(0.0, 24.0)) < 0.01);
+        assert!(lines[0][1].distance(xf.to_screen(Point::new(170.0, 180.0)) + vec2(0.0, 24.0)) < 0.01);
+        assert_eq!(serde_json::to_value(&app.session.active().unwrap().doc).unwrap(), before);
+        app.ui.view.edges = false;
+        assert!(axis(&mut app).is_empty());
+        app.ui.view.edges = true;
+        app.run("select.set", json!({"ids": []})).unwrap();
+        assert!(axis(&mut app).is_empty());
+        app.run("select.set", json!({"ids": [id]})).unwrap();
+        assert_eq!(axis(&mut app), lines);
+        app.run("object.repeat.options", json!({"angle": 0, "center": [180, 140]})).unwrap();
+        let horizontal = axis(&mut app);
+        assert_eq!(horizontal.len(), 1);
+        assert!((horizontal[0][0].y - horizontal[0][1].y).abs() < 0.01);
+        app.run("edit.undo", json!({})).unwrap();
+        assert_eq!(axis(&mut app), lines);
+        app.view_mut().unwrap().rotation = 45.0;
+        let rotated = axis(&mut app);
+        let d = rotated[0][1] - rotated[0][0];
+        assert!((d.x.abs() - d.y.abs()).abs() < 0.01);
+        app.run("object.repeat.release", json!({})).unwrap();
+        assert!(axis(&mut app).is_empty());
+    }
+
+    #[test]
+    fn mirror_axis_drag_uses_canvas_coordinates_in_a_zoomed_rotated_view() {
+        let mut app = VectorcraftApp::new(Session::new(), Default::default());
+        app.run("file.new", json!({"width": 400, "height": 300})).unwrap();
+        app.run("shape.rectangle", json!({"x": 100, "y": 100, "width": 60, "height": 80})).unwrap();
+        app.run("object.repeat.mirror", json!({})).unwrap();
+        app.ui.task_bar = false;
+        app.ui.view.rulers = false;
+        app.view_mut().unwrap().zoom = 1.5;
+        app.view_mut().unwrap().rotation = 30.0;
+        let ctx = egui::Context::default();
+        frame(&mut app, &ctx, vec![]);
+        let axis = |app: &VectorcraftApp| {
+            let st = app.session.active().unwrap();
+            vectorcraft_tools::mirror::MirrorAxis::of(&st.doc, &st.selection, app.view().unwrap().zoom).unwrap()
+        };
+        let initial = axis(&app);
+        let xf = Xf::new(app.canvas_rect.unwrap(), app.view().unwrap());
+        let from = xf.to_screen(initial.center);
+        let to = from + vec2(40.0, 15.0);
+        let button = |pos, pressed| egui::Event::PointerButton { pos, button: egui::PointerButton::Primary, pressed, modifiers: Default::default() };
+        frame(&mut app, &ctx, vec![egui::Event::PointerMoved(from), button(from, true)]);
+        frame(&mut app, &ctx, vec![egui::Event::PointerMoved(to)]);
+        assert!(axis(&app).center.distance(xf.to_doc(to)) < 0.001, "the mirrored artwork previews during the drag");
+        frame(&mut app, &ctx, vec![button(to, false)]);
+        assert!(axis(&app).center.distance(xf.to_doc(to)) < 0.001);
+        app.run("edit.undo", json!({})).unwrap();
+        assert_eq!(axis(&app).center, initial.center);
+        // Both rotation handles remain a usable size at this zoom and view angle.
+        let drawn = shapes(&mut app, &ctx);
+        for end in initial.ends {
+            assert!(drawn.iter().any(|s| matches!(s, Shape::Circle(c)
+                if c.center.distance(xf.to_screen(end)) < 0.01 && c.radius == vectorcraft_tools::mirror::HANDLE_RADIUS)));
+        }
+    }
+
+    #[test]
+    fn top_bounding_box_handle_scales_a_default_mirror_repeat() {
+        let mut app = VectorcraftApp::new(Session::new(), Default::default());
+        app.run("file.new", json!({"width": 400, "height": 300})).unwrap();
+        app.run("shape.rectangle", json!({"x": 100, "y": 100, "width": 100, "height": 100})).unwrap();
+        app.run("object.repeat.mirror", json!({})).unwrap();
+        app.ui.task_bar = false;
+        app.ui.view.rulers = false;
+        let ctx = egui::Context::default();
+        frame(&mut app, &ctx, vec![]);
+
+        let initial = app.selection_bounds().unwrap();
+        let bx = app.selection_box().unwrap();
+        let top = bx.to_doc() * vectorcraft_tools::bbox::Handle::Top.pos(bx.rect);
+        let xf = Xf::new(app.canvas_rect.unwrap(), app.view().unwrap());
+        let from = xf.to_screen(top);
+        let to = from + vec2(0.0, -30.0);
+        let button = |pos, pressed| egui::Event::PointerButton { pos, button: egui::PointerButton::Primary, pressed, modifiers: Default::default() };
+
+        frame(&mut app, &ctx, vec![egui::Event::PointerMoved(from), button(from, true)]);
+        frame(&mut app, &ctx, vec![egui::Event::PointerMoved(to)]);
+        frame(&mut app, &ctx, vec![button(to, false)]);
+
+        let scaled = app.selection_bounds().unwrap();
+        assert!(scaled.height() > initial.height() + 10.0, "Top handle should scale the repeat: {initial:?} -> {scaled:?}");
+        assert!((scaled.width() - initial.width()).abs() < 0.01, "Top handle should not scale width: {initial:?} -> {scaled:?}");
     }
 
     /// #1236: Curvature edits points, so existing paths show one circular marker per point and
