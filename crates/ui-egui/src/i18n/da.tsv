@@ -1439,6 +1439,7 @@ lighting	Light	Lys
 	History Options…	Indstillinger for historik…
 	Step Backward	Et trin tilbage
 	Step Forward	Et trin frem
+	Clear History	Ryd historik
 	Set History Limit…	Angiv historikgrænse…
 	Open a document to see its history.	Åbn et dokument for at se dets historik.
 	Abutting	Stødende
@@ -4083,6 +4084,7 @@ imageTrace	Outline	Kontur
 @msg	nothing to redo	intet at gendanne
 @msg	nothing to save: the document has no visible art	intet at gemme: dokumentet har ingen synlig grafik
 @msg	nothing to undo	intet at fortryde
+@msg	no history to clear	ingen historik at rydde
 @msg	nothing to warp	intet at forvride
 @msg	nothing to wrap	intet at ombryde
 @msg	object {0} cannot have children	objektet {0} kan ikke have underobjekter

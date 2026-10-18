@@ -1163,6 +1163,7 @@
 	History Options…	Opções do Histórico…
 	Step Backward	Voltar um Passo
 	Step Forward	Avançar um Passo
+	Clear History	Limpar Histórico
 	Set History Limit…	Definir Limite do Histórico…
 	History States	Estados do Histórico
 # History panel: the names of undo steps (`every_undo_label_is_translated`).
@@ -3628,6 +3629,7 @@ axis	Both	Ambos
 @msg	nothing to redo	nada para refazer
 @msg	nothing to save: the document has no visible art	nada para salvar: o documento não tem arte visível
 @msg	nothing to undo	nada para desfazer
+@msg	no history to clear	nenhum histórico para limpar
 @msg	nothing to warp	nada para deformar
 @msg	nothing to wrap	nada para envolver
 @msg	object {0} cannot have children	o objeto {0} não pode ter filhos

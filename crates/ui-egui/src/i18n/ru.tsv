@@ -1356,6 +1356,7 @@ file-filter	Templates	Шаблоны
 	History Options…	Параметры истории…
 	Step Backward	Шаг назад
 	Step Forward	Шаг вперёд
+	Clear History	Очистить историю
 	Set History Limit…	Задать предел истории…
 	History States	Состояния истории
 # History panel: the names of undo steps (`every_undo_label_is_translated`).
@@ -4081,6 +4082,7 @@ axis	Both	Оба
 @msg	nothing to redo	нечего повторять
 @msg	nothing to save: the document has no visible art	нечего сохранять: в документе нет видимого рисунка
 @msg	nothing to undo	нечего отменять
+@msg	no history to clear	нет истории для очистки
 @msg	nothing to warp	нечего деформировать
 @msg	nothing to wrap	нечего обтекать
 @msg	object {0} cannot have children	объект {0} не может иметь потомков

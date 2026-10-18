@@ -1722,6 +1722,7 @@ file-filter	Templates	Sablonok
 	History Options…	Előzmények beállításai…
 	Step Backward	Lépés vissza
 	Step Forward	Lépés előre
+	Clear History	Előzmények törlése
 	Set History Limit…	Előzménykorlát beállítása…
 	History States	Előzmények lépésszáma
 # History panel: the names of undo steps (`every_undo_label_is_translated`).
@@ -4693,6 +4694,7 @@ imageTrace	Outline	Körvonal
 @msg	nothing to redo	nincs mit újra végrehajtani
 @msg	nothing to save: the document has no visible art	nincs mit menteni: a dokumentumban nincs látható grafika
 @msg	nothing to undo	nincs mit visszavonni
+@msg	no history to clear	nincs törölhető előzmény
 @msg	nothing to warp	nincs mit torzítani
 @msg	nothing to wrap	nincs mit körbefuttatni
 @msg	object ids are non-negative integers, not {v}	az objektumazonosító nemnegatív egész szám, ez nem az: {v}

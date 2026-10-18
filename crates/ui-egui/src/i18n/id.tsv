@@ -1439,6 +1439,7 @@ lighting	Light	Cahaya
 	History Options…	Opsi riwayat…
 	Step Backward	Mundur satu langkah
 	Step Forward	Maju satu langkah
+	Clear History	Hapus riwayat
 	Set History Limit…	Atur batas riwayat…
 	Open a document to see its history.	Buka dokumen untuk melihat riwayatnya.
 	Abutting	Bersinggungan
@@ -4083,6 +4084,7 @@ imageTrace	Outline	Kontur
 @msg	nothing to redo	tidak ada yang dapat dipulihkan
 @msg	nothing to save: the document has no visible art	tidak ada yang dapat disimpan: dokumen tidak memiliki karya seni yang terlihat
 @msg	nothing to undo	tidak ada yang dapat diurungkan
+@msg	no history to clear	tidak ada riwayat yang dapat dihapus
 @msg	nothing to warp	tidak ada yang dapat diubah bentuknya
 @msg	nothing to wrap	tidak ada yang dapat dibungkus
 @msg	object {0} cannot have children	objek {0} tidak dapat memiliki anak

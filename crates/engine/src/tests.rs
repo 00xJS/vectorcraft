@@ -28,6 +28,61 @@ fn create_and_undo_redo() {
     assert!(s.execute("edit.redo", &json!({})).is_err());
 }
 
+/// Clear History removes the steps to undo and the steps to redo. The document and the selection
+/// stay as they are, Undo and Redo are then disabled, and clearing is not a step itself.
+#[test]
+fn clear_history_removes_every_step_and_keeps_the_document() {
+    let mut s = session();
+    let a = rect(&mut s, 10.0, 10.0, 100.0, 50.0);
+    let b = rect(&mut s, 200.0, 10.0, 100.0, 50.0);
+    rect(&mut s, 400.0, 10.0, 100.0, 50.0);
+    s.execute("edit.undo", &json!({})).unwrap();
+    let st = s.doc().unwrap();
+    assert_eq!((st.history.undo.len(), st.history.redo.len()), (2, 1));
+    let (doc, selection, dirty) = (st.doc.clone(), st.selection.clone(), st.is_dirty());
+    assert_eq!(s.execute("edit.clearHistory", &json!({})).unwrap(), json!({"cleared": 3}));
+    let st = s.doc().unwrap();
+    assert_eq!((st.history.undo.len(), st.history.redo.len()), (0, 0));
+    assert!(Arc::ptr_eq(&st.doc, &doc), "the document is the one from before clearing");
+    assert_eq!((&st.selection, st.is_dirty()), (&selection, dirty));
+    assert!(st.doc.node(a).is_some() && st.doc.node(b).is_some());
+    for cmd in ["edit.undo", "edit.redo", "edit.clearHistory"] {
+        assert!(matches!(s.execute(cmd, &json!({})), Err(EngineError::Disabled(..))), "{cmd}");
+    }
+    // A new edit is a step again: undoing it goes back to the document the history was cleared at.
+    rect(&mut s, 600.0, 10.0, 100.0, 50.0);
+    s.execute("edit.undo", &json!({})).unwrap();
+    assert!(Arc::ptr_eq(&s.doc().unwrap().doc, &doc));
+    assert!(s.execute("edit.undo", &json!({})).is_err());
+}
+
+/// Clear History is disabled without a document and in a document with no step to undo or redo.
+#[test]
+fn clear_history_needs_a_step_to_clear() {
+    let mut s = Session::new();
+    assert!(matches!(s.execute("edit.clearHistory", &json!({})), Err(EngineError::Disabled(..))), "no document");
+    s.execute("file.new", &json!({})).unwrap();
+    match s.execute("edit.clearHistory", &json!({})) {
+        Err(EngineError::Disabled(_, why)) => assert_eq!(why, "no history to clear"),
+        other => panic!("a new document: {other:?}"),
+    }
+}
+
+/// A drag still in progress when the history is cleared ends, and its change stays in the document
+/// without a step to undo it.
+#[test]
+fn clear_history_keeps_a_drag_in_progress_in_the_document() {
+    let mut s = session();
+    let a = rect(&mut s, 10.0, 10.0, 100.0, 50.0);
+    s.begin_interaction("Move").unwrap();
+    s.preview("object.move", &json!({"dx": 30, "dy": 0})).unwrap();
+    assert_eq!(s.execute("edit.clearHistory", &json!({})).unwrap(), json!({"cleared": 2}));
+    assert!(!s.in_interaction());
+    let st = s.doc().unwrap();
+    assert_eq!(st.doc.node(a).unwrap().geometric_bounds().unwrap().x0, 40.0);
+    assert!(st.history.undo.is_empty() && st.history.redo.is_empty());
+}
+
 #[test]
 fn unknown_and_disabled() {
     let mut s = Session::new();

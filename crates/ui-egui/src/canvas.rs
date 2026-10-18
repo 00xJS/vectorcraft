@@ -6440,6 +6440,34 @@ mod tests {
         assert_eq!(plain(&app, id), "");
     }
 
+    /// Clear History waits while an IME composes, as Undo does: the marked text and the steps stay.
+    #[test]
+    fn clear_history_waits_while_the_ime_composes() {
+        let mut app = VectorcraftApp::new(Session::new(), Default::default());
+        app.session.prefs.placeholder_text = false;
+        app.session.execute("file.new", &json!({"width": 400, "height": 300})).unwrap();
+        app.session.execute("shape.rectangle", &json!({"x": 300, "y": 200, "width": 20, "height": 20})).unwrap();
+        let ctx = egui::Context::default();
+        typing_frame(&mut app, &ctx, vec![]);
+        app.select_tool("type");
+        let xf = Xf::new(app.canvas_rect.unwrap(), app.view().unwrap());
+        let at = xf.to_screen(Point::new(100.0, 100.0));
+        let click =
+            |p: Pos2, pressed| egui::Event::PointerButton { pos: p, button: egui::PointerButton::Primary, pressed, modifiers: Default::default() };
+        typing_frame(&mut app, &ctx, vec![egui::Event::PointerMoved(at), click(at, true)]);
+        typing_frame(&mut app, &ctx, vec![click(at, false)]);
+        let id = app.session.active().unwrap().selection.objects[0].0;
+        typing_frame(&mut app, &ctx, vec![preedit("が", 1)]);
+        assert!(app.session.tool_composing());
+        assert!(!crate::menus::enabled(&app, "edit.clearHistory"));
+        crate::menus::invoke(&mut app, "edit.clearHistory", json!({}));
+        assert!(app.session.tool_composing(), "the composition goes on");
+        assert!(!app.session.active().unwrap().history.undo.is_empty(), "the steps stay");
+        typing_frame(&mut app, &ctx, vec![preedit("", 0), egui::Event::Ime(egui::ImeEvent::Commit("雅".into()))]);
+        assert_eq!(plain(&app, id), "雅");
+        assert!(crate::menus::enabled(&app, "edit.clearHistory"));
+    }
+
     #[test]
     fn clicking_away_mid_composition_keeps_the_text_and_interrupts_the_ime() {
         let mut app = VectorcraftApp::new(Session::new(), Default::default());

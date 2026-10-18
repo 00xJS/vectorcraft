@@ -1518,6 +1518,7 @@ lighting	Light	Světlo
 	History Options…	Možnosti historie…
 	Step Backward	Krok zpět
 	Step Forward	Krok vpřed
+	Clear History	Vymazat historii
 	Set History Limit…	Nastavit limit historie…
 	Open a document to see its history.	Otevřete dokument, abyste viděli jeho historii.
 # History panel: the names of undo steps (`every_undo_label_is_translated`).
@@ -4347,6 +4348,7 @@ imageTrace	Outline	Obrys
 @msg	nothing to redo	není co opakovat
 @msg	nothing to save: the document has no visible art	není co uložit: dokument nemá žádnou viditelnou kresbu
 @msg	nothing to undo	není co vrátit
+@msg	no history to clear	není žádná historie k vymazání
 @msg	nothing to warp	není co pokřivit
 @msg	nothing to wrap	není co obtékat
 @msg	object {0} cannot have children	objekt {0} nemůže mít potomky
