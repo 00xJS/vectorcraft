@@ -1222,7 +1222,9 @@ impl Renderer {
     /// In isolation mode, while drawing outside the isolated container and the art dimmed around
     /// it: the isolated container and its layers and groups, from the top layer down to it.
     fn isolation_path(&mut self, f: &Frame) -> Option<(NodeId, Vec<NodeId>)> {
-        let isolated = f.opts.isolated.filter(|_| !self.isolation_settled)?;
+        // Opacity-mask editing isolates the temporary layer for tools; that layer is not painted on
+        // the page (the mask applies on the object), so canvas dimming would wash out everything.
+        let isolated = f.opts.isolated.filter(|_| f.doc.mask_edit.is_none() && !self.isolation_settled)?;
         let doc = std::ptr::from_ref(f.doc) as usize;
         if self.isolation.as_ref().is_none_or(|(stamp, d, id, _)| (*stamp, *d, *id) != (self.stamp, doc, isolated)) {
             self.isolation = Some((self.stamp, doc, isolated, f.doc.ancestry(isolated).unwrap_or_default()));
