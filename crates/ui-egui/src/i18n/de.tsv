@@ -4785,3 +4785,5 @@ effect	Soft	Weich
 	Minimum	Minimum
 	Justification	Abstände
 @msg	the file's variables and data sets weren't read (variables: {variables}, data sets: {data_sets}): the Variables panel doesn't list them	die Variablen und Datensätze der Datei wurden nicht gelesen (Variablen: {variables}, Datensätze: {data_sets}): Das Bedienfeld „Variablen“ listet sie nicht auf
+# Select by Color (select.color)
+	Select by Color	Nach Farbe auswählen

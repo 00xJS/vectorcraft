@@ -4819,3 +4819,5 @@ lighting	Light	Luce
 	Minimum	Minimo
 	Justification	Giustificazione
 @msg	the file's variables and data sets weren't read (variables: {variables}, data sets: {data_sets}): the Variables panel doesn't list them	le variabili e i set di dati del file non sono stati letti (variabili: {variables}, set di dati: {data_sets}): il pannello Variabili non li elenca
+# Select by Color (select.color)
+	Select by Color	Seleziona per colore

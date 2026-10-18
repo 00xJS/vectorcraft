@@ -5112,3 +5112,5 @@ imageTrace	Outline	კონტური
 @msg	its zlib compression is damaged	მისი zlib შეკუმშვა დაზიანებულია
 @msg	its Zstandard compression is damaged	მისი Zstandard შეკუმშვა დაზიანებულია
 @msg	it decompresses to more than {_1} MB	გაშლისას {_1} MB-ს აღემატება
+# Select by Color (select.color)
+	Select by Color	მონიშვნა ფერის მიხედვით
