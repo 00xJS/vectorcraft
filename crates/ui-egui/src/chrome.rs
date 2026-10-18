@@ -397,12 +397,7 @@ fn tab_title(d: &vectorcraft_engine::DocState, zoom: f64, outline: bool, display
         let color = if d.doc.color_mode == vectorcraft_doc::ColorMode::Cmyk { "CMYK" } else { "RGB" };
         format!("{color}/{}", if outline { tl!("Outline") } else { tl!("Preview") })
     };
-    format!(
-        "{}{} @ {} ({mode})",
-        d.title(),
-        if d.is_dirty() { "*" } else { "" },
-        zoom_label(zoom, display_print_size).replace('%', " %")
-    )
+    format!("{}{} @ {} ({mode})", d.title(), if d.is_dirty() { "*" } else { "" }, zoom_label(zoom, display_print_size).replace('%', " %"))
 }
 
 /// Whether a document tab's × comes before its title (macOS) rather than after it (Windows,
@@ -660,11 +655,15 @@ pub fn status_bar(app: &mut VectorcraftApp, ui: &mut Ui) {
                 let zoom = app.view().map(|v| v.zoom).unwrap_or(1.0);
                 let print = app.session.prefs.display_print_size;
                 let shown = crate::state::zoom_display_percent(zoom, print);
-                egui::ComboBox::from_id_salt("zoom-combo").selected_text(egui::RichText::new(zoom_label(zoom, print)).size(11.5)).width(76.0).show_ui(
-                    ui,
-                    |ui| {
+                egui::ComboBox::from_id_salt("zoom-combo")
+                    .selected_text(egui::RichText::new(zoom_label(zoom, print)).size(11.5))
+                    .width(76.0)
+                    .show_ui(ui, |ui| {
                         for z in ZOOM_STOPS.iter().rev() {
-                            if ui.selectable_label((z - shown).abs() < 0.01, zoom_label(crate::state::zoom_from_display_percent(*z, print), print)).clicked() {
+                            if ui
+                                .selectable_label((z - shown).abs() < 0.01, zoom_label(crate::state::zoom_from_display_percent(*z, print), print))
+                                .clicked()
+                            {
                                 app.run("view.setZoom", json!({"zoom": z})).ok();
                             }
                         }
@@ -675,8 +674,7 @@ pub fn status_bar(app: &mut VectorcraftApp, ui: &mut Ui) {
                         if ui.selectable_label(false, tl!("Fit All")).clicked() {
                             app.run("view.fitAll", json!({})).ok();
                         }
-                    },
-                );
+                    });
                 let rot = app.view().map(|v| v.rotation).unwrap_or(0.0);
                 egui::ComboBox::from_id_salt("rot-combo").selected_text(egui::RichText::new(format!("{rot:.0}°")).size(11.5)).width(52.0).show_ui(
                     ui,
