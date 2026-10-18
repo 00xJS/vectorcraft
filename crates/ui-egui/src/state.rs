@@ -354,6 +354,12 @@ pub struct UiState {
     /// Invalidates in-flight gestures when a workspace is replaced.
     #[serde(skip)]
     pub docking_generation: u64,
+    /// The main dock column's outer width in screen points (legacy or shared docking).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub dock_width: Option<f32>,
+    /// Next frame should seed egui [`PanelState`] from [`Self::dock_width`] (workspace switch).
+    #[serde(skip)]
+    pub dock_width_pending: bool,
     /// The Tools panel floats with its top-left corner here (dragged out by its title bar); `None`:
     /// docked at the window's left edge.
     #[serde(default)]
@@ -772,6 +778,8 @@ impl Default for UiState {
             docking_hidden: Default::default(),
             docking_icons: Default::default(),
             docking_generation: 0,
+            dock_width: None,
+            dock_width_pending: false,
             toolbar_pos: None,
             status_bar: true,
             dock: true,
