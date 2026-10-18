@@ -472,6 +472,7 @@ fn number(ui: &mut egui::Ui, d: &mut Dialog, key: &str, name: &str, range: (f64,
     let typed = unit.map(|u| widgets::typed_unit(ui.ctx(), u));
     let mut value = from(d.f64(key, default)).clamp(from(range.0), from(range.1));
     let suffix = unit.map_or_else(|| suffix.to_string(), |u| format!(" {}", u.suffix()));
+    let speed = if decimals == 0 { 1.0 } else { 0.25 };
     let mut next = None;
     ui.horizontal(|ui| {
         ui.spacing_mut().item_spacing.x = 6.0;
@@ -485,7 +486,7 @@ fn number(ui: &mut egui::Ui, d: &mut Dialog, key: &str, name: &str, range: (f64,
                     [VALUE_W, 24.0],
                     egui::DragValue::new(&mut value)
                         .range(from(range.0)..=from(range.1))
-                        .speed(if decimals == 0 { 1.0 } else { 0.25 })
+                        .speed(speed)
                         .max_decimals(decimals)
                         .suffix(&suffix)
                         .update_while_editing(false)
@@ -513,10 +514,16 @@ fn number(ui: &mut egui::Ui, d: &mut Dialog, key: &str, name: &str, range: (f64,
         };
         let rail_min = from(range.0);
         let rail = rail_width(ui) + VALUE_W;
-        let slider = widgets::color_slider_named(
+        // The text the DragValue shows: at least the places its speed gives (one for 0.25 at 1x to
+        // 3x scaling, as egui computes them), at most `decimals`.
+        let places = ((f64::from(ui.input(|i| i.aim_radius())) / speed).log10().ceil().clamp(0.0, 15.0) as usize).min(decimals);
+        let number = ui.style().number_formatter.format(value, places..=decimals);
+        let shown = widgets::SliderValue::text(number.parse().unwrap_or(value), rail_min..=rail_max, format!("{number}{suffix}"));
+        let slider = widgets::color_slider_valued(
             ui,
             ("revolve-slider", key),
             name,
+            Some(shown),
             ((value - rail_min) / (rail_max - rail_min)).clamp(0.0, 1.0) as f32,
             rail,
             &|_| t.input_border,
