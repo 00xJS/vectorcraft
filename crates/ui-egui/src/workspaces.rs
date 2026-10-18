@@ -500,8 +500,7 @@ mod tests {
 
     #[test]
     fn saved_workspaces_restore_dock_width() {
-        let mut ui = UiState::default();
-        ui.dock_width = Some(420.0);
+        let mut ui = UiState { dock_width: Some(420.0), ..Default::default() };
         save_as(&mut ui, "Wide").unwrap();
         ui.dock_width = Some(260.0);
         save_as(&mut ui, "Narrow").unwrap();
