@@ -331,38 +331,31 @@ fn service_font() -> PathBuf {
     std::env::temp_dir().join(format!("vc-sysfonts-{}-service", std::process::id())).join(".29457")
 }
 
-/// Fonts a font service activates after the first scan are picked up on the next check (#2576).
+/// The fonts a font service (Adobe Fonts on Windows, through DirectWrite) loads in place are
+/// cataloged: named by the platform's lister, read whatever their file is called (#579), and one it
+/// activates after a scan is picked up by the next check (#2576). One test: the lister is set once
+/// per process, so two tests changing what it lists would race.
 #[test]
-fn the_database_tells_when_a_font_service_adds_a_font() {
+fn fonts_the_platform_lists_outside_the_font_folders_are_cataloged() {
     use std::sync::Mutex;
     static FILES: Mutex<Vec<String>> = Mutex::new(Vec::new());
+    let list = |files: Vec<String>| *FILES.lock().unwrap_or_else(|e| e.into_inner()) = files;
     set_platform_font_files(|| FILES.lock().unwrap_or_else(|e| e.into_inner()).clone());
     let file = service_font();
     std::fs::create_dir_all(file.parent().unwrap()).unwrap();
+    let _ = std::fs::remove_file(&file);
+    // Nothing listed at the first scan; then a font service activates a font.
     let db = FontDb::for_system_scan_test();
     assert!(!db.installed_fonts_changed());
     db.load_system_fonts();
     assert!(!db.has_family("Service Sans3"));
     std::fs::write(&file, renamed_to("SourceSans3-Regular.ttf", "Service Sans3")).unwrap();
-    *FILES.lock().unwrap_or_else(|e| e.into_inner()) = vec![file.to_string_lossy().into_owned()];
+    // A collection lists its file once per face.
+    list(vec![file.to_string_lossy().into_owned(); 2]);
     assert!(db.installed_fonts_changed(), "a font a font service activated since the scan");
     db.load_system_fonts();
     assert!(db.has_family("Service Sans3"));
-}
-
-/// The fonts a font service (Adobe Fonts on Windows, through DirectWrite) loads in place are
-/// cataloged: named by the platform's lister, read whatever their file is called (#579).
-#[test]
-fn fonts_the_platform_lists_outside_the_font_folders_are_cataloged() {
-    let file = service_font();
-    std::fs::create_dir_all(file.parent().unwrap()).unwrap();
-    std::fs::write(&file, renamed_to("SourceSans3-Regular.ttf", "Service Sans3")).unwrap();
-    // The lister's files outside the font folders are scanned with them, each once (a collection
-    // lists its file once per face).
-    fn lister() -> Vec<String> {
-        vec![service_font().to_string_lossy().into_owned(); 2]
-    }
-    set_platform_font_files(lister);
+    // The lister's files outside the font folders are scanned with them, each once.
     let dirs = system_font_dirs();
     assert_eq!(dirs.iter().filter(|d| **d == file).count(), 1, "{dirs:?}");
     // A file named by itself is read without a font's extension, one in a folder isn't.
