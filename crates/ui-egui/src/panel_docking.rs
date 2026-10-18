@@ -796,11 +796,7 @@ pub(crate) fn show(app: &mut VectorcraftApp, ui: &mut egui::Ui) -> bool {
         }
     }
     for (layer, layout_rect, fill) in fills {
-        let rect = ui
-            .ctx()
-            .memory(|memory| memory.area_rect(layer.id))
-            .filter(|rect| rect.is_positive())
-            .unwrap_or(layout_rect);
+        let rect = ui.ctx().memory(|memory| memory.area_rect(layer.id)).filter(|rect| rect.is_positive()).unwrap_or(layout_rect);
         if rect.is_positive() {
             ui.ctx().layer_painter(layer).set(fill, egui::Shape::rect_filled(rect, 0.0, t.panel));
         }
