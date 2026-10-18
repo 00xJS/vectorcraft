@@ -1384,7 +1384,9 @@ pub fn layered_ai(private: &[u8], visible: Document, warnings: Vec<String>, outl
         Err(why) => {
             let mut visible = visible;
             place_pages(&ai::artboards(&data), &mut visible, unit);
-            (visible, unread(warnings, &why), false)
+            let mut all = unread(warnings, &why);
+            all.extend(ai::variables(&data).note());
+            (visible, all, false)
         }
     }
 }

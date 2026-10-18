@@ -2430,6 +2430,19 @@ proptest! {
         }
         survive("mutated .ai editing data", || Some(vectorcraft_eps::layered_ai(&private, Document::new(100.0, 100.0), vec![], false, false, 1.0).0))?;
     }
+
+    /// A `.ai` whose variable library is damaged or hostile: the library is counted for the warning
+    /// whether the layers are read or not (an inserted `Z` can make an operator the reader doesn't
+    /// handle, and then the layers aren't read).
+    #[test]
+    fn ai_variable_library_never_panics(cut in 0usize..12_000, edits in prop::collection::vec((0usize..12_000, prop::sample::select(vec!['0', '9', ' ', '\n', '(', ')', '/', ':', ';', ',', '%', '_', 'Z'])), 0..12)) {
+        use vectorcraft_testkit::ai;
+        let library = ai::variable_library(&["Name", "Number"], &["One", "Two"]);
+        let data = ai::editing_data(100.0, 100.0, &format!("{library}{}", ai::layer("L", "0 g\n10 10 m\n20 20 L\nS\n")));
+        let text = mutate_text(&data, cut, &edits);
+        let private = [b"%AI24_ZStandard_Data".as_slice(), &zstd(&text)].concat();
+        survive("mutated .ai variable library", || Some(vectorcraft_eps::layered_ai(&private, Document::new(100.0, 100.0), vec![], false, false, 1.0).0))?;
+    }
 }
 
 /// A `.ai` in PostScript form as other apps write it: the procsets that define its operators named,

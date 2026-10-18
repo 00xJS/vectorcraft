@@ -538,6 +538,36 @@ fn artboards() {
     assert_eq!(doc.artboards[0].rect, Rect::new(0.0, 0.0, 600.0, 400.0));
 }
 
+/// A variable library in the document data isn't read: a note gives how many variables and data
+/// sets it has, counting the elements of the library alone (a data set's element for a variable named
+/// `variable` isn't a variable).
+#[test]
+fn a_variable_library_is_noted_with_its_counts() {
+    use vectorcraft_testkit::ai::variable_library;
+    let square = layer(&format!("{RED}{}f\n", rect_path(0.0, 0.0, 10.0, 10.0)));
+    let notes = |library: &str| read_ok(&format!("{library}{square}")).warnings.into_iter().filter(|w| w.contains("variables")).collect::<Vec<_>>();
+    assert_eq!(
+        notes(&variable_library(&["variable", "Team"], &["Home", "Away", "Third"])),
+        ["the file's variables and data sets weren't read (2 variables, 3 data sets): the Variables panel doesn't list them"]
+    );
+    assert_eq!(
+        notes(&variable_library(&["Team"], &["Home"])),
+        ["the file's variables and data sets weren't read (1 variable, 1 data set): the Variables panel doesn't list them"]
+    );
+    assert!(notes(&variable_library(&[], &[])).is_empty(), "an empty library gives no warning");
+    assert!(notes("").is_empty());
+    // When the reader can't read the layers, `variables` still counts the library, for the warning
+    // of the file read from its PDF part.
+    let unread = stream(&format!("{}{}", variable_library(&["Team"], &["Home", "Away"]), layer("1 Zz\n")));
+    assert!(read(unread.as_bytes()).is_err());
+    assert_eq!(variables(unread.as_bytes()), read::VariableLibrary { variables: 1, data_sets: 2 });
+    // The same when the reading stops before it reaches the library (at an `LB` without its layer).
+    let early = stream(&format!("LB\n{}{square}", variable_library(&["Team"], &["Home", "Away"])));
+    assert!(read(early.as_bytes()).is_err());
+    assert_eq!(variables(early.as_bytes()), read::VariableLibrary { variables: 1, data_sets: 2 });
+    assert_eq!(variables(stream(&square).as_bytes()), read::VariableLibrary::default());
+}
+
 #[test]
 fn a_drawn_look_stands_for_its_object() {
     // The look (a group, with a part on `%_` lines for newer readers), then the object on `%_`
