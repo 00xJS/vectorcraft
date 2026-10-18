@@ -8,7 +8,9 @@
 //! their own, or with a fill or stroke of their own that has geometry effects or paints members
 //! with geometry effects, are given as their evaluated art ([`evaluate_container`]). Blends,
 //! envelopes and repeats whose objects have geometry effects are given as their evaluated art
-//! ([`expanded_live_group`]), with each of those objects given as its own art. Fills and
+//! ([`expanded_live_group`]), with each of those objects given as its own art. A clip group or
+//! layer whose clipping path has strokes with geometry effects is given as that path's geometry
+//! before its effects, which the renderer clips by, and those strokes as drawn. Fills and
 //! strokes that paint nothing (hidden, or painted None) are left out. [`bounds_of`],
 //! [`oriented_bounds`] and [`anchor_bounds`] measure the visual bounds of that art, strokes
 //! included, where [`Document::bounds_of`], [`Document::oriented_bounds`] and
@@ -20,6 +22,7 @@ use std::cell::{Cell, RefCell};
 use std::collections::HashMap;
 use std::sync::Arc;
 
+use vectorcraft_doc::color::Paint;
 use vectorcraft_doc::{Appearance, AppearanceItem, Document, Node, NodeId, NodeKind, OrientedBox, Selection, SymbolBoxes};
 use vectorcraft_geom::{Affine, PathData, Rect, Shape, union_opt};
 
@@ -85,8 +88,9 @@ pub fn bounds_in(symbols: &SymbolBoxes, n: &Node, a: Affine) -> Option<Rect> {
 
 /// `n` as plain art with the geometry effects in it applied, at every depth, symbol instances
 /// measured by `symbols`. Raster effects stay on the art. A group, layer or intertwine without a
-/// clip is rebuilt with the drawn art of each member that has one. `None` when no geometry effect
-/// in `n` changes what it draws.
+/// clip is rebuilt with the drawn art of each member that has one. A clip group or layer becomes a
+/// group of its clipping path without strokes and the drawn art of the path's strokes, when they
+/// have one. `None` when no geometry effect in `n` changes what it draws.
 pub fn drawn_art(symbols: &SymbolBoxes, n: &Node) -> Option<Node> {
     Drawn::new(symbols).drawn_art(n)
 }
@@ -137,10 +141,11 @@ impl<'s, 'd> Drawn<'s, 'd> {
 
     /// See [`drawn_art`].
     fn drawn_art(&self, n: &Node) -> Option<Node> {
-        let Some(mut art) = self.own_art(n) else { return self.with_drawn_members(n) };
+        let Some(mut art) = self.own_art(n) else { return self.clip_art(n).or_else(|| self.with_drawn_members(n)) };
         // The art's members can carry geometry effects of their own: type's fills and strokes, the
-        // members of an evaluated group and the objects in a symbol's art.
-        if let Some(m) = self.with_drawn_members(&art) {
+        // members of an evaluated group, the clipping path of an evaluated clip group and the
+        // objects in a symbol's art.
+        if let Some(m) = self.clip_art(&art).or_else(|| self.with_drawn_members(&art)) {
             art = m;
         }
         Some(art)
@@ -220,6 +225,33 @@ impl<'s, 'd> Drawn<'s, 'd> {
         }
         Some(m)
     }
+
+    /// Clip group or layer `n` as its clipping path's strokes draw it: a group of the clipping path
+    /// without its strokes, measured as the region it clips to, and its strokes ([`Node::clip_paint`])
+    /// as their [`Self::drawn_art`]. The renderer clips by the clipping path's geometry before its
+    /// geometry effects ([`crate::clip_outline`]) and paints the path's fills inside that region and
+    /// its strokes over the clipped art, unclipped. `None` for any other object, when the clipping
+    /// path is hidden and when its strokes have no drawn art.
+    fn clip_art(&self, n: &Node) -> Option<Node> {
+        if !n.clips() {
+            return None;
+        }
+        let clip = n.children()?.first().filter(|c| c.visible)?;
+        let strokes = self.drawn_art(&clip.clip_paint().stroke?)?;
+        Some(Node::group(n.id, vec![Arc::new(unstroked(clip)), Arc::new(strokes)]))
+    }
+}
+
+/// Clipping path `clip` without its strokes or its characters' strokes.
+fn unstroked(clip: &Node) -> Node {
+    let mut n = clip.clone();
+    n.appearance.items.retain(AppearanceItem::is_fill);
+    if let NodeKind::Text(t) = &mut n.kind {
+        for r in &mut t.runs {
+            r.style.stroke = Paint::None;
+        }
+    }
+    n
 }
 
 /// Whether `n` itself has a geometry effect that [`Drawn::own_art`] applies, its own or one of its

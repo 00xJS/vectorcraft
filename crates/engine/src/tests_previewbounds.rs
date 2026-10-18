@@ -172,6 +172,46 @@ fn a_groups_own_fill_is_measured_on_its_members_where_they_are() {
 }
 
 #[test]
+fn a_clip_group_is_measured_where_its_clipping_paths_stroke_paints() {
+    // A 200 pt square clipped by a 100 pt square at (100, 100) with Offset Path 20. The clipped art
+    // is clipped by the square without the offset, so the group is measured by that square.
+    let mut s = session();
+    let content = NodeId(run(&mut s, "shape.rectangle", json!({"x": 50, "y": 50, "width": 200, "height": 200}))["id"].as_u64().unwrap());
+    let path = NodeId(run(&mut s, "shape.rectangle", json!({"x": 100, "y": 100, "width": 100, "height": 100}))["id"].as_u64().unwrap());
+    run(&mut s, "select.set", json!({"ids": [content.0, path.0]}));
+    let clip = NodeId(run(&mut s, "object.clippingMask.make", json!({}))["id"].as_u64().unwrap());
+    run(&mut s, "effect.apply", json!({"effect": "path.offsetPath", "params": {"offset": 20}, "ids": [path.0], "item": null}));
+    preview(&mut s, true);
+    let square = Rect::new(100.0, 100.0, 200.0, 200.0);
+    assert!(near(s.transform_bounds(&[clip]).unwrap(), square, 1e-6), "{:?}", s.transform_bounds(&[clip]));
+    // A 4 pt stroke on the clipping path paints along the offset shape, over the clipped art, from
+    // 78 to 222.
+    run(&mut s, "paint.setStroke", json!({"ids": [path.0], "color": "#000000"}));
+    run(&mut s, "stroke.set", json!({"ids": [path.0], "weight": 4}));
+    let stroked = Rect::new(78.0, 78.0, 222.0, 222.0);
+    assert!(near(s.transform_bounds(&[clip]).unwrap(), stroked, 1e-6), "{:?}", s.transform_bounds(&[clip]));
+    // A fill of the clip group's own keeps that box.
+    run(&mut s, "appearance.addFill", json!({"ids": [clip.0]}));
+    run(&mut s, "paint.setFill", json!({"ids": [clip.0], "item": 0, "color": "#000000"}));
+    assert!(near(s.transform_bounds(&[clip]).unwrap(), stroked, 1e-6), "with a fill: {:?}", s.transform_bounds(&[clip]));
+    // Turned 30°, the box keeps that size.
+    run(&mut s, "select.set", json!({"ids": [clip.0]}));
+    run(&mut s, "object.rotate", json!({"angle": 30}));
+    let turned = s.transform_box(&[clip]).unwrap();
+    assert!(
+        (turned.angle - 30.0).abs() < 1e-9 && (turned.rect.width() - 144.0).abs() < 1e-6 && (turned.rect.height() - 144.0).abs() < 1e-6,
+        "{turned:?}"
+    );
+    // In a group, the clip group is measured the same way.
+    run(&mut s, "object.rotate", json!({"angle": -30}));
+    let group = NodeId(run(&mut s, "object.group", json!({}))["id"].as_u64().unwrap());
+    assert!(near(s.transform_bounds(&[group]).unwrap(), stroked, 1e-6), "{:?}", s.transform_bounds(&[group]));
+    // Without Use Preview Bounds, the clipping path's geometry is measured.
+    preview(&mut s, false);
+    assert!(near(s.transform_bounds(&[clip]).unwrap(), square, 1e-6), "{:?}", s.transform_bounds(&[clip]));
+}
+
+#[test]
 fn only_fills_and_strokes_that_paint_are_measured() {
     let item = |s: &Session, id: NodeId, fill: bool| {
         let items = s.doc().unwrap().doc.node(id).unwrap().appearance.items.clone();
