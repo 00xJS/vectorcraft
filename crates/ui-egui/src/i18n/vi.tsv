@@ -4362,6 +4362,7 @@ theme	Appearance	Giao diện
 @msg	Packaged {n} file(s){note}	Đã đóng gói {n} tệp{note}
 @msg	page size {w} × {h}	kích thước trang {w} × {h}
 @msg	page {0} does not exist (the PDF has {1})	trang {0} không tồn tại (PDF có {1} trang)
+@msg	thumbnail: no page {n} (the file has 1)	thumbnail: trang {n} không tồn tại (tệp có 1 trang)
 @msg	panel group is empty	nhóm bảng trống
 @msg	panel must name a registered panel	panel phải đặt tên bảng đã đăng ký
 @msg	paste unavailable	dán không khả dụng

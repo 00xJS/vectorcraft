@@ -3993,6 +3993,7 @@ theme	Appearance	Erscheinungsbild
 @msg	object {id} is not a selected top-level object	Objekt {id} ist kein ausgewähltes Objekt der obersten Stufe
 @msg	page size {w} × {h}	Seitengröße {w} × {h}
 @msg	page {0} does not exist (the PDF has {1})	Seite {0} ist nicht vorhanden (die PDF-Datei hat {1})
+@msg	thumbnail: no page {n} (the file has 1)	thumbnail: Seite {n} ist nicht vorhanden (die Datei hat 1)
 @msg	paste unavailable	Einfügen nicht verfügbar
 @msg	path is already closed	der Pfad ist bereits geschlossen
 @msg	paths contain invalid coordinates	die Pfade enthalten ungültige Koordinaten

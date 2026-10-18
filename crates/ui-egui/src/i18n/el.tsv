@@ -4032,6 +4032,7 @@ theme	Appearance	Εμφάνιση
 @msg	object {id} is not a selected top-level object	το αντικείμενο {id} δεν είναι επιλεγμένο αντικείμενο ανώτατης βαθμίδας
 @msg	page size {w} × {h}	μέγεθος σελίδας {w} × {h}
 @msg	page {0} does not exist (the PDF has {1})	η σελίδα {0} δεν υπάρχει (το PDF έχει {1})
+@msg	thumbnail: no page {n} (the file has 1)	thumbnail: η σελίδα {n} δεν υπάρχει (το αρχείο έχει 1)
 @msg	paste unavailable	η επικόλληση δεν είναι διαθέσιμη
 @msg	path is already closed	η διαδρομή είναι ήδη κλειστή
 @msg	paths contain invalid coordinates	οι διαδρομές περιέχουν μη έγκυρες συντεταγμένες

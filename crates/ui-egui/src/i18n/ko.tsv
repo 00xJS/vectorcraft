@@ -4098,6 +4098,7 @@ theme	Appearance	외관
 @msg	cannot read PDF: {0}	PDF를 읽을 수 없습니다: {0}
 @msg	invalid PDF setting: {0}	잘못된 PDF 설정: {0}
 @msg	page {0} does not exist (the PDF has {1})	페이지 {0}이(가) 없습니다(PDF의 페이지 수: {1})
+@msg	thumbnail: no page {n} (the file has 1)	thumbnail: 페이지 {n}이(가) 없습니다(파일의 페이지 수: 1)
 @msg	the PDF has no pages	PDF에 페이지가 없습니다
 @msg	the PDF is password-protected: give its password	PDF가 암호로 보호되어 있습니다: 암호를 입력하세요
 @msg	the PDF password is wrong	PDF 암호가 올바르지 않습니다

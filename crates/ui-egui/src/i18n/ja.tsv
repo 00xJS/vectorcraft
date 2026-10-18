@@ -4166,6 +4166,7 @@ swatch	Bright Violet	ビビッドバイオレット
 @msg	cannot read PDF: {0}	PDF を読み込めません: {0}
 @msg	invalid PDF setting: {0}	PDF の設定が正しくありません: {0}
 @msg	page {0} does not exist (the PDF has {1})	ページ {0} は存在しません (この PDF のページ数は {1} です)
+@msg	thumbnail: no page {n} (the file has 1)	thumbnail: ページ {n} は存在しません (このファイルのページ数は 1 です)
 @msg	the PDF has no pages	PDF にページがありません
 @msg	the PDF is password-protected: give its password	この PDF はパスワードで保護されています: パスワードを入力してください
 @msg	the PDF password is wrong	PDF のパスワードが正しくありません

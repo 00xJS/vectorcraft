@@ -4078,6 +4078,7 @@ axis	Both	Обидві
 @msg	object {id} is not a selected top-level object	об’єкт {id} не є виділеним об’єктом верхнього рівня
 @msg	page size {w} × {h}	розмір сторінки {w} × {h}
 @msg	page {0} does not exist (the PDF has {1})	сторінка {0} не існує (в PDF{1})
+@msg	thumbnail: no page {n} (the file has 1)	thumbnail: сторінка {n} не існує (у файлі 1)
 @msg	paste unavailable	вставка недоступна
 @msg	path is already closed	контур вже замкнутий
 @msg	paths contain invalid coordinates	контури містять неприпустимі координати
