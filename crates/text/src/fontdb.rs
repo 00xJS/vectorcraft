@@ -1568,8 +1568,16 @@ fn norm(s: &str) -> String {
     norm_chars(s).collect()
 }
 
-/// Weight implied by a style name (400 = regular).
+/// Weight implied by a style name (400 = regular). Japanese faces number their weights W0–W9
+/// (Hiragino, Morisawa…), W6 weighing 600 as its weight class does (#2873).
 pub fn style_weight(style: &str) -> f32 {
+    let numbered = style.split(|c: char| !c.is_ascii_alphanumeric()).find_map(|part| match part.as_bytes() {
+        [b'W' | b'w', d @ b'0'..=b'9'] => Some(f32::from(d - b'0') * 100.0),
+        _ => None,
+    });
+    if let Some(w) = numbered {
+        return w.max(100.0);
+    }
     let s = norm(style);
     const TABLE: &[(&str, f32)] = &[
         ("extralight", 200.0),

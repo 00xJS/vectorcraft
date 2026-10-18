@@ -467,7 +467,7 @@ lists every option with its default. `encoding` is `utf8`, `utf16` (big-endian a
 (presentation attributes only; filters, masks, blend modes and embedded fonts left out, symbols as art, each with
 a warning). `embedFonts: true` embeds the fonts type uses as `@font-face` rules subset to the characters used; a
 font whose licence (OS/2 `fsType`) forbids subsetting is embedded whole, one that forbids embedding is left out
-with a warning. Type names its faces by numeric `font-weight` (600 for Semibold, 300 for Light, `bold` for 700),
+with a warning. Type names its faces by numeric `font-weight` (600 for Semibold and for a Japanese face's W6, 300 for Light, `bold` for 700),
 embedded or not. `svgz` takes the same options and writes the SVG gzipped (`.svgz` files also open,
 place and paste). `run_command document.save {path: "x.svg", svg: {…}}` saves as SVG (or `.svgz`).
 
