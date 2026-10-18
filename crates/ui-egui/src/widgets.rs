@@ -2864,6 +2864,7 @@ mod combo_keyboard_tests {
 mod button_tests {
     use super::*;
 
+    /// [`flat_button_fit`] preserves minimum width for short labels and expands for long ones.
     #[test]
     fn flat_button_fit_expands_for_long_text() {
         let ctx = egui::Context::default();
