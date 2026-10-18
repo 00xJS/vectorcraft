@@ -158,6 +158,19 @@ fn span(r: &Rect, x: bool) -> (f64, f64) {
     if x { (r.x0, r.x1) } else { (r.y0, r.y1) }
 }
 
+/// Along axis `x`, does dragging `handle` move the box's minimum edge (true) or maximum (false)?
+fn resize_moves_min_edge(handle: Handle, x: bool) -> Option<bool> {
+    let (ax, ay) = handle.axes();
+    if x && !ax || !x && !ay {
+        return None;
+    }
+    if x {
+        Some(matches!(handle, Handle::Left | Handle::TopLeft | Handle::BottomLeft))
+    } else {
+        Some(matches!(handle, Handle::Top | Handle::TopLeft | Handle::TopRight))
+    }
+}
+
 /// The objects a moved selection (`moving`) spaces itself evenly with, by their bounds: each
 /// visible object on a layer as a whole (a group too), and inside a group holding some of the
 /// moving objects its other objects, but a Shaper Group's original shapes. At most [`BUDGET`].
@@ -195,6 +208,12 @@ impl Targets {
             t.boxes = object_boxes(cx.doc, &cx.selection.objects);
         }
         t
+    }
+
+    /// Targets for scaling the selection: the other art, styled as `cx` asks, and with Smart Guides ›
+    /// Spacing Guides the neighbours whose gaps the moving edge should match ([`Self::snap_scale`]).
+    pub fn for_scale(cx: &ToolContext) -> Self {
+        Self::for_move(cx, &cx.selection.objects)
     }
 
     /// Targets for a drawn point: the art in `visible` (all of it for None) but `exclude`, its
@@ -986,13 +1005,13 @@ impl Targets {
                 (nx, ny, snap) = (c.0 + s * e.0, c.1 + s * e.1, found);
             }
         }
-        let out = Affine::translate(origin.to_vec2()) * Affine::scale_non_uniform(nx, ny) * Affine::translate(-origin.to_vec2());
+        let mut out = Affine::translate(origin.to_vec2()) * Affine::scale_non_uniform(nx, ny) * Affine::translate(-origin.to_vec2());
         let (hit_x, hit_y, on) = snap;
         if let Some((q, k)) = on {
             return (out, self.label(q, k.label()).into_iter().collect());
         }
         // The lines run from the target's own point across the resized box, on the page.
-        let nr = (to_doc * out).transform_rect_bbox(r);
+        let mut nr = (to_doc * out).transform_rect_bbox(r);
         let mut ov = vec![];
         if let Some((x, from)) = hit_x {
             ov.extend(self.line(Point::new(x, from.y.min(nr.y0)), Point::new(x, from.y.max(nr.y1))));
@@ -1002,6 +1021,38 @@ impl Targets {
         }
         if hit_x.is_some() || hit_y.is_some() {
             ov.extend(self.label(to_doc * (out * handle.pos(r)), "align"));
+        }
+        if !self.boxes.is_empty() && !from_center {
+            let aligned = [hit_x.is_some(), hit_y.is_some()];
+            for (is_x, lined_up) in [(true, aligned[0]), (false, aligned[1])] {
+                if lined_up {
+                    continue;
+                }
+                let Some(moves_min) = resize_moves_min_edge(handle, is_x) else { continue };
+                if let Some((shift, gaps)) = self.even_spacing(nr, is_x, tol) {
+                    let (lo, hi) = span(&nr, is_x);
+                    let len = hi - lo;
+                    let new_len = if moves_min { hi - (lo + shift) } else { hi + shift - lo };
+                    if len > 1e-9 && new_len > 1e-9 {
+                        let f = new_len / len;
+                        let (ax, ay) = handle.axes();
+                        if is_x {
+                            nx *= f;
+                            if proportional && ay {
+                                ny *= f;
+                            }
+                        } else {
+                            ny *= f;
+                            if proportional && ax {
+                                nx *= f;
+                            }
+                        }
+                        out = Affine::translate(origin.to_vec2()) * Affine::scale_non_uniform(nx, ny) * Affine::translate(-origin.to_vec2());
+                        nr = (to_doc * out).transform_rect_bbox(r);
+                        ov.extend(gaps.into_iter().flat_map(|g| self.gap_marks(g, is_x, tol)));
+                    }
+                }
+            }
         }
         (out, ov)
     }
@@ -1492,6 +1543,36 @@ mod tests {
         let off = ToolContext { spacing_guides: false, ..cx(&d, &s, &p) };
         let (dv, ov) = Targets::for_move(&off, &s.objects).snap_rect(Rect::new(141.0, 305.0, 181.0, 345.0), 4.0);
         assert_eq!((dv, lines(&ov)), (Vec2::ZERO, 0));
+    }
+
+    /// Smart Guides › Spacing Guides (#394): resizing by a side handle snaps the moving edge to the
+    /// same gap as the neighbours in its row, with the gaps marked.
+    #[test]
+    fn spacing_guides_resize_snaps_the_moving_edge_to_equal_gaps() {
+        use crate::bbox::scale_for_drag;
+        use vectorcraft_doc::{Appearance, Node};
+        let mut d = Document::new(500.0, 500.0);
+        let l = d.layers[0].id;
+        for r in [Rect::new(20.0, 300.0, 60.0, 340.0), Rect::new(80.0, 300.0, 120.0, 340.0)] {
+            let id = d.alloc_id();
+            d.insert(Some(l), 0, Node::path(id, vectorcraft_geom::shapes::rectangle(r), Appearance::default_art())).unwrap();
+        }
+        let r = Rect::new(141.0, 305.0, 181.0, 345.0);
+        let id = d.alloc_id();
+        d.insert(Some(l), 0, Node::path(id, vectorcraft_geom::shapes::rectangle(r), Appearance::default_art())).unwrap();
+        let s = Selection { objects: vec![id], ..Default::default() };
+        let t = Targets::for_scale(&cx(&d, &s, &paint()));
+        let (a, ov) = t.snap_scale(
+            &OrientedBox::aligned(r),
+            Handle::Left,
+            scale_for_drag(r, Handle::Left, Point::new(139.0, 325.0), false, false),
+            false,
+            false,
+            4.0,
+        );
+        assert_eq!(a.transform_rect_bbox(r).x0, 140.0, "20 pt from the second square");
+        let magenta = |o: &Overlay| matches!(o, Overlay::Line { color, .. } if *color == MAGENTA);
+        assert!(ov.iter().any(magenta), "{ov:?}");
     }
 
     /// Preferences › Smart Guides › Display Options (#394): the colour, and Alignment Guides and

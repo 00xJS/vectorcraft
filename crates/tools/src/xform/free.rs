@@ -235,7 +235,7 @@ impl Tool for FreeTransformTool {
                 self.drag = None;
                 let Some(r) = selection_bounds(cx) else { return vec![] };
                 if let Some(op) = self.classify(cx, r, p, ev.mods) {
-                    self.targets = op.handle().is_some().then(|| PointSnap::new(cx, || Targets::collect(cx.doc, &cx.selection.objects, None)));
+                    self.targets = op.handle().is_some().then(|| PointSnap::new(cx, || Targets::for_scale(cx)));
                     self.drag = Some(Drag { op, rect: r, start: p, began: false });
                 }
                 vec![]
