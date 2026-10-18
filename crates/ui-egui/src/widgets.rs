@@ -260,15 +260,31 @@ pub(crate) fn round_to(v: f64, decimals: i32) -> f64 {
 }
 
 /// One step of a numeric field with each modifier, most specific first (a plain pattern would also
-/// match Shift): ten with Shift, a tenth with Ctrl/Cmd, else one.
+/// match Shift): ten with Shift, a tenth with Ctrl/Cmd, else one. A Ctrl/Cmd or plain step goes to
+/// the next multiple of its size ([`step_to_multiple`]); a Shift step adds or takes ten.
 const STEPS: [(egui::Modifiers, f64); 3] = [(egui::Modifiers::SHIFT, 10.0), (egui::Modifiers::COMMAND, 0.1), (egui::Modifiers::NONE, 1.0)];
 
+/// `v` moved `n` steps of `size` (down when `n` is negative): the first step goes to the next
+/// multiple of `size` in its direction and each further step adds or takes one `size`. By 1, 5.1
+/// goes up to 6 and down to 5, and 5 goes up to 6 and down to 4. A value within a millionth of a
+/// step of a multiple counts as that multiple.
+fn step_to_multiple(v: f64, size: f64, n: f64) -> f64 {
+    if n == 0.0 {
+        return v;
+    }
+    let q = v / size;
+    let from = if n > 0.0 { (q + 1e-6).floor() } else { (q - 1e-6).ceil() };
+    (from + n) * size
+}
+
 /// ↑/↓ in focused numeric field `resp`, or the mouse wheel turned over it, step the number `buf`
-/// shows (`read` parses it, `show` formats it) by one per press or wheel notch ([`STEPS`]: Shift
-/// ten, Ctrl/Cmd a tenth), applied at once as in Illustrator's panels and dialogs. The new text
-/// replaces `buf`, all selected so typing replaces it. Returns the new number when a step was
-/// taken. While the pointer is over the focused field the wheel is the field's (the panel under it
-/// doesn't scroll); an unfocused field leaves the wheel to the panel and the canvas.
+/// shows (`read` parses it, `show` formats it) per press or wheel notch ([`STEPS`]): a plain step
+/// goes to the next whole number in its direction (5.1 up to 6, down to 5), a Ctrl/Cmd step goes to
+/// the next tenth, and a Shift step adds or takes ten. The new value is applied at once, as in
+/// Illustrator's panels and dialogs, and the new text replaces `buf`, all selected so typing
+/// replaces it. Returns the new number when a step was taken. While the pointer is over the focused
+/// field the wheel is the field's (the panel under it doesn't scroll); an unfocused field leaves the
+/// wheel to the panel and the canvas.
 fn step_value(ui: &Ui, resp: &Response, buf: &mut String, read: impl Fn(&str) -> Option<f64>, show: impl Fn(f64) -> String) -> Option<f64> {
     // Memory focus, as the field's highlight and its typing use: `Response::has_focus` also needs the
     // window to report keyboard focus.
@@ -281,41 +297,51 @@ fn step_value(ui: &Ui, resp: &Response, buf: &mut String, read: impl Fn(&str) ->
     // left of a notch carries over to the next turn.
     let (line, notch_id) = (ui.ctx().options(|o| o.input_options.line_scroll_speed), resp.id.with("wheel"));
     let mut notches: f32 = if wheel { ui.data(|d| d.get_temp(notch_id)).unwrap_or(0.0) } else { 0.0 };
-    let mut steps = 0.0;
+    // Each press and each turn of whole notches in the order they came: its modifiers and size from
+    // [`STEPS`], and how many steps up (down when negative).
+    let mut steps: Vec<(egui::Modifiers, f64, f64)> = Vec::new();
     ui.input_mut(|i| {
-        for (mods, size) in STEPS {
-            let up = i.count_and_consume_key(mods, Key::ArrowUp) as f64;
-            let down = i.count_and_consume_key(mods, Key::ArrowDown) as f64;
-            steps += size * (up - down);
-        }
-        if !wheel {
-            return;
-        }
         i.events.retain(|e| {
-            let Event::MouseWheel { unit, delta, modifiers, .. } = e else { return true };
-            let Some((_, size)) = STEPS.iter().find(|(m, _)| modifiers.matches_logically(*m)) else { return true };
-            // Shift may turn the wheel sideways (the Mac does).
-            let d = if modifiers.shift { delta.x + delta.y } else { delta.y };
-            notches += match unit {
-                MouseWheelUnit::Point => d / line.max(1.0),
-                MouseWheelUnit::Line | MouseWheelUnit::Page => d,
+            let (Event::Key { modifiers, .. } | Event::MouseWheel { modifiers, .. }) = e else { return true };
+            let Some(&(mods, size)) = STEPS.iter().find(|(m, _)| modifiers.matches_logically(*m)) else { return true };
+            let n = match e {
+                Event::Key { key: Key::ArrowUp, pressed: true, .. } => 1.0,
+                Event::Key { key: Key::ArrowDown, pressed: true, .. } => -1.0,
+                Event::MouseWheel { unit, delta, .. } if wheel => {
+                    // Shift may turn the wheel sideways (the Mac does).
+                    let d = if modifiers.shift { delta.x + delta.y } else { delta.y };
+                    notches += match unit {
+                        MouseWheelUnit::Point => d / line.max(1.0),
+                        MouseWheelUnit::Line | MouseWheelUnit::Page => d,
+                    };
+                    let whole = notches.trunc();
+                    notches -= whole;
+                    f64::from(whole)
+                }
+                _ => return true,
             };
-            let whole = notches.trunc();
-            notches -= whole;
-            steps += size * f64::from(whole);
+            if n != 0.0 {
+                steps.push((mods, size, n));
+            }
             false
         });
-        // The rest of a turn egui spreads over the next frames scrolls nothing either.
-        i.smooth_scroll_delta = egui::Vec2::ZERO;
+        if wheel {
+            // The rest of a turn egui spreads over the next frames scrolls nothing either.
+            i.smooth_scroll_delta = egui::Vec2::ZERO;
+        }
     });
     if wheel {
         ui.data_mut(|d| d.insert_temp(notch_id, notches));
     }
-    if steps == 0.0 {
+    if steps.is_empty() {
         return None;
     }
+    let mut v = read(buf)?;
+    for (mods, size, n) in steps {
+        v = if mods == egui::Modifiers::SHIFT { v + size * n } else { step_to_multiple(v, size, n) };
+    }
     // Rounded as fields show it.
-    let v = round_to(read(buf)? + steps, STEP_DECIMALS);
+    let v = round_to(v, STEP_DECIMALS);
     *buf = show(v);
     ui.data_mut(|d| d.insert_temp(resp.id, buf.clone()));
     select_all(ui, resp.id, buf);
@@ -2551,6 +2577,41 @@ mod spinner_modifier_tests {
         assert_eq!(spinner_step(14.0, 1.0, 0.0, true, egui::Modifiers::NONE), 15.0);
         assert_eq!(spinner_step(14.0, 1.0, 0.0, false, egui::Modifiers::COMMAND), 13.9);
         assert_eq!(spinner_step(0.0, 1.0, 0.0, false, egui::Modifiers::SHIFT), 0.0);
+    }
+}
+
+#[cfg(test)]
+mod step_to_multiple_tests {
+    use super::*;
+
+    /// #2881: the first step goes to the next multiple of its size in its direction, and each further
+    /// step adds or takes one size.
+    #[test]
+    fn a_step_goes_to_the_next_multiple_of_its_size() {
+        for (v, size, n, want) in [
+            (5.1, 1.0, 1.0, 6.0),
+            (5.1, 1.0, -1.0, 5.0),
+            (5.0, 1.0, 1.0, 6.0),
+            (5.0, 1.0, -1.0, 4.0),
+            (-2.5, 1.0, 1.0, -2.0),
+            (-2.5, 1.0, -1.0, -3.0),
+            (24.8, 1.0, 2.0, 26.0),
+            (24.8, 1.0, -2.0, 23.0),
+            (5.13, 0.1, 1.0, 5.2),
+            (5.13, 0.1, -1.0, 5.1),
+            (5.1, 1.0, 0.0, 5.1),
+        ] {
+            assert!((step_to_multiple(v, size, n) - want).abs() < 1e-9, "{v} by {size} × {n}: {}", step_to_multiple(v, size, n));
+        }
+    }
+
+    /// A value a float error away from a multiple moves a whole step from it: 0.7 is 6.999… tenths.
+    #[test]
+    fn a_value_next_to_a_multiple_moves_a_whole_step() {
+        assert!((step_to_multiple(0.7, 0.1, 1.0) - 0.8).abs() < 1e-9);
+        assert!((step_to_multiple(0.3, 0.1, -1.0) - 0.2).abs() < 1e-9);
+        assert!((step_to_multiple(5.000_000_1, 1.0, 1.0) - 6.0).abs() < 1e-9);
+        assert!((step_to_multiple(4.999_999_9, 1.0, -1.0) - 4.0).abs() < 1e-9);
     }
 }
 
