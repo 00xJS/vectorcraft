@@ -1026,6 +1026,38 @@ fn select_same_paint_reads_type_characters() {
     assert_eq!(same(&mut s, t1, "select.same.fillAndStroke"), vec![t1, r]);
 }
 
+/// Select by Color needs no object to start from: it matches fills and strokes as
+/// `document.inspect` reports them, `#rrggbb`.
+#[test]
+fn select_color_matches_fill_and_stroke_without_a_selection() {
+    let mut s = session();
+    let [a, b, c] = [0.0, 20.0, 40.0].map(|x| rect(&mut s, x, 0.0, 10.0, 10.0));
+    let t = text(&mut s, "a");
+    fill(&mut s, a, "#000000");
+    fill(&mut s, t, "#000000");
+    // A grey as a PDF stores it reads as #fefefe.
+    s.execute("paint.setFill", &json!({"ids": [b.0], "color": [0.996, 0.996, 0.996]})).unwrap();
+    fill(&mut s, c, "#ff0000");
+    s.execute("paint.setStroke", &json!({"ids": [a.0, c.0], "color": "#0000ff"})).unwrap();
+    s.execute("select.none", &json!({})).unwrap();
+    let pick = |s: &mut Session, p: Value| {
+        s.execute("select.color", &p).unwrap();
+        let mut v = selected(s);
+        v.sort();
+        v
+    };
+    assert_eq!(pick(&mut s, json!({"fill": "#000000"})), vec![a, t]);
+    assert_eq!(pick(&mut s, json!({"fill": "#fefefe"})), vec![b]);
+    assert_eq!(pick(&mut s, json!({"stroke": "#0000ff"})), vec![a, c]);
+    assert_eq!(pick(&mut s, json!({"fill": "#000000", "stroke": "#0000ff"})), vec![a]);
+    // Select > Reselect repeats it.
+    s.execute("select.none", &json!({})).unwrap();
+    s.execute("select.reselect", &json!({})).unwrap();
+    assert_eq!(selected(&s), vec![a]);
+    assert!(s.execute("select.color", &json!({})).is_err());
+    assert!(s.execute("select.color", &json!({"fill": "not a colour"})).is_err());
+}
+
 #[test]
 fn select_direction_handles_selects_all_anchors() {
     let mut s = session();

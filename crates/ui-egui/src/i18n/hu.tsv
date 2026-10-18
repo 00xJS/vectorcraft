@@ -5191,3 +5191,5 @@ imageTrace	Outline	Körvonal
 	Minimum must not exceed Desired, nor Desired Maximum.	A minimum nem haladhatja meg a kívánt értéket, sem a kívánt érték a maximumot.
 	Justification	Sorkizárás
 @msg	the file's variables and data sets weren't read (variables: {variables}, data sets: {data_sets}): the Variables panel doesn't list them	a fájl változói és adatkészletei nem lettek beolvasva (változók: {variables}, adatkészletek: {data_sets}): a Változók panel nem listázza őket
+# Select by Color (select.color)
+	Select by Color	Kijelölés szín szerint
