@@ -3084,6 +3084,7 @@ diagnostics	ui	介面
 	Printer mark type:	印表機標記類型：
 	Roman	西式
 mark-style	Japanese	日式
+font-script	Japanese	漢字
 	Printer profile:	印表機描述檔：
 	Printer Setup…	印表機設定…
 	Printer:	印表機：
