@@ -3618,6 +3618,8 @@ effect	Regular	ჩვეულებრივი
 @msg	`{key}` must be `auto` or a language code such as `en` or `zh-hant`	`{key}` უნდა იყოს `auto` ან ენის კოდი, მაგალითად `en` ან `zh-hant`
 @msg	`{key}` must be a #rrggbb colour	`{key}` უნდა იყოს #rrggbb ფერი
 @msg	`{key}` must be a number	`{key}` უნდა იყოს რიცხვი
+@msg	`{key}` must be a number, not {v}	`{key}` უნდა იყოს რიცხვი და არა {v}
+@msg	{key} must be Unix seconds (an integer) or null	{key} უნდა იყოს Unix-დრო წამებში (მთელი რიცხვი) ან null
 @msg	`{key}` must be a string	`{key}` უნდა იყოს სტრიქონი
 @msg	`{key}` must be a whole number	`{key}` უნდა იყოს მთელი რიცხვი
 @msg	`{key}` must be a whole number between {min} and {max} (got {x})	`{key}` უნდა იყოს მთელი რიცხვი {min}-დან {max}-მდე (მიღებულია {x})
@@ -4108,6 +4110,9 @@ effect	Regular	ჩვეულებრივი
 @msg	`{text}`: step {i}'s result has no such value (write $$ for a literal $)	`{text}`: ნაბიჯ {i}-ის შედეგს ასეთი მნიშვნელობა არ აქვს (ლიტერალური $-ისთვის დაწერეთ $$)
 @msg	`{text}`: there is no step {i} before this one (steps count from 0; write $$ for a literal $)	`{text}`: ამის წინ ნაბიჯი {i} არ არის (ნაბიჯები 0-დან ითვლება; ლიტერალური $-ისთვის დაწერეთ $$)
 @msg	object ids are non-negative integers, not {v}	ობიექტების id არაუარყოფითი მთელი რიცხვებია და არა {v}
+@msg	{key} must be an array of non-negative integer object ids	{key} უნდა იყოს ობიექტების id-ების მასივი, სადაც ყოველი id არაუარყოფითი მთელი რიცხვია
+@msg	invalid object id {value}: expected a non-negative integer	ობიექტის არასწორი id {value}: მოსალოდნელია არაუარყოფითი მთელი რიცხვი
+@msg	no such object id {value}	ობიექტი id-ით {value} არ არსებობს
 @msg	automation filesystem access is not granted: read authority is absent: {path}	ავტომატიზაციას ფაილურ სისტემაზე წვდომა არ აქვს: წაკითხვის უფლება არ არის: {path}
 @msg	automation filesystem access is not granted: write authority is absent: {path}	ავტომატიზაციას ფაილურ სისტემაზე წვდომა არ აქვს: ჩაწერის უფლება არ არის: {path}
 @msg	automation path rejected: outside the read root {root}: {path}	ავტომატიზაციის გზა უარყოფილია: წაკითხვის ძირის {root} გარეთაა: {path}
@@ -5072,6 +5077,7 @@ imageTrace	Outline	კონტური
 @msg	library panel `{given}` isn't open	ბიბლიოთეკის პანელი `{given}` გახსნილი არ არის
 @msg	mask art ends outside a mask dictionary	ნიღბის ნახატი ნიღბის ლექსიკონის გარეთ მთავრდება
 @msg	missing number `{key}`	აკლია რიცხვი `{key}`
+@msg	missing integer `{key}`	აკლია მთელი რიცხვი `{key}`
 @msg	no such spine point	ხერხემლის ასეთი წერტილი არ არსებობს
 @msg	no such spine segment	ხერხემლის ასეთი სეგმენტი არ არსებობს
 @msg	not a blend	ეს გადასვლა არ არის

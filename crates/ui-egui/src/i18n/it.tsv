@@ -3841,6 +3841,8 @@ axis	Both	Entrambi
 @msg	`{key}` must be a #rrggbb color	`{key}` deve essere un colore #rrggbb
 @msg	`{key}` must be a #rrggbb colour	`{key}` deve essere un colore #rrggbb
 @msg	`{key}` must be a number	`{key}` deve essere un numero
+@msg	`{key}` must be a number, not {v}	`{key}` deve essere un numero, non {v}
+@msg	{key} must be Unix seconds (an integer) or null	{key} deve essere un tempo Unix in secondi (un intero) o null
 @msg	`{key}` must be a string	`{key}` deve essere una stringa
 @msg	`{key}` must be a whole number	`{key}` deve essere un numero intero
 @msg	`{key}` must be a whole number between {min} and {max} (got {x})	`{key}` deve essere un numero intero tra {min} e {max} (ricevuto {x})
@@ -3971,6 +3973,7 @@ axis	Both	Entrambi
 @msg	missing `tool`	manca `tool`
 @msg	missing index	manca index
 @msg	missing number `{key}`	manca il numero `{key}`
+@msg	missing integer `{key}`	manca il numero intero `{key}`
 @msg	multiple windows land with M11.5	le finestre multiple arriveranno con M11.5
 @msg	name the file	assegna un nome al file
 @msg	no CSS to copy: select objects with CSS of their own	nessun CSS da copiare: seleziona oggetti con un CSS proprio
@@ -4391,6 +4394,9 @@ axis	Both	Entrambi
 @msg	`{text}`: step {i}'s result has no such value (write $$ for a literal $)	`{text}`: il risultato del passaggio {i} non ha questo valore (scrivi $$ per un $ letterale)
 @msg	`{text}`: there is no step {i} before this one (steps count from 0; write $$ for a literal $)	`{text}`: non c’è un passaggio {i} prima di questo (i passaggi si contano da 0; scrivi $$ per un $ letterale)
 @msg	object ids are non-negative integers, not {v}	gli ID oggetto sono interi non negativi, non {v}
+@msg	{key} must be an array of non-negative integer object ids	{key} deve essere un array di ID oggetto interi non negativi
+@msg	invalid object id {value}: expected a non-negative integer	ID oggetto {value} non valido: è richiesto un intero non negativo
+@msg	no such object id {value}	nessun oggetto con ID {value}
 @msg	automation filesystem access is not granted: read authority is absent: {path}	l'automazione non ha accesso al file system: manca l'autorizzazione di lettura: {path}
 @msg	automation filesystem access is not granted: write authority is absent: {path}	l'automazione non ha accesso al file system: manca l'autorizzazione di scrittura: {path}
 @msg	automation path rejected: outside the read root {root}: {path}	percorso di automazione rifiutato: fuori dalla cartella radice di lettura {root}: {path}

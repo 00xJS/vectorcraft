@@ -3799,6 +3799,8 @@ axis	Both	Les deux
 @msg	`{key}` must be a #rrggbb color	`{key}` doit être une couleur #rrggbb
 @msg	`{key}` must be a #rrggbb colour	`{key}` doit être une couleur #rrggbb
 @msg	`{key}` must be a number	`{key}` doit être un nombre
+@msg	`{key}` must be a number, not {v}	`{key}` doit être un nombre, pas {v}
+@msg	{key} must be Unix seconds (an integer) or null	{key} doit être un temps Unix en secondes (un entier) ou null
 @msg	`{key}` must be a string	`{key}` doit être une chaîne
 @msg	`{key}` must be a whole number	`{key}` doit être un nombre entier
 @msg	`{key}` must be a whole number between {min} and {max} (got {x})	`{key}` doit être un nombre entier compris entre {min} et {max} (reçu : {x})
@@ -3929,6 +3931,7 @@ axis	Both	Les deux
 @msg	missing `tool`	`tool` manquant
 @msg	missing index	index manquant
 @msg	missing number `{key}`	nombre `{key}` manquant
+@msg	missing integer `{key}`	nombre entier `{key}` manquant
 @msg	multiple windows land with M11.5	les fenêtres multiples arrivent avec M11.5
 @msg	name the file	nommez le fichier
 @msg	no CSS to copy: select objects with CSS of their own	aucun CSS à copier : sélectionnez des objets ayant leur propre CSS
@@ -4363,6 +4366,9 @@ axis	Both	Les deux
 @msg	`{text}`: step {i}'s result has no such value (write $$ for a literal $)	`{text}` : le résultat de l’étape {i} n’a pas cette valeur (écrivez $$ pour un $ littéral)
 @msg	`{text}`: there is no step {i} before this one (steps count from 0; write $$ for a literal $)	`{text}` : il n’y a pas d’étape {i} avant celle-ci (les étapes sont comptées à partir de 0 ; écrivez $$ pour un $ littéral)
 @msg	object ids are non-negative integers, not {v}	les identifiants d’objet sont des entiers positifs ou nuls, pas {v}
+@msg	{key} must be an array of non-negative integer object ids	{key} doit être un tableau d’identifiants d’objet, entiers positifs ou nuls
+@msg	invalid object id {value}: expected a non-negative integer	identifiant d’objet {value} non valide (un entier positif ou nul est attendu)
+@msg	no such object id {value}	aucun objet ne porte l’identifiant {value}
 @msg	automation filesystem access is not granted: read authority is absent: {path}	l’automatisation n’a pas accès au système de fichiers : aucune autorisation de lecture : {path}
 @msg	automation filesystem access is not granted: write authority is absent: {path}	l’automatisation n’a pas accès au système de fichiers : aucune autorisation d’écriture : {path}
 @msg	automation path rejected: outside the read root {root}: {path}	chemin d’automatisation refusé : hors du dossier racine de lecture {root} : {path}

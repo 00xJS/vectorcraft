@@ -3825,6 +3825,8 @@ axis	Both	Обидві
 @msg	`{key}` must be a #rrggbb color	`{key}` має бути кольором #rrggbb
 @msg	`{key}` must be a #rrggbb colour	`{key}` має бути кольором #rrggbb
 @msg	`{key}` must be a number	`{key}` має бути числом
+@msg	`{key}` must be a number, not {v}	`{key}` має бути числом, а не {v}
+@msg	{key} must be Unix seconds (an integer) or null	{key} має бути часом Unix у секундах (цілим числом) або null
 @msg	`{key}` must be a string	`{key}` має бути рядком
 @msg	`{key}` must be a whole number	`{key}` має бути цілим числом
 @msg	`{key}` must be a whole number between {min} and {max} (got {x})	`{key}` має бути цілим числом від {min} до {max} (отримано {x})
@@ -3955,6 +3957,7 @@ axis	Both	Обидві
 @msg	missing `tool`	відсутня `tool`
 @msg	missing index	відсутня index
 @msg	missing number `{key}`	відсутнє число `{key}`
+@msg	missing integer `{key}`	відсутнє ціле число `{key}`
 @msg	multiple windows land with M11.5	кілька вікон з’являться в M11.5
 @msg	name the file	дайте файлу ім’я
 @msg	no CSS to copy: select objects with CSS of their own	ні CSS для копіювання: виділіть об’єкти з власним CSS
@@ -4375,6 +4378,9 @@ axis	Both	Обидві
 @msg	`{text}`: step {i}'s result has no such value (write $$ for a literal $)	`{text}`: у результаті кроку {i} немає такого значення (щоб написати сам $, введіть $$)
 @msg	`{text}`: there is no step {i} before this one (steps count from 0; write $$ for a literal $)	`{text}`: перед цим кроком немає кроку {i} (кроки рахуються з 0; щоб написати сам $, введіть $$)
 @msg	object ids are non-negative integers, not {v}	ідентифікатори об’єктів — невід’ємні цілі числа, а не {v}
+@msg	{key} must be an array of non-negative integer object ids	{key} має бути масивом ідентифікаторів об’єктів, які є невід’ємними цілими числами
+@msg	invalid object id {value}: expected a non-negative integer	неприпустимий ідентифікатор об’єкта {value}: очікується невід’ємне ціле число
+@msg	no such object id {value}	об’єкт з ідентифікатором {value} не існує
 @msg	automation filesystem access is not granted: read authority is absent: {path}	автоматизація не має доступу до файлової системи: немає права на читання: {path}
 @msg	automation filesystem access is not granted: write authority is absent: {path}	автоматизація не має доступу до файлової системи: немає права на запис: {path}
 @msg	automation path rejected: outside the read root {root}: {path}	шлях автоматизації відхилено: поза кореневою папкою для читання {root}: {path}

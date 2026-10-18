@@ -3726,6 +3726,8 @@ axis	Both	И двете
 @msg	`{key}` must be a #rrggbb color	`{key}` трябва да бъде цвят във формат #rrggbb
 @msg	`{key}` must be a #rrggbb colour	`{key}` трябва да бъде цвят във формат #rrggbb
 @msg	`{key}` must be a number	`{key}` трябва да бъде число
+@msg	`{key}` must be a number, not {v}	`{key}` трябва да бъде число, а не {v}
+@msg	{key} must be Unix seconds (an integer) or null	{key} трябва да бъде Unix време в секунди (цяло число) или null
 @msg	`{key}` must be a string	`{key}` трябва да бъде низ
 @msg	`{key}` must be a whole number	`{key}` трябва да бъде цяло число
 @msg	`{key}` must be a whole number between {min} and {max} (got {x})	`{key}` трябва да бъде цяло число между {min} и {max} (получено е {x})
@@ -3852,6 +3854,7 @@ axis	Both	И двете
 @msg	missing `tool`	липсва `tool`
 @msg	missing index	липсва индекс
 @msg	missing number `{key}`	липсва число `{key}`
+@msg	missing integer `{key}`	липсва цяло число `{key}`
 @msg	multiple windows land with M11.5	множество прозорци се зареждат с M11.5
 @msg	name the file	именувайте файла
 @msg	no CSS to copy: select objects with CSS of their own	няма CSS за копиране: изберете обекти със собствен CSS
@@ -4283,6 +4286,9 @@ axis	Both	И двете
 @msg	`{text}`: step {i}'s result has no such value (write $$ for a literal $)	`{text}`: резултатът от стъпка {i} няма такава стойност (напишете $$ за литерален знак $)
 @msg	`{text}`: there is no step {i} before this one (steps count from 0; write $$ for a literal $)	`{text}`: няма стъпка {i} преди тази (стъпките се броят от 0; напишете $$ за литерален знак $)
 @msg	object ids are non-negative integers, not {v}	идентификаторите на обектите са неотрицателни цели числа, а не {v}
+@msg	{key} must be an array of non-negative integer object ids	{key} трябва да бъде масив от идентификатори на обекти, които са неотрицателни цели числа
+@msg	invalid object id {value}: expected a non-negative integer	невалиден идентификатор на обект {value}: очаква се неотрицателно цяло число
+@msg	no such object id {value}	няма обект с идентификатор {value}
 @msg	automation filesystem access is not granted: read authority is absent: {path}	достъпът на автоматизацията до файловата система не е разрешен: липсва право за четене: {path}
 @msg	automation filesystem access is not granted: write authority is absent: {path}	достъпът на автоматизацията до файловата система не е разрешен: липсва право за запис: {path}
 @msg	automation path rejected: outside the read root {root}: {path}	пътят за автоматизация е отхвърлен: извън корена за четене {root}: {path}
