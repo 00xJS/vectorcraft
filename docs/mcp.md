@@ -2599,7 +2599,9 @@ ISO 8601 UTC. Pass any of the editable keys to change them in one undo step (`nu
 list or a comma-separated string and keeps each word once); bad values are refused. PDF export writes the title,
 author, description and keywords to the document info and XMP, PNG export writes them (with the copyright and
 creation date) as text chunks, and SVG export writes the description as `<desc>` and, with the `metadata` option,
-all of it as Dublin Core. A PDF, `.ai` or `.ait` opened from its pages or its editing copy (`document.open`,
+all of it as Dublin Core. PDF export and PDF-compatible `.ai` and `.ait` saves write the `created` date (the time of
+writing when the document has none) as the file's creation date and the time of writing as its modification date.
+A PDF, `.ai` or `.ait` opened from its pages or its editing copy (`document.open`,
 `file.newFromTemplate`, `file.revert`; not one restored from the document it carries) opens with the `author`,
 `description`, `keywords`, `copyrightStatus`, `copyrightNotice`, `copyrightUrl`, `created` and `modified` that its XMP
 packet (`dc:creator`, `dc:description`, `dc:subject` or `pdf:Keywords`, `xmpRights:Marked`, `dc:rights`,
