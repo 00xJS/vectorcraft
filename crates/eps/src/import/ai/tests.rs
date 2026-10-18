@@ -677,6 +677,40 @@ fn images_with_alpha_channels() {
     assert!(art(&r.doc).is_empty() && r.warnings.iter().any(|w| w.contains("cut short")));
 }
 
+/// Editing data `data` opens without its one image and with the warning "an image VectorCraft can't read was left out" once.
+fn image_left_out_with_a_warning(data: &[u8]) {
+    let r = read(data).unwrap();
+    assert!(art(&r.doc).is_empty(), "{:#?}", art(&r.doc));
+    let left_out = r.warnings.iter().filter(|w| *w == "an image VectorCraft can't read was left out").count();
+    assert_eq!(left_out, 1, "{:?}", r.warnings);
+}
+
+#[test]
+fn an_image_without_a_matrix_is_left_out_with_a_warning() {
+    image_left_out_with_a_warning(&image("", (1, 1), ("DeviceRGB", 3, 0), &[255, 0, 0], 3));
+}
+
+#[test]
+fn an_image_with_too_few_operands_is_left_out_with_a_warning() {
+    // The operands hold 10 numbers after the matrix, one short of the binary flag.
+    let text = String::from_utf8(image("[ 1 0 0 1 0 100 ]", (1, 1), ("DeviceRGB", 3, 0), b"abc", 3)).unwrap();
+    let data = text.replacen("] 0 0 1 1 1 1 8 3 0 0 1 0 4 4 0 0\n", "] 0 0 1 1 1 1 8 3 0 0\n", 1);
+    assert_ne!(data, text);
+    image_left_out_with_a_warning(data.as_bytes());
+}
+
+#[test]
+fn an_image_whose_matrix_isnt_six_numbers_is_left_out_with_a_warning() {
+    image_left_out_with_a_warning(&image("[ 1 0 0 1 ]", (1, 1), ("DeviceRGB", 3, 0), &[255, 0, 0], 3));
+}
+
+#[test]
+fn an_image_whose_matrix_has_no_area_is_left_out_with_a_warning() {
+    image_left_out_with_a_warning(&image("[ 0 0 0 0 0 0 ]", (1, 1), ("DeviceRGB", 3, 0), &[255, 0, 0], 3));
+    // This matrix maps the image onto a line.
+    image_left_out_with_a_warning(&image("[ 1 2 2 4 0 100 ]", (1, 1), ("DeviceRGB", 3, 0), &[255, 0, 0], 3));
+}
+
 /// The raster matrix `[a b c d tx ty]` is an art-space matrix (y up) applied to the image's pixels
 /// with their rows running downwards, `(u, -v)`: art x = a·u − c·v + tx, art y = b·u − d·v + ty.
 /// Without rotation (b = c = 0) that is the same as flipping the matrix's result; a rotated image
