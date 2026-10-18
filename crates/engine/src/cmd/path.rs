@@ -100,7 +100,7 @@ pub fn specs() -> Vec<CommandSpec> {
             "Reshape",
             [],
             None,
-            "{id, x, y, dx, dy, tol=3, radius?} Reshape tool: grab the path at (x, y) (adding an anchor there unless one is within tol) and drag it by (dx, dy); nearby anchors follow with a smooth falloff over radius along the path (default: half the subpath's length)",
+            "{id, x, y, dx, dy, tol=3, radius?} Reshape tool: grab the path at (x, y) (adding an anchor there unless one is within tol) and drag it by (dx, dy); nearby anchors follow with a smooth falloff over radius, measured along the path (default: half the subpath's size)",
             has_doc,
             reshape
         ),
@@ -680,22 +680,30 @@ fn reshape(s: &mut Session, p: &Value) -> Result<Value> {
             Some((i, dist)) if dist <= tol => i,
             _ => sp.insert_anchor(seg, t),
         };
-        let r = radius.unwrap_or_else(|| (sp.arc_length() / 2.0).max(1.0));
-        let weights: Vec<f64> = sp
-            .anchors
-            .iter()
-            .enumerate()
-            .map(|(i, _)| {
-                if i == grabbed {
-                    1.0
-                } else {
-                    let q = (sp.anchor_arc_distance(grabbed, i) / r).min(1.0);
-                    (1.0 - q * q).powi(2)
-                }
-            })
-            .collect();
+        // Each anchor's distance along the path from the grabbed one, the shorter way round a
+        // closed path: the lengths are measured once, as a path can have many anchors.
+        let pos = sp.anchor_arc_positions();
+        let total = pos.last().copied().unwrap_or(0.0);
+        // The default reach is the subpath's size, as before, now measured along it.
+        let r = radius.unwrap_or_else(|| {
+            let mut bp = vectorcraft_geom::BezPath::new();
+            sp.to_bezpath_into(&mut bp);
+            let b = vectorcraft_geom::Shape::bounding_box(&bp);
+            (b.width().hypot(b.height()) / 2.0).max(1.0)
+        });
+        let from = pos.get(grabbed).copied().unwrap_or(0.0);
+        let closed = sp.closed;
         for (i, a) in sp.anchors.iter_mut().enumerate() {
-            let v = delta * weights[i];
+            let w = if i == grabbed {
+                1.0
+            } else {
+                let d = (pos.get(i).copied().unwrap_or(f64::INFINITY) - from).abs();
+                let d = if closed { d.min(total - d) } else { d };
+                // A distance or radius that isn't finite gives NaN here, which `min` reads as 1: no move.
+                let q = (d / r).min(1.0);
+                (1.0 - q * q).powi(2)
+            };
+            let v = delta * w;
             a.p += v;
             a.h_in += v;
             a.h_out += v;

@@ -2355,8 +2355,8 @@ fn reshape_falloff_follows_arc_length_on_open_paths() {
             }),
         )
         .unwrap()["id"]
-        .as_u64()
-        .unwrap(),
+            .as_u64()
+            .unwrap(),
     );
     s.execute("path.reshape", &json!({"id": id.0, "x": 300.0, "y": 0.0, "dx": 0.0, "dy": 100.0})).unwrap();
     let pts: Vec<_> = s.doc().unwrap().doc.node(id).unwrap().path_data().unwrap().subpaths[0].anchors.iter().map(|a| a.p).collect();

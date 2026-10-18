@@ -229,29 +229,10 @@ impl SubPath {
         }
         let mut pos = vec![0.0];
         for i in 0..self.segment_count() {
-            let len = kurbo::ParamCurveArclen::arclen(&self.segment(i), 1e-6);
-            pos.push(pos[i] + len);
+            let len = kurbo::ParamCurveArclen::arclen(&self.segment(i), 1e-3);
+            pos.push(pos.last().copied().unwrap_or(0.0) + len);
         }
         pos
-    }
-    /// Total length of all segments.
-    pub fn arc_length(&self) -> f64 {
-        self.anchor_arc_positions().last().copied().unwrap_or(0.0)
-    }
-    /// Shortest distance along this subpath between two anchors.
-    pub fn anchor_arc_distance(&self, a: usize, b: usize) -> f64 {
-        let pos = self.anchor_arc_positions();
-        let n = self.anchors.len();
-        if a >= n || b >= n {
-            return f64::INFINITY;
-        }
-        let d = (pos[a] - pos[b]).abs();
-        if self.closed {
-            let total = pos.last().copied().unwrap_or(0.0);
-            if total > 0.0 { d.min(total - d) } else { d }
-        } else {
-            d
-        }
     }
     pub fn to_bezpath_into(&self, out: &mut BezPath) {
         let Some(first) = self.anchors.first() else { return };
