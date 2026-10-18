@@ -4031,6 +4031,8 @@ imageTrace	Outline	Ääriviiva
 @msg	`{key}` must be a #rrggbb color	`{key}` on oltava #rrggbb-väri
 @msg	`{key}` must be a #rrggbb colour	`{key}` on oltava #rrggbb-väri
 @msg	`{key}` must be a number	`{key}` on oltava luku
+@msg	`{key}` must be a number, not {v}	`{key}` on oltava luku, ei {v}
+@msg	{key} must be Unix seconds (an integer) or null	{key} on oltava Unix-aika sekunteina (kokonaisluku) tai null
 @msg	`{key}` must be a string	`{key}` on oltava merkkijono
 @msg	`{key}` must be a whole number	`{key}` on oltava kokonaisluku
 @msg	`{key}` must be a whole number between {min} and {max} (got {x})	`{key}` on oltava kokonaisluku väliltä {min}–{max} (saatiin {x})
@@ -4157,6 +4159,7 @@ imageTrace	Outline	Ääriviiva
 @msg	missing `tool`	`tool` puuttuu
 @msg	missing index	indeksi puuttuu
 @msg	missing number `{key}`	luku `{key}` puuttuu
+@msg	missing integer `{key}`	kokonaisluku `{key}` puuttuu
 @msg	multiple windows land with M11.5	useat ikkunat tulevat versiossa M11.5
 @msg	name the file	anna tiedostolle nimi
 @msg	no CSS to copy: select objects with CSS of their own	ei kopioitavaa CSS:ää: valitse objekteja, joilla on oma CSS
@@ -4552,6 +4555,9 @@ imageTrace	Outline	Ääriviiva
 @msg	`{text}`: step {i}'s result has no such value (write $$ for a literal $)	`{text}`: vaiheen {i} tuloksessa ei ole tällaista arvoa (kirjoita $$, jos tarkoitat merkkiä $)
 @msg	`{text}`: there is no step {i} before this one (steps count from 0; write $$ for a literal $)	`{text}`: ennen tätä ei ole vaihetta {i} (vaiheet numeroidaan 0:sta; kirjoita $$, jos tarkoitat merkkiä $)
 @msg	object ids are non-negative integers, not {v}	objektitunnukset ovat ei-negatiivisia kokonaislukuja, ei {v}
+@msg	{key} must be an array of non-negative integer object ids	{key} on oltava taulukko objektitunnuksia, jotka ovat ei-negatiivisia kokonaislukuja
+@msg	invalid object id {value}: expected a non-negative integer	virheellinen objektitunnus {value}: odotettiin ei-negatiivista kokonaislukua
+@msg	no such object id {value}	objektia tunnuksella {value} ei ole
 @msg	automation filesystem access is not granted: read authority is absent: {path}	automaation tiedostojärjestelmäkäyttöä ei ole myönnetty: lukuoikeus puuttuu: {path}
 @msg	automation filesystem access is not granted: write authority is absent: {path}	automaation tiedostojärjestelmäkäyttöä ei ole myönnetty: kirjoitusoikeus puuttuu: {path}
 @msg	automation path rejected: outside the read root {root}: {path}	automaation polku hylättiin: lukujuuren {root} ulkopuolella: {path}

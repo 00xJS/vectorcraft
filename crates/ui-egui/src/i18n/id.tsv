@@ -3855,6 +3855,8 @@ imageTrace	Outline	Kontur
 @msg	`{key}` must be `auto` or a language code such as `en` or `zh-hant`	`{key}` harus `auto` atau kode bahasa seperti `en` atau `zh-hant`
 @msg	`{key}` must be a #rrggbb colour	`{key}` harus berupa warna #rrggbb
 @msg	`{key}` must be a number	`{key}` harus berupa angka
+@msg	`{key}` must be a number, not {v}	`{key}` harus berupa angka, bukan {v}
+@msg	{key} must be Unix seconds (an integer) or null	{key} harus berupa waktu Unix dalam detik (bilangan bulat) atau null
 @msg	`{key}` must be a string	`{key}` harus berupa string
 @msg	`{key}` must be a whole number	`{key}` harus berupa bilangan bulat
 @msg	`{key}` must be a whole number between {min} and {max} (got {x})	`{key}` harus berupa bilangan bulat antara {min} dan {max} (diperoleh {x})
@@ -3974,6 +3976,8 @@ imageTrace	Outline	Kontur
 @msg	missing `name`	`name` tidak ada
 @msg	missing `tool`	`tool` tidak ada
 @msg	missing index	indeks tidak ada
+@msg	missing number `{key}`	angka `{key}` tidak ada
+@msg	missing integer `{key}`	bilangan bulat `{key}` tidak ada
 @msg	multiple windows land with M11.5	beberapa jendela hadir bersama M11.5
 @msg	name the file	beri nama file
 @msg	no CSS to copy: select objects with CSS of their own	tidak ada CSS untuk disalin: pilih objek yang memiliki CSS sendiri
@@ -4356,6 +4360,9 @@ imageTrace	Outline	Kontur
 @msg	`{text}`: step {i}'s result has no such value (write $$ for a literal $)	`{text}`: hasil langkah {i} tidak memiliki nilai seperti itu (tulis $$ untuk $ literal)
 @msg	`{text}`: there is no step {i} before this one (steps count from 0; write $$ for a literal $)	`{text}`: tidak ada langkah {i} sebelum langkah ini (langkah dihitung mulai dari 0; tulis $$ untuk $ literal)
 @msg	object ids are non-negative integers, not {v}	id objek adalah bilangan bulat non-negatif, bukan {v}
+@msg	{key} must be an array of non-negative integer object ids	{key} harus berupa larik id objek yang berupa bilangan bulat non-negatif
+@msg	invalid object id {value}: expected a non-negative integer	id objek {value} tidak valid: harus berupa bilangan bulat non-negatif
+@msg	no such object id {value}	tidak ada objek dengan id {value}
 @msg	automation filesystem access is not granted: read authority is absent: {path}	akses sistem berkas otomatisasi tidak diberikan: otoritas baca tidak ada: {path}
 @msg	automation filesystem access is not granted: write authority is absent: {path}	akses sistem berkas otomatisasi tidak diberikan: otoritas tulis tidak ada: {path}
 @msg	automation path rejected: outside the read root {root}: {path}	jalur otomatisasi ditolak: di luar akar baca {root}: {path}

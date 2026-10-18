@@ -3927,6 +3927,8 @@ swatch	Bright Violet	ビビッドバイオレット
 @msg	`freeform.points` must be an array	`freeform.points` には配列を指定してください
 @msg	`freeform.lines` must be an array	`freeform.lines` には配列を指定してください
 @msg	`{key}` must be a number	`{key}` には数値を指定してください
+@msg	`{key}` must be a number, not {v}	`{key}` には数値を指定してください ({v} は使えません)
+@msg	{key} must be Unix seconds (an integer) or null	{key} には Unix 時間の秒数 (整数) または null を指定してください
 @msg	a freeform gradient keeps at least one point	フリーフォームグラデーションには少なくとも 1 つのポイントが必要です
 @msg	freeform point {i} needs `at` [x, y] and a valid `color`	フリーフォームのポイント {i} には `at` [x, y] と有効な `color` が必要です
 @msg	freeform line {i} must be an array of point indices	フリーフォームのライン {i} にはポイントのインデックスの配列を指定してください
@@ -4319,6 +4321,7 @@ swatch	Bright Violet	ビビッドバイオレット
 @msg	missing `tool`	`tool` が指定されていません
 @msg	missing index	index が指定されていません
 @msg	missing number `{key}`	数値 `{key}` が指定されていません
+@msg	missing integer `{key}`	整数 `{key}` が指定されていません
 @msg	multiple windows land with M11.5	複数ウィンドウは M11.5 で対応予定です
 @msg	no PNG encoder	PNG エンコーダーがありません
 @msg	no document open	ドキュメントが開かれていません
@@ -4429,6 +4432,9 @@ swatch	Bright Violet	ビビッドバイオレット
 @msg	`{text}`: step {i}'s result has no such value (write $$ for a literal $)	`{text}`: ステップ {i} の結果にその値はありません ($ そのものを書くには $$ と入力してください)
 @msg	`{text}`: there is no step {i} before this one (steps count from 0; write $$ for a literal $)	`{text}`: この前にステップ {i} はありません (ステップは 0 から数えます。$ そのものを書くには $$ と入力してください)
 @msg	object ids are non-negative integers, not {v}	オブジェクト ID は 0 以上の整数です ({v} は使えません)
+@msg	{key} must be an array of non-negative integer object ids	{key} にはオブジェクト ID (0 以上の整数) の配列を指定してください
+@msg	invalid object id {value}: expected a non-negative integer	オブジェクト ID {value} は正しくありません: 0 以上の整数を指定してください
+@msg	no such object id {value}	ID が {value} のオブジェクトは見つかりません
 @msg	automation filesystem access is not granted: read authority is absent: {path}	自動化にはファイルシステムへのアクセスが許可されていません: 読み込み権限がありません: {path}
 @msg	automation filesystem access is not granted: write authority is absent: {path}	自動化にはファイルシステムへのアクセスが許可されていません: 書き込み権限がありません: {path}
 @msg	automation path rejected: outside the read root {root}: {path}	自動化のパスを拒否しました: 読み込みルート {root} の外です: {path}

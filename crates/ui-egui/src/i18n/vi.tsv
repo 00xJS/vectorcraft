@@ -3971,6 +3971,8 @@ theme	Appearance	Giao diện
 @msg	`{key}` must be a #rrggbb color	`{key}` phải là màu #rrggbb
 @msg	`{key}` must be a #rrggbb colour	`{key}` phải là màu #rrggbb
 @msg	`{key}` must be a number	`{key}` phải là một số
+@msg	`{key}` must be a number, not {v}	`{key}` phải là một số, không phải {v}
+@msg	{key} must be Unix seconds (an integer) or null	{key} phải là thời gian Unix tính bằng giây (số nguyên) hoặc null
 @msg	`{key}` must be a string	`{key}` phải là một chuỗi
 @msg	`{key}` must be a whole number	`{key}` phải là số nguyên
 @msg	`{key}` must be a whole number between {min} and {max} (got {x})	`{key}` phải là số nguyên từ {min} đến {max} (nhận được {x})
@@ -4215,6 +4217,7 @@ theme	Appearance	Giao diện
 @msg	missing `tool`	thiếu `tool`
 @msg	missing index	thiếu chỉ mục
 @msg	missing number `{key}`	thiếu số `{key}`
+@msg	missing integer `{key}`	thiếu số nguyên `{key}`
 @msg	missing panel layout	thiếu bố cục bảng
 @msg	move requires a destination panel	move cần bảng đích
 @msg	move requires an existing destination panel	move cần bảng đích tồn tại
@@ -4347,6 +4350,9 @@ theme	Appearance	Giao diện
 @msg	nothing to warp	không có gì để biến dạng
 @msg	nothing to wrap	không có gì để bọc
 @msg	object ids are non-negative integers, not {v}	id đối tượng là số nguyên không âm, không phải {v}
+@msg	{key} must be an array of non-negative integer object ids	{key} phải là một mảng id đối tượng là số nguyên không âm
+@msg	invalid object id {value}: expected a non-negative integer	id đối tượng {value} không hợp lệ: cần một số nguyên không âm
+@msg	no such object id {value}	không có đối tượng nào có id {value}
 @msg	object {0} cannot have children	đối tượng {0} không thể có phần tử con
 @msg	object {id} is not a path	đối tượng {id} không phải là đường dẫn
 @msg	object {id} is not a selected top-level object	đối tượng {id} không phải là đối tượng cấp cao nhất đã chọn

@@ -3869,6 +3869,8 @@ imageTrace	Outline	Contour
 @msg	`{key}` must be `auto` or a language code such as `en` or `zh-hant`	`{key}` moet `auto` zijn of een taalcode zoals `en` of `zh-hant`
 @msg	`{key}` must be a #rrggbb colour	`{key}` moet een #rrggbb-kleur zijn
 @msg	`{key}` must be a number	`{key}` moet een getal zijn
+@msg	`{key}` must be a number, not {v}	`{key}` moet een getal zijn, niet {v}
+@msg	{key} must be Unix seconds (an integer) or null	{key} moet Unix-tijd in seconden (een geheel getal) of null zijn
 @msg	`{key}` must be a string	`{key}` moet een string zijn
 @msg	`{key}` must be a whole number	`{key}` moet een geheel getal zijn
 @msg	`{key}` must be a whole number between {min} and {max} (got {x})	`{key}` moet een geheel getal tussen {min} en {max} zijn (kreeg {x})
@@ -4370,6 +4372,9 @@ imageTrace	Outline	Contour
 @msg	`{text}`: step {i}'s result has no such value (write $$ for a literal $)	`{text}`: het resultaat van stap {i} heeft geen dergelijke waarde (schrijf $$ voor een letterlijke $)
 @msg	`{text}`: there is no step {i} before this one (steps count from 0; write $$ for a literal $)	`{text}`: er is geen stap {i} vóór deze stap (stappen tellen vanaf 0; schrijf $$ voor een letterlijke $)
 @msg	object ids are non-negative integers, not {v}	object-id's zijn niet-negatieve gehele getallen, niet {v}
+@msg	{key} must be an array of non-negative integer object ids	{key} moet een array van object-id's zijn die niet-negatieve gehele getallen zijn
+@msg	invalid object id {value}: expected a non-negative integer	ongeldige object-id {value}: een niet-negatief geheel getal verwacht
+@msg	no such object id {value}	er is geen object met id {value}
 @msg	automation filesystem access is not granted: read authority is absent: {path}	toegang tot het bestandssysteem voor automatisering is niet verleend: de leesbevoegdheid ontbreekt: {path}
 @msg	automation filesystem access is not granted: write authority is absent: {path}	toegang tot het bestandssysteem voor automatisering is niet verleend: de schrijfbevoegdheid ontbreekt: {path}
 @msg	automation path rejected: outside the read root {root}: {path}	automatiseringspad afgewezen: buiten de leesroot {root}: {path}
@@ -5198,6 +5203,7 @@ swatch	Bright Violet	Felviolet
 @msg	index must be ≥ 0	index moet ≥ 0 zijn
 @msg	mask art ends outside a mask dictionary	maskerillustratie eindigt buiten een maskerwoordenboek
 @msg	missing number `{key}`	getal `{key}` ontbreekt
+@msg	missing integer `{key}`	geheel getal `{key}` ontbreekt
 @msg	no such spine point	dat aspunt bestaat niet
 @msg	no such spine segment	dat assegment bestaat niet
 @msg	not a blend	geen vermenging

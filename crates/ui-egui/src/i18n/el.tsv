@@ -2097,6 +2097,8 @@ axis	Both	Και τα δύο
 @msg	`{key}` must be a #rrggbb color	Το `{key}` πρέπει να είναι χρώμα #rrggbb
 @msg	`{key}` must be a #rrggbb colour	Το `{key}` πρέπει να είναι χρώμα #rrggbb
 @msg	`{key}` must be a number	Το `{key}` πρέπει να είναι αριθμός
+@msg	`{key}` must be a number, not {v}	Το `{key}` πρέπει να είναι αριθμός, όχι {v}
+@msg	{key} must be Unix seconds (an integer) or null	{key}: πρέπει να είναι χρόνος Unix σε δευτερόλεπτα (ακέραιος) ή null
 @msg	`{key}` must be a string	Το `{key}` πρέπει να είναι συμβολοσειρά
 @msg	`{key}` must be a whole number	Το `{key}` πρέπει να είναι ακέραιος αριθμός
 @msg	`{key}` must be a whole number between {min} and {max} (got {x})	Το `{key}` πρέπει να είναι ακέραιος από {min} έως {max} (δόθηκε {x})
@@ -3909,6 +3911,7 @@ theme	Appearance	Εμφάνιση
 @msg	missing `tool`	λείπει το `tool`
 @msg	missing index	λείπει ο δείκτης
 @msg	missing number `{key}`	λείπει ο αριθμός `{key}`
+@msg	missing integer `{key}`	λείπει ο ακέραιος `{key}`
 @msg	multiple windows land with M11.5	τα πολλαπλά παράθυρα θα προστεθούν στην έκδοση M11.5
 @msg	name the file	δώστε όνομα στο αρχείο
 @msg	no CSS to copy: select objects with CSS of their own	δεν υπάρχει CSS για αντιγραφή: επιλέξτε αντικείμενα με δικό τους CSS
@@ -4334,6 +4337,9 @@ theme	Appearance	Εμφάνιση
 @msg	`{text}`: step {i}'s result has no such value (write $$ for a literal $)	`{text}`: το αποτέλεσμα του βήματος {i} δεν έχει τέτοια τιμή (γράψτε $$ για κυριολεκτικό $)
 @msg	`{text}`: there is no step {i} before this one (steps count from 0; write $$ for a literal $)	`{text}`: δεν υπάρχει βήμα {i} πριν από αυτό (η αρίθμηση αρχίζει από 0· γράψτε $$ για κυριολεκτικό $)
 @msg	object ids are non-negative integers, not {v}	τα αναγνωριστικά αντικειμένων πρέπει να είναι μη αρνητικοί ακέραιοι, όχι {v}
+@msg	{key} must be an array of non-negative integer object ids	{key}: πρέπει να είναι πίνακας αναγνωριστικών αντικειμένων που είναι μη αρνητικοί ακέραιοι
+@msg	invalid object id {value}: expected a non-negative integer	μη έγκυρο αναγνωριστικό αντικειμένου {value}: αναμένεται μη αρνητικός ακέραιος
+@msg	no such object id {value}	δεν υπάρχει αντικείμενο με αναγνωριστικό {value}
 @msg	automation filesystem access is not granted: read authority is absent: {path}	δεν έχει επιτραπεί πρόσβαση αυτοματισμού στο σύστημα αρχείων: δεν υπάρχει δικαίωμα ανάγνωσης: {path}
 @msg	automation filesystem access is not granted: write authority is absent: {path}	δεν έχει επιτραπεί πρόσβαση αυτοματισμού στο σύστημα αρχείων: δεν υπάρχει δικαίωμα εγγραφής: {path}
 @msg	automation path rejected: outside the read root {root}: {path}	απορρίφθηκε η διαδρομή αυτοματισμού: εκτός ρίζας ανάγνωσης {root}: {path}

@@ -3926,6 +3926,8 @@ imageTrace	Outline	Kontur
 @msg	`{key}` must be a #rrggbb color	`{key}` musi być kolorem #rrggbb
 @msg	`{key}` must be a #rrggbb colour	`{key}` musi być kolorem #rrggbb
 @msg	`{key}` must be a number	`{key}` musi być liczbą
+@msg	`{key}` must be a number, not {v}	`{key}` musi być liczbą, nie {v}
+@msg	{key} must be Unix seconds (an integer) or null	{key} musi być czasem Unix w sekundach (liczbą całkowitą) lub null
 @msg	`{key}` must be a string	`{key}` musi być ciągiem znaków
 @msg	`{key}` must be a whole number	`{key}` musi być liczbą całkowitą
 @msg	`{key}` must be a whole number between {min} and {max} (got {x})	`{key}` musi być liczbą całkowitą od {min} do {max} (podano {x})
@@ -4056,6 +4058,7 @@ imageTrace	Outline	Kontur
 @msg	missing `tool`	brak `tool`
 @msg	missing index	brak indeksu
 @msg	missing number `{key}`	brak liczby `{key}`
+@msg	missing integer `{key}`	brak liczby całkowitej `{key}`
 @msg	multiple windows land with M11.5	wiele okien pojawi się w M11.5
 @msg	name the file	nadaj nazwę plikowi
 @msg	no CSS to copy: select objects with CSS of their own	brak CSS do skopiowania: zaznacz obiekty z własnym CSS
@@ -4455,6 +4458,9 @@ imageTrace	Outline	Kontur
 @msg	`{text}`: step {i}'s result has no such value (write $$ for a literal $)	`{text}`: wynik kroku {i} nie ma takiej wartości (wpisz $$, aby uzyskać znak $)
 @msg	`{text}`: there is no step {i} before this one (steps count from 0; write $$ for a literal $)	`{text}`: przed tym krokiem nie ma kroku {i} (kroki liczone od 0; wpisz $$, aby uzyskać znak $)
 @msg	object ids are non-negative integers, not {v}	identyfikatory obiektów to nieujemne liczby całkowite, nie {v}
+@msg	{key} must be an array of non-negative integer object ids	{key} musi być tablicą identyfikatorów obiektów, które są nieujemnymi liczbami całkowitymi
+@msg	invalid object id {value}: expected a non-negative integer	nieprawidłowy identyfikator obiektu {value}: oczekiwano nieujemnej liczby całkowitej
+@msg	no such object id {value}	brak obiektu o identyfikatorze {value}
 @msg	automation filesystem access is not granted: read authority is absent: {path}	nie przyznano dostępu automatyzacji do systemu plików: brak uprawnień do odczytu: {path}
 @msg	automation filesystem access is not granted: write authority is absent: {path}	nie przyznano dostępu automatyzacji do systemu plików: brak uprawnień do zapisu: {path}
 @msg	automation path rejected: outside the read root {root}: {path}	odrzucono ścieżkę automatyzacji: poza katalogiem głównym odczytu {root}: {path}

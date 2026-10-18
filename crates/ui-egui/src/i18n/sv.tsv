@@ -3731,6 +3731,8 @@ axis	Both	Båda
 @msg	`{key}` must be a #rrggbb color	`{key}` måste vara en färg i formatet #rrggbb
 @msg	`{key}` must be a #rrggbb colour	`{key}` måste vara en färg i formatet #rrggbb
 @msg	`{key}` must be a number	`{key}` måste vara ett tal
+@msg	`{key}` must be a number, not {v}	`{key}` måste vara ett tal, inte {v}
+@msg	{key} must be Unix seconds (an integer) or null	{key} måste vara Unix-tid i sekunder (ett heltal) eller null
 @msg	`{key}` must be a string	`{key}` måste vara en sträng
 @msg	`{key}` must be a whole number	`{key}` måste vara ett heltal
 @msg	`{key}` must be a whole number between {min} and {max} (got {x})	`{key}` måste vara ett heltal mellan {min} och {max} (fick {x})
@@ -3857,6 +3859,7 @@ axis	Both	Båda
 @msg	missing `tool`	`tool` saknas
 @msg	missing index	index saknas
 @msg	missing number `{key}`	talet `{key}` saknas
+@msg	missing integer `{key}`	heltalet `{key}` saknas
 @msg	multiple windows land with M11.5	flera fönster kommer med M11.5
 @msg	name the file	namnge filen
 @msg	no CSS to copy: select objects with CSS of their own	ingen CSS att kopiera: markera objekt som har egen CSS
@@ -4288,6 +4291,9 @@ axis	Both	Båda
 @msg	`{text}`: step {i}'s result has no such value (write $$ for a literal $)	`{text}`: resultatet från steg {i} har inget sådant värde (skriv $$ för ett bokstavligt $)
 @msg	`{text}`: there is no step {i} before this one (steps count from 0; write $$ for a literal $)	`{text}`: det finns inget steg {i} före det här (stegen räknas från 0; skriv $$ för ett bokstavligt $)
 @msg	object ids are non-negative integers, not {v}	objekt-id:n är icke-negativa heltal, inte {v}
+@msg	{key} must be an array of non-negative integer object ids	{key} måste vara en array med objekt-id:n som är icke-negativa heltal
+@msg	invalid object id {value}: expected a non-negative integer	ogiltigt objekt-id {value}: ett icke-negativt heltal förväntades
+@msg	no such object id {value}	det finns inget objekt med id {value}
 @msg	automation filesystem access is not granted: read authority is absent: {path}	automatiseringen har inte fått åtkomst till filsystemet: läsbehörighet saknas: {path}
 @msg	automation filesystem access is not granted: write authority is absent: {path}	automatiseringen har inte fått åtkomst till filsystemet: skrivbehörighet saknas: {path}
 @msg	automation path rejected: outside the read root {root}: {path}	automatiseringssökvägen avvisades: utanför läsroten {root}: {path}
