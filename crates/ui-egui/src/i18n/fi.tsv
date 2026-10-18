@@ -4438,6 +4438,7 @@ imageTrace	Outline	Ääriviiva
 @msg	{C}: no effect at index {from}	{C}: ei tehostetta indeksissä {from}
 @msg	{_1} failed: {e}	{_1} epäonnistui: {e}
 @msg	{_1} files can be opened but not written (see document.formats)	{_1}-tiedostoja voi avata mutta ei kirjoittaa (ks. document.formats)
+@msg	{_1} files are written by file.saveAsTemplate	{_1}-tiedostot kirjoitetaan komennolla file.saveAsTemplate
 @msg	{_1} font families available	{_1} fonttiperhettä käytettävissä
 @msg	{_1} is a live effect (Effect › Plug-ins)	{_1} on live-tehoste (Tehoste › Laajennukset)
 @msg	{_1} is already used by {_2}	{_1} on jo käytössä kohteella {_2}

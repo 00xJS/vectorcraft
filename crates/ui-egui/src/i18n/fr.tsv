@@ -4212,6 +4212,7 @@ axis	Both	Les deux
 @msg	{C}: no effect at index {from}	{C} : aucun effet à l’indice {from}
 @msg	{_1} failed: {e}	échec de {_1} : {e}
 @msg	{_1} files can be opened but not written (see document.formats)	les fichiers {_1} peuvent être ouverts mais pas écrits (voir document.formats)
+@msg	{_1} files are written by file.saveAsTemplate	les fichiers {_1} sont écrits par file.saveAsTemplate
 @msg	{_1} font families available	{_1} familles de polices disponibles
 @msg	{_1} is a live effect (Effect › Plug-ins)	{_1} est un effet dynamique (Effet › Plug-ins)
 @msg	{_1} is already used by {_2}	{_1} est déjà utilisé par {_2}
