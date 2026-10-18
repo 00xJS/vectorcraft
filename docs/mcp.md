@@ -821,6 +821,25 @@ Not remembered: Color Settings, the document, anything else. Nothing is read or 
 desktop app starts, the presets it kept in its preferences file before this folder existed are moved into it; after
 that the folder is the one place they live, so a preset deleted by `vectorcraft-cli` is gone in the app too.
 
+### Reproducible output
+
+PNG, PDF, EPS, legacy `.ai`, packaged zips and saved `.vectorcraft` files record the time they were
+made in (PDF `CreationDate` and `ModDate`, the PNG `Creation Time` entry, a zip entry's date, a
+document's `created` and `modified`), so the same commands run twice gave different bytes though the
+pixels matched (#2880). Setting **`SOURCE_DATE_EPOCH`** to a non-negative whole number of seconds
+since the epoch records that instant instead of the clock, and the bytes repeat
+(<https://reproducible-builds.org/specs/source-date-epoch/>):
+
+```sh
+SOURCE_DATE_EPOCH=1791208980 vectorcraft-cli run --cmd file.new --params '{}' --export out.pdf
+```
+
+A command that takes its own date (`file.new {created}`, a save's `modified`) still wins over the
+variable. A blank, negative or non-numeric value is ignored and the clock decides, so an export is
+never refused over the environment. The variable does not reach the recovery heartbeat or the
+random seed PDF encryption draws on, which must follow the real clock. SVG output carries no time
+and was already reproducible.
+
 ### Parameter keys
 
 `command_run`, each step of `command_batch`, `run --cmd … --params` and the control channel's `engine.execute` check

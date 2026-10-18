@@ -70,7 +70,7 @@ fn export_with_report_inner(doc: &Document, opts: &PdfOptions, left_out: &mut Ha
 
     let title = crate::pdfx::title(set.standard, opts.title.clone().unwrap_or_else(|| doc.title.clone()));
     // The time of writing (none on the web) dates the editing data and the page information.
-    let now = vectorcraft_doc::metadata::now_unix();
+    let now = vectorcraft_doc::metadata::output_time();
     let created_at = opts.created.or(now);
     crate::pdfx::require_date(set.standard, created_at)?;
     let mut w = Writer::new(doc, set, &title, created_at, doc.color_mode == vectorcraft_doc::ColorMode::Cmyk)?;
