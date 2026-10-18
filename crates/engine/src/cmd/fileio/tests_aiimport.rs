@@ -188,7 +188,7 @@ fn what_the_reader_doesnt_read_opens_as_before_with_a_warning() {
 /// data sets weren't read, whether its layers are read or it comes in as its PDF part.
 #[test]
 fn an_ai_file_with_a_variable_library_says_its_variables_werent_read() {
-    const NOTE: &str = "the file's variables and data sets weren't read (2 variables, 3 data sets): the Variables panel doesn't list them";
+    const NOTE: &str = "the file's variables and data sets weren't read (variables: 2, data sets: 3): the Variables panel doesn't list them";
     let library = ai::variable_library(&["Name", "Number"], &["One", "Two", "Three"]);
     let square = format!("0 1 1 0 1 0 0 Xa\n{}f\n", ai::rect(10.0, 50.0, 40.0, 90.0));
     let notes =

@@ -1738,6 +1738,7 @@ fn unread_layers_notes_are_translated() {
         "the file's layers weren't read from its editing data (its zlib compression is damaged): they come from its PDF part",
         "the file's layers weren't read from its editing data (its Zstandard compression is damaged): they come from its PDF part",
         "the file's layers weren't read from its editing data (it decompresses to more than 256 MB): they come from its PDF part",
+        "the file's variables and data sets weren't read (variables: 2, data sets: 3): the Variables panel doesn't list them",
     ] {
         let status = format!("Opened with 1 note(s): {note}");
         for code in COMPLETE_MESSAGES.iter().chain(&["pt-br"]) {

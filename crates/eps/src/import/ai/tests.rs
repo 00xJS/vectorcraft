@@ -548,11 +548,11 @@ fn a_variable_library_is_noted_with_its_counts() {
     let notes = |library: &str| read_ok(&format!("{library}{square}")).warnings.into_iter().filter(|w| w.contains("variables")).collect::<Vec<_>>();
     assert_eq!(
         notes(&variable_library(&["variable", "Team"], &["Home", "Away", "Third"])),
-        ["the file's variables and data sets weren't read (2 variables, 3 data sets): the Variables panel doesn't list them"]
+        ["the file's variables and data sets weren't read (variables: 2, data sets: 3): the Variables panel doesn't list them"]
     );
     assert_eq!(
         notes(&variable_library(&["Team"], &["Home"])),
-        ["the file's variables and data sets weren't read (1 variable, 1 data set): the Variables panel doesn't list them"]
+        ["the file's variables and data sets weren't read (variables: 1, data sets: 1): the Variables panel doesn't list them"]
     );
     assert!(notes(&variable_library(&[], &[])).is_empty(), "an empty library gives no warning");
     assert!(notes("").is_empty());

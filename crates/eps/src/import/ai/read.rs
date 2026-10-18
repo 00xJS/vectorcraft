@@ -200,13 +200,9 @@ impl VariableLibrary {
     /// The import's note that the library wasn't read, when it has a variable or a data set.
     pub fn note(self) -> Option<String> {
         let Self { variables, data_sets } = self;
-        let s = |n: usize| if n == 1 { "" } else { "s" };
+        // Counts after a colon need no plural, so every language can translate the note whole.
         (variables + data_sets > 0).then(|| {
-            format!(
-                "the file's variables and data sets weren't read ({variables} variable{}, {data_sets} data set{}): the Variables panel doesn't list them",
-                s(variables),
-                s(data_sets)
-            )
+            format!("the file's variables and data sets weren't read (variables: {variables}, data sets: {data_sets}): the Variables panel doesn't list them")
         })
     }
 }
