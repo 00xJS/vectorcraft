@@ -876,6 +876,14 @@ of the format they write (one object can carry several formats' options). A comm
 (`document.setup`, `text.areaOptions`) says so the same way. The app's own journal isn't checked: an action or
 journal recorded by an older version replays as it did, except for an effect `color` that the effect can't read.
 
+These Object menu commands refuse a string or another value that is not a number with
+`` `scaleH` must be a number, not "50" ``, naming the key, and change nothing: `scaleH`, `scaleV`, `moveH`, `moveV`
+and `rotate` in `object.transformEach`; `ppi` in `object.rasterize`; `width`, `height`, `spacingX` and `spacingY` in
+`object.createObjectMosaic`; `offset`, `length`, `bleed` and `weight` in `object.createTrimMarks`; and `spacing` in
+`artboard.rearrange`. A null is read as a key left out. `object.cropImage` refuses a `rect` that is not an array of
+four numbers, such as a string, with `rect must be [x, y, width, height]`; a null `rect` crops to the artboard, as a
+missing one does.
+
 `object.createObjectMosaic` (`columns`, `rows`), `object.transformEach` (`reference`, `seed`) and `artboard.rearrange`
 (`columns`) take whole numbers, written `4` or `4.0`. A fraction or a negative number is refused with
 `` `columns` must be a whole number ``. A string or another value that is not a number is refused with
