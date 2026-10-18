@@ -612,6 +612,127 @@ fn spot_colours_are_custom_colours() {
     assert!((tint - 0.5).abs() < 1e-6);
 }
 
+/// A document with a spot color swatch for each of `spots`, a square filled with each at half
+/// tint, and a square whose linear gradient fill (the first spot color to white) names the
+/// gradient swatch `gradient` (the document holds no such swatch; the writer reads only the
+/// fill's name).
+fn spots_and_gradient(spots: &[&str], gradient: &str) -> Document {
+    let mut doc = Document::new(200.0, 100.0);
+    let layer = doc.layers[0].id;
+    for (i, name) in spots.iter().enumerate() {
+        let c = i as f32 * 0.5;
+        doc.swatches.push(vectorcraft_color::Swatch {
+            name: (*name).into(),
+            paint: Paint::solid(Color::cmyk(c, 0.5, 1.0, 0.0)),
+            global: true,
+            spot: true,
+        });
+        let fill = Paint::Solid { color: Color::cmyk(c / 2.0, 0.25, 0.5, 0.0), swatch: Some((*name).into()), tint: 0.5 };
+        let x = 10.0 + 40.0 * i as f64;
+        let n = shape(&mut doc, shapes::rectangle(Rect::new(x, 10.0, x + 30.0, 40.0)), fill, Paint::None);
+        doc.insert(Some(layer), usize::MAX, n).unwrap();
+    }
+    let mut first = GradientStop::new(0.0, Color::cmyk(0.0, 0.5, 1.0, 0.0));
+    first.swatch = Some(spots[0].into());
+    let g = Gradient { kind: GradientKind::Linear, stops: vec![first, GradientStop::new(1.0, Color::cmyk(0.0, 0.0, 0.0, 0.0))] };
+    let mut paint = GradientPaint::new(g);
+    paint.swatch = Some(gradient.into());
+    let n = shape(&mut doc, shapes::rectangle(Rect::new(10.0, 50.0, 50.0, 90.0)), Paint::Gradient(Box::new(paint)), Paint::None);
+    doc.insert(Some(layer), usize::MAX, n).unwrap();
+    doc
+}
+
+/// `doc` written with the title `title`, and run as a PostScript program ([`prints_as`]).
+fn write_titled(doc: &Document, title: &str) -> LegacyAiOutput {
+    let o = LegacyAiOptions { title: title.into(), created: Some(0), ..LegacyAiOptions::default() };
+    let out = export_legacy_ai(doc, &o).unwrap();
+    prints_as(&out.bytes, doc, &o);
+    out
+}
+
+/// The spot colors and gradients of the objects of `doc`'s first layer, in paint order: each
+/// solid fill's swatch, and each gradient fill's swatch with its first stop's.
+fn inks(doc: &Document) -> Vec<Option<String>> {
+    let mut out = vec![];
+    for n in children(&doc.layers[0]) {
+        match n.appearance.fill_paint() {
+            Paint::Solid { swatch, .. } => out.push(swatch.clone()),
+            Paint::Gradient(g) => {
+                out.push(g.swatch.clone());
+                out.push(g.gradient.stops.first().and_then(|s| s.swatch.clone()));
+            }
+            _ => {}
+        }
+    }
+    out
+}
+
+/// The title, spot color names and gradient names are written in Windows-1252, as layer names
+/// are: é is 351 (octal) in the header's custom colors, each `x`, the gradient's definition, its
+/// stops and `Bg`. The spot color and gradient names read back as they were.
+#[test]
+fn spot_gradient_and_title_names_are_written_in_windows_1252() {
+    let doc = spots_and_gradient(&["Caf\u{e9}"], "D\u{e9}grad\u{e9}");
+    let out = write_titled(&doc, "R\u{e9}sum\u{e9}");
+    let text = String::from_utf8(out.bytes.clone()).unwrap();
+    for needle in [
+        "%%Title: (R\\351sum\\351)\n",
+        "%%DocumentCustomColors: (Caf\\351)\n",
+        "%%CMYKCustomColor: 0 0.5 1 0 (Caf\\351)\n",
+        "0 0.5 1 0 (Caf\\351) 0.5 x\n",
+        "%AI5_BeginGradient: (D\\351grad\\351)\n(D\\351grad\\351) 0 2 Bd\n",
+        "0 0.5 1 0 (Caf\\351) 0 3 50 0 %_Bs\n",
+        "1 (D\\351grad\\351) ",
+    ] {
+        assert!(text.contains(needle), "missing {needle:?} in\n{text}");
+    }
+    assert!(!text.contains("\\303"), "{text}");
+    assert!(!out.warnings.iter().any(|w| w == TITLE_AND_COLOR_NAMES), "{:?}", out.warnings);
+    let read = crate::import(&out.bytes).unwrap().document;
+    let names = inks(&read);
+    let want = ["Caf\u{e9}", "D\u{e9}grad\u{e9}", "Caf\u{e9}"].map(|n| Some(n.to_string()));
+    assert_eq!(names, want);
+}
+
+/// A character Windows-1252 can't hold is written as `?`, with one warning for all of these
+/// names. Names that become the same are numbered, so the header, each `x` and each `Bg` still
+/// tell the colors and gradients apart.
+#[test]
+fn names_outside_windows_1252_are_replaced_and_kept_apart() {
+    // 赤 and 青 (spot colors), 渐变 and グラ (gradients), 日本 (the title).
+    let mut doc = spots_and_gradient(&["\u{8d64}", "\u{9752}"], "\u{6e10}\u{53d8}");
+    let g = Gradient {
+        kind: GradientKind::Linear,
+        stops: vec![GradientStop::new(0.0, Color::cmyk(1.0, 0.0, 0.0, 0.0)), GradientStop::new(1.0, Color::cmyk(0.0, 0.0, 0.0, 0.0))],
+    };
+    let mut paint = GradientPaint::new(g);
+    paint.swatch = Some("\u{30b0}\u{30e9}".into());
+    let n = shape(&mut doc, shapes::rectangle(Rect::new(60.0, 50.0, 100.0, 90.0)), Paint::Gradient(Box::new(paint)), Paint::None);
+    let layer = doc.layers[0].id;
+    doc.insert(Some(layer), usize::MAX, n).unwrap();
+    let out = write_titled(&doc, "\u{65e5}\u{672c}");
+    let text = String::from_utf8(out.bytes.clone()).unwrap();
+    for needle in [
+        "%%Title: (??)\n",
+        "%%DocumentCustomColors: (?)\n%%+ (? 2)\n",
+        "%%CMYKCustomColor: 0 0.5 1 0 (?)\n%%+ 0.5 0.5 1 0 (? 2)\n",
+        "0 0.5 1 0 (?) 0.5 x\n",
+        "0.5 0.5 1 0 (? 2) 0.5 x\n",
+        "(??) 0 2 Bd\n",
+        "(?? 2) 0 2 Bd\n",
+        "0 0.5 1 0 (?) 0 3 50 0 %_Bs\n",
+        "1 (??) ",
+        "1 (?? 2) ",
+    ] {
+        assert!(text.contains(needle), "missing {needle:?} in\n{text}");
+    }
+    assert_eq!(out.warnings.iter().filter(|w| *w == TITLE_AND_COLOR_NAMES).count(), 1, "{:?}", out.warnings);
+    assert!(!out.warnings.iter().any(|w| w == LAYER_NAME), "{:?}", out.warnings);
+    let read = crate::import(&out.bytes).unwrap().document;
+    let want = [Some("?"), Some("? 2"), Some("??"), Some("?"), Some("?? 2"), None].map(|n| n.map(String::from));
+    assert_eq!(inks(&read), want);
+}
+
 #[test]
 fn losses_are_warned() {
     let mut doc = sample();

@@ -67,7 +67,8 @@ private editing data. VectorCraft:
   all type as outlines. The format can hide only layers: hidden objects go to a hidden layer of their own above
   their layer, are omitted, or are made visible (Hidden Objects, `hiddenObjects: "layer"|"omit"|"visible"`).
   Sublayers become groups; appearances, effects and brushes are expanded; object names are left out; layer
-  names are written in Windows-1252, with `?` for characters outside it.
+  names, spot color and gradient names and the title are written in Windows-1252, with `?` for characters outside
+  it (two spot colors or two gradients whose names become the same are numbered).
   The file is also a PostScript program that runs: its prolog, a procedure set of VectorCraft's own written from
   the PostScript Language Reference, gives the format's operators their meaning, so it prints and previews
   (gradients filled with their first stop's colour, type left to the apps that read the format). VectorCraft
