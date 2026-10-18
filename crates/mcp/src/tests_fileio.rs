@@ -133,6 +133,17 @@ fn export_is_the_same_call_in_the_app_and_headless() {
 }
 
 #[test]
+fn the_raster_scale_leaves_other_formats_alone() {
+    // DXF's own `scale` (drawing units per mm) comes through `options`; the raster one would resize
+    // the drawing and leave its units unset.
+    let mut h = two_boards();
+    let dxf = |h: &mut Headless, args: Value| text(&call_tool(h, "export", &args))["dataBase64"].clone();
+    let plain = dxf(&mut h, json!({"format": "dxf"}));
+    assert!(dxf(&mut h, json!({"format": "dxf", "scale": 2})) == plain, "the raster scale changed the DXF");
+    assert!(dxf(&mut h, json!({"format": "dxf", "options": {"scale": 2}})) != plain, "the DXF scale was dropped");
+}
+
+#[test]
 fn exporting_native_keeps_the_document_path() {
     let mut h = two_boards();
     let doc = tmp("keep.vectorcraft");
