@@ -42,7 +42,7 @@ against Illustrator's public documentation; **estimated** unless noted.
 | Hidden characters (Show Hidden Characters) | done | `type.hiddenCharacters` |
 | Spell check (Check Spelling, Auto Spell Check, custom dictionary) | missing | menu stubs; needs an openly licensed dictionary |
 | Smart Punctuation, Change Case, Find & Replace | done | |
-| Caret: the arrows and Delete step over whole clusters (Thai consonant with its marks, combining accents, emoji); Backspace removes one character | done | |
+| Caret: the arrows and Delete step over whole clusters (Thai consonant with its marks, combining accents, emoji); Backspace removes one character | done | in text with right-to-left characters the arrows move in visual order and stop on both sides of a character drawn with no width, such as a zero width non-joiner |
 | Touch Type tool | done | moves, scales and rotates one character through its kerning, baseline shift, scales and rotation (`text.touchType`); the first character of a line and right-to-left characters move only up and down |
 | Retype (identify fonts in outlines/images) | missing | Illustrator's uses a cloud model |
 | Snap to Glyph | missing | menu stub |
