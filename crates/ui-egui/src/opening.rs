@@ -133,10 +133,7 @@ mod tests {
         }
         assert!(!long_operation_busy(&app));
         let (release, held) = std::sync::mpsc::channel::<()>();
-        let services = Services {
-            write_shared: Some(std::sync::Arc::new(|_: &str, _: &[u8]| Ok(()))),
-            ..Default::default()
-        };
+        let services = Services { write_shared: Some(std::sync::Arc::new(|_: &str, _: &[u8]| Ok(()))), ..Default::default() };
         app = VectorcraftApp::new(Session::new(), services);
         crate::background::run(
             &mut app,
