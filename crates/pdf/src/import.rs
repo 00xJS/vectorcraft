@@ -149,6 +149,10 @@ pub const PAST_PAGE_NOTE: &str = "art reaching past the page was clipped to it, 
 
 /// Warning: glyphs were kept as outlines rather than read as type.
 pub const OUTLINED_TEXT_NOTE: &str = "text was converted to outlines";
+/// Warning: text drawn invisibly (text rendering mode 3, as a scanned page's OCR layer is) was left
+/// out: VectorCraft has no type that is kept but not drawn, so a PDF saved from it loses that
+/// searchable text (#2675).
+pub const INVISIBLE_TEXT_NOTE: &str = "invisible text (such as a scanned page's searchable OCR layer) was left out";
 /// Warning: glyphs that differ from the installed font of their name were kept as outlines.
 pub const UNMATCHED_GLYPHS_NOTE: &str = "text whose glyphs differ from the installed font of the same name was kept as outlines";
 /// The end of the warning that glyphs whose characters the file doesn't name were kept as
@@ -1963,7 +1967,10 @@ impl<'a> Device<'a> for Builder<'_> {
     ) {
         self.pending = false;
         let stroke = match draw_mode {
-            GlyphDrawMode::Invisible => return,
+            GlyphDrawMode::Invisible => {
+                self.warn(INVISIBLE_TEXT_NOTE);
+                return;
+            }
             GlyphDrawMode::Fill => None,
             GlyphDrawMode::Stroke(p) => Some(p.clone()),
         };

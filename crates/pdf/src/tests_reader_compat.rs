@@ -177,3 +177,21 @@ pub(crate) fn transfer_contract() {
 fn soft_mask_inversion_uses_quantized_transfer_endpoints() {
     transfer_contract();
 }
+
+/// #2675: text in rendering mode 3 (invisible, as a scanned page's OCR layer) isn't kept, and the
+/// import now says so, for type and outlines alike. Visible text beside it still comes in, and a
+/// page without invisible text gets no such warning.
+#[test]
+fn invisible_text_is_reported_when_left_out() {
+    let open = |content: &str, text_as: TextAs| import_with_report(&text_pdf(content), &ImportOptions { text_as, ..Default::default() }).unwrap();
+    let invisible = "BT /F1 20 Tf 3 Tr 1 0 0 1 10 40 Tm (AB) Tj 0 Tr 1 0 0 1 10 10 Tm (CA) Tj ET";
+    for text_as in [TextAs::Text, TextAs::Outlines] {
+        let r = open(invisible, text_as);
+        assert!(r.warnings.iter().any(|w| w == crate::INVISIBLE_TEXT_NOTE), "{text_as:?}: {:?}", r.warnings);
+        let mut kept = 0;
+        r.document.walk(|n| kept += usize::from(matches!(n.kind, NodeKind::Text(_) | NodeKind::Path { .. } | NodeKind::Compound { .. })));
+        assert!(kept >= 1, "{text_as:?}: the visible line still comes in");
+        let visible = open("BT /F1 20 Tf 1 0 0 1 10 10 Tm (CA) Tj ET", text_as);
+        assert!(!visible.warnings.iter().any(|w| w == crate::INVISIBLE_TEXT_NOTE), "{text_as:?}: {:?}", visible.warnings);
+    }
+}
