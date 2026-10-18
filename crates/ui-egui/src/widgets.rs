@@ -44,6 +44,20 @@ pub fn flat_button(ui: &mut Ui, text: &str, width: f32) -> Response {
     resp
 }
 
+/// A [`flat_button`] that expands to fit localized labels wider than `min_width`.
+pub fn flat_button_fit(ui: &mut Ui, text: &str, min_width: f32) -> Response {
+    let t = Tokens::get(ui.ctx());
+    let galley = ui.painter().layout_no_wrap(tl!(text).to_string(), egui::FontId::proportional(12.5), t.text_strong);
+    let width = (galley.size().x + 24.0).max(min_width);
+    let (rect, resp) = ui.allocate_exact_size(vec2(width, 24.0), Sense::click());
+    let rect = rect.shrink2(vec2(0.0, 0.5));
+    ui.painter().rect_filled(rect, CornerRadius::same(5), t.button);
+    flat_fill(ui, rect, &resp);
+    ui.painter().with_clip_rect(rect).text(rect.center(), egui::Align2::CENTER_CENTER, tl!(text), egui::FontId::proportional(12.5), t.text_strong);
+    resp.widget_info(|| egui::WidgetInfo::labeled(egui::WidgetType::Button, ui.is_enabled(), tl!(text)));
+    resp
+}
+
 /// Width of a [`split_button`]'s arrow.
 pub const SPLIT_ARROW: f32 = 18.0;
 
@@ -2843,5 +2857,25 @@ mod combo_keyboard_tests {
         assert!(picked.is_some(), "an option was picked");
         frame(&ctx, vec![], &mut picked);
         assert!(!egui::Popup::is_any_open(&ctx), "the list closes after a keyboard pick");
+    }
+}
+
+#[cfg(test)]
+mod button_tests {
+    use super::*;
+
+    #[test]
+    fn flat_button_fit_expands_for_long_text() {
+        let ctx = egui::Context::default();
+        crate::theme::install_fonts(&ctx);
+        let raw = egui::RawInput::default();
+        let mut out = ctx.run_ui(raw, |ui| {
+            let resp_short = flat_button_fit(ui, "OK", 100.0);
+            assert_eq!(resp_short.rect.width(), 100.0);
+
+            let resp_long = flat_button_fit(ui, "Çalışma Yüzeylerini Düzenle", 100.0);
+            assert!(resp_long.rect.width() > 160.0);
+        });
+        out.textures_delta.clear();
     }
 }
