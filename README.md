@@ -225,7 +225,7 @@ and what's next; [`docs/target-app-parity.md`](docs/target-app-parity.md) the fu
 [`docs/gaps.md`](docs/gaps.md) the ranked list of what's missing.
 
 **Where we are (2026-10-10): alpha.** About 88% of core menu items, tools, effects and formats exist
-(92.5% of menu items do something), feature depth is ~75%, and we estimate ~65% ready for real work for mainstream vector illustration: everyday
+(92.5% of menu items do something), feature depth is ~75%, and we estimate ~65% ready for real work for a mainstream illustrator (~62% across all tracked features): everyday
 vector illustration is close to usable: drawing and path tools,
 Pathfinder and Shape Builder, paint, gradients, appearance and transparency, type with styles, threading and Hebrew/Arabic bidirectional layout, and
 files (SVG, PDF and PDF-compatible `.ai` with PDF/X, legacy version 7 `.ai` keeping layers, groups and type, EPS, DXF, EMF/WMF, raster formats, PSD out and PSD/PSB in as their merged image, Print, Package).
