@@ -219,28 +219,13 @@ impl Unit {
         const DECIMAL: [f64; 19] =
             [0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1.0, 2.0, 5.0, 10.0, 25.0, 50.0, 100.0, 200.0, 500.0, 1000.0, 2000.0, 5000.0, 10000.0];
         // An inch is divided in half, not in ten: a tenth of an inch is not a mark an inch ruler
-        // carries, so below an inch the steps are binary fractions (#2827). From an inch up the
-        // ladder is the shared one.
-        const BINARY: [f64; 18] = [
-            1.0 / 128.0,
-            1.0 / 64.0,
-            1.0 / 32.0,
-            1.0 / 16.0,
-            0.125,
-            0.25,
-            0.5,
-            1.0,
-            2.0,
-            5.0,
-            10.0,
-            25.0,
-            50.0,
-            100.0,
-            200.0,
-            500.0,
-            1000.0,
-            10000.0,
-        ];
+        // carries, so below an inch the steps are binary fractions (#2827). Labelling stops at a
+        // sixteenth; zooming in past that leaves the labels where they are and only the ticks
+        // between them grow denser, down to a hundred and twenty-eighth
+        // ([`Self::ruler_minor`]). A label is at most six characters that way ("0.0625"), which
+        // the left ruler has room for when it spells one down the ruler a character at a time.
+        // From an inch up the ladder is the shared one.
+        const BINARY: [f64; 15] = [1.0 / 16.0, 0.125, 0.25, 0.5, 1.0, 2.0, 5.0, 10.0, 25.0, 50.0, 100.0, 200.0, 500.0, 1000.0, 10000.0];
         let steps: &[f64] = if self.ruler_halves() { &BINARY } else { &DECIMAL };
         steps.iter().copied().find(|s| s * self.points() * zoom >= 50.0).unwrap_or(10000.0)
     }
@@ -1870,6 +1855,15 @@ mod tests {
         assert_eq!(step(Unit::Inches, 20.0), 0.0625);
         // An inch and wider is unchanged.
         assert_eq!(step(Unit::Inches, 1.0), 1.0);
+        // Labelling stops at a sixteenth, as the report says Illustrator's does, so zooming in
+        // further only adds ticks. A label therefore never needs more than the six characters of
+        // "0.0625", which the left ruler has room for when it spells one out a character per line.
+        for zoom in [20.0, 50.0, 100.0, 400.0, 1600.0] {
+            assert_eq!(step(Unit::Inches, zoom), 0.0625, "zoom {zoom}");
+        }
+        // The unlabelled ticks go on down to a hundred and twenty-eighth: the 32nds, 64ths and
+        // 128ths the report expects to appear unlabelled when zoomed in close.
+        assert_eq!(Unit::Inches.ruler_minor(0.0625), 1.0 / 128.0);
         // The minor ticks: an eighth of the step on an inch ruler, a tenth elsewhere.
         assert_eq!(Unit::Inches.ruler_minor(0.25), 0.03125);
         assert_eq!(Unit::Millimeters.ruler_minor(25.0), 2.5);
