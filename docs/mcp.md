@@ -485,7 +485,8 @@ Saving beyond `save_file` goes through `run_command`: `file.saveAs {path?, forma
 on the new file and format; for `format: "ait"`, or a `.ait` path without `format`, it fails with an error that names
 `file.saveAsTemplate`), `file.saveCopy` (the document keeps its path, title and modified state),
 `file.saveAsTemplate {path?, format?}` (it writes a `.vctemplate`, or, for `format: "ait"` or a `.ait` path, a
-PDF-compatible `.ait` written as a `.ai` file is; both open untitled; a path whose extension names another format has
+PDF-compatible `.ait` written as a `.ai` file is, and with `aiVersion: "7"` it fails with an error; both open untitled;
+a path whose extension names another format has
 it replaced by the template's extension, and any other path that does not end in that extension has it added, so
 `card.png` is saved as `card.vctemplate` and `card` as `card.vctemplate`; the suggested name and the Templates folder
 come back without a path), `file.newFromTemplate {path}`, `file.revert` and `file.formatOptions {format?}` (a format's options

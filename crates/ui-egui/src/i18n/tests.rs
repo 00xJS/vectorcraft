@@ -1665,6 +1665,21 @@ fn blend_spine_param_errors_are_translated() {
     assert!(untranslated.is_empty(), "untranslated spine errors:\n{}", untranslated.join("\n"));
 }
 
+/// The parameter error of Save as Template for a `.ait` with `aiVersion` 7 is translated whole in
+/// each language of [`COMPLETE_MESSAGES`].
+#[test]
+fn legacy_ait_param_error_is_translated() {
+    use serde_json::json;
+    let mut s = vectorcraft_engine::Session::new();
+    s.execute("file.new", &json!({})).unwrap();
+    let e = s.execute("file.saveAsTemplate", &json!({"format": "ait", "aiVersion": "7"})).unwrap_err();
+    let vectorcraft_engine::EngineError::BadParams { msg, .. } = &e else { panic!("{e}") };
+    for code in COMPLETE_MESSAGES {
+        let shown = message(Lang::from_code(code).unwrap(), &e.to_string());
+        assert!(!shown.contains(msg.as_str()), "{code}: {shown}");
+    }
+}
+
 /// The errors for a parameter key a command doesn't take (#1442), whose text the scan above
 /// doesn't read, are translated whole in each language of [`COMPLETE_MESSAGES`].
 #[test]
