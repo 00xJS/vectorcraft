@@ -1784,6 +1784,24 @@ fn bounding_box_handles_snap_to_the_grid() {
     }
 }
 
+/// A Shift-constrained move with Snap to Grid on stays level: the square's center lands on a
+/// gridline across, and its top stays where it was, off the grid.
+#[test]
+fn a_shift_move_snapped_to_the_grid_stays_on_its_line() {
+    let mut s = session();
+    let a = rect(&mut s, 101.0, 101.0, 100.0, 100.0);
+    let step = s.doc().unwrap().doc.grid.spacing / f64::from(s.doc().unwrap().doc.grid.subdivisions.max(1));
+    let on_grid = |v: f64| (v / step - (v / step).round()).abs() < 1e-9;
+    let v = ViewInfo { snap_to_grid: true, ..ViewInfo::default() };
+    let shift = vectorcraft_tools::Mods { shift: true, ..Default::default() };
+    s.select_tool("selection", v).unwrap();
+    for (kind, x, y) in [(PointerKind::Down, 151.0, 151.0), (PointerKind::Drag, 180.0, 153.0), (PointerKind::Up, 180.0, 153.0)] {
+        s.pointer(&PointerEvent::new(kind, x, y).with_mods(shift), v).unwrap();
+    }
+    let b = s.doc().unwrap().doc.node(a).unwrap().geometric_bounds().unwrap();
+    assert!(on_grid(b.center().x) && (b.y0 - 101.0).abs() < 1e-9, "{b:?}, grid step {step}");
+}
+
 /// Follow-up to #1254: toggling or adding anchors of a path selected as a whole starts from all
 /// its anchors, so toggling one deselects it alone and adding one keeps them all.
 #[test]

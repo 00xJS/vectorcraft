@@ -663,7 +663,7 @@ impl Tool for DirectSelectionTool {
                     let (q, guides) = snap.snap_from(cx, grab + (p - start), shift.as_ref());
                     (d, self.guides) = (q - grab, guides);
                 } else if let Some(snap) = &self.move_snap {
-                    (d, self.guides) = snap.snap(cx, start, d, ev.mods.alt);
+                    (d, self.guides) = if ev.mods.shift { snap.snap_along(cx, start, d, ev.mods.alt) } else { snap.snap(cx, start, d, ev.mods.alt) };
                 }
                 self.snapped = snapped(d, unsnapped, ev.mods.shift, &self.guides);
                 out.push(Action::Preview(
@@ -1946,6 +1946,26 @@ mod tests {
             let mut t = DirectSelectionTool::new(group);
             let (v, _) = drag(&mut t, &c, (350.0, 350.0), (253.0, 351.0), Mods::default());
             assert_eq!(v["matrix"], json!([1.0, 0.0, 0.0, 1.0, -100.0, 1.0]), "group: {group}");
+        }
+    }
+
+    /// Group Selection and Direct Selection on a whole path keep a Shift-constrained move on its
+    /// line when it snaps, as the Selection tool does: level by 13.04 with Snap to Grid on, B's
+    /// right side (413.04) lands on the gridline 414, and its top stays at 300, between 297 and
+    /// 306.
+    #[test]
+    fn a_shift_move_of_objects_snaps_along_its_line() {
+        let (d, _, b) = two_squares();
+        let p = paint();
+        let mut s = Selection::default();
+        s.set([b]);
+        let c = ToolContext { snap_to_grid: true, ..cx(&d, &s, &p) };
+        let shift = Mods { shift: true, ..Mods::default() };
+        for group in [true, false] {
+            let mut t = DirectSelectionTool::new(group);
+            let (v, _) = drag(&mut t, &c, (350.0, 350.0), (363.0, 351.0), shift);
+            let (x, y) = (v["matrix"][4].as_f64().unwrap(), v["matrix"][5].as_f64().unwrap());
+            assert!((x - 14.0).abs() < 1e-9 && y.abs() < 1e-9, "group: {group}: {v}");
         }
     }
 
