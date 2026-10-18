@@ -452,9 +452,10 @@ pub struct VectorcraftApp {
     pub(crate) picks: picks::Picks,
     /// The screen color sampler shown and not answered yet, and where its color goes.
     pub(crate) screen_sampler: Option<screen_color::Waiting>,
-    /// The look for fonts installed or removed while the app was in the background, running
-    /// ([`Self::refresh_installed_fonts`]): whether they were.
-    font_check: Option<std::sync::mpsc::Receiver<bool>>,
+    /// The look for fonts installed or removed meanwhile, running
+    /// ([`Self::refresh_installed_fonts`]): whether they were, and whether to wake the app for
+    /// the answer.
+    font_check: Option<(std::sync::mpsc::Receiver<bool>, bool)>,
     /// When installed fonts were last checked in line (app time, s).
     font_install_check_at: f64,
     /// Keyboard pastes of something other than text (see [`shortcuts::PasteChord`]).
@@ -1206,7 +1207,8 @@ impl VectorcraftApp {
         #[cfg(not(target_arch = "wasm32"))]
         if !(0.0..FONT_INSTALL_POLL).contains(&(now - self.font_install_check_at)) {
             self.font_install_check_at = now;
-            self.refresh_installed_fonts();
+            // Read on the next frame the app draws anyway: an idle app isn't woken for it.
+            self.refresh_installed_fonts(false);
         }
         self.poll_font_check(ctx);
         picks::poll(self, ctx);
@@ -1306,9 +1308,11 @@ impl VectorcraftApp {
     /// at the font folders and the platform's font list on a timer and when the window comes back,
     /// a scan only when they changed.
     /// The look runs on another thread (asking DirectWrite for the fonts font services loaded
-    /// meanwhile takes tens of milliseconds on Windows, #579), [`Self::poll_font_check`] scans.
-    fn refresh_installed_fonts(&mut self) {
-        if self.font_check.is_some() {
+    /// meanwhile takes tens of milliseconds on Windows, #579), [`Self::poll_font_check`] scans;
+    /// `wake` wakes the app for the answer.
+    fn refresh_installed_fonts(&mut self, wake: bool) {
+        if let Some((_, w)) = &mut self.font_check {
+            *w |= wake;
             return;
         }
         let (tx, rx) = std::sync::mpsc::channel();
@@ -1321,12 +1325,12 @@ impl VectorcraftApp {
         if spawned.is_none() {
             look();
         }
-        self.font_check = Some(rx);
+        self.font_check = Some((rx, wake));
     }
 
     /// Rescan the fonts once [`Self::refresh_installed_fonts`]'s look says they changed.
     fn poll_font_check(&mut self, ctx: &egui::Context) {
-        let Some(check) = &self.font_check else { return };
+        let Some((check, wake)) = &self.font_check else { return };
         match check.try_recv() {
             Ok(changed) => {
                 self.font_check = None;
@@ -1335,7 +1339,11 @@ impl VectorcraftApp {
                     let _ = self.run("text.rescanFonts", json!({}));
                 }
             }
-            Err(std::sync::mpsc::TryRecvError::Empty) => ctx.request_repaint_after(std::time::Duration::from_millis(50)),
+            Err(std::sync::mpsc::TryRecvError::Empty) => {
+                if *wake {
+                    ctx.request_repaint_after(std::time::Duration::from_millis(50));
+                }
+            }
             Err(std::sync::mpsc::TryRecvError::Disconnected) => self.font_check = None,
         }
     }
@@ -1357,7 +1365,7 @@ impl VectorcraftApp {
             match e {
                 egui::Event::ModifiersChanged(m) => self.host_modifiers = *m,
                 egui::Event::WindowFocused(false) => self.host_modifiers = egui::Modifiers::NONE,
-                egui::Event::WindowFocused(true) => self.refresh_installed_fonts(),
+                egui::Event::WindowFocused(true) => self.refresh_installed_fonts(true),
                 _ => {}
             }
         }
