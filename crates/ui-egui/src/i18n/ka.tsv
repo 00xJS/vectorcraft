@@ -5120,3 +5120,4 @@ imageTrace	Outline	კონტური
 @msg	it decompresses to more than {_1} MB	გაშლისას {_1} MB-ს აღემატება
 # Select by Color (select.color)
 	Select by Color	მონიშვნა ფერის მიხედვით
+@msg	thumbnail: no page {n} (the file has 1)	thumbnail: გვერდი {n} არ არსებობს (ფაილს 1 გვერდი აქვს)
