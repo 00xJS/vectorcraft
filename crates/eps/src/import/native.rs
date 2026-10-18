@@ -473,11 +473,17 @@ fn join_pieces(parts: &mut Vec<Arc<Node>>, lines: &[(String, Point)]) {
     });
 }
 
-/// Do the regions of made type cover most of `object`?
-fn covered(object: &[Arc<Node>], content: &[Content]) -> bool {
+/// Do the regions of made type in the slots that `keep` takes cover most of `object`?
+fn covered(object: &[Arc<Node>], content: &[Content], keep: impl Fn(usize) -> bool) -> bool {
     let Some(r) = extent(object) else { return false };
-    let inside: f64 =
-        content.iter().filter_map(|c| if let Content::Made(_, Some(region), ..) = c { Some(region.intersect(r).area()) } else { None }).sum();
+    let inside: f64 = content
+        .iter()
+        .enumerate()
+        .filter_map(|(k, c)| match c {
+            Content::Made(_, Some(region), ..) => Some(region.intersect(r).area()).filter(|a| *a > 0.0 && keep(k)),
+            _ => None,
+        })
+        .sum();
     inside >= 0.5 * r.area().max(1e-9)
 }
 
@@ -570,7 +576,7 @@ fn plan(
     // The file's text document is trusted where it agrees with the page about something (its lines
     // start where the page's type does, or the page has type where it lays type out), or where the
     // page has no type to disagree with.
-    let in_region = |object: &[Arc<Node>]| covered(object, &content);
+    let in_region = |object: &[Arc<Node>]| covered(object, &content, |_| true);
     let trusted = owner.iter().any(Option::is_some) || shown.is_empty() || shown.iter().any(|o| in_region(o));
     if !trusted {
         content.iter_mut().for_each(|c| *c = Content::Empty);
@@ -589,8 +595,33 @@ fn plan(
                     .is_some_and(|l| !words.is_empty() && words.iter().all(|w| l.iter().any(|(text, _)| letters(text).contains(w.as_str()))))
         })
     };
+    // The letters of each slot's story, in lower case.
+    let spelled: Vec<String> = stories.iter().map(|s| s.as_ref().map(|s| letters(s.text()).to_ascii_lowercase()).unwrap_or_default()).collect();
+    // For each slot: is its made type where `object` is, with the letters of one of `object`'s texts in
+    // its story? All are false unless such slots have the letters of every text between them.
+    let spelling = |object: &[Arc<Node>], content: &[Content]| -> Vec<bool> {
+        let r = extent(object);
+        let words: Vec<String> = object
+            .iter()
+            .filter_map(|n| if let NodeKind::Text(t) = &n.kind { Some(letters(&t.plain_text()).to_ascii_lowercase()) } else { None })
+            .filter(|w| !w.is_empty())
+            .collect();
+        let has = |k: usize| spelled.get(k).is_some_and(|s| words.is_empty() || words.iter().any(|w| s.contains(w.as_str())));
+        let near: Vec<bool> = content
+            .iter()
+            .enumerate()
+            .map(|(k, c)| match (c, r) {
+                (Content::Made(_, Some(region), ..), Some(r)) => region.intersect(r).area() > 0.0 && has(k),
+                _ => false,
+            })
+            .collect();
+        let every = words.iter().all(|w| near.iter().zip(&spelled).any(|(n, s)| *n && s.contains(w.as_str())));
+        if every { near } else { vec![] }
+    };
     let mut spare: Vec<Vec<Arc<Node>>> = vec![];
     for (j, object) in shown.iter().enumerate() {
+        let spells = spelling(object, &content);
+        let spells = |k: usize| spells.get(k).copied().unwrap_or(false);
         match owner.get(j).copied().flatten().filter(|_| trusted) {
             // The type of a text object the layers hide: the layers have it, hidden, so the page's
             // isn't another text object's.
@@ -601,12 +632,13 @@ fn plan(
                 Some(c) => *c = Content::Page(object.clone()),
                 None => {}
             },
-            // What lies where made type is, is that type as the page draws it.
-            None if covered(object, &content) => {
+            // What lies where made type is and has that type's letters is that type as the page draws it.
+            None if covered(object, &content, spells) => {
                 let r = extent(object).unwrap_or(Rect::ZERO);
-                for c in &mut content {
+                for (k, c) in content.iter_mut().enumerate() {
                     if let Content::Made(_, Some(region), seen, _) = c
                         && !region.intersect(r).is_zero_area()
+                        && spells(k)
                     {
                         *seen = true;
                     }

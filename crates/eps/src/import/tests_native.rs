@@ -643,6 +643,86 @@ fn type_of_the_page_that_no_story_places_stays_with_the_nearest_text_object() {
     assert!(all.contains(&"Extra".to_string()), "{all:?} {:?}", r.warnings);
 }
 
+/// Page type of no text object that lies where made type is, but has other letters, is not that type:
+/// it stays, with the nearest text object.
+#[test]
+fn type_of_the_page_near_made_type_with_other_letters_stays() {
+    // "Extra" is 11.5 below the line of "Hi there", well inside the box round that line.
+    let doc = text_document(&[("Hi there\r", 0, (8200.0, 8180.0), (0.0, 0.0), 0.0)]);
+    let art = native_with_text(&layer("Art", true, &text_object(0)), &doc);
+    let page = "0 0 0 1 setcmykcolor /Helvetica findfont 14 scalefont setfont 58.5 61.5 moveto (Hi there) show 58.5 50 moveto (Extra) show";
+    let r = import(&eps(page, &art)).unwrap();
+    let mut all = vec![];
+    r.document.walk(|n| {
+        if let NodeKind::Text(t) = &n.kind {
+            all.push(t.plain_text());
+        }
+    });
+    assert_eq!(all, ["Hi there", "Extra"], "{:?}", r.warnings);
+    assert!(r.warnings.iter().any(|w| w.contains("with another's")), "{:?}", r.warnings);
+}
+
+/// Page type of no text object that lies where made type is and has its letters, in any case, is that
+/// type as the page draws it: the made type stays, and the page's is left out.
+#[test]
+fn type_of_the_page_with_the_letters_of_made_type_where_it_lies_is_that_type() {
+    // The page draws the line 3 points below where the story starts it, so no line of the story
+    // owns it.
+    let doc = text_document(&[("Hi there\r", 0, (8200.0, 8180.0), (0.0, 0.0), 0.0)]);
+    let art = native_with_text(&layer("Art", true, &text_object(0)), &doc);
+    for drawn in ["Hi there", "HI THERE", "there"] {
+        let page = format!("0 0 0 1 setcmykcolor /Helvetica findfont 14 scalefont setfont 58.5 58.5 moveto ({drawn}) show");
+        let r = import(&eps(&page, &art)).unwrap();
+        let mut all = vec![];
+        r.document.walk(|n| {
+            if let NodeKind::Text(t) = &n.kind {
+                all.push((t.plain_text(), t.xf.as_coeffs()[5]));
+            }
+        });
+        assert_eq!(all, [("Hi there".to_string(), 38.5)], "{drawn}: {:?}", r.warnings);
+        assert!(!r.warnings.iter().any(|w| w.contains("doesn't draw") || w.contains("with another's")), "{drawn}: {:?}", r.warnings);
+    }
+}
+
+/// Page type of no text object that lies where the made type of two text objects is, with the
+/// letters of one of them in each of its pieces, is the type of both as the page draws it.
+#[test]
+fn type_of_the_page_with_the_letters_of_two_made_types_where_it_lies_is_their_type() {
+    // The two stories start 16.5 apart on one line, and the page draws both 3 points below it: its
+    // two pieces are one object, which no line of either story owns.
+    let doc = text_document(&[("Hi\r", 0, (8200.0, 8180.0), (0.0, 0.0), 0.0), ("there\r", 0, (8216.5, 8180.0), (0.0, 0.0), 0.0)]);
+    let art = native_with_text(&layer("Art", true, &(text_object(0) + &text_object(1))), &doc);
+    let page = "0 0 0 1 setcmykcolor /Helvetica findfont 14 scalefont setfont 58.5 58.5 moveto (Hi) show 75 58.5 moveto (there) show";
+    let r = import(&eps(page, &art)).unwrap();
+    let mut all = vec![];
+    r.document.walk(|n| {
+        if let NodeKind::Text(t) = &n.kind {
+            all.push((t.plain_text(), t.xf.as_coeffs()[5]));
+        }
+    });
+    assert_eq!(all, [("Hi".to_string(), 38.5), ("there".to_string(), 38.5)], "{:?}", r.warnings);
+    assert!(!r.warnings.iter().any(|w| w.contains("doesn't draw") || w.contains("with another's")), "{:?}", r.warnings);
+}
+
+/// The file's text document is trusted where the page has type where it lays type out, whatever
+/// letters that type has: its type is weighed against the page.
+#[test]
+fn page_type_where_made_type_is_trusts_the_text_document_whatever_its_letters() {
+    let doc = text_document(&[("Hi there\r", 0, (8200.0, 8180.0), (0.0, 0.0), 0.0)]);
+    let art = native_with_text(&layer("Art", true, &text_object(0)), &doc);
+    let page = "0 0 0 1 setcmykcolor /Helvetica findfont 14 scalefont setfont 58.5 50 moveto (Extra) show";
+    let r = import(&eps(page, &art)).unwrap();
+    let mut all = vec![];
+    r.document.walk(|n| {
+        if let NodeKind::Text(t) = &n.kind {
+            all.push(t.plain_text());
+        }
+    });
+    assert_eq!(all, ["Extra"], "{:?}", r.warnings);
+    // "Hi there" was made from the text document and left out because the page doesn't draw it.
+    assert!(r.warnings.iter().any(|w| w.contains("doesn't draw")), "{:?}", r.warnings);
+}
+
 #[test]
 fn type_the_page_draws_of_a_text_object_on_a_hidden_layer_stays_hidden() {
     // A file's page may draw what its layers have hidden since: story 1's type is on the page at
