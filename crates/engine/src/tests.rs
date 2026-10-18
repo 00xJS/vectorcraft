@@ -2344,6 +2344,29 @@ fn reshape_moves_the_grabbed_point_and_its_neighbourhood() {
 }
 
 #[test]
+fn reshape_falloff_follows_arc_length_on_open_paths() {
+    let mut s = session();
+    let id = NodeId(
+        s.execute(
+            "path.create",
+            &json!({
+                "anchors": [{"x": 0, "y": 0}, {"x": 100, "y": 0}, {"x": 200, "y": 0}, {"x": 300, "y": 0}],
+                "closed": false
+            }),
+        )
+        .unwrap()["id"]
+            .as_u64()
+            .unwrap(),
+    );
+    s.execute("path.reshape", &json!({"id": id.0, "x": 300.0, "y": 0.0, "dx": 0.0, "dy": 100.0})).unwrap();
+    let pts: Vec<_> = s.doc().unwrap().doc.node(id).unwrap().path_data().unwrap().subpaths[0].anchors.iter().map(|a| a.p).collect();
+    assert!((pts[3].y - 100.0).abs() < 1e-6, "grabbed end moves full delta: {pts:?}");
+    assert!(pts[0].y.abs() < 1e-6, "far end stays put: {pts:?}");
+    assert!(pts[2].y > 1.0 && pts[2].y < 100.0, "mid-anchor moves partially: {pts:?}");
+    assert!(pts[1].y < pts[2].y, "nearer anchors move more: {pts:?}");
+}
+
+#[test]
 fn graph_tool_drag_creates_a_graph_and_asks_for_data() {
     let mut s = session();
     let v = ViewInfo::default();

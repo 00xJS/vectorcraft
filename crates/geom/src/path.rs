@@ -221,6 +221,19 @@ impl SubPath {
         let b = &self.anchors[(i + 1) % n];
         !a.has_out() && !b.has_in()
     }
+    /// Arc-length at each anchor from the start of this subpath (one entry per anchor).
+    pub fn anchor_arc_positions(&self) -> Vec<f64> {
+        let n = self.anchors.len();
+        if n == 0 {
+            return vec![];
+        }
+        let mut pos = vec![0.0];
+        for i in 0..self.segment_count() {
+            let len = kurbo::ParamCurveArclen::arclen(&self.segment(i), 1e-3);
+            pos.push(pos.last().copied().unwrap_or(0.0) + len);
+        }
+        pos
+    }
     pub fn to_bezpath_into(&self, out: &mut BezPath) {
         let Some(first) = self.anchors.first() else { return };
         out.move_to(first.p);
