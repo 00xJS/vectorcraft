@@ -75,7 +75,7 @@ pub use save::{
 };
 pub use screens::{
     PRESET_KEYS as SCREEN_EXPORT_PRESET_KEYS, PRESETS as SCREEN_PRESETS, ScreenExportPreset, ScreenSize,
-    builtin_presets as screen_export_builtin_presets, preset_rows as screen_preset_rows,
+    builtin_presets as screen_export_builtin_presets, first_file as screen_first_file, preset_rows as screen_preset_rows,
 };
 pub(crate) use screens::{
     SHARED_KEYS as SCREEN_SETTINGS_KEYS, check_settings as check_screen_settings, export as export_screens, safe_file_name,
