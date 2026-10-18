@@ -716,11 +716,21 @@ impl Tool for SelectionTool {
                 }
                 let nr = a.transform_rect_bbox(bx.rect);
                 self.measure = cx.transform_tools_guides.then(|| (p, cx.size_label(nr.width(), nr.height())));
-                let mut params = json!({ "matrix": matrix_json(bx.conjugate(a)), "copy": false });
+                // With Use Preview Bounds the box is the visual box, whose margins around the art
+                // (strokes, geometry effects) scale with it or stay. `object.setBounds` then gives the
+                // visual box the dragged size and keeps its opposite handle (with Alt, its center)
+                // where it is. A drag that flips the box scales by the matrix.
+                let [sx, _, _, sy, _, _] = a.as_coeffs();
+                let (cmd, mut params) = if cx.preview_bounds && cx.selection.anchors.is_empty() && sx > 0.0 && sy > 0.0 {
+                    let reference = if m.alt { 4 } else { handle.opposite().reference() };
+                    ("object.setBounds", json!({ "width": nr.width(), "height": nr.height(), "reference": reference, "copy": false }))
+                } else {
+                    ("object.transform", json!({ "matrix": matrix_json(bx.conjugate(a)), "copy": false }))
+                };
                 if areas {
                     params["typeAreas"] = json!(true);
                 }
-                vec![Action::Preview("object.transform".into(), params)]
+                vec![Action::Preview(cmd.into(), params)]
             }
             (PointerKind::Drag, State::Rotating { center, start, .. }) => {
                 let (a, deg) = rotate_for_drag(center, start, p, m.shift);

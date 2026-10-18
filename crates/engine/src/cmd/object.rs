@@ -1724,14 +1724,51 @@ fn distribute_spacing(s: &mut Session, p: &Value) -> Result<Value> {
 }
 
 fn set_bounds(s: &mut Session, p: &Value) -> Result<Value> {
+    match bounds_transform(s, p, selected_roots(s)?, 0.0)? {
+        Bounds::Anchors(ids, b) => set_anchor_bounds(s, p, ids, b),
+        Bounds::Objects(ids, xf) => apply_transform(s, "Transform", ids, xf, p, false),
+    }
+}
+
+/// What `object.setBounds` does with its values ([`bounds_transform`]).
+enum Bounds {
+    /// With anchors selected with Direct Selection: the objects and the box of the anchors that
+    /// [`set_anchor_bounds`] moves or scales.
+    Anchors(Vec<NodeId>, Rect),
+    /// The objects and the transform that gives them the values.
+    Objects(Vec<NodeId>, Affine),
+}
+
+/// A previewed `object.setBounds` that transforms objects runs as `object.transform` with the
+/// transform [`bounds_transform`] finds for it, so the interaction commits that transform (Transform
+/// Again repeats it, and the journal holds it). A bounding-box handle drag with Use Preview Bounds
+/// previews `object.setBounds`. The objects are those `object.transform` transforms (a path of a
+/// compound path selected on its own is one), and the art keeps at least 1e-4 of its width and
+/// height, as with [`vectorcraft_tools::bbox::scale_for_drag`]. `None` with anchors selected with
+/// Direct Selection and when the values are not valid.
+pub(crate) fn bounds_rewrite(s: &Session, cmd: &str, params: &Value) -> Option<(String, Value)> {
+    if cmd != "object.setBounds" {
+        return None;
+    }
+    let Ok(Bounds::Objects(_, xf)) = bounds_transform(s, params, selected_roots_to_transform(s).ok()?, 1e-4) else { return None };
+    let mut p = params.as_object().cloned().unwrap_or_default();
+    for k in ["x", "y", "width", "height", "reference", "proportional"] {
+        p.remove(k);
+    }
+    p.insert("matrix".into(), json!(xf.as_coeffs()));
+    Some(("object.transform".to_string(), Value::Object(p)))
+}
+
+/// How `object.setBounds` with params `p` changes the objects `ids`. A scale that would leave the
+/// art with a width or height below `least` of the one it has keeps `least` of it.
+fn bounds_transform(s: &Session, p: &Value, ids: Vec<NodeId>, least: f64) -> Result<Bounds> {
     check_numbers(p, &["x", "y", "width", "height"], "object.setBounds")?;
-    let ids = selected_roots(s)?;
     let st = s.doc()?;
     if transforms_objects(p)
         && !bool_or(p, "copy", false)
         && let Some(b) = effects::preview::anchor_bounds(&st.selection, &st.doc, s.prefs.use_preview_bounds)
     {
-        return set_anchor_bounds(s, p, ids, b);
+        return Ok(Bounds::Anchors(ids, b));
     }
     let d = &s.doc()?.doc;
     // Sizes are measured square to the bounding box, which a rotation turns with the objects:
@@ -1786,7 +1823,7 @@ fn set_bounds(s: &mut Session, p: &Value) -> Result<Value> {
     // leave a rounding error in it on a rotated object or with Use Preview Bounds.
     let current = |k: &str, now: f64| p.get(k).and_then(Value::as_f64).is_none_or(|x| x == now);
     if current("x", page.x) && current("y", page.y) && current("width", v.width()) && current("height", v.height()) {
-        return apply_transform(s, "Transform", ids, Affine::IDENTITY, p, false);
+        return Ok(Bounds::Objects(ids, Affine::IDENTITY));
     }
     let to = frame.to_local(Point::new(f64_or(p, "x", page.x), f64_or(p, "y", page.y)));
     // The scales and the point above can miss the size or the reference point when the margins of
@@ -1818,8 +1855,15 @@ fn set_bounds(s: &mut Session, p: &Value) -> Result<Value> {
     } else {
         Spans::measure(d, &ids, &frame, strokes).refit(rp, refi, [w, h], (sx, sy, new_rp))
     };
-    let (scale, new_rp) = solved.map_or((scale, new_rp), |(sx, sy, at)| (about(rp, Affine::scale_non_uniform(sx, sy)), at));
-    apply_transform(s, "Transform", ids, frame.conjugate(Affine::translate(to - new_rp) * scale), p, false)
+    let (sx, sy, new_rp) = solved.unwrap_or((sx, sy, new_rp));
+    // A scale below `least` of art with a width (height) keeps `least`, and the reference point
+    // moves with the scales as above.
+    let keep = |s: f64, geo: f64| if geo > 1e-9 && (0.0..least).contains(&s) { least } else { s };
+    let (kx, ky) = (keep(sx, g.width()), keep(sy, g.height()));
+    let scale = about(rp, Affine::scale_non_uniform(kx, ky));
+    let new_rp = if (kx, ky) == (sx, sy) { new_rp } else { scale * gp + (sp - gp) * f(kx, ky) + (rp - sp) };
+    let xf = frame.conjugate(Affine::translate(to - new_rp) * scale);
+    Ok(Bounds::Objects(ids, xf))
 }
 
 /// The scales along x and y that give the box `measure` returns for them the size `size`, and point

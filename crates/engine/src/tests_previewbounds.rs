@@ -748,6 +748,136 @@ fn the_bounding_box_handles_sit_on_the_offset_shape() {
     assert_eq!(drag(false).width(), 100.0, "off, the point is no handle");
 }
 
+/// The box `id` is drawn in (strokes and geometry effects included) and its geometric box after a
+/// Selection tool drag from `from` to `to` with `mods`, with Smart Guides off.
+fn drag_box(s: &mut Session, id: NodeId, from: (f64, f64), to: (f64, f64), mods: Mods) -> (Rect, Rect) {
+    let v = ViewInfo { smart_guides: false, ..ViewInfo::default() };
+    s.select_tool("selection", v).unwrap();
+    for (k, (x, y)) in [(PointerKind::Down, from), (PointerKind::Drag, to), (PointerKind::Up, to)] {
+        s.pointer(&PointerEvent { mods, ..PointerEvent::new(k, x, y) }, v).unwrap();
+    }
+    let drawn = vectorcraft_render::effects::preview::bounds_of(&s.doc().unwrap().doc, &[id], true).unwrap();
+    (drawn, geometric(s, id))
+}
+
+/// Drags of `make`'s object with Use Preview Bounds on, and Scale Strokes & Effects off and on: from
+/// the handle at the first point to the second point, with the modifiers, giving the visual box.
+type HandleDrags = [((f64, f64), (f64, f64), Mods, Rect); 4];
+
+fn assert_handle_drags(make: fn(&mut Session) -> NodeId, drags: HandleDrags) {
+    for strokes in [false, true] {
+        for (from, to, mods, want) in drags {
+            let mut s = session();
+            let id = make(&mut s);
+            preview(&mut s, true);
+            s.prefs.scale_strokes = strokes;
+            let (v, _) = drag_box(&mut s, id, from, to, mods);
+            assert!(near(v, want, 1e-6), "strokes {strokes}, {from:?} to {to:?}, {mods:?}: {v:?}");
+        }
+    }
+}
+
+const SHIFT: Mods = Mods { shift: true, alt: false, cmd: false, ctrl: false, space: false };
+const ALT: Mods = Mods { shift: false, alt: true, cmd: false, ctrl: false, space: false };
+
+#[test]
+fn a_handle_drag_keeps_the_opposite_visual_edge_of_a_stroked_path() {
+    // A 100 x 50 rectangle at (100, 100) with a 20 pt stroke, drawn from (90, 90) to (210, 160): the
+    // opposite edge of the visual box stays and the dragged edge goes to the pointer, with Shift in
+    // proportion, with Alt about the center.
+    let make = |s: &mut Session| rect(s, 100.0, 100.0, 20.0);
+    assert_handle_drags(
+        make,
+        [
+            ((210.0, 125.0), (310.0, 125.0), Mods::default(), Rect::new(90.0, 90.0, 310.0, 160.0)),
+            ((210.0, 160.0), (260.0, 200.0), Mods::default(), Rect::new(90.0, 90.0, 260.0, 200.0)),
+            ((210.0, 160.0), (330.0, 170.0), SHIFT, Rect::new(90.0, 90.0, 330.0, 230.0)),
+            ((210.0, 125.0), (260.0, 125.0), ALT, Rect::new(40.0, 90.0, 260.0, 160.0)),
+        ],
+    );
+    // Off, the handles sit on the path, and the path scales from its own opposite edge.
+    for strokes in [false, true] {
+        let mut s = session();
+        let id = make(&mut s);
+        s.prefs.scale_strokes = strokes;
+        let (_, g) = drag_box(&mut s, id, (200.0, 125.0), (300.0, 125.0), Mods::default());
+        assert_eq!(g, Rect::new(100.0, 100.0, 300.0, 150.0), "strokes {strokes}");
+        let (_, g) = drag_box(&mut s, id, (300.0, 150.0), (350.0, 200.0), Mods::default());
+        assert_eq!(g, Rect::new(100.0, 100.0, 350.0, 200.0), "strokes {strokes}");
+    }
+}
+
+#[test]
+fn transform_again_repeats_the_transform_of_a_handle_drag_with_preview_bounds() {
+    // The drag takes the visual right edge of the stroked rectangle from 210 to 310, so the path,
+    // with its stroke kept, goes from 100..200 to 100..300: x becomes 2x - 100.
+    let mut s = session();
+    let id = rect(&mut s, 100.0, 100.0, 20.0);
+    preview(&mut s, true);
+    s.prefs.scale_strokes = false;
+    let (_, g) = drag_box(&mut s, id, (210.0, 125.0), (310.0, 125.0), Mods::default());
+    assert!(near(g, Rect::new(100.0, 100.0, 300.0, 150.0), 1e-6), "{g:?}");
+    run(&mut s, "object.transformAgain", json!({}));
+    assert!(near(geometric(&s, id), Rect::new(100.0, 100.0, 500.0, 150.0), 1e-6), "{:?}", geometric(&s, id));
+}
+
+#[test]
+fn a_handle_drag_with_preview_bounds_scales_a_compound_paths_member_alone() {
+    // A ring: a 100 pt square at (100, 100) with a 20 pt square hole at (140, 140), the hole selected
+    // alone in the isolated compound path.
+    let mut s = session();
+    let square = |s: &mut Session, at: f64, size: f64| {
+        NodeId(run(s, "shape.rectangle", json!({"x": at, "y": at, "width": size, "height": size}))["id"].as_u64().unwrap())
+    };
+    let (outer, hole) = (square(&mut s, 100.0, 100.0), square(&mut s, 140.0, 20.0));
+    run(&mut s, "select.set", json!({"ids": [outer.0, hole.0]}));
+    let c = run(&mut s, "object.compoundPath.make", json!({}))["id"].as_u64().unwrap();
+    run(&mut s, "object.isolate", json!({"id": c}));
+    run(&mut s, "select.set", json!({"ids": [hole.0]}));
+    preview(&mut s, true);
+    let (b, around) = (s.transform_bounds(&[hole]).unwrap(), s.transform_bounds(&[outer]));
+    let (v, _) = drag_box(&mut s, hole, (b.x1, b.center().y), (b.x1 + 10.0, b.center().y), Mods::default());
+    assert_eq!(s.transform_bounds(&[outer]), around, "the square around the hole stays");
+    assert!(near(v, Rect::new(b.x0, b.y0, b.x1 + 10.0, b.y1), 1e-6), "the hole: {v:?} from {b:?}");
+}
+
+#[test]
+fn a_handle_drag_with_preview_bounds_leaves_the_art_some_width() {
+    // Dragging the visual right edge of the rectangle with a kept 20 pt stroke (drawn from 90 to 210)
+    // to 95 asks for less width than the stroke adds: the path keeps 1e-4 of its width.
+    let mut s = session();
+    let id = rect(&mut s, 100.0, 100.0, 20.0);
+    preview(&mut s, true);
+    s.prefs.scale_strokes = false;
+    let (_, g) = drag_box(&mut s, id, (210.0, 125.0), (95.0, 125.0), Mods::default());
+    assert!((g.width() - 0.01).abs() < 1e-9, "{g:?}");
+}
+
+#[test]
+fn a_handle_drag_keeps_the_opposite_edge_of_the_offset_shape() {
+    // A 100 pt square at (100, 100) with Offset Path 10, drawn from (90, 90) to (210, 210).
+    let make = |s: &mut Session| offset_square(s, 100.0);
+    assert_handle_drags(
+        make,
+        [
+            ((210.0, 150.0), (310.0, 150.0), Mods::default(), Rect::new(90.0, 90.0, 310.0, 210.0)),
+            ((210.0, 210.0), (260.0, 250.0), Mods::default(), Rect::new(90.0, 90.0, 260.0, 250.0)),
+            ((210.0, 210.0), (330.0, 220.0), SHIFT, Rect::new(90.0, 90.0, 330.0, 330.0)),
+            ((210.0, 150.0), (260.0, 150.0), ALT, Rect::new(40.0, 90.0, 260.0, 210.0)),
+        ],
+    );
+    // Off, the handles sit on the square, and the square scales from its own opposite edge.
+    for strokes in [false, true] {
+        let mut s = session();
+        let id = make(&mut s);
+        s.prefs.scale_strokes = strokes;
+        let (_, g) = drag_box(&mut s, id, (200.0, 150.0), (300.0, 150.0), Mods::default());
+        assert_eq!(g, Rect::new(100.0, 100.0, 300.0, 200.0), "strokes {strokes}");
+        let (_, g) = drag_box(&mut s, id, (300.0, 200.0), (350.0, 250.0), Mods::default());
+        assert_eq!(g, Rect::new(100.0, 100.0, 350.0, 250.0), "strokes {strokes}");
+    }
+}
+
 #[test]
 fn hovering_over_an_unchanged_document_measures_nothing_again() {
     // A selected square with Offset Path 10, drawn from 90 to 210, with Use Preview Bounds and Smart

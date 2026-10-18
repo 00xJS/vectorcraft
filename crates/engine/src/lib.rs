@@ -1902,7 +1902,7 @@ impl Session {
         }
         // The previous preview's paint is undone with it.
         self.pending_paint = None;
-        let rw = cmd::distortcmds::perspective_rewrite(self, cmd, params);
+        let rw = cmd::distortcmds::perspective_rewrite(self, cmd, params).or_else(|| cmd::bounds_rewrite(self, cmd, params));
         let (cmd, params) = rw.as_ref().map_or((cmd, params), |(c, p)| (c.as_str(), p));
         let outer = std::mem::replace(&mut self.previewing, true);
         let r = self.execute(cmd, params);
