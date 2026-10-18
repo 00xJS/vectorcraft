@@ -194,6 +194,12 @@ fn from_editing_data_alone(bytes: &[u8], opts: &LoadOptions) -> Option<Result<(D
     )
 }
 
+/// Do `opts` read every page of the PDF `bytes`: no `pages`, or a range that names each one?
+fn every_page(bytes: &[u8], opts: &LoadOptions) -> bool {
+    let Some(range) = &opts.pages else { return true };
+    vectorcraft_pdf::info(bytes, opts.password.as_deref()).is_ok_and(|i| parse_range(range, i.pages.len()).is_ok_and(|p| p.len() == i.pages.len()))
+}
+
 /// [`load`] with `document.open` options (the PDF pages, box and password; the DXF options).
 pub fn load_with(name: &str, bytes: &[u8], opts: &LoadOptions) -> Result<Loaded> {
     let format = detect(name, bytes).ok_or_else(|| match super::unsupported(&super::extension(name)) {
@@ -239,9 +245,11 @@ pub fn load_with(name: &str, bytes: &[u8], opts: &LoadOptions) -> Result<Loaded>
                     let alone = r.only_text.then(|| from_editing_data_alone(bytes, opts)).flatten().and_then(|read| read.ok());
                     Ok(alone.unwrap_or_else(|| through_editing_data(bytes, opts, r.document, r.warnings, r.user_unit)))
                 }
-                // Saved without its PDF part: the editing copy is all the file has.
+                // Saved without its PDF part: the editing copy is all the file has (`pages` that
+                // name every page read it as the whole file).
                 Err(e) if e.to_string() == vectorcraft_pdf::PdfError::PlaceholderOnly.to_string() => {
-                    from_editing_data_alone(bytes, opts).unwrap_or(Err(e))
+                    let whole = LoadOptions { pages: None, ..opts.clone() };
+                    from_editing_data_alone(bytes, if every_page(bytes, opts) { &whole } else { opts }).unwrap_or(Err(e))
                 }
                 Err(e) => Err(e),
             })?
