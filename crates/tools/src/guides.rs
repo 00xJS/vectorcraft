@@ -685,6 +685,77 @@ impl Targets {
         self.snap_rects(&[r], tol)
     }
 
+    /// Snap a point that may only move along `dir` (the grabbed point of a move Shift keeps to its
+    /// line): onto the point of that line nearest an anchor or center within `tol` of `p`, labeled
+    /// at the anchor or center, else to where the nearest target line or ruler guide crosses the
+    /// line, at most twice `tol` away ([`Self::slide`]). Returns where it goes and the guides.
+    pub(crate) fn snap_point_along(&self, p: Point, dir: Vec2, tol: f64) -> (Point, Vec<Overlay>) {
+        let l2 = dir.hypot2();
+        if !l2.is_finite() || l2 <= 1e-18 {
+            return (p, vec![]);
+        }
+        if let Some((q, k)) = self.nearest_point(p, tol) {
+            return (p + dir * ((q - p).dot(dir) / l2), self.label(q, k.label()).into_iter().collect());
+        }
+        match self.slide(p, dir, p, tol, false) {
+            Some((q, from)) => (q, self.lined_up(q, from)),
+            None => (p, vec![]),
+        }
+    }
+
+    /// [`Self::snap_rects`] for rectangles that may only move along `dir` (a move Shift keeps to
+    /// its line): they slide along it until the edge or center of one of them is in line with a
+    /// target, within `tol` of it on that axis, the target that needs the shortest way along the
+    /// line winning. Lining up with nothing, a single rectangle with Spacing Guides slides to where
+    /// it is spaced evenly along an axis the line runs along. Returns the shift (along `dir`) and
+    /// the guides.
+    pub(crate) fn snap_rects_along(&self, rects: &[Rect], dir: Vec2, tol: f64) -> (Vec2, Vec<Overlay>) {
+        let len = dir.hypot();
+        if !len.is_finite() || len <= 1e-9 {
+            return (Vec2::ZERO, vec![]);
+        }
+        let u = dir / len;
+        // The axes the line runs along: the x axis (`true`) and the y axis, and how far a step of
+        // one along the line goes on that axis.
+        let axes = [(true, u.x), (false, u.y)].into_iter().filter(|(_, c)| c.abs() > 1e-9);
+        // The way along the line, the target line it lines up with, where that line starts, and
+        // its axis.
+        let mut best: Option<(f64, f64, Point, bool)> = None;
+        for (x, c) in axes.clone() {
+            let lines = if x { &self.xs } else { &self.ys };
+            for r in rects {
+                let vs = if x { [r.x0, r.center().x, r.x1] } else { [r.y0, r.center().y, r.y1] };
+                for v in vs {
+                    for (t, from, _) in lines_near(lines, v, tol).iter().filter(|(t, ..)| (t - v).abs() <= tol) {
+                        let s = (t - v) / c;
+                        if best.is_none_or(|b| s.abs() < b.0.abs()) {
+                            best = Some((s, *t, *from, x));
+                        }
+                    }
+                }
+            }
+        }
+        if let Some((s, t, from, x)) = best {
+            let ov = rects.iter().map(|r| *r + u * s).reduce(|a, b| a.union(b)).and_then(|m| {
+                if x {
+                    self.line(Point::new(t, from.y.min(m.y0)), Point::new(t, from.y.max(m.y1)))
+                } else {
+                    self.line(Point::new(from.x.min(m.x0), t), Point::new(from.x.max(m.x1), t))
+                }
+            });
+            return (u * s, ov.into_iter().collect());
+        }
+        let [r] = rects else { return (Vec2::ZERO, vec![]) };
+        if self.boxes.is_empty() {
+            return (Vec2::ZERO, vec![]);
+        }
+        let spaced =
+            axes.filter_map(|(x, c)| self.even_spacing(*r, x, tol).map(|(shift, _)| (shift / c, x))).min_by(|a, b| a.0.abs().total_cmp(&b.0.abs()));
+        let Some((s, x)) = spaced else { return (Vec2::ZERO, vec![]) };
+        let gaps = self.even_spacing(*r + u * s, x, tol).map(|(_, gaps)| gaps).unwrap_or_default();
+        (u * s, gaps.into_iter().flat_map(|g| self.gap_marks(g, x, tol)).collect())
+    }
+
     /// Snap rectangles that move together (an artboard and its bleed): the edge or centre of any
     /// of them nearest a target, per axis. A single moved selection with Spacing Guides
     /// ([`Self::for_move`]) is spaced evenly along an axis that lines up with nothing
