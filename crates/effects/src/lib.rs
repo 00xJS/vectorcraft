@@ -468,6 +468,13 @@ pub fn effect_catalog() -> Vec<EffectInfo> {
             json!({"amount": 50.0, "radius": 1.0, "threshold": 0.0}),
         ),
         r(
+            "sketch.chalkCharcoal",
+            "Chalk & Charcoal…",
+            SKETCH,
+            "{chalkArea: 0..20 (6; chalk in light areas), charcoalArea: 0..20 (6; charcoal in dark areas), strokePressure: 0..5 (2)} redraws the object with chalk highlights and charcoal strokes on white paper, keeping its coverage. Original visual approximation from public documentation; slider ranges and defaults are VectorCraft choices, not verified proprietary values.",
+            json!({"chalkArea": 6.0, "charcoalArea": 6.0, "strokePressure": 2.0}),
+        ),
+        r(
             "sketch.halftonePattern",
             "Halftone Pattern…",
             SKETCH,

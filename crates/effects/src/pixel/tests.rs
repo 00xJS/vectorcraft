@@ -1998,6 +1998,50 @@ fn brush_strokes_follow_the_object_at_any_resolution() {
     }
 }
 
+/// Chalk & Charcoal of `p` over `w` × `h` pixels of `src`, laid out by `s`.
+fn chalk_charcoal(p: serde_json::Value, src: &[u8], w: usize, h: usize, s: &PixelSpace) -> Vec<u8> {
+    let mut out = src.to_vec();
+    fx("sketch.chalkCharcoal", p).apply(&mut out, w, h, s);
+    out
+}
+
+#[test]
+fn chalk_charcoal_params_take_defaults_and_stay_in_range() {
+    assert_eq!(
+        fx("sketch.chalkCharcoal", json!({})),
+        PixelFx::ChalkCharcoal { chalk: 6.0, charcoal: 6.0, pressure: 2.0 }
+    );
+    assert_eq!(
+        fx("sketch.chalkCharcoal", json!({"chalkArea": 1e9, "charcoalArea": -2, "strokePressure": 99})),
+        PixelFx::ChalkCharcoal { chalk: 20.0, charcoal: 0.0, pressure: 5.0 }
+    );
+    let doc = crate::effect_info("sketch.chalkCharcoal").unwrap().params;
+    assert!(doc.contains("chalkArea") && doc.contains("charcoalArea") && doc.contains("strokePressure"), "{doc}");
+    let f = fx("sketch.chalkCharcoal", json!({"strokePressure": 5}));
+    assert_eq!(f.outset(Rect::new(0.0, 0.0, 100.0, 50.0)), 0.0);
+    assert!(f.reach().unwrap() > 0.0);
+}
+
+#[test]
+fn chalk_charcoal_draws_in_black_and_white_only() {
+    let (w, h) = (48, 48);
+    let src = image(w, h, |x, y| {
+        let c = [[230u8, 20, 20], [20, 200, 40], [30, 60, 220], [240, 220, 30]][(x / 12) % 4];
+        let a: u16 = if y < 24 { 255 } else { 128 };
+        [c[0], c[1], c[2]].map(|v| (u16::from(v) * a / 255) as u8).into_iter().chain([a as u8]).collect::<Vec<_>>().try_into().unwrap()
+    });
+    let out = chalk_charcoal(json!({"chalkArea": 12, "charcoalArea": 12, "strokePressure": 4}), &src, w, h, &space(w, h));
+    for (p, q) in out.as_chunks::<4>().0.iter().zip(src.as_chunks::<4>().0) {
+        assert_eq!(p[3], q[3], "coverage kept");
+        if p[3] == 0 {
+            continue;
+        }
+        assert_eq!(p[0], p[1]);
+        assert_eq!(p[1], p[2]);
+    }
+    assert_ne!(out, src);
+}
+
 /// Halftone Pattern of `p` over `w` × `h` pixels of `src`, laid out by `s`.
 fn halftone(p: serde_json::Value, src: &[u8], w: usize, h: usize, s: &PixelSpace) -> Vec<u8> {
     let mut out = src.to_vec();
