@@ -1650,6 +1650,20 @@ fn effect_color_param_error_is_translated() {
     }
 }
 
+/// The error for a Levels or Curves `channel` the effect doesn't have, whose text the scan above
+/// doesn't read, is translated whole in each language of [`COMPLETE_MESSAGES`] and in Bulgarian.
+#[test]
+fn effect_channel_param_error_is_translated() {
+    use serde_json::json;
+    let p = json!({"effect": "adjust.levels", "params": {"channel": "alpha"}});
+    let e = vectorcraft_engine::check_params("effect.apply", &p).unwrap_err();
+    let vectorcraft_engine::EngineError::BadParams { msg, .. } = &e else { panic!("{e}") };
+    for code in COMPLETE_MESSAGES.iter().chain(&["bg"]) {
+        let shown = message(Lang::from_code(code).unwrap(), &e.to_string());
+        assert!(!shown.contains(msg.as_str()) && shown.contains("`channel`") && shown.contains("effect.apply"), "{code}: {shown}");
+    }
+}
+
 /// The notes of an EPS or `.ai` whose layers weren't read, which the importer pushes as warnings
 /// (the scan above doesn't read them), are translated whole, reason included, as the status bar
 /// shows them after opening (#2035).
