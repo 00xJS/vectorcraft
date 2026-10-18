@@ -2483,6 +2483,10 @@ artboard `page` (or, with `crop: "bounding"`, its art's bounds), linked to the f
 (see Linked images), and vectors in every output; with `link: false` (or from `dataBase64`) it is an editable copy
 of its art, as one clipped group. `at` centres it, `rect` fits it, `replace`
 swaps the selected object (keeping its place and transform), `template` puts it on a new template layer.
+The art's bounds are the bounds of the art that shows, with its strokes and effects, as an export measures them:
+hidden objects, guides and template layers do not count, and symbol instances are measured by their art. A page or artboard holds the objects
+whose shown art lies on it; a hidden object on it is still placed and stays hidden, as do the hidden members of the groups placed.
+`replace` and the `width` and `height` that `file.place` answers also measure symbol instances by their art.
 `file.place.info` describes a file without placing it and `image.info` reports a placed image's link, colour mode and
 effective ppi. `file.place.queue` loads the place cursor (the `place` tool) with several files: headless, drive it
 with `pointer_gesture` (a click places at 100% with the top-left corner there, a drag at the dragged size) and
