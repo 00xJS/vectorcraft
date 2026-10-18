@@ -806,6 +806,12 @@ type Places = BTreeMap<Vec<usize>, Vec<(usize, usize)>>;
 pub const FORMAT_VERSION: u32 = 1;
 
 impl Document {
+    /// Document Raster Effects Settings › Resolution in ppi, 1 to 2400 (72 when the stored value
+    /// isn't a number).
+    pub fn raster_ppi(&self) -> f64 {
+        Some(self.raster_effects_ppi).filter(|v| v.is_finite()).unwrap_or(72.0).clamp(1.0, 2400.0)
+    }
+
     /// The ruler zero point, or zero on both axes when either stored coordinate is invalid.
     /// Rulers, coordinate fields and guide snapping use the same supported range.
     pub fn ruler_origin_or_zero(&self) -> Point {

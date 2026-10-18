@@ -1651,7 +1651,11 @@ impl Writer<'_> {
             return 0;
         }
         let bounds = n.visual_bounds_with(&self.doc.symbol_boxes());
-        let reach: f64 = fx.iter().map(|f| f.outset(bounds.unwrap_or_default())).sum::<f64>() + 2.0;
+        // An Outer Glow's silhouette grows by a quarter of a pixel of the document's raster grid first.
+        let grow = 18.0 / self.doc.raster_ppi();
+        let reach: f64 =
+            fx.iter().map(|f| f.outset(bounds.unwrap_or_default()) + if matches!(f, RasterFx::OuterGlow { .. }) { grow } else { 0.0 }).sum::<f64>()
+                + 2.0;
         let region = bounds.map(|b| self.xf.transform_rect_bbox(b).inflate(reach, reach));
         let mut opened = 0;
         for f in fx.iter().rev() {
@@ -1691,9 +1695,10 @@ impl Writer<'_> {
                     self.num(*dy),
                     flood(color, *opacity)
                 ),
-                // The glow blurs a solid silhouette: alpha × 255 makes any alpha full.
+                // The glow blurs a solid silhouette (alpha × 255 makes any alpha full) grown by a quarter raster pixel.
                 RasterFx::OuterGlow { opacity, blur, color, .. } => format!(
-                    "<feComponentTransfer in=\"SourceAlpha\"><feFuncA type=\"linear\" slope=\"255\"/></feComponentTransfer><feGaussianBlur stdDeviation=\"{}\" result=\"glow\"/>{}<feComposite in2=\"glow\" operator=\"in\" result=\"paint\"/><feMerge><feMergeNode in=\"paint\"/><feMergeNode in=\"SourceGraphic\"/></feMerge>",
+                    "<feComponentTransfer in=\"SourceAlpha\"><feFuncA type=\"linear\" slope=\"255\"/></feComponentTransfer><feMorphology operator=\"dilate\" radius=\"{}\"/><feGaussianBlur stdDeviation=\"{}\" result=\"glow\"/>{}<feComposite in2=\"glow\" operator=\"in\" result=\"paint\"/><feMerge><feMergeNode in=\"paint\"/><feMergeNode in=\"SourceGraphic\"/></feMerge>",
+                    fmt_num(grow, 3),
                     sd(*blur),
                     flood(color, *opacity)
                 ),
