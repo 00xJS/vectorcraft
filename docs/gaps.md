@@ -158,7 +158,7 @@ from G14 and the budget run of G15: **~170–270 h** one agent, ~50–80 h wall 
 
 - **Done:** Numeric fields keep a text drag's start when the pointer gains focus and movement exceeds the click threshold (#1326, in part). A completed focus click selects the whole value; keyboard focus, double-click and numeric stepping remain regression-tested. Short movements still classified as clicks can select all; that case remains open.
 
-- **Done:** DXF reads control-point SPLINE closure (#1299 follow-up after #1320); open curves keep their open state. Escape leaves Artboard editing for Selection; during a drag it first cancels the gesture. Headless egui key events cover idle Escape, active-drag cancellation and a subsequent Escape in `tests_distortkeys.rs`.
+- **Done:** DXF reads control-point SPLINE closure (#1299 follow-up after #1320); open curves keep their open state. DXF export now recognizes circular cubic paths conservatively and writes native CIRCLE/ARC across R12–2018; a non-circular ellipse remains SPLINE. CNC preset and VCarve QA remain open. Escape leaves Artboard editing for Selection; during a drag it first cancels the gesture. Headless egui key events cover idle Escape, active-drag cancellation and a subsequent Escape in `tests_distortkeys.rs`.
 
 - **Done:** Simplify and Add Anchor Points clear stale component selections on rewritten paths; Simplify previews and reports original/new point counts (#1272).
 - **Done:** no-op anchor Align preserves Undo, Redo, saved state and path geometry (#1180 follow-up),
