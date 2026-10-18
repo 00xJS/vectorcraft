@@ -1261,6 +1261,9 @@ pub struct Session {
     /// lends the other tools. None until one is chosen.
     pub(crate) last_selection_tool: Option<&'static str>,
     pub(crate) last_view: ViewInfo,
+    /// The selection tools' measurements for the active document as it is: a pointer move or a
+    /// cursor asked for again over an unchanged document and selection measures nothing again.
+    pub(crate) preview_memo: vectorcraft_tools::select::PreviewMemo,
     depth: u32,
     /// Set when the active tool panicked (see [`guard`]); reported by the next tool event.
     tool_panic: Option<EngineError>,
@@ -1383,6 +1386,7 @@ impl Session {
             lender: None,
             last_selection_tool: None,
             last_view: ViewInfo::default(),
+            preview_memo: Default::default(),
             depth: 0,
             tool_panic: None,
             draw_mode: DrawMode::Normal,

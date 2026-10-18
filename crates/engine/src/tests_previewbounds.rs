@@ -6,8 +6,8 @@ use std::sync::Arc;
 use serde_json::{Value, json};
 use vectorcraft_color::{Color, Paint};
 use vectorcraft_doc::{Appearance, Document, Effect, Node, NodeId, NodeKind, Symbol};
-use vectorcraft_geom::{Affine, Rect, shapes};
-use vectorcraft_tools::{PointerEvent, PointerKind};
+use vectorcraft_geom::{Affine, Point, Rect, shapes};
+use vectorcraft_tools::{Cursor, Mods, PointerEvent, PointerKind};
 
 use super::*;
 
@@ -706,4 +706,42 @@ fn the_bounding_box_handles_sit_on_the_offset_shape() {
     };
     assert!(drag(true).width() > 150.0, "a scale from the edge of the offset shape");
     assert_eq!(drag(false).width(), 100.0, "off, the point is no handle");
+}
+
+#[test]
+fn hovering_over_an_unchanged_document_measures_nothing_again() {
+    // A selected square with Offset Path 10, drawn from 90 to 210, with Use Preview Bounds and Smart
+    // Guides on: the bounding box and the center Smart Guides label are measured once.
+    let mut s = session();
+    let id = offset_square(&mut s, 100.0);
+    preview(&mut s, true);
+    let v = ViewInfo::default();
+    s.select_tool("selection", v).unwrap();
+    let hover = |s: &mut Session, x: f64| {
+        s.pointer(&PointerEvent::new(PointerKind::Move, x, 150.0), v).unwrap();
+        s.cursor(Point::new(x, 150.0), Mods::default(), v)
+    };
+    let xs = [210.0, 150.0, 151.0, 180.0, 250.0];
+    for x in xs {
+        hover(&mut s, x);
+    }
+    let measured = s.preview_memo.measurements();
+    assert!(measured > 0, "the first hover measures");
+    for x in xs {
+        hover(&mut s, x);
+    }
+    assert_eq!(s.preview_memo.measurements(), measured, "hovering again measures nothing");
+    assert_eq!(hover(&mut s, 210.0), Cursor::ResizeH, "the right edge of the offset shape");
+    assert_ne!(hover(&mut s, 230.0), Cursor::ResizeH);
+
+    // Offset Path 30 draws the square from 70 to 230: the box is measured again.
+    run(&mut s, "effect.setParams", json!({"index": 0, "params": {"offset": 30}, "ids": [id.0], "item": null}));
+    assert_eq!(hover(&mut s, 230.0), Cursor::ResizeH, "the right edge of the new offset shape");
+    let measured_again = s.preview_memo.measurements();
+    assert!(measured_again > measured);
+
+    // Moved 50 pt to the right, the square is drawn from 120 to 280.
+    run(&mut s, "object.move", json!({"dx": 50, "dy": 0}));
+    assert_eq!(hover(&mut s, 280.0), Cursor::ResizeH, "the right edge of the moved offset shape");
+    assert!(s.preview_memo.measurements() > measured_again);
 }

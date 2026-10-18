@@ -22,6 +22,9 @@
 //! under the pointer, or into a new frame of the same shape and size at the click on empty canvas,
 //! and a drag draws a rectangle for the new frame (`text.thread.add`). Escape drops the loaded text.
 
+use std::cell::RefCell;
+use std::collections::HashMap;
+
 use serde_json::{Value, json};
 use vectorcraft_doc::hit::{hit_test, marquee, objects_at};
 use vectorcraft_doc::{NodeId, OrientedBox};
@@ -259,16 +262,103 @@ pub fn matrix_json(a: Affine) -> Value {
     json!([c[0], c[1], c[2], c[3], c[4], c[5]])
 }
 
+/// The bounds the selection tools measured for one state of an open document: [`selection_bounds`],
+/// [`selection_box`] and the objects' bounds that Smart Guides find centers in while hovering
+/// ([`object_bounds`]). With Use Preview Bounds on, each measurement evaluates the geometry effects
+/// of the objects (Offset Path, Pathfinder, Outline Object, blends), and the canvas asks for the
+/// cursor on every hover frame. The session keeps one memo ([`ToolContext::preview_memo`]), as the
+/// UI keeps one for `VectorcraftApp::selection_box`. The memo holds the measurements for one key
+/// (the document's uid and revision, the selected objects and Use Preview Bounds), and a new key
+/// replaces them.
+#[derive(Default)]
+pub struct PreviewMemo(RefCell<MemoState>);
+
+#[derive(Default)]
+struct MemoState {
+    entry: Option<Measured>,
+    /// How many measurements the memo has made.
+    measurements: u64,
+}
+
+/// The measurements for one key; a slot holds `None` until it is measured.
+struct Measured {
+    revision: (u64, u64),
+    objects: Vec<NodeId>,
+    preview: bool,
+    bounds: Option<Option<Rect>>,
+    oriented: Option<Option<OrientedBox>>,
+    by_object: HashMap<NodeId, Option<Option<Rect>>>,
+}
+
+impl Measured {
+    fn is_for(&self, cx: &ToolContext) -> bool {
+        self.revision == cx.revision && self.preview == cx.preview_bounds && self.objects == cx.selection.objects
+    }
+}
+
+impl PreviewMemo {
+    /// How many measurements the memo has made: each one it could not answer from the measurements
+    /// for the document as it is.
+    pub fn measurements(&self) -> u64 {
+        self.0.try_borrow().map_or(0, |st| st.measurements)
+    }
+
+    /// The measurements for the state `cx` shows, after the ones for any other state are dropped.
+    fn current<'m>(st: &'m mut MemoState, cx: &ToolContext) -> &'m mut Measured {
+        let fresh = || Measured {
+            revision: cx.revision,
+            objects: cx.selection.objects.clone(),
+            preview: cx.preview_bounds,
+            bounds: None,
+            oriented: None,
+            by_object: HashMap::new(),
+        };
+        if !st.entry.as_ref().is_some_and(|m| m.is_for(cx)) {
+            st.entry = Some(fresh());
+        }
+        st.entry.get_or_insert_with(fresh)
+    }
+
+    /// The value `slot` holds for the state `cx` shows, else `measure`'s, which `slot` then holds.
+    fn remember<T: Clone>(&self, cx: &ToolContext, slot: impl Fn(&mut Measured) -> &mut Option<T>, measure: impl FnOnce() -> T) -> T {
+        if let Ok(mut st) = self.0.try_borrow_mut()
+            && let Some(v) = slot(Self::current(&mut st, cx)).clone()
+        {
+            return v;
+        }
+        let v = measure();
+        if let Ok(mut st) = self.0.try_borrow_mut() {
+            st.measurements += 1;
+            *slot(Self::current(&mut st, cx)) = Some(v.clone());
+        }
+        v
+    }
+}
+
+/// `measure`'s value, kept in the session's [`PreviewMemo`] in the slot `slot` picks; measured
+/// every time without a memo.
+fn remembered<T: Clone>(cx: &ToolContext, slot: impl Fn(&mut Measured) -> &mut Option<T>, measure: impl FnOnce() -> T) -> T {
+    match cx.preview_memo {
+        Some(memo) => memo.remember(cx, slot, measure),
+        None => measure(),
+    }
+}
+
 /// Selection bounds used for the bounding box: visual bounds as drawn with Use Preview Bounds
 /// ([`vectorcraft_effects::preview`]), else geometric bounds.
 pub fn selection_bounds(cx: &ToolContext) -> Option<Rect> {
-    vectorcraft_effects::preview::bounds_of(cx.doc, &cx.selection.objects, cx.preview_bounds)
+    remembered(cx, |m| &mut m.bounds, || vectorcraft_effects::preview::bounds_of(cx.doc, &cx.selection.objects, cx.preview_bounds))
 }
 
 /// [`selection_bounds`] square to the selection's own angle: the bounding box the Selection tool
 /// shows and drags (rotated after a rotation).
 pub fn selection_box(cx: &ToolContext) -> Option<OrientedBox> {
-    vectorcraft_effects::preview::oriented_bounds(cx.doc, &cx.selection.objects, cx.preview_bounds)
+    remembered(cx, |m| &mut m.oriented, || vectorcraft_effects::preview::oriented_bounds(cx.doc, &cx.selection.objects, cx.preview_bounds))
+}
+
+/// The bounds of object `id`, measured as [`selection_bounds`] measures the selection.
+fn object_bounds(cx: &ToolContext, id: NodeId) -> Option<Rect> {
+    remembered(cx, |m| m.by_object.entry(id).or_insert(None), || vectorcraft_effects::preview::bounds_of(cx.doc, &[id], cx.preview_bounds))
 }
 
 /// The objects of `ids` that lie entirely inside marquee `r`, edges included, measured by their
@@ -334,7 +424,7 @@ impl SelectionTool {
                 if !cx.smart_guides {
                     return None;
                 }
-                let c = vectorcraft_effects::preview::bounds_of(cx.doc, &[id], cx.preview_bounds)?.center();
+                let c = object_bounds(cx, id)?.center();
                 (c.distance(p) <= reach).then_some((c, "center"))
             })
         })
@@ -2204,5 +2294,37 @@ mod tests {
         t.pointer(&cx, &ev(PointerKind::Down, port.x, port.y));
         t.pointer(&cx, &ev(PointerKind::Up, port.x, port.y));
         assert_ne!(t.cursor(&cx, Point::new(30.0, 420.0), Mods::default()), Cursor::LoadedText);
+    }
+
+    /// The memo answers for the revision, the selected objects and Use Preview Bounds it measured
+    /// for, and measures again when any of them changes.
+    #[test]
+    fn the_preview_memo_measures_once_per_revision_selection_and_preview_bounds() {
+        let (d, id) = doc_with_rect();
+        let mut moved = d.clone();
+        if let Some(n) = moved.node_mut(id) {
+            n.transform(Affine::translate((50.0, 0.0)), false);
+        }
+        let (mut s, p, memo) = (Selection::default(), paint(), PreviewMemo::default());
+        s.set([id]);
+        let at = |d, s, revision, preview_bounds| {
+            let c = ToolContext { revision, preview_bounds, preview_memo: Some(&memo), ..cx(d, s, &p) };
+            (selection_bounds(&c).map(|r| r.x1), object_bounds(&c, id).map(|r| r.x1))
+        };
+        assert_eq!(at(&d, &s, (1, 1), false), (Some(200.0), Some(200.0)));
+        assert_eq!(memo.measurements(), 2);
+        // The same revision with the moved square: the memo answers with what it measured.
+        assert_eq!(at(&moved, &s, (1, 1), false), (Some(200.0), Some(200.0)));
+        assert_eq!(memo.measurements(), 2);
+        assert_eq!(at(&moved, &s, (1, 2), false), (Some(250.0), Some(250.0)), "a new revision");
+        assert_eq!(memo.measurements(), 4);
+        assert_eq!(at(&moved, &s, (1, 2), true), (Some(250.5), Some(250.5)), "Use Preview Bounds counts the stroke");
+        assert_eq!(memo.measurements(), 6);
+        let none = Selection::default();
+        assert_eq!(at(&moved, &none, (1, 2), true), (None, Some(250.5)), "another selection");
+        assert_eq!(memo.measurements(), 8);
+        // Without a memo, every call measures.
+        let c = cx(&moved, &s, &p);
+        assert_eq!(selection_bounds(&c).map(|r| r.x1), Some(250.0));
     }
 }
