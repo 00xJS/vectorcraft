@@ -1917,6 +1917,13 @@ fn shows_a_name(id: &str, label: &str) -> bool {
         || (matches!(id, "effect.apply" | "effect.dialog") && vectorcraft_effects::plugin_effects().iter().any(|e| e.label == label))
 }
 
+/// Does the menu item `id` with `params` list an installed plug-in (an Object › Plug-ins filter or
+/// an Effect › Plug-ins effect), by the plug-in's own name? Told by the item itself, so it holds
+/// while another thread installs or removes plug-ins.
+pub(crate) fn lists_plugin(id: &str, params: &Value) -> bool {
+    id == "plugin.dialog" || params.get("effect").and_then(Value::as_str).and_then(vectorcraft_plugins::effect::plugin_id).is_some()
+}
+
 /// The label of a menu item as drawn: [`dynamic_label`] in the UI language. Labels assembled
 /// around a name (Undo *Move*, Reset *Essentials*, Last Effect: *Drop Shadow*) are translated as
 /// templates so the name can move; names that are user data (files, views, fonts, custom
@@ -3952,17 +3959,17 @@ pub const DYNAMIC_LABELS: &[&str] = &[
 
 /// Every English string the menus, the command palette, the panel registry, the toolbar and the
 /// Preferences dialog can show: what a complete language catalog has to cover. Names that are user
-/// data (fonts, recent files, saved views, libraries), the point sizes and the view angles are
-/// left out.
+/// data (fonts, recent files, saved views, libraries, installed plug-ins), the point sizes and the
+/// view angles are left out.
 pub fn menu_strings() -> std::collections::BTreeSet<String> {
     use std::collections::BTreeSet;
-    fn user_data(id: &str) -> bool {
-        hidden_when_disabled(id) || id.starts_with("type.recentFont")
+    fn user_data(id: &str, params: &Value) -> bool {
+        hidden_when_disabled(id) || id.starts_with("type.recentFont") || lists_plugin(id, params)
     }
     fn walk(items: &[Item], under: &str, out: &mut BTreeSet<String>) {
         for it in items {
             match it {
-                Item::Cmd(l, id, _) => {
+                Item::Cmd(l, id, params) => {
                     let size = l.strip_suffix(" pt").is_some_and(|n| n.chars().all(|c| c.is_ascii_digit()));
                     // View › Rotate View lists angles: an optional minus sign, digits and a degree sign.
                     let angle = l
@@ -3971,7 +3978,7 @@ pub fn menu_strings() -> std::collections::BTreeSet<String> {
                         .is_some_and(|n| !n.is_empty() && n.chars().all(|c| c.is_ascii_digit()));
                     // VectorCraft › Language lists each language by its own name.
                     let language_name = *id == "app.language" && crate::i18n::Lang::all().any(|lang| lang.name() == *l);
-                    if !user_data(id) && !size && !angle && !language_name && *l != "—" {
+                    if !user_data(id, params) && !size && !angle && !language_name && *l != "—" {
                         out.insert(l.to_string());
                     }
                 }

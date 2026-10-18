@@ -954,8 +954,11 @@ fn menu_catalogs_translate_every_menu_label() {
     let language_name = |l: &str| Lang::all().any(|lang| lang.name() == l);
     // Font names and sizes, and installed plug-ins' own names, are not interface text.
     let interface = |(label, id, p): &(&str, &str, serde_json::Value)| {
-        let plugin = *id == "plugin.dialog" || p.get("effect").and_then(serde_json::Value::as_str).is_some_and(|e| e.starts_with("plugin."));
-        *id != "text.setStyle" && !plugin && shown.contains(*label) && !MENU_KEEP_AS_IS.contains(label) && !language_name(label)
+        *id != "text.setStyle"
+            && !crate::menus::lists_plugin(id, p)
+            && shown.contains(*label)
+            && !MENU_KEEP_AS_IS.contains(label)
+            && !language_name(label)
     };
     let mut all: Vec<String> = labels.iter().filter(|l| interface(l)).map(|(l, ..)| l.to_string()).collect();
     all.extend(toggled_labels());
