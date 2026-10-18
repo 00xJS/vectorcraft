@@ -867,6 +867,131 @@ fn draw2_commands_reject_bad_params() {
     }
 }
 
+/// A path of two open subpaths, each of three anchors from x 100 to x 300 with a middle anchor that
+/// has two handles: subpath 0 at y 100, subpath 1 at y 300.
+fn two_subpaths(s: &mut Session) -> NodeId {
+    let id = curve(s);
+    let sub = |y: f64| {
+        let anchors = json!([
+            {"x": 100, "y": y, "out": [130, y - 30.0]},
+            {"x": 200, "y": y, "in": [170, y - 30.0], "out": [230, y - 30.0]},
+            {"x": 300, "y": y, "in": [270, y - 30.0]},
+        ]);
+        json!({"anchors": anchors, "closed": false})
+    };
+    s.execute("path.setAnchors", &json!({"id": id.0, "subpaths": [sub(100.0), sub(300.0)]})).unwrap();
+    id
+}
+
+/// Runs `cmd` with `p` and `key` set to each of 1.5, -1 and "1": each call fails with an error that
+/// names `key`, and the document and the undo history stay as they were.
+fn refuses_an_index_that_is_not_whole(s: &mut Session, cmd: &str, p: &serde_json::Value, key: &str) {
+    for v in [json!(1.5), json!(-1), json!("1")] {
+        let mut p = p.clone();
+        p[key] = v;
+        let before = s.doc().unwrap().doc.clone();
+        let undo = undo_steps(s);
+        let Err(e) = s.execute(cmd, &p) else { panic!("{cmd} {p} succeeded") };
+        assert!(e.to_string().contains(&format!("`{key}`")), "{cmd} {p}: {e}");
+        assert!(s.doc().unwrap().doc == before, "{cmd} {p} changed the document");
+        assert_eq!(undo_steps(s), undo, "{cmd} {p} left an undo step");
+    }
+}
+
+/// Runs `cmd` with `p` on path `id` (made by [`two_subpaths`]) with `subpath: 1`, without `subpath`
+/// and with `subpath: null`, undoing each: the first changes subpath 1 alone, and the others change
+/// subpath 0 alone.
+fn edits_the_subpath_given(s: &mut Session, cmd: &str, p: &serde_json::Value, id: NodeId) {
+    let before = path(s, id).subpaths;
+    for (si, p) in [(1, with(p, json!({"subpath": 1}))), (0, p.clone()), (0, with(p, json!({"subpath": null})))] {
+        s.execute(cmd, &p).unwrap();
+        let after = path(s, id).subpaths;
+        assert_eq!(after.len(), 2, "{cmd} {p}");
+        assert!(after[si] != before[si] && after[1 - si] == before[1 - si], "{cmd} {p}: {after:?}");
+        s.execute("edit.undo", &json!({})).unwrap();
+        assert_eq!(path(s, id).subpaths, before, "{cmd} {p}: undo");
+    }
+}
+
+#[test]
+fn curvature_edit_refuses_a_subpath_that_is_not_a_whole_number() {
+    let mut s = session();
+    let id = two_subpaths(&mut s);
+    let p = json!({"id": id.0, "op": "move", "anchor": 1, "x": 200, "y": 150});
+    refuses_an_index_that_is_not_whole(&mut s, "path.curvatureEdit", &p, "subpath");
+    edits_the_subpath_given(&mut s, "path.curvatureEdit", &p, id);
+}
+
+#[test]
+fn remove_anchor_refuses_a_subpath_that_is_not_a_whole_number() {
+    let mut s = session();
+    let id = two_subpaths(&mut s);
+    let p = json!({"id": id.0, "anchor": 1});
+    refuses_an_index_that_is_not_whole(&mut s, "path.removeAnchor", &p, "subpath");
+    edits_the_subpath_given(&mut s, "path.removeAnchor", &p, id);
+}
+
+#[test]
+fn convert_anchor_refuses_a_subpath_that_is_not_a_whole_number() {
+    let mut s = session();
+    let id = two_subpaths(&mut s);
+    let p = json!({"id": id.0, "anchor": 1, "to": "corner"});
+    refuses_an_index_that_is_not_whole(&mut s, "path.convertAnchor", &p, "subpath");
+    edits_the_subpath_given(&mut s, "path.convertAnchor", &p, id);
+}
+
+#[test]
+fn reshape_segment_refuses_a_subpath_that_is_not_a_whole_number() {
+    let mut s = session();
+    let id = two_subpaths(&mut s);
+    let p = json!({"id": id.0, "segment": 0, "t": 0.5, "dx": 0, "dy": 20});
+    refuses_an_index_that_is_not_whole(&mut s, "path.reshapeSegment", &p, "subpath");
+    edits_the_subpath_given(&mut s, "path.reshapeSegment", &p, id);
+}
+
+#[test]
+fn split_refuses_a_subpath_anchor_or_segment_that_is_not_a_whole_number() {
+    // A bad `anchor` beside a good `segment` is refused, and so is a bad `segment` beside a good
+    // `anchor`.
+    let mut s = session();
+    let id = two_subpaths(&mut s);
+    let at_anchor = json!({"id": id.0, "anchor": 1});
+    let at_segment = json!({"id": id.0, "segment": 0, "t": 0.5});
+    refuses_an_index_that_is_not_whole(&mut s, "path.split", &at_anchor, "subpath");
+    refuses_an_index_that_is_not_whole(&mut s, "path.split", &at_segment, "subpath");
+    refuses_an_index_that_is_not_whole(&mut s, "path.split", &at_segment, "anchor");
+    refuses_an_index_that_is_not_whole(&mut s, "path.split", &at_anchor, "segment");
+    let before = path(&s, id).subpaths;
+    for (si, p) in [(1, with(&at_anchor, json!({"subpath": 1}))), (0, at_anchor.clone()), (0, with(&at_anchor, json!({"subpath": null})))] {
+        s.execute("path.split", &p).unwrap();
+        let after = path(&s, id).subpaths;
+        // The subpath split becomes two of two anchors each, in its place.
+        let kept = if si == 1 { &after[0] } else { &after[2] };
+        assert!(after.len() == 3 && after[si].anchors.len() == 2 && after[si + 1].anchors.len() == 2, "{p}: {after:?}");
+        assert_eq!(kept, &before[1 - si], "{p}");
+        s.execute("edit.undo", &json!({})).unwrap();
+        assert_eq!(path(&s, id).subpaths, before, "{p}: undo");
+    }
+}
+
+#[test]
+fn set_handle_refuses_a_subpath_that_is_not_a_whole_number() {
+    let mut s = session();
+    let id = two_subpaths(&mut s);
+    let p = json!({"id": id.0, "anchor": 0, "which": "out", "x": 140, "y": 250});
+    refuses_an_index_that_is_not_whole(&mut s, "path.setHandle", &p, "subpath");
+    edits_the_subpath_given(&mut s, "path.setHandle", &p, id);
+}
+
+#[test]
+fn insert_anchor_refuses_a_subpath_that_is_not_a_whole_number() {
+    let mut s = session();
+    let id = two_subpaths(&mut s);
+    let p = json!({"id": id.0, "segment": 0, "t": 0.5});
+    refuses_an_index_that_is_not_whole(&mut s, "path.insertAnchor", &p, "subpath");
+    edits_the_subpath_given(&mut s, "path.insertAnchor", &p, id);
+}
+
 #[test]
 fn path_commands_refuse_a_delta_or_point_of_1e9_pt_or_more() {
     // `path.reshapeSegment` refuses a delta of 1e9 pt or longer, and `path.convertAnchor` and

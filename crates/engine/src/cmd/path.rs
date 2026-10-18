@@ -7,6 +7,7 @@ use vectorcraft_doc::{NodeId, NodeKind, Scaling};
 use vectorcraft_geom::{Anchor, AnchorKind, PathData, Point, SubPath, Vec2};
 
 use super::create::anchor_from_json;
+use super::draw2::usize_opt;
 use super::pathops::Beside;
 use super::*;
 use crate::EngineError;
@@ -37,7 +38,7 @@ pub fn specs() -> Vec<CommandSpec> {
             "Move Direction Handle",
             [],
             None,
-            "{id, subpath, anchor, which: \"in\"|\"out\", x, y, independent?: bool}",
+            "{id, subpath?, anchor, which: \"in\"|\"out\", x, y, independent?: bool}",
             has_doc,
             set_handle
         ),
@@ -104,7 +105,7 @@ pub fn specs() -> Vec<CommandSpec> {
             has_doc,
             reshape
         ),
-        cmd!("path.insertAnchor", "Add Anchor Point", [], None, "{id, subpath, segment, t: 0..1}", has_doc, insert_anchor),
+        cmd!("path.insertAnchor", "Add Anchor Point", [], None, "{id, subpath?, segment, t: 0..1}", has_doc, insert_anchor),
         cmd!(
             "path.cutAtAnchors",
             "Cut Path at Selected Anchor Points",
@@ -215,7 +216,7 @@ pub(crate) fn transform_anchors(s: &mut Session, label: &str, xf: vectorcraft_ge
 
 fn set_handle(s: &mut Session, p: &Value) -> Result<Value> {
     let id = id_param(p, "id").ok_or_else(|| bad("path.setHandle", "missing id"))?;
-    let si = p.get("subpath").and_then(Value::as_u64).unwrap_or(0) as usize;
+    let si = usize_opt(p, "subpath", "path.setHandle")?.unwrap_or(0);
     let ai = p.get("anchor").and_then(Value::as_u64).ok_or_else(|| bad("path.setHandle", "missing anchor"))? as usize;
     let out = str_param(p, "which") != Some("in");
     let pos = Point::new(f64_req(p, "x", "path.setHandle")?, f64_req(p, "y", "path.setHandle")?);
@@ -715,7 +716,7 @@ fn reshape(s: &mut Session, p: &Value) -> Result<Value> {
 
 fn insert_anchor(s: &mut Session, p: &Value) -> Result<Value> {
     let id = id_param(p, "id").ok_or_else(|| bad("path.insertAnchor", "missing id"))?;
-    let si = p.get("subpath").and_then(Value::as_u64).unwrap_or(0) as usize;
+    let si = usize_opt(p, "subpath", "path.insertAnchor")?.unwrap_or(0);
     let seg = p.get("segment").and_then(Value::as_u64).ok_or_else(|| bad("path.insertAnchor", "missing segment"))? as usize;
     let t = f64_or(p, "t", 0.5).clamp(0.0, 1.0);
     let idx = s.edit("Add Anchor Point", |d, _| {

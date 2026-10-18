@@ -1962,6 +1962,10 @@ does. `path.convertAnchor` (its `x`, `y`) and `path.freehand` (each of its `poin
 path by its control points when one of them has an x or y that is infinite or larger in size than `f64::MAX / 16`
 (about 1.1e307), so an edit that leaves such a path selected, `path.create` included, fails with "result would exceed
 the canvas (coordinates out of range)".
+`path.curvatureEdit`, `path.removeAnchor`, `path.convertAnchor`, `path.reshapeSegment`, `path.split`,
+`path.setHandle` and `path.insertAnchor` edit subpath 0 when `subpath` is absent or null, and refuse a `subpath` that
+is not a whole number of 0 or more, such as 1.5, -1 or "1" ("missing integer `subpath`"); `path.split` refuses such
+an `anchor` or `segment` in the same way. The document does not change and no undo step is recorded.
 
 A `pointer_gesture` with `mods: {cmd: true}` held at the press, with any tool but the selection tools (Command on
 macOS, Ctrl elsewhere), drags with the selection tool chosen last (`select_tool`), or Direct Selection with the Pen,
