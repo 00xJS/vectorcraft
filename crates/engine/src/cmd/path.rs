@@ -100,7 +100,7 @@ pub fn specs() -> Vec<CommandSpec> {
             "Reshape",
             [],
             None,
-            "{id, x, y, dx, dy, tol=3, radius?} Reshape tool: grab the path at (x, y) (adding an anchor there unless one is within tol) and drag it by (dx, dy); nearby anchors follow with a smooth falloff over radius (default: half the subpath's size)",
+            "{id, x, y, dx, dy, tol=3, radius?} Reshape tool: grab the path at (x, y) (adding an anchor there unless one is within tol) and drag it by (dx, dy); nearby anchors follow with a smooth falloff over radius along the path (default: half the subpath's length)",
             has_doc,
             reshape
         ),
@@ -680,21 +680,22 @@ fn reshape(s: &mut Session, p: &Value) -> Result<Value> {
             Some((i, dist)) if dist <= tol => i,
             _ => sp.insert_anchor(seg, t),
         };
-        let origin = sp.anchors[grabbed].p;
-        let r = radius.unwrap_or_else(|| {
-            let mut bp = vectorcraft_geom::BezPath::new();
-            sp.to_bezpath_into(&mut bp);
-            let b = vectorcraft_geom::Shape::bounding_box(&bp);
-            (b.width().hypot(b.height()) / 2.0).max(1.0)
-        });
+        let r = radius.unwrap_or_else(|| (sp.arc_length() / 2.0).max(1.0));
+        let weights: Vec<f64> = sp
+            .anchors
+            .iter()
+            .enumerate()
+            .map(|(i, _)| {
+                if i == grabbed {
+                    1.0
+                } else {
+                    let q = (sp.anchor_arc_distance(grabbed, i) / r).min(1.0);
+                    (1.0 - q * q).powi(2)
+                }
+            })
+            .collect();
         for (i, a) in sp.anchors.iter_mut().enumerate() {
-            let w = if i == grabbed {
-                1.0
-            } else {
-                let q = (a.p.distance(origin) / r).min(1.0);
-                (1.0 - q * q).powi(2)
-            };
-            let v = delta * w;
+            let v = delta * weights[i];
             a.p += v;
             a.h_in += v;
             a.h_out += v;
