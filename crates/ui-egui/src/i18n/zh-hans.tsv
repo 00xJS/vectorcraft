@@ -3861,7 +3861,8 @@ imageTrace	Outline	轮廓
 @msg	it has too much text	它的文字过多
 @msg	its editing data doesn't say where its art is	其编辑数据未说明其图稿的位置
 @msg	its editing data doesn't say where its artboard is	其编辑数据未说明其画板的位置
-@msg	its editing data is for a different page	其编辑数据属于另一个页面
+@msg	its editing data is for a {w} × {h} pt page, not the file's {pw} × {ph} pt page	其编辑数据属于 {w} × {h} pt 的页面，而非文件的 {pw} × {ph} pt 页面
+@msg	its editing data is for a {w} × {h} pt page, the file's {pw} × {ph} pt page at {scale}	其编辑数据属于 {w} × {h} pt 的页面，即文件的 {pw} × {ph} pt 页面按 {scale} 比例缩放后的页面
 @msg	its page has text, and its layers have no text objects to put it in	其页面中有文字，但其图层中没有可放置这些文字的文本对象
 @msg	the art on them differs from the page's in {_1}% of it	其上的图稿与页面的图稿有 {_1}% 不同
 @msg	the art on them differs from the page's in {_1}% of it: they come from its editing data all the same	其上的图稿与页面的图稿有 {_1}% 不同：它们仍从其编辑数据导入

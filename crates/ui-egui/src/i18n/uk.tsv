@@ -3715,6 +3715,8 @@ axis	Both	Обидві
 @msg	its editing data doesn't say where its artboard is	його дані для редагування не вказують, де знаходиться монтажна область
 @msg	its editing data has no layers	у його даних для редагування немає шарів
 @msg	its editing data is damaged	його дані для редагування пошкоджено
+@msg	its editing data is for a {w} × {h} pt page, not the file's {pw} × {ph} pt page	його дані для редагування відносяться до сторінки {w} × {h} пт, а не до сторінки файлу {pw} × {ph} пт
+@msg	its editing data is for a {w} × {h} pt page, the file's {pw} × {ph} pt page at {scale}	його дані для редагування відносяться до сторінки {w} × {h} пт, тобто до сторінки файлу {pw} × {ph} пт у масштабі {scale}
 @msg	its zlib compression is damaged	їхнє стиснення zlib пошкоджено
 @msg	its Zstandard compression is damaged	їхнє стиснення Zstandard пошкоджено
 @msg	it decompresses to more than {_1} MB	після розпакування вони займають понад {_1} МБ

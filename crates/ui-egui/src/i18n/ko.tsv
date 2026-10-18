@@ -4047,7 +4047,8 @@ theme	Appearance	외관
 @msg	it has too much text	텍스트가 너무 많습니다
 @msg	its editing data doesn't say where its art is	편집 데이터에 아트웍의 위치가 없습니다
 @msg	its editing data doesn't say where its artboard is	편집 데이터에 아트보드의 위치가 없습니다
-@msg	its editing data is for a different page	편집 데이터가 다른 페이지용입니다
+@msg	its editing data is for a {w} × {h} pt page, not the file's {pw} × {ph} pt page	편집 데이터가 파일의 {pw} × {ph} pt 페이지가 아닌 {w} × {h} pt 페이지용입니다
+@msg	its editing data is for a {w} × {h} pt page, the file's {pw} × {ph} pt page at {scale}	편집 데이터가 {w} × {h} pt 페이지용입니다. 파일의 {pw} × {ph} pt 페이지를 {scale} 배율로 나타낸 것입니다
 @msg	its page has text, and its layers have no text objects to put it in	페이지에 텍스트가 있지만 레이어에는 이를 넣을 텍스트 개체가 없습니다
 @msg	the art on them differs from the page's in {_1}% of it	이들의 아트웍이 페이지와 {_1}% 다릅니다
 @msg	the art on them differs from the page's in {_1}% of it: they come from its editing data all the same	이들의 아트웍이 페이지와 {_1}% 다릅니다. 그래도 편집 데이터에서 가져왔습니다

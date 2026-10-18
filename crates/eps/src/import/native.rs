@@ -30,7 +30,7 @@ use std::collections::BTreeSet;
 use std::sync::Arc;
 
 use vectorcraft_color::BlendMode;
-use vectorcraft_doc::{AppearanceItem, Document, Node, NodeId, NodeKind, Scaling, TextKind};
+use vectorcraft_doc::{AppearanceItem, Document, Node, NodeId, NodeKind, Scaling, TextKind, Unit};
 use vectorcraft_geom::{Affine, PathData, Point, Rect, Vec2};
 
 use super::Imported;
@@ -994,7 +994,18 @@ fn build(data: &[u8], visible: Option<&Document>, page: Page, outlined: bool, tr
         // scale, which `to_doc` carries, so its art and the page reach the same size (#2031).
         let rect = to_doc.transform_rect_bbox(art_box);
         if (rect.width() - page_rect.width()).abs() > 0.5 || (rect.height() - page_rect.height()).abs() > 0.5 {
-            return Err("its editing data is for a different page".into());
+            // Both sizes in points as the fields show them, and the editing data's page to the
+            // file's as a scale (1:10 is a tenth of its size) when its sides are in proportion and
+            // the scale doesn't round to 1:1.
+            let n = |v: f64| Unit::Points.number(v);
+            let (w, h, pw, ph) = (n(rect.width()), n(rect.height()), n(page_rect.width()), n(page_rect.height()));
+            let k = page_rect.width() / rect.width();
+            let factor = n(k.max(1.0 / k));
+            if k.is_finite() && k > 0.0 && (rect.height() * k - page_rect.height()).abs() <= 0.5 && factor != "1" {
+                let scale = if k >= 1.0 { format!("1:{factor}") } else { format!("{factor}:1") };
+                return Err(format!("its editing data is for a {w} × {h} pt page, the file's {pw} × {ph} pt page at {scale}"));
+            }
+            return Err(format!("its editing data is for a {w} × {h} pt page, not the file's {pw} × {ph} pt page"));
         }
         // The page's area in the layers' document, and the page's type moved there.
         let shift = Affine::translate(Vec2::new(rect.x0 - page_rect.x0, rect.y0 - page_rect.y0));

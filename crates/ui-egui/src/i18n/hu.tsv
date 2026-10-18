@@ -4537,6 +4537,8 @@ imageTrace	Outline	Körvonal
 @msg	its editing data doesn't say where its artboard is	a szerkesztési adataiból nem derül ki, hol van a rajztáblája
 @msg	its editing data has no layers	a szerkesztési adataiban nincsenek rétegek
 @msg	its editing data is damaged	a szerkesztési adatai sérültek
+@msg	its editing data is for a {w} × {h} pt page, not the file's {pw} × {ph} pt page	a szerkesztési adatai egy {w} × {h} pt méretű oldalhoz tartoznak, nem a fájl {pw} × {ph} pt méretű oldalához
+@msg	its editing data is for a {w} × {h} pt page, the file's {pw} × {ph} pt page at {scale}	a szerkesztési adatai egy {w} × {h} pt méretű oldalhoz tartoznak, ami a fájl {pw} × {ph} pt méretű oldala {scale} méretarányban
 @msg	its zlib compression is damaged	a zlib-tömörítésük sérült
 @msg	its Zstandard compression is damaged	a Zstandard-tömörítésük sérült
 @msg	it decompresses to more than {_1} MB	kicsomagolva nagyobbak, mint {_1} MB

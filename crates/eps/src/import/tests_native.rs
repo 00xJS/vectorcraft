@@ -270,7 +270,7 @@ fn editing_data_in_the_units_of_a_user_unit_page_comes_in_at_the_pages_size() {
     assert_eq!((stroke.width, dash.pattern, dash.offset), (20.0, vec![40.0, 20.0], 10.0));
     // Read as if its page had no `UserUnit`, the editing data is for another page.
     let (_, w, read) = crate::layered_ai(&private(&art), page.clone(), vec![], false, false, 1.0);
-    assert!(!read && w.iter().any(|w| w.contains("different page")), "{w:?}");
+    assert!(!read && w.iter().any(|w| w.contains("for a 100 × 100 pt page, the file's 1000 × 1000 pt page at 1:10")), "{w:?}");
     // Editing data with the page in points.
     let points = native(&layer("Jig", true, "0 0 1 0 k\n100 100 m\n140 100 L\n140 140 L\n100 140 L\nf")).replace(" 0 0 100 100", " 0 0 1000 1000");
     let (d, w, read) = crate::layered_ai(&private(&points), page, vec![], false, false, 10.0);
@@ -290,7 +290,49 @@ fn an_ai_file_that_cant_be_read_through_its_editing_data_keeps_its_pdf_part() {
     let other = native(&layer("Jig", true, &square(10, 10))).replace("%AI3_Cropmarks: 0 0 100 100", "%AI3_Cropmarks: 0 0 50 50");
     let (d, w, _) = crate::layered_ai(&private(&other), pdf.clone(), vec![], false, false, 1.0);
     assert_eq!(names(&d), names(&pdf));
-    assert!(w.iter().any(|w| w.contains("different page")), "{w:?}");
+    assert!(w.iter().any(|w| w.contains("for a 50 × 50 pt page, the file's 100 × 100 pt page at 1:2")), "{w:?}");
+}
+
+/// #2034: editing data for a page of another size gives both sizes in points, in an EPS's note and
+/// in a `.ai`'s.
+#[test]
+fn editing_data_for_a_page_of_another_size_names_both_sizes() {
+    let art = native(&layer("Jig", true, &square(10, 10))).replace(" 0 0 100 100", " 0 0 600 400");
+    let file = String::from_utf8(eps(&page_square(10, 10), &art)).unwrap().replace("%%BoundingBox: 0 0 100 100", "%%BoundingBox: 0 0 612 792");
+    let r = import(file.as_bytes()).unwrap();
+    assert_eq!(names(&r.document), ["Layer 1"], "{:?}", r.warnings);
+    let note = "the file's layers weren't read (its editing data is for a 600 × 400 pt page, not the file's 612 × 792 pt page): it comes in as its page, in one layer";
+    assert!(r.warnings.iter().any(|w| w == note), "{:?}", r.warnings);
+    // A `.ai` whose PDF part has an A4 page.
+    let (_, w, read) = crate::layered_ai(&private(&art), Document::new(595.2756, 841.8898), vec![], false, false, 1.0);
+    let note = "the file's layers weren't read from its editing data (its editing data is for a 600 × 400 pt page, not the file's 595.276 × 841.89 pt page): they come from its PDF part";
+    assert!(!read && w.iter().any(|w| w == note), "{w:?}");
+}
+
+/// #2034: editing data whose page is the file's at another scale (a Large Canvas file without its
+/// scale, for one) gives that scale, the editing data's page to the file's.
+#[test]
+fn editing_data_for_the_page_at_another_scale_names_the_scale() {
+    let art = native(&layer("Jig", true, &square(10, 10)));
+    let note = |file: &str| {
+        let r = import(file.as_bytes()).unwrap();
+        assert_eq!(names(&r.document), ["Layer 1"], "{:?}", r.warnings);
+        r.warnings.into_iter().find(|w| w.contains("its editing data is for")).unwrap_or_default()
+    };
+    let file = String::from_utf8(eps(&page_square(10, 10), &art)).unwrap();
+    let ten = file.replace("%%BoundingBox: 0 0 100 100", "%%BoundingBox: 0 0 1000 1000");
+    assert_eq!(
+        note(&ten),
+        "the file's layers weren't read (its editing data is for a 100 × 100 pt page, the file's 1000 × 1000 pt page at 1:10): it comes in as its page, in one layer"
+    );
+    let wide = file.replace("%%BoundingBox: 0 0 100 100", "%%BoundingBox: 0 0 250 250");
+    assert!(note(&wide).contains("for a 100 × 100 pt page, the file's 250 × 250 pt page at 1:2.5)"));
+    let half = file.replace("%%BoundingBox: 0 0 100 100", "%%BoundingBox: 0 0 50 50");
+    assert!(note(&half).contains("for a 100 × 100 pt page, the file's 50 × 50 pt page at 2:1)"));
+    // A scale that rounds to 1:1 isn't given.
+    let large = art.replace(" 0 0 100 100", " 0 0 2000 2000");
+    let (_, w, _) = crate::layered_ai(&private(&large), Document::new(2000.8, 2000.8), vec![], false, false, 1.0);
+    assert!(w.iter().any(|w| w.contains("for a 2000 × 2000 pt page, not the file's 2000.8 × 2000.8 pt page)")), "{w:?}");
 }
 
 /// Editing data that can't be decompressed leaves the `.ai` as its PDF part, after its notes, with a
@@ -330,7 +372,7 @@ fn a_large_canvas_eps_keeps_its_layers_at_the_pages_size() {
     let art = native_large_canvas(20.0, 10.0, &layer("Art", true, &square(10, 10)));
     let r = import(&eps(&page_square(10, 10), &art)).unwrap();
     assert_eq!(names(&r.document), ["Layer 1"], "{:?}", r.warnings);
-    assert!(r.warnings.iter().any(|w| w.contains("different page")), "{:?}", r.warnings);
+    assert!(r.warnings.iter().any(|w| w.contains("for a 200 × 200 pt page, the file's 100 × 100 pt page at 2:1")), "{:?}", r.warnings);
     // A `.ai` keeps its art space: its PDF part is read at the size it declares.
     let art = native_large_canvas(100.0, 10.0, &layer("Art", true, &square(10, 10)));
     let (d, w, read) = crate::layered_ai(&private(&art), pdf_part(10.0, 86.0), vec![], false, false, 1.0);
@@ -1198,5 +1240,5 @@ fn raster_print_page_recovers_legacy_mesh_vector_mask_and_editable_curve() {
     // A wrong editing copy must still fail the page comparison.
     let wrong = file.replace("%%BoundingBox: 0 0 100 100", "%%BoundingBox: 0 0 120 100");
     let r = import(wrong.as_bytes()).unwrap();
-    assert!(r.warnings.iter().any(|w| w.contains("different page")), "{:?}", r.warnings);
+    assert!(r.warnings.iter().any(|w| w.contains("for a 100 × 100 pt page, not the file's 120 × 100 pt page")), "{:?}", r.warnings);
 }
