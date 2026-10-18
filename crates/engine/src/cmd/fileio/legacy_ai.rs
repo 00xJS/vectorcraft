@@ -15,7 +15,9 @@
 //! blending mode written opaque is a box hiding the art under it (version 7 images have no alpha
 //! channel, §8.1). With `flatten` (the default) each becomes an opaque image of itself and the art
 //! under it, rendered from the document as it is, clipped to the area where it changes what shows;
-//! the art under it stays as it was. With `omit` they are left out.
+//! the art under it stays as it was. With `omit` they are left out. An image that can't be decoded
+//! is missing from the images that flattening and expanding raster effects draw, and the warnings
+//! then carry the raster exports' note once.
 //!
 //! The format can't hide objects, only layers (`hiddenObjects`): with `layer` (the default) each
 //! layer's hidden objects go to a hidden layer of their own just above it, with `omit` they are
@@ -104,6 +106,7 @@ pub(super) fn encode(cmd: &str, f: &Format, doc: &Document, p: &Value) -> Result
         enc.warnings.push(SEPARATE.to_string());
     }
     let created = vectorcraft_doc::metadata::now_unix();
+    let failed = vectorcraft_render::decode_failures();
     for b in boards {
         let one = super::save::artboard_doc(doc, b);
         let (full, placed) = crate::cmd::place::document::full_documents(&one);
@@ -126,6 +129,11 @@ pub(super) fn encode(cmd: &str, f: &Format, doc: &Document, p: &Value) -> Result
             note(&mut enc.warnings, w);
         }
         enc.files.push((Some(b), out.bytes));
+    }
+    // Expanding raster effects and flattening images draw the art, and an image the renderer
+    // couldn't decode drew nothing there.
+    if let Some(w) = super::super::rasterfx::undecoded_warning(failed) {
+        note(&mut enc.warnings, w);
     }
     Ok(enc)
 }
