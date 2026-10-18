@@ -24,6 +24,7 @@ pub mod dxf_import;
 pub mod dxf_options;
 pub mod edit_selection;
 mod effect;
+pub mod effect_gallery;
 pub mod envelope;
 pub mod eps_options;
 pub mod expand;
@@ -301,6 +302,7 @@ registry! {
     SwatchConflict: [swatch_conflict::KIND] => swatch_conflict::SPEC,
     FileInfo: [file_info::KIND] => file_info::SPEC,
     RasterEffectsSettings: [raster_effects::KIND] => raster_effects::SPEC,
+    EffectGallery: [effect_gallery::KIND] => effect_gallery::SPEC,
     MissingLinks: [missing_links::KIND] => missing_links::SPEC,
     MissingFonts: [missing_fonts::KIND] => missing_fonts::SPEC,
     FindLinks: [find_links::KIND] => find_links::SPEC,

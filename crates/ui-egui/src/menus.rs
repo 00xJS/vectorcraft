@@ -858,6 +858,12 @@ pub const UI_COMMANDS: &[(&str, &str, &str, &str)] = &[
         "{} open Document Raster Effects Settings (dialog `rasterEffectsSettings`: the document.rasterEffectsSettings fields); OK runs it. The menu item opens it too",
     ),
     (
+        "ui.effectGalleryDialog",
+        "Effect Gallery Dialog",
+        "",
+        "{} open Effect Gallery (dialog `effectGallery`: browse raster filters, build a stack, OK applies it as separate effects in one undo step). Effect → Effect Gallery… opens it too",
+    ),
+    (
         "ui.pdfPresetsDialog",
         "PDF Presets…",
         "",
@@ -1770,6 +1776,7 @@ pub fn run_ui_command(app: &mut VectorcraftApp, id: &str, p: &Value) -> Option<R
         "file.exportAs" => io::export(app, s("format").as_deref(), s("path"), p),
         "ui.fileInfoDialog" => crate::dialogs::file_info::open(app),
         "ui.rasterEffectsSettingsDialog" => crate::dialogs::raster_effects::open(app),
+        "ui.effectGalleryDialog" => crate::dialogs::effect_gallery::open(app, p),
         "ui.pdfPresetsDialog" => {
             crate::dialogs::pdf_presets::open(app, s("selected").as_deref());
             Ok(Value::Null)
@@ -2436,7 +2443,7 @@ pub fn enabled(app: &VectorcraftApp, id: &str) -> bool {
         id if id.starts_with("view.goto") => {
             id["view.goto".len()..].parse::<usize>().is_ok_and(|n| n >= 1 && app.session.active().is_some_and(|d| n <= d.doc.views.len()))
         }
-        "effect.dialog" | "ui.recolorDialog" => app.session.active().is_some_and(|d| !d.selection.is_empty()),
+        "effect.dialog" | "ui.recolorDialog" | "ui.effectGalleryDialog" => app.session.active().is_some_and(|d| !d.selection.is_empty()),
         "ui.cropImage" => selected_image(app, |_| true),
         "effect.applyLast" | "effect.last" => app.last_effect.is_some() && app.session.active().is_some_and(|d| !d.selection.is_empty()),
         "file.export.pdf" | "ui.savePdfDialog" | "ui.fileInfoDialog" | "ui.rasterEffectsSettingsDialog" => app.session.active().is_some(),
@@ -4055,6 +4062,7 @@ fn effect_menu() -> Vec<Item> {
     if !raster.is_empty() {
         out.push(Sep);
         out.push(Item::Header("Raster Effects"));
+        out.push(c("Effect Gallery…", "ui.effectGalleryDialog"));
         out.extend(raster);
     }
     // Anything not placed above (future effects) still shows up.
