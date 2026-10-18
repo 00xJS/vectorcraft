@@ -4251,6 +4251,7 @@ swatch	Bright Violet	ビビッドバイオレット
 @msg	no plug-in {id} is installed	プラグイン {id} はインストールされていません
 @msg	{_1} is a live effect (Effect › Plug-ins)	{_1} はライブ効果です (「効果 › プラグイン」から使用してください)
 @msg	a preset named `{_1}` exists	`{_1}` という名前のプリセットはすでに存在します
+@msg	a swatch or color group named `{n}` exists	`{n}` という名前のスウォッチまたはカラーグループはすでに存在します
 @msg	no print preset named `{base}`	`{base}` という名前のプリントプリセットが見つかりません
 @msg	no print preset named `{name}`	`{name}` という名前のプリントプリセットが見つかりません
 @msg	no saved print preset named `{name}` ({DEFAULT_PRESET} is protected: start a new one from it)	`{name}` という名前の保存済みプリントプリセットが見つかりません ({DEFAULT_PRESET} は保護されています: これを元に新しいプリセットを作成してください)

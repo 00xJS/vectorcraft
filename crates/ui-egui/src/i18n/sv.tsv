@@ -3768,6 +3768,7 @@ axis	Both	Båda
 @msg	a page tree node has no kids	en nod i sidträdet har inga barn
 @msg	a page's placement is not finite	en sidas placering är inte ändlig
 @msg	a preset named `{_1}` exists	det finns redan en förinställning med namnet `{_1}`
+@msg	a swatch or color group named `{n}` exists	det finns redan en färgruta eller färggrupp med namnet `{n}`
 @msg	a slice size must be a positive number of points	en skivstorlek måste vara ett positivt antal punkter
 @msg	a spine keeps at least two points	en ryggrad behåller minst två punkter
 @msg	a stream runs past the end	en ström fortsätter förbi slutet

@@ -3763,6 +3763,7 @@ axis	Both	И двете
 @msg	a page tree node has no kids	въззел в дървото на страниците няма деца
 @msg	a page's placement is not finite	разположението на страницата не е крайно
 @msg	a preset named `{_1}` exists	предварителна настройка с име `{_1}` съществува
+@msg	a swatch or color group named `{n}` exists	образец или цветова група с име `{n}` вече съществува
 @msg	a slice size must be a positive number of points	размерът на парчето трябва да бъде положително число в точки
 @msg	a spine keeps at least two points	оста запазва поне две точки
 @msg	a stream runs past the end	потокът преминава отвъд края

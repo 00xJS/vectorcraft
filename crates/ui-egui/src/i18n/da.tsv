@@ -3891,6 +3891,7 @@ imageTrace	Outline	Kontur
 @msg	a page tree node has no kids	en node i sidetræet har ingen børn
 @msg	a page's placement is not finite	en sides placering er ikke endelig
 @msg	a preset named `{_1}` exists	der findes en forudindstilling med navnet `{_1}`
+@msg	a swatch or color group named `{n}` exists	der findes en farveprøve eller farvegruppe med navnet `{n}`
 @msg	a slice size must be a positive number of points	en udsnitsstørrelse skal være et positivt antal punkter
 @msg	a stream runs past the end	en strøm løber forbi slutningen
 @msg	a stream's length is wrong	længden på en strøm er forkert

@@ -3891,6 +3891,7 @@ imageTrace	Outline	Kontur
 @msg	a page tree node has no kids	simpul pohon halaman tidak memiliki anak
 @msg	a page's placement is not finite	penempatan halaman bukan bilangan hingga
 @msg	a preset named `{_1}` exists	preset bernama `{_1}` sudah ada
+@msg	a swatch or color group named `{n}` exists	sampel atau grup warna bernama `{n}` sudah ada
 @msg	a slice size must be a positive number of points	ukuran irisan harus berupa bilangan positif dalam titik
 @msg	a stream runs past the end	aliran melewati akhir
 @msg	a stream's length is wrong	panjang aliran salah

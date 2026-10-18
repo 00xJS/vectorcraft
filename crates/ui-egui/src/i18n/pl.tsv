@@ -3964,6 +3964,7 @@ imageTrace	Outline	Kontur
 @msg	a page tree node has no kids	węzeł drzewa stron nie ma elementów potomnych
 @msg	a page's placement is not finite	położenie strony nie jest skończone
 @msg	a preset named `{_1}` exists	ustawienie o nazwie `{_1}` już istnieje
+@msg	a swatch or color group named `{n}` exists	próbka lub grupa kolorów o nazwie `{n}` już istnieje
 @msg	a slice size must be a positive number of points	rozmiar plasterka musi być dodatnią liczbą punktów
 @msg	a spine keeps at least two points	grzbiet musi mieć co najmniej dwa punkty
 @msg	a stream runs past the end	strumień wykracza poza koniec
