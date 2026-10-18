@@ -380,7 +380,9 @@ fn undo(s: &mut Session, _: &Value) -> Result<Value> {
     let doc = std::mem::replace(&mut st.doc, e.doc);
     let selection = std::mem::replace(&mut st.selection, Arc::unwrap_or_clone(e.selection));
     let selection = shared_selection(selection, st.history.redo.last());
-    st.history.redo.push(crate::HistoryEntry::turned(e.label, doc, selection, &st.doc, costs));
+    let mut turned = crate::HistoryEntry::turned(e.label, doc, selection, &st.doc, costs);
+    turned.named = e.named;
+    st.history.redo.push(turned);
     st.history.trim();
     st.revision += 1;
     st.selection.prune(&st.doc);
@@ -403,7 +405,9 @@ fn redo(s: &mut Session, _: &Value) -> Result<Value> {
     let doc = std::mem::replace(&mut st.doc, e.doc);
     let selection = std::mem::replace(&mut st.selection, Arc::unwrap_or_clone(e.selection));
     let selection = shared_selection(selection, st.history.undo.last());
-    st.history.undo.push(crate::HistoryEntry::turned(e.label, doc, selection, &st.doc, costs));
+    let mut turned = crate::HistoryEntry::turned(e.label, doc, selection, &st.doc, costs);
+    turned.named = e.named;
+    st.history.undo.push(turned);
     st.history.trim();
     st.revision += 1;
     st.selection.prune(&st.doc);

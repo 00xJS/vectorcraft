@@ -2466,6 +2466,8 @@ mark-style	Japanese	Японський
 	Redefine Character Style	Перевизначити стиль символу
 	Redefine Graphic Style	Перевизначити графічний стиль
 	Redefine Graphic Style “{name}”	Перевизначити графічний стиль «{name}»
+	Apply {name}	Застосувати стиль «{name}»
+	Redefine {name}	Перевизначити стиль «{name}»
 	Redefine Paragraph Style	Перевизначити стиль абзацу
 	Redefine Symbol	Перевизначити символ
 	Redefine {kind} Style	Перевизначити стиль {kind}

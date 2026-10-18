@@ -2756,6 +2756,8 @@ mark-style	Japanese	Kiểu Nhật
 	Redefine Character Style	Xác định lại kiểu ký tự
 	Redefine Graphic Style	Xác định lại kiểu đồ họa
 	Redefine Graphic Style “{name}”	Xác định lại kiểu đồ họa “{name}”
+	Apply {name}	Áp dụng kiểu “{name}”
+	Redefine {name}	Xác định lại kiểu “{name}”
 	Redefine Paragraph Style	Xác định lại kiểu đoạn văn
 	Redefine Symbol	Xác định lại ký hiệu
 	Redefine {kind} Style	Xác định lại kiểu {kind}

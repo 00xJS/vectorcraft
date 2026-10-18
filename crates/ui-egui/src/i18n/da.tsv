@@ -1249,6 +1249,8 @@ lighting	Light	Lys
 	Opacity: {value}	Opacitet: {value}
 	Rectangle: Sunshine	Rektangel: Sunshine
 	Redefine Graphic Style “{name}”	Omdefinér grafisk typografi »{name}«
+	Apply {name}	Anvend stilen »{name}«
+	Redefine {name}	Omdefinér stilen »{name}«
 	Show Thumbnail	Vis miniatur
 	Artboard Options: edit with the Artboard tool	Tegnebrætindstillinger: redigér med tegnebrætværktøjet
 	Delete Artboards	Slet tegnebrætter

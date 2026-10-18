@@ -1263,6 +1263,8 @@ lighting	Light	Licht
 	Opacity: {value}	Dekking: {value}
 	Rectangle: Sunshine	Rechthoek: Sunshine
 	Redefine Graphic Style “{name}”	Grafische stijl „{name}” opnieuw definiëren
+	Apply {name}	Stijl „{name}” toepassen
+	Redefine {name}	Stijl „{name}” opnieuw definiëren
 	Show Thumbnail	Miniatuur tonen
 	Artboard Options: edit with the Artboard tool	Opties voor tekengebied: bewerken met het Tekengebied-gereedschap
 	Delete Artboards	Tekengebieden verwijderen

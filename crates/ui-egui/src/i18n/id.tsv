@@ -1249,6 +1249,8 @@ lighting	Light	Cahaya
 	Opacity: {value}	Opasitas: {value}
 	Rectangle: Sunshine	Persegi panjang: Sunshine
 	Redefine Graphic Style “{name}”	Definisikan ulang gaya grafis “{name}”
+	Apply {name}	Terapkan gaya “{name}”
+	Redefine {name}	Definisikan ulang gaya “{name}”
 	Show Thumbnail	Tampilkan thumbnail
 	Artboard Options: edit with the Artboard tool	Opsi artboard: edit dengan alat artboard
 	Delete Artboards	Hapus artboard

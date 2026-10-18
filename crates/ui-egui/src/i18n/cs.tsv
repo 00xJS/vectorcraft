@@ -1328,6 +1328,8 @@ lighting	Light	Světlo
 	Opacity: {value}	Krytí: {value}
 	Rectangle: Sunshine	Obdélník: Sluneční svit
 	Redefine Graphic Style “{name}”	Předefinovat grafický styl „{name}“
+	Apply {name}	Použít styl „{name}“
+	Redefine {name}	Předefinovat styl „{name}“
 	Show Thumbnail	Zobrazit miniaturu
 	Delete Artboards	Odstranit pracovní plochy
 	Delete Empty Artboards	Odstranit prázdné pracovní plochy

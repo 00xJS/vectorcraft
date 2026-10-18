@@ -2979,6 +2979,8 @@ mark-style	Japanese	Japán
 	Redefine Character Style	Karakterstílus újradefiniálása
 	Redefine Graphic Style	Grafikai stílus újradefiniálása
 	Redefine Graphic Style “{name}”	Grafikai stílus újradefiniálása: „{name}”
+	Apply {name}	Stílus alkalmazása: „{name}”
+	Redefine {name}	Stílus újradefiniálása: „{name}”
 	Redefine Paragraph Style	Bekezdésstílus újradefiniálása
 	Redefine Symbol	Szimbólum újradefiniálása
 	Redefine {kind} Style	Stílus újradefiniálása: {kind}

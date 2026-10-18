@@ -1909,8 +1909,8 @@ pub fn display_label(app: &VectorcraftApp, id: &str, label: &str) -> String {
             // The step's name as the History panel lists it.
             let name = crate::panels::history::shown;
             match last {
-                Some(h) if id == "edit.undo" => fmt(tl!("Undo {name}"), &[("name", &name(&h.label))]),
-                Some(h) => fmt(tl!("Redo {name}"), &[("name", &name(&h.label))]),
+                Some(h) if id == "edit.undo" => fmt(tl!("Undo {name}"), &[("name", &name(h))]),
+                Some(h) => fmt(tl!("Redo {name}"), &[("name", &name(h))]),
                 None => tl!(if id == "edit.undo" { "Undo" } else { "Redo" }).to_string(),
             }
         }
@@ -4293,6 +4293,22 @@ mod tests {
         app.run("file.new", json!({})).unwrap();
         app.run("shape.rectangle", json!({"x": 0, "y": 0, "width": 10, "height": 10})).unwrap();
         app
+    }
+
+    /// Edit › Undo and Edit › Redo name a step named after a style as the History panel lists it:
+    /// the template's translation with the style's name in it.
+    #[test]
+    fn undo_and_redo_name_a_style_step_around_the_style_name() {
+        let mut app = app_with_a_rectangle();
+        let text = app.run("text.create", json!({"x": 0, "y": 40, "text": "Hello"})).unwrap()["id"].clone();
+        app.run("charStyle.new", json!({"name": "Brush"})).unwrap();
+        app.run("charStyle.apply", json!({"name": "Brush", "id": text})).unwrap();
+        crate::i18n::set_current(crate::i18n::Lang::from_code("ja").expect("ja registered"));
+        assert_eq!(display_label(&app, "edit.undo", "Undo"), "スタイル「Brush」を適用を取り消す");
+        app.run("edit.undo", json!({})).unwrap();
+        assert_eq!(display_label(&app, "edit.redo", "Redo"), "スタイル「Brush」を適用をやり直す");
+        crate::i18n::set_current(crate::i18n::Lang::EN);
+        assert_eq!(display_label(&app, "edit.redo", "Redo"), "Redo Apply Brush");
     }
 
     #[test]

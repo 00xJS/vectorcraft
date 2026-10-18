@@ -2450,6 +2450,8 @@ mark-style	Japanese	일본식
 	Redefine Character Style	문자 스타일 재정의
 	Redefine Graphic Style	그래픽 스타일 재정의
 	Redefine Graphic Style “{name}”	그래픽 스타일 “{name}” 재정의
+	Apply {name}	스타일 “{name}” 적용
+	Redefine {name}	스타일 “{name}” 재정의
 	Redefine Paragraph Style	단락 스타일 재정의
 	Redefine Symbol	심볼 재정의
 	Redefine {kind} Style	{kind} 스타일 재정의

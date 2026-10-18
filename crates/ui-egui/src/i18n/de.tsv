@@ -2423,6 +2423,8 @@ mark-style	Japanese	Japanisch
 	Redefine Character Style	Zeichenformat neu definieren
 	Redefine Graphic Style	Grafikstil neu definieren
 	Redefine Graphic Style “{name}”	Grafikstil „{name}“ neu definieren
+	Apply {name}	Format „{name}“ anwenden
+	Redefine {name}	Format „{name}“ neu definieren
 	Redefine Paragraph Style	Absatzformat neu definieren
 	Redefine Symbol	Symbol neu definieren
 	Redefine {kind} Style	{kind}format neu definieren

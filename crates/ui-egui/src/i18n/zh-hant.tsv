@@ -2448,6 +2448,8 @@ mark-style	Japanese	日式
 	Redefine Character Style	重新定義字元樣式
 	Redefine Graphic Style	重新定義繪圖樣式
 	Redefine Graphic Style “{name}”	重新定義繪圖樣式「{name}」
+	Apply {name}	套用樣式「{name}」
+	Redefine {name}	重新定義樣式「{name}」
 	Redefine Paragraph Style	重新定義段落樣式
 	Redefine Symbol	重新定義符號
 	Redefine {kind} Style	重新定義{kind}樣式

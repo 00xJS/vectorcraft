@@ -1242,6 +1242,8 @@ lighting	Light	Światło
 	Opacity: {value}	Krycie: {value}
 	Rectangle: Sunshine	Prostokąt: Słońce
 	Redefine Graphic Style “{name}”	Zdefiniuj ponownie styl graficzny „{name}”
+	Apply {name}	Zastosuj styl „{name}”
+	Redefine {name}	Zdefiniuj ponownie styl „{name}”
 	Show Thumbnail	Pokaż miniaturę
 	Delete Artboards	Usuń obszary kompozycji
 	Delete Empty Artboards	Usuń puste obszary kompozycji

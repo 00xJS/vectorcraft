@@ -2398,6 +2398,8 @@
 	Redefine Character Style	Definiera om teckenstil
 	Redefine Graphic Style	Definiera om grafikstil
 	Redefine Graphic Style “{name}”	Definiera om grafikstilen ”{name}”
+	Apply {name}	Använd stilen ”{name}”
+	Redefine {name}	Definiera om stilen ”{name}”
 	Redefine Paragraph Style	Definiera om styckestil
 	Redefine Symbol	Definiera om symbol
 	Redefine {kind} Style	Definiera om {kind}stil

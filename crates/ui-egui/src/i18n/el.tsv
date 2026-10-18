@@ -2968,6 +2968,8 @@ theme	Appearance	Εμφάνιση
 	Redefine Character Style	Επαναπροσδιορισμός στυλ χαρακτήρων
 	Redefine Graphic Style	Επαναπροσδιορισμός στυλ γραφικών
 	Redefine Graphic Style “{name}”	Επαναπροσδιορισμός στυλ γραφικών «{name}»
+	Apply {name}	Εφαρμογή στυλ «{name}»
+	Redefine {name}	Επαναπροσδιορισμός στυλ «{name}»
 	Redefine Paragraph Style	Επαναπροσδιορισμός στυλ παραγράφου
 	Redefine Symbol	Επαναπροσδιορισμός συμβόλου
 	Redefine {kind} Style	Επαναπροσδιορισμός στυλ {kind}
