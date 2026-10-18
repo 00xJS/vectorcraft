@@ -229,6 +229,19 @@ fn an_ai_file_saved_without_its_pdf_part_opens_from_its_editing_data() {
     assert!(e.contains("placeholder"), "{e}");
 }
 
+#[test]
+fn an_ai_file_saved_without_its_pdf_part_opens_with_pages_naming_every_page() {
+    let file = ai::ai(&compressed(&ai::sample_data()), PLACEHOLDER);
+    for pages in [json!("1"), json!(1), json!("1-")] {
+        let mut s = Session::new();
+        open(&mut s, "art.ai", &file, json!({"pages": pages})).unwrap();
+        check_sample(&s);
+    }
+    // Without editing data, the placeholder still isn't opened as the art.
+    let e = open(&mut Session::new(), "plain.ai", &ai::ai(b"", PLACEHOLDER), json!({"pages": "1"})).unwrap_err().to_string();
+    assert!(e.contains("placeholder"), "{e}");
+}
+
 /// A page of text alone, as text-only art has in its PDF part: no path is painted.
 const TEXT_ART: &str = "BT /F1 36 Tf 10 40 Td (Text only) Tj ET";
 
