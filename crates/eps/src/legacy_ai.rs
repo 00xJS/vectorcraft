@@ -24,9 +24,9 @@
 //!   corner), painted `N n F f S s B b` (lower case closes first); guides `(N) *` before and after
 //!   the path (§6); fill rule `XR`; overprint `O`/`R`; stroke `w J j M d`.
 //! - Colours (§5.4): `g`/`G` (grey), `k`/`K` (CMYK), `Xa`/`XA` (`r g b`), `x`/`X` (a spot colour
-//!   at a tint). Gradient fills (§3.5.3): the path, `Bb`, `1 (name) x y angle length 1 0 0 1 0 0
-//!   Bg`, a radial's highlight `x y angle fraction Bh`, `f` (or `F`), and `0 BB`, or `2 BB` (`1 BB`
-//!   open) to stroke it too.
+//!   at a tint). Gradient fills (§3.5.3): the path, `Bb`, a radial's highlight `x y angle fraction
+//!   Bh` (`0 0 0 0 Bh` at the center, §3.5.5, §3.5.6), `1 (name) x y angle length 1 0 0 1 0 0 Bg`,
+//!   `f` (or `F`), and `0 BB`, or `2 BB` (`1 BB` open) to stroke it too.
 //! - Images (§8): `%AI5_BeginRaster`, `[matrix] 0 0 w h w h 8 3 0 0 0 0 XI`, the RGB samples in
 //!   hex on comment lines, `%AI5_EndRaster`.
 //! - Type (§15): point type, area type and type on a path as text objects, `type To`, `a b c d tx
@@ -996,8 +996,9 @@ impl<'a> Writer<'a> {
     // ---------- gradients ----------
 
     /// The definition gradient `g` uses (defined once for each distinct gradient), and its
-    /// instance on a path of bounds `bounds`: `Bb`, `1 (name) x y angle length 1 0 0 1 0 0 Bg`, a
-    /// radial's highlight `x y angle fraction Bh` (its distance a fraction of the radius, §3.5.5).
+    /// instance on a path of bounds `bounds`: `Bb`, a radial's highlight `x y angle fraction Bh`
+    /// (its distance a fraction of the radius, at most 1, §3.5.5; `0 0 0 0 Bh` at the center,
+    /// §3.5.6), `1 (name) x y angle length 1 0 0 1 0 0 Bg`.
     fn gradient(&mut self, g: &GradientPaint, bounds: Rect) -> String {
         let name = self.define(&g.gradient, g.swatch.as_deref());
         for stop in &g.gradient.stops {
@@ -1024,15 +1025,14 @@ impl<'a> Writer<'a> {
             self.warn(ELLIPTICAL);
         }
         let mut s = String::from("Bb\n");
-        if g.gradient.kind == GradientKind::Radial
-            && let Some(f) = geom.focal
-        {
-            let off: Vec2 = self.to_art * f - start;
-            if off.hypot() > 1e-9 && length > 1e-9 {
-                let fraction = (off.hypot() / length).min(1.0);
-                ps::push_nums(&mut s, &[off.x, off.y, off.y.atan2(off.x).to_degrees(), fraction]);
-                s.push_str("Bh\n");
-            }
+        if g.gradient.kind == GradientKind::Radial {
+            // Every radial instance has a highlight (§3.5.5), `0 0 0 0 Bh` at the center (§3.5.6).
+            // It lies within the gradient's circle: one past the radius is written on it.
+            let off: Vec2 = geom.focal.map_or(Vec2::ZERO, |f| self.to_art * f - start);
+            let fraction = if off.hypot() > 1e-9 && length > 1e-9 { off.hypot() / length } else { 0.0 };
+            let (off, angle) = if fraction > 0.0 { (off / fraction.max(1.0), off.y.atan2(off.x).to_degrees()) } else { (Vec2::ZERO, 0.0) };
+            ps::push_nums(&mut s, &[off.x, off.y, angle, fraction.min(1.0)]);
+            s.push_str("Bh\n");
         }
         s.push_str("1 ");
         s.push_str(&ps::string(&name));

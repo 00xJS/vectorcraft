@@ -89,8 +89,8 @@ fn write_with(doc: &Document, o: LegacyAiOptions) -> LegacyAiOutput {
 /// don't print, its type as its glyphs' outlines where the writer writes them (all type with
 /// [`LegacyAiOptions::outline_text`], else the type 8-bit text can't hold) and left out where it
 /// writes text objects, its
-/// hidden objects shown when `o` writes them visible, and its gradients filled with their first
-/// stop's colour.
+/// hidden objects shown when `o` writes them visible, and its gradient fills and strokes painted
+/// in their first stop's color.
 fn as_printed(doc: &Document, o: &LegacyAiOptions) -> Document {
     // A run's glyphs, laid out, as one path with the run's fill (the renderer draws no type).
     fn outlined(t: &vectorcraft_doc::TextObject) -> Node {
@@ -120,10 +120,12 @@ fn as_printed(doc: &Document, o: &LegacyAiOptions) -> Document {
                 n.visible = true;
             }
             for item in &mut n.appearance.items {
-                if let AppearanceItem::Fill(f) = item
-                    && let Paint::Gradient(g) = &f.paint
-                {
-                    f.paint = g.gradient.stops.first().map_or(Paint::None, |s| Paint::solid(s.color));
+                let paint = match item {
+                    AppearanceItem::Fill(f) => &mut f.paint,
+                    AppearanceItem::Stroke(s) => &mut s.paint,
+                };
+                if let Paint::Gradient(g) = paint {
+                    *paint = g.gradient.stops.first().map_or(Paint::None, |s| Paint::solid(s.color));
                 }
             }
             if let Some(c) = n.children_mut() {
@@ -292,6 +294,137 @@ fn a_gradient_fill_and_its_stroke_are_one_object() {
     let Paint::Gradient(g) = n.appearance.fill_paint() else { panic!("{:?}", n.appearance) };
     assert_eq!(g.gradient.kind, GradientKind::Radial);
     assert_eq!(n.appearance.stroke_paint().color(), Some(Color::rgb(1.0, 0.0, 0.0)));
+}
+
+/// A gradient from white to #1b2a6b, the colors of #2687's circle, placed at `geom` (None: fitted
+/// to the object).
+fn white_to_navy(kind: GradientKind, geom: Option<vectorcraft_color::GradientGeom>) -> Paint {
+    let navy = Color::rgb(27.0 / 255.0, 42.0 / 255.0, 107.0 / 255.0);
+    let g = Gradient { kind, stops: vec![GradientStop::new(0.0, Color::rgb(1.0, 1.0, 1.0)), GradientStop::new(1.0, navy)] };
+    Paint::Gradient(Box::new(GradientPaint { geom, ..GradientPaint::new(g) }))
+}
+
+/// A 400 × 400 document: #2687's radial circle (center 100, 100, radius 80) and linear square;
+/// below them a radial square in a group, a radial compound ring, a clipping group whose clipping
+/// path and member are radial, a square stroked radial, and a radial square whose elliptical
+/// gradient has its focal point 30 pt above the center, past its 20 pt radius.
+fn radials() -> Document {
+    let mut doc = Document::new(400.0, 400.0);
+    let layer = doc.layers[0].id;
+    let radial = || white_to_navy(GradientKind::Radial, None);
+    let circle = shape(&mut doc, shapes::ellipse(Rect::new(20.0, 20.0, 180.0, 180.0)), radial(), Paint::None);
+    let square = shape(&mut doc, shapes::rectangle(Rect::new(220.0, 20.0, 380.0, 180.0)), white_to_navy(GradientKind::Linear, None), Paint::None);
+    let member = shape(&mut doc, shapes::rectangle(Rect::new(20.0, 220.0, 60.0, 260.0)), radial(), Paint::None);
+    let group = Node::group(doc.alloc_id(), vec![Arc::new(member)]);
+    let outer = shape(&mut doc, shapes::rectangle(Rect::new(80.0, 220.0, 120.0, 260.0)), Paint::None, Paint::None);
+    let inner = shape(&mut doc, shapes::rectangle(Rect::new(90.0, 230.0, 110.0, 250.0)), Paint::None, Paint::None);
+    let mut ring = Node::new(doc.alloc_id(), NodeKind::Compound { children: vec![Arc::new(outer), Arc::new(inner)], rule: FillRule::EvenOdd });
+    ring.appearance = Appearance::basic(radial(), Paint::None, 0.0).into();
+    let mut clip = Node::new(
+        doc.alloc_id(),
+        NodeKind::Path {
+            path: shapes::rectangle(Rect::new(140.0, 220.0, 180.0, 260.0)),
+            rule: FillRule::NonZero,
+            live: None,
+            clipping: true,
+            guide: false,
+        },
+    );
+    clip.appearance = Appearance::basic(radial(), Paint::None, 0.0).into();
+    let clipped = shape(&mut doc, shapes::rectangle(Rect::new(130.0, 210.0, 190.0, 270.0)), radial(), Paint::None);
+    let window = Node::new(doc.alloc_id(), NodeKind::Group { children: vec![Arc::new(clip), Arc::new(clipped)], clip: true });
+    let stroked = shape(&mut doc, shapes::rectangle(Rect::new(200.0, 220.0, 240.0, 260.0)), Paint::None, radial());
+    let geom = vectorcraft_color::GradientGeom {
+        start: vectorcraft_geom::Point::new(300.0, 240.0),
+        end: vectorcraft_geom::Point::new(320.0, 240.0),
+        aspect: 2.0,
+        focal: Some(vectorcraft_geom::Point::new(300.0, 210.0)),
+    };
+    let off_center =
+        shape(&mut doc, shapes::rectangle(Rect::new(260.0, 220.0, 340.0, 260.0)), white_to_navy(GradientKind::Radial, Some(geom)), Paint::None);
+    for n in [circle, square, group, ring, window, stroked, off_center] {
+        doc.insert(Some(layer), usize::MAX, n).unwrap();
+    }
+    doc
+}
+
+/// Every radial gradient instance has its highlight `Bh` (§3.5.5): `0 0 0 0 Bh` when it is at the
+/// center (#2687: without it the reference app drew the circle in its outer color), on fills,
+/// strokes, in groups, compound paths and clipping groups, and an off-center one within the
+/// gradient's circle. Linear instances have none. VectorCraft reads back one linear and at least
+/// seven radial gradients, each with its stops, and the circle, the square and the off-center
+/// square in their place.
+#[test]
+fn radial_gradients_have_their_highlight() {
+    let out = write(&radials());
+    let text = String::from_utf8(out.bytes.clone()).unwrap();
+    // One definition for the radial gradient, one for the linear one (§3.5.2).
+    assert!(text.contains("2 Bn\n%AI5_BeginGradient: (Gradient)\n(Gradient) 1 2 Bd\n[\n"), "{text}");
+    assert!(text.contains("%AI5_BeginGradient: (Gradient 2)\n(Gradient 2) 0 2 Bd\n[\n"), "{text}");
+    // Each instance, `Bb` to `BB`.
+    let instances: Vec<&str> = text.split("Bb\n").skip(1).filter_map(|t| t.split_inclusive("BB\n").next()).collect();
+    let radial: Vec<&str> = instances.iter().copied().filter(|i| i.contains(" (Gradient) ")).collect();
+    let linear: Vec<&str> = instances.iter().copied().filter(|i| i.contains(" (Gradient 2) ")).collect();
+    assert_eq!((radial.len() + linear.len(), linear.len()), (instances.len(), 1), "{instances:#?}");
+    assert!(radial.len() >= 8, "{radial:#?}");
+    for i in &radial {
+        let bh = i.lines().next().unwrap_or_default();
+        assert!(bh.ends_with(" Bh") && bh.split_whitespace().count() == 5, "{i}");
+    }
+    assert!(!linear[0].contains("Bh"), "{}", linear[0]);
+    for needle in [
+        // #2687's circle and square.
+        "\nBb\n0 0 0 0 Bh\n1 (Gradient) 100 300 0 80 1 0 0 1 0 0 Bg\nf\n0 BB\n",
+        "\nBb\n1 (Gradient 2) 220 300 0 160 1 0 0 1 0 0 Bg\nf\n0 BB\n",
+        // In a group.
+        "\nBb\n0 0 0 0 Bh\n1 (Gradient) 40 160 0 20 1 0 0 1 0 0 Bg\nf\n0 BB\nU\n",
+        // Both subpaths of the compound ring (§5.3.5).
+        "\nBb\n0 0 0 0 Bh\n1 (Gradient) 100 160 0 20 1 0 0 1 0 0 Bg\nf\n0 BB\n90 170 m\n",
+        "\nBb\n0 0 0 0 Bh\n1 (Gradient) 100 160 0 20 1 0 0 1 0 0 Bg\nf\n0 BB\n*U\n",
+        // The clipping path's fill and the clipped square (§5.6.2).
+        "\nBb\n0 0 0 0 Bh\n1 (Gradient) 160 160 0 20 1 0 0 1 0 0 Bg\nf\n0 BB\n",
+        "\nBb\n0 0 0 0 Bh\n1 (Gradient) 160 160 0 30 1 0 0 1 0 0 Bg\nf\n0 BB\nQ\n",
+        // The stroke, written as its outline filled.
+        "\nBb\n0 0 0 0 Bh\n1 (Gradient) 220 160 0 21 1 0 0 1 0 0 Bg\nf\n0 BB\n",
+        // The focal point 30 pt up, 1.5 radii out: written on the circle, straight up.
+        "\nBb\n0 20 90 1 Bh\n1 (Gradient) 300 160 0 20 1 0 0 1 0 0 Bg\nf\n0 BB\n",
+    ] {
+        assert!(text.contains(needle), "missing {needle:?} in\n{text}");
+    }
+    for expected in [STROKES, ELLIPTICAL] {
+        assert!(out.warnings.iter().any(|w| w == expected), "{expected} not in {:?}", out.warnings);
+    }
+    // Read back: every gradient keeps its stops, the document holds the linear square and at
+    // least seven radial gradients, and the circle, the square and the off-center square keep
+    // their place.
+    let doc = crate::import(&out.bytes).unwrap().document;
+    let mut found = vec![];
+    doc.walk(|n| {
+        for i in &n.appearance.items {
+            if let AppearanceItem::Fill(f) = i
+                && let Paint::Gradient(g) = &f.paint
+            {
+                found.push((**g).clone());
+            }
+        }
+    });
+    let kinds = |k: GradientKind| found.iter().filter(|g| g.gradient.kind == k).count();
+    // Seven radial objects (a compound path's members carry its fill too) and the linear square.
+    assert!(kinds(GradientKind::Radial) >= 7 && kinds(GradientKind::Linear) == 1, "{found:#?}");
+    let near = |a: vectorcraft_geom::Point, x: f64, y: f64| (a.x - x).abs() < 1e-3 && (a.y - y).abs() < 1e-3;
+    for g in &found {
+        let [white, navy] = g.gradient.stops.as_slice() else { panic!("{g:?}") };
+        assert_eq!((white.offset, navy.offset, white.color), (0.0, 1.0, Color::rgb(1.0, 1.0, 1.0)), "{g:?}");
+        let rgb = navy.color.to_rgb();
+        assert!([27.0, 42.0, 107.0].iter().zip(rgb).all(|(want, got)| (want / 255.0 - got).abs() < 1e-3), "{rgb:?}");
+    }
+    let placed = |x: f64, y: f64| found.iter().filter_map(|g| g.geom.map(|m| (g.gradient.kind, m))).find(|(_, m)| near(m.start, x, y));
+    let Some((GradientKind::Radial, circle)) = placed(100.0, 100.0) else { panic!("{found:#?}") };
+    assert!(near(circle.end, 180.0, 100.0) && circle.focal.is_none(), "{circle:?}");
+    let Some((GradientKind::Linear, square)) = placed(220.0, 100.0) else { panic!("{found:#?}") };
+    assert!(near(square.end, 380.0, 100.0), "{square:?}");
+    let Some((GradientKind::Radial, off)) = placed(300.0, 240.0) else { panic!("{found:#?}") };
+    assert!(near(off.end, 320.0, 240.0) && off.focal.is_some_and(|f| near(f, 300.0, 220.0)), "{off:?}");
 }
 
 #[test]
