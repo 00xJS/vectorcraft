@@ -1308,17 +1308,26 @@ pub(super) fn layered(ps: &[u8], visible: Imported) -> Imported {
 /// its editing copy (`private`, the joined `AIPrivateData` or `AIPDFPrivateData` streams) instead,
 /// as [`layered`] reads an EPS: with the layers and objects of the file, its artboards (with the
 /// PDF part's bleed), and the art that lies outside them, which its PDF part doesn't have.
-/// `warnings` are the notes of reading the PDF part; the notes returned are those, and the layers'.
-/// The flag returned is `true` when the document is the one read from the layers; else the document
-/// is `visible`, its pages moved by `place_pages` when the layers can't be read. `outlined`: the
-/// PDF part's type was read as outlines (a file whose type shows then comes in as its PDF part).
+/// `warnings` are the notes of reading the PDF part; the notes returned are those, then the layers'
+/// notes, or a note saying why the layers weren't read when the editing data can't be decompressed
+/// or its layers can't be read. The flag returned is `true` when the document is the one read from
+/// the layers; else the document is `visible`, its pages moved by `place_pages` when the editing
+/// data was decompressed but its layers can't be read. `outlined`: the PDF part's type was read as
+/// outlines (a file whose type shows then comes in as its PDF part).
 /// `trust`: layers that draw differently from the PDF part are used all the same, with a warning.
 /// `unit`: the size in points of a unit of the PDF part's user space, its first page's `UserUnit`,
 /// by which its art came in scaled. Editing data whose artboard matches the page only in those
 /// units comes in `unit` times as large, and so does the artboard layout `place_pages` takes from
 /// it.
 pub fn layered_ai(private: &[u8], visible: Document, warnings: Vec<String>, outlined: bool, trust: bool, unit: f64) -> (Document, Vec<String>, bool) {
-    let Ok(data) = ai::decode_private(private) else { return (visible, warnings, false) };
+    let unread = |mut all: Vec<String>, why: &str| {
+        all.push(format!("{LAYERS_UNREAD} from its editing data ({why}): they come from its PDF part"));
+        all
+    };
+    let data = match ai::decode_private(private) {
+        Ok(data) => data,
+        Err(why) => return (visible, unread(warnings, &why), false),
+    };
     if !has_layers(&data) {
         return (visible, warnings, false);
     }
@@ -1330,11 +1339,9 @@ pub fn layered_ai(private: &[u8], visible: Document, warnings: Vec<String>, outl
             (done, all, true)
         }
         Err(why) => {
-            let mut all = warnings;
-            all.push(format!("{LAYERS_UNREAD} from its editing data ({why}): they come from its PDF part"));
             let mut visible = visible;
             place_pages(&ai::artboards(&data), &mut visible, unit);
-            (visible, all, false)
+            (visible, unread(warnings, &why), false)
         }
     }
 }

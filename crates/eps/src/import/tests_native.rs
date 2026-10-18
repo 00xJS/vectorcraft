@@ -293,6 +293,23 @@ fn an_ai_file_that_cant_be_read_through_its_editing_data_keeps_its_pdf_part() {
     assert!(w.iter().any(|w| w.contains("different page")), "{w:?}");
 }
 
+/// Editing data that can't be decompressed leaves the `.ai` as its PDF part, after its notes, with a
+/// note saying why its layers weren't read, which counts as a loss.
+#[test]
+fn an_ai_file_whose_editing_data_cant_be_decompressed_says_so() {
+    let pdf = pdf_part(10.0, 86.0);
+    for (private, why) in [
+        (&b"%AI12_CompressedDataxx"[..], "its zlib compression is damaged"),
+        (b"%AI24_ZStandard_Data nothing", "its Zstandard compression is damaged"),
+    ] {
+        let (d, w, read) = crate::layered_ai(private, pdf.clone(), vec!["a note".into()], false, false, 1.0);
+        assert!(!read);
+        assert_eq!(names(&d), names(&pdf));
+        assert_eq!(w, ["a note".to_string(), format!("the file's layers weren't read from its editing data ({why}): they come from its PDF part")]);
+        assert!(crate::is_loss(&w[1]), "{w:?}");
+    }
+}
+
 /// #2031: a Large Canvas editing copy (`%AI24_LargeCanvasScale: 10`) writes its art and boxes at
 /// 1/10 scale; the import scales them back, so its layers are read instead of being rejected as
 /// another page's — with the art at the page's size. Art that doesn't match the page at that

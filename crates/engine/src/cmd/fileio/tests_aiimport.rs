@@ -135,16 +135,42 @@ fn a_pdfs_art_past_the_page_opens_whole_from_its_editing_data() {
     assert!(s.doc().unwrap().doc.art_bounds().is_some_and(|b| b.x1 < 200.5));
 }
 
-/// Editing data that can't be read leaves the file as its PDF part reads, with that part's notes:
-/// a `.ai`'s art outside its artboards is missing, and a PDF's art past the page is clipped.
+/// A `.ai` or a PDF whose editing data can't be decompressed opens from its PDF part with a note
+/// that its layers weren't read, and an export to its own path is refused unless it is given
+/// `acknowledgeLoss`.
+#[test]
+fn a_file_whose_editing_data_cant_be_decompressed_is_not_written_over_unasked() {
+    let d = std::env::temp_dir().join(format!("vc-aiundecoded-{}", std::process::id()));
+    std::fs::create_dir_all(&d).unwrap();
+    let damaged = b"%AI12_CompressedDataxx";
+    for (name, file) in [("art.ai", ai::ai(damaged, ai::page_pdf())), ("art.pdf", ai::pdf(damaged, ai::page_pdf()))] {
+        let path = d.join(name);
+        std::fs::write(&path, &file).unwrap();
+        let path = path.to_string_lossy().to_string();
+        let mut s = Session::new();
+        let r = s.execute("document.open", &json!({"path": path})).unwrap();
+        assert!(r["warnings"].to_string().contains("layers weren't read from its editing data (its zlib compression is damaged)"), "{name}: {r}");
+        let e = s.execute("document.export", &json!({"path": path})).unwrap_err().to_string();
+        assert!(e.contains("left things out") && e.contains("layers weren't read"), "{name}: {e}");
+        assert_eq!(std::fs::read(&path).unwrap(), file, "{name}");
+        s.execute("document.export", &json!({"path": path, "acknowledgeLoss": true})).unwrap();
+        assert_ne!(std::fs::read(&path).unwrap(), file, "{name}");
+    }
+    std::fs::remove_dir_all(d).ok();
+}
+
+/// Editing data that can't be read leaves the file as its PDF part reads, with that part's notes
+/// and then a note saying why its layers weren't read: a `.ai`'s art outside its artboards is
+/// missing, and a PDF's art past the page is clipped.
 #[test]
 fn editing_data_that_cant_be_read_keeps_the_pdf_parts_notes() {
     let damaged = b"%AI12_CompressedData not zlib";
+    let unread = "the file's layers weren't read from its editing data (its zlib compression is damaged): they come from its PDF part";
     let mut s = Session::new();
     let r = open(&mut s, "damaged.ai", &ai::ai(damaged, ai::page_pdf()), json!({})).unwrap();
-    assert_eq!(r["warnings"], json!([vectorcraft_pdf::OFF_ARTBOARD_NOTE]), "{r}");
+    assert_eq!(r["warnings"], json!([vectorcraft_pdf::OFF_ARTBOARD_NOTE, unread]), "{r}");
     let r = open(&mut s, "damaged.pdf", &ai::pdf(damaged, "0 g 150 20 100 60 re f"), json!({})).unwrap();
-    assert_eq!(r["warnings"], json!([vectorcraft_pdf::PAST_PAGE_NOTE]), "{r}");
+    assert_eq!(r["warnings"], json!([vectorcraft_pdf::PAST_PAGE_NOTE, unread]), "{r}");
 }
 
 #[test]

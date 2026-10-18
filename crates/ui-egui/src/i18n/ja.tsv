@@ -3790,6 +3790,9 @@ swatch	Bright Violet	ビビッドバイオレット
 @msg	it has more than one artboard	アートボードが複数あります
 @msg	its editing data has no layers	編集データにレイヤーがありません
 @msg	its editing data is damaged	編集データが破損しています
+@msg	its zlib compression is damaged	zlib 圧縮が破損しています
+@msg	its Zstandard compression is damaged	Zstandard 圧縮が破損しています
+@msg	it decompresses to more than {_1} MB	展開すると {_1} MB を超えます
 @msg	its type is to come in as outlines, which only its page has	文字をアウトラインとして読み込む設定ですが、アウトラインはページにしかありません
 @msg	{_1} files	{_1} 個のファイル
 @msg	A browser with WebGPU or WebGL2 is required.	WebGPU または WebGL2 に対応したブラウザーが必要です。

@@ -1658,11 +1658,21 @@ fn unread_layers_notes_are_translated() {
     for note in [
         "the file's layers weren't read (its editing data is for a different page): it comes in as its page, in one layer",
         "the file's layers weren't read from its editing data (its editing data is damaged): they come from its PDF part",
+        "the file's layers weren't read from its editing data (its zlib compression is damaged): they come from its PDF part",
+        "the file's layers weren't read from its editing data (its Zstandard compression is damaged): they come from its PDF part",
+        "the file's layers weren't read from its editing data (it decompresses to more than 256 MB): they come from its PDF part",
     ] {
         let status = format!("Opened with 1 note(s): {note}");
         for code in COMPLETE_MESSAGES.iter().chain(&["pt-br"]) {
             let shown = message(Lang::from_code(code).unwrap(), &status);
-            assert!(!shown.contains("weren't read") && !shown.contains("its editing data") && !shown.contains("Opened with"), "{code}: {shown}");
+            assert!(
+                !shown.contains("weren't read")
+                    && !shown.contains("its editing data")
+                    && !shown.contains("is damaged")
+                    && !shown.contains("decompresses")
+                    && !shown.contains("Opened with"),
+                "{code}: {shown}"
+            );
         }
     }
 }
