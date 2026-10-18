@@ -584,7 +584,7 @@ thread_local! {
 /// Document Raster Effects Settings › Resolution of `doc`, in ppi (1 to 2400; 72 when it isn't a
 /// number).
 fn doc_raster_ppi(doc: &Document) -> f64 {
-    Some(doc.raster_effects_ppi).filter(|v| v.is_finite()).unwrap_or(72.0).clamp(1.0, 2400.0)
+    doc.raster_ppi()
 }
 
 /// The effects [`Renderer::pixel_content`] runs on the content's pixels (those changing the
@@ -1052,7 +1052,9 @@ impl Renderer {
                 (e.image.clone(), (p.x + e.rel.0).round(), (p.y + e.rel.1).round(), e.scale, e.moved)
             }
             None => {
-                let spread = blur.max(0.0) * 1.5 / f.px + 2.0;
+                // An Outer Glow's silhouette grows by a quarter of a pixel of the document's raster grid first.
+                let grow = if matches!(fx, RasterFx::OuterGlow { .. }) { 18.0 / doc_raster_ppi(f.doc) } else { 0.0 };
+                let spread = (blur.max(0.0) * 1.5 + grow) / f.px + 2.0;
                 let reach = reach + Vec2::new(dx, dy);
                 let r = f.view.transform_rect_bbox(reach).inflate(spread, spread);
                 let (x0, y0) = (r.x0.floor(), r.y0.floor());
@@ -1112,6 +1114,7 @@ impl Renderer {
                     // An Outer Glow blurs a solid silhouette: wherever the art has any alpha, as AI files draw a glow round a glow.
                     let solid = matches!(fx, RasterFx::OuterGlow { .. });
                     let mut a: Vec<f32> = pm.data().iter().map(|p| if solid && p.a > 0 { 255.0 } else { p.a as f32 }).collect();
+                    effects::pixel::dilate_plane(&mut a, wu, hu, grow / f.px / scale);
                     effects::pixel::blur_plane(&mut a, wu, hu, sigma);
                     let [cr, cg, cb] = f.ink.rgb(&color);
                     let tint = |v: f32, ch: f32| (v * ch).round().clamp(0.0, 255.0) as u8;
@@ -2587,6 +2590,21 @@ mod tests {
         let (faint, opaque) = (glow(0.2), glow(1.0));
         assert_eq!(faint[1], opaque[1], "faint {faint:?}, opaque {opaque:?}");
         assert!(faint[1] < 210, "the glow reaches past the edge: {faint:?}");
+    }
+
+    #[test]
+    fn an_outer_glow_grows_its_silhouette_by_a_quarter_raster_pixel() {
+        // GUARDS: the glows AI files export measure as the solid silhouette grown by a quarter of a pixel
+        // of the document's raster grid, then blurred: a quarter point at 72 ppi, next to nothing at 720.
+        let r = Rect::new(30.0, 30.0, 70.0, 70.0);
+        let green_outside = |ppi: f64| {
+            let mut d =
+                doc_with(r, Color::BLACK, vec![("stylize.outerGlow", json!({"color": "#ff0000", "mode": "normal", "opacity": 100, "blur": 4}))]);
+            d.raster_effects_ppi = ppi;
+            render(&d).pixel(27, 50)[1]
+        };
+        let (coarse, fine) = (green_outside(72.0), green_outside(720.0));
+        assert!(coarse + 3 < fine, "the red glow is stronger at 72 ppi: 72 ppi {coarse}, 720 ppi {fine}");
     }
 
     #[test]
