@@ -4858,3 +4858,4 @@ lighting	Light	ライト
 	Minimum must not exceed Desired, nor Desired Maximum.	最小値は最適値を、最適値は最大値を超えることはできません。
 	Minimum	最小
 	Justification	文字組み
+@msg	the file's variables and data sets weren't read (variables: {variables}, data sets: {data_sets}): the Variables panel doesn't list them	ファイルの変数とデータセットは読み込まれませんでした (変数: {variables}、データセット: {data_sets})。変数パネルには表示されません

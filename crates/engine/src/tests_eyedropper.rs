@@ -343,7 +343,8 @@ fn rgb_gradient_and_mesh_colors_given_to_a_cmyk_document_separate_through_the_co
         kind: Default::default(),
         stops: vec![vectorcraft_color::GradientStop::new(0.0, managed_cmyk(Color::WHITE)), vectorcraft_color::GradientStop::new(1.0, red)],
     };
-    assert_eq!(colors(&s), [0.0, 0.5, 1.0].map(|t| stored.sample(t).0), "{:?}", colors(&s));
+    // The points mix in the model the stops share (#2829): CMYK here.
+    assert_eq!(colors(&s), [0.0, 0.5, 1.0].map(|t| stored.sample_with(t, Color::lerp_keep_model).0), "{:?}", colors(&s));
 
     let m = rect(&mut s, 300.0);
     s.execute("object.mesh.create", &json!({"ids": [m.0], "rows": 1, "cols": 1})).unwrap();

@@ -4781,3 +4781,4 @@ lighting	Light	광원
 	Minimum must not exceed Desired, nor Desired Maximum.	최소값은 희망값을, 희망값은 최대값을 넘을 수 없습니다.
 	Minimum	최소
 	Justification	양끝 맞춤
+@msg	the file's variables and data sets weren't read (variables: {variables}, data sets: {data_sets}): the Variables panel doesn't list them	파일의 변수와 데이터 세트를 읽지 않았습니다(변수: {variables}, 데이터 세트: {data_sets}). 변수 패널에 표시되지 않습니다

@@ -5146,3 +5146,4 @@ mark-style	Japanese	Japonesas
 	Full Justify	Justificar completamente
 	Minimum must not exceed Desired, nor Desired Maximum.	El mínimo no puede superar el deseado, ni el deseado el máximo.
 	Justification	Justificación
+@msg	the file's variables and data sets weren't read (variables: {variables}, data sets: {data_sets}): the Variables panel doesn't list them	no se leyeron las variables ni los conjuntos de datos del archivo (variables: {variables}, conjuntos de datos: {data_sets}): el panel Variables no los muestra
