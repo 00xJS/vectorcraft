@@ -4839,3 +4839,9 @@ lighting	Light	光源
 	Justification	對齊設定
 # Select by Color (select.color)
 	Select by Color	依顏色選取
+@msg	missing integer `{key}`	未提供整數 `{key}`
+@msg	`{key}` must be a number, not {v}	`{key}` 必須是數字，而非 {v}
+@msg	{key} must be Unix seconds (an integer) or null	{key} 必須是以秒為單位的 Unix 時間 (整數) 或 null
+@msg	{key} must be an array of non-negative integer object ids	{key} 必須是由非負整數物件 id 組成的陣列
+@msg	invalid object id {value}: expected a non-negative integer	無效的物件 id {value}：應為非負整數
+@msg	no such object id {value}	沒有 id 為 {value} 的物件
