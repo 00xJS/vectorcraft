@@ -50,6 +50,9 @@ pub enum PathfinderOp {
     Outline,
     /// Front-most minus everything behind; keeps the front-most key.
     MinusBack,
+    /// Effect only: split into faces like Divide; overlapping faces take the highest of each CMYK
+    /// channel from every shape covering them (Illustrator Effect → Pathfinder → Hard Mix).
+    HardMix,
 }
 
 /// One face of the planar arrangement of a set of shapes (Shape Builder / Live Paint face).
@@ -172,6 +175,13 @@ pub fn pathfinder(op: PathfinderOp, shapes: &[Shape]) -> Vec<Shape> {
                 .collect()
         }
         PathfinderOp::Outline => outline_edges(&arr, shapes),
+        PathfinderOp::HardMix => regions_of(&arr)
+            .into_iter()
+            .filter_map(|r| {
+                let key = shapes.get(r.top()?)?.key;
+                Some(Shape::new(r.path, FillRule::NonZero, key))
+            })
+            .collect(),
     }
 }
 
