@@ -342,10 +342,7 @@ pub(crate) fn parse(id: &str, p: &Value) -> Option<PixelFx> {
             charcoal: num(p, "charcoalArea", 6.0).clamp(0.0, 20.0),
             pressure: num(p, "strokePressure", 2.0).clamp(0.0, 5.0),
         },
-        "sketch.chrome" => PixelFx::Chrome {
-            detail: num(p, "detail", 4.0).clamp(0.0, 10.0),
-            smoothness: num(p, "smoothness", 4.0).clamp(0.0, 10.0),
-        },
+        "sketch.chrome" => PixelFx::Chrome { detail: num(p, "detail", 4.0).clamp(0.0, 10.0), smoothness: num(p, "smoothness", 4.0).clamp(0.0, 10.0) },
         "sketch.graphicPen" => PixelFx::GraphicPen {
             length: num(p, "strokeLength", 5.0).clamp(1.0, 15.0),
             balance: num(p, "lightDarkBalance", 50.0).clamp(0.0, 100.0),

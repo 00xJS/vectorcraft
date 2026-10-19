@@ -183,11 +183,7 @@ pub(super) fn chrome(px: &mut [[u8; 4]], w: usize, h: usize, space: &PixelSpace,
     }
     blur_plane(&mut height, w, h, sigma);
     blur_plane(&mut alpha, w, h, sigma);
-    let tone: Vec<f64> = height
-        .iter()
-        .zip(&alpha)
-        .map(|(h, a)| if *a > 1e-4 { f64::from(*h / *a).clamp(0.0, 1.0) } else { 0.0 })
-        .collect();
+    let tone: Vec<f64> = height.iter().zip(&alpha).map(|(h, a)| if *a > 1e-4 { f64::from(*h / *a).clamp(0.0, 1.0) } else { 0.0 }).collect();
     let px_unit = place.px.max(1e-9);
     place.each(px, |x, y, p| {
         if p[3] == 0 {
