@@ -1,6 +1,7 @@
 //! Window chrome: application bar (menus), Control bar, document tabs, status bar.
 
 use std::borrow::Cow;
+use std::sync::Arc;
 
 use egui::{CornerRadius, Sense, Stroke, Ui, vec2};
 use serde_json::json;
@@ -726,15 +727,27 @@ pub fn status_bar(app: &mut VectorcraftApp, ui: &mut Ui) {
         });
 }
 
-/// Allocate the remaining row once, then paint each field inside its own bounded rectangle.
-/// Child UIs requested with a desired width can shrink to their contents; these rectangles cannot.
-fn status_readouts(app: &VectorcraftApp, ui: &mut Ui, t: &Tokens) {
-    const MESSAGE_MIN: f32 = 180.0;
+/// The most recently measured status widths, scoped to this UI and display settings.
+struct StatusReadoutWidths {
+    key: (crate::i18n::Lang, vectorcraft_doc::Unit, f32),
+    values: [f32; 4],
+}
+
+/// Reuse sample-string measurements until language, document units or display scale changes.
+/// Keep a single entry per UI so repeated DPI/zoom changes cannot grow the cache indefinitely.
+fn status_readout_widths(ui: &Ui, lang: crate::i18n::Lang, unit: vectorcraft_doc::Unit, t: &Tokens) -> Arc<StatusReadoutWidths> {
+    let id = ui.id().with("status-readout-widths");
+    let key = (lang, unit, ui.ctx().pixels_per_point());
+    if let Some(cached) = ui.data(|data| data.get_temp::<Arc<StatusReadoutWidths>>(id))
+        && cached.key == key
+    {
+        return cached;
+    }
+    // Text layout also accesses egui state, so measure outside the ui.data lock.
     let mono = theme::mono(10.5);
     let proportional = egui::FontId::proportional(10.5);
-    let unit = app.session.general_unit();
-    let render = crate::i18n::tr_ctx(crate::i18n::current(), "diagnostics", "render");
-    let ui_name = crate::i18n::tr_ctx(crate::i18n::current(), "diagnostics", "ui");
+    let render = crate::i18n::tr_ctx(lang, "diagnostics", "render");
+    let ui_name = crate::i18n::tr_ctx(lang, "diagnostics", "ui");
     let measure = |text, font: &egui::FontId| ui.painter().layout_no_wrap(text, font.clone(), t.text).size().x.ceil() + 4.0;
     // Reserve a readable numeric range using every digit in the active font. These samples
     // depend on the language/units, never the live values: timings cannot move field boundaries.
@@ -744,6 +757,23 @@ fn status_readouts(app: &VectorcraftApp, ui: &mut Ui, t: &Tokens) {
     let fps_width = (0..=9).map(|d| measure(format!("{d}{d}{d}{d} fps"), &proportional)).fold(0.0_f32, f32::max);
     // Each axis shows at least -9999.99..9999.99 in the selected unit without elision.
     let axis_width = (0..=9).map(|d| measure(format!("X: -{d}{d}{d}{d}.{d}{d} {}", unit.suffix()), &mono)).fold(100.0_f32, f32::max);
+    let widths = Arc::new(StatusReadoutWidths { key, values: [render_width, ui_width, fps_width, axis_width] });
+    ui.data_mut(|data| data.insert_temp(id, Arc::clone(&widths)));
+    widths
+}
+
+/// Allocate the remaining row once, then paint each field inside its own bounded rectangle.
+/// Child UIs requested with a desired width can shrink to their contents; these rectangles cannot.
+fn status_readouts(app: &VectorcraftApp, ui: &mut Ui, t: &Tokens) {
+    const MESSAGE_MIN: f32 = 180.0;
+    let mono = theme::mono(10.5);
+    let proportional = egui::FontId::proportional(10.5);
+    let unit = app.session.general_unit();
+    let lang = crate::i18n::current();
+    let render = crate::i18n::tr_ctx(lang, "diagnostics", "render");
+    let ui_name = crate::i18n::tr_ctx(lang, "diagnostics", "ui");
+    let widths = status_readout_widths(ui, lang, unit, t);
+    let [render_width, ui_width, fps_width, axis_width] = widths.values;
     let coord_width = 2.0 * axis_width;
     let perf_width = render_width + ui_width + fps_width + 12.0;
     let point_id = ui.id().with(("status-hover-point", app.session.active().map(|st| st.uid)));
@@ -1096,6 +1126,10 @@ mod tests {
         assert_eq!(super::first_tab_shown(&widths, None, 350.0), 0);
         assert_eq!(super::first_tab_shown(&widths, Some(4), 50.0), 4, "a tab wider than the room still shows");
     }
+    use std::sync::Arc;
+
+    use super::{StatusReadoutWidths, status_readouts};
+    use crate::theme::Tokens;
     use serde_json::json;
     use vectorcraft_engine::Session;
 
@@ -1169,6 +1203,61 @@ mod tests {
         crate::theme::install_fonts(&ctx);
         crate::theme::apply(&ctx, crate::theme::Brightness::Dark);
         (app, ctx)
+    }
+
+    /// Draw the production readouts and observe the cached measurement object across frames.
+    fn status_width_cache_frame(app: &crate::VectorcraftApp, ctx: &egui::Context, width: f32, ppp: f32) -> Arc<StatusReadoutWidths> {
+        let screen = egui::Rect::from_min_size(egui::Pos2::ZERO, egui::vec2(width, 300.0));
+        let mut input = egui::RawInput { screen_rect: Some(screen), ..Default::default() };
+        input.viewports.entry(egui::ViewportId::ROOT).or_default().native_pixels_per_point = Some(ppp);
+        let mut cache = None;
+        let mut output = ctx.run_ui(input, |ui| {
+            let t = Tokens::get(ui.ctx());
+            status_readouts(app, ui, &t);
+            cache = ui.data(|data| data.get_temp::<Arc<StatusReadoutWidths>>(ui.id().with("status-readout-widths")));
+        });
+        output.textures_delta.clear();
+        cache.expect("production status readouts populated their cache")
+    }
+
+    /// Live values, hover state and window width reuse the same measurement object.
+    #[test]
+    fn status_width_measurements_are_reused_across_frames() {
+        let (mut app, ctx) = status_readout_app();
+        let first = status_width_cache_frame(&app, &ctx, 1400.0, 1.0);
+        for width in [1400.0_f32, 500.0, 2200.0] {
+            app.perf = crate::Perf { render_ms: f64::from(width), frame_ms: f64::from(width) / 3.0, fps: 120.0 };
+            app.hover_doc = Some(vectorcraft_geom::Point::new(-width as f64, width as f64));
+            let cached = status_width_cache_frame(&app, &ctx, width, 1.0);
+            assert!(Arc::ptr_eq(&first, &cached), "live state or window size remeasured the samples");
+        }
+        app.hover_doc = None;
+        assert!(Arc::ptr_eq(&first, &status_width_cache_frame(&app, &ctx, 1400.0, 1.0)));
+    }
+
+    /// Each independent cache-key component refreshes widths, then subsequent frames reuse them.
+    #[test]
+    fn status_width_measurements_refresh_for_language_units_and_dpi() {
+        let (mut app, ctx) = status_readout_app();
+        let mut previous = status_width_cache_frame(&app, &ctx, 4000.0, 1.0);
+        let french = crate::i18n::Lang::from_code("fr").unwrap();
+        for (lang, unit, ppp) in [
+            (french, vectorcraft_doc::Unit::Points, 1.0),
+            (french, vectorcraft_doc::Unit::Millimeters, 1.0),
+            (french, vectorcraft_doc::Unit::Millimeters, 1.5),
+            (crate::i18n::Lang::EN, vectorcraft_doc::Unit::Millimeters, 1.5),
+            (crate::i18n::Lang::EN, vectorcraft_doc::Unit::Points, 1.5),
+            (crate::i18n::Lang::EN, vectorcraft_doc::Unit::Points, 1.0),
+        ] {
+            crate::i18n::set_current(lang);
+            app.session.execute("document.setUnits", &json!({"units": unit.key()})).unwrap();
+            let fresh = status_width_cache_frame(&app, &ctx, 4000.0, ppp);
+            assert_eq!(fresh.key, (lang, unit, ppp));
+            assert!(!Arc::ptr_eq(&previous, &fresh), "changed language/units/DPI reused stale widths");
+            assert!(fresh.values.iter().all(|w| w.is_finite() && *w > 0.0));
+            assert!(Arc::ptr_eq(&fresh, &status_width_cache_frame(&app, &ctx, 4000.0, ppp)));
+            previous = fresh;
+        }
     }
 
     /// These assertions require every target to be present, and cover the old padding limits.
