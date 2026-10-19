@@ -311,6 +311,9 @@ pub struct CanvasCache {
     /// drag's lower resolution ([`vectorcraft_render::FrameStats::moved`]): the next frame outside
     /// an interaction runs them again, on the worker when there is one.
     pub moved: bool,
+    /// The frame shown was rendered on the worker: an interaction's frames stay there
+    /// ([`canvas::show`]).
+    pub from_worker: bool,
     pub worker: Option<render_worker::Worker>,
     pub worker_started: bool,
     /// The slices as laid out for (document uid, revision): the canvas draws them every frame.
@@ -525,6 +528,7 @@ impl VectorcraftApp {
                 key: None,
                 last_ms: 0.0,
                 moved: false,
+                from_worker: false,
                 worker: None,
                 worker_started: false,
                 slices: None,

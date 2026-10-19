@@ -339,6 +339,7 @@ pub fn show(app: &mut VectorcraftApp, ui: &mut Ui) {
         app.perf.render_ms = done.ms;
         app.canvas.last_ms = done.ms;
         app.canvas.moved = done.moved > 0;
+        app.canvas.from_worker = true;
     }
     if app.canvas.key.as_ref() != Some(&key) || app.canvas.texture.is_none() {
         let (w, h, view) = match pixel {
@@ -389,10 +390,13 @@ pub fn show(app: &mut VectorcraftApp, ui: &mut Ui) {
         // Light documents render synchronously (no lag vs overlays); heavy ones go to the worker.
         // A document switch renders synchronously so another document's frame is never shown.
         // The first frame after an interaction, when the frame shown drew moved rasters, also goes
-        // to the worker.
+        // to the worker. An interaction's frames stay on the worker once it drew the frame shown:
+        // its renderer keeps the rasters of the art's effects that make those frames fast, and this
+        // thread's renderer has none, so a frame fast on the worker would be slow here.
         let same_doc = app.canvas.key.as_ref().is_some_and(|k| k.doc == key.doc);
         let settling = app.canvas.moved && !key.interacting;
-        let heavy = (app.canvas.last_ms > 8.0 || settling) && app.canvas.texture.is_some() && same_doc;
+        let staying = key.interacting && app.canvas.from_worker;
+        let heavy = (app.canvas.last_ms > 8.0 || settling || staying) && app.canvas.texture.is_some() && same_doc;
         match (&mut app.canvas.worker, heavy) {
             (Some(worker), true) => worker.submit(crate::render_worker::Job { key: key.clone(), doc: doc.clone(), w, h, view, opts }),
             _ => {
@@ -403,6 +407,7 @@ pub fn show(app: &mut VectorcraftApp, ui: &mut Ui) {
                 app.perf.render_ms = now_ms() - t0;
                 app.canvas.last_ms = app.perf.render_ms;
                 app.canvas.moved = app.canvas.renderer.stats.moved > 0;
+                app.canvas.from_worker = false;
             }
         }
     }
@@ -4725,6 +4730,107 @@ mod tests {
         assert!(run(&mut app, vec![]) == Some(after), "a dialog's preview draws the effect at full resolution");
         assert!(app.canvas.key.as_ref().is_some_and(|k| k.interacting && !k.dragging));
         assert_eq!(app.canvas.renderer.stats.previewed, 0);
+    }
+
+    /// Dragging a small square over an A4 page filled by a rectangle blurred by 500 pt, at 200%:
+    /// the blur reaches far past the raster budget, so the still frame keeps the backdrop's raster
+    /// cropped to the view, and each frame of a Selection tool drag draws it from there instead of
+    /// previewing it at the drag's lower resolution: on this thread, and on the worker, where the
+    /// frames of a heavy document render.
+    #[test]
+    fn a_drag_over_a_wide_blur_draws_the_blur_from_the_still_frame() {
+        for on_worker in [false, true] {
+            let mut app = VectorcraftApp::new(Session::new(), Default::default());
+            app.session.execute("file.new", &json!({"width": 595, "height": 842})).unwrap();
+            app.canvas.worker_started = true; // no worker unless `on_worker`
+            let back = app.run("shape.rectangle", json!({"x": 0, "y": 0, "width": 595, "height": 842})).unwrap()["id"].clone();
+            app.run("paint.setFill", json!({"ids": [back], "color": "#1a4ce6"})).unwrap();
+            app.run("effect.apply", json!({"effect": "blur.gaussian", "params": {"radius": 500}, "ids": [back]})).unwrap();
+            let square = app.run("shape.rectangle", json!({"x": 260, "y": 380, "width": 60, "height": 60})).unwrap()["id"].clone();
+            app.run("select.set", json!({"ids": [square]})).unwrap();
+            app.select_tool("selection");
+            let ctx = egui::Context::default();
+            // One headless frame with `events`, then, on the worker, frames until the frame it renders
+            // for them is shown.
+            let run = |app: &mut VectorcraftApp, events: Vec<egui::Event>| {
+                let frame = |app: &mut VectorcraftApp, events| {
+                    let raw = egui::RawInput {
+                        screen_rect: Some(egui::Rect::from_min_size(Pos2::ZERO, vec2(1440.0, 870.0))),
+                        events,
+                        ..Default::default()
+                    };
+                    let mut out = ctx.run_ui(raw, |ui| show(app, ui));
+                    out.textures_delta.clear();
+                };
+                frame(app, events);
+                let until = std::time::Instant::now() + std::time::Duration::from_secs(60);
+                while app.canvas.worker.as_ref().is_some_and(|w| w.pending.is_some()) && std::time::Instant::now() < until {
+                    std::thread::sleep(std::time::Duration::from_millis(5));
+                    frame(app, vec![]);
+                }
+            };
+            let moved = |app: &VectorcraftApp| if on_worker { app.canvas.moved } else { app.canvas.renderer.stats.moved > 0 };
+            run(&mut app, vec![]);
+            if let Some(vm) = app.view_mut() {
+                (vm.zoom, vm.center) = (2.0, Point::new(290.0, 410.0));
+            }
+            if on_worker {
+                app.canvas.worker = crate::render_worker::Worker::spawn(ctx.clone());
+                app.canvas.last_ms = 50.0;
+            }
+            run(&mut app, vec![]);
+            assert_eq!(app.canvas.from_worker, on_worker);
+            assert!(!moved(&app), "a still frame, on the worker: {on_worker}");
+            let at = app.canvas_rect.unwrap().center();
+            let button =
+                |pos, pressed| egui::Event::PointerButton { pos, button: egui::PointerButton::Primary, pressed, modifiers: Default::default() };
+            run(&mut app, vec![egui::Event::PointerMoved(at)]);
+            run(&mut app, vec![button(at, true)]);
+            for step in [1.0, 2.0, 3.0] {
+                run(&mut app, vec![egui::Event::PointerMoved(at + vec2(13.0, 7.0) * step)]);
+                assert!(app.canvas.key.as_ref().is_some_and(|k| k.interacting && k.dragging), "step {step}, on the worker: {on_worker}");
+                assert_eq!(app.canvas.from_worker, on_worker, "step {step}");
+                assert!(
+                    !moved(&app),
+                    "the blur drawn from the still frame's raster, step {step}, on the worker: {on_worker} ({} ms)",
+                    app.perf.render_ms
+                );
+            }
+            run(&mut app, vec![button(at + vec2(39.0, 21.0), false)]);
+            let info = app.run("document.inspect", json!({})).unwrap();
+            let children = info["layers"][0]["children"].as_array().unwrap().clone();
+            let x0 = |id: &serde_json::Value| children.iter().find(|c| c["id"] == *id).unwrap()["bounds"]["x"].as_f64().unwrap();
+            assert!(x0(&square) > 270.0 && x0(&back) == 0.0, "the square moved, the backdrop did not");
+            app.canvas.worker = None;
+        }
+    }
+
+    /// An interaction's frames stay on the worker once it drew the frame shown, however fast that
+    /// frame was: the worker's renderer keeps the effect rasters that made it fast, and this
+    /// thread's renderer, without them, would draw the next frame slowly. Without a frame from the
+    /// worker, a fast frame renders on this thread as before.
+    #[test]
+    fn an_interaction_stays_on_the_worker_that_drew_the_frame_shown() {
+        let mut app = VectorcraftApp::new(Session::new(), Default::default());
+        app.session.execute("file.new", &json!({"width": 400, "height": 300})).unwrap();
+        app.session.execute("shape.rectangle", &json!({"x": 100, "y": 50, "width": 200, "height": 200})).unwrap();
+        app.canvas.worker_started = true; // the first frame renders on this thread
+        let ctx = egui::Context::default();
+        shapes(&mut app, &ctx);
+        for from_worker in [true, false] {
+            app.canvas.worker = crate::render_worker::Worker::spawn(ctx.clone());
+            (app.canvas.from_worker, app.canvas.last_ms) = (from_worker, 1.0);
+            app.session.begin_interaction("Preview").unwrap();
+            shapes(&mut app, &ctx);
+            let pending = app.canvas.worker.as_ref().and_then(|w| w.pending.as_ref()).is_some_and(|k| k.interacting);
+            assert_eq!(pending, from_worker, "sent to the worker: {from_worker}");
+            if !from_worker {
+                assert!(app.canvas.key.as_ref().is_some_and(|k| k.interacting), "rendered on this thread");
+            }
+            app.session.cancel_interaction().unwrap();
+            app.canvas.worker = None;
+            shapes(&mut app, &ctx);
+        }
     }
 
     /// The frame after an interaction renders without `interacting` also when the interaction
