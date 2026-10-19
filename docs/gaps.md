@@ -275,9 +275,10 @@ from G14 and the budget run of G15: **~170–270 h** one agent, ~50–80 h wall 
   Export Type (Graphic or Movie Clip; default Movie Clip; `symbol.new` / `symbol.options` / Symbols panel;
   canvas placement unchanged; Animate / Flash handoff metadata); Symbol Options › Enable Guides for 9-Slice
   Scaling (four guides as fractions of the symbol size, `nineSlice` / `nineSliceGuides` on `symbol.new` /
-  `symbol.options`, stored per symbol; handoff metadata, not drawn on the canvas, #2342).
+  `symbol.options`, stored per symbol; handoff metadata, not drawn on the canvas, #2342); Brush Options › Key
+  Color eyedropper for scatter, art and pattern brushes (Hue Shift colorization; samples canvas art).
 - **Missing:** the Art brush's Overlap, auto-generated Pattern brush corners, new tile art in Pattern Brush
-  Options, the Key Color eyedropper; original brush, symbol and graphic-style libraries generated in code (never
+  Options; original brush, symbol and graphic-style libraries generated in code (never
   Adobe's); dynamic symbols; Start Global Edit; drawing the 9-slice guides on the canvas in symbol edit mode and scaling by them.
 - **Estimate:** 15–26 h.
 
