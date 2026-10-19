@@ -561,10 +561,7 @@ mod tests {
         let acts = drag(&mut t, &cx, first, first + Vec2::new(10.0, -4.0));
         let p3 = preview(&acts[1]);
         assert_eq!(p3["start"], json!(0));
-        assert!(
-            close(p3.get("dx").and_then(|v| v.as_f64()).unwrap_or(0.0), 0.0) && close(p3["dy"].as_f64().unwrap(), 4.0),
-            "{p3}"
-        );
+        assert!(close(p3.get("dx").and_then(|v| v.as_f64()).unwrap_or(0.0), 0.0) && close(p3["dy"].as_f64().unwrap(), 4.0), "{p3}");
     }
 
     #[test]
