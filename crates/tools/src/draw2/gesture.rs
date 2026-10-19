@@ -339,6 +339,12 @@ impl Tool for GestureTool {
                     }
                     *q = *r + start_shift * ws + end_shift * we;
                 }
+                // A smoothing pass that began after a snapped press starts where the press was.
+                if self.smoothing
+                    && let (Some(q), Some(r)) = (self.points.first_mut(), self.raw.first())
+                {
+                    *q = *r;
+                }
                 if away {
                     self.push(end, ev.pressure);
                 } else if self.snaps()
@@ -709,6 +715,29 @@ mod tests {
         let mut b = GestureTool::new("blobBrush");
         b.key(&cx, ToolKey::BracketRight, Mods::default());
         assert_eq!(b.options()["size"], 11.0);
+    }
+
+    /// #3013 review: Alt pressed after a press whose start snapped to the grid turns the stroke into
+    /// a smoothing pass that starts where the press was, not at the snapped point.
+    #[test]
+    fn a_smoothing_pass_after_a_snapped_press_starts_at_the_press() {
+        let (mut d, id) = doc_with_rect();
+        d.grid = vectorcraft_doc::GridPrefs { spacing: 100.0, subdivisions: 1 };
+        let mut s = Selection::default();
+        s.set([id]);
+        let p = paint();
+        let cx = ToolContext { snap_to_grid: true, ..cx(&d, &s, &p) };
+        let mut t = GestureTool::new("pencil");
+        t.set_option("altSmooth", &json!(true));
+        let alt = Mods { alt: true, ..Default::default() };
+        t.pointer(&cx, &PointerEvent::new(PointerKind::Down, 51.0, 151.0));
+        for x in [150.0, 250.0] {
+            t.pointer(&cx, &PointerEvent::new(PointerKind::Drag, x, 151.0).with_mods(alt));
+        }
+        let last = t.pointer(&cx, &PointerEvent::new(PointerKind::Up, 250.0, 151.0).with_mods(alt));
+        let Some(Action::Exec(c, v)) = last.first() else { panic!("{last:?}") };
+        assert_eq!(c, "path.smoothRegion");
+        assert_eq!(v["points"][0], json!([51.0, 151.0]), "{v}");
     }
 
     #[test]
