@@ -41,7 +41,7 @@ pub use sketch::{HALFTONE_TYPES, HalftonePattern};
 pub use texture::{GRAIN_TYPES, Grain, LIGHT_DIRECTIONS, Light, TEXTURES, Texture};
 
 /// The Photoshop-style effect ids (all raster effects, see [`crate::is_raster`]).
-pub const PIXEL_EFFECTS: [&str; 36] = [
+pub const PIXEL_EFFECTS: [&str; 37] = [
     "artistic.cutout",
     "artistic.filmGrain",
     "artistic.neonGlow",
@@ -66,6 +66,7 @@ pub const PIXEL_EFFECTS: [&str; 36] = [
     "pixelate.pointillize",
     "sharpen.unsharpMask",
     "sketch.chalkCharcoal",
+    "sketch.chrome",
     "sketch.graphicPen",
     "sketch.halftonePattern",
     "sketch.reticulation",
@@ -151,6 +152,8 @@ pub enum PixelFx {
     /// Sketch › Chalk & Charcoal: chalk highlights in light areas and charcoal in dark ones;
     /// `chalk` and `charcoal` (0..20) set how much, `pressure` (0..5) the stroke weight.
     ChalkCharcoal { chalk: f64, charcoal: f64, pressure: f64 },
+    /// Sketch › Chrome: polished chrome relief with `detail` (0..10) and `smoothness` (0..10).
+    Chrome { detail: f64, smoothness: f64 },
     /// Sketch › Graphic Pen: fine linear ink strokes along `dir`, each `length` (1..15) points long
     /// on white paper; `balance` (0..100) sets how much of the tone range becomes black ink.
     GraphicPen { length: f64, balance: f64, direction: StrokeDirection },
@@ -339,6 +342,7 @@ pub(crate) fn parse(id: &str, p: &Value) -> Option<PixelFx> {
             charcoal: num(p, "charcoalArea", 6.0).clamp(0.0, 20.0),
             pressure: num(p, "strokePressure", 2.0).clamp(0.0, 5.0),
         },
+        "sketch.chrome" => PixelFx::Chrome { detail: num(p, "detail", 4.0).clamp(0.0, 10.0), smoothness: num(p, "smoothness", 4.0).clamp(0.0, 10.0) },
         "sketch.graphicPen" => PixelFx::GraphicPen {
             length: num(p, "strokeLength", 5.0).clamp(1.0, 15.0),
             balance: num(p, "lightDarkBalance", 50.0).clamp(0.0, 100.0),
@@ -432,7 +436,11 @@ impl PixelFx {
             // Content shifted outwards reaches past the bounds by as much as the shift.
             PixelFx::Glass { distortion, .. } => distort::glass_shift(distortion),
             PixelFx::OceanRipple { size, magnitude } => distort::ripple_shift(size, magnitude),
-            PixelFx::UnsharpMask { .. } | PixelFx::ChalkCharcoal { .. } | PixelFx::HalftonePattern { .. } | PixelFx::Reticulation { .. } => 0.0,
+            PixelFx::UnsharpMask { .. }
+            | PixelFx::ChalkCharcoal { .. }
+            | PixelFx::Chrome { .. }
+            | PixelFx::HalftonePattern { .. }
+            | PixelFx::Reticulation { .. } => 0.0,
             PixelFx::GlowingEdges { width, smoothness, .. } => width.max(smoothness * 3.0),
             PixelFx::FilmGrain { .. }
             | PixelFx::Cutout { .. }
@@ -483,6 +491,7 @@ impl PixelFx {
             PixelFx::ColorHalftone { max_radius, .. } => Some(3.0 * std::f64::consts::SQRT_2 * max_radius),
             PixelFx::Crystallize { cell } => Some(1.5 * cell),
             PixelFx::ChalkCharcoal { .. } => Some(sketch::CHALK_CHARCOAL_REACH),
+            PixelFx::Chrome { smoothness, .. } => Some(sketch::chrome_reach(smoothness)),
             PixelFx::FilmGrain { .. } | PixelFx::Mezzotint { .. } | PixelFx::HalftonePattern { .. } | PixelFx::Reticulation { .. } => Some(0.0),
             // Cutout's palette comes from the whole object.
             PixelFx::Cutout { .. } => None,
@@ -540,6 +549,7 @@ impl PixelFx {
             PixelFx::OceanRipple { size, magnitude } => distort::ocean_ripple(px, w, h, space, size, magnitude),
             PixelFx::UnsharpMask { amount, radius, threshold } => sharpen::unsharp(px, w, h, amount, to_px(radius), threshold),
             PixelFx::ChalkCharcoal { chalk, charcoal, pressure } => sketch::chalk_charcoal(px, w, h, space, chalk, charcoal, pressure),
+            PixelFx::Chrome { detail, smoothness } => sketch::chrome(px, w, h, space, detail, smoothness),
             PixelFx::GraphicPen { length, balance, direction } => brushstrokes::graphic_pen(px, w, h, space, length, balance, direction),
             PixelFx::HalftonePattern { size, contrast, kind } => sketch::halftone_pattern(px, w, h, space, size, contrast, kind),
             PixelFx::Reticulation { density, foreground, background } => sketch::reticulation(px, w, h, space, density, foreground, background),

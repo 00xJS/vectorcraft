@@ -1,5 +1,5 @@
 //! The Photoshop-style raster effects (Effect › Artistic, Blur › Radial Blur and Smart Blur, Brush Strokes,
-//! Distort › Diffuse Glow, Glass and Ocean Ripple, Pixelate › Color Halftone, Crystallize, Mezzotint and Pointillize, Sharpen › Unsharp Mask, Sketch › Halftone Pattern, Texture ›
+//! Distort › Diffuse Glow, Glass and Ocean Ripple, Pixelate › Color Halftone, Crystallize, Mezzotint and Pointillize, Sharpen › Unsharp Mask, Sketch › Chalk & Charcoal, Chrome, Graphic Pen, Halftone Pattern and Reticulation, Texture ›
 //! Craquelure, Grain, Mosaic Tiles, Patchwork, Stained Glass and Texturizer, Video): applied and
 //! edited as commands, listed in the catalogue, drawn on the canvas, and written to PDF and SVG
 //! as images of the effected object.
@@ -49,8 +49,13 @@ const PIXELATE: [(&str, &str); 4] =
     [("pixelate.colorHalftone", "{}"), ("pixelate.crystallize", "{}"), ("pixelate.mezzotint", "{}"), ("pixelate.pointillize", "{}")];
 
 /// Effect › Sketch, at their defaults.
-const SKETCH: [(&str, &str); 4] =
-    [("sketch.chalkCharcoal", "{}"), ("sketch.graphicPen", "{}"), ("sketch.halftonePattern", "{}"), ("sketch.reticulation", "{}")];
+const SKETCH: [(&str, &str); 5] = [
+    ("sketch.chalkCharcoal", "{}"),
+    ("sketch.chrome", "{}"),
+    ("sketch.graphicPen", "{}"),
+    ("sketch.halftonePattern", "{}"),
+    ("sketch.reticulation", "{}"),
+];
 
 /// Effect › Texture, at their defaults.
 const TEXTURE: [(&str, &str); 6] = [

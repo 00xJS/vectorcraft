@@ -483,6 +483,13 @@ pub fn effect_catalog() -> Vec<EffectInfo> {
             json!({"chalkArea": 6.0, "charcoalArea": 6.0, "strokePressure": 2.0}),
         ),
         r(
+            "sketch.chrome",
+            "Chrome…",
+            SKETCH,
+            "{detail: 0..10 (4; finer surface texture), smoothness: 0..10 (4; softer relief before the highlights and shadows)} treats the object as polished chrome lit from the top left: bright highlights on high points and dark shadows in low ones, keeping its coverage. Original visual approximation; chosen VectorCraft defaults.",
+            json!({"detail": 4.0, "smoothness": 4.0}),
+        ),
+        r(
             "sketch.graphicPen",
             "Graphic Pen…",
             SKETCH,
