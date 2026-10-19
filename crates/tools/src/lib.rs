@@ -263,6 +263,8 @@ pub struct ToolContext<'a> {
     pub appearance_item: Option<usize>,
     /// General → Constrain Angle (degrees): Shift constrains drags to 45° steps from it.
     pub constrain_angle: f64,
+    /// General → Keyboard Increment: arrow-key nudges in document units (Shift multiplies by 10).
+    pub keyboard_increment: f64,
     /// The selected freeform gradient point (`paint.freeform.selectPoint`), marked on the
     /// freeform annotator.
     pub freeform_point: Option<usize>,
@@ -937,6 +939,7 @@ pub(crate) mod testutil {
             gradient_stop: None,
             appearance_item: None,
             constrain_angle: 0.0,
+            keyboard_increment: 1.0,
             freeform_point: None,
             raster_sample: 1,
             preview_bounds: false,
