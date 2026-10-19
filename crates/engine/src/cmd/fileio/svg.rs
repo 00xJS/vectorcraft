@@ -155,7 +155,7 @@ pub(super) fn lost_artboards_warning(doc: &Document, p: &Value, label: &str) -> 
     let preserved = plan(doc, p).is_ok_and(|(opts, ..)| opts.preserve_editing);
     (n > 1 && !preserved).then(|| {
         format!(
-            "{label} keeps 1 of the document's {n} artboards (the first, unless one is chosen) and reopens with only that one: turn on Preserve Editing Capabilities or save as VectorCraft to keep them all"
+            "{label} does not preserve the document's {n} artboards and reopens with only one: turn on Preserve Editing Capabilities or save as VectorCraft to keep them all"
         )
     })
 }
