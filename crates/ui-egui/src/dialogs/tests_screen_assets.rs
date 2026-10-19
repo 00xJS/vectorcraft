@@ -52,7 +52,7 @@ fn assets(app: &mut VectorcraftApp) -> Vec<Value> {
 fn export_selection_collects_the_selection_and_opens_the_assets_tab() {
     let (mut app, log, _) = app(true);
     assert!(crate::menus::enabled(&app, "file.exportSelection"));
-    let r = app.run("file.exportSelection", json!({})).unwrap();
+    let r = app.run("file.exportSelection", json!({"multiple": true})).unwrap();
     let list = assets(&mut app);
     assert_eq!(list.len(), 2, "one asset per object");
     let ids: Vec<Value> = list.iter().map(|a| a["id"].clone()).collect();
@@ -61,7 +61,7 @@ fn export_selection_collects_the_selection_and_opens_the_assets_tab() {
     assert_eq!((field(&app, "tab"), field(&app, "assets")), (json!("assets"), json!(ids)));
     // Collecting the same art again opens on the same assets.
     super::cancel(&mut app);
-    app.run("file.exportSelection", json!({})).unwrap();
+    app.run("file.exportSelection", json!({"multiple": true})).unwrap();
     assert_eq!(assets(&mut app).len(), 2);
     assert_eq!(field(&app, "assets"), json!(ids));
     let text = painted_text(&mut app, |app, ui| super::show(app, ui.ctx()));
@@ -80,12 +80,15 @@ fn export_selection_collects_the_selection_and_opens_the_assets_tab() {
 
 #[test]
 fn export_selection_as_one_asset() {
-    let (mut app, _, ids) = app(true);
-    app.run("file.exportSelection", json!({"multiple": false})).unwrap();
-    let list = assets(&mut app);
-    assert_eq!(list.len(), 1);
-    assert_eq!(list[0]["nodes"], json!(ids));
-    assert_eq!(field(&app, "assets"), json!([list[0]["id"]]));
+    // By default the selection, ungrouped, becomes one asset of it all; `multiple: false` says so too.
+    for p in [json!({}), json!({"multiple": false})] {
+        let (mut app, _, ids) = app(true);
+        app.run("file.exportSelection", p.clone()).unwrap();
+        let list = assets(&mut app);
+        assert_eq!(list.len(), 1, "{p}");
+        assert_eq!(list[0]["nodes"], json!(ids), "{p}");
+        assert_eq!(field(&app, "assets"), json!([list[0]["id"]]), "{p}");
+    }
 }
 
 #[test]
