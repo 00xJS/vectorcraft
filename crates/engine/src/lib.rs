@@ -1349,6 +1349,8 @@ impl Session {
         // Placed documents are read by the native format's loader.
         vectorcraft_doc::placed_document::set_loader(cmd::place::document::read_document);
         vectorcraft_doc::placed_document::set_file_reader(cmd::place::document::read_file_again);
+        // Clicks find an image's own fills and strokes where their effects draw them.
+        vectorcraft_doc::hit::set_image_paint(vectorcraft_render::effects::image_paint);
         Self {
             docs: vec![],
             active: None,
