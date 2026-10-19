@@ -424,6 +424,7 @@ impl Tool for SelectionTool {
             State::Moving { began: true, .. } | State::Scaling { .. } | State::Rotating { .. } => true,
             State::Corner(c) => c.adjusting(),
             State::Pie(d) => d.adjusting(),
+            State::Bracket(b) => b.adjusting(),
             State::Mirror(d) => d.adjusting(),
             _ => false,
         }
@@ -924,6 +925,22 @@ mod tests {
         t.pointer(&cx, &ev(PointerKind::Down, 190.0, 191.0));
         assert!(!t.transforming(), "a press is still a click");
         t.pointer(&cx, &ev(PointerKind::Drag, 175.0, 176.0));
+        assert!(t.transforming());
+    }
+
+    /// A type-on-path bracket drag is a transform, so the sharp selection box hides while the span moves.
+    #[test]
+    fn a_bracket_drag_counts_as_transforming_once_it_moves() {
+        let (d, id) = crate::testutil::doc_with_path_type();
+        let mut s = Selection::default();
+        s.add(id);
+        let p = paint();
+        let cx = cx(&d, &s, &p);
+        let mut t = SelectionTool::default();
+        assert!(!t.transforming());
+        t.pointer(&cx, &ev(PointerKind::Down, 280.0, 290.0));
+        assert!(!t.transforming(), "a press is still a click");
+        t.pointer(&cx, &ev(PointerKind::Drag, 320.0, 290.0));
         assert!(t.transforming());
     }
 
