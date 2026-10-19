@@ -12,7 +12,7 @@
 
 use serde_json::{Value, json};
 use vectorcraft_doc::NodeId;
-use vectorcraft_geom::Point;
+use vectorcraft_geom::{Point, Vec2};
 
 use super::{FEEDBACK, points_json, polyline};
 use crate::guides::DrawSnap;
@@ -47,6 +47,24 @@ pub struct GestureTool {
     pub close_within: f64,
     /// Smart Guides for the Pencil's ends.
     snap: DrawSnap,
+    /// Where the Pencil's stroke began, before its start snapped, and how far snapping moved it:
+    /// the samples near the start take part of that move ([`ease`]).
+    start_shift: (Point, Vec2),
+}
+
+/// How far, in multiples of the move, the samples near a snapped end follow it (#2958).
+const EASE_SPAN: f64 = 4.0;
+
+/// `p` moved by part of `shift`: all of it at `from`, none from [`EASE_SPAN`] times the shift's
+/// length away, easing between. A stroke end that snaps (to the grid, a point or a guide) then
+/// bends the stroke smoothly to it instead of jumping there and leaving a hook (#2958).
+fn ease(p: Point, from: Point, shift: Vec2) -> Point {
+    let len = shift.hypot();
+    if !(len > 1e-9 && len.is_finite()) {
+        return p;
+    }
+    let t = (p.distance(from) / (EASE_SPAN * len)).min(1.0);
+    p + shift * (1.0 - t).powi(2)
 }
 
 impl GestureTool {
@@ -78,6 +96,7 @@ impl GestureTool {
             edit_within: 12.0,
             close_within: 15.0,
             snap: DrawSnap::default(),
+            start_shift: (Point::ZERO, Vec2::ZERO),
         }
     }
 
@@ -232,6 +251,7 @@ impl Tool for GestureTool {
                 self.redraw = if self.draws_path() && self.extend.is_none() { self.find_redraw(cx, p) } else { None };
                 // A path continued starts at its end, one redrawn on it; a new one where it snaps.
                 let start = if self.snaps() && self.extend.is_none() && self.redraw.is_none() { self.snap.press(cx, p, &[], None) } else { p };
+                self.start_shift = (p, start - p);
                 self.clear();
                 self.push(start, ev.pressure);
                 vec![]
@@ -247,7 +267,8 @@ impl Tool for GestureTool {
                 if self.points.last().is_some_and(|l| l.distance(p) < cx.tol(1.0)) {
                     return vec![];
                 }
-                self.push(p, ev.pressure);
+                let (from, shift) = self.start_shift;
+                self.push(ease(p, from, shift), ev.pressure);
                 if !self.draws_path() {
                     return vec![];
                 }
@@ -265,7 +286,16 @@ impl Tool for GestureTool {
                 }
                 let end = if self.snaps() { self.snap.drag(cx, p, None) } else { p };
                 self.snap.clear();
-                if self.points.last().is_some_and(|l| l.distance(p) >= cx.tol(1.0)) {
+                // Was the last step away from where the button went up (before the samples bend)?
+                let away = self.points.last().is_some_and(|l| l.distance(p) >= cx.tol(1.0));
+                // The samples before a snapped end bend to it too (the start's already did).
+                let end_shift = end - p;
+                if let Some((_, rest)) = self.points.split_first_mut() {
+                    for q in rest {
+                        *q = ease(*q, p, end_shift);
+                    }
+                }
+                if away {
                     self.push(end, ev.pressure);
                 } else if self.snaps()
                     && self.points.len() > 1
@@ -407,6 +437,32 @@ mod tests {
         let acts = drag(&mut t, &cx, &[(102.0, 98.0), (151.0, 300.0)], Mods::default());
         let Some(Action::Preview(_, v)) = acts.last().and_then(|a| a.first()) else { panic!("{acts:?}") };
         assert_eq!(v["points"][0], json!([102.0, 98.0]));
+    }
+
+    /// #2958: with Snap to Grid the Pencil's ends still land on grid points, but the stroke bends
+    /// to them over a few times the distance they moved instead of jumping there: no hook (the
+    /// samples keep running forward), and samples away from the ends stay where the hand went.
+    #[test]
+    fn pencil_strokes_ease_into_ends_snapped_to_the_grid() {
+        let (d, _) = doc_with_rect();
+        let s = Selection::default();
+        let p = paint();
+        let cx = ToolContext { snap_to_grid: true, ..cx(&d, &s, &p) };
+        let step = cx.grid_step();
+        // A straight stroke sampled every 2 pt, both ends between grid points.
+        let (x0, x1, y) = (step * 10.0 + step * 0.45, step * 30.0 + step * 0.45, step * 10.0 + step * 0.4);
+        let pts: Vec<(f64, f64)> = (0..).map(|i| x0 + 2.0 * f64::from(i)).take_while(|x| *x <= x1).map(|x| (x, y)).collect();
+        let mut t = GestureTool::new("pencil");
+        let acts = drag(&mut t, &cx, &pts, Mods::default());
+        let Some(Action::Preview(_, v)) = acts.last().and_then(|a| a.first()) else { panic!("{acts:?}") };
+        let out: Vec<(f64, f64)> = v["points"].as_array().unwrap().iter().map(|q| (q[0].as_f64().unwrap(), q[1].as_f64().unwrap())).collect();
+        let on_grid = |v: f64| (v / step - (v / step).round()).abs() < 1e-9;
+        let (first, last) = (out[0], out[out.len() - 1]);
+        assert!(on_grid(first.0) && on_grid(first.1) && on_grid(last.0) && on_grid(last.1), "ends on the grid: {first:?} {last:?}");
+        assert!(out.windows(2).all(|w| w[1].0 > w[0].0), "no hook: the stroke keeps running forward {out:?}");
+        // Halfway along, the hand's points as drawn.
+        let mid = out[out.len() / 2];
+        assert!((mid.1 - y).abs() < 1e-9, "{mid:?}");
     }
 
     /// #852: the Paintbrush sends each point's pen pressure; a mouse (always fully pressed) and
