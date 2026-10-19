@@ -119,7 +119,8 @@ pub fn stroke_contains(path: &BezPath, width: f64, tol: f64, p: Point) -> bool {
 /// (#1103).
 pub fn intersects_rect(path: &PathData, r: Rect) -> bool {
     let Some(b) = path.bounds() else { return false };
-    if b.intersect(r).area() <= 0.0 && !(b.width() == 0.0 || b.height() == 0.0) {
+    let degenerate = |x: Rect| x.width() == 0.0 || x.height() == 0.0;
+    if b.intersect(r).area() <= 0.0 && !degenerate(b) && !degenerate(r) {
         return false;
     }
     // Any anchor inside?
@@ -226,6 +227,16 @@ mod tests {
         // crossing a line
         let l = shapes::line(Point::new(0.0, 0.0), Point::new(10.0, 10.0));
         assert!(intersects_rect(&l, Rect::new(4.0, 0.0, 6.0, 10.0)));
+    }
+
+    #[test]
+    fn marquee_degenerate_rect() {
+        let p = shapes::rectangle(Rect::new(0.0, 0.0, 10.0, 10.0));
+        // zero-height / zero-width marquee crossing the shape
+        assert!(intersects_rect(&p, Rect::new(-5.0, 5.0, 15.0, 5.0)));
+        assert!(intersects_rect(&p, Rect::new(5.0, -5.0, 5.0, 15.0)));
+        // zero-height marquee missing it
+        assert!(!intersects_rect(&p, Rect::new(20.0, 5.0, 30.0, 5.0)));
     }
 }
 
