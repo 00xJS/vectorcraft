@@ -430,10 +430,7 @@ fn copying_a_color_book_from_a_temporary_path_uses_its_title() {
     let loaded = run(&mut s, "swatch.library.load", json!({ "path": source }))["library"].clone();
     assert_eq!(run(&mut s, "swatch.library.get", json!({ "library": loaded }))["name"], "Test Book®");
     let r = run(&mut s, "swatch.library.copyToUser", json!({ "library": loaded }));
-    assert_eq!(
-        (r["library"].as_str(), r["name"].as_str(), r["copied"].as_bool()),
-        (Some("user/Test Book®.acb"), Some("Test Book®"), Some(true))
-    );
+    assert_eq!((r["library"].as_str(), r["name"].as_str(), r["copied"].as_bool()), (Some("user/Test Book®.acb"), Some("Test Book®"), Some(true)));
     assert_eq!(r["path"], user.join("Test Book®.acb").to_string_lossy().to_string());
     assert_eq!(std::fs::read(user.join("Test Book®.acb")).unwrap(), bytes);
     let _ = std::fs::remove_dir_all(dir);
