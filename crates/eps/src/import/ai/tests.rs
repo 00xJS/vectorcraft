@@ -1244,6 +1244,28 @@ fn an_object_with_a_style_this_reads_comes_in_as_itself() {
 }
 
 #[test]
+fn an_object_with_a_feather_style_comes_in_with_a_live_effect() {
+    let feather_style = "%AI9_BeginArtStyles\n\
+        /KnownStyle :\n(Soft) /Name ,\n/ActiveStyle :\n/CompoundFilter :\n(Chain Style Filter) 0 0 /Filter ,\n1 /Visible ,\n\
+        /CompoundFilter :\n(Stack Style Filter) 0 0 /Filter ,\n1 /Visible ,\n\
+        /BasicFilter :\n(Fill Style Filter) 0 0 /Filter ,\n1 /Visible ,\n/Dictionary : /NotRecorded ,\n/FillStyle : 0 O\n0 0 0 0 0 0 1 Xa\n0 1 Xd\n/Def ;\n (FillStyle) ,\n; /Dict ;\n /Part ,\n\
+        /BasicFilter :\n(Conduit Filter) 0 0 /Filter ,\n1 /Visible ,\n;\n /Part ,\n;\n /Part ,\n\
+        /BasicFilter :\n(Adobe Feather) 1 0 /Filter ,\n1 /Visible ,\n/Dictionary : /NotRecorded ,\n8 /Real (rad) ,\n; /Dict ;\n /Part ,\n;\n\
+        %AI9_EndArtStyles\n";
+    let hidden_rect = rect_path(0.0, 0.0, 10.0, 10.0).replace('\n', "\n%_");
+    let art_ = format!(
+        "0 Ae\nu\n{RED}{}f\nU\n%_Bb\n%_{hidden_rect}f\n%_0 BB\n1 (Soft) XW\n",
+        rect_path(0.0, 0.0, 10.0, 10.0)
+    );
+    let r = read_ok(&format!("{feather_style}{}", layer(&art_)));
+    let a = art(&r.doc);
+    assert_eq!(a.len(), 1);
+    let [feather] = a[0].appearance.effects.as_slice() else { panic!("{:#?}", a[0].appearance) };
+    assert_eq!((feather.id.as_str(), feather.params["radius"].as_f64()), ("stylize.feather", Some(8.0)));
+    assert!(!r.warnings.iter().any(|w| w.contains("drawn look")), "{:?}", r.warnings);
+}
+
+#[test]
 fn a_bare_comment_line_in_a_prolog_leaves_its_end_alone() {
     // GUARDS: a bare `%` line's empty marker matched the empty begin marker of a section that has none.
     let r = read_ok(&format!("%%BeginProlog\n%\n%%EndProlog\n{}", layer(&format!("{RED}{}f\n", rect_path(0.0, 0.0, 10.0, 10.0)))));
