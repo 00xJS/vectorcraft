@@ -83,9 +83,6 @@ fn guide_cursor(vertical: bool) -> Cursor {
 #[derive(Clone, Copy, Debug)]
 struct Drag {
     index: usize,
-    /// Orientation when the drag began (Alt swaps from this, as for a new guide).
-    source_vertical: bool,
-    /// Effective orientation while dragging (Alt swaps from `source_vertical`).
     vertical: bool,
     /// Where the guide was, and where it is now (x of a vertical guide, y of a horizontal one).
     from: f64,
@@ -242,7 +239,6 @@ impl GuideEdit {
         let (shift, selected) = (ev.mods.shift, cx.selection.guides.contains(&index));
         self.drag = Some(Drag {
             index,
-            source_vertical: g.vertical,
             vertical: g.vertical,
             from: g.pos,
             at: g.pos,
@@ -271,7 +267,7 @@ impl GuideEdit {
             PointerKind::Up => {
                 self.drag = None;
                 self.snap = GuideSnap::default();
-                if d.began && on_ruler(cx, d.source_vertical, ev.pos) {
+                if d.began && on_ruler(cx, d.vertical, ev.pos) {
                     // Dropped on its ruler: the guide goes (a copy is just not made).
                     let mut out = vec![Action::Cancel];
                     if !ev.mods.alt {
@@ -302,24 +298,15 @@ impl GuideEdit {
                 return out;
             }
             d.began = true;
-            out.push(Action::Begin("Move Guide".into()));
+            out.push(Action::Begin(if ev.mods.alt { "Copy Guide" } else { "Move Guide" }.into()));
             self.snap = GuideSnap::new(cx);
         }
-        let vertical = d.source_vertical != ev.mods.alt;
         let moved = p - d.start;
-        let at = if vertical == d.source_vertical {
-            self.snap.snap(cx, d.source_vertical, d.from + if d.source_vertical { moved.x } else { moved.y }, ev.mods.shift)
-        } else {
-            self.snap.snap(cx, vertical, if vertical { p.x } else { p.y }, ev.mods.shift)
-        };
-        (d.at, d.pointer, d.vertical) = (at, p, vertical);
-        if vertical != d.source_vertical {
-            out.push(Action::Preview("guide.move".into(), json!({ "index": d.index, "pos": at, "vertical": vertical })));
-        } else {
-            // The other selected guides follow the pointer: vertical ones across, horizontal ones down.
-            let (dx, dy) = if d.source_vertical { (at - d.from, moved.y) } else { (moved.x, at - d.from) };
-            out.push(Action::Preview("guide.move".into(), json!({ "dx": dx, "dy": dy, "copy": false })));
-        }
+        let at = self.snap.snap(cx, d.vertical, d.from + if d.vertical { moved.x } else { moved.y }, ev.mods.shift);
+        (d.at, d.pointer) = (at, p);
+        // The other selected guides follow the pointer: vertical ones across, horizontal ones down.
+        let (dx, dy) = if d.vertical { (at - d.from, moved.y) } else { (moved.x, at - d.from) };
+        out.push(Action::Preview("guide.move".into(), json!({ "dx": dx, "dy": dy, "copy": ev.mods.alt })));
         out
     }
 
@@ -616,7 +603,7 @@ mod tests {
     }
 
     #[test]
-    fn shift_click_toggles_and_alt_drag_swaps_orientation() {
+    fn shift_click_toggles_and_alt_drag_copies() {
         let d = guides_doc();
         let mut s = Selection::default();
         s.set_guides([0, 1]);
@@ -627,11 +614,10 @@ mod tests {
         assert_eq!(g.press(&c, &ev(PointerKind::Down, 50.0, 400.0, shift)), Some(vec![]));
         let deselect = Action::Exec("guide.select".into(), json!({"indexes": [1], "toggle": true}));
         assert_eq!(g.pointer(&c, &ev(PointerKind::Up, 50.0, 400.0, shift)), Some(vec![deselect]));
-        // Guide 1 is horizontal at y = 400; Alt-drag turns it vertical at the pointer's x.
         g.press(&c, &ev(PointerKind::Down, 50.0, 400.0, alt));
-        let a = g.pointer(&c, &ev(PointerKind::Drag, 80.0, 420.0, alt)).unwrap();
-        assert_eq!(a[0], Action::Begin("Move Guide".into()));
-        assert_eq!(a[1], Action::Preview("guide.move".into(), json!({"index": 1, "pos": 80.0, "vertical": true})));
+        let a = g.pointer(&c, &ev(PointerKind::Drag, 50.0, 420.0, alt)).unwrap();
+        assert_eq!(a[0], Action::Begin("Copy Guide".into()));
+        assert_eq!(a[1], Action::Preview("guide.move".into(), json!({"dx": 0.0, "dy": 20.0, "copy": true})));
     }
 
     #[test]
@@ -689,11 +675,7 @@ mod tests {
         };
         if let Some(from) = from {
             assert_eq!(command, "guide.move");
-            if p.get("index").is_some() {
-                p["pos"].as_f64().unwrap()
-            } else {
-                from + p[if vertical { "dx" } else { "dy" }].as_f64().unwrap()
-            }
+            from + p[if vertical { "dx" } else { "dy" }].as_f64().unwrap()
         } else {
             assert_eq!(command, "guide.add");
             assert_eq!(p["vertical"], json!(vertical));
@@ -738,20 +720,23 @@ mod tests {
                 let mut selection = Selection::default();
                 selection.set_guides([index]);
                 let c = ToolContext { unit, zoom, smart_guides: false, snap_to_point: false, ..cx(&doc, &selection, &paint) };
-                let mut guide = GuideEdit::default();
-                let (start, to, want) = if vertical {
-                    (Point::new(from, 50.0), Point::new(pointer.x, 50.0), expected.x)
-                } else {
-                    (Point::new(50.0, from), Point::new(50.0, pointer.y), expected.y)
-                };
-                assert!(guide.press(&c, &ev(PointerKind::Down, start.x, start.y, Mods::default())).unwrap().is_empty());
-                let mods = Mods { shift: true, ..Default::default() };
-                let actions = guide.pointer(&c, &ev(PointerKind::Drag, to.x, to.y, mods)).unwrap();
-                assert_eq!(actions.first(), Some(&Action::Begin("Move Guide".into())));
-                let actual = guide_preview_position(&actions, vertical, Some(from));
-                assert!((actual - want).abs() < 1e-8, "{unit:?} {origin:?} vertical={vertical} actual={actual} want={want}");
-                assert_eq!(guide.pointer(&c, &ev(PointerKind::Up, to.x, to.y, mods)), Some(vec![Action::Commit]));
-                assert!(!guide.busy());
+                for copy in [false, true] {
+                    let mut guide = GuideEdit::default();
+                    let (start, to, want) = if vertical {
+                        (Point::new(from, 50.0), Point::new(pointer.x, 50.0), expected.x)
+                    } else {
+                        (Point::new(50.0, from), Point::new(50.0, pointer.y), expected.y)
+                    };
+                    assert!(guide.press(&c, &ev(PointerKind::Down, start.x, start.y, Mods::default())).unwrap().is_empty());
+                    let mods = Mods { shift: true, alt: copy, ..Default::default() };
+                    let actions = guide.pointer(&c, &ev(PointerKind::Drag, to.x, to.y, mods)).unwrap();
+                    assert_eq!(actions.first(), Some(&Action::Begin(if copy { "Copy Guide" } else { "Move Guide" }.into())));
+                    let actual = guide_preview_position(&actions, vertical, Some(from));
+                    assert!((actual - want).abs() < 1e-8, "{unit:?} {origin:?} vertical={vertical} copy={copy} actual={actual} want={want}");
+                    assert!(matches!(actions.last(), Some(Action::Preview(_, p)) if p["copy"] == json!(copy)));
+                    assert_eq!(guide.pointer(&c, &ev(PointerKind::Up, to.x, to.y, mods)), Some(vec![Action::Commit]));
+                    assert!(!guide.busy());
+                }
             }
         }
     }
@@ -855,26 +840,13 @@ mod tests {
                         "commands keep absolute coordinates"
                     );
                     check(new.overlays(&c));
-                    let mut moved = GuideEdit::default();
-                    let (start, to) = if vertical { ((from, 50.0), (222.0, 50.0)) } else { ((50.0, from), (50.0, 238.0)) };
-                    moved.press(&c, &ev(PointerKind::Down, start.0, start.1, Mods::default())).unwrap();
-                    moved.pointer(&c, &ev(PointerKind::Drag, to.0, to.1, Mods::default())).unwrap();
-                    check(moved.overlays(&c));
-                    // Alt swaps orientation; the readout follows the effective axis.
-                    let mut flipped = GuideEdit::default();
-                    flipped.press(&c, &ev(PointerKind::Down, start.0, start.1, Mods::default())).unwrap();
-                    flipped.pointer(&c, &ev(PointerKind::Drag, to.0, to.1, Mods { alt: true, ..Default::default() })).unwrap();
-                    let flipped_vertical = !vertical;
-                    let origin = c.ruler_origin;
-                    let want_flip = format!(
-                        "{}: {}",
-                        if flipped_vertical { "X" } else { "Y" },
-                        c.len(if flipped_vertical { to.0 - origin.x } else { to.1 - origin.y })
-                    );
-                    assert!(
-                        matches!(flipped.overlays(&c).last(), Some(Overlay::Measure { text, .. }) if text == &want_flip),
-                        "want {want_flip}"
-                    );
+                    for copy in [false, true] {
+                        let mut moved = GuideEdit::default();
+                        let (start, to) = if vertical { ((from, 50.0), (222.0, 50.0)) } else { ((50.0, from), (50.0, 238.0)) };
+                        moved.press(&c, &ev(PointerKind::Down, start.0, start.1, Mods::default())).unwrap();
+                        moved.pointer(&c, &ev(PointerKind::Drag, to.0, to.1, Mods { alt: copy, ..Default::default() })).unwrap();
+                        check(moved.overlays(&c));
+                    }
                     let quiet = ToolContext { measurement_labels: false, ..c };
                     assert!(new.overlays(&quiet).is_empty(), "measurement-label preference is preserved");
                 }

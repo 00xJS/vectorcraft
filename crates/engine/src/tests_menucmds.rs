@@ -2011,14 +2011,6 @@ fn ruler_guides_and_lock() {
     assert!(s.execute("guide.remove", &json!({"index": 0})).is_err());
 }
 
-#[test]
-fn guide_move_can_swap_orientation() {
-    let mut s = session();
-    s.execute("guide.add", &json!({"vertical": false, "pos": 50})).unwrap();
-    s.execute("guide.move", &json!({"index": 0, "pos": 120, "vertical": true})).unwrap();
-    assert_eq!((s.doc().unwrap().doc.guides[0].vertical, s.doc().unwrap().doc.guides[0].pos), (true, 120.0));
-}
-
 /// #1534: Lock Guides locks the paths made into guides too: they can't be selected (so neither
 /// moved, reshaped nor deleted), by a click, a marquee or Select All, and locking lets them go.
 #[test]
