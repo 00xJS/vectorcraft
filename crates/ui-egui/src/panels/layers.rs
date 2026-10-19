@@ -1697,7 +1697,9 @@ fn save_selection_menu(app: &mut VectorcraftApp, ui: &mut Ui) {
         }
         for name in names {
             if widgets::menu_item_name(ui, &name, true, false) {
+                let selected = last_selected(app);
                 app.run("select.recall", json!({ "name": name })).ok();
+                see_selection(app, ui, selected);
                 ui.close();
             }
         }
@@ -2950,6 +2952,34 @@ mod tests {
         }
         assert_eq!(app.session.active().unwrap().selection.objects, [b], "c is deleted and b stays selected");
         assert_eq!(frame(&mut app, &ctx, vec![], false).0.len(), 2, "Sub stays closed");
+    }
+
+    /// With Locate Selected Objects on, a saved selection recalled from the panel menu's Save
+    /// Selection submenu is not located: the recalled object stays in its closed sublayer and group.
+    #[test]
+    fn with_the_option_a_selection_recalled_from_the_panel_menu_is_not_located() {
+        let (mut app, [_, sub, g, b, _, c]) = nested();
+        app.ui.layers_panel.locate_selected = true;
+        app.run("select.set", json!({"ids": [b.0]})).unwrap();
+        app.run("select.save", json!({"name": "Kept"})).unwrap();
+        app.run("select.set", json!({"ids": [c.0]})).unwrap();
+        let ctx = egui::Context::default();
+        crate::theme::install_fonts(&ctx);
+        frame(&mut app, &ctx, vec![], false);
+        expand(&mut app, &json!({"ids": [sub.0, g.0], "open": false})).unwrap();
+        assert_eq!(frame(&mut app, &ctx, vec![], false).0.len(), 3, "Layer 1, Sub (closed) and c");
+        let menu_frame = |app: &mut VectorcraftApp, events| super::super::tests_appearance::frame_events(&ctx, app, events, menu);
+        let at = |texts: &[(String, egui::Rect)], label: &str| texts.iter().find(|(t, _)| t.trim() == label).map(|(_, r)| r.center());
+        let sub_menu = at(&menu_frame(&mut app, vec![]), "Save Selection").expect("the Save Selection submenu");
+        for e in [egui::Event::PointerMoved(sub_menu), button(sub_menu, true), button(sub_menu, false)] {
+            menu_frame(&mut app, vec![e]);
+        }
+        let item = at(&menu_frame(&mut app, vec![]), "Kept").expect("the saved selection's item");
+        for e in [egui::Event::PointerMoved(item), button(item, true), button(item, false)] {
+            menu_frame(&mut app, vec![e]);
+        }
+        assert_eq!(app.session.active().unwrap().selection.objects, [b], "the saved selection is recalled");
+        assert_eq!(frame(&mut app, &ctx, vec![], false).0.len(), 3, "Sub stays closed");
     }
 
     /// With Locate Selected Objects on, the object selected in a document that becomes active is
