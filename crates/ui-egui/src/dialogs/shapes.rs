@@ -2,7 +2,7 @@
 //! Star, Line Segment Tool Options and the two grids (size, divider counts and skews, switches).
 
 use serde_json::{Value, json};
-use vectorcraft_geom::Rect;
+use vectorcraft_geom::{Point, Rect};
 
 use super::{DialogSpec, form, run_and_close};
 use crate::panels::transform::artboard_rect;
@@ -48,6 +48,16 @@ fn set_grid_placed(d: &mut Dialog, r: Rect) {
     d.fields.insert("height".into(), json!(r.height()));
 }
 
+/// Top-left `x`/`y` so reference point `refi` sits on the canvas click (`__anchorX`/`__anchorY`).
+pub(crate) fn grid_pin_to_anchor(d: &mut Dialog) {
+    let anchor = Point::new(d.f64("__anchorX", d.f64("x", 0.0)), d.f64("__anchorY", d.f64("y", 0.0)));
+    let refi = grid_reference(d);
+    let (w, h) = (d.f64("width", 100.0), d.f64("height", 100.0));
+    let rp = vectorcraft_geom::reference_point(Rect::new(0.0, 0.0, w, h), refi);
+    d.fields.insert("x".into(), json!(anchor.x - rp.x));
+    d.fields.insert("y".into(), json!(anchor.y - rp.y));
+}
+
 /// The form's fields, then a grid's switches.
 fn body(app: &mut VectorcraftApp, ui: &mut egui::Ui, d: &mut Dialog) -> bool {
     let unit = app.session.general_unit();
@@ -56,6 +66,7 @@ fn body(app: &mut VectorcraftApp, ui: &mut egui::Ui, d: &mut Dialog) -> bool {
             let refi = grid_reference(d);
             if let Some(i) = widgets::reference_point(ui, refi) {
                 d.fields.insert("reference".into(), json!(i));
+                grid_pin_to_anchor(d);
             }
         });
         ui.add_space(4.0);
