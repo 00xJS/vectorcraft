@@ -1846,9 +1846,34 @@ fn join_takes_the_paths_and_the_ends_to_join() {
         json!({"ids": [a.0, 999]}),
         json!({"ids": [a.0, r.0], "ends": ["first"]}),
         json!({"ids": [a.0, b.0], "ends": ["first", "middle"]}),
+        json!({"to": "round"}),
     ] {
         assert!(s.execute("path.join", &bad).is_err(), "{bad}");
     }
+}
+
+/// `path.join {to}` makes the joined anchor a corner or smooth point.
+#[test]
+fn join_to_corner_or_smooth_sets_the_merged_anchor() {
+    let mut s = session();
+    let r = rect(&mut s, 100.0, 100.0, 100.0, 80.0);
+    s.execute("select.anchors", &json!({"id": r.0, "anchors": [[0, 0], [0, 1]], "mode": "set"})).unwrap();
+    s.execute("path.average", &json!({"axis": "both"})).unwrap();
+    s.execute("path.join", &json!({"to": "corner"})).unwrap();
+    let a = &path(&s, r).subpaths[0].anchors[0];
+    assert_eq!(a.kind, vectorcraft_geom::AnchorKind::Corner);
+    assert_eq!((a.h_in, a.h_out), (a.p, a.p));
+    s.execute("edit.undo", &json!({})).unwrap();
+    s.execute("edit.undo", &json!({})).unwrap();
+    s.execute("path.average", &json!({"axis": "both"})).unwrap();
+    s.execute("path.join", &json!({"to": "smooth"})).unwrap();
+    let a = &path(&s, r).subpaths[0].anchors[0];
+    assert_eq!(a.kind, vectorcraft_geom::AnchorKind::Smooth);
+    let a = line(&mut s, 0.0, 0.0, 100.0, 0.0);
+    let b = line(&mut s, 100.0, 0.0, 200.0, 0.0);
+    s.execute("path.join", &json!({"ids": [a.0, b.0], "to": "smooth"})).unwrap();
+    let j = &path(&s, a).subpaths[0].anchors[1];
+    assert_eq!(j.kind, vectorcraft_geom::AnchorKind::Smooth);
 }
 
 #[test]
