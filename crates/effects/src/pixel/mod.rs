@@ -1,5 +1,5 @@
 //! Photoshop-style raster effects (Effect › Artistic › Cutout, Film Grain, Neon Glow, Plastic Wrap and
-//! Poster Edges, Blur › Radial Blur and Smart Blur, Brush Strokes › Accented Edges, Angled Strokes,
+//! Poster Edges, Smudge Stick, Sponge and Watercolor, Blur › Radial Blur and Smart Blur, Brush Strokes › Accented Edges, Angled Strokes,
 //! Crosshatch, Dark Strokes, Ink Outlines, Spatter, Sprayed Strokes and Sumi-e, Distort › Diffuse
 //! Glow, Glass and Ocean Ripple, Pixelate › Color Halftone, Crystallize, Mezzotint and Pointillize,
 //! Sharpen › Unsharp Mask, Sketch › Chalk & Charcoal, Graphic Pen, Halftone Pattern, Plaster and
@@ -21,6 +21,7 @@ mod brushstrokes;
 mod distort;
 mod edges;
 mod loaded;
+mod paint;
 mod pixelate;
 mod sharpen;
 mod sketch;
@@ -41,12 +42,15 @@ pub use sketch::{HALFTONE_TYPES, HalftonePattern};
 pub use texture::{GRAIN_TYPES, Grain, LIGHT_DIRECTIONS, Light, TEXTURES, Texture};
 
 /// The Photoshop-style effect ids (all raster effects, see [`crate::is_raster`]).
-pub const PIXEL_EFFECTS: [&str; 38] = [
+pub const PIXEL_EFFECTS: [&str; 41] = [
     "artistic.cutout",
     "artistic.filmGrain",
     "artistic.neonGlow",
     "artistic.plasticWrap",
     "artistic.posterEdges",
+    "artistic.smudgeStick",
+    "artistic.sponge",
+    "artistic.watercolor",
     "blur.radial",
     "blur.smart",
     "brushStrokes.accentedEdges",
@@ -92,6 +96,16 @@ pub enum PixelFx {
     /// Artistic › Film Grain: monochrome grain in shadows and midtones, a wider bright
     /// highlight area (0..20), and tonal intensity (0..10), preserving coverage.
     FilmGrain { grain: f64, highlight: f64, intensity: f64 },
+    /// Artistic › Smudge Stick: the dark areas smudged along short diagonal strokes `stroke`
+    /// (0..10) long, the light areas (widened by `highlight`, 0..20) smudged longer and lightened
+    /// by up to `intensity` (0..10).
+    SmudgeStick { stroke: f64, highlight: f64, intensity: f64 },
+    /// Artistic › Sponge: soft blobs of lighter and darker colour about `brush` (0..10) large,
+    /// contrasting as `definition` (0..25) says, their edges as soft as `smoothness` (1..15).
+    Sponge { brush: f64, definition: f64, smoothness: f64 },
+    /// Artistic › Watercolor: detail simplified by a brush of `detail` (1..14), edges saturated,
+    /// shadows deepened by `shadow` (0..10), `texture` (1..3) grains of paper showing.
+    Watercolor { detail: f64, shadow: f64, texture: u32 },
     /// Artistic › Neon Glow: dimmed greys lit by `colour` (straight RGB, 0..1) glowing from the
     /// light areas (`size` above 0) or the dark ones (below 0), spread by |`size`| (-24..24), as
     /// strong as `brightness` (0..50).
@@ -267,6 +281,21 @@ pub(crate) fn parse(id: &str, p: &Value) -> Option<PixelFx> {
             grain: num(p, "grain", 4.0).clamp(0.0, 20.0),
             highlight: num(p, "highlightArea", 0.0).clamp(0.0, 20.0),
             intensity: num(p, "intensity", 10.0).clamp(0.0, 10.0),
+        },
+        "artistic.smudgeStick" => PixelFx::SmudgeStick {
+            stroke: num(p, "strokeLength", 2.0).clamp(0.0, 10.0),
+            highlight: num(p, "highlightArea", 12.0).clamp(0.0, 20.0),
+            intensity: num(p, "intensity", 10.0).clamp(0.0, 10.0),
+        },
+        "artistic.sponge" => PixelFx::Sponge {
+            brush: num(p, "brushSize", 2.0).clamp(0.0, 10.0),
+            definition: num(p, "definition", 12.0).clamp(0.0, 25.0),
+            smoothness: num(p, "smoothness", 5.0).clamp(1.0, 15.0),
+        },
+        "artistic.watercolor" => PixelFx::Watercolor {
+            detail: num(p, "brushDetail", 9.0).clamp(1.0, 14.0),
+            shadow: num(p, "shadowIntensity", 1.0).clamp(0.0, 10.0),
+            texture: num(p, "texture", 1.0).clamp(1.0, 3.0).round() as u32,
         },
         "artistic.plasticWrap" => PixelFx::PlasticWrap {
             highlight: num(p, "highlightStrength", 20.0).clamp(0.0, 20.0),
@@ -453,6 +482,8 @@ impl PixelFx {
             | PixelFx::Plaster { .. }
             | PixelFx::Reticulation { .. } => 0.0,
             PixelFx::GlowingEdges { width, smoothness, .. } => width.max(smoothness * 3.0),
+            // These three keep the object's coverage.
+            PixelFx::SmudgeStick { .. } | PixelFx::Sponge { .. } | PixelFx::Watercolor { .. } => 0.0,
             PixelFx::FilmGrain { .. }
             | PixelFx::Cutout { .. }
             | PixelFx::NeonGlow { .. }
@@ -480,6 +511,9 @@ impl PixelFx {
             PixelFx::RadialBlur { .. } => None,
             PixelFx::SmartBlur { radius, mode: SmartBlurMode::Normal, .. } => Some(radius),
             PixelFx::SmartBlur { radius, samples, .. } => Some(blur::edge_reach(radius, samples)),
+            PixelFx::SmudgeStick { stroke, .. } => Some(paint::smudge_reach(stroke)),
+            PixelFx::Sponge { brush, smoothness, .. } => Some(paint::sponge_reach(brush, smoothness)),
+            PixelFx::Watercolor { detail, .. } => Some(paint::watercolor_reach(detail)),
             PixelFx::AccentedEdges { width, smoothness, .. } => Some(brushstrokes::accent_reach(width, smoothness)),
             // The strokes, and the softened tones that choose them.
             PixelFx::AngledStrokes { length, .. } | PixelFx::GraphicPen { length, .. } => {
@@ -534,6 +568,9 @@ impl PixelFx {
         match *self {
             PixelFx::Cutout { levels, simplicity, fidelity } => artistic::cutout(px, w, h, space, levels, simplicity, fidelity),
             PixelFx::FilmGrain { grain, highlight, intensity } => artistic::film_grain(px, w, h, space, grain, highlight, intensity),
+            PixelFx::SmudgeStick { stroke, highlight, intensity } => paint::smudge_stick(px, w, h, space, stroke, highlight, intensity),
+            PixelFx::Sponge { brush, definition, smoothness } => paint::sponge(px, w, h, space, brush, definition, smoothness),
+            PixelFx::Watercolor { detail, shadow, texture } => paint::watercolor(px, w, h, space, detail, shadow, texture),
             PixelFx::PlasticWrap { highlight, detail, smoothness } => artistic::plastic_wrap(px, w, h, space, highlight, detail, smoothness),
             PixelFx::NeonGlow { size, brightness, colour } => artistic::neon_glow(px, w, h, space, size, brightness, colour),
             PixelFx::PosterEdges { thickness, intensity, posterization } => {
@@ -814,3 +851,5 @@ pub fn gaussian_rgba(data: &mut [u8], w: usize, h: usize, sigma: f64) {
 
 #[cfg(test)]
 mod tests;
+#[cfg(test)]
+mod tests_paint;

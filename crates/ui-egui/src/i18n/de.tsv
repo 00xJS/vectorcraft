@@ -4771,6 +4771,16 @@ effect	Soft	Weich
 	Movie Clip	Movieclip
 @msg	name is empty	Name ist leer
 @msg	no symbol named `{n}`	kein Symbol namens `{n}`
+	Smudge Stick…	Wischstift…
+	Smudge Stick	Wischstift
+	Sponge…	Schwamm…
+	Sponge	Schwamm
+	Watercolor…	Aquarell…
+	Watercolor	Aquarell
+	Brush Size	Pinselgröße
+	Definition	Definition
+	Brush Detail	Pinseldetail
+	Shadow Intensity	Schattenintensität
 # Links and Attributes: files and URLs handed to other apps.
 @msg	Edit Original opens image and document files only; “{name}” is not one	Original bearbeiten öffnet nur Bild- und Dokumentdateien; „{name}“ gehört nicht dazu
 @msg	only http, https and mailto URLs open in the browser, not “{url}”	nur http-, https- und mailto-URLs werden im Browser geöffnet, nicht „{url}“

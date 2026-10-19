@@ -5191,6 +5191,16 @@ theme	Appearance	Apparence
 	Movie Clip	Clip
 @msg	name is empty	le nom est vide
 @msg	no symbol named `{n}`	aucun symbole nommé `{n}`
+	Smudge Stick…	Estompe…
+	Smudge Stick	Estompe
+	Sponge…	Éponge…
+	Sponge	Éponge
+	Watercolor…	Aquarelle…
+	Watercolor	Aquarelle
+	Brush Size	Taille du pinceau
+	Definition	Définition
+	Brush Detail	Détail du pinceau
+	Shadow Intensity	Intensité des ombres
 # Links and Attributes: files and URLs handed to other apps.
 @msg	Edit Original opens image and document files only; “{name}” is not one	Modifier l’original n’ouvre que les fichiers d’image et de document ; « {name} » n’en est pas un
 @msg	only http, https and mailto URLs open in the browser, not “{url}”	seules les URL http, https et mailto s’ouvrent dans le navigateur, pas « {url} »

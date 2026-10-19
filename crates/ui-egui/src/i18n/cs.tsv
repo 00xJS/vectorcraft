@@ -5192,6 +5192,16 @@ mark-style	Japanese	Japonské
 	Movie Clip	Filmový klip
 @msg	name is empty	název je prázdný
 @msg	no symbol named `{n}`	žádný symbol s názvem `{n}`
+	Smudge Stick…	Rozmazávací tyčinka…
+	Smudge Stick	Rozmazávací tyčinka
+	Sponge…	Houba…
+	Sponge	Houba
+	Watercolor…	Akvarel…
+	Watercolor	Akvarel
+	Brush Size	Velikost štětce
+	Definition	Definice
+	Brush Detail	Detail štětce
+	Shadow Intensity	Intenzita stínů
 # Links and Attributes: files and URLs handed to other apps.
 @msg	Edit Original opens image and document files only; “{name}” is not one	Upravit originál otevírá pouze soubory obrázků a dokumentů; „{name}“ mezi ně nepatří
 @msg	only http, https and mailto URLs open in the browser, not “{url}”	v prohlížeči se otevírají pouze adresy URL http, https a mailto, ne „{url}“

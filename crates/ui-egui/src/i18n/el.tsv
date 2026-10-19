@@ -5144,6 +5144,16 @@ effect	Points	Σημεία
 	Movie Clip	Κλιπ ταινίας
 @msg	name is empty	το όνομα είναι κενό
 @msg	no symbol named `{n}`	κανένα σύμβολο με όνομα `{n}`
+	Smudge Stick…	Μουτζούρα…
+	Smudge Stick	Μουτζούρα
+	Sponge…	Σφουγγάρι…
+	Sponge	Σφουγγάρι
+	Watercolor…	Υδατογραφία…
+	Watercolor	Υδατογραφία
+	Brush Size	Μέγεθος πινέλου
+	Definition	Ευκρίνεια
+	Brush Detail	Λεπτομέρεια πινέλου
+	Shadow Intensity	Ένταση σκιών
 # Links and Attributes: files and URLs handed to other apps.
 @msg	Edit Original opens image and document files only; “{name}” is not one	η Επεξεργασία πρωτοτύπου ανοίγει μόνο αρχεία εικόνων και εγγράφων· το «{name}» δεν είναι τέτοιο αρχείο
 @msg	only http, https and mailto URLs open in the browser, not “{url}”	στο πρόγραμμα περιήγησης ανοίγουν μόνο URL http, https και mailto, όχι το «{url}»
