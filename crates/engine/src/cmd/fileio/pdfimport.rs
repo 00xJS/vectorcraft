@@ -143,13 +143,13 @@ pub(super) fn import(bytes: &[u8], o: &LoadOptions, editor_document: bool) -> Re
 }
 
 /// Page `page` (0-based) of a PDF as a document of one artboard (its `o.crop` box) and one
-/// layer of what it shows (text as outlines: it looks as printed), and the import notes.
+/// layer of what it shows, with the same text choice as Open, and the import notes.
 pub fn page_document(bytes: &[u8], page: usize, o: &LoadOptions) -> Result<(Document, Vec<String>)> {
     let opts = ImportOptions {
         pages: Some(vec![page]),
         crop: o.crop,
         password: o.password.clone(),
-        text_as: TextAs::Outlines,
+        text_as: o.text_as,
         layers: false,
         ..Default::default()
     };
