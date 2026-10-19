@@ -6,7 +6,7 @@ use serde::{Deserialize, Serialize};
 use vectorcraft_color::{BlendMode, Color, Paint};
 use vectorcraft_geom::corners::cut_corners;
 use vectorcraft_geom::shapes::{self, CornerKind};
-use vectorcraft_geom::{Affine, BezPath, FillRule, PathData, Point, Rect};
+use vectorcraft_geom::{Affine, BezPath, FillRule, PathData, Point, Rect, Shape};
 
 use crate::appearance::Appearance;
 use crate::live::{BlendSpec, EnvelopeKind, GradientMesh, Outliner};
@@ -1097,8 +1097,10 @@ impl Node {
     }
     /// A quick box round everything the object can paint, for culling clicks: paths and compound
     /// paths grow their geometric bounds by the farthest their strokes can reach from any path
-    /// ([`Appearance::outset`]) instead of measuring along their shape. Symbol instances are
-    /// measured as in [`Node::visual_bounds`].
+    /// ([`Appearance::outset`]) instead of measuring along their shape. An image's box takes in
+    /// the shapes its own fills and strokes paint ([`crate::hit::set_image_paint`]). Groups, layers
+    /// without a clipping mask and Intertwine groups take in their members' boxes, grown by their
+    /// own strokes. Symbol instances are measured as in [`Node::visual_bounds`].
     pub fn reach_bounds(&self) -> Option<Rect> {
         self.reach(None)
     }
@@ -1116,6 +1118,22 @@ impl Node {
                 let o = self.appearance.outset();
                 self.geometric(symbols).map(|b| b.inflate(o, o))
             }
+            // The members' reach, grown by the container's own strokes.
+            NodeKind::Layer { children, clip: false, .. } | NodeKind::Group { children, clip: false } => {
+                let o = self.appearance.outset();
+                children
+                    .iter()
+                    .skip(usize::from(self.extras().shaper.is_some()))
+                    .fold(None, |acc, c| vectorcraft_geom::union_opt(acc, c.reach(symbols)))
+                    .map(|b| b.inflate(o, o))
+            }
+            NodeKind::Intertwine { children } => children.iter().fold(None, |acc, c| vectorcraft_geom::union_opt(acc, c.reach(symbols))),
+            // The frame and each shape the image's own fills and strokes paint, a stroke's grown by
+            // the farthest it can reach from its shape.
+            NodeKind::Image(_) => crate::hit::image_paint(self).iter().fold(self.geometric(symbols), |acc, (bp, _, item)| {
+                let o = if let crate::AppearanceItem::Stroke(s) = item { s.reach() } else { 0.0 };
+                vectorcraft_geom::union_opt(acc, (!bp.elements().is_empty()).then(|| bp.bounding_box().inflate(o, o)))
+            }),
             _ => self.visual(symbols),
         }
     }
@@ -1165,9 +1183,9 @@ impl Node {
         }
     }
     /// Visual bounds: what the object paints, its strokes included (paths and compound paths
-    /// measure theirs along their own shape, see [`Appearance::stroked_bounds`]). A symbol
-    /// instance is measured as in [`Node::geometric_bounds`], grown by its own strokes' reach
-    /// ([`Node::visual_bounds_with`] measures its art).
+    /// measure theirs along their own shape, see [`Appearance::stroked_bounds`]). An image is
+    /// measured by its frame. A symbol instance is measured as in [`Node::geometric_bounds`],
+    /// grown by its own strokes' reach ([`Node::visual_bounds_with`] measures its art).
     pub fn visual_bounds(&self) -> Option<Rect> {
         self.visual(None)
     }
@@ -1242,6 +1260,8 @@ impl Node {
                 let o = self.appearance.outset().max(chars);
                 self.geometric(symbols).map(|b| b.inflate(o, o))
             }
+            // An image is measured by its frame, without its own fills and strokes.
+            NodeKind::Image(_) => self.geometric(symbols),
             _ => {
                 let o = self.appearance.outset();
                 self.geometric(symbols).map(|b| b.inflate(o, o))
@@ -1699,11 +1719,11 @@ impl Node {
 
 impl Node {
     /// The Appearance panel's row for what this object's own fills and strokes paint around:
-    /// "Contents" for a group or layer (its members), "Characters" for type; `None` for objects
-    /// whose fills and strokes paint their own geometry.
+    /// "Contents" for a group or layer (its members) and for an image (its pixels), "Characters"
+    /// for type; `None` for objects whose fills and strokes paint their own geometry.
     pub fn contents_label(&self) -> Option<&'static str> {
         match self.kind {
-            NodeKind::Group { .. } | NodeKind::Layer { .. } => Some("Contents"),
+            NodeKind::Group { .. } | NodeKind::Layer { .. } | NodeKind::Image(_) => Some("Contents"),
             NodeKind::Text(_) => Some("Characters"),
             _ => None,
         }
