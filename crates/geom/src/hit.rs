@@ -28,9 +28,11 @@ pub fn polygon_covers_rect(path: &BezPath, r: Rect, tol: f64) -> bool {
     // Convex: every turn goes the same way (straight runs allowed).
     let n = pts.len();
     let mut sign = 0.0f64;
+    let mut turning = 0.0f64;
     for i in 0..n {
         let (a, b, c) = (pts[i], pts[(i + 1) % n], pts[(i + 2) % n]);
         let cross = (b - a).cross(c - b);
+        turning += cross.atan2((b - a).dot(c - b));
         if cross.abs() <= 1e-9 {
             continue;
         }
@@ -39,6 +41,10 @@ pub fn polygon_covers_rect(path: &BezPath, r: Rect, tol: f64) -> bool {
         } else if cross.signum() != sign {
             return false;
         }
+    }
+    // A simple convex polygon turns through exactly one full revolution; a star winds more.
+    if (turning.abs() - std::f64::consts::TAU).abs() > 1e-6 {
+        return false;
     }
     let inner = r.inflate(-tol, -tol);
     sign != 0.0
@@ -243,5 +249,21 @@ mod regress_tests {
         bp.curve_to(c.p1, c.p2, c.p3);
         let worst = (0..=200).map(|i| distance_to_outline(&bp, c.eval(i as f64 / 200.0))).fold(0.0, f64::max);
         assert!(worst < 1e-6, "{worst}");
+    }
+
+    #[test]
+    fn polygon_covers_rect_rejects_self_intersecting_star() {
+        let mut b = BezPath::new();
+        for k in 0..5 {
+            let a = (-90.0 + 144.0 * k as f64).to_radians();
+            let p = Point::new(100.0 * a.cos(), 100.0 * a.sin());
+            if k == 0 {
+                b.move_to(p);
+            } else {
+                b.line_to(p);
+            }
+        }
+        b.close_path();
+        assert!(!polygon_covers_rect(&b, Rect::new(-55.0, -20.0, 55.0, 78.0), 0.01));
     }
 }
