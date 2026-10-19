@@ -31,8 +31,13 @@ const BRUSH_STROKES: [(&str, &str); 8] = [
 ];
 
 /// Effect › Artistic, at their defaults.
-const ARTISTIC: [(&str, &str); 4] =
-    [("artistic.cutout", "{}"), ("artistic.filmGrain", "{}"), ("artistic.neonGlow", "{}"), ("artistic.posterEdges", "{}")];
+const ARTISTIC: [(&str, &str); 5] = [
+    ("artistic.cutout", "{}"),
+    ("artistic.filmGrain", "{}"),
+    ("artistic.neonGlow", "{}"),
+    ("artistic.plasticWrap", "{}"),
+    ("artistic.posterEdges", "{}"),
+];
 
 /// Effect › Distort (Diffuse Glow with its highlights glowing from a low brightness up, as the
 /// striped art's reds are dark).
@@ -195,6 +200,11 @@ fn artistic_settings_survive_a_save_and_open() {
             "artistic.posterEdges",
             json!({"edgeThickness": 4.0, "edgeIntensity": 5.0, "posterization": 1.0}),
             [json!({"edgeIntensity": 0.0}), json!({"posterization": 6.0})],
+        ),
+        (
+            "artistic.plasticWrap",
+            json!({"highlightStrength": 18.0, "detail": 10.0, "smoothness": 8.0}),
+            [json!({"highlightStrength": 5.0}), json!({"highlightStrength": 0.0})],
         ),
     ] {
         let (mut s, g) = striped();
