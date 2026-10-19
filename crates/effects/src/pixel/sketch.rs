@@ -1,4 +1,4 @@
-//! Effect › Sketch (Chalk & Charcoal, Chrome, Halftone Pattern and Reticulation; Graphic Pen lives in
+//! Effect › Sketch (Chalk & Charcoal, Chrome, Halftone Pattern, Plaster and Reticulation; Graphic Pen lives in
 //! [`super::brushstrokes`]). Original filters built from public behaviour documentation:
 //! <https://helpx.adobe.com/illustrator/using/summary-effects.html> (Sketch effects redraw in
 //! black and white) and the public Photoshop Elements Artistic filters guide. Visual
@@ -10,7 +10,7 @@ use vectorcraft_geom::Vec2;
 
 use super::edges::sobel;
 use super::pixelate::{Place, cell, rand, value_noise};
-use super::texture::{Tones, luma, premultiply, smooth_noise, straight};
+use super::texture::{Light, Tones, luma, premultiply, smooth_noise, straight};
 use super::{PixelSpace, blur_plane, pick};
 
 const SALT_CHALK: u64 = 216;
@@ -200,6 +200,75 @@ pub(super) fn chrome(px: &mut [[u8; 4]], w: usize, h: usize, space: &PixelSpace,
         let spec = (face * strength + (h0 - 0.5) * 1.5).tanh();
         let grey = (0.5 + 0.5 * spec).clamp(0.0, 1.0);
         *p = premultiply([grey as f32; 3], f32::from(p[3]) / 255.0);
+    });
+}
+
+/// Colour `c` lit by `s`: darkened towards black below 0, lightened towards white above.
+fn lit(c: [f32; 3], s: f64) -> [f32; 3] {
+    let s = if s.is_finite() { s.clamp(-1.0, 1.0) as f32 } else { 0.0 };
+    c.map(|v| if s < 0.0 { v * (1.0 + s) } else { v + (1.0 - v) * s })
+}
+
+/// How a surface whose height rises along `slope` faces a light from `toward`.
+fn facing(slope: Vec2, toward: Vec2) -> f64 {
+    -slope.dot(toward)
+}
+
+/// The σ (document units) of Plaster's height blur at `smoothness` (1..15).
+fn plaster_sigma_pt(smoothness: f64) -> f64 {
+    let smoothness = smoothness.clamp(1.0, 15.0);
+    0.15 + 0.85 * (smoothness - 1.0) / 14.0
+}
+
+/// How far (document units) Plaster's softened relief reaches at `smoothness` (1..15).
+pub(super) fn plaster_reach(smoothness: f64) -> f64 {
+    if !smoothness.is_finite() {
+        return 3.0 * plaster_sigma_pt(8.0) + 0.5;
+    }
+    3.0 * plaster_sigma_pt(smoothness) + 0.5
+}
+
+/// Plaster: the object molded in relief plaster and lit from `light`. Dark areas are raised and
+/// light areas recessed; `imageBalance` (1..50) shifts more of the image lower at higher values;
+/// `smoothness` (1..15) softens the relief. Coverage is kept.
+pub(super) fn plaster(px: &mut [[u8; 4]], w: usize, h: usize, space: &PixelSpace, image_balance: f64, smoothness: f64, light: Light) {
+    if !(image_balance.is_finite() && smoothness.is_finite() && space.px.is_finite() && space.px > 0.0)
+        || w == 0
+        || h == 0
+        || w.checked_mul(h) != Some(px.len())
+    {
+        return;
+    }
+    let image_balance = image_balance.clamp(1.0, 50.0);
+    let smoothness = smoothness.clamp(1.0, 15.0);
+    let bias = (image_balance - 1.0) / 49.0;
+    let mut height: Vec<f32> = px
+        .iter()
+        .map(|p| {
+            let a = f32::from(p[3]) / 255.0;
+            let dark = (1.0 - luma(straight(*p))) * a;
+            (dark - bias as f32 * 0.65).clamp(0.0, 1.0)
+        })
+        .collect();
+    blur_plane(&mut height, w, h, plaster_sigma_pt(smoothness) / space.px);
+    let Some(place) = Place::new(space, w, h) else { return };
+    let step = (0.35f64).max(0.5 * place.px);
+    let strength = 0.55;
+    let toward = light.toward();
+    let at = |x: usize, y: usize, dx: i32, dy: i32| {
+        let (xx, yy) = ((x as i32 + dx).clamp(0, w as i32 - 1) as usize, (y as i32 + dy).clamp(0, h as i32 - 1) as usize);
+        height[yy * w + xx]
+    };
+    place.each(px, |x, y, p| {
+        if p[3] == 0 {
+            return;
+        }
+        let h = height[y * w + x];
+        let (left, right, up, down) = (at(x, y, -1, 0), at(x, y, 1, 0), at(x, y, 0, -1), at(x, y, 0, 1));
+        let slope = Vec2::new(f64::from(right - left), f64::from(down - up)) / (2.0 * step);
+        let ridge = f64::from(h - 0.25 * (left + right + up + down)) / step;
+        let shade = strength * (facing(slope, toward) + ridge);
+        *p = premultiply(lit(straight(*p), shade), f32::from(p[3]) / 255.0);
     });
 }
 

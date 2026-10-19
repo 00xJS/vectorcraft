@@ -504,6 +504,13 @@ pub fn effect_catalog() -> Vec<EffectInfo> {
             json!({"size": 1.0, "contrast": 5.0, "patternType": "dot"}),
         ),
         r(
+            "sketch.plaster",
+            "Plaster…",
+            SKETCH,
+            "{imageBalance: 1..50 (20; higher values sink more of the image), smoothness: 1..15 (8; higher values soften the relief), lightDirection: \"bottom\"|\"bottomLeft\"|\"left\"|\"topLeft\"|\"top\"|\"topRight\"|\"right\"|\"bottomRight\" (\"top\")} molds the object in relief plaster and lights it from that direction; dark areas are raised and light areas recessed, keeping its coverage. Original visual approximation; chosen VectorCraft defaults.",
+            json!({"imageBalance": 20.0, "smoothness": 8.0, "lightDirection": "top"}),
+        ),
+        r(
             "sketch.reticulation",
             "Reticulation…",
             SKETCH,
