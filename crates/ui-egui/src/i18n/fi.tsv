@@ -1868,6 +1868,7 @@ lighting	Light	Valo
 	Right-Justified Tab	Oikealle tasattu sarkain
 	Select a text object to set its tab stops.	Valitse tekstiobjekti, jonka sarkainkohdat haluat asettaa.
 	Select text	Valitse teksti
+	Snap to Unit	Kohdista yksikköön
 	+ Add Scale	+ Lisää skaalaus
 	Add Selected Artwork as One Asset	Lisää valittu kuvitus yhtenä resurssina
 	Export Settings	Vientiasetukset
