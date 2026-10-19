@@ -447,3 +447,23 @@ fn press_quality_writes_an_rgb_image_in_a_cmyk_document_as_cmyk() {
     let w = written(&export_with_report(&d, &opts(json!({}))).unwrap().bytes);
     assert_eq!(w[0].space, "DeviceRGB", "no conversion");
 }
+
+/// #3012 review: in an RGB document Press Quality converts to Document CMYK too, the CMYK
+/// profile in effect: a CMYK image keeps its inks (not converted to RGB), and an RGB image comes
+/// out CMYK.
+#[test]
+fn press_quality_writes_cmyk_in_an_rgb_document_too() {
+    let press = || PdfOptions { settings: builtin_preset("Press Quality").unwrap().settings, created: Some(1_700_000_000), ..Default::default() };
+    assert_eq!(press().settings.output.destination, DOCUMENT_CMYK);
+    let ink = [0u8, 102, 255, 0];
+    let tiff = ImageBlob::cmyk_tiff(&Inks::new(4, 4, flat(ink, 16)).unwrap()).unwrap();
+    let rgb = image::RgbImage::from_fn(4, 4, |x, y| image::Rgb([(x * 60) as u8, (y * 60) as u8, 128]));
+    let png_blob = ImageBlob { mime: "image/png".into(), bytes: Arc::new(png(rgb)), proxy: None };
+    for (what, blob) in [("CMYK image", tiff), ("RGB image", png_blob)] {
+        let mut d = image_doc(blob, 4, 4);
+        d.color_mode = ColorMode::Rgb;
+        let w = written(&export_with_report(&d, &press()).unwrap().bytes);
+        assert_eq!(w.len(), 1, "{what}: {w:?}");
+        assert_eq!(w[0].space, "DeviceCMYK", "{what} in an RGB document");
+    }
+}
