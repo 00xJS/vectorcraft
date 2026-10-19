@@ -1555,11 +1555,26 @@ fn grid(p: &egui::Painter, xf: &Xf, spacing: f64, subdiv: u32, look: LineLook) {
 }
 
 /// A ruler label for `v` (in the ruler's unit) on a ruler whose labels are `step` apart: whole
-/// numbers, or as many decimals as the step has.
+/// numbers, or the fewest decimals that write `step` exactly, so a binary step keeps its value
+/// (an inch ruler's 1/16 reads `0.0625`, not the `0.06` that rounding the step's magnitude gave).
+/// How far down the left ruler a label of `chars` characters reaches, counting from its top: it
+/// is spelled one character per line, [`RULER_CHAR`] apart, and the last one is a line tall.
+pub(crate) fn vertical_label_height(chars: usize) -> f32 {
+    chars.saturating_sub(1) as f32 * RULER_CHAR + RULER_LINE
+}
+
+/// A ruler label's line spacing and line height on the left ruler.
+const RULER_CHAR: f32 = 8.5;
+const RULER_LINE: f32 = 9.5;
+
 pub(crate) fn ruler_label(v: f64, step: f64) -> String {
-    let decimals = if step >= 1.0 { 0 } else { (-step.log10()).ceil() as usize };
+    let exact = |d: u32| (step * 10f64.powi(d as i32)).fract().abs() < 1e-9;
+    let decimals = (0..=7).find(|d| exact(*d)).unwrap_or(7) as usize;
     let s = format!("{v:.decimals$}");
-    if s.trim_start_matches('-').chars().all(|c| c == '0' || c == '.') { "0".into() } else { s }
+    // Trailing zeros go, as `Unit::number` drops them: a sixteenth-inch ruler labels the inch `1`,
+    // not `1.0000`, which the vertical ruler would spell down six lines.
+    let s = if s.contains('.') { s.trim_end_matches('0').trim_end_matches('.') } else { &s };
+    if s.trim_start_matches('-').chars().all(|c| c == '0' || c == '.') { "0".into() } else { s.into() }
 }
 
 /// The rulers, numbered in `unit` (the General unit).
@@ -1669,7 +1684,7 @@ fn rulers(ui: &Ui, full: egui::Rect, xf: &Xf, hover: Option<Point>, unit: Unit, 
     // (`per` points each).
     let per = unit.points();
     let step = unit.ruler_step(xf.zoom);
-    let minor = step / 10.0;
+    let minor = unit.ruler_minor(step);
     let font = egui::FontId::proportional(9.5);
     let near = |v: f64, every: f64| ((v / every).round() * every - v).abs() < minor * 0.01;
     // A tick's length: the labelled ones longest, the halves between them shorter.
@@ -1705,14 +1720,24 @@ fn rulers(ui: &Ui, full: egui::Rect, xf: &Xf, hover: Option<Point>, unit: Unit, 
         }
     });
     let clip_left = p.with_clip_rect(left);
+    // A label spelled down the ruler is tall, and a long one can reach the next label's place:
+    // "-0.0625" is seven characters, 60 pt of ruler, where a sixteenth-inch step leaves 54 pt at
+    // zoom 12. The ticks all stay; a label that would run into the one above it is left out.
+    let mut filled_to = f32::NEG_INFINITY;
     ticks(left.left_top(), left.left_bottom(), vectorcraft_geom::Vec2::new(sn, cs), &mut |d, y| {
         let sy = left.top() + d;
         clip_left.line_segment([pos2(left.right() - tick(y), sy), pos2(left.right(), sy)], Stroke::new(1.0, t.ruler_tick));
         if near(y, step) {
             // Vertical labels read top-to-bottom, one digit per line like Illustrator.
-            for (k, ch) in ruler_label(y, step).chars().enumerate() {
+            let text = ruler_label(y, step);
+            let top = sy + 2.0;
+            if top < filled_to {
+                return;
+            }
+            filled_to = top + vertical_label_height(text.chars().count());
+            for (k, ch) in text.chars().enumerate() {
                 clip_left.text(
-                    pos2(left.left() + 4.0, sy + 2.0 + k as f32 * 8.5),
+                    pos2(left.left() + 4.0, top + k as f32 * RULER_CHAR),
                     egui::Align2::LEFT_TOP,
                     ch.to_string(),
                     font.clone(),
