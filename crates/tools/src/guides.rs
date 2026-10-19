@@ -14,7 +14,8 @@ use std::sync::Arc;
 use vectorcraft_doc::hit::{HitOptions, hit_test};
 use vectorcraft_doc::{Document, Node, NodeId, NodeKind, OrientedBox, Selection};
 use vectorcraft_geom::kurbo::ParamCurveNearest;
-use vectorcraft_geom::{Affine, Line, ParamCurve, PathSeg, Point, Rect, SubPath, Vec2, constrain_angle_from};
+use vectorcraft_geom::{Affine, Line, ParamCurve, PathSeg, Point, Rect, Shape, SubPath, Vec2, constrain_angle_from};
+use vectorcraft_text::{FontDb, layout as layout_text};
 
 use crate::bbox::Handle;
 use crate::{Overlay, ScreenFrame, ToolContext};
@@ -53,6 +54,7 @@ enum Kind {
     Artboard,
     Bleed,
     Guide,
+    Glyph,
 }
 
 impl Kind {
@@ -64,6 +66,7 @@ impl Kind {
             Kind::Artboard => "artboard",
             Kind::Bleed => "bleed",
             Kind::Guide => "guide",
+            Kind::Glyph => "glyph",
         }
     }
 }
@@ -219,9 +222,12 @@ impl Targets {
     /// Targets for a drawn point: the art in `visible` (all of it for None) but `exclude`, its
     /// anchors, centres, edges and path segments, its anchors in line too. The anchors and
     /// segments of `exclude` (the path being drawn, whose bounds grow with it) stay targets.
-    pub fn for_drawing(doc: &Document, exclude: &[NodeId], visible: Option<Rect>) -> Self {
+    pub fn for_drawing(doc: &Document, exclude: &[NodeId], visible: Option<Rect>, glyphs: bool) -> Self {
         let mut t = Self::collect_inner(doc, exclude, None, visible, Gather::Drawing);
         t.push_paths(doc, exclude, true);
+        if glyphs {
+            t.push_glyphs(doc, exclude, visible);
+        }
         t.index()
     }
 
@@ -263,6 +269,51 @@ impl Targets {
         self.points.push((a, Kind::Anchor));
         self.xs.push((a.x, a, Kind::Anchor));
         self.ys.push((a.y, a, Kind::Anchor));
+    }
+
+    /// Live-text baselines and glyph bounds (View › Snap to Glyph).
+    fn push_glyphs(&mut self, doc: &Document, exclude: &[NodeId], visible: Option<Rect>) {
+        let skip: HashSet<NodeId> = exclude.iter().copied().collect();
+        let db = FontDb::global();
+        let kind = Kind::Glyph;
+        let mut budget = BUDGET / 4;
+        walk_but(&doc.layers, &skip, &mut |n| {
+            if budget == 0 || !n.visible {
+                return;
+            }
+            let NodeKind::Text(t) = &n.kind else { return };
+            let lay = layout_text(db, t);
+            let ink = t.xf.transform_rect_bbox(lay.bounds);
+            if !ink.is_finite() || ink.width() <= 0.0 || ink.height() <= 0.0 {
+                return;
+            }
+            if let Some(v) = visible
+                && ink.intersect(v).area() <= 0.0
+                && !v.contains(ink.center())
+            {
+                return;
+            }
+            let to_doc = |p: Point| t.xf * p;
+            for line in &lay.lines {
+                let at = to_doc(Point::new(line.x0, line.baseline));
+                self.ys.push((at.y, at, kind));
+            }
+            for g in &lay.glyphs {
+                if budget == 0 {
+                    break;
+                }
+                let bb = g.outline.bounding_box();
+                if !(bb.width() > 0.0 && bb.height() > 0.0) {
+                    continue;
+                }
+                let r = t.xf.transform_rect_bbox(bb);
+                for p in [Point::new(r.x0, r.y0), Point::new(r.x1, r.y0), Point::new(r.x1, r.y1), Point::new(r.x0, r.y1)] {
+                    self.xs.push((p.x, p, kind));
+                    self.ys.push((p.y, p, kind));
+                }
+                budget -= 1;
+            }
+        });
     }
 
     /// The same targets drawing their guides as the Smart Guides preferences in `cx` ask
@@ -1273,6 +1324,7 @@ struct SnapKey {
     exclude: Vec<NodeId>,
     screen: Option<ScreenFrame>,
     view: [bool; 5],
+    snap_to_glyph: bool,
     style: GuideStyle,
     tolerances: [f64; 2],
 }
@@ -1284,6 +1336,7 @@ impl SnapKey {
             exclude: exclude.to_vec(),
             screen: cx.screen,
             view: [cx.smart_guides, cx.snap_to_point, cx.snap_to_pixel, cx.snap_to_grid, cx.guides],
+            snap_to_glyph: cx.snap_to_glyph && cx.alignment_guides,
             style: GuideStyle::of(cx),
             tolerances: [cx.snapping_tolerance, cx.snap_tolerance],
         }
@@ -1341,7 +1394,7 @@ impl DrawSnap {
     }
 
     fn gather(&mut self, cx: &ToolContext, key: SnapKey) {
-        let snap = PointSnap::new(cx, || Targets::for_drawing(cx.doc, &key.exclude, visible(cx)));
+        let snap = PointSnap::new(cx, || Targets::for_drawing(cx.doc, &key.exclude, visible(cx), key.snap_to_glyph));
         self.targets = Some((Some(key), snap));
     }
 
@@ -1650,7 +1703,7 @@ mod tests {
                 || t.segments.iter().any(|(_, s)| s.start() == corner || s.end() == corner)
         };
         assert!(!gives_corner(&Targets::collect(&d, &[], None)));
-        assert!(!gives_corner(&Targets::for_drawing(&d, &[], None)));
+        assert!(!gives_corner(&Targets::for_drawing(&d, &[], None, false)));
         assert!(!gives_corner(&Targets::for_anchor_drag(&d, &Selection::default())));
         assert!(!gives_corner(&Targets::for_handle(&d, face)));
         assert!(!object_boxes(&d, &[face]).contains(&Rect::new(0.0, 300.0, 150.0, 400.0)), "the source shapes' bounds");
@@ -1742,7 +1795,7 @@ mod tests {
         let (d, _) = doc_with_rect();
         let (s, p) = (Selection::default(), paint());
         let c = cx(&d, &s, &p);
-        let t = Targets::for_drawing(&d, &[], None).styled(&c);
+        let t = Targets::for_drawing(&d, &[], None, false).styled(&c);
         // The rect is 100..200: its corner, a point on its side, and in line with an anchor.
         let (q, ov) = t.snap_from(Point::new(202.0, 198.0), None, 4.0);
         assert_eq!((q, labels(&ov)), (Point::new(200.0, 200.0), vec!["anchor"]));
@@ -1796,7 +1849,7 @@ mod tests {
         d.guides.push(vectorcraft_doc::Guide::new(false, 150.0));
         let (s, p) = (Selection::default(), paint());
         let c = ToolContext { guides: true, ..cx(&d, &s, &p) };
-        let t = Targets::for_drawing(&d, &[], None).styled(&c).with_rulers(&c);
+        let t = Targets::for_drawing(&d, &[], None, false).styled(&c).with_rulers(&c);
         let (q, ov) = t.snap_from(Point::new(152.0, 101.5), None, 4.0);
         assert!((q - Point::new(150.0, 100.0)).hypot() < 1e-9, "{q:?}");
         assert_eq!(labels(&ov), ["intersect"]);
@@ -1843,7 +1896,7 @@ mod tests {
         let mut s = Selection::default();
         s.set([id]);
         s.anchors.insert(id, [(0, 1)].into_iter().collect());
-        for t in [Targets::collect(&d, &[], None), Targets::for_drawing(&d, &[id], None), Targets::for_anchor_drag(&d, &s)] {
+        for t in [Targets::collect(&d, &[], None), Targets::for_drawing(&d, &[id], None, false), Targets::for_anchor_drag(&d, &s)] {
             for q in (0..40).flat_map(|i| (0..40).map(move |j| Point::new(i as f64 * 12.7, j as f64 * 11.3))) {
                 let scan = t.points.iter().copied().filter(|(a, _)| a.distance(q) <= 6.0).min_by(|a, b| a.0.distance(q).total_cmp(&b.0.distance(q)));
                 assert_eq!(t.nearest_point(q, 6.0).map(|h| h.0.distance(q)), scan.map(|h| h.0.distance(q)), "{q:?}");

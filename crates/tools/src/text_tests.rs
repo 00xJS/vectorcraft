@@ -3,7 +3,8 @@
 
 use super::*;
 use crate::testutil::{cx, paint};
-use vectorcraft_doc::{CharStyle, Document, Node, Selection};
+use vectorcraft_doc::{CharStyle, Document, Node, NodeKind, Selection, TextObject};
+use vectorcraft_text::FontDb;
 
 fn doc_with_text(text: &str) -> (Document, NodeId) {
     let mut d = Document::new(500.0, 500.0);
@@ -506,6 +507,35 @@ fn hebrew_typing_and_visual_arrows_keep_logical_text() {
     assert_eq!(tool.caret, 8);
     let NodeKind::Text(t) = &d.node(id).unwrap().kind else { panic!() };
     assert_eq!(t.plain_text(), "שלום");
+}
+
+/// View › Snap to Glyph: new point type placed near live text snaps to its baseline.
+#[test]
+fn snap_to_glyph_lines_up_new_point_type_with_a_baseline() {
+    let (d, _) = doc_with_text("Baseline");
+    let (sel, p) = (Selection::default(), paint());
+    let mut c = cx(&d, &sel, &p);
+    c.snap_to_glyph = true;
+    let existing = match &d.layers[0].children().unwrap()[0].kind {
+        NodeKind::Text(t) => t,
+        _ => panic!("text"),
+    };
+    let lay = vectorcraft_text::layout(FontDb::global(), existing);
+    let baseline_y = (existing.xf * Point::new(0.0, lay.lines[0].baseline)).y;
+    let mut tool = TypeTool::new("type");
+    tool.pointer(&c, &PointerEvent::new(PointerKind::Down, 250.0, baseline_y + 2.0));
+    let acts = tool.pointer(&c, &PointerEvent::new(PointerKind::Up, 250.0, baseline_y + 2.0));
+    assert!(
+        acts.iter().any(|a| matches!(a, Action::Exec(cmd, v) if cmd == "text.create" && (v["y"].as_f64().unwrap() - baseline_y).abs() < 0.5)),
+        "{acts:?}"
+    );
+    c.snap_to_glyph = false;
+    tool.pointer(&c, &PointerEvent::new(PointerKind::Down, 250.0, baseline_y + 2.0));
+    let acts = tool.pointer(&c, &PointerEvent::new(PointerKind::Up, 250.0, baseline_y + 2.0));
+    assert!(
+        acts.iter().any(|a| matches!(a, Action::Exec(cmd, v) if cmd == "text.create" && (v["y"].as_f64().unwrap() - (baseline_y + 2.0)).abs() < 0.5)),
+        "{acts:?}"
+    );
 }
 
 /// Where new type goes snaps to Smart Guides (#506): a click beside a rect lines up with its
