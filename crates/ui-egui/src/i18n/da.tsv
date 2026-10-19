@@ -1980,6 +1980,7 @@ lighting	Light	Lys
 	One file per artboard: <name>-<artboard>.{ext}	Én fil pr. tegnebræt: <name>-<artboard>.{ext}
 	One page per artboard.	Én side pr. tegnebræt.
 	The bounds of the visible art.	Den synlige grafiks grænser.
+	The plug-in writes the whole document.	Plug-ins eksporterer hele dokumentet.
 	Use Artboards	Brug tegnebrætter
 	Choose a folder	Vælg en mappe
 	Create Sub-folders	Opret undermapper

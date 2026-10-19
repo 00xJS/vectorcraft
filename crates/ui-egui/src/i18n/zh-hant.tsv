@@ -2019,6 +2019,7 @@ file-filter	Templates	範本
 @msg	missing `id` (see plugin.list)	未提供 `id` (請參閱 plugin.list)
 @msg	no plug-in {id} is installed	未安裝增效模組 {id}
 @msg	{_1} is a live effect (Effect › Plug-ins)	{_1} 是即時效果 (效果 › 增效模組)
+@msg	{_1} is an exporter (File › Export › Export As…)	{_1} 是匯出增效模組 (檔案 › 匯出 › 匯出為…)
 @msg	a preset named `{_1}` exists	名為 `{_1}` 的預設集已存在
 @msg	a swatch or color group named `{n}` exists	名為 `{n}` 的色票或顏色群組已存在
 @msg	no print preset named `{base}`	沒有名為 `{base}` 的列印預設集
@@ -3964,6 +3965,7 @@ font-script	Japanese	漢字
 	Text Wrap Options	文字繞圖選項
 	Text Wrap Options…	文字繞圖選項…
 	The bounds of the visible art.	可見圖稿的邊界。
+	The plug-in writes the whole document.	增效模組會匯出整份文件。
 	The cell shows the type object's text as HTML.	儲存格以 HTML 顯示文字物件的文字。
 	The document has no colour swatches.	文件中沒有色票。
 	The edge of the paper the printer can't reach: the art goes inside it, and the preview shows it dashed.	印表機無法觸及的紙張邊緣：圖稿會放在其內側，預覽中會以虛線顯示。

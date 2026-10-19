@@ -3096,6 +3096,7 @@ font-script	Japanese	汉字
 	Text Wrap Options	文字绕图选项
 	Text Wrap Options…	文本绕排选项…
 	The bounds of the visible art.	可见图稿的边界。
+	The plug-in writes the whole document.	增效工具会导出整个文档。
 	The cell shows the type object's text as HTML.	该单元格以 HTML 显示文字对象的内容。
 	The document has no colour swatches.	文档没有颜色色板。
 	The edge of the paper the printer can't reach: the art goes inside it, and the preview shows it dashed.	打印机无法触及的纸张边缘：图稿会放在其内侧，预览中会以虚线显示。
@@ -4014,6 +4015,7 @@ imageTrace	Outline	轮廓
 @msg	missing `id` (see plugin.list)	缺少 `id` (请参阅 plugin.list)
 @msg	no plug-in {id} is installed	未安装增效工具 {id}
 @msg	{_1} is a live effect (Effect › Plug-ins)	{_1} 是实时效果 (效果 › 增效工具)
+@msg	{_1} is an exporter (File › Export › Export As…)	{_1} 是导出增效工具 (文件 › 导出 › 导出为…)
 @msg	a preset named `{_1}` exists	名为 `{_1}` 的预设已存在
 @msg	a swatch or color group named `{n}` exists	名为 `{n}` 的色板或颜色组已存在
 @msg	no print preset named `{base}`	没有名为 `{base}` 的打印预设

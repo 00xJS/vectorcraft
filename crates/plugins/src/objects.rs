@@ -286,9 +286,8 @@ fn decode_object(v: &Value, at: &str, anchors: &mut usize) -> Result<OutObject> 
 /// declined (the message reaches the user).
 pub fn decode(bytes: &[u8]) -> Result<Vec<OutObject>> {
     let v: Value = serde_json::from_slice(bytes).map_err(|e| Error::Output(format!("not JSON: {e}")))?;
-    if let Some(e) = v.get("error").filter(|e| !e.is_null()) {
-        let msg: String = e.as_str().map_or_else(|| e.to_string(), str::to_string).chars().filter(|c| !c.is_control()).take(300).collect();
-        return Err(Error::Failed(msg));
+    if let Some(e) = declined(&v) {
+        return Err(e);
     }
     let objects = v.get("objects").and_then(Value::as_array).ok_or_else(|| Error::Output("expected {\"objects\": [...]}".into()))?;
     if objects.len() > MAX_OBJECTS {
@@ -296,6 +295,20 @@ pub fn decode(bytes: &[u8]) -> Result<Vec<OutObject>> {
     }
     let mut anchors = 0;
     objects.iter().enumerate().map(|(i, o)| decode_object(o, &format!("objects[{i}]"), &mut anchors)).collect()
+}
+
+/// The decline in a plug-in's output `v`, `{"error": "…"}`: its message as the user reads it,
+/// without control characters and at most 300 of them.
+pub(crate) fn declined(v: &Value) -> Option<Error> {
+    let e = v.get("error").filter(|e| !e.is_null())?;
+    Some(Error::Failed(printable(e, 300)))
+}
+
+/// A plug-in's text the user reads: `v` as a string (any other JSON as its text), without control
+/// characters, at most `max` characters of it.
+pub(crate) fn printable(v: &Value, max: usize) -> String {
+    let s = v.as_str().map_or_else(|| v.to_string(), str::to_string);
+    s.chars().filter(|c| !c.is_control()).take(max).collect()
 }
 
 /// The paints of `ap`'s fills (`fill`) or strokes, in paint order.

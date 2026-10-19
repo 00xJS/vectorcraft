@@ -1980,6 +1980,7 @@ lighting	Light	Cahaya
 	One file per artboard: <name>-<artboard>.{ext}	Satu file per artboard: <name>-<artboard>.{ext}
 	One page per artboard.	Satu halaman per artboard.
 	The bounds of the visible art.	Batas karya seni yang terlihat.
+	The plug-in writes the whole document.	Plug-in mengekspor seluruh dokumen.
 	Use Artboards	Gunakan artboard
 	Choose a folder	Pilih folder
 	Create Sub-folders	Buat subfolder
