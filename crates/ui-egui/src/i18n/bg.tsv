@@ -1058,6 +1058,7 @@
 	Fill (X), double-click for the Color Picker	Запълване (X), щракнете двукратно за избор на цвят
 	Fill and Stroke	Запълване и щрих
 	Fill new strokes	Запълване на нови щрихове
+	Alt key toggles to Smooth Tool	Клавишът Alt превключва към инструмент „Гладкост“
 	Fill Color	Цвят на запълване
 	Fill New Type Objects With Placeholder Text	Запълване на нови текстови обекти с примесен текст
 	Fill Rule	Правило за запълване
@@ -1174,6 +1175,8 @@
 	Large Gaps	Големи пролуки
 	Gap Preview Color:	Цвят за преглед на пролуките:
 	Close Gaps With Paths	Затваряне на пролуките с пътища
+	Select Fills	Избиране на запълвания
+	Select Strokes	Избиране на щрихове
 	Gaussian Blur…	Гаусово размазване…
 	General	Общи
 	General › Placement › X	Общи › Разположение › X
@@ -1370,6 +1373,12 @@
 	Release Blend	Освобождаване на преливане
 	Release Envelope	Освобождаване на обвивка
 	Release Intertwine	Освобождаване на преплитане
+	Objects on Path	Обекти по пътя
+	Attach	Прикрепяне
+	Objects on Path Options	Опции за обекти по пътя
+	Objects on Path Tool	Инструмент „Обекти по пътя“
+	Attach Objects on Path	Прикрепяне на обекти към пътя
+	Expand Objects on Path	Разширяване на обекти по пътя
 	Release Live Paint	Освобождаване на динамично оцветяване
 	Release Repeat	Освобождаване на повторение
 	Release Slice	Освобождаване на отрязък
@@ -1672,6 +1681,7 @@
 	Load Text into Clipboard	Зареждане на текст в клипборда
 	Local Libraries	Локални библиотеки
 	Locate Object	Намиране на обект
+	Locate Selected Objects	Намиране на избраните обекти
 	Location	Местоположение
 	Location:	Местоположение:
 	Lock	Заключване
@@ -2952,6 +2962,7 @@
 	Snap to Pixel	Прилепване към пиксел
 	Precise Cursors	Прецизни курсори
 	Snap to Point	Прилепване към точка
+	Snap to Unit	Прилепване към мерна единица
 	Snapping Tolerance	Толеранс на прилепване
 	Social Square Post 1080×1080	Публикация за квадрат в социални мрежи 1080×1080
 	Soft Light	Мека светлина
@@ -5178,3 +5189,4 @@ theme	Appearance	Външен вид
 @msg	the file's variables and data sets weren't read (variables: {variables}, data sets: {data_sets}): the Variables panel doesn't list them	променливите и наборите от данни на файла не бяха прочетени (променливи: {variables}, набори от данни: {data_sets}): панелът „Променливи“ не ги показва
 # Select by Color (select.color)
 	Select by Color	Избиране по цвят
+	Move Anchor Point	Преместване на опорна точка

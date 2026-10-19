@@ -1243,6 +1243,7 @@
 	Fill Color	Màu tô
 	Fill Grid	Tô lưới
 	Fill new strokes	Tô nét mới
+	Alt key toggles to Smooth Tool	Phím Alt chuyển sang công cụ Làm mượt
 	Keep selected	Giữ trạng thái đã chọn
 	Merge only with selection	Chỉ hợp nhất với vùng chọn
 	Fill New Type Objects With Placeholder Text	Tô đối tượng chữ mới bằng văn bản giữ chỗ
@@ -1394,6 +1395,8 @@ file-filter	Templates	Mẫu
 	Large Gaps	Khoảng cách lớn
 	Gap Preview Color:	Màu xem trước khoảng cách:
 	Close Gaps With Paths	Đóng khoảng cách bằng đường dẫn
+	Select Fills	Chọn vùng tô
+	Select Strokes	Chọn nét
 	Gaussian Blur	Mờ Gaussian
 	Gaussian Blur…	Làm mờ Gaussian…
 	General	Chung
@@ -1608,6 +1611,12 @@ file-filter	Templates	Mẫu
 	Release Envelope	Giải phóng Envelope
 	Release Image Trace	Giải phóng vector hóa ảnh
 	Release Intertwine	Giải phóng đan xen
+	Objects on Path	Đối tượng trên đường dẫn
+	Attach	Gắn
+	Objects on Path Options	Tùy chọn đối tượng trên đường dẫn
+	Objects on Path Tool	Công cụ Đối tượng trên đường dẫn
+	Attach Objects on Path	Gắn đối tượng lên đường dẫn
+	Expand Objects on Path	Mở rộng đối tượng trên đường dẫn
 	Release Live Paint	Giải phóng tô trực tiếp
 	Release Repeat	Giải phóng lặp lại
 	Release Slice	Giải phóng lát cắt
@@ -1986,6 +1995,7 @@ file-filter	Templates	Mẫu
 	Loaded Texture	Kết cấu đã tải
 	Local Libraries	Thư viện cục bộ
 	Locate Object	Xác định vị trí đối tượng
+	Locate Selected Objects	Xác định vị trí đối tượng đã chọn
 	Location	Vị trí
 	Location:	Vị trí:
 	Lock	Khóa
@@ -3365,6 +3375,7 @@ mark-style	Japanese	Kiểu Nhật
 	Snap to Pixel	Hút vào pixel
 	Precise Cursors	Con trỏ chính xác
 	Snap to Point	Hút vào điểm
+	Snap to Unit	Hút vào đơn vị
 	Snapping Tolerance	Dung sai hút
 	Social Square Post 1080×1080	Bài đăng vuông mạng xã hội 1080×1080
 	Soft	Mềm
@@ -4436,6 +4447,7 @@ theme	Appearance	Giao diện
 @msg	select a Live Paint group	hãy chọn nhóm tô trực tiếp
 @msg	select a repeat	hãy chọn một đối tượng lặp
 @msg	select an Intertwine group	hãy chọn một nhóm đan xen
+@msg	select an Objects on Path group	hãy chọn một nhóm đối tượng trên đường dẫn
 @msg	select a stroke with a variable width	hãy chọn nét có chiều rộng biến đổi
 @msg	select a symbol instance	hãy chọn đối tượng ký hiệu
 @msg	select an envelope	hãy chọn một Envelope
@@ -4746,6 +4758,7 @@ theme	Appearance	Giao diện
 @msg	choose a destination folder	hãy chọn thư mục đích
 @msg	choose a source folder	hãy chọn thư mục nguồn
 @msg	open a document with data sets	hãy mở một tài liệu có tập dữ liệu
+@msg	nothing in data set {name} was applied: no object is bound to a variable it has a value for	không có gì trong tập dữ liệu {name} được áp dụng: không có đối tượng nào được gắn với biến số mà tập dữ liệu có giá trị
 @msg	the action has no steps	hành động không có bước nào
 
 # User Interface › Accent Color
@@ -4808,3 +4821,4 @@ theme	Appearance	Giao diện
 @msg	the file's variables and data sets weren't read (variables: {variables}, data sets: {data_sets}): the Variables panel doesn't list them	các biến và tập dữ liệu của tệp chưa được đọc (biến: {variables}, tập dữ liệu: {data_sets}): bảng Biến không liệt kê chúng
 # Select by Color (select.color)
 	Select by Color	Chọn theo màu
+	Move Anchor Point	Di chuyển điểm neo

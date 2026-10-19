@@ -1050,6 +1050,7 @@
 	Fill and Stroke	填色與筆畫
 	Fill Color	填色顏色
 	Fill new strokes	為新筆畫套用填色
+	Alt key toggles to Smooth Tool	Alt 鍵切換為平滑工具
 	Keep selected	保持選取狀態
 	Merge only with selection	僅與選取物件合併
 	Fill New Type Objects With Placeholder Text	以預留位置文字填滿新文字物件
@@ -1179,6 +1180,8 @@ file-filter	Templates	範本
 	Large Gaps	大間隙
 	Gap Preview Color:	間隙預覽顏色：
 	Close Gaps With Paths	以路徑封閉間隙
+	Select Fills	選取填色
+	Select Strokes	選取筆畫
 	Gaussian Blur…	高斯模糊…
 	General	一般
 	General › Placement › X	一般 › 位置 › X
@@ -1387,6 +1390,12 @@ file-filter	Templates	範本
 	Release Envelope	釋放封套
 	Release Image Trace	釋放影像描圖
 	Release Intertwine	釋放交織
+	Objects on Path	路徑上的物件
+	Attach	附加
+	Objects on Path Options	路徑上的物件選項
+	Objects on Path Tool	路徑上的物件工具
+	Attach Objects on Path	附加路徑上的物件
+	Expand Objects on Path	展開路徑上的物件
 	Release Live Paint	釋放即時上色
 	Release Repeat	釋放重複
 	Release Slice	釋放切片
@@ -1781,6 +1790,7 @@ file-filter	Templates	範本
 @msg	pattern missing	找不到圖樣
 @msg	select a repeat	請選取重複物件
 @msg	select an Intertwine group	請選取交織群組
+@msg	select an Objects on Path group	請選取路徑上的物件群組
 @msg	select the art to repeat	請選取要重複的圖稿
 @msg	the document has no patterns	文件中沒有圖樣
 @msg	no artboard	沒有工作區域
@@ -2256,6 +2266,7 @@ file-filter	Templates	範本
 @msg	choose a destination folder	請選擇目的地資料夾
 @msg	choose a source folder	請選擇來源資料夾
 @msg	open a document with data sets	請開啟含有資料集的文件
+@msg	nothing in data set {name} was applied: no object is bound to a variable it has a value for	資料集 {name} 未套用任何內容：沒有物件綁定到該資料集中有值的變數
 @msg	the action has no steps	動作沒有步驟
 @msg	cancelled; nothing was changed	已取消；未做任何變更
 @msg	Save writes {_1}, not {_2}: use file.saveAsTemplate to write it	「儲存」會寫入 {_1}，而非 {_2}：若要寫入該格式，請使用 file.saveAsTemplate
@@ -2440,6 +2451,7 @@ file-filter	Templates	範本
 	Load Text into Clipboard	將文字載入剪貼簿
 	Local Libraries	本機資料庫
 	Locate Object	尋找物件
+	Locate Selected Objects	尋找選取的物件
 	Location	位置
 	Location:	位置：
 	Lock	鎖定
@@ -3759,6 +3771,7 @@ mark-style	Japanese	日式
 	Snap to Pixel	靠齊像素
 	Precise Cursors	精確游標
 	Snap to Point	靠齊控制點
+	Snap to Unit	靠齊單位
 	Snapping Tolerance	靠齊容許度
 	Social Square Post 1080×1080	社群正方形貼文 1080×1080
 	Soft Light	柔光
@@ -4845,3 +4858,4 @@ lighting	Light	光源
 @msg	{key} must be an array of non-negative integer object ids	{key} 必須是由非負整數物件 id 組成的陣列
 @msg	invalid object id {value}: expected a non-negative integer	無效的物件 id {value}：應為非負整數
 @msg	no such object id {value}	沒有 id 為 {value} 的物件
+	Move Anchor Point	移動錨點

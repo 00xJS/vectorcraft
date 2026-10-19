@@ -1026,6 +1026,7 @@
 	Fill (X), double-click for the Color Picker	填色 (X)，双击打开拾色器
 	Fill and Stroke	填色和描边
 	Fill new strokes	为新描边应用填色
+	Alt key toggles to Smooth Tool	Alt 键切换为平滑工具
 	Keep selected	保持选择状态
 	Merge only with selection	仅与所选对象合并
 	Fill Color	填色
@@ -1155,6 +1156,8 @@ file-filter	Templates	模板
 	Large Gaps	大间隙
 	Gap Preview Color:	间隙预览颜色：
 	Close Gaps With Paths	用路径封闭间隙
+	Select Fills	选择填色
+	Select Strokes	选择描边
 	Gaussian Blur…	高斯模糊…
 	General	常规
 	General › Placement › X	一般 › 位置 › X
@@ -1352,6 +1355,12 @@ file-filter	Templates	模板
 	Release Blend	释放混合
 	Release Envelope	释放封套
 	Release Intertwine	释放交织
+	Objects on Path	路径上的对象
+	Attach	附加
+	Objects on Path Options	路径上的对象选项
+	Objects on Path Tool	路径上的对象工具
+	Attach Objects on Path	附加路径上的对象
+	Expand Objects on Path	扩展路径上的对象
 	Release Live Paint	释放实时上色
 	Release Repeat	释放重复
 	Release Slice	释放切片
@@ -1630,6 +1639,7 @@ file-filter	Templates	模板
 	Load Text into Clipboard	将文本载入剪贴板
 	Local Libraries	本地库
 	Locate Object	查找对象
+	Locate Selected Objects	查找所选对象
 	Location	位置
 	Location:	位置：
 	Lock	锁定
@@ -2894,6 +2904,7 @@ mark-style	Japanese	日式
 	Snap to Pixel	对齐像素
 	Precise Cursors	精确光标
 	Snap to Point	对齐点
+	Snap to Unit	对齐单位
 	Snapping Tolerance	吸附容差
 	Social Square Post 1080×1080	社交方形帖子 1080×1080
 	Soft Light	柔光
@@ -3770,6 +3781,7 @@ imageTrace	Outline	轮廓
 @msg	pattern missing	缺少图案
 @msg	select a repeat	请选择一个重复对象
 @msg	select an Intertwine group	请选择一个交织组
+@msg	select an Objects on Path group	请选择一个路径上的对象组
 @msg	select the art to repeat	请选择要重复的图稿
 @msg	the document has no patterns	文档中没有图案
 @msg	no artboard	没有画板
@@ -4248,6 +4260,7 @@ imageTrace	Outline	轮廓
 @msg	choose a destination folder	请选择目标文件夹
 @msg	choose a source folder	请选择源文件夹
 @msg	open a document with data sets	请打开包含数据集的文档
+@msg	nothing in data set {name} was applied: no object is bound to a variable it has a value for	数据集 {name} 未应用任何内容：没有对象绑定到该数据集中有值的变量
 @msg	the action has no steps	该动作没有步骤
 # Import Shortcut Set (Keyboard Shortcuts › Import…, File › Open of a .kys file) and its commands.
 	Import Shortcut Set	导入快捷键组
@@ -5050,3 +5063,4 @@ lighting	Light	光源
 @msg	the file's variables and data sets weren't read (variables: {variables}, data sets: {data_sets}): the Variables panel doesn't list them	文件的变量和数据集未被读取（变量：{variables}，数据集：{data_sets}）：“变量”面板不会列出它们
 # Select by Color (select.color)
 	Select by Color	按颜色选择
+	Move Anchor Point	移动锚点

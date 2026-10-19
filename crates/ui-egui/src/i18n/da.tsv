@@ -1734,6 +1734,7 @@ lighting	Light	Lys
 	Right-Justified Tab	Højrejusteret tabulator
 	Select a text object to set its tab stops.	Markér et tekstobjekt for at angive dets tabulatorstop.
 	Select text	Markér tekst
+	Snap to Unit	Fastgør til enhed
 	+ Add Scale	+ Tilføj skala
 	Add Selected Artwork as One Asset	Tilføj markeret grafik som ét aktiv
 	Export Settings	Eksportindstillinger
@@ -2063,6 +2064,7 @@ lighting	Light	Lys
 	Edit selected paths within:	Redigér markerede stier inden for:
 	Fidelity:	Præcision:
 	Fill new strokes	Udfyld nye konturer
+	Alt key toggles to Smooth Tool	Alt-tasten skifter til Udglatningsværktøj
 	The document has no colour swatches.	Dokumentet har ingen farveprøver.
 	Style Name:	Typografinavn:
 	Crop To	Beskær til
@@ -2080,6 +2082,7 @@ lighting	Light	Lys
 	Layers Panel Options	Indstillinger for lagpanelet
 	Row Size:	Rækkestørrelse:
 	Show Layers Only	Vis kun lag
+	Locate Selected Objects	Lokalisér markerede objekter
 	Thumbnails:	Miniaturer:
 	Anchor Points	Ankerpunkter
 	Brush Affects:	Penslen påvirker:
@@ -5074,6 +5077,8 @@ swatch	Bright Violet	Kraftig violet
 	Chop Design	Beskær design
 	Clear Events	Ryd hændelser
 	Close Gaps With Paths	Luk huller med stier
+	Select Fills	Markér udfyldninger
+	Select Strokes	Markér konturer
 	Column Type:	Søjletype:
 	Each Design Represents:	Hvert design repræsenterer:
 	Event:	Hændelse:
@@ -5151,6 +5156,12 @@ swatch	Bright Violet	Kraftig violet
 	Release Blend	Frigør blanding
 	Release Envelope	Frigør konvolut
 	Release Intertwine	Frigør sammenfletning
+	Objects on Path	Objekter på kurve
+	Attach	Tilknyt
+	Objects on Path Options	Indstillinger for objekter på kurve
+	Objects on Path Tool	Objekter på kurve-værktøj
+	Attach Objects on Path	Tilknyt objekter til kurve
+	Expand Objects on Path	Udvid objekter på kurve
 	Release Live Paint	Frigør live-maling
 	Release Repeat	Frigør gentagelse
 	Release Slice	Frigør udsnit
@@ -5197,3 +5208,4 @@ swatch	Bright Violet	Kraftig violet
 	Justification	Justering
 # Select by Color (select.color)
 	Select by Color	Markér efter farve
+	Move Anchor Point	Flyt ankerpunkt

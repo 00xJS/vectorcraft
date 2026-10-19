@@ -43,6 +43,15 @@ pub fn specs() -> Vec<CommandSpec> {
             set_handle
         ),
         cmd!(
+            "path.moveAnchor",
+            "Move Anchor Point",
+            [],
+            None,
+            "{id, subpath?, anchor, x, y} move one anchor to (x, y), its handles with it",
+            has_doc,
+            move_anchor
+        ),
+        cmd!(
             "path.setAnchors",
             "Set Anchors",
             [],
@@ -225,6 +234,22 @@ fn set_handle(s: &mut Session, p: &Value) -> Result<Value> {
         let path = path_mut(d, id)?;
         let a = path.anchor_mut(si, ai).ok_or_else(|| EngineError::Other("no such anchor".into()))?;
         a.set_handle(out, pos, independent);
+        Ok(())
+    })?;
+    ok()
+}
+
+/// `path.moveAnchor`: one anchor to (x, y), its handles keeping their offsets (the Anchor Point
+/// tool's Shift-drag).
+fn move_anchor(s: &mut Session, p: &Value) -> Result<Value> {
+    let id = id_param(p, "id").ok_or_else(|| bad("path.moveAnchor", "missing id"))?;
+    let si = usize_opt(p, "subpath", "path.moveAnchor")?.unwrap_or(0);
+    let ai = p.get("anchor").and_then(Value::as_u64).ok_or_else(|| bad("path.moveAnchor", "missing anchor"))? as usize;
+    let pos = Point::new(f64_req(p, "x", "path.moveAnchor")?, f64_req(p, "y", "path.moveAnchor")?);
+    s.edit("Move", |d, _| {
+        let path = path_mut(d, id)?;
+        let a = path.anchor_mut(si, ai).ok_or_else(|| EngineError::Other("no such anchor".into()))?;
+        *a = a.transform(vectorcraft_geom::Affine::translate(pos - a.p));
         Ok(())
     })?;
     ok()
@@ -602,7 +627,6 @@ fn without_anchors(sp: SubPath, removed: &BTreeSet<usize>) -> Vec<SubPath> {
     if gone.is_empty() {
         return vec![sp];
     }
-    let keep = |anchors: Vec<Anchor>| (anchors.len() >= 2).then(|| SubPath::new(anchors, false));
     let mut runs: Vec<Vec<Anchor>> = vec![];
     let mut run = vec![];
     for (i, anchor) in sp.anchors.into_iter().enumerate() {
@@ -630,7 +654,7 @@ fn without_anchors(sp: SubPath, removed: &BTreeSet<usize>) -> Vec<SubPath> {
     } else if !run.is_empty() {
         runs.push(run);
     }
-    runs.into_iter().filter_map(keep).collect()
+    runs.into_iter().filter_map(open_run).collect()
 }
 
 /// Remove connections, splitting open/closed contours into their surviving open runs.

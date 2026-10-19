@@ -963,6 +963,7 @@
 	Fill Rule	Regra de Preenchimento
 	Fill and Stroke	Preenchimento e Traçado
 	Fill new strokes	Preencher novos traçados
+	Alt key toggles to Smooth Tool	A tecla Alt alterna para a ferramenta Suavizar
 	Keep selected	Manter selecionado
 	Merge only with selection	Mesclar somente com a seleção
 	Fill with Placeholder Text	Preencher com Texto de Placeholder
@@ -1056,6 +1057,8 @@
 	Large Gaps	Lacunas Grandes
 	Gap Preview Color:	Cor de Visualização das Lacunas:
 	Close Gaps With Paths	Fechar Lacunas com Caminhos
+	Select Fills	Selecionar Preenchimentos
+	Select Strokes	Selecionar Traçados
 	Gaussian Blur…	Desfoque Gaussiano…
 	General	Geral
 	Generate CSS	Gerar CSS
@@ -1210,6 +1213,12 @@
 	Release Blend	Liberar Mesclagem
 	Release Envelope	Liberar Envelope
 	Release Intertwine	Liberar Entrelaçamento
+	Objects on Path	Objetos no Caminho
+	Attach	Anexar
+	Objects on Path Options	Opções de Objetos no Caminho
+	Objects on Path Tool	Ferramenta Objetos no Caminho
+	Attach Objects on Path	Anexar Objetos ao Caminho
+	Expand Objects on Path	Expandir Objetos no Caminho
 	Release Live Paint	Liberar Pintura ao Vivo
 	Release Repeat	Liberar Repetição
 	Release Slice	Liberar Fatia
@@ -2501,6 +2510,7 @@
 	Snap to Pixel	Ajustar ao Pixel
 	Precise Cursors	Cursores Precisos
 	Snap to Point	Ajustar ao Ponto
+	Snap to Unit	Ajustar à Unidade
 	Snapping Tolerance	Tolerância de Ajuste
 	Soft Light	Luz Suave
 	Solid	Sólido
@@ -3114,6 +3124,7 @@ lighting	Light	Luz
 	Layers Panel Options	Opções do painel Camadas
 	Left-to-Right Paragraph Direction	Direção do parágrafo da esquerda para a direita
 	Line-end Punctuation Half Width	Pontuação de fim de linha em meia largura
+	Locate Selected Objects	Localizar objetos selecionados
 	Lock Others	Bloquear outros
 	Merge Selected	Mesclar selecionados
 	Model	Modelo
@@ -3678,6 +3689,7 @@ axis	Both	Ambos
 @msg	select a linked image: an embedded one has no file	selecione uma imagem vinculada: uma incorporada não tem arquivo
 @msg	select a repeat	selecione uma repetição
 @msg	select an Intertwine group	selecione um grupo entrelaçado
+@msg	select an Objects on Path group	selecione um grupo de objetos no caminho
 @msg	select a stroke with a variable width	selecione um traço com largura variável
 @msg	select a symbol instance	selecione uma instância de símbolo
 @msg	select an Image Trace object	selecione um objeto de Vetorização de imagem
@@ -5032,6 +5044,7 @@ mark-style	Japanese	Japonesas
 @msg	choose a destination folder	escolha uma pasta de destino
 @msg	choose a source folder	escolha uma pasta de origem
 @msg	open a document with data sets	abra um documento com conjuntos de dados
+@msg	nothing in data set {name} was applied: no object is bound to a variable it has a value for	nada do conjunto de dados {name} foi aplicado: nenhum objeto está vinculado a uma variável para a qual ele tem um valor
 @msg	the action has no steps	a ação não tem etapas
 @msg	Angles require two straight segments	Ângulos exigem dois segmentos retos
 @msg	Choose a circle or a perfect arc	Escolha um círculo ou um arco perfeito
@@ -5131,3 +5144,4 @@ mark-style	Japanese	Japonesas
 @msg	the file's variables and data sets weren't read (variables: {variables}, data sets: {data_sets}): the Variables panel doesn't list them	as variáveis e os conjuntos de dados do arquivo não foram lidos (variáveis: {variables}, conjuntos de dados: {data_sets}): o painel Variáveis não os lista
 # Select by Color (select.color)
 	Select by Color	Selecionar por Cor
+	Move Anchor Point	Mover Ponto de Ancoragem

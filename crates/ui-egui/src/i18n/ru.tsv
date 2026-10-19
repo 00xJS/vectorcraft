@@ -1076,6 +1076,7 @@
 	Fill (X), double-click for the Color Picker	Заливка (X), дважды щёлкните для палитры цветов
 	Fill and Stroke	Заливка и обводка
 	Fill new strokes	Заполнять новые обводки
+	Alt key toggles to Smooth Tool	Клавиша Alt переключает на инструмент «Сглаживание»
 	Keep selected	Оставлять выбранным
 	Merge only with selection	Объединять только с выделенным
 	Fill Color	Цвет заливки
@@ -1206,6 +1207,8 @@ file-filter	Templates	Шаблоны
 	Large Gaps	Большие зазоры
 	Gap Preview Color:	Цвет просмотра зазоров:
 	Close Gaps With Paths	Закрыть зазоры контурами
+	Select Fills	Выделять заливки
+	Select Strokes	Выделять обводки
 	Gaussian Blur…	Размытие по Гауссу…
 	General	Общие
 	General › Placement › X	Общие › Размещение › X
@@ -1413,6 +1416,12 @@ file-filter	Templates	Шаблоны
 	Release Envelope	Освободить оболочку
 	Release Image Trace	Освободить трассировку изображения
 	Release Intertwine	Освободить переплетение
+	Objects on Path	Объекты на контуре
+	Attach	Прикрепить
+	Objects on Path Options	Параметры объектов на контуре
+	Objects on Path Tool	Инструмент «Объекты на контуре»
+	Attach Objects on Path	Прикрепить объекты к контуру
+	Expand Objects on Path	Разобрать объекты на контуре
 	Release Live Paint	Освободить быструю заливку
 	Release Repeat	Освободить повтор
 	Release Slice	Освободить фрагмент
@@ -1737,6 +1746,7 @@ file-filter	Templates	Шаблоны
 	Load Text into Clipboard	Загрузить текст в буфер обмена
 	Local Libraries	Локальные библиотеки
 	Locate Object	Найти объект
+	Locate Selected Objects	Находить выделенные объекты
 	Location	Расположение
 	Location:	Расположение:
 	Lock	Заблокировать
@@ -3040,6 +3050,7 @@ mark-style	Japanese	Японский
 	Snap to Pixel	Привязать к пикселю
 	Precise Cursors	Точные курсоры
 	Snap to Point	Привязать к точке
+	Snap to Unit	Привязать к единицам
 	Snapping Tolerance	Допуск привязки
 	Social Square Post 1080×1080	Квадратный пост для соцсетей 1080×1080
 	Soft Light	Мягкий свет
@@ -4132,6 +4143,7 @@ axis	Both	Оба
 @msg	select a linked image: an embedded one has no file	выделите связанное изображение: у внедрённого нет файла
 @msg	select a repeat	выделите повтор
 @msg	select an Intertwine group	выделите группу переплетения
+@msg	select an Objects on Path group	выделите группу объектов на контуре
 @msg	select a stroke with a variable width	выделите обводку с переменной шириной
 @msg	select a symbol instance	выделите экземпляр символа
 @msg	select an Image Trace object	выделите объект трассировки изображения
@@ -4762,6 +4774,7 @@ lighting	Light	Свет
 @msg	choose a destination folder	выберите папку назначения
 @msg	choose a source folder	выберите исходную папку
 @msg	open a document with data sets	откройте документ с наборами данных
+@msg	nothing in data set {name} was applied: no object is bound to a variable it has a value for	из набора данных {name} ничего не применено: ни один объект не привязан к переменной, для которой в нём есть значение
 @msg	the action has no steps	в действии нет шагов
 
 # User Interface › Accent Color
@@ -4824,3 +4837,4 @@ lighting	Light	Свет
 @msg	the file's variables and data sets weren't read (variables: {variables}, data sets: {data_sets}): the Variables panel doesn't list them	переменные и наборы данных файла не прочитаны (переменных: {variables}, наборов данных: {data_sets}): панель «Переменные» их не показывает
 # Select by Color (select.color)
 	Select by Color	Выделить по цвету
+	Move Anchor Point	Переместить опорную точку

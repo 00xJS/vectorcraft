@@ -1748,6 +1748,7 @@ lighting	Light	Licht
 	Right-Justified Tab	Rechts uitgelijnde tabstop
 	Select a text object to set its tab stops.	Selecteer een tekstobject om de tabstops in te stellen.
 	Select text	Selecteer tekst
+	Snap to Unit	Uitlijnen op eenheid
 	+ Add Scale	+ Schaal toevoegen
 	Add Selected Artwork as One Asset	Geselecteerde artwork als één asset toevoegen
 	Export Settings	Exportinstellingen
@@ -2077,6 +2078,7 @@ lighting	Light	Licht
 	Edit selected paths within:	Geselecteerde paden bewerken binnen:
 	Fidelity:	Nauwkeurigheid:
 	Fill new strokes	Nieuwe lijnen vullen
+	Alt key toggles to Smooth Tool	Alt-toets schakelt over naar Gladmaken-gereedschap
 	The document has no colour swatches.	Het document heeft geen kleurstalen.
 	Style Name:	Stijlnaam:
 	Crop To	Bijsnijden tot
@@ -2094,6 +2096,7 @@ lighting	Light	Licht
 	Layers Panel Options	Opties voor het paneel Lagen
 	Row Size:	Rijgrootte:
 	Show Layers Only	Alleen lagen weergeven
+	Locate Selected Objects	Geselecteerde objecten lokaliseren
 	Thumbnails:	Miniaturen:
 	Anchor Points	Ankerpunten
 	Brush Affects:	Penseel beïnvloedt:
@@ -5086,6 +5089,8 @@ swatch	Bright Violet	Felviolet
 	Chop Design	Ontwerp afknippen
 	Clear Events	Gebeurtenissen wissen
 	Close Gaps With Paths	Openingen sluiten met paden
+	Select Fills	Vullingen selecteren
+	Select Strokes	Lijnen selecteren
 	Column Type:	Kolomtype:
 	Each Design Represents:	Elk ontwerp staat voor:
 	Event:	Gebeurtenis:
@@ -5163,6 +5168,12 @@ swatch	Bright Violet	Felviolet
 	Release Blend	Vermenging vrijgeven
 	Release Envelope	Omvorming vrijgeven
 	Release Intertwine	Verstrengeling vrijgeven
+	Objects on Path	Objecten op pad
+	Attach	Koppelen
+	Objects on Path Options	Opties voor objecten op pad
+	Objects on Path Tool	Objecten-op-pad-gereedschap
+	Attach Objects on Path	Objecten aan pad koppelen
+	Expand Objects on Path	Objecten op pad uitbreiden
 	Release Live Paint	Live Paint vrijgeven
 	Release Repeat	Herhaling vrijgeven
 	Release Slice	Slice vrijgeven
@@ -5239,3 +5250,4 @@ swatch	Bright Violet	Felviolet
 	Justification	Uitvullen
 # Select by Color (select.color)
 	Select by Color	Selecteren op kleur
+	Move Anchor Point	Ankerpunt verplaatsen

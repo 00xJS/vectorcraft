@@ -1334,7 +1334,7 @@ pub fn snap_pick(cx: &ToolContext, p: Point) -> (Point, Vec<Overlay>) {
     }
     let tol = if cx.smart_guides { cx.snap_tol() } else { cx.tol(cx.snap_tolerance) };
     let mut roots = cx.selection.objects.clone();
-    roots.extend(hit_test(cx.doc, p, HitOptions { tol, ..cx.hit_options() }).map(|h| h.leaf));
+    roots.extend(hit_test(cx.doc, p, HitOptions { tol, skip_guides: false, ..cx.hit_options() }).map(|h| h.leaf));
     let near = Rect::new(p.x - tol, p.y - tol, p.x + tol, p.y + tol);
     Targets::points_near(cx.doc, &roots, near).styled(cx).snap_point(p, tol)
 }

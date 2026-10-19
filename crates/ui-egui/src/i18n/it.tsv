@@ -1078,6 +1078,7 @@
 	Fill (X), double-click for the Color Picker	Riempimento (X), fai doppio clic per il selettore colore
 	Fill and Stroke	Riempimento e traccia
 	Fill new strokes	Riempi nuove tracce
+	Alt key toggles to Smooth Tool	Il tasto Alt attiva lo strumento Smussa
 	Keep selected	Mantieni selezionato
 	Merge only with selection	Unisci solo con la selezione
 	Fill Color	Colore riempimento
@@ -1208,6 +1209,8 @@ file-filter	Templates	Modelli
 	Large Gaps	Spazi vuoti grandi
 	Gap Preview Color:	Colore anteprima spazi vuoti:
 	Close Gaps With Paths	Chiudi spazi vuoti con tracciati
+	Select Fills	Seleziona riempimenti
+	Select Strokes	Seleziona tracce
 	Gaussian Blur…	Sfocatura gaussiana…
 	General	Generale
 	General › Placement › X	Generale › Posizionamento › X
@@ -1415,6 +1418,12 @@ file-filter	Templates	Modelli
 	Release Envelope	Rilascia involucro
 	Release Image Trace	Rilascia ricalco immagine
 	Release Intertwine	Rilascia intreccio
+	Objects on Path	Oggetti su tracciato
+	Attach	Aggancia
+	Objects on Path Options	Opzioni oggetti su tracciato
+	Objects on Path Tool	Strumento Oggetti su tracciato
+	Attach Objects on Path	Aggancia oggetti al tracciato
+	Expand Objects on Path	Espandi oggetti su tracciato
 	Release Live Paint	Rilascia pittura dinamica
 	Release Repeat	Rilascia ripetizione
 	Release Slice	Rilascia sezione
@@ -1739,6 +1748,7 @@ file-filter	Templates	Modelli
 	Load Text into Clipboard	Carica testo negli appunti
 	Local Libraries	Librerie locali
 	Locate Object	Individua oggetto
+	Locate Selected Objects	Individua oggetti selezionati
 	Location	Posizione
 	Location:	Posizione:
 	Lock	Blocca
@@ -3044,6 +3054,7 @@ mark-style	Japanese	Giapponese
 	Snap to Pixel	Aggancia ai pixel
 	Precise Cursors	Cursori di precisione
 	Snap to Point	Aggancia al punto
+	Snap to Unit	Aggancia all'unità
 	Snapping Tolerance	Tolleranza di aggancio
 	Social Square Post 1080×1080	Post quadrato per social 1080×1080
 	Soft Light	Luce soffusa
@@ -4136,6 +4147,7 @@ axis	Both	Entrambi
 @msg	select a linked image: an embedded one has no file	seleziona un'immagine collegata: un'immagine incorporata non ha un file
 @msg	select a repeat	seleziona una ripetizione
 @msg	select an Intertwine group	seleziona un gruppo intrecciato
+@msg	select an Objects on Path group	seleziona un gruppo di oggetti su tracciato
 @msg	select a stroke with a variable width	seleziona una traccia con larghezza variabile
 @msg	select a symbol instance	seleziona un'istanza di simbolo
 @msg	select an Image Trace object	seleziona un oggetto di ricalco immagine
@@ -4766,6 +4778,7 @@ lighting	Light	Luce
 @msg	choose a destination folder	scegli una cartella di destinazione
 @msg	choose a source folder	scegli una cartella di origine
 @msg	open a document with data sets	apri un documento con set di dati
+@msg	nothing in data set {name} was applied: no object is bound to a variable it has a value for	non è stato applicato nulla del set di dati {name}: nessun oggetto è associato a una variabile per cui ha un valore
 @msg	the action has no steps	l'azione non ha passaggi
 
 # User Interface › Accent Color
@@ -4828,3 +4841,4 @@ lighting	Light	Luce
 @msg	the file's variables and data sets weren't read (variables: {variables}, data sets: {data_sets}): the Variables panel doesn't list them	le variabili e i set di dati del file non sono stati letti (variabili: {variables}, set di dati: {data_sets}): il pannello Variabili non li elenca
 # Select by Color (select.color)
 	Select by Color	Seleziona per colore
+	Move Anchor Point	Sposta punto di ancoraggio

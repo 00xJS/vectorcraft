@@ -1635,6 +1635,7 @@ lighting	Light	სინათლე
 	Right-Justified Tab	მარჯვნივ სწორებული ტაბულაცია
 	Select a text object to set its tab stops.	ტაბულაციის გაჩერებების დასაყენებლად მონიშნეთ ტექსტური ობიექტი.
 	Select text	მონიშნეთ ტექსტი
+	Snap to Unit	ერთეულზე მიბმა
 	+ Add Scale	+ მასშტაბის დამატება
 	Add Selected Artwork as One Asset	მონიშნული ნახატის დამატება ერთ რესურსად
 	Export Settings	ექსპორტის პარამეტრები
@@ -1978,6 +1979,7 @@ lighting	Light	სინათლე
 	Layers Panel Options	შრეების პანელის პარამეტრები
 	Row Size:	სტრიქონის ზომა:
 	Show Layers Only	მხოლოდ შრეების ჩვენება
+	Locate Selected Objects	მონიშნული ობიექტების მოძებნა
 	Thumbnails:	ესკიზები:
 	Anchor Points	საყრდენი წერტილები
 	Brush Affects:	ფუნჯი მოქმედებს:
@@ -4828,6 +4830,7 @@ imageTrace	Outline	კონტური
 	Intertwine	გადახლართვა
 	Arrange Intertwine Area	გადახლართვის არის დალაგება
 @msg	select an Intertwine group	მონიშნეთ გადახლართვის ჯგუფი
+@msg	select an Objects on Path group	მონიშნეთ ტრაექტორიაზე ობიექტების ჯგუფი
 	Registration:	საბაზისო წერტილი:
 @msg	span must be "object" or "selection", got {v}	span უნდა იყოს "object" ან "selection", მიღებულია {v}
 @msg	span: "selection" places a `gradient`, not a swatch	span: "selection" ათავსებს `gradient`-ს და არა ფერის ნიმუშს
@@ -4848,6 +4851,7 @@ imageTrace	Outline	კონტური
 @msg	choose a destination folder	აირჩიეთ დანიშნულების საქაღალდე
 @msg	choose a source folder	აირჩიეთ წყარო საქაღალდე
 @msg	open a document with data sets	გახსენით დოკუმენტი მონაცემთა ნაკრებებით
+@msg	nothing in data set {name} was applied: no object is bound to a variable it has a value for	მონაცემთა ნაკრები {name}: არაფერი გამოყენებულა; არცერთი ობიექტი არ არის მიბმული ცვლადზე, რომელსაც მასში მნიშვნელობა აქვს
 @msg	the action has no steps	მოქმედებას ნაბიჯები არ აქვს
 	Convert to Straight Lines	სწორ ხაზებად გარდაქმნა
 	Corner Point Angle Threshold:	კუთხოვანი წერტილის კუთხის ზღვარი:
@@ -5012,6 +5016,12 @@ imageTrace	Outline	კონტური
 	Release Blend	გადასვლის მოხსნა
 	Release Envelope	გარსის მოხსნა
 	Release Intertwine	გადახლართვის მოხსნა
+	Objects on Path	ობიექტები ტრაექტორიაზე
+	Attach	მიმაგრება
+	Objects on Path Options	ტრაექტორიაზე ობიექტების პარამეტრები
+	Objects on Path Tool	ტრაექტორიაზე ობიექტების ხელსაწყო
+	Attach Objects on Path	ობიექტების ტრაექტორიაზე მიმაგრება
+	Expand Objects on Path	ტრაექტორიაზე ობიექტების გაშლა
 	Release Live Paint	ცოცხალი შეღებვის მოხსნა
 	Release Repeat	გამეორების მოხსნა
 	Release Slice	ნაჭრის მოხსნა
@@ -5032,6 +5042,8 @@ imageTrace	Outline	კონტური
 	Resize Type Area	ტექსტის არის ზომის შეცვლა
 	Scale Design	დიზაინის მასშტაბირება
 	Scale in Perspective	პერსპექტივაში მასშტაბირება
+	Select Fills	შევსებების მონიშვნა
+	Select Strokes	კონტურების მონიშვნა
 	Set History Limit…	ისტორიის ლიმიტის დაყენება…
 	Shape Builder Delete	ფიგურების კონსტრუქტორით წაშლა
 	Sliding	სრიალა
@@ -5121,3 +5133,5 @@ imageTrace	Outline	კონტური
 # Select by Color (select.color)
 	Select by Color	მონიშვნა ფერის მიხედვით
 @msg	thumbnail: no page {n} (the file has 1)	thumbnail: გვერდი {n} არ არსებობს (ფაილს 1 გვერდი აქვს)
+	Move Anchor Point	საყრდენი წერტილის გადაადგილება
+	Alt key toggles to Smooth Tool	Alt კლავიში ჩართავს გაგლუვების ხელსაწყოს

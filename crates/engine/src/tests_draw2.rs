@@ -984,6 +984,24 @@ fn set_handle_refuses_a_subpath_that_is_not_a_whole_number() {
 }
 
 #[test]
+fn move_anchor_takes_its_handles_along_and_refuses_a_subpath_that_is_not_a_whole_number() {
+    let mut s = session();
+    let id = two_subpaths(&mut s);
+    let p = json!({"id": id.0, "anchor": 0, "x": 140, "y": 250});
+    refuses_an_index_that_is_not_whole(&mut s, "path.moveAnchor", &p, "subpath");
+    edits_the_subpath_given(&mut s, "path.moveAnchor", &p, id);
+    // The anchor lands on (x, y) and its handles keep their offsets from it.
+    s.execute("path.setHandle", &json!({"id": id.0, "anchor": 0, "which": "out", "x": 30, "y": 40})).unwrap();
+    let a = path(&s, id).subpaths[0].anchors[0];
+    s.execute("path.moveAnchor", &json!({"id": id.0, "anchor": 0, "x": a.p.x + 15.0, "y": a.p.y - 5.0})).unwrap();
+    let b = path(&s, id).subpaths[0].anchors[0];
+    assert_eq!(b.p, a.p + vectorcraft_geom::Vec2::new(15.0, -5.0));
+    assert_eq!(b.h_out - b.p, a.h_out - a.p);
+    assert_eq!(b.h_in - b.p, a.h_in - a.p);
+    assert!(s.execute("path.moveAnchor", &json!({"id": id.0, "anchor": 99, "x": 0, "y": 0})).is_err());
+}
+
+#[test]
 fn insert_anchor_refuses_a_subpath_that_is_not_a_whole_number() {
     let mut s = session();
     let id = two_subpaths(&mut s);
@@ -1966,6 +1984,26 @@ fn open_anchor_delete_preserves_curves_appearance_and_history() {
     assert!(s.doc().unwrap().doc.node(id).is_none(), "the second Delete removes the remainder");
     s.execute("edit.undo", &json!({})).unwrap();
     assert_eq!(s.doc().unwrap().doc, after);
+}
+
+#[test]
+fn closed_anchor_delete_then_join_closes_with_a_line() {
+    let mut s = session();
+    let data = "M100 100C120 60 180 60 200 100C220 140 280 140 300 100C320 60 380 60 400 100C420 140 480 140 500 100C500 200 100 200 100 100Z";
+    let id = NodeId(s.execute("path.create", &json!({"d": data})).unwrap()["id"].as_u64().unwrap());
+    s.execute("select.anchors", &json!({"id": id.0, "anchors": [[0, 2]]})).unwrap();
+    s.execute("path.deleteAnchors", &json!({})).unwrap();
+    let result = path(&s, id);
+    assert_eq!(result.subpaths.len(), 1);
+    let sp = &result.subpaths[0];
+    assert!(!sp.closed);
+    assert!(!sp.anchors.first().unwrap().has_in() && !sp.anchors.last().unwrap().has_out(), "dangling handles are cleared");
+    s.execute("path.join", &json!({"ids": [id.0]})).unwrap();
+    let joined = path(&s, id);
+    let sp = &joined.subpaths[0];
+    assert!(sp.closed);
+    let closing = sp.segment(sp.segment_count() - 1);
+    assert!(closing.p1 == closing.p0 && closing.p2 == closing.p3, "closing segment is a line: {closing:?}");
 }
 
 #[test]

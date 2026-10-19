@@ -1078,6 +1078,7 @@
 	Fill (X), double-click for the Color Picker	Fond (X), double-cliquez pour ouvrir le Sélecteur de couleurs
 	Fill and Stroke	Fond et contour
 	Fill new strokes	Remplir les nouveaux contours
+	Alt key toggles to Smooth Tool	La touche Alt bascule sur l’outil Arrondi
 	Keep selected	Garder sélectionné
 	Merge only with selection	Fusionner uniquement avec la sélection
 	Fill Color	Couleur de fond
@@ -1198,6 +1199,8 @@
 	Large Gaps	Grands espaces
 	Gap Preview Color:	Couleur d’aperçu des espaces :
 	Close Gaps With Paths	Fermer les espaces avec des tracés
+	Select Fills	Sélectionner les fonds
+	Select Strokes	Sélectionner les contours
 	Gaussian Blur…	Flou gaussien…
 	General	Général
 	General › Placement › X	Général › Placement › X
@@ -1395,6 +1398,12 @@
 	Release Blend	Annuler le dégradé de formes
 	Release Envelope	Annuler l’enveloppe
 	Release Intertwine	Annuler l’entrelacement
+	Objects on Path	Objets sur tracé
+	Attach	Attacher
+	Objects on Path Options	Options d’objets sur tracé
+	Objects on Path Tool	Outil Objets sur tracé
+	Attach Objects on Path	Attacher des objets au tracé
+	Expand Objects on Path	Décomposer les objets sur tracé
 	Release Live Paint	Annuler la peinture dynamique
 	Release Repeat	Annuler la répétition
 	Release Slice	Annuler la tranche
@@ -1712,6 +1721,7 @@
 	Load Text into Clipboard	Charger du texte dans le presse-papiers
 	Local Libraries	Bibliothèques locales
 	Locate Object	Localiser l’objet
+	Locate Selected Objects	Localiser les objets sélectionnés
 	Location	Emplacement
 	Location:	Emplacement :
 	Lock	Verrouiller
@@ -3008,6 +3018,7 @@
 	Snap to Pixel	Magnétisme du pixel
 	Precise Cursors	Pointeurs précis
 	Snap to Point	Magnétisme du point
+	Snap to Unit	Magnétisme de l’unité
 	Snapping Tolerance	Tolérance du magnétisme
 	Social Square Post 1080×1080	Publication carrée pour réseaux sociaux 1080×1080
 	Soft Light	Lumière tamisée
@@ -4094,6 +4105,7 @@ axis	Both	Les deux
 @msg	select a linked image: an embedded one has no file	sélectionnez une image liée : une image incorporée n’a pas de fichier
 @msg	select a repeat	sélectionnez une répétition
 @msg	select an Intertwine group	sélectionnez un groupe entrelacé
+@msg	select an Objects on Path group	sélectionnez un groupe d’objets sur tracé
 @msg	select a stroke with a variable width	sélectionnez un contour de largeur variable
 @msg	select a symbol instance	sélectionnez une instance de symbole
 @msg	select an Image Trace object	sélectionnez un objet de vectorisation de l’image
@@ -5153,6 +5165,7 @@ theme	Appearance	Apparence
 @msg	choose a destination folder	choisissez un dossier de destination
 @msg	choose a source folder	choisissez un dossier source
 @msg	open a document with data sets	ouvrez un document avec des jeux de données
+@msg	nothing in data set {name} was applied: no object is bound to a variable it has a value for	rien du jeu de données {name} n’a été appliqué, car aucun objet n’est lié à une variable pour laquelle il a une valeur
 @msg	the action has no steps	l'action n'a aucune étape
 
 # User Interface › Accent Color
@@ -5213,3 +5226,4 @@ theme	Appearance	Apparence
 @msg	the file's variables and data sets weren't read (variables: {variables}, data sets: {data_sets}): the Variables panel doesn't list them	les variables et jeux de données du fichier n’ont pas été lus (variables : {variables}, jeux de données : {data_sets}) : le panneau Variables ne les affiche pas
 # Select by Color (select.color)
 	Select by Color	Sélectionner par couleur
+	Move Anchor Point	Déplacer le point d’ancrage

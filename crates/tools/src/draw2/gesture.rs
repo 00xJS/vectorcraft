@@ -39,6 +39,11 @@ pub struct GestureTool {
     /// "Keep selected": select the path a Pencil, Paintbrush or Blob Brush stroke draws, continues
     /// or merges into (on for the Pencil and Paintbrush, off for the Blob Brush).
     pub keep_selected: bool,
+    /// "Alt key toggles to Smooth Tool": holding Alt with the Pencil tool smooths selected paths
+    /// instead of closing the path (Pencil only, on by default).
+    pub alt_smooth: bool,
+    /// Active drag is smoothing with the Pencil tool.
+    smoothing: bool,
     /// "Merge only with selection": a Blob Brush stroke merges only with selected paths.
     pub merge_only_selection: bool,
     /// "Edit selected paths within N pixels".
@@ -102,6 +107,9 @@ impl GestureTool {
             size: 10.0,
             fill: false,
             keep_selected: id != "blobBrush",
+            // Off, as Pencil Tool Options ships it: Alt keeps drawing a closed path until it is on.
+            alt_smooth: false,
+            smoothing: false,
             merge_only_selection: false,
             edit_within: 12.0,
             close_within: 15.0,
@@ -213,13 +221,19 @@ impl GestureTool {
         let pts = &self.points;
         let has_sel = !cx.selection.is_empty();
         let tol = cx.tol(self.edit_within);
+        if self.smoothing {
+            if has_sel && pts.len() >= 2 {
+                return vec![Action::Exec("path.smoothRegion".into(), json!({"points": points_json(pts), "radius": tol, "fidelity": self.fidelity}))];
+            }
+            return vec![];
+        }
         match self.id {
             "pencil" | "paintbrush" => {
                 if !self.began {
                     return vec![];
                 }
                 let near = pts.len() > 2 && pts[0].distance(pts[pts.len() - 1]) <= cx.tol(self.close_within);
-                let closed = m.alt || (self.extend.is_none() && near);
+                let closed = (m.alt && !self.alt_smooth) || (self.extend.is_none() && near);
                 vec![Action::Preview("path.freehand".into(), self.freehand_params(closed)), Action::Commit]
             }
             "blobBrush" => vec![Action::Exec(
@@ -260,10 +274,15 @@ impl Tool for GestureTool {
             PointerKind::Down => {
                 self.active = true;
                 self.began = false;
-                self.extend = if self.draws_path() { self.find_extend(cx, p) } else { None };
-                self.redraw = if self.draws_path() && self.extend.is_none() { self.find_redraw(cx, p) } else { None };
+                self.smoothing = self.id == "pencil" && self.alt_smooth && ev.mods.alt;
+                self.extend = if self.draws_path() && !self.smoothing { self.find_extend(cx, p) } else { None };
+                self.redraw = if self.draws_path() && !self.smoothing && self.extend.is_none() { self.find_redraw(cx, p) } else { None };
                 // A path continued starts at its end, one redrawn on it; a new one where it snaps.
-                let start = if self.snaps() && self.extend.is_none() && self.redraw.is_none() { self.snap.press(cx, p, &[], None) } else { p };
+                let start = if self.snaps() && !self.smoothing && self.extend.is_none() && self.redraw.is_none() {
+                    self.snap.press(cx, p, &[], None)
+                } else {
+                    p
+                };
                 self.start_shift = (p, start - p);
                 self.last_raw = p;
                 self.clear();
@@ -275,7 +294,10 @@ impl Tool for GestureTool {
                 if !self.active {
                     return vec![];
                 }
-                if self.snaps() {
+                if !self.began && self.id == "pencil" && self.alt_smooth && ev.mods.alt {
+                    self.smoothing = true;
+                }
+                if self.snaps() && !self.smoothing {
                     // Where the stroke would end: shown, taken on release.
                     self.snap.drag(cx, p, None);
                 }
@@ -286,7 +308,7 @@ impl Tool for GestureTool {
                 self.last_raw = p;
                 self.raw.push(p);
                 self.push(ease(p, from, shift), ev.pressure);
-                if !self.draws_path() {
+                if !self.draws_path() || self.smoothing {
                     return vec![];
                 }
                 let mut out = vec![];
@@ -301,15 +323,15 @@ impl Tool for GestureTool {
                 if !self.active {
                     return vec![];
                 }
-                let end = if self.snaps() { self.snap.drag(cx, p, None) } else { p };
+                let end = if self.snaps() && !self.smoothing { self.snap.drag(cx, p, None) } else { p };
                 self.snap.clear();
                 // Was the last step away from where the button went up (before the samples bend)?
                 let away = !self.points.is_empty() && self.last_raw.distance(p) >= cx.tol(1.0);
                 // The samples before a snapped end bend to it too. Near both ends (a short stroke,
                 // or one whose ends snap together) a sample takes a share of each move that adds up
                 // to at most the whole, so none overshoots past either end (#3013 review).
-                let end_shift = end - p;
-                let (from, start_shift) = self.start_shift;
+                // A smoothing pass (Alt, which may come mid-drag) works on where the hand went.
+                let (end_shift, (from, start_shift)) = if self.smoothing { (Vec2::ZERO, (p, Vec2::ZERO)) } else { (end - p, self.start_shift) };
                 for (q, r) in self.points.iter_mut().zip(&self.raw).skip(1) {
                     let (mut ws, mut we) = (weight(*r, from, start_shift), weight(*r, p, end_shift));
                     if ws + we > 1.0 {
@@ -320,6 +342,7 @@ impl Tool for GestureTool {
                 if away {
                     self.push(end, ev.pressure);
                 } else if self.snaps()
+                    && !self.smoothing
                     && self.points.len() > 1
                     && let Some(last) = self.points.last_mut()
                 {
@@ -329,6 +352,7 @@ impl Tool for GestureTool {
                 let out = self.finish(cx, ev.mods);
                 self.active = false;
                 self.began = false;
+                self.smoothing = false;
                 self.clear();
                 self.extend = None;
                 self.redraw = None;
@@ -348,6 +372,7 @@ impl Tool for GestureTool {
                 self.snap.clear();
                 self.active = false;
                 self.began = false;
+                self.smoothing = false;
                 self.clear();
                 if began { vec![Action::Cancel] } else { vec![] }
             }
@@ -383,7 +408,10 @@ impl Tool for GestureTool {
         o.push(Overlay::Path { path: polyline(&self.points), color, width, dashed: self.id == "knife" });
         o
     }
-    fn cursor(&self, _cx: &ToolContext, _p: Point, _m: Mods) -> Cursor {
+    fn cursor(&self, _cx: &ToolContext, _p: Point, m: Mods) -> Cursor {
+        if self.id == "pencil" && self.alt_smooth && m.alt {
+            return Cursor::Smooth;
+        }
         match self.id {
             "paintbrush" => Cursor::Paintbrush,
             "blobBrush" => Cursor::BlobBrush,
@@ -397,7 +425,17 @@ impl Tool for GestureTool {
     }
     fn options(&self) -> Value {
         match self.id {
-            "pencil" | "paintbrush" => {
+            "pencil" => {
+                json!({
+                    "fidelity": self.fidelity,
+                    "fill": self.fill,
+                    "altSmooth": self.alt_smooth,
+                    "keepSelected": self.keep_selected,
+                    "editWithin": self.edit_within,
+                    "closeWithin": self.close_within
+                })
+            }
+            "paintbrush" => {
                 json!({
                     "fidelity": self.fidelity,
                     "fill": self.fill,
@@ -417,6 +455,7 @@ impl Tool for GestureTool {
             "fidelity" => self.fidelity = v.as_f64().unwrap_or(self.fidelity).clamp(0.05, 100.0),
             "size" => self.size = v.as_f64().unwrap_or(self.size).clamp(0.1, 1000.0),
             "fill" => self.fill = v.as_bool().unwrap_or(self.fill),
+            "altSmooth" => self.alt_smooth = v.as_bool().unwrap_or(self.alt_smooth),
             "keepSelected" => self.keep_selected = v.as_bool().unwrap_or(self.keep_selected),
             "mergeOnlySelection" => self.merge_only_selection = v.as_bool().unwrap_or(self.merge_only_selection),
             "editWithin" => self.edit_within = v.as_f64().unwrap_or(self.edit_within).clamp(0.0, 100.0),
@@ -436,6 +475,16 @@ mod tests {
         let mut v = vec![t.pointer(cx, &PointerEvent::new(PointerKind::Down, pts[0].0, pts[0].1))];
         for &(x, y) in &pts[1..] {
             v.push(t.pointer(cx, &PointerEvent::new(PointerKind::Drag, x, y)));
+        }
+        let l = pts[pts.len() - 1];
+        v.push(t.pointer(cx, &PointerEvent::new(PointerKind::Up, l.0, l.1).with_mods(m)));
+        v
+    }
+
+    fn drag_held(t: &mut GestureTool, cx: &ToolContext, pts: &[(f64, f64)], m: Mods) -> Vec<Vec<Action>> {
+        let mut v = vec![t.pointer(cx, &PointerEvent::new(PointerKind::Down, pts[0].0, pts[0].1).with_mods(m))];
+        for &(x, y) in &pts[1..] {
+            v.push(t.pointer(cx, &PointerEvent::new(PointerKind::Drag, x, y).with_mods(m)));
         }
         let l = pts[pts.len() - 1];
         v.push(t.pointer(cx, &PointerEvent::new(PointerKind::Up, l.0, l.1).with_mods(m)));
@@ -660,5 +709,47 @@ mod tests {
         let mut b = GestureTool::new("blobBrush");
         b.key(&cx, ToolKey::BracketRight, Mods::default());
         assert_eq!(b.options()["size"], 11.0);
+    }
+
+    #[test]
+    fn pencil_alt_toggles_to_smooth_when_enabled_and_closes_when_disabled() {
+        let (d, id) = doc_with_rect();
+        let mut s = Selection::default();
+        s.set([id]);
+        let p = paint();
+        let cx = cx(&d, &s, &p);
+
+        // Off by default, as Pencil Tool Options ships it; on, Alt lends the Smooth tool.
+        let mut t = GestureTool::new("pencil");
+        assert_eq!(t.options()["altSmooth"], json!(false));
+        t.set_option("altSmooth", &json!(true));
+
+        // When alt is pressed, cursor shows smooth tool.
+        let alt_mod = Mods { alt: true, ..Default::default() };
+        assert_eq!(t.cursor(&cx, Point::new(50.0, 50.0), alt_mod), Cursor::Smooth);
+        assert_eq!(t.cursor(&cx, Point::new(50.0, 50.0), Mods::default()), Cursor::Pencil);
+
+        // Alt-drag over selected path smooths it.
+        let acts = drag_held(&mut t, &cx, &[(50.0, 150.0), (150.0, 150.0), (250.0, 150.0)], alt_mod);
+        assert!(acts[1].is_empty(), "drag does not preview freehand path while smoothing");
+        let last = acts.last().unwrap();
+        assert!(
+            matches!(&last[0], Action::Exec(c, v) if c == "path.smoothRegion" && v["points"].as_array().unwrap().len() == 3),
+            "expected path.smoothRegion, got: {last:?}"
+        );
+
+        // When altSmooth is disabled:
+        t.set_option("altSmooth", &json!(false));
+        assert_eq!(t.options()["altSmooth"], json!(false));
+        assert_eq!(t.cursor(&cx, Point::new(50.0, 50.0), alt_mod), Cursor::Pencil);
+
+        // Alt-drag draws a closed pencil path.
+        let empty_sel = Selection::default();
+        let cx_empty = crate::testutil::cx(&d, &empty_sel, &p);
+        let acts = drag(&mut t, &cx_empty, &[(0.0, 0.0), (10.0, 5.0), (20.0, 0.0)], alt_mod);
+        assert_eq!(acts[1][0], Action::Begin("Pencil".into()));
+        let last = acts.last().unwrap();
+        assert!(matches!(&last[0], Action::Preview(_, v) if v["closed"] == true && v["style"] == "pencil"));
+        assert_eq!(last[1], Action::Commit);
     }
 }
