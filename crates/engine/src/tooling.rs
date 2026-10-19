@@ -104,13 +104,24 @@ impl Session {
 
     /// The selection tool Cmd lends tool `id` for a drag: the one chosen last; until one is,
     /// Direct Selection to the tools that edit anchors (the Pen) and Selection to the others.
-    /// None for the selection tools themselves and the view tools.
-    fn lent_tool(&self, id: &str) -> Option<&'static str> {
+    /// Cmd+Alt lends Group Selection when the lend would be Direct Selection (including while
+    /// Direct Selection is active). None for the other selection tools and the view tools.
+    fn lent_tool(&self, id: &str, mods: &Mods) -> Option<&'static str> {
         use vectorcraft_tools::catalog::{edits_anchors, is_selection_tool};
-        if is_selection_tool(id) || matches!(id, "hand" | "zoom" | "rotateView") {
+        if matches!(id, "hand" | "zoom" | "rotateView") {
             return None;
         }
-        Some(self.last_selection_tool.unwrap_or(if edits_anchors(id) { "directSelection" } else { "selection" }))
+        if id == "directSelection" && mods.cmd && mods.alt {
+            return Some("groupSelection");
+        }
+        if is_selection_tool(id) {
+            return None;
+        }
+        let base = self.last_selection_tool.unwrap_or(if edits_anchors(id) { "directSelection" } else { "selection" });
+        if mods.alt && base == "directSelection" {
+            return Some("groupSelection");
+        }
+        Some(base)
     }
 
     /// A press with Cmd held (Ctrl elsewhere) and any other tool than a selection tool: the
@@ -120,7 +131,7 @@ impl Session {
         if ev.kind != PointerKind::Down || !ev.mods.cmd || self.lender.is_some() {
             return *ev;
         }
-        let Some(id) = self.lent_tool(self.tool.id()) else { return *ev };
+        let Some(id) = self.lent_tool(self.tool.id(), &ev.mods) else { return *ev };
         // Typing in progress is kept as its own step first: the lent tool's drag previews from the
         // document its interaction started from, which would drop the typing (#1881).
         if crate::cmd::typing_in_progress(self) {
@@ -431,7 +442,7 @@ impl Session {
     /// tools' a crosshair, [`Cursor::precise`]). With Cmd held, the pointer of the selection tool a
     /// press would borrow ([`Self::lend_selection_tool`]).
     pub fn cursor(&mut self, p: Point, mods: Mods, view: ViewInfo) -> Cursor {
-        let lent = if mods.cmd && self.lender.is_none() { self.lent_tool(self.tool.id()) } else { None };
+        let lent = if mods.cmd && self.lender.is_none() { self.lent_tool(self.tool.id(), &mods) } else { None };
         let c = match lent {
             Some(id) => {
                 let lent = self.make_tool(id);
