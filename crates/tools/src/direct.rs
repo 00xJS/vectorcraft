@@ -767,7 +767,19 @@ impl Tool for DirectSelectionTool {
                 self.state = State::Idle;
                 b.finish()
             }
-            (PointerKind::Up, State::MoveObject { began, deselect, .. }) => {
+            (
+                PointerKind::Up,
+                State::MoveAnchors { began, .. }
+                | State::MoveObject { began, .. }
+                | State::Segment { began, .. }
+                | State::SpinePoint { began, .. }
+                | State::SpineSegment { began, .. }
+                | State::TypeArea { began, .. },
+            ) => {
+                let deselect = match self.state {
+                    State::MoveObject { deselect, .. } => deselect,
+                    _ => None,
+                };
                 self.state = State::Idle;
                 self.guides.clear();
                 (self.anchor_snap, self.copy_snap, self.move_snap) = (None, None, None);
@@ -781,26 +793,6 @@ impl Tool for DirectSelectionTool {
                         vec![Action::Exec("select.segments".into(), json!({"id": id.0, "segments": [[si, seg]]}))]
                     }
                     (false, None, None, None) => vec![],
-                }
-            }
-            (
-                PointerKind::Up,
-                State::MoveAnchors { began, .. }
-                | State::Segment { began, .. }
-                | State::SpinePoint { began, .. }
-                | State::SpineSegment { began, .. }
-                | State::TypeArea { began, .. },
-            ) => {
-                self.state = State::Idle;
-                self.guides.clear();
-                (self.anchor_snap, self.copy_snap, self.move_snap) = (None, None, None);
-                match (began, self.click.take(), self.click_segment.take()) {
-                    (true, _, _) => vec![Action::Commit],
-                    (false, Some((id, si, ai)), _) => {
-                        vec![Action::Exec("select.anchors".into(), json!({"id": id.0, "anchors": [[si, ai]], "mode": "set"}))]
-                    }
-                    (false, None, Some((id, si, seg))) => vec![Action::Exec("select.segments".into(), json!({"id": id.0, "segments": [[si, seg]]}))],
-                    (false, None, None) => vec![],
                 }
             }
             (PointerKind::Up, State::Handle { .. } | State::SpineHandle { .. }) => {
