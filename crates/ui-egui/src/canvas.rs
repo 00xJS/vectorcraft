@@ -107,6 +107,25 @@ fn drag_id() -> egui::Id {
 fn drag_pos_id() -> egui::Id {
     egui::Id::new("canvas-drag-pos")
 }
+/// The document point last sent to the tool as a drag during [`Drag::Tool`].
+fn tool_drag_doc_id() -> egui::Id {
+    egui::Id::new("canvas-tool-drag-doc")
+}
+/// Whether the tool should get another drag event: the pointer moved this frame, or its document
+/// position changed without a delta (some Wayland compositors coalesce motion until release, #834).
+fn tool_drag_moved(ui: &Ui, xf: &Xf, p: Pos2, pointer: &egui::PointerState) -> bool {
+    if pointer.delta() != egui::Vec2::ZERO {
+        return true;
+    }
+    let at = xf.to_doc(p);
+    let id = tool_drag_doc_id();
+    let prev = ui.data(|d| d.get_temp::<Point>(id));
+    if prev == Some(at) {
+        return false;
+    }
+    ui.data_mut(|d| d.insert_temp(id, at));
+    true
+}
 
 /// The pen pressure (0..1) of the press in progress: the force of this frame's pen or touch
 /// input, else the last one seen since the press (`pressed`: a new press, whose mouse has none
@@ -888,7 +907,7 @@ fn handle_input(app: &mut VectorcraftApp, ui: &Ui, resp: &egui::Response, rect: 
                     ui.data_mut(|dd| dd.insert_temp(drag_id(), Drag::Art));
                 }
                 Drag::Tool => {
-                    if pointer.delta() != egui::Vec2::ZERO {
+                    if tool_drag_moved(ui, &xf, p, &pointer) {
                         // Every position the pen or mouse passed this frame, not just the last: a
                         // fast stroke keeps its curve (a pen reports far more often than frames come).
                         for (at, force) in frame_moves(ui) {
@@ -911,6 +930,7 @@ fn handle_input(app: &mut VectorcraftApp, ui: &Ui, resp: &egui::Response, rect: 
             ui.data_mut(|dd| {
                 dd.remove::<Drag>(drag_id());
                 dd.remove::<Pos2>(drag_pos_id());
+                dd.remove::<Point>(tool_drag_doc_id());
             });
             match d {
                 Drag::ZoomBox { start } => {
@@ -7174,6 +7194,34 @@ mod tests {
         assert!(app.session.tool_composing());
         assert!(!app.take_ime_discard());
         assert_eq!(plain(&app, id), "雅がくらくか");
+    }
+
+    #[test]
+    fn tool_drag_moved_without_pointer_delta() {
+        let ctx = egui::Context::default();
+        let rect = egui::Rect::from_min_size(Pos2::ZERO, vec2(400.0, 300.0));
+        let v = View::default();
+        let xf = Xf::new(rect, &v);
+        let a = pos2(100.0, 100.0);
+        let b = pos2(150.0, 120.0);
+        let mut first = false;
+        let mut second = false;
+        let mut out =
+            ctx.run_ui(egui::RawInput { screen_rect: Some(rect), events: vec![egui::Event::PointerMoved(a)], ..Default::default() }, |ui| {
+                let pointer = ui.input(|i| i.pointer.clone());
+                first = tool_drag_moved(ui, &xf, a, &pointer);
+                second = tool_drag_moved(ui, &xf, a, &pointer);
+            });
+        out.textures_delta.clear();
+        assert!(first, "the first drag sample at a position runs");
+        assert!(!second, "the same position without a delta is not sent again");
+        let mut moved = false;
+        out = ctx.run_ui(egui::RawInput { screen_rect: Some(rect), events: vec![egui::Event::PointerMoved(b)], ..Default::default() }, |ui| {
+            let pointer = ui.input(|i| i.pointer.clone());
+            moved = tool_drag_moved(ui, &xf, b, &pointer);
+        });
+        out.textures_delta.clear();
+        assert!(moved, "a new document position runs even when egui reports no delta");
     }
 
     #[test]
