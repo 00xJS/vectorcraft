@@ -414,6 +414,14 @@ pub fn show(app: &mut VectorcraftApp, ui: &mut Ui) {
     if let (Some(tex), Some(k)) = (&app.canvas.texture, &app.canvas.key)
         && k.doc == key.doc
     {
+        // The frame being shown covers the canvas rect it was rendered for. While a panel is
+        // dragged that rect is a different size, so reprojecting the frame through the *current*
+        // rect stretches the art to the new size until the worker's frame arrives, then it snaps
+        // back. Rebuild the rect it was rendered for from the key's own pixel size instead.
+        let old_rect = {
+            let ppp = if k.ppp > 0.0 { k.ppp } else { 1.0 };
+            egui::Rect::from_center_size(rect.center(), vec2(k.w as f32 / ppp, k.h as f32 / ppp))
+        };
         match k.pixel {
             // Document pixels: placed over the document rect they cover, turning with the view.
             Some([x0, y0, x1, y1]) => {
@@ -421,17 +429,18 @@ pub fn show(app: &mut VectorcraftApp, ui: &mut Ui) {
             }
             None if (k.rot - v.rotation).abs() < 1e-9 => {
                 // Reproject the last frame if it was rendered for a different view.
-                let old = Xf { rect, zoom: k.zoom, center: Point::new(k.cx, k.cy), rot: xf.rot };
-                let a = xf.to_screen(old.to_doc(rect.min));
-                let b = xf.to_screen(old.to_doc(rect.max));
+                let old = Xf { rect: old_rect, zoom: k.zoom, center: Point::new(k.cx, k.cy), rot: xf.rot };
+                let a = xf.to_screen(old.to_doc(old_rect.min));
+                let b = xf.to_screen(old.to_doc(old_rect.max));
                 painter.image(tex.id(), egui::Rect::from_min_max(a, b), egui::Rect::from_min_max(pos2(0.0, 0.0), pos2(1.0, 1.0)), Color32::WHITE);
             }
             // The view turned after the last frame was rendered, and the worker renders the frame at
             // the new angle. Until it arrives, the last frame is drawn turned into this view: each
             // corner goes where this view puts the document point that the corner showed.
             None => {
-                let old = Xf { rect, zoom: k.zoom, center: Point::new(k.cx, k.cy), rot: k.rot.to_radians() };
-                let q = [rect.left_top(), rect.right_top(), rect.right_bottom(), rect.left_bottom()].map(|c| xf.to_screen(old.to_doc(c)));
+                let old = Xf { rect: old_rect, zoom: k.zoom, center: Point::new(k.cx, k.cy), rot: k.rot.to_radians() };
+                let q =
+                    [old_rect.left_top(), old_rect.right_top(), old_rect.right_bottom(), old_rect.left_bottom()].map(|c| xf.to_screen(old.to_doc(c)));
                 textured_quad(&painter, tex.id(), &q, (1.0, 1.0));
             }
         }
@@ -4859,6 +4868,101 @@ mod tests {
         assert!(app.canvas.key.as_ref().is_some_and(|k| !k.interacting), "rendered again");
         assert_eq!(app.canvas.renderer.stats.moved, 0);
         assert!(!app.canvas.moved);
+    }
+
+    /// A cached texture keeps the renderer's document mapping when the viewport changes. The
+    /// controlled worker cannot finish early, even if egui repeats a layout pass.
+    #[test]
+    fn cached_frames_keep_their_scale_during_resize_rotation_and_dpi_changes() {
+        for (old_rot, new_rot, old_ppp, new_ppp, pixel, resize_only) in [
+            // Isolate the original panel/window resize: zoom, pan, rotation and DPI stay fixed.
+            (0.0, 0.0, 1.0, 1.0, false, true),
+            (30.0, 30.0, 1.25, 1.25, false, true),
+            (0.0, 0.0, 1.0, 1.0, false, false),
+            (30.0, 30.0, 1.25, 1.25, false, false),
+            (30.0, 75.0, 1.25, 1.25, false, false),
+            (30.0, 75.0, 1.25, 2.0, false, false),
+            (30.0, 30.0, 2.0, 1.25, false, false),
+            (30.0, 75.0, 1.25, 2.0, true, false),
+        ] {
+            let ctx = egui::Context::default();
+            crate::theme::install_fonts(&ctx);
+            let mut app = VectorcraftApp::new(Session::new(), Default::default());
+            app.session.execute("file.new", &json!({"width": 400, "height": 300})).unwrap();
+            app.canvas.worker_started = true;
+            app.ui.view.pixel_preview = pixel;
+            let frame = |app: &mut VectorcraftApp, size: egui::Vec2, ppp: f32| {
+                let mut input = egui::RawInput { screen_rect: Some(egui::Rect::from_min_size(pos2(31.25, 19.5), size)), ..Default::default() };
+                // Monitor DPI is viewport input, not egui's UI zoom (which rescales the last
+                // screen rect and would override the simultaneous resize under test).
+                input.viewports.get_mut(&egui::ViewportId::ROOT).unwrap().native_pixels_per_point = Some(ppp);
+                let mut out = ctx.run_ui(input, |ui| show(app, ui));
+                assert!((out.pixels_per_point - ppp).abs() < 0.001);
+                out.textures_delta.clear();
+                let tex = app.canvas.texture.as_ref().expect("rendered canvas texture").id();
+                out.shapes
+                    .into_iter()
+                    .find_map(|s| match s.shape {
+                        Shape::Mesh(m) if m.texture_id == tex => Some(m),
+                        _ => None,
+                    })
+                    .expect("the canvas texture is drawn")
+            };
+            frame(&mut app, vec2(800.25, 600.35), old_ppp);
+            {
+                let v = app.view_mut().unwrap();
+                v.rotation = old_rot;
+                v.zoom = 2.5;
+                v.center = Point::new(210.0, 160.0);
+            }
+            frame(&mut app, vec2(800.25, 600.35), old_ppp);
+            let old = app.canvas.key.clone().unwrap();
+            let (worker, jobs, completed) = crate::render_worker::Worker::test_channel();
+            app.canvas.worker = Some(worker);
+            app.canvas.last_ms = 50.0;
+            {
+                let v = app.view_mut().unwrap();
+                v.rotation = new_rot;
+                if !resize_only {
+                    v.zoom = 3.25;
+                    v.center = Point::new(225.0, 170.0);
+                }
+            }
+            let size = vec2(602.5, 720.1);
+            let mesh = frame(&mut app, size, new_ppp);
+            assert_eq!(app.canvas.key.as_ref(), Some(&old), "the cached frame is still displayed");
+            let job = jobs.try_recv().expect("the replacement frame was submitted");
+            assert_eq!(job.key.ppp, new_ppp);
+            assert_eq!(job.key.rot, new_rot);
+            if resize_only {
+                assert_eq!((job.key.zoom, job.key.cx, job.key.cy, job.key.rot, job.key.ppp), (old.zoom, old.cx, old.cy, old.rot, old.ppp));
+            }
+            assert_ne!((job.key.w, job.key.h), (old.w, old.h));
+            let xf = Xf::new(app.canvas_rect.unwrap(), app.view().unwrap());
+            let render_view = Affine::translate((old.w as f64 / 2.0, old.h as f64 / 2.0))
+                * Affine::rotate(old.rot.to_radians())
+                * Affine::scale(old.zoom * old.ppp as f64)
+                * Affine::translate((-old.cx, -old.cy));
+            assert_eq!(mesh.vertices.len(), 4);
+            for vertex in &mesh.vertices {
+                assert!([pos2(0.0, 0.0), pos2(1.0, 0.0), pos2(1.0, 1.0), pos2(0.0, 1.0)].contains(&vertex.uv));
+                let doc = if let Some([x0, y0, x1, y1]) = old.pixel {
+                    Point::new(x0 as f64 + vertex.uv.x as f64 * (x1 - x0) as f64, y0 as f64 + vertex.uv.y as f64 * (y1 - y0) as f64)
+                } else {
+                    render_view.inverse() * Point::new(vertex.uv.x as f64 * old.w as f64, vertex.uv.y as f64 * old.h as f64)
+                };
+                assert!(
+                    (vertex.pos - xf.to_screen(doc)).length() < 0.002,
+                    "{old_rot}° -> {new_rot}°, DPI {old_ppp} -> {new_ppp}, pixel={pixel}: {vertex:?}"
+                );
+            }
+            // Deliver the actual replacement and verify that it replaces the cached key.
+            let img = app.canvas.renderer.render(&job.doc, job.w, job.h, job.view, &job.opts);
+            let expected = job.key.clone();
+            completed.send(crate::render_worker::Done { key: job.key, img, ms: 1.0, moved: 0 }).unwrap();
+            frame(&mut app, size, new_ppp);
+            assert_eq!(app.canvas.key.as_ref(), Some(&expected), "the worker's frame arrived");
+        }
     }
 
     /// When the view turns while the worker renders the frame at the new angle (Reset Rotate View on
