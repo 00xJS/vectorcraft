@@ -448,6 +448,8 @@ fn join(s: &mut Session, p: &Value) -> Result<Value> {
                     && let Some(first) = sp.anchors.first_mut()
                 {
                     first.h_in = last.h_in;
+                    // Closed first, so the merged anchor smooths between both its neighbours.
+                    sp.closed = true;
                     if let Some(smooth) = join_kind {
                         join_point(sp, 0, smooth);
                     }
