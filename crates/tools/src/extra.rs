@@ -422,11 +422,7 @@ impl GraphTool {
             let k = d.x.abs().max(d.y.abs());
             d = Vec2::new(k * d.x.signum(), k * d.y.signum());
         }
-        if m.alt {
-            vectorcraft_geom::Rect::from_points(s - d, s + d)
-        } else {
-            vectorcraft_geom::Rect::from_points(s, s + d)
-        }
+        if m.alt { vectorcraft_geom::Rect::from_points(s - d, s + d) } else { vectorcraft_geom::Rect::from_points(s, s + d) }
     }
     fn params(&self, s: Point, p: Point, m: Mods) -> Value {
         let r = Self::plot_rect(s, p, m);
@@ -532,9 +528,7 @@ mod tests {
         let (d, _) = doc_with_rect();
         let s = Selection::default();
         let p = paint();
-        let measure_count = |t: &GraphTool, c: &ToolContext| {
-            t.overlays(c).iter().filter(|o| matches!(o, Overlay::Measure { .. })).count()
-        };
+        let measure_count = |t: &GraphTool, c: &ToolContext| t.overlays(c).iter().filter(|o| matches!(o, Overlay::Measure { .. })).count();
         let measure_text = |t: &GraphTool, c: &ToolContext| {
             t.overlays(c).iter().find_map(|o| match o {
                 Overlay::Measure { text, .. } => Some(text.clone()),
