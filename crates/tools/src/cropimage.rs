@@ -395,10 +395,7 @@ mod tests {
             let c = ToolContext { measurement_labels: on, ..cx(&d, &s, &p) };
             tool.pointer(&c, &PointerEvent::new(PointerKind::Down, 50.0, 60.0));
             tool.pointer(&c, &PointerEvent::new(PointerKind::Drag, 80.0, 70.0));
-            tool.overlays(&c)
-                .iter()
-                .filter(|o| matches!(o, Overlay::Measure { .. } | Overlay::Label { .. }))
-                .count()
+            tool.overlays(&c).iter().filter(|o| matches!(o, Overlay::Measure { .. } | Overlay::Label { .. })).count()
         };
         assert_eq!(count(true), 1);
         assert_eq!(count(false), 0);
@@ -411,7 +408,9 @@ mod tests {
         t.pointer(&c, &PointerEvent::new(PointerKind::Down, 150.0, 110.0));
         t.pointer(&c, &PointerEvent::new(PointerKind::Drag, 120.0, 100.0));
         assert!(
-            t.overlays(&c).iter().any(|o| matches!(o, Overlay::Measure { p, text, .. } if *p == Point::new(120.0, 100.0) && text == &c.size_label(170.0, 90.0))),
+            t.overlays(&c)
+                .iter()
+                .any(|o| matches!(o, Overlay::Measure { p, text, .. } if *p == Point::new(120.0, 100.0) && text == &c.size_label(170.0, 90.0))),
             "drag: measure at the pointer"
         );
     }
