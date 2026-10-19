@@ -5227,3 +5227,4 @@ theme	Appearance	Apparence
 # Select by Color (select.color)
 	Select by Color	Sélectionner par couleur
 	Move Anchor Point	Déplacer le point d’ancrage
+@msg	{label} keeps 1 of the document's {n} artboards: the file reopens with one. Turn on Preserve Editing Capabilities to keep them all.	{label} conserve 1 des {n} plans de travail du document : le fichier se rouvre avec un seul. Activez Conserver les fonctions d’édition pour les conserver tous.
