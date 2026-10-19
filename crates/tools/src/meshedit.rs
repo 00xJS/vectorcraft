@@ -131,10 +131,7 @@ impl MeshEdit {
             && let Some(at) = d.at
         {
             let delta = at - d.origin;
-            out.push(Overlay::Measure {
-                p: at + Vec2::new(cx.tol(12.0), cx.tol(12.0)),
-                text: cx.offset_label(delta.x, delta.y),
-            });
+            out.push(Overlay::Measure { p: at + Vec2::new(cx.tol(12.0), cx.tol(12.0)), text: cx.offset_label(delta.x, delta.y) });
         }
         out
     }
