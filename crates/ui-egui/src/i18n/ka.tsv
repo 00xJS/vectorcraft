@@ -4756,6 +4756,7 @@ imageTrace	Outline	კონტური
 @msg	the file's layers weren't read ({_1}): it comes in as its page, in one layer	ფაილის შრეები ვერ წაიკითხა ({_1}): ის გაიხსნება როგორც მისი გვერდი, ერთ შრეში
 @msg	the file's layers weren't read from its editing data ({_1}): they come from its PDF part	ფაილის შრეები რედაქტირების მონაცემებიდან ვერ წაიკითხა ({_1}): ისინი მისი PDF ნაწილიდან აიღება
 @msg	the Color Picker is not open	ფერის ამრჩევი გახსნილი არ არის
+@msg	the Simplify slider is not open	გამარტივების სლაიდერი გახსნილი არ არის
 @msg	the screen color sampler is already open	ეკრანიდან ფერის აღება უკვე გახსნილია
 @msg	this system has no screen color sampler	ამ სისტემას ეკრანიდან ფერის აღების საშუალება არ აქვს
 # Dimension tool and Object › Dimensions. A drafting dimension is ზომა (ზომის დასმა), like a dimension on a technical drawing.
@@ -4899,6 +4900,8 @@ imageTrace	Outline	კონტური
 	Rotate View to Selection	ხედის შემობრუნება მონიშნულის მიხედვით
 	Update Selection	მონიშნულის განახლება
 	Show Original Path	საწყისი ტრაექტორიის ჩვენება
+	Open this dialog with these settings next time	შემდეგ ჯერზე ამ დიალოგის ამ პარამეტრებით გახსნა
+	Auto-Simplify	ავტომატური გამარტივება
 	Texture Image	ტექსტურის გამოსახულება
 @msg	check a layer to export	მონიშნეთ საექსპორტო შრე
 @msg	select the art to export first	ჯერ მონიშნეთ საექსპორტო ნახატი
