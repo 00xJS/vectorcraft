@@ -2495,8 +2495,10 @@ mod tests {
     /// An Outer Glow whose whole reach is over the budget is made coarser over that whole reach and
     /// kept for any pan: its grid starts at the reach's first whole device pixel, which a pan by whole
     /// pixels moves with the art, so the raster drawn after the pan is the one a fresh renderer makes,
-    /// also for pans that aren't multiples of the raster's scale. Here a 100 pt glow at 500% (scale
-    /// 2) and a 2 pt glow round the page at 800% (scale 3, near the narrowest blur made coarser).
+    /// also for pans that aren't multiples of the raster's scale. A pan by a fraction of a pixel
+    /// places the raster at the nearest whole pixel, as a full-size raster kept whole is placed, and
+    /// here draws as a fresh renderer draws too. A 100 pt glow at 500% (scale 2) and a 2 pt glow
+    /// round the page at 800% (scale 3, near the narrowest blur made coarser).
     #[test]
     fn a_coarser_glow_kept_whole_draws_after_a_pan_as_made_again() {
         let size = (640, 360);
@@ -2518,7 +2520,7 @@ mod tests {
             let image = |r: &Renderer| r.shadows.values().map(|e| std::sync::Arc::as_ptr(&e.image)).collect::<Vec<_>>();
             let kept = image(&r);
             assert!(r.shadows.values().all(|e| e.scale == scale && e.view.is_none()), "blur {blur}: coarser, over the whole reach");
-            for pan in [(37.0, -21.0), (1.0, 0.0), (-3.0, 5.0)] {
+            for pan in [(37.0, -21.0), (1.0, 0.0), (-3.0, 5.0), (0.5, 0.0), (37.3, -21.6)] {
                 let xf = Affine::translate(pan) * base;
                 let panned = r.render(&d, size.0, size.1, xf, &opts);
                 assert_eq!(image(&r), kept, "blur {blur}, pan {pan:?}: the raster kept is drawn");
