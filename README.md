@@ -180,6 +180,8 @@ cd apps/vectorcraft-web && trunk build --release            # web build → dist
 cargo xtask ci                                            # fmt, clippy, tests, layering, wasm, vendor names
 ```
 
+For text and custom letter shapes, see [Typography and Custom Lettering](docs/typography-lettering.md).
+
 Japanese fonts come from [storytold/craft-fonts](https://github.com/storytold/craft-fonts), an optional
 build input (releases always use it): `CRAFT_FONTS_DIR="$PWD/../craft-fonts" cargo run --release -p vectorcraft` (an absolute path).
 Without it, Japanese text uses the installed system fonts. See [`docs/development.md`](docs/development.md#fonts-craft-fonts-optional-build-input).
