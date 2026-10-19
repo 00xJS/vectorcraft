@@ -484,6 +484,18 @@ pub fn selection_quads(layout: &TextLayout, a: usize, b: usize) -> Vec<[Point; 4
 /// Going right, the caret takes them in increasing order on left-to-right glyphs and in
 /// decreasing order on right-to-left glyphs; going left, it takes them in the reverse order.
 pub fn caret_horizontal(layout: &TextLayout, byte: usize, right: bool) -> usize {
+    caret_horizontal_filtered(layout, byte, right, |_| true)
+}
+
+/// Like [`caret_horizontal`], but exclude glyph stops inside a grapheme of `text`.
+pub fn caret_horizontal_cluster(layout: &TextLayout, text: &str, byte: usize, right: bool) -> usize {
+    use unicode_segmentation::GraphemeCursor;
+    caret_horizontal_filtered(layout, byte, right, |b| {
+        text.is_char_boundary(b) && GraphemeCursor::new(b, text.len(), true).is_boundary(text, 0).unwrap_or(false)
+    })
+}
+
+fn caret_horizontal_filtered(layout: &TextLayout, byte: usize, right: bool, valid: impl Fn(usize) -> bool) -> usize {
     let li = layout.line_of(byte);
     let Some(line) = layout.lines.get(li) else { return byte };
     let glyphs = layout.glyphs.get(line.glyph_start..line.glyph_end).unwrap_or_default();
@@ -500,6 +512,7 @@ pub fn caret_horizontal(layout: &TextLayout, byte: usize, right: bool) -> usize 
     stops.dedup();
     stops
         .into_iter()
+        .filter(|&b| valid(b))
         .filter_map(|b| {
             // Both the distance and the place among stops at one x are counted in the step's direction.
             let (bx, bo) = stop(b);
