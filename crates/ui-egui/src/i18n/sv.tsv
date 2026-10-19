@@ -1374,6 +1374,12 @@
 	Release Blend	Släpp blandning
 	Release Envelope	Släpp kuvert
 	Release Intertwine	Släpp sammanflätning
+	Objects on Path	Objekt på bana
+	Attach	Fäst
+	Objects on Path Options	Alternativ för objekt på bana
+	Objects on Path Tool	Verktyg för objekt på bana
+	Attach Objects on Path	Fäst objekt på bana
+	Expand Objects on Path	Expandera objekt på bana
 	Release Live Paint	Släpp direktmålning
 	Release Repeat	Släpp upprepning
 	Release Slice	Släpp skiva
@@ -5103,6 +5109,7 @@ theme	Appearance	Utseende
 @msg	open a document with data sets	öppna ett dokument med datauppsättningar
 @msg	nothing in data set {name} was applied: no object is bound to a variable it has a value for	inget i datauppsättningen {name} användes: inget objekt är bundet till en variabel som den har ett värde för
 @msg	select an Intertwine group	markera en sammanflätningsgrupp
+@msg	select an Objects on Path group	markera en grupp med objekt på bana
 @msg	span must be "object" or "selection", got {v}	span måste vara "object" eller "selection", fick {v}
 @msg	span: "selection" places a `gradient`, not a swatch	span: "selection" placerar en `gradient`, inte en färgruta
 @msg	span: "selection" places a gradient: give `gradient`	span: "selection" placerar en övertoning: ange `gradient`

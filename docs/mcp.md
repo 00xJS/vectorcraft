@@ -4274,6 +4274,35 @@ canvas as they export. `object.blend.expand` and `object.blend.release` keep the
 opacity mask and appearance (Release on a group around the keys and spine when the blend has any), and
 `object.expand` with `object: true` expands the blends in the selection.
 
+## Objects on Path
+
+`object.objectsOnPath.attach {path?, ids?, pivot?, rotate?}` attaches the selected objects (or `ids`) to the path
+`path`: the objects and the path go into an Objects on Path group, with the path at its bottom. The objects go along
+the path in their order on the canvas, column by column from left to right and top to bottom in each column. The first
+one sits on the path's first anchor, the last one sits on the end of an open path, and the others are spread evenly
+between them by length; on a closed path the gaps run all the way round. The attachment point of each object (`pivot`,
+0 to 8 row by row from the top left of its bounds without strokes; default 4, the center) sits on the path, and the
+object is turned to the path's direction there. An object rotated by other than a multiple of 90° is first turned to
+the nearest multiple. `rotate` tilts every object by that many degrees counter-clockwise. Without `path`, the command
+chooses the Objects on Path tool (`objectsOnPath`), whose click on a path sends `{path}`. As the path, the command
+refuses a guide, a compound path, type, a path without length and a path already in an Objects on Path group. As
+objects, it refuses graphs, layers and objects already in an Objects on Path group.
+
+The group stays live: after every edit its objects go back on its path. Editing the path moves them, an object moved
+on its own goes back to its place, an object moved into the group (`layer.move` with `place: "inside"`) joins the end
+of the path, an object moved out of it leaves, and art that replaces an object (`symbol.breakLink`) keeps its place.
+`object.objectsOnPath.options {ids?, pivot?, rotate?}` changes Pivot and Rotate, and
+`object.objectsOnPath.expand {ids?}` makes the groups plain groups. Both act on the groups that `ids` names (Objects
+on Path groups or objects in them), or on the groups of the selection when `ids` is not given. The native file keeps
+the group with an `objects_on_path` record; SVG, PDF and the other exports write the path and the objects as plain
+art.
+
+```json
+{"name":"run_command","arguments":{"command":"object.objectsOnPath.attach","params":{"path":30,"ids":[12,15,18]}}}
+{"name":"run_command","arguments":{"command":"object.objectsOnPath.options","params":{"pivot":7,"rotate":15}}}
+{"name":"run_command","arguments":{"command":"object.objectsOnPath.expand","params":{}}}
+```
+
 ## Paragraph composer
 
 `text.setFormat {ids?, composer: "singleLine"|"everyLine"}` sets how a text object's lines are broken (the Paragraph

@@ -572,6 +572,9 @@ pub struct NodeExtras {
     pub intertwine: Option<Box<PathData>>,
     /// Live Paint group: its Gap Options (Object › Live Paint › Gap Options; `None`: the defaults).
     pub live_paint_gaps: Option<Box<crate::live_paint::GapOptions>>,
+    /// Object › Objects on Path: the group's path and the objects attached to it (see
+    /// [`crate::objects_on_path`]).
+    pub objects_on_path: Option<Box<crate::objects_on_path::ObjectsOnPath>>,
 }
 
 /// No extras: what [`Node::extras`] gives for a node without any.
@@ -590,6 +593,7 @@ static NO_EXTRAS: NodeExtras = NodeExtras {
     dimension: None,
     intertwine: None,
     live_paint_gaps: None,
+    objects_on_path: None,
 };
 
 /// A node's [`NodeExtras`], if it has any ([`Node::extras`]). Extras that are all unset equal
@@ -724,6 +728,7 @@ impl Serialize for Node {
             e.dimension.is_none(),
             e.intertwine.is_none(),
             e.live_paint_gaps.is_none(),
+            e.objects_on_path.is_none(),
         ];
         let mut st = s.serialize_struct("Node", skips.iter().filter(|s| !**s).count())?;
         let mut skip = skips.into_iter();
@@ -762,6 +767,7 @@ impl Serialize for Node {
         field!("dimension", &e.dimension);
         field!("intertwine", &e.intertwine);
         field!("live_paint_gaps", &e.live_paint_gaps);
+        field!("objects_on_path", &e.objects_on_path);
         st.end()
     }
 }
@@ -821,6 +827,8 @@ struct NodeWire {
     intertwine: Option<Box<PathData>>,
     #[serde(default)]
     live_paint_gaps: Option<Box<crate::live_paint::GapOptions>>,
+    #[serde(default)]
+    objects_on_path: Option<Box<crate::objects_on_path::ObjectsOnPath>>,
 }
 
 impl From<NodeWire> for Node {
@@ -840,6 +848,7 @@ impl From<NodeWire> for Node {
             dimension: w.dimension,
             intertwine: w.intertwine,
             live_paint_gaps: w.live_paint_gaps,
+            objects_on_path: w.objects_on_path,
         };
         Node {
             id: w.id,
@@ -1025,6 +1034,7 @@ impl Node {
         match &self.kind {
             NodeKind::Layer { .. } => "Layer",
             NodeKind::Group { clip: true, .. } => "Clip Group",
+            NodeKind::Group { .. } if self.extras().objects_on_path.is_some() => "Objects on Path",
             NodeKind::Group { .. } => "Group",
             NodeKind::Path { live: Some(l), .. } => l.label(),
             NodeKind::Path { guide: true, .. } => "Guide",
@@ -1250,6 +1260,12 @@ impl Node {
             && let Some(dimension) = &mut e.dimension
         {
             dimension.transform(a);
+        }
+        // The frames of the objects attached to a path move with them.
+        if let Some(e) = self.extras_if_any()
+            && let Some(on_path) = &mut e.objects_on_path
+        {
+            on_path.transform(a);
         }
         if !self.is_layer() {
             self.bbox_angle = crate::orient::transformed_angle(self.bbox_angle, a);

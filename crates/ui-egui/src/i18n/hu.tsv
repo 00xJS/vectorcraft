@@ -1771,6 +1771,12 @@ file-filter	Templates	Sablonok
 	Release Blend	Összemosás megszüntetése
 	Release Envelope	Burkoló megszüntetése
 	Release Intertwine	Összefonás megszüntetése
+	Objects on Path	Objektumok útvonalon
+	Attach	Csatolás
+	Objects on Path Options	Objektumok útvonalon beállításai
+	Objects on Path Tool	Objektumok útvonalon
+	Attach Objects on Path	Objektumok csatolása útvonalhoz
+	Expand Objects on Path	Objektumok útvonalon kibontása
 	Release Live Paint	Élő festés megszüntetése
 	Release Repeat	Ismétlés megszüntetése
 	Release Slice	Szelet megszüntetése
@@ -4790,6 +4796,7 @@ imageTrace	Outline	Körvonal
 @msg	select a Live Paint group	jelölj ki egy élőfestés-csoportot
 @msg	select a repeat	jelölj ki egy ismétlést
 @msg	select an Intertwine group	jelölj ki egy összefonási csoportot
+@msg	select an Objects on Path group	jelölj ki egy Objektumok útvonalon csoportot
 @msg	select a stroke with a variable width	jelölj ki egy változó szélességű körvonalat
 @msg	select a symbol instance	jelölj ki egy szimbólumpéldányt
 @msg	select an envelope	jelölj ki egy burkolót

@@ -1541,6 +1541,12 @@ lighting	Light	Valo
 	Release Blend	Vapauta sulautus
 	Release Envelope	Vapauta kuori
 	Release Intertwine	Vapauta lomitus
+	Objects on Path	Objektit polulla
+	Attach	Kiinnitä
+	Objects on Path Options	Objektit polulla -asetukset
+	Objects on Path Tool	Objektit polulla -työkalu
+	Attach Objects on Path	Kiinnitä objektit polulle
+	Expand Objects on Path	Laajenna objektit polulla
 	Release Live Paint	Vapauta elävä maalaus
 	Release Repeat	Vapauta toisto
 	Release Slice	Vapauta siivu
@@ -5111,6 +5117,7 @@ mark-style	Japanese	Japanilainen
 @msg	open a document with data sets	avaa asiakirja, jossa on tietojoukkoja
 @msg	nothing in data set {name} was applied: no object is bound to a variable it has a value for	tietojoukosta {name} ei käytetty mitään: mitään objektia ei ole sidottu muuttujaan, jolle siinä on arvo
 @msg	select an Intertwine group	valitse lomitusryhmä
+@msg	select an Objects on Path group	valitse Objektit polulla -ryhmä
 @msg	span must be "object" or "selection", got {v}	span-arvon on oltava "object" tai "selection", saatiin {v}
 @msg	span: "selection" places a `gradient`, not a swatch	span: "selection" sijoittaa `gradient`-liukuvärin, ei värimallia
 @msg	span: "selection" places a gradient: give `gradient`	span: "selection" sijoittaa liukuvärin: anna `gradient`

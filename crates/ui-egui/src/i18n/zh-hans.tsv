@@ -1354,6 +1354,12 @@ file-filter	Templates	模板
 	Release Blend	释放混合
 	Release Envelope	释放封套
 	Release Intertwine	释放交织
+	Objects on Path	路径上的对象
+	Attach	附加
+	Objects on Path Options	路径上的对象选项
+	Objects on Path Tool	路径上的对象工具
+	Attach Objects on Path	附加路径上的对象
+	Expand Objects on Path	扩展路径上的对象
 	Release Live Paint	释放实时上色
 	Release Repeat	释放重复
 	Release Slice	释放切片
@@ -3774,6 +3780,7 @@ imageTrace	Outline	轮廓
 @msg	pattern missing	缺少图案
 @msg	select a repeat	请选择一个重复对象
 @msg	select an Intertwine group	请选择一个交织组
+@msg	select an Objects on Path group	请选择一个路径上的对象组
 @msg	select the art to repeat	请选择要重复的图稿
 @msg	the document has no patterns	文档中没有图案
 @msg	no artboard	没有画板

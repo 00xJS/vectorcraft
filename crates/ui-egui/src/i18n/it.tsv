@@ -1417,6 +1417,12 @@ file-filter	Templates	Modelli
 	Release Envelope	Rilascia involucro
 	Release Image Trace	Rilascia ricalco immagine
 	Release Intertwine	Rilascia intreccio
+	Objects on Path	Oggetti su tracciato
+	Attach	Aggancia
+	Objects on Path Options	Opzioni oggetti su tracciato
+	Objects on Path Tool	Strumento Oggetti su tracciato
+	Attach Objects on Path	Aggancia oggetti al tracciato
+	Expand Objects on Path	Espandi oggetti su tracciato
 	Release Live Paint	Rilascia pittura dinamica
 	Release Repeat	Rilascia ripetizione
 	Release Slice	Rilascia sezione
@@ -4140,6 +4146,7 @@ axis	Both	Entrambi
 @msg	select a linked image: an embedded one has no file	seleziona un'immagine collegata: un'immagine incorporata non ha un file
 @msg	select a repeat	seleziona una ripetizione
 @msg	select an Intertwine group	seleziona un gruppo intrecciato
+@msg	select an Objects on Path group	seleziona un gruppo di oggetti su tracciato
 @msg	select a stroke with a variable width	seleziona una traccia con larghezza variabile
 @msg	select a symbol instance	seleziona un'istanza di simbolo
 @msg	select an Image Trace object	seleziona un oggetto di ricalco immagine

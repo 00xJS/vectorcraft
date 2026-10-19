@@ -1610,6 +1610,12 @@ file-filter	Templates	Mẫu
 	Release Envelope	Giải phóng Envelope
 	Release Image Trace	Giải phóng vector hóa ảnh
 	Release Intertwine	Giải phóng đan xen
+	Objects on Path	Đối tượng trên đường dẫn
+	Attach	Gắn
+	Objects on Path Options	Tùy chọn đối tượng trên đường dẫn
+	Objects on Path Tool	Công cụ Đối tượng trên đường dẫn
+	Attach Objects on Path	Gắn đối tượng lên đường dẫn
+	Expand Objects on Path	Mở rộng đối tượng trên đường dẫn
 	Release Live Paint	Giải phóng tô trực tiếp
 	Release Repeat	Giải phóng lặp lại
 	Release Slice	Giải phóng lát cắt
@@ -4440,6 +4446,7 @@ theme	Appearance	Giao diện
 @msg	select a Live Paint group	hãy chọn nhóm tô trực tiếp
 @msg	select a repeat	hãy chọn một đối tượng lặp
 @msg	select an Intertwine group	hãy chọn một nhóm đan xen
+@msg	select an Objects on Path group	hãy chọn một nhóm đối tượng trên đường dẫn
 @msg	select a stroke with a variable width	hãy chọn nét có chiều rộng biến đổi
 @msg	select a symbol instance	hãy chọn đối tượng ký hiệu
 @msg	select an envelope	hãy chọn một Envelope

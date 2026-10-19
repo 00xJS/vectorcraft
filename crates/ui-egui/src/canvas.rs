@@ -680,6 +680,7 @@ fn cursor_icon(c: Cursor) -> egui::CursorIcon {
         | Cursor::SymbolStainer
         | Cursor::SymbolScreener
         | Cursor::SymbolStyler
+        | Cursor::ObjectsOnPath
         | Cursor::Scissors
         | Cursor::ScissorsNotAllowed
         | Cursor::MeshAdd

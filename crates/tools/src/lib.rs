@@ -23,6 +23,7 @@ pub mod intertwine;
 pub mod meshblend;
 pub mod meshedit;
 pub mod mirror;
+pub mod objects_on_path;
 pub mod params;
 pub mod pathtype;
 pub mod pen;
@@ -516,6 +517,9 @@ pub enum Cursor {
     BlendObject,
     /// The Blend tool over an anchor point (the blend starts there): a crosshair with a target.
     BlendAnchor,
+    /// The Objects on Path tool over a path the selected objects can attach to (a click attaches
+    /// them).
+    ObjectsOnPath,
     /// Over a bracket of selected type on a path (a drag moves it): the arrow with a bracket.
     PathBracket,
     /// Over the type widget of selected type (a double-click converts point type to area type and
@@ -691,6 +695,7 @@ impl Cursor {
             | Cursor::Shaper
             | Cursor::LivePaintBucket
             | Cursor::Measure
+            | Cursor::ObjectsOnPath
             | Cursor::PrintTiling
             | Cursor::SymbolSprayer
             | Cursor::SymbolShifter
@@ -809,6 +814,7 @@ pub fn create(id: &str) -> Box<dyn Tool> {
             .or_else(|| cropimage::create(other))
             .or_else(|| cut::create(other))
             .or_else(|| intertwine::create(other))
+            .or_else(|| objects_on_path::create(other))
             .or_else(|| touchtype::create(other))
             .unwrap_or_else(|| Box::new(NoopTool(tool_info(other).map(|t| t.id).unwrap_or("selection")))),
     }
