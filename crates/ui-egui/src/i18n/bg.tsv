@@ -5175,6 +5175,17 @@ theme	Appearance	Външен вид
 	Definition	Дефиниция
 	Brush Detail	Детайл на четката
 	Shadow Intensity	Интензивност на сенките
+	Bas Relief…	Барелеф…
+	Bas Relief	Барелеф
+	Charcoal…	Въглен…
+	Charcoal	Въглен
+	Photocopy…	Фотокопие…
+	Photocopy	Фотокопие
+	Stamp…	Печат…
+	Stamp	Печат
+	Thickness	Дебелина
+	Detail	Детайл
+	Light/Dark Balance	Баланс светло/тъмно
 # Links and Attributes: files and URLs handed to other apps.
 @msg	Edit Original opens image and document files only; “{name}” is not one	„Редактиране на оригинал“ отваря само файлове с изображения и документи; „{name}“ не е такъв файл
 @msg	only http, https and mailto URLs open in the browser, not “{url}”	в браузъра се отварят само URL адреси с http, https и mailto, не „{url}“

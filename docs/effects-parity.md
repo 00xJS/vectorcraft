@@ -1,6 +1,6 @@
 # Effects parity
 
-> **Last reviewed:** 2026-10-10 · **Last updated:** 2026-10-20 · **Change:** minor (G2: Effect › Artistic › Smudge Stick, Sponge and Watercolor; Photoshop filters 42/57, 15 remaining (14–24 h); G2: Sketch › Chrome; Sketch › Chalk & Charcoal, Graphic Pen and Reticulation and Artistic › Plastic Wrap, #2972, #2967, #2976, #3034: 37/57 Photoshop effects; 3D lighting: one to ten colored lights, smooth colored Inflate, legacy white-light appearance preserved; surface batching and restored seam minimum; scores and estimates unchanged; Zig Zag's Smooth points make a continuous wave, #2343; G2: Effect › Sketch › Halftone Pattern; Photoshop filters 42/57, 15 remaining (14–24 h); Round Corners also rounds corners where a curve meets a line or another curve, with Live Corners' cut; straight corners unchanged; score unchanged; Revolve: automatic smooth shading and default-on Cap with continuous rims; wide shadows and glows at high zoom, #1706; stacked Transform effects, #1705; 3D on nonzero compound paths, #1724; pattern tiles redraw, #1723; scores unchanged; Roughen's Smooth turn-backs, #1643; Scribble per region, #1648; score unchanged; Warp Arc bends in the object's proportions, #1578; Zig Zag ridges evenly spaced, #1558; effect parameters checked, #1592; score unchanged; raster effects after a pattern, radial or freeform gradient fill export at their place and size, #1536; score unchanged; 3D and Materials on outlined type and other shapes of many small curves, #1481; Twist 0° to 360°, #1524; twisted walls keep their faces, #1525; score unchanged; 3D and Materials: Inflate takes Twist, Taper and Cap; score unchanged; 3D and Materials: Perspective as the documented 0°–160° angle; 3D and Materials: the documented light settings) · **Target:** Adobe Illustrator 2026 (30.x)
+> **Last reviewed:** 2026-10-10 · **Last updated:** 2026-10-20 · **Change:** minor (G2: Effect › Artistic › Smudge Stick, Sponge and Watercolor; Sketch › Bas Relief, Charcoal, Photocopy and Stamp, #2533; Photoshop filters 45/57, 12 remaining (8–14 h); G2: Sketch › Chrome; Sketch › Chalk & Charcoal, Graphic Pen and Reticulation and Artistic › Plastic Wrap, #2972, #2967, #2976, #3034: 37/57 Photoshop effects; 3D lighting: one to ten colored lights, smooth colored Inflate, legacy white-light appearance preserved; surface batching and restored seam minimum; scores and estimates unchanged; Zig Zag's Smooth points make a continuous wave, #2343; G2: Effect › Sketch › Halftone Pattern; Photoshop filters 45/57, 12 remaining (8–14 h); Round Corners also rounds corners where a curve meets a line or another curve, with Live Corners' cut; straight corners unchanged; score unchanged; Revolve: automatic smooth shading and default-on Cap with continuous rims; wide shadows and glows at high zoom, #1706; stacked Transform effects, #1705; 3D on nonzero compound paths, #1724; pattern tiles redraw, #1723; scores unchanged; Roughen's Smooth turn-backs, #1643; Scribble per region, #1648; score unchanged; Warp Arc bends in the object's proportions, #1578; Zig Zag ridges evenly spaced, #1558; effect parameters checked, #1592; score unchanged; raster effects after a pattern, radial or freeform gradient fill export at their place and size, #1536; score unchanged; 3D and Materials on outlined type and other shapes of many small curves, #1481; Twist 0° to 360°, #1524; twisted walls keep their faces, #1525; score unchanged; 3D and Materials: Inflate takes Twist, Taper and Cap; score unchanged; 3D and Materials: Perspective as the documented 0°–160° angle; 3D and Materials: the documented light settings) · **Target:** Adobe Illustrator 2026 (30.x)
 
 Every entry of Illustrator's Effect menu, by its public feature name, against VectorCraft's effects catalogue
 (`effect_catalog()` in `crates/effects/src/lib.rs`) and the Effect menu built from it
@@ -12,7 +12,7 @@ Part of [target-app-parity.md](target-app-parity.md); open work is in [gaps.md](
 | Group | Illustrator | VectorCraft | % | Remaining (h) |
 |---|---:|---:|---:|---:|
 | Illustrator effects (vector and stylize) | 50 | 46 | 92% | 6–10 |
-| Photoshop effects (raster, Effect Gallery) | 57 | 42 | 74% | 14–24 |
+| Photoshop effects (raster, Effect Gallery) | 57 | 45 | 79% | 8–14 |
 | 3D and Materials | 4 (+3 Classic) | 4 (initial: Extrude & Bevel, Revolve, Inflate, Rotate) | ~25% | 25–45 |
 | Beyond Illustrator: Effect › Color Adjustments (6), effect plug-ins (WebAssembly) | — | 6 + plug-ins | — | — |
 
@@ -44,7 +44,7 @@ its resolution, PDF export warns once per object with the requested and the lowe
 | Distort | Diffuse Glow, Glass, Ocean Ripple | 3/3 | — |
 | Pixelate | Color Halftone, Crystallize, Mezzotint, Pointillize | 4/4 | — |
 | Sharpen | Unsharp Mask | 1/1 | — |
-| Sketch | Bas Relief, Chalk & Charcoal, Charcoal, Chrome, Conté Crayon, Graphic Pen, Halftone Pattern, Note Paper, Photocopy, Plaster, Reticulation, Stamp, Torn Edges, Water Paper | 6/14 (approximate Chalk & Charcoal, Chrome, Graphic Pen, Halftone Pattern, Plaster, Reticulation; Chalk & Charcoal and Graphic Pen defaults unverified) | Bas Relief, Charcoal, Conté Crayon, Note Paper, Photocopy, Stamp, Torn Edges, Water Paper |
+| Sketch | Bas Relief, Chalk & Charcoal, Charcoal, Chrome, Conté Crayon, Graphic Pen, Halftone Pattern, Note Paper, Photocopy, Plaster, Reticulation, Stamp, Torn Edges, Water Paper | 10/14 (approximate Bas Relief, Chalk & Charcoal, Charcoal, Chrome, Graphic Pen, Halftone Pattern, Photocopy, Plaster, Reticulation, Stamp; Chalk & Charcoal and Graphic Pen defaults unverified) | Conté Crayon, Note Paper, Torn Edges, Water Paper |
 | Stylize | Glowing Edges | 1/1 | — |
 | Texture | Craquelure, Grain, Mosaic Tiles, Patchwork, Stained Glass, Texturizer | 6/6 | Texturizer's Load Texture |
 | Video | De-Interlace, NTSC Colors | 2/2 | — |
@@ -52,7 +52,7 @@ its resolution, PDF export warns once per object with the requested and the lowe
 
 The pixel-filter pipeline (`vectorcraft_effects::pixel`) is in place: each new filter is one function, a
 catalogue row, a menu entry and translations. Measured throughput: 0.7–1.2 agent hours per filter
-(see [calibration](target-app-parity.md#calibration)), so the 15 missing filters are ~10–18 h and the Effect
+(see [calibration](target-app-parity.md#calibration)), so the 12 missing filters are ~8–14 h and the Effect
 Gallery dialog another 4–6 h. These parallelize well across agents.
 
 Film Grain (`artistic.filmGrain`, Effect › Artistic) adds stable monochrome noise to shadows and
@@ -133,6 +133,22 @@ image in SVG and PDF. Ranges and defaults are chosen for VectorCraft, not assert
 Tests: `pixel::tests_paint::*`, `tests_rasterfilters`, `dialogs::tests::raster_filter_dialogs_*`,
 `tests_labels::effect_menu_lists_the_artistic_filters_*` and the `command_sweep` structured junk.
 
+Bas Relief, Charcoal, Photocopy and Stamp (`sketch.basRelief`, `sketch.charcoal`, `sketch.photocopy`,
+`sketch.stamp`, Effect › Sketch; `pixel/sketch_ink.rs`) redraw the object in black ink on white paper
+and keep its coverage. Bas Relief carves low relief lit from one of eight directions (Detail, Smoothness,
+Light Direction); Charcoal draws bold edges and sketches the midtones in diagonal strokes (Thickness,
+Detail, Light/Dark Balance); Photocopy prints only where a pixel is darker than its surroundings, so large
+dark areas copy around their edges (Detail, Darkness); Stamp reduces the object to solid black and
+white (Light/Dark Balance, Smoothness). Sizes are in document points at any Document Raster Effects
+resolution, strokes and noise lie in document space around the object's centre, and all four preview
+live. Behaviour is an original visual approximation based on
+[Illustrator's public effects reference](https://helpx.adobe.com/illustrator/using/summary-effects.html)
+and the [public Sketch filters guide](https://helpx.adobe.com/photoshop-elements/using/sketch-filters.html),
+not a pixel-identical proprietary implementation; the parameter ranges and defaults are chosen for
+VectorCraft, not asserted as measured proprietary defaults. Tests: `pixel::tests_sketch::*`,
+`tests_rasterfilters`, `command_sweep`, `dialogs::tests::raster_filter_dialogs_preview_and_apply` and
+`tests_labels::effect_menu_lists_the_sketch_filters_*`.
+
 ## 3D and Materials
 
 | Item | Ours |
@@ -155,6 +171,7 @@ angular cut caps, exact visibility, 3D Classic, Turntable, 3D export) is 25–45
 | 2026-10-19 | minor | Sketch › Chalk & Charcoal, Graphic Pen and Reticulation and Artistic › Plastic Wrap landed (#2972, #2967, #2976, #3034): 36/57 Photoshop effects (estimated; defaults unverified) |
 | 2026-10-16 | minor | Zig Zag with Smooth points draws a continuous wave: every peak and valley is a smooth point with handles along the path, a third of the way to the next ridge, so each span follows a half cosine through the path instead of a straight diagonal with rounded tips, also at the ends of open paths and for ridges much taller than they are apart (#2343); score unchanged (estimated) |
 | 2026-10-16 | minor | G2: Effect › Artistic › Smudge Stick, Sponge and Watercolor (live, with their documented options; original approximations); measured Photoshop filters 36/57 with Cutout, Neon Glow and Poster Edges, 21 remaining (19–31 h). |
+| 2026-10-16 | minor | G2: Effect › Sketch › Bas Relief, Charcoal, Photocopy and Stamp (black ink on white paper, sizes in points at any Document Raster Effects resolution, live preview); measured Photoshop filters 37/57 with Cutout, Neon Glow and Poster Edges, 20 remaining (18–30 h). |
 | 2026-10-16 | minor | G2: Effect › Sketch › Halftone Pattern (Size, Contrast, Pattern Type Circle, Dot or Line; black ink on white paper, Size in points at any Document Raster Effects resolution); measured Photoshop filters 30/57, 27 remaining (22–38 h). |
 | 2026-10-17 | minor | Colored Inflate: shared membrane normals and smooth RGB vector ramps replace flat polygon bands; channel groups are batched per solid-fill surface. White-light Inflate retains its original polygons, paint composition and seam joins; the 0.05 seam minimum is restored. Scores and hour estimates unchanged. |
 | 2026-10-16 | minor | 3D lighting: one to ten directional lights, a selectable light list, Add Light and Delete Light, independent settings and artboard gestures; ambient applied once and smooth RGB vector export; scores and hour estimates unchanged |

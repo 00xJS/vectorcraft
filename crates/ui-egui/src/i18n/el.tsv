@@ -5154,6 +5154,17 @@ effect	Points	Σημεία
 	Definition	Ευκρίνεια
 	Brush Detail	Λεπτομέρεια πινέλου
 	Shadow Intensity	Ένταση σκιών
+	Bas Relief…	Ανάγλυφο…
+	Bas Relief	Ανάγλυφο
+	Charcoal…	Κάρβουνο…
+	Charcoal	Κάρβουνο
+	Photocopy…	Φωτοαντίγραφο…
+	Photocopy	Φωτοαντίγραφο
+	Stamp…	Σφραγίδα…
+	Stamp	Σφραγίδα
+	Thickness	Πάχος
+	Detail	Λεπτομέρεια
+	Light/Dark Balance	Ισορροπία φωτεινού/σκούρου
 # Links and Attributes: files and URLs handed to other apps.
 @msg	Edit Original opens image and document files only; “{name}” is not one	η Επεξεργασία πρωτοτύπου ανοίγει μόνο αρχεία εικόνων και εγγράφων· το «{name}» δεν είναι τέτοιο αρχείο
 @msg	only http, https and mailto URLs open in the browser, not “{url}”	στο πρόγραμμα περιήγησης ανοίγουν μόνο URL http, https και mailto, όχι το «{url}»

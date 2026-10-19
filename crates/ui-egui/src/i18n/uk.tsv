@@ -4795,6 +4795,17 @@ lighting	Light	Світло
 	Definition	Чіткість
 	Brush Detail	Деталізація пензля
 	Shadow Intensity	Інтенсивність тіней
+	Bas Relief…	Барельєф…
+	Bas Relief	Барельєф
+	Charcoal…	Вугілля…
+	Charcoal	Вугілля
+	Photocopy…	Фотокопія…
+	Photocopy	Фотокопія
+	Stamp…	Штамп…
+	Stamp	Штамп
+	Thickness	Товщина
+	Detail	Деталі
+	Light/Dark Balance	Баланс світлого й темного
 # Links and Attributes: files and URLs handed to other apps.
 @msg	Edit Original opens image and document files only; “{name}” is not one	«Редагувати оригінал» відкриває лише файли зображень і документів; «{name}» до них не належить
 @msg	only http, https and mailto URLs open in the browser, not “{url}”	у браузері відкриваються лише URL з http, https і mailto, а не «{url}»

@@ -497,11 +497,25 @@ pub fn effect_catalog() -> Vec<EffectInfo> {
             json!({"amount": 50.0, "radius": 1.0, "threshold": 0.0}),
         ),
         r(
+            "sketch.basRelief",
+            "Bas Relief…",
+            SKETCH,
+            "{detail: 1..15 (13; the larger, the finer the features that stay), smoothness: 1..15 (3; rounds the carving), lightDirection: \"bottom\"|\"bottomLeft\"|\"left\"|\"topLeft\"|\"top\"|\"topRight\"|\"right\"|\"bottomRight\" (\"bottom\"; where the light comes from)} carves the object in low relief in black and white: surfaces facing the light turn white, those turned away black, flat areas grey. Coverage is kept. Original visual approximation; chosen VectorCraft defaults.",
+            json!({"detail": 13.0, "smoothness": 3.0, "lightDirection": "bottom"}),
+        ),
+        r(
             "sketch.chalkCharcoal",
             "Chalk & Charcoal…",
             SKETCH,
             "{chalkArea: 0..20 (6; chalk in light areas), charcoalArea: 0..20 (6; charcoal in dark areas), strokePressure: 0..5 (2)} redraws the object with chalk highlights and charcoal strokes on white paper, keeping its coverage. Original visual approximation from public documentation; slider ranges and defaults are VectorCraft choices, not verified proprietary values.",
             json!({"chalkArea": 6.0, "charcoalArea": 6.0, "strokePressure": 2.0}),
+        ),
+        r(
+            "sketch.charcoal",
+            "Charcoal…",
+            SKETCH,
+            "{thickness: 1..7 (1; width of the bold edges and of the strokes' spacing), detail: 0..5 (1; the larger, the finer the edges), lightDarkBalance: 0..100 (50; how far into the lights the charcoal reaches)} redraws the object in black charcoal on white paper: bold edges and diagonal strokes over the midtones. Coverage is kept. Original visual approximation; chosen VectorCraft defaults.",
+            json!({"thickness": 1.0, "detail": 1.0, "lightDarkBalance": 50.0}),
         ),
         r(
             "sketch.chrome",
@@ -525,6 +539,13 @@ pub fn effect_catalog() -> Vec<EffectInfo> {
             json!({"size": 1.0, "contrast": 5.0, "patternType": "dot"}),
         ),
         r(
+            "sketch.photocopy",
+            "Photocopy…",
+            SKETCH,
+            "{detail: 1..24 (7; the larger, the finer the features that copy), darkness: 1..50 (25; the larger, the more of the dark copies)} copies the object in black on white: large dark areas copy only around their edges and midtones go to black or white. Coverage is kept. Original visual approximation; chosen VectorCraft defaults.",
+            json!({"detail": 7.0, "darkness": 25.0}),
+        ),
+        r(
             "sketch.plaster",
             "Plaster…",
             SKETCH,
@@ -537,6 +558,13 @@ pub fn effect_catalog() -> Vec<EffectInfo> {
             SKETCH,
             "{density: 0..50 (12; finer grain at higher values), foregroundLevel: 0..50 (6; pulls shadows toward black ink), backgroundLevel: 0..50 (6; pulls highlights toward white paper)} redraws the object in black ink on white paper through a high-contrast film-grain screen, keeping its coverage. Original visual approximation; chosen VectorCraft defaults.",
             json!({"density": 12.0, "foregroundLevel": 6.0, "backgroundLevel": 6.0}),
+        ),
+        r(
+            "sketch.stamp",
+            "Stamp…",
+            SKETCH,
+            "{lightDarkBalance: 0..50 (25; the larger, the more of the object prints black), smoothness: 1..50 (5; rounds the shapes)} simplifies the object to solid black and white, as a rubber stamp would print it. Coverage is kept. Original visual approximation; chosen VectorCraft defaults.",
+            json!({"lightDarkBalance": 25.0, "smoothness": 5.0}),
         ),
         r(
             "stylize.glowingEdges",

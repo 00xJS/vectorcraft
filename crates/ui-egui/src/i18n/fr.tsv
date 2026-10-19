@@ -5201,6 +5201,17 @@ theme	Appearance	Apparence
 	Definition	Définition
 	Brush Detail	Détail du pinceau
 	Shadow Intensity	Intensité des ombres
+	Bas Relief…	Bas-relief…
+	Bas Relief	Bas-relief
+	Charcoal…	Fusain…
+	Charcoal	Fusain
+	Photocopy…	Photocopie…
+	Photocopy	Photocopie
+	Stamp…	Tampon…
+	Stamp	Tampon
+	Thickness	Épaisseur
+	Detail	Détail
+	Light/Dark Balance	Équilibre clair/foncé
 # Links and Attributes: files and URLs handed to other apps.
 @msg	Edit Original opens image and document files only; “{name}” is not one	Modifier l’original n’ouvre que les fichiers d’image et de document ; « {name} » n’en est pas un
 @msg	only http, https and mailto URLs open in the browser, not “{url}”	seules les URL http, https et mailto s’ouvrent dans le navigateur, pas « {url} »

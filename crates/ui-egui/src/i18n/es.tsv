@@ -5144,6 +5144,17 @@ mark-style	Japanese	Japonesas
 	Definition	Definición
 	Brush Detail	Detalle del pincel
 	Shadow Intensity	Intensidad de sombras
+	Bas Relief…	Bajorrelieve…
+	Bas Relief	Bajorrelieve
+	Charcoal…	Carboncillo…
+	Charcoal	Carboncillo
+	Photocopy…	Fotocopia…
+	Photocopy	Fotocopia
+	Stamp…	Sello…
+	Stamp	Sello
+	Thickness	Grosor
+	Detail	Detalle
+	Light/Dark Balance	Equilibrio claro/oscuro
 # Links and Attributes: files and URLs handed to other apps.
 @msg	Edit Original opens image and document files only; “{name}” is not one	Editar original solo abre archivos de imagen y de documento; “{name}” no lo es
 @msg	only http, https and mailto URLs open in the browser, not “{url}”	solo se abren en el navegador las URL http, https y mailto, no “{url}”

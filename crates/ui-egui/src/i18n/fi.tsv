@@ -5166,6 +5166,17 @@ mark-style	Japanese	Japanilainen
 	Definition	Terävyys
 	Brush Detail	Siveltimen yksityiskohta
 	Shadow Intensity	Varjojen voimakkuus
+	Bas Relief…	Matala korkokuva…
+	Bas Relief	Matala korkokuva
+	Charcoal…	Hiili…
+	Charcoal	Hiili
+	Photocopy…	Valokopio…
+	Photocopy	Valokopio
+	Stamp…	Leima…
+	Stamp	Leima
+	Thickness	Paksuus
+	Detail	Yksityiskohta
+	Light/Dark Balance	Vaalean ja tumman tasapaino
 # Links and Attributes: files and URLs handed to other apps.
 @msg	Edit Original opens image and document files only; “{name}” is not one	Muokkaa alkuperäistä avaa vain kuva- ja asiakirjatiedostoja; “{name}” ei ole sellainen
 @msg	only http, https and mailto URLs open in the browser, not “{url}”	selaimessa avataan vain http-, https- ja mailto-URL-osoitteet, ei “{url}”
