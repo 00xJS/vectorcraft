@@ -1373,6 +1373,9 @@ pub struct Session {
     /// Where the plug-ins `plugin.install` installs are kept; `None`: only for the process
     /// ([`Session::attach_plugin_store`]).
     plugin_dir: Option<std::path::PathBuf>,
+    /// A filter's output that a run made in the background handed in for `plugin.run` to apply
+    /// ([`cmd::plugin::FilterRun::hand_in`]); the next `plugin.run` takes it.
+    plugin_output: Option<cmd::plugin::HandedIn>,
     /// URLs recently given in the Attributes panel (`attributes.set {url}`), newest first; not saved.
     pub recent_urls: Vec<String>,
     /// The language the UI is drawn in (a language code, never `auto`), set by the UI each frame;
@@ -1439,6 +1442,9 @@ impl Default for Session {
 }
 
 impl Session {
+    /// A session with no document open, the default preferences and the Selection tool. It also
+    /// installs the hooks the document crate calls back into: the loader and file reader of placed
+    /// documents, and where an image's effects draw its fills and strokes, for clicks.
     pub fn new() -> Self {
         // Placed documents are read by the native format's loader.
         vectorcraft_doc::placed_document::set_loader(cmd::place::document::read_document);
@@ -1479,6 +1485,7 @@ impl Session {
             pdf_preset_dir: None,
             profile_dir: None,
             plugin_dir: None,
+            plugin_output: None,
             recent_urls: vec![],
             ui_language: None,
             journal_note: Default::default(),

@@ -5384,3 +5384,15 @@ axis	Y Axis	Eje Y
 @msg	`dither` applies to gradient fills (paint.setFill)	`dither` se aplica a rellenos de degradado (paint.setFill)
 @msg	`dither` must be true or false	`dither` debe ser true o false
 @msg	`method` must be classic or perceptual	`method` debe ser classic o perceptual
+# Heavy plug-in filters (plugin.inspect, plug-in runs)
+	Install “{name}”, which asks for a heavy budget?	¿Instalar “{name}”, que pide un presupuesto de cálculo grande?
+	Each run may take up to {minutes} minutes and do {times} times the work other plug-ins may. It runs in the background, and you can cancel it.	Cada ejecución puede tardar hasta {minutes} minutos y hacer {times} veces el trabajo que se permite a otros plugins. Se ejecuta en segundo plano y se puede cancelar.
+	It may take minutes, so it runs in the background, where you can cancel it.	Puede tardar minutos, así que se ejecuta en segundo plano, donde se puede cancelar.
+	The plug-in is computing…	El plugin está calculando…
+	Inspect Plug-in	Inspeccionar plugin
+	Cancel Plug-in Run	Cancelar ejecución del plugin
+@msg	{_1} finished, but the document or the plug-in changed meanwhile: run it again	{_1} terminó, pero el documento o el plugin cambió entretanto: vuelva a ejecutarlo
+@msg	Running “{name}”…	Ejecutando “{name}”…
+@msg	a live effect runs while the document is drawn, so it can't be `heavy`	un efecto interactivo se ejecuta mientras se dibuja el documento, así que no puede ser `heavy`
+@msg	an exporter always gets an export's budget: leave `budget` out	un plugin de exportación siempre recibe el presupuesto de una exportación: omite `budget`
+@msg	“{_1}” asks for a heavy budget (each run up to {minutes} minutes and {times} times the usual instructions): install it with `allowHeavy: true` once the user agrees	“{_1}” pide un presupuesto de cálculo grande (cada ejecución hasta {minutes} minutos y {times} veces las instrucciones habituales): instálalo con `allowHeavy: true` cuando el usuario lo acepte

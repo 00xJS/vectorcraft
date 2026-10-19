@@ -23,12 +23,13 @@ This page is the contract for plug-in authors and the reference for the host (`c
 
 | Command | Params | What it does |
 |---|---|---|
-| `plugin.list` | `{}` | `{"plugins": [{id, name, version, kind, author, description, params, paramsSchema, effect?, format?, extensions?, size, source}], "folder": report}` |
+| `plugin.list` | `{}` | `{"plugins": [{id, name, version, kind, author, description, params, paramsSchema, effect?, format?, extensions?, budget?, size, source}], "folder": report}` (`budget: "heavy"` for a [heavy filter](#heavy-filters)) |
 | `plugin.info` | `{"id"}` | One plug-in: the `plugin.list` entry plus `manifest`, `defaults` and `lastError` (a live effect's last failure). |
 | `plugin.run` | `{"id", "params"?: {…}, "ids"?: [...]}` (plug-in params may also be top-level keys) | Runs an object filter on the selection (or `ids`). One undo step; the result is selected. |
-| `plugin.install` | `{"path": "/x/y.wasm"}` (desktop) or `{"dataBase64": "…", "name"?}`, `"replace": bool = true` | Validates and installs a module; returns its `plugin.list` entry. The desktop app and `vectorcraft-cli` keep it in the `Plug-ins` folder next to the preferences, so it is installed again after a restart (#2541). |
+| `plugin.install` | `{"path": "/x/y.wasm"}` (desktop) or `{"dataBase64": "…", "name"?}`, `"replace": bool = true`, `"allowHeavy": bool = false` | Validates and installs a module; returns its `plugin.list` entry. The desktop app and `vectorcraft-cli` keep it in the `Plug-ins` folder next to the preferences, so it is installed again after a restart (#2541). A [heavy filter](#heavy-filters) installs only with `allowHeavy: true`, once the user agreed. |
+| `plugin.inspect` | as `plugin.install`: `{"path"}` or `{"dataBase64", "name"?}` | Validates a module without installing it; returns the `plugin.list` entry it would have. |
 | `plugin.remove` | `{"id"}` | Uninstalls, and deletes it from the `Plug-ins` folder. |
-| `plugin.reload` | `{"path"?: "folder"}` (default: the preference folder) | Installs every `*.wasm` in a folder; a bad module is reported and skipped. |
+| `plugin.reload` | `{"path"?: "folder"}` (default: the preference folder) | Installs every `*.wasm` in a folder; a bad module is reported and skipped, and so is a heavy filter (nobody was asked). |
 
 Live effects are applied like any effect: `effect.apply {"effect": "plugin.<id>", "params": {…}}`, edited with
 `effect.setParams`, listed by `effect.list` (menu `Effect › Plug-ins`) and baked by Object › Expand Appearance.
@@ -45,7 +46,8 @@ parameters it runs at once. Parameters too many for the window's height scroll i
 heading and buttons in view. Exporters are formats of **File › Export › Export As**, where Use
 Artboards is greyed out (the plug-in writes the whole document); one with parameters asks for them in a dialog of the
 same kind once the file is picked, and its Export button writes the file. **File › Open** of a `.wasm` file installs
-a plug-in too (on the web this is how plug-ins get in).
+a plug-in too (on the web this is how plug-ins get in). A heavy filter asks before it is installed, and runs in the
+background ([below](#heavy-filters)).
 
 **Preference folder.** Edit › Preferences › Plug-ins & Scratch Disks › *Additional Plug-ins Folder*: when set, every
 `*.wasm` in that folder (not recursive) is installed at startup and whenever the preference changes (desktop builds;
@@ -67,13 +69,36 @@ The host is [`wasmi`](https://github.com/wasmi-labs/wasmi), a pure-Rust WebAssem
 | Module size | 32 MiB | rejected |
 | Linear memory | 512 MiB per instance (input and parameters: at most half) | `memory.grow` returns -1; oversized input or initial memory fails |
 | Output | 64 MiB of JSON | `Limit("output size")` |
-| Instructions (fuel) | 50 M per call + 4,000 per input byte for `vc_run`; an export 10 G + 4,000 per byte | `Limit("instruction budget")` |
-| Wall clock | 60 s per filter run, 5 s per live-effect run, 300 s per export (desktop; checked every 20 M instructions) | `Limit("time budget")` |
+| Instructions (fuel) | 50 M per call + 4,000 per input byte for `vc_run`; a [heavy filter](#heavy-filters) 1 G + 4,000 per byte; an export 10 G + 4,000 per byte | `Limit("instruction budget")` |
+| Wall clock | 60 s per filter run, 5 s per live-effect run, 300 s per heavy filter run or export (desktop; checked every 20 M instructions) | `Limit("time budget")` |
 | Call depth | 1,024 frames | trap |
 | Module shape | wasmi's strict limits (≤ 10,000 functions, 1 memory, …) | rejected |
 
 An export runs where the export runs: with Background Export on, on the export's worker, whose Cancel stops the
 plug-in between two of those 20 M-instruction slices; nothing is written then.
+
+### Heavy filters
+
+Some filters do heavy but legitimate work, such as routing a plotter's pen, packing shapes onto a sheet or running a
+simulation, which a minute and 50 M instructions don't cover. Such a filter declares `"budget": "heavy"` in its
+manifest (only a filter may: a live effect runs whenever the document is drawn, and an exporter has an export's
+budget). Each of its runs gets 1 G instructions (20 times a light run's) plus the 4,000 per input byte, and 300 s
+(`vectorcraft_plugins::{HEAVY_FUEL, HEAVY_WALL_TIME_MS}`). Its output can't add to the budget: the host learns how
+much there is only once the run has ended.
+
+- **Installing asks first.** Install Plug-in… and File › Open show what the filter asks for, and install it once the
+  user clicks OK; `plugin.install` refuses it without `allowHeavy: true`, which an agent passes once the user agreed
+  (`plugin.inspect` tells it beforehand). A filter kept in the `Plug-ins` folder was agreed to and is installed again
+  at startup. The Additional Plug-ins Folder skips heavy filters with a note in its report, since loading a folder
+  asks nobody.
+- **It runs in the background.** Its dialog has no Preview. OK (or the menu item, without parameters) runs it on a
+  thread of its own while editing goes on, shown in the status bar and, after a moment, in a progress window with
+  Cancel (also Esc) and Continue in Background (`plugin.cancelRuns`, `plugin.hideRuns`). When it is done its result is
+  applied as `plugin.run` with the same parameters and objects, as one undo step, unless the document or the plug-in
+  changed meanwhile: then nothing changes, and the status bar says to run it again. On the web, which has no threads,
+  it runs at once; the instruction budget alone bounds it there.
+- `plugin.run` itself runs a heavy filter where it is called, as it runs any filter: an MCP client waits for it, and
+  its `notifications/cancelled` stops it.
 
 Every run gets a **fresh instance**, so no state survives between calls. Traps, exhausted budgets, malformed
 modules, bad manifests, out-of-range pointers, negative return codes and invalid output all become errors, and the
@@ -126,6 +151,8 @@ pointers are offsets into the module's memory.
 - `name`: the menu label, or an exporter's format name in Export As (1–64 printable characters). `kind`: `"filter"`
   (object filter), `"effect"` (live effect) or `"exporter"`. Exporters came after the first ABI v1 hosts, which refuse
   the kind when the plug-in is installed.
+- `budget` (filters only): `"light"` (the default) or `"heavy"`, for work that takes minutes ([heavy
+  filters](#heavy-filters)). Hosts from before it ignore the key, so there the filter gets a light run's budget.
 - `extensions` (exporters only, and required): 1–8 file extensions, lower-case letters and digits without the dot
   (`["plt"]`); the first is the one Export As gives the file. A built-in format keeps an extension both list (`svg`):
   `document.export` then writes the exporter's format only when asked for by its format id.

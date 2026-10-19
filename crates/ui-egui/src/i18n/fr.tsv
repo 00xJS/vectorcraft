@@ -5441,3 +5441,15 @@ axis	Y Axis	Axe Y
 @msg	`dither` applies to gradient fills (paint.setFill)	`dither` s’applique aux fonds en dégradé (paint.setFill)
 @msg	`dither` must be true or false	`dither` doit valoir true ou false
 @msg	`method` must be classic or perceptual	`method` doit être classic ou perceptual
+# Heavy plug-in filters (plugin.inspect, plug-in runs)
+	Install “{name}”, which asks for a heavy budget?	Installer « {name} », qui demande un budget de calcul important ?
+	Each run may take up to {minutes} minutes and do {times} times the work other plug-ins may. It runs in the background, and you can cancel it.	Chaque exécution peut durer jusqu’à {minutes} minutes et faire {times} fois le travail permis aux autres modules externes. Elle s’exécute en arrière-plan, et vous pouvez l’annuler.
+	It may take minutes, so it runs in the background, where you can cancel it.	Cela peut prendre plusieurs minutes : il s’exécute donc en arrière-plan, où vous pouvez l’annuler.
+	The plug-in is computing…	Le module externe calcule…
+	Inspect Plug-in	Examiner le module externe
+	Cancel Plug-in Run	Annuler l’exécution du module externe
+@msg	{_1} finished, but the document or the plug-in changed meanwhile: run it again	{_1} a terminé, mais le document ou le module externe a changé entre-temps : relancez-le
+@msg	Running “{name}”…	Exécution de « {name} »…
+@msg	a live effect runs while the document is drawn, so it can't be `heavy`	un effet dynamique s’exécute pendant le tracé du document, il ne peut donc pas être `heavy`
+@msg	an exporter always gets an export's budget: leave `budget` out	un module externe d’exportation reçoit toujours le budget d’une exportation : omettez `budget`
+@msg	“{_1}” asks for a heavy budget (each run up to {minutes} minutes and {times} times the usual instructions): install it with `allowHeavy: true` once the user agrees	« {_1} » demande un budget de calcul important (chaque exécution jusqu’à {minutes} minutes et {times} fois les instructions habituelles) : installez-le avec `allowHeavy: true` une fois que l’utilisateur l’accepte
