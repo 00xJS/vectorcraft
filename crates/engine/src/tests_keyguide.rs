@@ -127,3 +127,59 @@ fn selected_anchor_points_align_to_a_key_guide() {
     assert_eq!(p.x, 400.0);
     assert_eq!(path.subpaths[0].anchors[1].p.x, 140.0, "the other points stay");
 }
+
+#[test]
+fn selected_guides_align_to_a_clicked_key_object() {
+    let mut s = session();
+    let a = rect(&mut s, 100.0, 100.0);
+    s.execute("guide.add", &json!({"vertical": true, "pos": 500})).unwrap();
+    s.execute("guide.add", &json!({"vertical": false, "pos": 400})).unwrap();
+    s.select_tool("selection", ViewInfo::default()).unwrap();
+    // Click the object, Shift-click both guides, then click the object again: one object is
+    // enough to be the key while guides are selected.
+    click(&mut s, 110.0, 110.0, false);
+    click(&mut s, 500.0, 300.0, true);
+    click(&mut s, 300.0, 400.0, true);
+    assert_eq!(s.doc().unwrap().selection.guides, vec![0, 1]);
+    click(&mut s, 110.0, 110.0, false);
+    assert_eq!(s.doc().unwrap().selection.key, Some(a), "the object is the key");
+    let before = bounds(&s, a);
+    s.execute("object.align", &json!({"horizontal": "center", "vertical": "center"})).unwrap();
+    let guides = |s: &Session| s.doc().unwrap().doc.guides.iter().map(|g| g.pos).collect::<Vec<_>>();
+    assert_eq!(guides(&s), [120.0, 110.0], "the vertical guide on the centre's x, the horizontal one on its y");
+    assert_eq!(bounds(&s, a), before, "the key stays put");
+    s.execute("object.align", &json!({"horizontal": "right"})).unwrap();
+    assert_eq!(guides(&s), [140.0, 110.0], "horizontal alignment moves only the vertical guide");
+    s.execute("edit.undo", &json!({})).unwrap();
+    assert_eq!(guides(&s), [120.0, 110.0], "one undo step");
+    // Aligning to the artboard leaves the guides alone.
+    s.execute("object.align", &json!({"horizontal": "left", "to": "artboard"})).unwrap();
+    assert_eq!(guides(&s), [120.0, 110.0]);
+    // Deselecting the guides lets the lone key go.
+    s.execute("guide.select", &json!({"indexes": [0, 1], "toggle": true})).unwrap();
+    assert_eq!(s.doc().unwrap().selection.objects, vec![a]);
+    assert_eq!(s.doc().unwrap().selection.key, None);
+}
+
+#[test]
+fn guides_align_to_a_key_object_among_others_and_parallel_ones_to_a_key_guide() {
+    let mut s = session();
+    let (a, b) = (rect(&mut s, 100.0, 100.0), rect(&mut s, 300.0, 250.0));
+    for pos in [500, 600] {
+        s.execute("guide.add", &json!({"vertical": true, "pos": pos})).unwrap();
+    }
+    s.execute("select.set", &json!({"ids": [a.0, b.0]})).unwrap();
+    s.execute("guide.select", &json!({"indexes": [0, 1], "toggle": true})).unwrap();
+    s.execute("select.key", &json!({"id": b.0})).unwrap();
+    s.execute("object.align", &json!({"horizontal": "left"})).unwrap();
+    assert_eq!(bounds(&s, a).x0, 300.0);
+    assert!(s.doc().unwrap().doc.guides.iter().all(|g| g.pos == 300.0));
+    // Aligning to the selection leaves guides alone.
+    s.execute("object.align", &json!({"horizontal": "right", "to": "selection"})).unwrap();
+    assert!(s.doc().unwrap().doc.guides.iter().all(|g| g.pos == 300.0));
+    // A key guide stays put, and the other vertical guide lines up on it.
+    s.execute("guide.move", &json!({"index": 1, "pos": 700})).unwrap();
+    s.execute("select.key", &json!({"guide": 1})).unwrap();
+    s.execute("object.align", &json!({"horizontal": "center"})).unwrap();
+    assert_eq!(s.doc().unwrap().doc.guides.iter().map(|g| g.pos).collect::<Vec<_>>(), [700.0, 700.0]);
+}

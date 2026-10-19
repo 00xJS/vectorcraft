@@ -175,13 +175,16 @@ impl Selection {
             refs.retain(|&(si, seg)| path.subpaths.get(si).is_some_and(|sp| seg < sp.segment_count()));
             !refs.is_empty() && self.objects.contains(id) && self.anchors.contains_key(id)
         });
-        // The key object stays while another selected object lies outside it.
+        // Guides on a hidden or locked layer can't stay selected.
+        self.guides.retain(|i| doc.guides.get(*i).is_some_and(|g| doc.guide_editable(g)));
+        // The key object stays while another selected object lies outside it, or while ruler
+        // guides are selected for it to line up (#2143).
         let keep = self.key.and_then(|k| found.get(&k)).and_then(|p| doc.node_at(p)).is_some_and(|n| {
             let mut inside = BTreeSet::new();
             n.walk(&mut |c| {
                 inside.insert(c.id);
             });
-            self.objects.iter().any(|o| !inside.contains(o))
+            self.objects.iter().any(|o| !inside.contains(o)) || (self.objects.contains(&n.id) && !self.guides.is_empty())
         });
         if !keep {
             self.key = None;
@@ -190,8 +193,6 @@ impl Selection {
             self.target = None;
         }
         self.slices.retain(|id| doc.is_slice(*id));
-        // Guides on a hidden or locked layer can't stay selected.
-        self.guides.retain(|i| doc.guides.get(*i).is_some_and(|g| doc.guide_editable(g)));
         // A key guide needs objects to line up on it, and stays selected.
         if self.key.is_some() || self.objects.is_empty() || self.key_guide.is_some_and(|k| !self.guides.contains(&k)) {
             self.key_guide = None;

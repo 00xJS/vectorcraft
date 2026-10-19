@@ -775,6 +775,10 @@ pub(crate) fn deselect_guides(d: &Document, sel: &mut Selection) -> bool {
     }
     sel.guides.clear();
     sel.key_guide = None;
+    // A key object kept only for the guides to line up on goes with them.
+    if sel.key.is_some_and(|k| sel.objects.iter().all(|o| *o == k)) {
+        sel.key = None;
+    }
     any
 }
 
