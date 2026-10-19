@@ -1567,6 +1567,12 @@ lighting	Light	Světlo
 	Release Blend	Uvolnit prolnutí
 	Release Envelope	Uvolnit obálku
 	Release Intertwine	Uvolnit propletení
+	Objects on Path	Objekty na cestě
+	Attach	Připojit
+	Objects on Path Options	Možnosti objektů na cestě
+	Objects on Path Tool	Nástroj Objekty na cestě
+	Attach Objects on Path	Připojit objekty na cestu
+	Expand Objects on Path	Rozložit objekty na cestě
 	Release Live Paint	Uvolnit živou malbu
 	Release Repeat	Uvolnit opakování
 	Release Slice	Uvolnit řez
@@ -4402,6 +4408,7 @@ imageTrace	Outline	Obrys
 @msg	select a linked image: an embedded one has no file	vyberte propojený obrázek: vložený nemá soubor
 @msg	select a repeat	vyberte opakování
 @msg	select an Intertwine group	vyberte skupinu propletení
+@msg	select an Objects on Path group	vyberte skupinu objektů na cestě
 @msg	select a stroke with a variable width	vyberte tah s proměnnou šířkou
 @msg	select a symbol instance	vyberte instanci symbolu
 @msg	select an Image Trace object	vyberte objekt vektorizace obrazu

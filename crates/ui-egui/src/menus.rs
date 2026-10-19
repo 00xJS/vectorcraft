@@ -2572,6 +2572,7 @@ pub fn menu_tree_named(english_names: bool) -> Vec<(&'static str, Vec<Item>)> {
                     "Intertwine",
                     vec![c("Make", "object.intertwine.make"), c("Edit", "object.intertwine.edit"), c("Release", "object.intertwine.release")],
                 ),
+                sub("Objects on Path", vec![c("Attach", "object.objectsOnPath.attach"), c("Expand", "object.objectsOnPath.expand")]),
                 sub(
                     "Blend",
                     vec![
@@ -3094,6 +3095,10 @@ pub fn context_items(app: &VectorcraftApp) -> Vec<Item> {
         }
         if several && paths {
             v.push(c("Make Compound Path", "object.compoundPath.make"));
+        }
+        // Chooses the Objects on Path tool, whose click on a path attaches the selection to it.
+        if several {
+            v.push(c("Objects on Path", "object.objectsOnPath.attach"));
         }
         if any(|k| matches!(k, NodeKind::Compound { .. })) {
             v.push(c("Release Compound Path", "object.compoundPath.release"));

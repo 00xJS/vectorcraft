@@ -1400,6 +1400,12 @@ file-filter	Templates	Vorlagen
 	Release Envelope	Hülle zurückwandeln
 	Release Image Trace	Bildnachzeichner zurückwandeln
 	Release Intertwine	Verflechtung zurückwandeln
+	Objects on Path	Objekte auf Pfad
+	Attach	Anhängen
+	Objects on Path Options	Optionen für Objekte auf Pfad
+	Objects on Path Tool	Objekte-auf-Pfad-Werkzeug
+	Attach Objects on Path	Objekte an Pfad anhängen
+	Expand Objects on Path	Objekte auf Pfad umwandeln
 	Release Live Paint	„Interaktiv malen“ zurückwandeln
 	Release Repeat	Wiederholung zurückwandeln
 	Release Slice	Slice zurückwandeln
@@ -4039,6 +4045,7 @@ theme	Appearance	Erscheinungsbild
 @msg	select a linked image: an embedded one has no file	wählen Sie ein verknüpftes Bild aus: Ein eingebettetes hat keine Datei
 @msg	select a repeat	wählen Sie eine Wiederholung aus
 @msg	select an Intertwine group	wählen Sie eine Verflechtungsgruppe aus
+@msg	select an Objects on Path group	wählen Sie eine Gruppe „Objekte auf Pfad“ aus
 @msg	select a stroke with a variable width	wählen Sie eine Kontur mit variabler Breite aus
 @msg	select a symbol instance	wählen Sie eine Symbolinstanz aus
 @msg	select an Image Trace object	wählen Sie ein Bildnachzeichner-Objekt aus

@@ -1662,6 +1662,12 @@
 	Release Envelope	エンベロープを解除
 	Release Image Trace	画像トレースを解除
 	Release Intertwine	織り交ぜを解除
+	Objects on Path	パス上のオブジェクト
+	Attach	アタッチ
+	Objects on Path Options	パス上のオブジェクトオプション
+	Objects on Path Tool	パス上のオブジェクトツール
+	Attach Objects on Path	パス上のオブジェクトをアタッチ
+	Expand Objects on Path	パス上のオブジェクトを拡張
 	Release Live Paint	ライブペイントを解除
 	Release Repeat	リピートを解除
 	Release Slice	スライスを解除
@@ -4023,6 +4029,7 @@ swatch	Bright Violet	ビビッドバイオレット
 @msg	pattern missing	パターンが見つかりません
 @msg	select a repeat	リピートを選択してください
 @msg	select an Intertwine group	織り交ぜグループを選択してください
+@msg	select an Objects on Path group	パス上のオブジェクトグループを選択してください
 @msg	select the art to repeat	リピートするアートを選択してください
 @msg	the document has no patterns	ドキュメントにパターンがありません
 @msg	no artboard	アートボードがありません

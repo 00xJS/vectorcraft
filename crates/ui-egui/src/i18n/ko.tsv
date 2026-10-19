@@ -1657,6 +1657,12 @@
 	Release Envelope	엔벨로프 해제
 	Release Image Trace	이미지 추적 해제
 	Release Intertwine	교차 해제
+	Objects on Path	패스 위 개체
+	Attach	부착
+	Objects on Path Options	패스 위 개체 옵션
+	Objects on Path Tool	패스 위 개체 도구
+	Attach Objects on Path	패스 위 개체 부착
+	Expand Objects on Path	패스 위 개체 확장
 	Release Live Paint	라이브 페인트 해제
 	Release Repeat	반복 해제
 	Release Slice	분할 해제
@@ -3955,6 +3961,7 @@ theme	Appearance	외관
 @msg	pattern missing	패턴이 없습니다
 @msg	select a repeat	반복을 선택하세요
 @msg	select an Intertwine group	교차 그룹을 선택하세요
+@msg	select an Objects on Path group	패스 위 개체 그룹을 선택하세요
 @msg	select the art to repeat	반복할 아트웍을 선택하세요
 @msg	the document has no patterns	문서에 패턴이 없습니다
 @msg	no artboard	아트보드가 없습니다

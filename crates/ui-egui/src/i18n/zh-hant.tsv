@@ -1389,6 +1389,12 @@ file-filter	Templates	範本
 	Release Envelope	釋放封套
 	Release Image Trace	釋放影像描圖
 	Release Intertwine	釋放交織
+	Objects on Path	路徑上的物件
+	Attach	附加
+	Objects on Path Options	路徑上的物件選項
+	Objects on Path Tool	路徑上的物件工具
+	Attach Objects on Path	附加路徑上的物件
+	Expand Objects on Path	展開路徑上的物件
 	Release Live Paint	釋放即時上色
 	Release Repeat	釋放重複
 	Release Slice	釋放切片
@@ -1783,6 +1789,7 @@ file-filter	Templates	範本
 @msg	pattern missing	找不到圖樣
 @msg	select a repeat	請選取重複物件
 @msg	select an Intertwine group	請選取交織群組
+@msg	select an Objects on Path group	請選取路徑上的物件群組
 @msg	select the art to repeat	請選取要重複的圖稿
 @msg	the document has no patterns	文件中沒有圖樣
 @msg	no artboard	沒有工作區域

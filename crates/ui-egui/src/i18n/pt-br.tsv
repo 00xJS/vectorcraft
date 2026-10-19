@@ -1212,6 +1212,12 @@
 	Release Blend	Liberar Mesclagem
 	Release Envelope	Liberar Envelope
 	Release Intertwine	Liberar Entrelaçamento
+	Objects on Path	Objetos no Caminho
+	Attach	Anexar
+	Objects on Path Options	Opções de Objetos no Caminho
+	Objects on Path Tool	Ferramenta Objetos no Caminho
+	Attach Objects on Path	Anexar Objetos ao Caminho
+	Expand Objects on Path	Expandir Objetos no Caminho
 	Release Live Paint	Liberar Pintura ao Vivo
 	Release Repeat	Liberar Repetição
 	Release Slice	Liberar Fatia
@@ -3682,6 +3688,7 @@ axis	Both	Ambos
 @msg	select a linked image: an embedded one has no file	selecione uma imagem vinculada: uma incorporada não tem arquivo
 @msg	select a repeat	selecione uma repetição
 @msg	select an Intertwine group	selecione um grupo entrelaçado
+@msg	select an Objects on Path group	selecione um grupo de objetos no caminho
 @msg	select a stroke with a variable width	selecione um traço com largura variável
 @msg	select a symbol instance	selecione uma instância de símbolo
 @msg	select an Image Trace object	selecione um objeto de Vetorização de imagem

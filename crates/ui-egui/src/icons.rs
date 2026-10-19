@@ -84,6 +84,7 @@ pub fn tool_icon(name: &str) -> &'static str {
         "tool-measure" => "dc-measure",
         "tool-dimension" => "dc-dimension",
         "tool-blend" => "dc-blend",
+        "tool-objects-on-path" => "dc-objects-on-path",
         "tool-symbol" => "dc-symbol-sprayer",
         "tool-graph" => "chart-column",
         "tool-artboard" => "frame",

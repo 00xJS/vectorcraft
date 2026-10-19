@@ -1702,14 +1702,17 @@ impl Session {
         let before = st.doc.clone();
         let before_sel = st.selection.clone();
         let doc = Arc::make_mut(&mut st.doc);
-        // Dimensions follow the art they measure.
+        // Objects attached to a path follow it, and dimensions follow the art they measure.
         let result = match f(doc, &mut st.selection).and_then(|v| {
+            cmd::objects_on_path::refresh(&before, doc);
             cmd::dimension::refresh(&before, doc)?;
             Ok(v)
         }) {
             Ok(v) => match cmd::shaper::refresh(&before, Arc::make_mut(&mut st.doc)) {
                 Err(e) => Err(e),
                 Ok(()) => {
+                    // Attached Shaper groups whose art was rebuilt go back on their path.
+                    cmd::objects_on_path::refresh(&before, Arc::make_mut(&mut st.doc));
                     // Inline graphics in text follow their symbols.
                     cmd::inline::refresh(&before, Arc::make_mut(&mut st.doc));
                     // Text Wrap: area type follows its wrap objects; then threads re-flow.
@@ -2184,6 +2187,8 @@ mod tests_nativefile;
 mod tests_newart;
 #[cfg(test)]
 mod tests_newdoc;
+#[cfg(test)]
+mod tests_objects_on_path;
 #[cfg(test)]
 mod tests_objexpand;
 #[cfg(test)]

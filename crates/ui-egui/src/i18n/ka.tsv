@@ -4830,6 +4830,7 @@ imageTrace	Outline	კონტური
 	Intertwine	გადახლართვა
 	Arrange Intertwine Area	გადახლართვის არის დალაგება
 @msg	select an Intertwine group	მონიშნეთ გადახლართვის ჯგუფი
+@msg	select an Objects on Path group	მონიშნეთ ტრაექტორიაზე ობიექტების ჯგუფი
 	Registration:	საბაზისო წერტილი:
 @msg	span must be "object" or "selection", got {v}	span უნდა იყოს "object" ან "selection", მიღებულია {v}
 @msg	span: "selection" places a `gradient`, not a swatch	span: "selection" ათავსებს `gradient`-ს და არა ფერის ნიმუშს
@@ -5015,6 +5016,12 @@ imageTrace	Outline	კონტური
 	Release Blend	გადასვლის მოხსნა
 	Release Envelope	გარსის მოხსნა
 	Release Intertwine	გადახლართვის მოხსნა
+	Objects on Path	ობიექტები ტრაექტორიაზე
+	Attach	მიმაგრება
+	Objects on Path Options	ტრაექტორიაზე ობიექტების პარამეტრები
+	Objects on Path Tool	ტრაექტორიაზე ობიექტების ხელსაწყო
+	Attach Objects on Path	ობიექტების ტრაექტორიაზე მიმაგრება
+	Expand Objects on Path	ტრაექტორიაზე ობიექტების გაშლა
 	Release Live Paint	ცოცხალი შეღებვის მოხსნა
 	Release Repeat	გამეორების მოხსნა
 	Release Slice	ნაჭრის მოხსნა
