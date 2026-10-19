@@ -599,10 +599,7 @@ impl Tool for CurvatureTool {
                 tail.to_bezpath_into(&mut bp);
                 o.push(Overlay::Path { path: bp, color: FEEDBACK, width: 1.0, dashed: false });
                 if cx.measurement_labels && e.p.distance(h) > 1e-9 {
-                    o.push(Overlay::Measure {
-                        p: h + Vec2::new(cx.tol(12.0), cx.tol(12.0)),
-                        text: cx.segment_measure_label(e.p, h),
-                    });
+                    o.push(Overlay::Measure { p: h + Vec2::new(cx.tol(12.0), cx.tol(12.0)), text: cx.segment_measure_label(e.p, h) });
                 }
             }
             return o;
@@ -619,10 +616,7 @@ impl Tool for CurvatureTool {
                 && cx.measurement_labels
                 && from.distance(h) > 1e-9
             {
-                o.push(Overlay::Measure {
-                    p: h + Vec2::new(cx.tol(12.0), cx.tol(12.0)),
-                    text: cx.segment_measure_label(*from, h),
-                });
+                o.push(Overlay::Measure { p: h + Vec2::new(cx.tol(12.0), cx.tol(12.0)), text: cx.segment_measure_label(*from, h) });
             }
         }
         for (i, (p, _)) in self.pts.iter().enumerate() {

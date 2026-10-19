@@ -397,10 +397,7 @@ impl Tool for PenTool {
             }
             o.push(Overlay::Path { path: bp, color: cx.doc.layer_color(id), width: 1.0, dashed: false });
             if cx.measurement_labels && last.distance(h) > 1e-9 {
-                o.push(Overlay::Measure {
-                    p: h + Vec2::new(cx.tol(12.0), cx.tol(12.0)),
-                    text: cx.segment_measure_label(last, h),
-                });
+                o.push(Overlay::Measure { p: h + Vec2::new(cx.tol(12.0), cx.tol(12.0)), text: cx.segment_measure_label(last, h) });
             }
         }
         o.extend_from_slice(self.snap.guides());
