@@ -564,12 +564,8 @@ pub fn show(app: &mut VectorcraftApp, ui: &mut Ui) {
         }
         ui.data_mut(|d| d.insert_temp(key("seen-current"), current));
     }
-    // With Locate Selected Objects on, an object selected anew outside the panel has the rows
-    // around it opened, and its row is revealed instead of the active layer's row (below).
+    // With Locate Selected Objects on, an object selected anew outside the panel (below).
     let located = newly_selected(app, ui).filter(|_| !highlighted);
-    if let Some(id) = located {
-        open_around(app, &doc, &[id]);
-    }
     // Search All, and the Filter button at its right.
     let query = ui
         .horizontal(|ui| {
@@ -582,11 +578,18 @@ pub fn show(app: &mut VectorcraftApp, ui: &mut Ui) {
         .inner
         .trim()
         .to_lowercase();
+    // The located object, when it has a row once the rows around it are open (Show Layers Only, a
+    // search or the filter can leave it out): those rows open, and its row is revealed instead of
+    // the row revealed above. Otherwise nothing opens.
+    let located = located.filter(|id| {
+        app.session.active().is_some_and(|st| listed_when_opened(&doc, &st.layers_open, &app.ui.layers_panel, &query, &app.ui.layers_filter, *id))
+    });
+    if let Some(id) = located {
+        open_around(app, &doc, &[id]);
+    }
+    let reveal = located.or(reveal);
     let Some(st) = app.session.active() else { return };
     let list = rows_of_doc(ui, st, &app.ui.layers_panel, &query, &app.ui.layers_filter);
-    // The located object's row when it is listed (Show Layers Only, a search or the filter can
-    // leave it out), otherwise the row revealed above.
-    let reveal = located.filter(|id| list.iter().any(|r| r.node.id == *id)).or(reveal);
     let view = View {
         doc: &doc,
         thumbs: ThumbSource::of(app, st, &doc),
@@ -708,6 +711,23 @@ fn open_around(app: &mut VectorcraftApp, doc: &Document, ids: &[NodeId]) {
             st.layers_open.set(a, true);
         }
     }
+}
+
+/// Whether [`list_rows`] gives `id` a row once the layers and groups around it are open as well as
+/// `open`. Only the rows of `id`'s top-level layer are listed.
+fn listed_when_opened(doc: &Document, open: &OpenRows, opts: &PanelOptions, query: &str, filter: &Filter, id: NodeId) -> bool {
+    let Some(ancestry) = doc.ancestry(id) else { return false };
+    let Some(layer) = doc.layers.iter().find(|l| ancestry.first() == Some(&l.id)) else { return false };
+    if doc.mask_edit.is_some_and(|m| m.layer != layer.id) {
+        return false;
+    }
+    let mut open = open.clone();
+    for a in ancestry.split_last().map(|(_, a)| a).unwrap_or_default() {
+        open.set(*a, true);
+    }
+    let mut rows = vec![];
+    push_rows(layer, 0, false, (Color32::PLACEHOLDER, true), (&open, opts, query, filter, doc), &mut rows);
+    rows.iter().any(|r| r.node.id == id && r.guide.is_none())
 }
 
 /// The active document's uid and its last selected object, the one Locate Object locates.
@@ -3017,6 +3037,38 @@ mod tests {
         assert!(!(0..4).any(|_| tall_frame(&mut app, &ctx, &name).1), "the bottom layer's row is out of view");
         run(&mut app, "select.set", json!({"ids": [bottom]}));
         assert!((0..4).any(|_| tall_frame(&mut app, &ctx, &name).1), "the active layer's row is scrolled into view");
+    }
+
+    /// With Locate Selected Objects on, art selected outside the panel that Show Layers Only or the
+    /// filter leaves without a row opens nothing, so its group stays closed once the panel lists
+    /// every row again. Art the filter keeps has its group opened.
+    #[test]
+    fn with_the_option_art_the_panel_does_not_list_opens_nothing() {
+        let (mut app, _, paths) = groups_of_one(500);
+        app.ui.layers_panel.locate_selected = true;
+        let ctx = egui::Context::default();
+        let open = |app: &VectorcraftApp, i: usize| {
+            let st = app.session.active().unwrap();
+            st.layers_open.contains(st.doc.parent_of(paths[i]).unwrap())
+        };
+        let locate = |app: &mut VectorcraftApp, i: usize| {
+            app.session.execute("select.set", &json!({"ids": [paths[i].0]})).unwrap();
+            for _ in 0..4 {
+                tall_frame(app, &ctx, "");
+            }
+        };
+        tall_frame(&mut app, &ctx, "");
+        app.ui.layers_panel.layers_only = true;
+        locate(&mut app, 0);
+        app.ui.layers_panel.layers_only = false;
+        tall_frame(&mut app, &ctx, "");
+        assert!(!open(&app, 0), "Show Layers Only: the group stays closed");
+        app.ui.layers_filter = Filter { objects: vec![ObjectKind::Text], layers: vec![] };
+        locate(&mut app, 1);
+        assert!(!open(&app, 1), "a filter that leaves the path out: the group stays closed");
+        app.ui.layers_filter = Filter { objects: vec![ObjectKind::Paths], layers: vec![] };
+        locate(&mut app, 2);
+        assert!(open(&app, 2), "a filter that keeps the path: the group opens");
     }
 
     /// A layer of 2,000 groups of 10 paths with every row open: one frame lays out only the rows
