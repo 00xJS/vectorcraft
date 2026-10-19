@@ -843,7 +843,7 @@ pub const UI_COMMANDS: &[(&str, &str, &str, &str)] = &[
         "file.exportSelection",
         "Export Selection…",
         "",
-        "{multiple?: true} collect the selected objects as assets (assets.add: one per object; false: one of them all) and open Export for Screens on its Assets tab with them checked → {assets: [asset id…]}; document.exportSelection exports the selection in one go instead",
+        "{multiple?: false} collect the selected objects as assets (assets.add: one of them all, as one image; true: one per object) and open Export for Screens on its Assets tab with them checked → {assets: [asset id…]}; document.exportSelection exports the selection in one go instead",
     ),
     (
         "css.copy",
@@ -1666,13 +1666,15 @@ pub fn run_ui_command(app: &mut VectorcraftApp, id: &str, p: &Value) -> Option<R
         "file.saveForWeb" if p.as_object().is_none_or(|o| o.is_empty()) => crate::dialogs::save_for_web::open(app),
         "file.saveForWeb" => crate::dialogs::save_for_web::save(app, p.clone()),
         "file.saveForWeb.browser" => crate::dialogs::save_for_web::browser_preview(app, p),
-        // File → Export Selection…: the selection becomes assets, shown checked on Export for
-        // Screens' Assets tab.
-        "file.exportSelection" => app.run("assets.add", json!({ "multiple": p.get("multiple").and_then(Value::as_bool).unwrap_or(true) })).map(|r| {
-            let ids: Vec<u64> = r["assets"].as_array().into_iter().flatten().filter_map(Value::as_u64).collect();
-            crate::dialogs::open_export_for_screens_assets(app, Some(&ids));
-            json!({ "assets": ids })
-        }),
+        // File → Export Selection…: the selection becomes one asset (`multiple: true`: one per
+        // object), shown checked on Export for Screens' Assets tab.
+        "file.exportSelection" => {
+            app.run("assets.add", json!({ "multiple": p.get("multiple").and_then(Value::as_bool).unwrap_or(false) })).map(|r| {
+                let ids: Vec<u64> = r["assets"].as_array().into_iter().flatten().filter_map(Value::as_u64).collect();
+                crate::dialogs::open_export_for_screens_assets(app, Some(&ids));
+                json!({ "assets": ids })
+            })
+        }
         "css.copy" => crate::panels::css_properties::copy(app, p),
         "css.exportFile" => crate::panels::css_properties::export_file(app, p),
         // File → Print…: its dialog; with params, print (or save the job as a PDF) without it.
