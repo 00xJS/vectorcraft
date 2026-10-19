@@ -139,7 +139,7 @@ fn check_revolve_count(n: &Node, cmd: &str) -> Result<()> {
     Ok(())
 }
 
-const ONE_3D: &str = "An object takes one 3D effect. Edit the existing effect's options, or remove it first.";
+pub(crate) const ONE_3D: &str = "An object takes one 3D effect. Edit the existing effect's options, or remove it first.";
 
 pub(crate) fn apply(s: &mut Session, p: &Value) -> Result<Value> {
     const C: &str = "effect.apply";
@@ -172,13 +172,9 @@ pub(crate) fn apply(s: &mut Session, p: &Value) -> Result<Value> {
     if effects::is_three_d(id) {
         for target in appearance_targets(s, p)? {
             let n = s.doc()?.doc.node(target).ok_or(EngineError::NoNode(target))?;
-            if id == effects::REVOLVE {
-                effects::validate_revolve(n, &effect.params).map_err(|e| bad(C, e))?;
-                if effects::has_revolve(n) {
-                    return Err(bad(C, "A profile supports one Revolve effect. Edit the existing effect's options instead."));
-                }
-            } else {
-                effects::validate_solid(n, id, &effect.params).map_err(|e| bad(C, e))?;
+            effects::validate_three_d(n, id, &effect.params).map_err(|e| bad(C, e))?;
+            if id == effects::REVOLVE && effects::has_revolve(n) {
+                return Err(bad(C, "A profile supports one Revolve effect. Edit the existing effect's options instead."));
             }
             if effects::has_revolve(n) || effects::has_solid(n) {
                 return Err(bad(C, ONE_3D));
@@ -372,11 +368,7 @@ fn set_params(s: &mut Session, p: &Value) -> Result<Value> {
             if let (Some(cur), Value::Object(new)) = (prospective.as_object_mut(), effects::upgrade_params(&e.id, &params)) {
                 cur.extend(new);
             }
-            if e.id == effects::REVOLVE {
-                effects::validate_revolve(n, &prospective).map_err(|e| bad(C, e))?;
-            } else {
-                effects::validate_solid(n, &e.id, &prospective).map_err(|e| bad(C, e))?;
-            }
+            effects::validate_three_d(n, &e.id, &prospective).map_err(|e| bad(C, e))?;
         }
     }
     let ids = edit_effects(s, p, item, C, "Effect Options", &format!("{C}: no effect at index {index}"), |fx| {
@@ -410,7 +402,9 @@ const GLASS: &str = "distort.glass";
 /// Effect › Texture › Texturizer.
 const TEXTURIZER: &str = "texture.texturizer";
 
-fn texture_load_effect(id: &str) -> bool {
+/// Does effect `id` have Load Texture: a `textureImage` that `effect.apply` reads from an image
+/// file (Glass, Texturizer)?
+pub(crate) fn texture_load_effect(id: &str) -> bool {
     id == GLASS || id == TEXTURIZER
 }
 

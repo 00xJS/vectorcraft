@@ -82,7 +82,7 @@ pub use reshape::{expand_outlined, has_gradient_copies, has_item_geometry, image
 pub use revolve::{REVOLVE, has_revolve, revolve_art, revolve_options, validate_revolve};
 pub use solids::{
     EXTRUDE, INFLATE, ROTATE, ROTATION_PRESETS, SOLIDS, extrude_options, has_solid, inflate_options, is_three_d, solid_art, validate_solid,
-    view_options,
+    validate_three_d, view_options,
 };
 pub use warp::{WarpStyle, warp_point};
 
