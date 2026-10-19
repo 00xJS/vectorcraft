@@ -317,10 +317,10 @@ pub fn menu(app: &mut VectorcraftApp, ui: &mut Ui) {
     }
     ui.separator();
     if widgets::menu_item(ui, tl!("Import Data Sets…"), true, false) {
-        import_datasets(app);
+        crate::picks::button(app, import_datasets);
     }
     if widgets::menu_item(ui, tl!("Export Data Sets…"), !vars.is_empty(), false) {
-        export_datasets(app);
+        crate::picks::button(app, export_datasets);
     }
     ui.separator();
     // What the highlighted variable drives, selected — its bindings are left alone.
