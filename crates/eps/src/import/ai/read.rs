@@ -89,7 +89,7 @@ fn ruler_unit(v: u8) -> Option<Unit> {
         2 => Unit::Points,
         3 => Unit::Picas,
         4 => Unit::Centimeters,
-        5 | 6 => Unit::Pixels,
+        6 => Unit::Pixels,
         _ => return None,
     })
 }
