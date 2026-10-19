@@ -5259,3 +5259,4 @@ swatch	Bright Violet	Kirkas violetti
 	Save and Close	Tallenna ja sulje
 	Play:	Toista:
 	Move Anchor Point	Siirrä ankkuripistettä
+@msg	{label} keeps 1 of the document's {n} artboards: the file reopens with one. Turn on Preserve Editing Capabilities to keep them all.	{label} säilyttää asiakirjan {n} piirtoalustasta 1: tiedosto avautuu uudelleen yhdellä. Ota Säilytä muokkausominaisuudet käyttöön, jotta kaikki säilyvät.

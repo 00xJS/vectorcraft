@@ -5180,3 +5180,4 @@ effect	Points	Σημεία
 # Select by Color (select.color)
 	Select by Color	Επιλογή βάσει χρώματος
 	Move Anchor Point	Μετακίνηση σημείου αγκύρωσης
+@msg	{label} keeps 1 of the document's {n} artboards: the file reopens with one. Turn on Preserve Editing Capabilities to keep them all.	Το {label} διατηρεί 1 από τους {n} πίνακες σχεδίασης του εγγράφου: το αρχείο ανοίγει ξανά με μία. Ενεργοποιήστε τη Διατήρηση δυνατοτήτων επεξεργασίας για να τους κρατήσετε όλους.
