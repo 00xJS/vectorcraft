@@ -720,48 +720,117 @@ pub fn status_bar(app: &mut VectorcraftApp, ui: &mut Ui) {
                     })
                     .unwrap_or("");
                 ui.label(egui::RichText::new(tool).size(11.5).color(t.text_dim));
-                ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                    ui.label(
-                        egui::RichText::new(format!(
-                            "{} {:.1} ms · {} {:.1} ms · {:.0} fps",
-                            crate::i18n::tr_ctx(crate::i18n::current(), "diagnostics", "render"),
-                            app.perf.render_ms,
-                            crate::i18n::tr_ctx(crate::i18n::current(), "diagnostics", "ui"),
-                            app.perf.frame_ms,
-                            app.perf.fps
-                        ))
-                        .size(10.5)
-                        .color(t.text_disabled),
-                    );
-                    if let Some(p) = app.hover_doc {
-                        let u = app.session.general_unit();
-                        ui.label(
-                            egui::RichText::new(format!("X: {}  Y: {}", u.readout(p.x), u.readout(p.y))).font(theme::mono(10.5)).color(t.text_dim),
-                        );
-                    }
-                    // Background saves, exports and opens in progress, else the last message.
-                    let busy: Vec<&str> = app
-                        .background
-                        .jobs
-                        .iter()
-                        .filter(|j| !j.label.is_empty() && !j.cancelled())
-                        .map(|j| j.label.as_str())
-                        .chain(app.opening.pending.iter().map(|p| p.label.as_str()))
-                        .collect();
-                    if let Some(job) = busy.first() {
-                        let more = busy.len() - 1;
-                        let label = crate::i18n::msg(job);
-                        let text = if more > 0 { format!("{label}… (+{more})") } else { format!("{label}…") };
-                        ui.add(egui::Spinner::new().size(12.0).color(t.accent));
-                        ui.add(egui::Label::new(egui::RichText::new(text).size(11.0).color(t.text)).truncate());
-                    } else if !app.ui.status.is_empty() {
-                        // The message stays English in `ui.status` (agents and tests read it).
-                        let message = crate::i18n::msg(&app.ui.status);
-                        ui.add(egui::Label::new(egui::RichText::new(message).size(11.0).color(t.text)).truncate());
-                    }
-                });
+                status_readouts(app, ui, &t);
             });
         });
+}
+
+/// Allocate the remaining row once, then paint each field inside its own bounded rectangle.
+/// Child UIs requested with a desired width can shrink to their contents; these rectangles cannot.
+fn status_readouts(app: &VectorcraftApp, ui: &mut Ui, t: &Tokens) {
+    const MESSAGE_MIN: f32 = 180.0;
+    let mono = theme::mono(10.5);
+    let proportional = egui::FontId::proportional(10.5);
+    let unit = app.session.general_unit();
+    let render = crate::i18n::tr_ctx(crate::i18n::current(), "diagnostics", "render");
+    let ui_name = crate::i18n::tr_ctx(crate::i18n::current(), "diagnostics", "ui");
+    let measure = |text, font: &egui::FontId| ui.painter().layout_no_wrap(text, font.clone(), t.text).size().x.ceil() + 4.0;
+    // Reserve a readable numeric range using every digit in the active font. These samples
+    // depend on the language/units, never the live values: timings cannot move field boundaries.
+    let timing_width = |label| (0..=9).map(|d| measure(format!("{label} {d}{d}{d}{d}.{d} ms"), &proportional)).fold(0.0_f32, f32::max);
+    let render_width = timing_width(render);
+    let ui_width = timing_width(ui_name);
+    let fps_width = (0..=9).map(|d| measure(format!("{d}{d}{d}{d} fps"), &proportional)).fold(0.0_f32, f32::max);
+    // Each axis shows at least -9999.99..9999.99 in the selected unit without elision.
+    let axis_width = (0..=9).map(|d| measure(format!("X: -{d}{d}{d}{d}.{d}{d} {}", unit.suffix()), &mono)).fold(100.0_f32, f32::max);
+    let coord_width = 2.0 * axis_width;
+    let perf_width = render_width + ui_width + fps_width + 12.0;
+    let point_id = ui.id().with(("status-hover-point", app.session.active().map(|st| st.uid)));
+    if let Some(p) = app.hover_doc {
+        ui.data_mut(|data| data.insert_temp(point_id, p));
+    }
+    let gap = ui.spacing().item_spacing.x;
+    let size = vec2(ui.available_width().max(0.0), ui.available_height().max(0.0));
+    let (area, _) = ui.allocate_exact_size(size, Sense::hover());
+    let coordinates = area.width() >= MESSAGE_MIN + coord_width + gap;
+    let diagnostics = area.width() >= MESSAGE_MIN + coord_width + perf_width + 2.0 * gap;
+    let mut right = area.right();
+    if diagnostics {
+        let perf = egui::Rect::from_min_max(egui::pos2(right - perf_width, area.top()), area.right_bottom());
+        let mut x = perf.left();
+        for (id, width, text) in [
+            ("render", render_width, format!("{render} {:.1} ms", app.perf.render_ms)),
+            ("ui", ui_width, format!("{ui_name} {:.1} ms", app.perf.frame_ms)),
+            ("fps", fps_width, format!("{:.0} fps", app.perf.fps)),
+        ] {
+            let rect = egui::Rect::from_min_size(egui::pos2(x, area.top()), vec2(width, area.height()));
+            status_field(ui, id, rect, text, proportional.clone(), t.text_disabled);
+            x += width + 6.0;
+        }
+        right = perf.left() - gap;
+    }
+    if coordinates {
+        let left = right - coord_width;
+        // Keep the coordinate slot even without a hover point, so entering/leaving the canvas
+        // cannot move or re-truncate the message. X and Y have separate, stable origins.
+        let coord_rect = egui::Rect::from_min_max(egui::pos2(left, area.top()), egui::pos2(right, area.bottom()));
+        // The canvas clears hover_doc when the pointer leaves. While inspecting a readout,
+        // retain its last value so its tooltip can show the complete coordinate.
+        let inspecting = ui.input(|i| i.pointer.hover_pos()).is_some_and(|p| coord_rect.contains(p)) && ui.rect_contains_pointer(coord_rect);
+        let point = app.hover_doc.or_else(|| inspecting.then(|| ui.data(|data| data.get_temp::<vectorcraft_geom::Point>(point_id))).flatten());
+        if let Some(p) = point {
+            for (id, x, value) in [("X", left, p.x), ("Y", left + axis_width, p.y)] {
+                let rect = egui::Rect::from_min_size(egui::pos2(x, area.top()), vec2(axis_width, area.height()));
+                status_field(ui, id, rect, format!("{id}: {}", unit.readout(value)), mono.clone(), t.text_dim);
+            }
+        }
+        right = left - gap;
+    }
+    let busy: Vec<&str> = app
+        .background
+        .jobs
+        .iter()
+        .filter(|j| !j.label.is_empty() && !j.cancelled())
+        .map(|j| j.label.as_str())
+        .chain(app.opening.pending.iter().map(|p| p.label.as_str()))
+        .collect();
+    // Reserve the spinner's space while idle too: starting a background job changes the text,
+    // not its origin. Messages take priority over optional readouts in a narrow window.
+    let message = if let Some(job) = busy.first() {
+        let spinner = egui::Rect::from_center_size(egui::pos2(area.left() + 6.0, area.center().y), vec2(12.0, 12.0));
+        ui.put(spinner, egui::Spinner::new().size(12.0).color(t.accent));
+        let label = crate::i18n::msg(job);
+        let more = busy.len() - 1;
+        if more > 0 { format!("{label}… (+{more})") } else { format!("{label}…") }
+    } else {
+        crate::i18n::msg(&app.ui.status)
+    };
+    if !message.is_empty() {
+        let rect = egui::Rect::from_min_max(egui::pos2((area.left() + 18.0).min(right), area.top()), egui::pos2(right, area.bottom()));
+        status_field(ui, "message", rect, message, egui::FontId::proportional(11.0), t.text);
+    }
+}
+
+/// A field never grows with its text. Clipping also bounds over-wide glyphs; hover and access
+/// information retain the complete value when its on-screen label is truncated.
+fn status_field(ui: &mut Ui, id: &str, rect: egui::Rect, text: String, font: egui::FontId, color: egui::Color32) {
+    if rect.width() <= 0.0 || rect.height() <= 0.0 {
+        return;
+    }
+    let galley = egui::WidgetText::from(egui::RichText::new(&text).font(font)).into_galley(
+        ui,
+        Some(egui::TextWrapMode::Truncate),
+        rect.width(),
+        egui::TextStyle::Body,
+    );
+    let at = egui::pos2(rect.left(), rect.center().y - galley.size().y / 2.0);
+    let elided = galley.elided;
+    ui.painter().with_clip_rect(ui.clip_rect().intersect(rect)).galley(at, galley, color);
+    let response = ui.interact(rect, ui.id().with(("status-field", id)), Sense::hover());
+    response.widget_info(|| egui::WidgetInfo::labeled(egui::WidgetType::Label, true, &text));
+    if elided {
+        response.on_hover_text(text);
+    }
 }
 
 /// Contextual hint for the active tool: segments of (text, bold). Keys in bold segments are
@@ -1050,6 +1119,261 @@ mod tests {
         }
     }
 
+    #[derive(Debug)]
+    struct StatusText {
+        text: String,
+        at: egui::Pos2,
+        clip: egui::Rect,
+        bounds: egui::Rect,
+        elided: bool,
+    }
+
+    fn status_readout_frame(app: &mut crate::VectorcraftApp, ctx: &egui::Context, width: f32) -> Vec<StatusText> {
+        status_readout_frame_events(app, ctx, width, vec![])
+    }
+
+    fn status_readout_frame_events(app: &mut crate::VectorcraftApp, ctx: &egui::Context, width: f32, events: Vec<egui::Event>) -> Vec<StatusText> {
+        let screen = egui::Rect::from_min_size(egui::Pos2::ZERO, egui::vec2(width, 300.0));
+        let mut out = ctx.run_ui(egui::RawInput { screen_rect: Some(screen), events, ..Default::default() }, |ui| super::status_bar(app, ui));
+        out.textures_delta.clear();
+        out.shapes
+            .iter()
+            .filter_map(|s| match &s.shape {
+                egui::Shape::Text(t) => Some(StatusText {
+                    text: t.galley.job.text.clone(),
+                    at: t.pos,
+                    clip: s.clip_rect,
+                    bounds: egui::Rect::from_min_size(t.pos, t.galley.size()),
+                    elided: t.galley.elided,
+                }),
+                _ => None,
+            })
+            .collect()
+    }
+
+    fn status_text<'a>(texts: &'a [StatusText], prefix: &str) -> &'a StatusText {
+        texts.iter().find(|t| t.text.starts_with(prefix)).unwrap_or_else(|| panic!("missing {prefix:?}: {texts:?}"))
+    }
+
+    fn status_readout_app() -> (crate::VectorcraftApp, egui::Context) {
+        crate::i18n::set_current(crate::i18n::Lang::EN);
+        let mut app = crate::VectorcraftApp::new(Session::new(), Default::default());
+        app.session.execute("file.new", &json!({"width": 100, "height": 100})).unwrap();
+        app.ui.status = "Saved recovery data for Untitled-1".to_owned();
+        let ctx = egui::Context::default();
+        crate::theme::install_fonts(&ctx);
+        crate::theme::apply(&ctx, crate::theme::Brightness::Dark);
+        (app, ctx)
+    }
+
+    /// These assertions require every target to be present, and cover the old padding limits.
+    #[test]
+    fn the_status_bar_stands_still_while_its_readouts_change() {
+        let (mut app, ctx) = status_readout_app();
+        let mut baseline = None;
+        let mut message_baseline = None;
+        for (render, frame, fps, x, y) in [
+            (233.4, 4.9, 80.0, -662.25, 1647.9),
+            (9.8, 1.0, 120.0, 7.0, 5.0),
+            (100000.0, 10000.0, 1000.0, -1000.0, 100000.0),
+            (99999.9, 9999.9, 999.0, -999.99, 9999.99),
+        ] {
+            app.perf = crate::Perf { render_ms: render, frame_ms: frame, fps };
+            app.hover_doc = Some(vectorcraft_geom::Point::new(x, y));
+            let texts = status_readout_frame(&mut app, &ctx, 1400.0);
+            let message = status_text(&texts, "Saved recovery data");
+            let extent = (message.at, message.clip, message.bounds, message.elided);
+            if let Some(first) = message_baseline {
+                assert_eq!(extent, first, "message extent changed with readout values");
+            } else {
+                message_baseline = Some(extent);
+            }
+            for (prefix, value) in [
+                ("render", format!("{render:.1} ms")),
+                ("ui ", format!("{frame:.1} ms")),
+                ("X:", app.session.general_unit().readout(x)),
+                ("Y:", app.session.general_unit().readout(y)),
+            ] {
+                let text = status_text(&texts, prefix);
+                assert!(text.text.contains(&value), "{text:?} must contain {value:?}");
+                assert!(text.bounds.width() <= text.clip.width() + 0.01, "field overflow: {text:?}");
+            }
+            let fps_text = format!("{fps:.0} fps");
+            let fps_label = status_text(&texts, &fps_text);
+            assert!(fps_label.bounds.width() <= fps_label.clip.width() + 0.01);
+            let positions = ["Saved recovery data", "render", "ui ", "X:", "Y:", fps_text.as_str()].map(|p| status_text(&texts, p).at);
+            if let Some(first) = baseline {
+                assert_eq!(positions, first, "readout origins changed");
+            } else {
+                baseline = Some(positions);
+            }
+        }
+        app.perf.render_ms = 1000000.0;
+        let tree = crate::widgets::accessibility_tests::tree(|ui| super::status_bar(&mut app, ui));
+        assert!(
+            tree.iter().any(|n| n.role() == egui::accesskit::Role::Label && n.value() == Some("render 1000000.0 ms")),
+            "screen readers receive the complete value"
+        );
+    }
+
+    #[test]
+    fn status_messages_keep_their_origin_when_the_pointer_enters_and_leaves() {
+        let (mut app, ctx) = status_readout_app();
+        let mut first = None;
+        for hover in [None, Some(vectorcraft_geom::Point::new(7.0, 5.0)), None] {
+            app.hover_doc = hover;
+            let texts = status_readout_frame(&mut app, &ctx, 1400.0);
+            let message = status_text(&texts, "Saved recovery data");
+            assert!(!message.elided);
+            let position = (message.at, message.clip);
+            if let Some(first) = first {
+                assert_eq!(position, first);
+            } else {
+                first = Some(position);
+            }
+            assert_eq!(texts.iter().any(|t| t.text.starts_with("X:")), hover.is_some());
+        }
+    }
+
+    #[test]
+    fn hovering_a_coordinate_retains_its_full_value_for_inspection() {
+        let (mut app, ctx) = status_readout_app();
+        app.hover_doc = Some(vectorcraft_geom::Point::new(1e12, -1e12));
+        let first = status_readout_frame(&mut app, &ctx, 1400.0);
+        let x = status_text(&first, "X:");
+        assert!(x.elided);
+        let expected = x.text.clone();
+        app.hover_doc = None;
+        let inspect = status_readout_frame_events(&mut app, &ctx, 1400.0, vec![egui::Event::PointerMoved(x.clip.center())]);
+        assert_eq!(status_text(&inspect, "X:").text, expected);
+        let gone = status_readout_frame_events(&mut app, &ctx, 1400.0, vec![egui::Event::PointerGone]);
+        assert!(!gone.iter().any(|t| t.text.starts_with("X:")));
+        // A different document must not inherit the previous document's coordinate.
+        app.session.execute("file.new", &json!({"width": 100, "height": 100})).unwrap();
+        let other = status_readout_frame_events(&mut app, &ctx, 1400.0, vec![egui::Event::PointerMoved(x.clip.center())]);
+        assert!(!other.iter().any(|t| t.text.starts_with("X:")));
+    }
+
+    #[test]
+    fn narrow_status_bars_preserve_the_message_and_hide_optional_readouts() {
+        let (mut app, ctx) = status_readout_app();
+        app.hover_doc = Some(vectorcraft_geom::Point::new(7.0, 5.0));
+        let mut origin = None;
+        for (width, coords, perf) in [(1400.0, true, true), (1000.0, true, false), (800.0, false, false)] {
+            let texts = status_readout_frame(&mut app, &ctx, width);
+            let message = status_text(&texts, "Saved recovery data");
+            assert!(!message.elided, "{width}: message was truncated: {message:?}");
+            if let Some(origin) = origin {
+                assert_eq!(message.at, origin);
+            } else {
+                origin = Some(message.at);
+            }
+            assert_eq!(texts.iter().any(|t| t.text.starts_with("X:")), coords, "{width}");
+            assert_eq!(texts.iter().any(|t| t.text.starts_with("render")), perf, "{width}");
+            let tool = status_text(&texts, "Selection");
+            assert!(message.clip.left() >= tool.bounds.right(), "readouts must not overlap navigation: {texts:?}");
+            for field in texts.iter().filter(|t| t.text.starts_with("X:") || t.text.starts_with("Y:") || t.text.starts_with("render")) {
+                assert!(field.clip.left() >= tool.bounds.right());
+                assert!(!field.clip.intersects(message.clip));
+            }
+        }
+        // Still narrower bars may truncate a long message but must not draw over navigation.
+        let texts = status_readout_frame(&mut app, &ctx, 600.0);
+        let message = status_text(&texts, "Saved recovery data");
+        assert!(message.clip.left() >= status_text(&texts, "Selection").bounds.right());
+    }
+
+    #[test]
+    fn background_activity_keeps_the_status_message_origin() {
+        let (mut app, ctx) = status_readout_app();
+        let before = status_readout_frame(&mut app, &ctx, 1400.0);
+        let before = status_text(&before, "Saved recovery data");
+        let (tx, rx) = std::sync::mpsc::channel();
+        app.services.write_shared = Some(std::sync::Arc::new(|_, _| Ok(())));
+        crate::background::run(
+            &mut app,
+            true,
+            "Saving test.vectorcraft".to_owned(),
+            None,
+            move |_| {
+                rx.recv().unwrap();
+                Ok(json!({}))
+            },
+            |app, result| {
+                app.status("Saved recovery data for Untitled-1");
+                result
+            },
+        )
+        .unwrap();
+        let busy = status_readout_frame(&mut app, &ctx, 1400.0);
+        let message = status_text(&busy, "Saving test.vectorcraft");
+        assert_eq!((before.at, before.clip), (message.at, message.clip));
+        crate::background::run(&mut app, true, "Exporting test.svg".to_owned(), None, |_| Ok(json!({})), |_, result| result).unwrap();
+        let several = status_readout_frame(&mut app, &ctx, 1400.0);
+        let message = status_text(&several, "Saving test.vectorcraft");
+        assert!(message.text.ends_with("(+1)"));
+        assert_eq!((before.at, before.clip), (message.at, message.clip));
+        let tree = crate::widgets::accessibility_tests::tree(|ui| super::status_bar(&mut app, ui));
+        assert!(tree.iter().any(|n| n.role() == egui::accesskit::Role::ProgressIndicator), "the busy spinner remains accessible");
+        tx.send(()).unwrap();
+        crate::background::wait_all(&mut app);
+        let after = status_readout_frame(&mut app, &ctx, 1400.0);
+        let after = status_text(&after, "Saved recovery data");
+        assert_eq!((before.at, before.clip), (after.at, after.clip));
+    }
+
+    #[test]
+    fn ordinary_coordinates_are_readable_in_every_unit() {
+        let (mut app, ctx) = status_readout_app();
+        for unit in vectorcraft_doc::Unit::ALL {
+            app.session.execute("document.setUnits", &json!({"units": unit.key()})).unwrap();
+            for (x, y) in [(-1234.56, 1234.56), (-9999.99, 9999.99), (9999.99, -9999.99)] {
+                let (x, y) = (unit.to_pt(x), unit.to_pt(y));
+                app.hover_doc = Some(vectorcraft_geom::Point::new(x, y));
+                let texts = status_readout_frame(&mut app, &ctx, 1400.0);
+                for (axis, value) in [("X:", x), ("Y:", y)] {
+                    let field = status_text(&texts, axis);
+                    assert_eq!(field.text, format!("{axis} {}", unit.readout(value)));
+                    assert!(!field.elided, "{unit:?}: {field:?}");
+                    assert!(field.clip.contains_rect(field.bounds), "{unit:?}: {field:?}");
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn localized_diagnostics_are_readable_and_keep_their_field_bounds() {
+        let (mut app, ctx) = status_readout_app();
+        for lang in crate::i18n::Lang::all() {
+            crate::i18n::set_current(lang);
+            let render = crate::i18n::tr_ctx(lang, "diagnostics", "render");
+            let ui_name = crate::i18n::tr_ctx(lang, "diagnostics", "ui");
+            let mut baseline = None;
+            for (render_ms, frame_ms, fps, readable) in [(233.4, 4.9, 80.0, true), (9999.9, 9999.9, 9999.0, true), (1e12, 1e12, 1e12, false)] {
+                app.perf = crate::Perf { render_ms, frame_ms, fps };
+                let texts = status_readout_frame(&mut app, &ctx, 4000.0);
+                let fields = [format!("{render} {render_ms:.1} ms"), format!("{ui_name} {frame_ms:.1} ms"), format!("{fps:.0} fps")];
+                let bounds = fields.map(|value| {
+                    let field = status_text(&texts, &value);
+                    assert_eq!(field.text, value);
+                    assert_eq!(!field.elided, readable, "{}: {field:?}", lang.code());
+                    assert!(field.bounds.width() <= field.clip.width() + 0.01, "{}: {field:?}", lang.code());
+                    (field.at, field.clip)
+                });
+                if let Some(first) = baseline {
+                    assert_eq!(bounds, first, "{}: field allocation changed", lang.code());
+                } else {
+                    baseline = Some(bounds);
+                }
+            }
+            // Even long translations must yield their whole diagnostics group in a narrow
+            // window rather than overlapping the message or navigation controls.
+            let texts = status_readout_frame(&mut app, &ctx, 800.0);
+            assert!(!texts.iter().any(|t| t.text == format!("{render} {:.1} ms", app.perf.render_ms)), "{}", lang.code());
+        }
+        crate::i18n::set_current(crate::i18n::Lang::EN);
+    }
+
     /// A document tab's × sits where the platform puts it (#673): after the title on Windows,
     /// Linux and the web, before it on macOS; clicking it closes that document.
     #[test]
@@ -1111,6 +1435,7 @@ mod tests {
         app.run("artboard.new", json!({})).unwrap();
         app.canvas_rect = Some(egui::Rect::from_min_size(egui::Pos2::ZERO, egui::vec2(460.0, 260.0)));
         let ctx = egui::Context::default();
+        crate::theme::install_fonts(&ctx);
         let buttons = navigator(&mut app, &ctx, vec![]);
         assert_eq!(buttons.len(), 4);
         let click = |app: &mut crate::VectorcraftApp, r: egui::Rect| {
@@ -1207,6 +1532,7 @@ mod tests {
         app.run("view.goToArtboard", json!({"index": 1})).unwrap();
         let first = app.session.active().unwrap().doc.artboards[0].rect.center();
         let ctx = egui::Context::default();
+        crate::theme::install_fonts(&ctx);
         let texts = status_texts(&mut app, &ctx, vec![]);
         let field = texts.iter().find(|(s, _)| s == "2  Back").map(|(_, r)| *r).expect("the field shows artboard 2's number and name");
         assert!(!texts.iter().any(|(s, _)| s == "Front"), "the list is closed: {texts:?}");
@@ -1237,6 +1563,7 @@ mod tests {
         app.canvas_rect = Some(egui::Rect::from_min_size(egui::Pos2::ZERO, egui::vec2(460.0, 260.0)));
         app.run("view.goToArtboard", json!({"index": 699})).unwrap();
         let ctx = egui::Context::default();
+        crate::theme::install_fonts(&ctx);
         let rows = |texts: &[(String, egui::Rect)]| texts.iter().filter(|(s, _)| s.starts_with("Artboard ")).cloned().collect::<Vec<_>>();
         let texts = status_texts(&mut app, &ctx, vec![]);
         let field = texts.iter().find(|(s, _)| s == "700  Artboard 700").map(|(_, r)| *r).expect("the field");
@@ -1318,6 +1645,7 @@ mod tests {
             let selection = st.selection.clone();
             let undo = st.history.undo.len();
             let ctx = egui::Context::default();
+            crate::theme::install_fonts(&ctx);
 
             artboard_navigation_next(&mut app, &ctx);
 
@@ -1407,7 +1735,9 @@ mod tests {
             assert_eq!(history.1, 1);
             let options = app.session.tool_options();
 
-            artboard_navigation_next(&mut app, &egui::Context::default());
+            let ctx = egui::Context::default();
+            crate::theme::install_fonts(&ctx);
+            artboard_navigation_next(&mut app, &ctx);
 
             assert_eq!(app.view().unwrap().artboard, 1);
             assert_eq!(app.view().unwrap().center, before.artboards[1].rect.center());
