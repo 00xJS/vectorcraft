@@ -4806,6 +4806,7 @@ lighting	Light	ライト
 @msg	choose a destination folder	出力先フォルダーを選択してください
 @msg	choose a source folder	ソースフォルダーを選択してください
 @msg	open a document with data sets	データセットのあるドキュメントを開いてください
+@msg	nothing in data set {name} was applied: no object is bound to a variable it has a value for	データセット {name} から何も適用されませんでした: 値のある変数にバインドされたオブジェクトがありません
 @msg	the action has no steps	アクションにステップがありません
 
 # User Interface › Accent Color

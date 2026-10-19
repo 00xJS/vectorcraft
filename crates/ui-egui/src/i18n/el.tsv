@@ -5093,6 +5093,7 @@ effect	Points	Σημεία
 @msg	choose a destination folder	επιλέξτε φάκελο προορισμού
 @msg	choose a source folder	επιλέξτε φάκελο προέλευσης
 @msg	open a document with data sets	ανοίξτε ένα έγγραφο με σύνολα δεδομένων
+@msg	nothing in data set {name} was applied: no object is bound to a variable it has a value for	δεν εφαρμόστηκε τίποτα από το σύνολο δεδομένων {name}: κανένα αντικείμενο δεν είναι συνδεδεμένο με μεταβλητή για την οποία έχει τιμή
 @msg	select an Intertwine group	επιλέξτε μια ομάδα διαπλοκής
 @msg	span must be "object" or "selection", got {v}	το span πρέπει να είναι "object" ή "selection", δόθηκε {v}
 @msg	span: "selection" places a `gradient`, not a swatch	span: το "selection" τοποθετεί ένα `gradient`, όχι δείγμα χρώματος

@@ -1254,6 +1254,12 @@ defined. Of two variables of the same kind on one object, the one defined last w
 {"name":"run_command","arguments":{"command":"command.batch","params":{"label":"Offset","commands":[{"command":"object.move","params":{"dx":10,"dy":10,"copy":true}}]}}}
 ```
 
+When no object is bound to a variable that the data set has a value for, for example after `dataset.import` defines
+new variables without binding them, `dataset.select`, `dataset.next` and `dataset.prev` apply nothing and add
+`warning`, which the app's status bar shows: "nothing in data set A was applied: no object is bound to a variable it
+has a value for". A data set with a value for a bound variable gives no warning even when every object bound to it is
+locked; `skipped` counts those objects.
+
 `dataset.update {all?}` writes what the bound objects hold now into the active data set, for each variable that the
 data set holds. A variable whose objects report no value, because they are locked, inside a locked layer or group,
 or deleted, keeps the data set's value. With `all: true` it also adds every other variable that the

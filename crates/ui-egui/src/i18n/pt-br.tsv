@@ -5032,6 +5032,7 @@ mark-style	Japanese	Japonesas
 @msg	choose a destination folder	escolha uma pasta de destino
 @msg	choose a source folder	escolha uma pasta de origem
 @msg	open a document with data sets	abra um documento com conjuntos de dados
+@msg	nothing in data set {name} was applied: no object is bound to a variable it has a value for	nada do conjunto de dados {name} foi aplicado: nenhum objeto está vinculado a uma variável para a qual ele tem um valor
 @msg	the action has no steps	a ação não tem etapas
 @msg	Angles require two straight segments	Ângulos exigem dois segmentos retos
 @msg	Choose a circle or a perfect arc	Escolha um círculo ou um arco perfeito
