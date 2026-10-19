@@ -53,6 +53,9 @@ impl Tool for MeasureTool {
     }
 
     fn overlays(&self, cx: &ToolContext) -> Vec<Overlay> {
+        if !cx.measurement_labels {
+            return vec![];
+        }
         let Some((a, b)) = self.line else { return vec![] };
         if a == b {
             return vec![];
@@ -104,5 +107,7 @@ mod tests {
         assert!((o["angle"].as_f64().unwrap() - 53.130102).abs() < 1e-4);
         let ov = t.overlays(&cx);
         assert!(matches!(&ov[1], Overlay::Measure { text, .. } if text.starts_with("D: 50.00 pt")));
+        let quiet = ToolContext { measurement_labels: false, ..cx };
+        assert!(t.overlays(&quiet).is_empty(), "Measurement Labels off hides the readout");
     }
 }
