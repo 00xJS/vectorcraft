@@ -4845,6 +4845,16 @@ lighting	Light	ライト
 	Movie Clip	ムービークリップ
 @msg	name is empty	名前が空です
 @msg	no symbol named `{n}`	`{n}` という名前のシンボルはありません
+	Smudge Stick…	スマッジスティック…
+	Smudge Stick	スマッジスティック
+	Sponge…	スポンジ…
+	Sponge	スポンジ
+	Watercolor…	水彩…
+	Watercolor	水彩
+	Brush Size	ブラシサイズ
+	Definition	精細度
+	Brush Detail	ブラシの細かさ
+	Shadow Intensity	シャドウの強さ
 # Links and Attributes: files and URLs handed to other apps.
 @msg	Edit Original opens image and document files only; “{name}” is not one	「オリジナルを編集」で開けるのは画像ファイルとドキュメントファイルだけです: 「{name}」はどちらでもありません
 @msg	only http, https and mailto URLs open in the browser, not “{url}”	ブラウザーで開けるのは http、https、mailto の URL だけです: 「{url}」は開けません

@@ -86,7 +86,7 @@ fn effect_menu_lists_the_artistic_filters_before_blur() {
     let entries = menus::menu_entries(&app);
     let artistic: Vec<_> = entries.iter().filter(|e| e.path == ["Effect", "Artistic"]).collect();
     let labels: Vec<&str> = artistic.iter().map(|e| e.label.as_str()).collect();
-    assert_eq!(labels, ["Cutout…", "Film Grain…", "Neon Glow…", "Plastic Wrap…", "Poster Edges…"]);
+    assert_eq!(labels, ["Cutout…", "Film Grain…", "Neon Glow…", "Plastic Wrap…", "Poster Edges…", "Smudge Stick…", "Sponge…", "Watercolor…"]);
     assert!(artistic.iter().all(|e| e.command.as_deref() == Some("effect.dialog")));
     assert_eq!(artistic[2].params, json!({"effect": "artistic.neonGlow"}));
     let at = |name: &str| entries.iter().position(|e| e.path == ["Effect", name]).unwrap();

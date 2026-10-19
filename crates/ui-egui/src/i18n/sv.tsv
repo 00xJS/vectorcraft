@@ -5148,6 +5148,16 @@ theme	Appearance	Utseende
 	Movie Clip	Filmklipp
 @msg	name is empty	namnet är tomt
 @msg	no symbol named `{n}`	ingen symbol med namnet `{n}`
+	Smudge Stick…	Utsmetning…
+	Smudge Stick	Utsmetning
+	Sponge…	Svamp…
+	Sponge	Svamp
+	Watercolor…	Akvarell…
+	Watercolor	Akvarell
+	Brush Size	Penselstorlek
+	Definition	Skärpa
+	Brush Detail	Penseldetalj
+	Shadow Intensity	Skuggintensitet
 # Links and Attributes: files and URLs handed to other apps.
 @msg	Edit Original opens image and document files only; “{name}” is not one	Redigera original öppnar bara bild- och dokumentfiler; ”{name}” är ingen sådan
 @msg	only http, https and mailto URLs open in the browser, not “{url}”	bara http-, https- och mailto-URL:er öppnas i webbläsaren, inte ”{url}”

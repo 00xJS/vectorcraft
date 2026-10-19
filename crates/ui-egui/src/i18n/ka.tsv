@@ -5137,6 +5137,16 @@ imageTrace	Outline	კონტური
 # Select by Color (select.color)
 	Select by Color	მონიშვნა ფერის მიხედვით
 @msg	thumbnail: no page {n} (the file has 1)	thumbnail: გვერდი {n} არ არსებობს (ფაილს 1 გვერდი აქვს)
+	Smudge Stick…	დასაზელი ჯოხი…
+	Smudge Stick	დასაზელი ჯოხი
+	Sponge…	ღრუბელი…
+	Sponge	ღრუბელი
+	Watercolor…	აკვარელი…
+	Watercolor	აკვარელი
+	Brush Size	ფუნჯის ზომა
+	Definition	განსაზღვრულობა
+	Brush Detail	ფუნჯის დეტალი
+	Shadow Intensity	ჩრდილის ინტენსივობა
 	Move Anchor Point	საყრდენი წერტილის გადაადგილება
 	Alt key toggles to Smooth Tool	Alt კლავიში ჩართავს გაგლუვების ხელსაწყოს
 @msg	{label} keeps 1 of the document's {n} artboards: the file reopens with one. Turn on Preserve Editing Capabilities to keep them all.	{label} ინახავს დოკუმენტის {n} სამუშაო დაფიდან 1-ს: ფაილი ხელახლა ერთით გაიხსნება. ყველას შესანარჩუნებლად ჩართეთ „რედაქტირების შესაძლებლობების შენარჩუნება“.

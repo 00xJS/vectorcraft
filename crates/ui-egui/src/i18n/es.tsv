@@ -5134,6 +5134,16 @@ mark-style	Japanese	Japonesas
 	Movie Clip	Clip de película
 @msg	name is empty	el nombre está vacío
 @msg	no symbol named `{n}`	no hay ningún símbolo llamado `{n}`
+	Smudge Stick…	Difuminar con barra…
+	Smudge Stick	Difuminar con barra
+	Sponge…	Esponja…
+	Sponge	Esponja
+	Watercolor…	Acuarela…
+	Watercolor	Acuarela
+	Brush Size	Tamaño del pincel
+	Definition	Definición
+	Brush Detail	Detalle del pincel
+	Shadow Intensity	Intensidad de sombras
 # Links and Attributes: files and URLs handed to other apps.
 @msg	Edit Original opens image and document files only; “{name}” is not one	Editar original solo abre archivos de imagen y de documento; “{name}” no lo es
 @msg	only http, https and mailto URLs open in the browser, not “{url}”	solo se abren en el navegador las URL http, https y mailto, no “{url}”

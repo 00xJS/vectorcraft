@@ -5044,6 +5044,16 @@ mark-style	Japanese	Japońskie
 	Movie Clip	Klip filmowy
 @msg	name is empty	nazwa jest pusta
 @msg	no symbol named `{n}`	brak symbolu o nazwie `{n}`
+	Smudge Stick…	Rozmazywacz…
+	Smudge Stick	Rozmazywacz
+	Sponge…	Gąbka…
+	Sponge	Gąbka
+	Watercolor…	Akwarela…
+	Watercolor	Akwarela
+	Brush Size	Rozmiar pędzla
+	Definition	Wyrazistość
+	Brush Detail	Szczegółowość pędzla
+	Shadow Intensity	Intensywność cieni
 # Links and Attributes: files and URLs handed to other apps.
 @msg	Edit Original opens image and document files only; “{name}” is not one	Edytuj oryginał otwiera tylko pliki obrazów i dokumentów; „{name}” do nich nie należy
 @msg	only http, https and mailto URLs open in the browser, not “{url}”	w przeglądarce otwierają się tylko adresy URL http, https i mailto, a nie „{url}”
