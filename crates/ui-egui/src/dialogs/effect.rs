@@ -90,7 +90,7 @@ pub fn open(app: &mut VectorcraftApp, p: &Value) -> Result<Value, String> {
                 return Ok(json!({ "pending": EXISTS }));
             }
             fields.extend(info.defaults.as_object().cloned().unwrap_or_default());
-            if super::warp_effect::is_warp(&id) {
+            if super::warp_effect::is_warp(id) {
                 super::warp_effect::merge_remembered(&mut fields, app.last_warp.as_ref());
             }
         }
@@ -125,7 +125,7 @@ fn confirm_exists(app: &mut VectorcraftApp, d: &Dialog) -> Result<Value, String>
         let id = d.str("__effect");
         let defaults = vectorcraft_effects::default_params(&id);
         fields.extend(defaults.and_then(|v| v.as_object().cloned()).unwrap_or_default());
-        if super::warp_effect::is_warp(&id) {
+        if super::warp_effect::is_warp(id.as_str()) {
             super::warp_effect::merge_remembered(&mut fields, app.last_warp.as_ref());
         }
     } else {
@@ -682,7 +682,7 @@ fn confirm(app: &mut VectorcraftApp, d: &Dialog) -> Result<Value, String> {
     if cmd == "effect.apply" {
         let id = d.str("__effect");
         app.last_effect = Some((id.clone(), p["params"].clone()));
-        if super::warp_effect::is_warp(&id) {
+        if super::warp_effect::is_warp(id.as_str()) {
             app.last_warp = Some(super::warp_effect::remembered_params(d));
         }
     }
