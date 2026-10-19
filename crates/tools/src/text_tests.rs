@@ -60,14 +60,6 @@ fn type_arrows_keep_devanagari_clusters_with_an_rtl_suffix() {
         eprintln!("SKIPPED: type_arrows_keep_devanagari_clusters_with_an_rtl_suffix; no installed candidate font covers the Hindi input");
         return;
     };
-    eprintln!(
-        "TYPE_ARROW_FONT: {} {}; version={}; bytes={}; face_index={}",
-        face.family,
-        face.style,
-        face.version,
-        face.file_data().len(),
-        face.face_index()
-    );
     assert!(hindi.chars().all(|ch| face.covers(ch)), "the selected face covers the unchanged Hindi prefix");
     let style = CharStyle { font_family: face.family.clone(), font_style: face.style.clone(), size: 20.0, ..Default::default() };
 
@@ -106,15 +98,10 @@ fn type_arrows_keep_devanagari_clusters_with_an_rtl_suffix() {
         assert_eq!(tool.editing, Some(id));
         assert_eq!(tool.sel(), (second, second), "{case}: collapsed caret before Right");
         assert!(tool.typing.is_none(), "{case}: no pending typing session");
-        eprintln!(
-            "TYPE_ARROW_PRE_ASSERT_READY: case={case}; hindi_spans={hindi_spans:?}; visual_route={visual_route}; caret={}; anchor={}",
-            tool.caret, tool.anchor
-        );
         key(&mut tool, &d, ToolKey::Right, Mods::default());
         assert_eq!((tool.caret, tool.anchor), (hindi.len(), hindi.len()), "{case}: Right must move 6 -> 18 across the Hindi cluster");
         key(&mut tool, &d, ToolKey::Left, Mods::default());
         assert_eq!((tool.caret, tool.anchor), (second, second), "{case}: Left must move 18 -> 6 across the Hindi cluster");
-        eprintln!("TYPE_ARROW_CASE_COMPLETE: {case}");
     }
 }
 
@@ -139,14 +126,6 @@ fn type_arrows_keep_devanagari_clusters_across_wrapped_lines() {
         eprintln!("SKIPPED: type_arrows_keep_devanagari_clusters_across_wrapped_lines; no installed candidate font covers the Hindi input");
         return;
     };
-    eprintln!(
-        "TYPE_WRAP_FONT: {} {}; version={}; bytes={}; face_index={}",
-        face.family,
-        face.style,
-        face.version,
-        face.file_data().len(),
-        face.face_index()
-    );
     let style = CharStyle { font_family: face.family.clone(), font_style: face.style.clone(), size: 20.0, ..Default::default() };
     let (mut d, id, mut tool) = editing(text);
     let NodeKind::Text(t) = &mut d.node_mut(id).unwrap().kind else { panic!("text fixture") };
@@ -228,15 +207,10 @@ fn type_arrows_keep_devanagari_clusters_across_wrapped_lines() {
     assert_eq!(tool.editing, Some(id));
     assert_eq!(tool.sel(), (second, second), "setup: collapsed caret before Right");
     assert!(tool.typing.is_none(), "setup: no pending typing session");
-    eprintln!(
-        "TYPE_WRAP_PRE_ASSERT_READY: line_end={}; next_start={}; caret={}; anchor={}",
-        lay.lines[0].end, lay.lines[1].start, tool.caret, tool.anchor
-    );
     key(&mut tool, &d, ToolKey::Right, Mods::default());
     assert_eq!((tool.caret, tool.anchor), (hindi.len(), hindi.len()), "wrapped Right must move 6 -> 18 across the Hindi grapheme");
     key(&mut tool, &d, ToolKey::Left, Mods::default());
     assert_eq!((tool.caret, tool.anchor), (second, second), "wrapped Left must move 18 -> 6 across the Hindi grapheme");
-    eprintln!("TYPE_WRAP_CASE_COMPLETE");
 }
 
 #[test]
