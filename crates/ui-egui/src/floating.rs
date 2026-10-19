@@ -647,6 +647,7 @@ fn apply(app: &mut VectorcraftApp, ctx: &egui::Context, action: Option<Action>) 
         return;
     }
     let before = app.ui.clone();
+    let skip_reconcile = matches!(action, Some(Action::Reorder(_, _, _)));
     match action {
         Some(Action::Activate(gi, k)) => {
             if let Some(g) = app.ui.floating_panels.get_mut(gi)
@@ -678,16 +679,15 @@ fn apply(app: &mut VectorcraftApp, ctx: &egui::Context, action: Option<Action>) 
         Some(Action::Detach(gi, left)) => detach(app, ctx, gi, left),
         Some(Action::Tear(id, left)) => tear(app, ctx, &[id], id, strip_grab(ctx, left)),
         Some(Action::Reorder(gi, from, to)) => {
-            let ids = app.ui.floating_panels.get(gi).and_then(|g| {
-                if from == to { None } else { Some((g.panels.get(from).cloned(), g.panels.get(to).cloned())) }
-            });
-            if let Some((Some(from_id), Some(to_id))) = ids
-                && let Err(error) = app.run(
-                    "window.panel.move",
-                    json!({ "panel": from_id, "anchor": to_id, "before": to_id }),
-                )
+            if let Some(g) = app.ui.floating_panels.get_mut(gi)
+                && from != to
+                && from < g.panels.len()
+                && to < g.panels.len()
             {
-                app.ui.status = error;
+                let active = g.panels.get(g.active).cloned();
+                let moved = g.panels.remove(from);
+                g.panels.insert(to, moved);
+                g.active = active.and_then(|id| g.panels.iter().position(|p| *p == id)).unwrap_or(0);
             }
         }
         Some(Action::Undock(gi, grab)) => {
@@ -705,7 +705,7 @@ fn apply(app: &mut VectorcraftApp, ctx: &egui::Context, action: Option<Action>) 
         }
         None => {}
     }
-    if let Err(error) = crate::panel_docking::reconcile_native(app, before.clone()) {
+    if !skip_reconcile && let Err(error) = crate::panel_docking::reconcile_native(app, before.clone()) {
         app.ui.status = error;
     }
     ctx.data_mut(|data| {

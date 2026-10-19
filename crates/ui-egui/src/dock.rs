@@ -858,12 +858,15 @@ mod tests {
 
     #[test]
     fn partial_dock_tab_order_appends_tabs_missing_from_preferences() {
-        let mut ui = crate::state::UiState::default();
-        ui.dock_tab_order = vec![DockTab::Layers];
+        let ui = crate::state::UiState {
+            dock_tab: DockTab::Layers,
+            dock_tab_order: vec![DockTab::Layers, DockTab::Properties],
+            ..Default::default()
+        };
         let order = floating::resolved_dock_tab_order(&ui);
         assert_eq!(order.len(), DockTab::ALL.len());
-        assert_eq!(order[0], DockTab::Layers);
-        assert!(order.contains(&DockTab::Properties) && order.contains(&DockTab::Libraries));
+        assert_eq!(order[..2], [DockTab::Layers, DockTab::Properties]);
+        assert_eq!(order[2], DockTab::Libraries);
     }
 
     #[test]

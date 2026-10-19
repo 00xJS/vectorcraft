@@ -146,14 +146,15 @@ fn number(params: &Value, key: &str, default: f32) -> Result<f32, String> {
 /// group without promoting to a shared layout.
 fn legacy_same_strip_reorder(app: &mut VectorcraftApp, panel: &str, before: &str) -> Result<Value, String> {
     use crate::state::DockTab;
+    const BAD_DEST: &str = "move requires an existing destination panel";
     if crate::state::DockTab::from_id(panel).is_some()
         && DockTab::from_id(before).is_some()
         && crate::floating::group_of(&app.ui, panel).is_none()
         && crate::floating::group_of(&app.ui, before).is_none()
     {
         let mut order: Vec<DockTab> = crate::floating::docked_tabs(&app.ui).collect();
-        let from = order.iter().position(|t| t.info().0 == panel).ok_or("panel is not in the dock strip")?;
-        let to = order.iter().position(|t| t.info().0 == before).ok_or("before is not in the dock strip")?;
+        let from = order.iter().position(|t| t.info().0 == panel).ok_or(BAD_DEST)?;
+        let to = order.iter().position(|t| t.info().0 == before).ok_or(BAD_DEST)?;
         if from != to {
             let item = order.remove(from);
             order.insert(to, item);
@@ -161,13 +162,13 @@ fn legacy_same_strip_reorder(app: &mut VectorcraftApp, panel: &str, before: &str
         }
         return Ok(json!({ "panel": panel, "before": before }));
     }
-    let gi = crate::floating::group_of(&app.ui, panel).ok_or("panel is not in a tab group")?;
+    let gi = crate::floating::group_of(&app.ui, panel).ok_or(BAD_DEST)?;
     if crate::floating::group_of(&app.ui, before) != Some(gi) {
-        return Err("before must name a tab in the same group".into());
+        return Err(BAD_DEST.into());
     }
-    let g = app.ui.floating_panels.get_mut(gi).ok_or("panel group missing")?;
-    let from = g.panels.iter().position(|id| id == panel).ok_or("panel is not in the group")?;
-    let to = g.panels.iter().position(|id| id == before).ok_or("before is not in the group")?;
+    let g = app.ui.floating_panels.get_mut(gi).ok_or("invalid restored panel group")?;
+    let from = g.panels.iter().position(|id| id == panel).ok_or(BAD_DEST)?;
+    let to = g.panels.iter().position(|id| id == before).ok_or(BAD_DEST)?;
     if from != to {
         let active = g.panels.get(g.active).cloned();
         let moved = g.panels.remove(from);
@@ -329,9 +330,25 @@ fn apply_action(app: &mut VectorcraftApp, action: Action<String>) -> Result<Valu
 
 fn change(app: &mut VectorcraftApp, operation: &str, params: &Value) -> Result<Value, String> {
     let panel = params.get("panel").and_then(Value::as_str).and_then(normalize).ok_or("panel must name a registered panel")?;
-    if app.ui.docking.is_none() && operation == "move" && params.get("before").is_some() {
+    if operation == "move" && params.get("before").is_some() {
         let before = params.get("before").and_then(Value::as_str).and_then(normalize).ok_or("before must name a panel")?;
-        return legacy_same_strip_reorder(app, panel, before);
+        let in_group = crate::floating::group_of(&app.ui, panel).is_some();
+        use crate::state::DockTab;
+        let dock_strip_reorder = DockTab::from_id(panel).is_some()
+            && DockTab::from_id(before).is_some()
+            && crate::floating::group_of(&app.ui, panel).is_none()
+            && crate::floating::group_of(&app.ui, before).is_none();
+        if app.ui.docking.is_none() || in_group || dock_strip_reorder {
+            let mirror_native_tabs = crate::floating::group_of(&app.ui, panel)
+                .and_then(|i| app.ui.floating_panels.get(i))
+                .is_some_and(decorated);
+            let snapshot = app.ui.clone();
+            let result = legacy_same_strip_reorder(app, panel, before);
+            if mirror_native_tabs && app.ui.docking.is_some() && result.is_ok() {
+                reconcile_native(app, snapshot)?;
+            }
+            return result;
+        }
     }
     if app.ui.docking.as_ref().is_some_and(|layout| !valid(layout)) {
         return Err("saved panel layout is invalid; reset the workspace first".into());
@@ -935,7 +952,7 @@ pub(crate) fn legacy_tab_in_strip(
     let area = egui::Id::new("vectorcraft-panel-docking");
     let begun = ui.ctx().data(|d| d.get_temp::<LegacyDrag>(area.with("legacy-origin")).is_some());
     let begin = if strip.is_some() {
-        !inside_strip && !begun && (response.dragged() || response.drag_started())
+        !begun && (response.drag_started() || (!inside_strip && response.dragged()))
     } else {
         response.drag_started()
     };
