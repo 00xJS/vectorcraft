@@ -43,6 +43,8 @@ fn ruler_units_from_the_header_set_the_documents_units() {
     assert_eq!(read_ok(&stream(&body)).doc.units, Unit::Points, "default when the comment is absent");
     let with_in = with_mm.replace("AI5_RulerUnits: 1", "AI5_RulerUnits: 0");
     assert_eq!(read(with_in.as_bytes()).unwrap().doc.units, Unit::Inches);
+    let with_px = with_mm.replace("AI5_RulerUnits: 1", "AI5_RulerUnits: 6");
+    assert_eq!(read(with_px.as_bytes()).unwrap().doc.units, Unit::Pixels);
 }
 
 /// The children of the first layer.

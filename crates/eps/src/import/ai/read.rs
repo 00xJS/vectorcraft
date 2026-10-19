@@ -81,7 +81,7 @@ const MAX_HEX: usize = (MAX_PIXELS as usize) * 10;
 /// Largest side of the document and its artboards (points).
 const MAX_SIDE: f64 = 1e6;
 
-/// `%AI5_RulerUnits` → [`Unit`] (Illustrator 7 spec table 3; 4 and 5 are centimeters and pixels in later files).
+/// `%AI5_RulerUnits` → [`Unit`] (Illustrator 7 spec table 3; centimeters is 4; pixels is 6 in later files).
 fn ruler_unit(v: u8) -> Option<Unit> {
     Some(match v {
         0 => Unit::Inches,
@@ -89,7 +89,7 @@ fn ruler_unit(v: u8) -> Option<Unit> {
         2 => Unit::Points,
         3 => Unit::Picas,
         4 => Unit::Centimeters,
-        5 => Unit::Pixels,
+        5 | 6 => Unit::Pixels,
         _ => return None,
     })
 }
