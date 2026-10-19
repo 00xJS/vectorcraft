@@ -104,8 +104,9 @@ impl Session {
 
     /// The selection tool Cmd lends tool `id` for a drag: the one chosen last; until one is,
     /// Direct Selection to the tools that edit anchors (the Pen) and Selection to the others.
-    /// Cmd+Alt lends Group Selection when the lend would be Direct Selection (including while
-    /// Direct Selection is active). None for the other selection tools and the view tools.
+    /// Cmd+Alt lends Group Selection while Direct Selection is active. Cmd still lends the last
+    /// selection tool from other tools (Alt on the lent Direct Selection gesture stays copy/subtract).
+    /// None for the other selection tools and the view tools.
     fn lent_tool(&self, id: &str, mods: &Mods) -> Option<&'static str> {
         use vectorcraft_tools::catalog::{edits_anchors, is_selection_tool};
         if matches!(id, "hand" | "zoom" | "rotateView") {
@@ -117,11 +118,7 @@ impl Session {
         if is_selection_tool(id) {
             return None;
         }
-        let base = self.last_selection_tool.unwrap_or(if edits_anchors(id) { "directSelection" } else { "selection" });
-        if mods.alt && base == "directSelection" {
-            return Some("groupSelection");
-        }
-        Some(base)
+        Some(self.last_selection_tool.unwrap_or(if edits_anchors(id) { "directSelection" } else { "selection" }))
     }
 
     /// A press with Cmd held (Ctrl elsewhere) and any other tool than a selection tool: the

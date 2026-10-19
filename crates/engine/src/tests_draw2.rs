@@ -1609,14 +1609,15 @@ fn pen_with_cmd_borrows_direct_selection_and_goes_on_drawing() {
 }
 
 #[test]
-fn cmd_alt_lends_group_selection_when_direct_selection_was_last() {
+fn cmd_alt_lends_group_selection_while_direct_selection_is_active() {
     let (cmd, cmd_alt) = (Mods { cmd: true, ..Mods::default() }, Mods { cmd: true, alt: true, ..Mods::default() });
     let v = view();
     let mut s = session();
+    // Cmd+Alt while the Pen borrows Direct Selection keeps Direct Selection (Alt is copy/subtract).
     s.select_tool("directSelection", v).unwrap();
     s.select_tool("pen", v).unwrap();
     s.pointer(&PointerEvent::new(PointerKind::Down, 50.0, 50.0).with_mods(cmd_alt), v).unwrap();
-    assert_eq!(s.tool_id(), "groupSelection");
+    assert_eq!(s.tool_id(), "directSelection");
     s.pointer(&PointerEvent::new(PointerKind::Up, 50.0, 50.0).with_mods(cmd_alt), v).unwrap();
     assert_eq!(s.tool_id(), "pen");
     // Cmd alone still lends Direct Selection.
