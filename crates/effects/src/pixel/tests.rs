@@ -2160,10 +2160,7 @@ fn plaster(p: serde_json::Value, src: &[u8], w: usize, h: usize, s: &PixelSpace)
 #[test]
 fn plaster_params_take_defaults_and_stay_in_range() {
     use super::texture::Light;
-    assert_eq!(
-        fx("sketch.plaster", json!({})),
-        PixelFx::Plaster { image_balance: 20.0, smoothness: 8.0, light: Light::Top }
-    );
+    assert_eq!(fx("sketch.plaster", json!({})), PixelFx::Plaster { image_balance: 20.0, smoothness: 8.0, light: Light::Top });
     assert_eq!(
         fx("sketch.plaster", json!({"imageBalance": 0, "smoothness": 1e9, "lightDirection": "bottomRight"})),
         PixelFx::Plaster { image_balance: 1.0, smoothness: 15.0, light: Light::BottomRight }

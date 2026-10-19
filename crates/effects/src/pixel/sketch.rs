@@ -232,7 +232,11 @@ pub(super) fn plaster_reach(smoothness: f64) -> f64 {
 /// light areas recessed; `imageBalance` (1..50) shifts more of the image lower at higher values;
 /// `smoothness` (1..15) softens the relief. Coverage is kept.
 pub(super) fn plaster(px: &mut [[u8; 4]], w: usize, h: usize, space: &PixelSpace, image_balance: f64, smoothness: f64, light: Light) {
-    if !(image_balance.is_finite() && smoothness.is_finite() && space.px.is_finite() && space.px > 0.0) || w == 0 || h == 0 || w.checked_mul(h) != Some(px.len()) {
+    if !(image_balance.is_finite() && smoothness.is_finite() && space.px.is_finite() && space.px > 0.0)
+        || w == 0
+        || h == 0
+        || w.checked_mul(h) != Some(px.len())
+    {
         return;
     }
     let image_balance = image_balance.clamp(1.0, 50.0);
