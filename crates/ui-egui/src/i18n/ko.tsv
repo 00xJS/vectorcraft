@@ -4778,6 +4778,17 @@ lighting	Light	광원
 	Definition	선명도
 	Brush Detail	브러시 세부 묘사
 	Shadow Intensity	그림자 강도
+	Bas Relief…	부조…
+	Bas Relief	부조
+	Charcoal…	목탄…
+	Charcoal	목탄
+	Photocopy…	복사…
+	Photocopy	복사
+	Stamp…	스탬프…
+	Stamp	스탬프
+	Thickness	두께
+	Detail	세부
+	Light/Dark Balance	밝음/어두움 균형
 # Links and Attributes: files and URLs handed to other apps.
 @msg	Edit Original opens image and document files only; “{name}” is not one	원본 편집은 이미지 및 문서 파일만 엽니다. “{name}”은(는) 해당하지 않습니다
 @msg	only http, https and mailto URLs open in the browser, not “{url}”	브라우저에서는 http, https, mailto URL만 열립니다. “{url}”은(는) 열 수 없습니다

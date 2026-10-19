@@ -25,6 +25,7 @@ mod paint;
 mod pixelate;
 mod sharpen;
 mod sketch;
+mod sketch_ink;
 mod texture;
 mod video;
 
@@ -42,7 +43,7 @@ pub use sketch::{HALFTONE_TYPES, HalftonePattern};
 pub use texture::{GRAIN_TYPES, Grain, LIGHT_DIRECTIONS, Light, TEXTURES, Texture};
 
 /// The Photoshop-style effect ids (all raster effects, see [`crate::is_raster`]).
-pub const PIXEL_EFFECTS: [&str; 41] = [
+pub const PIXEL_EFFECTS: [&str; 45] = [
     "artistic.cutout",
     "artistic.filmGrain",
     "artistic.neonGlow",
@@ -69,12 +70,16 @@ pub const PIXEL_EFFECTS: [&str; 41] = [
     "pixelate.mezzotint",
     "pixelate.pointillize",
     "sharpen.unsharpMask",
+    "sketch.basRelief",
     "sketch.chalkCharcoal",
+    "sketch.charcoal",
     "sketch.chrome",
     "sketch.graphicPen",
     "sketch.halftonePattern",
+    "sketch.photocopy",
     "sketch.plaster",
     "sketch.reticulation",
+    "sketch.stamp",
     "stylize.glowingEdges",
     "texture.craquelure",
     "texture.grain",
@@ -175,6 +180,18 @@ pub enum PixelFx {
     /// Sketch › Halftone Pattern: black ink on white paper through a `kind` screen of cells `size`
     /// (1..12) apart, its edges as hard as `contrast` (0..50) says.
     HalftonePattern { size: f64, contrast: f64, kind: HalftonePattern },
+    /// Sketch › Bas Relief: low relief lit from `light`, keeping the finer features as `detail`
+    /// (1..15) says and rounded by `smoothness` (1..15).
+    BasRelief { detail: f64, smoothness: f64, light: Light },
+    /// Sketch › Charcoal: bold edges `thickness` (1..7) wide, as fine as `detail` (0..5) says, and
+    /// diagonal strokes over the midtones; `balance` (0..100) sets how far into the lights it reaches.
+    Charcoal { thickness: f64, detail: f64, balance: f64 },
+    /// Sketch › Photocopy: black only where a pixel is darker than its surroundings, as fine as
+    /// `detail` (1..24) says, and as readily as `darkness` (1..50) says.
+    Photocopy { detail: f64, darkness: f64 },
+    /// Sketch › Stamp: solid black and white, printing black as much as `balance` (0..50) says,
+    /// its shapes rounded by `smoothness` (1..50).
+    Stamp { balance: f64, smoothness: f64 },
     /// Sketch › Plaster: relief plaster lit from `light`; dark areas raised, light recessed;
     /// `imageBalance` (1..50) shifts more of the image lower at higher values; `smoothness` (1..15)
     /// softens the relief.
@@ -387,6 +404,22 @@ pub(crate) fn parse(id: &str, p: &Value) -> Option<PixelFx> {
             contrast: num(p, "contrast", 5.0).clamp(0.0, 50.0),
             kind: HalftonePattern::parse(text(p, "patternType", "dot")),
         },
+        "sketch.basRelief" => PixelFx::BasRelief {
+            detail: num(p, "detail", 13.0).clamp(1.0, 15.0),
+            smoothness: num(p, "smoothness", 3.0).clamp(1.0, 15.0),
+            light: Light::parse(text(p, "lightDirection", "bottom")),
+        },
+        "sketch.charcoal" => PixelFx::Charcoal {
+            thickness: num(p, "thickness", 1.0).clamp(1.0, 7.0),
+            detail: num(p, "detail", 1.0).clamp(0.0, 5.0),
+            balance: num(p, "lightDarkBalance", 50.0).clamp(0.0, 100.0),
+        },
+        "sketch.photocopy" => {
+            PixelFx::Photocopy { detail: num(p, "detail", 7.0).clamp(1.0, 24.0), darkness: num(p, "darkness", 25.0).clamp(1.0, 50.0) }
+        }
+        "sketch.stamp" => {
+            PixelFx::Stamp { balance: num(p, "lightDarkBalance", 25.0).clamp(0.0, 50.0), smoothness: num(p, "smoothness", 5.0).clamp(1.0, 50.0) }
+        }
         "sketch.plaster" => PixelFx::Plaster {
             image_balance: num(p, "imageBalance", 20.0).clamp(1.0, 50.0),
             smoothness: num(p, "smoothness", 8.0).clamp(1.0, 15.0),
@@ -481,6 +514,7 @@ impl PixelFx {
             | PixelFx::HalftonePattern { .. }
             | PixelFx::Plaster { .. }
             | PixelFx::Reticulation { .. } => 0.0,
+            PixelFx::BasRelief { .. } | PixelFx::Charcoal { .. } | PixelFx::Photocopy { .. } | PixelFx::Stamp { .. } => 0.0,
             PixelFx::GlowingEdges { width, smoothness, .. } => width.max(smoothness * 3.0),
             // These three keep the object's coverage.
             PixelFx::SmudgeStick { .. } | PixelFx::Sponge { .. } | PixelFx::Watercolor { .. } => 0.0,
@@ -531,6 +565,10 @@ impl PixelFx {
             PixelFx::Glass { distortion, .. } => Some(distort::glass_shift(distortion)),
             PixelFx::OceanRipple { size, magnitude } => Some(distort::ripple_shift(size, magnitude)),
             PixelFx::UnsharpMask { radius, .. } => Some(3.0 * radius),
+            PixelFx::BasRelief { detail, smoothness, .. } => Some(sketch_ink::relief_reach(detail, smoothness)),
+            PixelFx::Charcoal { thickness, detail, .. } => Some(sketch_ink::charcoal_reach(thickness, detail)),
+            PixelFx::Photocopy { detail, .. } => Some(sketch_ink::copy_reach(detail)),
+            PixelFx::Stamp { smoothness, .. } => Some(sketch_ink::stamp_reach(smoothness)),
             PixelFx::GlowingEdges { width, smoothness, .. } => Some(width.max(smoothness * 3.0)),
             // The cells around the pixel's, and the cells around theirs.
             PixelFx::ColorHalftone { max_radius, .. } => Some(3.0 * std::f64::consts::SQRT_2 * max_radius),
@@ -601,6 +639,10 @@ impl PixelFx {
             PixelFx::Chrome { detail, smoothness } => sketch::chrome(px, w, h, space, detail, smoothness),
             PixelFx::GraphicPen { length, balance, direction } => brushstrokes::graphic_pen(px, w, h, space, length, balance, direction),
             PixelFx::HalftonePattern { size, contrast, kind } => sketch::halftone_pattern(px, w, h, space, size, contrast, kind),
+            PixelFx::BasRelief { detail, smoothness, light } => sketch_ink::bas_relief(px, w, h, space, detail, smoothness, light),
+            PixelFx::Charcoal { thickness, detail, balance } => sketch_ink::charcoal(px, w, h, space, thickness, detail, balance),
+            PixelFx::Photocopy { detail, darkness } => sketch_ink::photocopy(px, w, h, space, detail, darkness),
+            PixelFx::Stamp { balance, smoothness } => sketch_ink::stamp(px, w, h, space, balance, smoothness),
             PixelFx::Plaster { image_balance, smoothness, light } => sketch::plaster(px, w, h, space, image_balance, smoothness, light),
             PixelFx::Reticulation { density, foreground, background } => sketch::reticulation(px, w, h, space, density, foreground, background),
             PixelFx::GlowingEdges { width, brightness, smoothness } => edges::glow(px, w, h, to_px(width), brightness, to_px(smoothness)),
@@ -853,3 +895,5 @@ pub fn gaussian_rgba(data: &mut [u8], w: usize, h: usize, sigma: f64) {
 mod tests;
 #[cfg(test)]
 mod tests_paint;
+#[cfg(test)]
+mod tests_sketch;

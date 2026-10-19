@@ -4795,6 +4795,17 @@ theme	Appearance	Giao diện
 	Definition	Độ nét
 	Brush Detail	Chi tiết cọ
 	Shadow Intensity	Cường độ bóng
+	Bas Relief…	Chạm nổi…
+	Bas Relief	Chạm nổi
+	Charcoal…	Than củi…
+	Charcoal	Than củi
+	Photocopy…	Bản photocopy…
+	Photocopy	Bản photocopy
+	Stamp…	Con dấu…
+	Stamp	Con dấu
+	Thickness	Độ dày
+	Detail	Chi tiết
+	Light/Dark Balance	Cân bằng sáng/tối
 # Links and Attributes: files and URLs handed to other apps.
 @msg	Edit Original opens image and document files only; “{name}” is not one	Chỉnh sửa bản gốc chỉ mở tệp hình ảnh và tài liệu; “{name}” không thuộc loại đó
 @msg	only http, https and mailto URLs open in the browser, not “{url}”	chỉ URL http, https và mailto mới được mở trong trình duyệt, không mở “{url}”
