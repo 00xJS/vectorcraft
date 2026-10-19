@@ -103,7 +103,7 @@ tools, never checked side by side) isn't captured row by row.
 | Construction guides at preference angles while drawing | done | #506 |
 | Line extension: the dragged end of a straight segment snaps to the segment's own direction at any angle, past its other end or short of it, with the guide along it | done | #2120; Direct Selection and Curvature, one anchor dragged (with several, the move has no single direction); nearer the horizontal or vertical through the other end, the point lines up with it ("align"), so a nearly level segment can still be straightened |
 | Measurement labels while drawing, moving and resizing | partial | sizes and offsets; angle and distance readouts while drawing missing |
-| Spacing guides (equal distances) | partial | for moves (#394); not for resizing or drawing |
+| Spacing guides (equal distances) | partial | for moves and bounding-box resizes (#394); not while drawing |
 | Snapping tolerance preference | done | |
 | Snap to Point, Snap to Grid, Snap to Pixel; Pixel Preview | done | #1840: with Snap to Grid on, anchors and objects snap to the grid even when Snap to Pixel is also ticked (#1816 waits for the reporter) |
 | Snap to Glyph | missing | menu stub |
