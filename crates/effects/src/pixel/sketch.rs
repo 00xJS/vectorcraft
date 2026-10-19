@@ -1,4 +1,5 @@
-//! Effect › Sketch (Chalk & Charcoal, Halftone Pattern; Graphic Pen lives in [`super::brushstrokes`]).\n//! Original filters built from public behaviour documentation:
+//! Effect › Sketch (Chalk & Charcoal, Halftone Pattern and Reticulation; Graphic Pen lives in
+//! [`super::brushstrokes`]). Original filters built from public behaviour documentation:
 //! <https://helpx.adobe.com/illustrator/using/summary-effects.html> (Sketch effects redraw in
 //! black and white) and the public Photoshop Elements Artistic filters guide. Visual
 //! approximations, not proprietary reproductions.
@@ -6,7 +7,7 @@
 use std::f64::consts::TAU;
 
 use super::edges::sobel;
-use super::pixelate::{Place, value_noise};
+use super::pixelate::{Place, cell, rand, value_noise};
 use super::texture::{Tones, luma, premultiply, straight};
 use super::{PixelSpace, blur_plane, pick};
 
@@ -134,5 +135,38 @@ pub(super) fn chalk_charcoal(px: &mut [[u8; 4]], w: usize, h: usize, space: &Pix
         grey *= 1.0 - down;
         grey += (1.0 - grey) * up;
         *p = premultiply([grey, grey, grey], f32::from(p[3]) / 255.0);
+    });
+}
+
+/// Reticulation: the object redrawn in black ink on white paper through a high-contrast film-grain
+/// screen. `density` (0..50) sets how fine the grain is; `foreground` and `background` (0..50 each)
+/// pull shadows toward black and highlights toward white before the grain decides ink. Coverage is
+/// kept.
+pub(super) fn reticulation(px: &mut [[u8; 4]], w: usize, h: usize, space: &PixelSpace, density: f64, foreground: f64, background: f64) {
+    if !(density.is_finite() && foreground.is_finite() && background.is_finite()) {
+        return;
+    }
+    let Some(place) = Place::new(space, w, h) else { return };
+    // Finer grain at higher density: cells from about 11 pt down to 1 pt.
+    let cell_size = 1.0 + (50.0 - density.clamp(0.0, 50.0)) * 0.2;
+    let fg = foreground.clamp(0.0, 50.0) / 50.0;
+    let bg = background.clamp(0.0, 50.0) / 50.0;
+    let spread = 0.12 + 0.38 * (density.clamp(0.0, 50.0) / 50.0);
+    const SALT: u64 = 0x5245_7469;
+    place.each(px, |x, y, p| {
+        if p[3] == 0 {
+            return;
+        }
+        let q = place.at(x, y);
+        let dark = f64::from(1.0 - luma(straight(*p))).clamp(0.0, 1.0);
+        let tone = (dark + fg * (1.0 - dark) * 0.65 - bg * dark * 0.65).clamp(0.0, 1.0);
+        let coarse = value_noise(SALT, q.x / cell_size, q.y / cell_size);
+        let fine = match (cell(q.x), cell(q.y)) {
+            (Some(i), Some(j)) => rand(SALT + 1, i, j, 2),
+            _ => 0.5,
+        };
+        let grain = 0.55 * coarse + 0.45 * fine;
+        let ink = if tone + (grain - 0.5) * spread > 0.5 { 1.0 } else { 0.0 };
+        *p = premultiply([(1.0 - ink) as f32; 3], f32::from(p[3]) / 255.0);
     });
 }

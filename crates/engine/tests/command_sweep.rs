@@ -336,6 +336,7 @@ fn structured_junk() {
         ("effect.apply", json!({"effect": "artistic.posterEdges", "params": {"edgeThickness": 1e308, "edgeIntensity": [], "posterization": -7}})),
         ("effect.apply", json!({"effect": "sketch.graphicPen", "params": {"strokeLength": -1e308, "lightDarkBalance": "NaN", "strokeDirection": 3}})),
         ("effect.apply", json!({"effect": "sketch.halftonePattern", "params": {"size": -1e308, "contrast": "NaN", "patternType": 3}})),
+        ("effect.apply", json!({"effect": "sketch.reticulation", "params": {"density": "NaN", "foregroundLevel": -1e308, "backgroundLevel": 1e308}})),
         ("effect.apply", json!({"effect": "texture.craquelure", "params": {"crackSpacing": -1e308, "crackDepth": "NaN", "crackBrightness": 1e308}})),
         ("effect.apply", json!({"effect": "texture.grain", "params": {"intensity": 1e308, "contrast": [1], "grainType": 7}})),
         ("effect.apply", json!({"effect": "texture.mosaicTiles", "params": {"tileSize": "1e999", "groutWidth": -1, "lightenGrout": null}})),

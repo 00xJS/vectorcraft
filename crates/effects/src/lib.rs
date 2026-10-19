@@ -490,6 +490,13 @@ pub fn effect_catalog() -> Vec<EffectInfo> {
             json!({"size": 1.0, "contrast": 5.0, "patternType": "dot"}),
         ),
         r(
+            "sketch.reticulation",
+            "Reticulation…",
+            SKETCH,
+            "{density: 0..50 (12; finer grain at higher values), foregroundLevel: 0..50 (6; pulls shadows toward black ink), backgroundLevel: 0..50 (6; pulls highlights toward white paper)} redraws the object in black ink on white paper through a high-contrast film-grain screen, keeping its coverage. Original visual approximation; chosen VectorCraft defaults.",
+            json!({"density": 12.0, "foregroundLevel": 6.0, "backgroundLevel": 6.0}),
+        ),
+        r(
             "stylize.glowingEdges",
             "Glowing Edges…",
             STYLIZE,
