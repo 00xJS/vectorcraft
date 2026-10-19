@@ -142,6 +142,85 @@ fn collect_text_alignment(text: &vectorcraft_doc::TextObject, range: Option<(usi
     record(index, &plain, start, end) // Includes empty text and the paragraph after a final newline.
 }
 
+/// Compare paragraph distances with the same tolerance as Character dimensional fields.
+struct ParaMetric(f64);
+
+impl PartialEq for ParaMetric {
+    fn eq(&self, other: &Self) -> bool {
+        (self.0 - other.0).abs() <= 1e-9 * self.0.abs().max(other.0.abs()).max(1.0)
+    }
+}
+
+enum ParaShared<T> {
+    None,
+    Same(T),
+    Differ,
+}
+
+impl<T: PartialEq> ParaShared<T> {
+    fn add(&mut self, v: T) {
+        match self {
+            Self::None => *self = Self::Same(v),
+            Self::Same(old) if *old == v => {}
+            _ => *self = Self::Differ,
+        }
+    }
+    fn value(self) -> Option<T> {
+        match self {
+            Self::Same(v) => Some(v),
+            _ => None,
+        }
+    }
+}
+
+/// Visit every paragraph the Paragraph panel acts on; stop early when `f` returns false.
+fn visit_paragraphs(app: &VectorcraftApp, mut f: impl FnMut(&ParaStyle) -> bool) -> bool {
+    let Some(st) = app.session.active() else { return false };
+    if let Some((id, a, b)) = super::character::text_editing(app)
+        && let Some(NodeKind::Text(text)) = st.doc.node(id).map(|n| &n.kind)
+    {
+        let range = text.paragraphs_in(a, b);
+        for i in range {
+            if !f(text.para_at(i)) {
+                return false;
+            }
+        }
+        return true;
+    }
+    let mut ok = true;
+    for node in st.selection.objects.iter().filter_map(|id| st.doc.node(*id)) {
+        node.walk(&mut |c| {
+            if let NodeKind::Text(t) = &c.kind {
+                for i in 0..t.paragraph_count() {
+                    if !f(t.para_at(i)) {
+                        ok = false;
+                    }
+                }
+            }
+        });
+        if !ok {
+            return false;
+        }
+    }
+    ok
+}
+
+/// A distance shared by every paragraph in scope, or `None` when they differ (blank spin field).
+fn shared_para_field(app: &VectorcraftApp, field: impl Fn(&ParaStyle) -> f64) -> Option<f64> {
+    let mut acc = ParaShared::None;
+    let mut any = false;
+    let record = |p: &ParaStyle| {
+        any = true;
+        acc.add(ParaMetric(field(p)));
+        true
+    };
+    visit_paragraphs(app, record);
+    if !any {
+        return text_style(app).map(|(_, p)| field(&p));
+    }
+    acc.value().map(|m| m.0)
+}
+
 /// None means differing displayed alignments, following the other mixed-value controls.
 fn selected_alignment(app: &VectorcraftApp, fallback: &ParaStyle) -> Option<Justify> {
     let default = Some(shown_alignment(fallback.justify, fallback.direction == Some(ParaDirection::RightToLeft)));
@@ -217,27 +296,27 @@ pub fn show(app: &mut VectorcraftApp, ui: &mut Ui) {
     };
     egui::Grid::new("para-grid").num_columns(4).spacing([4.0, 4.0]).show(ui, |ui| {
         label(ui, "→|", tl!("Left Indent"));
-        if let Some(v) = widgets::spin_field(ui, "pa-li", Some(para.left_indent), unit, fw, 1.0, -1296.0, &[]) {
+        if let Some(v) = widgets::spin_field(ui, "pa-li", shared_para_field(app, |p| p.left_indent), unit, fw, 1.0, -1296.0, &[]) {
             format(app, json!({"leftIndent": v}));
         }
         label(ui, "|←", tl!("Right Indent"));
-        if let Some(v) = widgets::spin_field(ui, "pa-ri", Some(para.right_indent), unit, fw, 1.0, -1296.0, &[]) {
+        if let Some(v) = widgets::spin_field(ui, "pa-ri", shared_para_field(app, |p| p.right_indent), unit, fw, 1.0, -1296.0, &[]) {
             format(app, json!({"rightIndent": v}));
         }
         ui.end_row();
         label(ui, "1→", tl!("First-line Left Indent"));
-        if let Some(v) = widgets::spin_field(ui, "pa-fi", Some(para.first_line_indent), unit, fw, 1.0, -1296.0, &[]) {
+        if let Some(v) = widgets::spin_field(ui, "pa-fi", shared_para_field(app, |p| p.first_line_indent), unit, fw, 1.0, -1296.0, &[]) {
             format(app, json!({"firstLineIndent": v}));
         }
         ui.label("");
         ui.label("");
         ui.end_row();
         label(ui, "↑¶", tl!("Space Before Paragraph"));
-        if let Some(v) = widgets::spin_field(ui, "pa-sb", Some(para.space_before), unit, fw, 1.0, 0.0, &[]) {
+        if let Some(v) = widgets::spin_field(ui, "pa-sb", shared_para_field(app, |p| p.space_before), unit, fw, 1.0, 0.0, &[]) {
             format(app, json!({"spaceBefore": v}));
         }
         label(ui, "↓¶", tl!("Space After Paragraph"));
-        if let Some(v) = widgets::spin_field(ui, "pa-sa", Some(para.space_after), unit, fw, 1.0, 0.0, &[]) {
+        if let Some(v) = widgets::spin_field(ui, "pa-sa", shared_para_field(app, |p| p.space_after), unit, fw, 1.0, 0.0, &[]) {
             format(app, json!({"spaceAfter": v}));
         }
         ui.end_row();
@@ -440,6 +519,23 @@ mod tests {
 
     fn select_range(app: &mut VectorcraftApp, start: usize, end: usize) {
         app.session.set_tool_option("select", &json!({"start": start, "end": end}));
+    }
+
+    #[test]
+    fn paragraph_mixed_indent_fields_show_blank() {
+        let (mut app, id) = editing_text("A\nB\n");
+        app.run("text.setFormat", json!({"id": id, "leftIndent": 10})).unwrap();
+        app.run("text.setFormat", json!({"id": id, "start": 2, "end": 3, "leftIndent": 20})).unwrap();
+        app.session.set_tool_option("selectAll", &json!(true));
+        assert_eq!(shared_para_field(&app, |p| p.left_indent), None);
+        assert_eq!(shared_para_field(&app, |p| p.space_before), Some(0.0));
+        app.run("text.setFormat", json!({"id": id, "leftIndent": 12})).unwrap();
+        assert_eq!(shared_para_field(&app, |p| p.left_indent), Some(12.0));
+        app.session.set_tool_option("stopEditing", &json!(true));
+        let other = app.run("text.create", json!({"x": 40, "y": 80, "text": "C"})).unwrap()["id"].clone();
+        app.run("text.setFormat", json!({"id": other, "leftIndent": 5})).unwrap();
+        app.run("select.set", json!({"ids": [id, other]})).unwrap();
+        assert_eq!(shared_para_field(&app, |p| p.left_indent), None);
     }
 
     #[test]
