@@ -3208,8 +3208,8 @@ or in `options` (`file.formatOptions {format}` lists them with their values):
   (default true) with false write blank pages around the native document (smaller; other apps show empty pages).
 - `.ai` only: `compress` (default true) is the PDF option `compression.compressText`.
 
-File → Save As asks for these in the save options dialog (VectorCraft Options) after the save panel; Save, Save a Copy
-and Save as Template reuse the options as last saved (or Use Compression).
+File → Save As asks for these in the save options dialog (VectorCraft Options) after the save panel, and Save a Copy
+does too for a `.ai` file; Save, Save a Copy to a native file and Save as Template reuse the options as last saved (or Use Compression).
 
 ```json
 {"name":"run_command","arguments":{"command":"file.saveAs","params":{"path":"/tmp/set.vectorcraft","separateArtboards":true,"range":"2-3","includeLinked":true}}}
