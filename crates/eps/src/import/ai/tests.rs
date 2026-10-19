@@ -1253,10 +1253,7 @@ fn an_object_with_a_feather_style_comes_in_with_a_live_effect() {
         /BasicFilter :\n(Adobe Feather) 1 0 /Filter ,\n1 /Visible ,\n/Dictionary : /NotRecorded ,\n8 /Real (rad) ,\n; /Dict ;\n /Part ,\n;\n\
         %AI9_EndArtStyles\n";
     let hidden_rect = rect_path(0.0, 0.0, 10.0, 10.0).replace('\n', "\n%_");
-    let art_ = format!(
-        "0 Ae\nu\n{RED}{}f\nU\n%_Bb\n%_{hidden_rect}f\n%_0 BB\n1 (Soft) XW\n",
-        rect_path(0.0, 0.0, 10.0, 10.0)
-    );
+    let art_ = format!("0 Ae\nu\n{RED}{}f\nU\n%_Bb\n%_{hidden_rect}f\n%_0 BB\n1 (Soft) XW\n", rect_path(0.0, 0.0, 10.0, 10.0));
     let r = read_ok(&format!("{feather_style}{}", layer(&art_)));
     let a = art(&r.doc);
     assert_eq!(a.len(), 1);
