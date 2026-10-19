@@ -46,7 +46,7 @@ its resolution, PDF export warns once per object with the requested and the lowe
 | Sharpen | Unsharp Mask | 1/1 | — |
 | Sketch | Bas Relief, Chalk & Charcoal, Charcoal, Chrome, Conté Crayon, Graphic Pen, Halftone Pattern, Note Paper, Photocopy, Plaster, Reticulation, Stamp, Torn Edges, Water Paper | 12/14 (approximate Bas Relief, Chalk & Charcoal, Charcoal, Chrome, Graphic Pen, Halftone Pattern, Note Paper, Photocopy, Plaster, Reticulation, Stamp, Water Paper; Chalk & Charcoal, Graphic Pen, Note Paper and Water Paper defaults unverified) | Conté Crayon, Torn Edges |
 | Stylize | Glowing Edges | 1/1 | — |
-| Texture | Craquelure, Grain, Mosaic Tiles, Patchwork, Stained Glass, Texturizer | 6/6 | Texturizer's Load Texture |
+| Texture | Craquelure, Grain, Mosaic Tiles, Patchwork, Stained Glass, Texturizer | 6/6 | — |
 | Video | De-Interlace, NTSC Colors | 2/2 | — |
 | Effect Gallery | the combined browser and stack dialog | 0/1 | all |
 

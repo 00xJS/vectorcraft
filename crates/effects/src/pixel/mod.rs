@@ -40,7 +40,7 @@ pub use distort::{GLASS_TEXTURES, GLASS_TEXTURES_LOADED, GlassTexture};
 pub use loaded::{LOADED, LoadedTexture, TEXTURE_IMAGE, texture};
 pub use pixelate::{MEZZOTINT_TYPES, Mezzotint};
 pub use sketch::{HALFTONE_TYPES, HalftonePattern};
-pub use texture::{GRAIN_TYPES, Grain, LIGHT_DIRECTIONS, Light, TEXTURES, Texture};
+pub use texture::{GRAIN_TYPES, Grain, LIGHT_DIRECTIONS, Light, TEXTURES, TEXTURES_LOADED, Texture};
 
 /// The Photoshop-style effect ids (all raster effects, see [`crate::is_raster`]).
 pub const PIXEL_EFFECTS: [&str; 48] = [
@@ -495,7 +495,7 @@ pub(crate) fn parse(id: &str, p: &Value) -> Option<PixelFx> {
             light: num(p, "lightIntensity", 3.0).clamp(0.0, 10.0),
         },
         "texture.texturizer" => PixelFx::Texturizer {
-            texture: Texture::parse(text(p, "texture", "canvas")),
+            texture: Texture::parse_with(text(p, "texture", "canvas"), p.get(TEXTURE_IMAGE).and_then(Value::as_str)),
             scaling: num(p, "scaling", 100.0).clamp(50.0, 200.0) / 100.0,
             relief: num(p, "relief", 4.0).clamp(0.0, 50.0),
             light: Light::parse(text(p, "lightDirection", "top")),
@@ -697,7 +697,7 @@ impl PixelFx {
             PixelFx::MosaicTiles { tile, grout, lighten } => texture::mosaic_tiles(px, w, h, space, tile, grout, lighten),
             PixelFx::Patchwork { square, relief } => texture::patchwork(px, w, h, space, square, relief),
             PixelFx::StainedGlass { cell, border, light } => texture::stained_glass(px, w, h, space, cell, border, light),
-            PixelFx::Texturizer { texture, scaling, relief, light, invert } => {
+            PixelFx::Texturizer { ref texture, scaling, relief, light, invert } => {
                 texture::texturizer(px, w, h, space, texture, scaling, relief, light, invert)
             }
             PixelFx::DeInterlace { even, interpolate } => video::deinterlace(px, w, h, space, even, interpolate),
