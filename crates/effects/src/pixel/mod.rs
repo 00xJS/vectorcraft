@@ -1,7 +1,8 @@
 //! Photoshop-style raster effects (Effect › Artistic › Cutout, Film Grain, Neon Glow and Poster Edges, Blur › Radial Blur and Smart Blur, Brush Strokes ›
 //! Accented Edges, Angled Strokes, Crosshatch, Dark Strokes, Ink Outlines, Spatter, Sprayed Strokes
 //! and Sumi-e, Distort › Diffuse Glow, Glass and Ocean Ripple, Pixelate › Color Halftone,
-//! Crystallize, Mezzotint and Pointillize, Sharpen › Unsharp Mask, Sketch › Halftone Pattern, Stylize ›
+//! Crystallize, Mezzotint and Pointillize, Sharpen › Unsharp Mask, Sketch › Chalk & Charcoal and
+//! Halftone Pattern, Stylize ›
 //! Glowing Edges, Texture
 //! › Craquelure, Grain, Mosaic Tiles, Patchwork, Stained Glass and Texturizer, and Video ›
 //! De-Interlace and NTSC Colors): filters over premultiplied RGBA8 pixels.
@@ -39,7 +40,7 @@ pub use sketch::{HALFTONE_TYPES, HalftonePattern};
 pub use texture::{GRAIN_TYPES, Grain, LIGHT_DIRECTIONS, Light, TEXTURES, Texture};
 
 /// The Photoshop-style effect ids (all raster effects, see [`crate::is_raster`]).
-pub const PIXEL_EFFECTS: [&str; 32] = [
+pub const PIXEL_EFFECTS: [&str; 33] = [
     "artistic.cutout",
     "artistic.filmGrain",
     "artistic.neonGlow",
@@ -62,6 +63,7 @@ pub const PIXEL_EFFECTS: [&str; 32] = [
     "pixelate.mezzotint",
     "pixelate.pointillize",
     "sharpen.unsharpMask",
+    "sketch.chalkCharcoal",
     "sketch.halftonePattern",
     "stylize.glowingEdges",
     "texture.craquelure",
@@ -139,6 +141,9 @@ pub enum PixelFx {
     /// Sharpen › Unsharp Mask: colours pushed away from a Gaussian blur of σ = `radius` by `amount`
     /// (1 = 100 %), where they differ from it by at least `threshold` levels.
     UnsharpMask { amount: f64, radius: f64, threshold: f64 },
+    /// Sketch › Chalk & Charcoal: chalk highlights in light areas and charcoal in dark ones;
+    /// `chalk` and `charcoal` (0..20) set how much, `pressure` (0..5) the stroke weight.
+    ChalkCharcoal { chalk: f64, charcoal: f64, pressure: f64 },
     /// Sketch › Halftone Pattern: black ink on white paper through a `kind` screen of cells `size`
     /// (1..12) apart, its edges as hard as `contrast` (0..50) says.
     HalftonePattern { size: f64, contrast: f64, kind: HalftonePattern },
@@ -311,6 +316,11 @@ pub(crate) fn parse(id: &str, p: &Value) -> Option<PixelFx> {
             radius: num(p, "radius", 1.0).clamp(0.1, 250.0),
             threshold: num(p, "threshold", 0.0).clamp(0.0, 255.0),
         },
+        "sketch.chalkCharcoal" => PixelFx::ChalkCharcoal {
+            chalk: num(p, "chalkArea", 6.0).clamp(0.0, 20.0),
+            charcoal: num(p, "charcoalArea", 6.0).clamp(0.0, 20.0),
+            pressure: num(p, "strokePressure", 2.0).clamp(0.0, 5.0),
+        },
         "sketch.halftonePattern" => PixelFx::HalftonePattern {
             size: num(p, "size", 1.0).clamp(1.0, 12.0),
             contrast: num(p, "contrast", 5.0).clamp(0.0, 50.0),
@@ -392,7 +402,7 @@ impl PixelFx {
             // Content shifted outwards reaches past the bounds by as much as the shift.
             PixelFx::Glass { distortion, .. } => distort::glass_shift(distortion),
             PixelFx::OceanRipple { size, magnitude } => distort::ripple_shift(size, magnitude),
-            PixelFx::UnsharpMask { .. } | PixelFx::HalftonePattern { .. } => 0.0,
+            PixelFx::UnsharpMask { .. } | PixelFx::ChalkCharcoal { .. } | PixelFx::HalftonePattern { .. } => 0.0,
             PixelFx::GlowingEdges { width, smoothness, .. } => width.max(smoothness * 3.0),
             PixelFx::FilmGrain { .. }
             | PixelFx::Cutout { .. }
@@ -439,6 +449,7 @@ impl PixelFx {
             // The cells around the pixel's, and the cells around theirs.
             PixelFx::ColorHalftone { max_radius, .. } => Some(3.0 * std::f64::consts::SQRT_2 * max_radius),
             PixelFx::Crystallize { cell } => Some(1.5 * cell),
+            PixelFx::ChalkCharcoal { .. } => Some(sketch::CHALK_CHARCOAL_REACH),
             PixelFx::FilmGrain { .. } | PixelFx::Mezzotint { .. } | PixelFx::HalftonePattern { .. } => Some(0.0),
             // Cutout's palette comes from the whole object.
             PixelFx::Cutout { .. } => None,
@@ -493,6 +504,7 @@ impl PixelFx {
             }
             PixelFx::OceanRipple { size, magnitude } => distort::ocean_ripple(px, w, h, space, size, magnitude),
             PixelFx::UnsharpMask { amount, radius, threshold } => sharpen::unsharp(px, w, h, amount, to_px(radius), threshold),
+            PixelFx::ChalkCharcoal { chalk, charcoal, pressure } => sketch::chalk_charcoal(px, w, h, space, chalk, charcoal, pressure),
             PixelFx::HalftonePattern { size, contrast, kind } => sketch::halftone_pattern(px, w, h, space, size, contrast, kind),
             PixelFx::GlowingEdges { width, brightness, smoothness } => edges::glow(px, w, h, to_px(width), brightness, to_px(smoothness)),
             PixelFx::ColorHalftone { max_radius, angles } => pixelate::color_halftone(px, w, h, space, max_radius, angles),
