@@ -277,13 +277,7 @@ impl<L: LibraryFile> Libraries<L> {
                 let base = file_name(&p);
                 // Color books (.acb) name the tab from the book title inside the file; a sandbox
                 // copy of an import often lands as tmp….tmp.acb (#2996).
-                let file = if ext == "acb" {
-                    library_file_name(lib.name(), &ext)
-                } else if temporary_library_file_name(&base) {
-                    library_file_name(lib.name(), &ext)
-                } else {
-                    base
-                };
+                let file = if ext == "acb" || temporary_library_file_name(&base) { library_file_name(lib.name(), &ext) } else { base };
                 (file, read_file(&p)?)
             }
             None => (library_file_name(lib.name(), ext), encode(&lib)?),
