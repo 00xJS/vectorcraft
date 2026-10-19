@@ -390,6 +390,29 @@ mod tests {
         assert_eq!(app.run("dataset.list", json!({})).unwrap()["datasets"][0]["matches"], json!(true));
     }
 
+    /// Choosing a data set, or stepping to one with the arrows, shows a status message when no
+    /// object is bound to a variable it has a value for, for example after Import Data Sets…
+    /// defines new variables. With such an object bound, it shows none.
+    #[test]
+    fn a_data_set_with_nothing_bound_shows_a_status_message() {
+        let mut app = VectorcraftApp::new(vectorcraft_engine::Session::new(), Default::default());
+        app.session.execute("file.new", &json!({"width": 300, "height": 200})).unwrap();
+        let t = app.session.execute("text.create", &json!({"x": 10, "y": 40, "text": "x"})).unwrap()["id"].as_u64().unwrap();
+        app.run("dataset.import", json!({"csv": "name,Name\nA,Ann\nB,Bob\n"})).unwrap();
+        let message = |row: &str| format!("nothing in data set {row} was applied: no object is bound to a variable it has a value for");
+        app.run("dataset.select", json!({"name": "A"})).unwrap();
+        assert_eq!(app.ui.status, message("A"));
+        app.run("dataset.next", json!({})).unwrap();
+        assert_eq!(app.ui.status, message("B"));
+        app.run("dataset.prev", json!({})).unwrap();
+        assert_eq!(app.ui.status, message("A"));
+
+        app.ui.status.clear();
+        app.run("variable.bind", json!({"variable": "Name", "ids": [t]})).unwrap();
+        app.run("dataset.select", json!({"name": "B"})).unwrap();
+        assert_eq!(app.ui.status, "");
+    }
+
     #[test]
     fn the_panel_menu_lists_the_row_commands() {
         let mut app = app_with_data();
