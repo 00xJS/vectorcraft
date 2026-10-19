@@ -3178,7 +3178,7 @@ effect	Points	Точки
 	Delete Library Item	Видалити елемент бібліотеки
 	No results	Нічого не знайдено
 	No items in this library match “{query}”.	У цій бібліотеці немає елементів, що відповідають «{query}».
-	Right-click an item to move it into this group.	Клацніть елемент правою кнопкою миші, щоб перемістити його в цю групу.
+	Drag an item here, or right-click one, to put it in this group.	Перетягніть сюди елемент або клацніть його правою кнопкою миші, щоб покласти його в цю групу.
 	New Group	Нова група
 	New Group…	Нова група…
 	Move to Group	Перемістити в групу
@@ -4837,5 +4837,7 @@ lighting	Light	Світло
 	Plastic Wrap	Целофанова плівка
 	Chrome…	Хром…
 	Chrome	Хром
+	Drop here to take it out of its group	Відпустіть тут, щоб вийняти його з групи
+	Move Library Group	Перемістити групу бібліотеки
 	Plaster…	Гіпс…
 	Plaster	Гіпс

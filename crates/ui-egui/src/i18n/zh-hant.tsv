@@ -3904,7 +3904,7 @@ font-script	Japanese	漢字
 	Delete Library Item	刪除資料庫項目
 	No results	沒有結果
 	No items in this library match “{query}”.	此資料庫中沒有符合「{query}」的項目。
-	Right-click an item to move it into this group.	在項目上按一下右鍵，即可將其移至此群組。
+	Drag an item here, or right-click one, to put it in this group.	將項目拖到此處，或在項目上按一下右鍵，即可將其放入此群組。
 	New Group	新增群組
 	New Group…	新增群組…
 	Move to Group	移至群組
@@ -4875,5 +4875,7 @@ lighting	Light	光源
 	Plastic Wrap	塑膠包裝
 	Chrome…	鉻黃…
 	Chrome	鉻黃
+	Drop here to take it out of its group	放到此處即可將其移出所屬群組
+	Move Library Group	移動資料庫群組
 	Plaster…	塑膠效果…
 	Plaster	塑膠效果

@@ -1398,7 +1398,7 @@ lighting	Light	სინათლე
 	This library is empty	ეს ბიბლიოთეკა ცარიელია
 	No results	შედეგები არ არის
 	No items in this library match “{query}”.	ამ ბიბლიოთეკაში „{query}“-ს შესაბამისი ელემენტი არ არის.
-	Right-click an item to move it into this group.	ამ ჯგუფში გადასატანად დაწკაპეთ ელემენტზე მარჯვენა ღილაკით.
+	Drag an item here, or right-click one, to put it in this group.	ამ ჯგუფში ჩასასმელად ჩაავლეთ ელემენტი აქ ან დაწკაპეთ მასზე მარჯვენა ღილაკით.
 	New Group	ახალი ჯგუფი
 	New Group…	ახალი ჯგუფი…
 	Move to Group	ჯგუფში გადატანა
@@ -5150,5 +5150,7 @@ imageTrace	Outline	კონტური
 	Plastic Wrap	პლასტიკური აფსკი
 	Chrome…	ქრომი…
 	Chrome	ქრომი
+	Drop here to take it out of its group	ჯგუფიდან ამოსაღებად ჩააგდეთ აქ
+	Move Library Group	ბიბლიოთეკის ჯგუფის გადატანა
 	Plaster…	თაბაშირი…
 	Plaster	თაბაშირი

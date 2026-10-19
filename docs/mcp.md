@@ -1564,9 +1564,13 @@ Items can be put in user-named groups, which the panel shows as collapsible sect
 search field filters every item by name; `library.get` lists them all to filter). `library.createGroup {library?,
 name?, items?: [{kind, item}]}` makes one (a name another group has, ignoring case, gets a number) with those items
 moved into it; `library.renameGroup {library?, group, name}` renames one; `library.deleteGroup {library?, group}`
-deletes one, its items staying in the library ungrouped; and `library.moveItem {library?, kind, item, group?}` moves
-an item into a group (without `group`, out of its group). An item is in one group at most; `library.get` lists the
-groups as `groups: [{name, items: [{kind: "color"|"charStyle"|"paraStyle"|"graphic", item}]}]` (a graphic by its id).
+deletes one, its items staying in the library ungrouped; and `library.moveItem {library?, kind, item, group?, before?
+| after?}` moves an item into a group (without `group`, out of its group) and, with `before` or `after` (another item
+of its kind), just before or after that item in the order its kind is listed and shown in. `library.moveGroup
+{library?, group, to}` moves a group to place `to` of the list (0: first; past the end: last). Dragging items and
+group headers in the panel runs these. An item is in one group at most; `library.get` lists the groups as `groups:
+[{name, items: [{kind: "color"|"charStyle"|"paraStyle"|"graphic", item}]}]` (a graphic by its id), and each kind's
+items in the order the panel shows them.
 
 `library.export {library?, path?}` writes a library (its colours, styles, graphics with their art and thumbnails, and
 its groups) as a `.vclibrary` file, the JSON the library folder keeps (without `path`: `{data}`, the file's text).

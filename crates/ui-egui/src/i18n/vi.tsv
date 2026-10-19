@@ -2926,7 +2926,7 @@ mark-style	Japanese	Kiểu Nhật
 	Right Indent	Thụt lề phải
 	Right Plane	Mặt phẳng phải
 	Right to Left	Phải sang trái
-	Right-click an item to move it into this group.	Bấm chuột phải vào mục để di chuyển vào nhóm này.
+	Drag an item here, or right-click one, to put it in this group.	Kéo một mục vào đây, hoặc bấm chuột phải vào mục, để đưa vào nhóm này.
 	Right-Justified Tab	Tab căn phải
 	Right-to-Left Paragraph Direction	Hướng đoạn văn từ phải sang trái
 	Right:	Phải:
@@ -4837,5 +4837,7 @@ theme	Appearance	Giao diện
 	Plastic Wrap	Màng bọc nhựa
 	Chrome…	Crôm…
 	Chrome	Crôm
+	Drop here to take it out of its group	Thả vào đây để đưa ra khỏi nhóm
+	Move Library Group	Di chuyển nhóm thư viện
 	Plaster…	Thạch cao…
 	Plaster	Thạch cao

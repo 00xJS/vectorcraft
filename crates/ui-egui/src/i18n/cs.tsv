@@ -1657,7 +1657,7 @@ lighting	Light	Světlo
 	This library is empty	Tato knihovna je prázdná
 	No results	Žádné výsledky
 	No items in this library match “{query}”.	Žádná položka v této knihovně neodpovídá „{query}“.
-	Right-click an item to move it into this group.	Kliknutím pravým tlačítkem na položku ji přesunete do této skupiny.
+	Drag an item here, or right-click one, to put it in this group.	Přetáhněte sem položku nebo na ni klikněte pravým tlačítkem a vložte ji do této skupiny.
 	New Group	Nová skupina
 	New Group…	Nová skupina…
 	Move to Group	Přesunout do skupiny
@@ -5243,5 +5243,7 @@ mark-style	Japanese	Japonské
 	Plastic Wrap	Plastová fólie
 	Chrome…	Chrom…
 	Chrome	Chrom
+	Drop here to take it out of its group	Pusťte sem, chcete-li ji vyjmout ze skupiny
+	Move Library Group	Přesunout skupinu knihovny
 	Plaster…	Sádra…
 	Plaster	Sádra

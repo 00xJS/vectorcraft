@@ -3036,7 +3036,7 @@ font-script	Japanese	汉字
 	Delete Library Item	删除库项目
 	No results	无结果
 	No items in this library match “{query}”.	此库中没有与“{query}”匹配的项目。
-	Right-click an item to move it into this group.	右键单击项目可将其移到此组。
+	Drag an item here, or right-click one, to put it in this group.	将项目拖到此处，或右键单击项目，即可将其放入此组。
 	New Group	新建组
 	New Group…	新建组…
 	Move to Group	移到组
@@ -5080,5 +5080,7 @@ lighting	Light	光源
 	Plastic Wrap	塑料包装
 	Chrome…	铬黄…
 	Chrome	铬黄
+	Drop here to take it out of its group	放到此处可将其移出所在组
+	Move Library Group	移动库组
 	Plaster…	塑料效果…
 	Plaster	塑料效果

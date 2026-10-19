@@ -2034,8 +2034,9 @@ pub enum PanelDrag {
     /// is dropped on takes `params` (`{swatch}`, `{color}`, `{gradient}`…; null for a colour group,
     /// which paints nothing) through the active proxy's `paint.setFill`/`paint.setStroke`; the
     /// Gradient panel's ramp takes its colour as a stop; the Swatches panel moves `rows`, or makes
-    /// a swatch of a paint dragged from elsewhere.
-    Paint { paint: Paint, params: serde_json::Value, rows: Option<SwatchRows> },
+    /// a swatch of a paint dragged from elsewhere. `library`: the Libraries panel colour it is
+    /// (library id, colour name), which that panel moves to where it is dropped.
+    Paint { paint: Paint, params: serde_json::Value, rows: Option<SwatchRows>, library: Option<(String, String)> },
     /// The Appearance panel's thumbnail: art it is dropped on takes object `0`'s appearance
     /// (`appearance.copyFrom`); the Graphic Styles panel makes a style of it.
     Appearance(vectorcraft_doc::NodeId),
@@ -2054,8 +2055,13 @@ pub enum PanelDrag {
     /// dropped on takes it (`brush.apply`).
     Brush { name: String, def: serde_json::Value },
     /// A Libraries panel graphic (`item`: its id in `library`): the canvas places a copy centred
-    /// where it is dropped (`library.use`).
+    /// where it is dropped (`library.use`); the panel moves it to where it is dropped.
     LibraryGraphic { library: String, item: String },
+    /// A Libraries panel text style (`item`: its name in `library`), which the panel moves to where
+    /// it is dropped.
+    LibraryItem { library: String, kind: vectorcraft_engine::cmd::library::ItemKind, item: String },
+    /// A Libraries panel group, by its header, which the panel moves to where it is dropped.
+    LibraryGroup { library: String, group: String },
 }
 
 /// A panel list `zone` that takes art dragged off the canvas: outlined while art is held over it;
@@ -2088,7 +2094,7 @@ impl PanelDrag {
             g.geom = None;
             g.freeform = None;
         }
-        Self::Paint { params: crate::panels::paint_params(&paint), paint, rows: None }
+        Self::Paint { params: crate::panels::paint_params(&paint), paint, rows: None, library: None }
     }
     /// The dragged colour (a solid paint's), which the Gradient panel's ramp takes.
     pub fn color(&self) -> Option<vectorcraft_color::Color> {

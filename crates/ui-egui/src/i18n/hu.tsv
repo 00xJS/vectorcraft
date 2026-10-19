@@ -3171,7 +3171,7 @@ mark-style	Japanese	Japán
 	Right Indent	Jobb behúzás
 	Right Plane	Jobb sík
 	Right to Left	Jobbról balra
-	Right-click an item to move it into this group.	Egy elemet jobb gombbal kattintva helyezhetsz át ebbe a csoportba.
+	Drag an item here, or right-click one, to put it in this group.	Húzz ide egy elemet, vagy kattints rá jobb gombbal, hogy ebbe a csoportba kerüljön.
 	Right-Justified Tab	Jobbra igazító tabulátor
 	Right-to-Left Paragraph Direction	Jobbról balra haladó bekezdés
 	Right:	Jobb:
@@ -5229,5 +5229,7 @@ imageTrace	Outline	Körvonal
 	Plastic Wrap	Fóliázás
 	Chrome…	Króm…
 	Chrome	Króm
+	Drop here to take it out of its group	Engedd el itt, hogy kikerüljön a csoportjából
+	Move Library Group	Könyvtárcsoport áthelyezése
 	Plaster…	Gipsz…
 	Plaster	Gipsz

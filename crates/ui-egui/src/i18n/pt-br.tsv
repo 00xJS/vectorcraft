@@ -3242,7 +3242,7 @@ lighting	Light	Luz
 	Delete Library Item	Excluir item da biblioteca
 	No results	Nenhum resultado
 	No items in this library match “{query}”.	Nenhum item desta biblioteca corresponde a “{query}”.
-	Right-click an item to move it into this group.	Clique com o botão direito em um item para movê-lo para este grupo.
+	Drag an item here, or right-click one, to put it in this group.	Arraste um item para cá, ou clique com o botão direito em um, para colocá-lo neste grupo.
 	New Group	Novo grupo
 	Move to Group	Mover para o grupo
 	Import Library	Importar biblioteca
@@ -5160,5 +5160,7 @@ mark-style	Japanese	Japonesas
 	Plastic Wrap	Envoltório plástico
 	Chrome…	Cromo…
 	Chrome	Cromo
+	Drop here to take it out of its group	Solte aqui para tirá-lo do grupo
+	Move Library Group	Mover grupo de biblioteca
 	Plaster…	Gesso…
 	Plaster	Gesso

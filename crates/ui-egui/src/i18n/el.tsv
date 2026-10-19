@@ -3492,7 +3492,7 @@ theme	Appearance	Εμφάνιση
 	Delete Library Item	Διαγραφή στοιχείου βιβλιοθήκης
 	No results	Δεν βρέθηκαν αποτελέσματα
 	No items in this library match “{query}”.	Κανένα στοιχείο αυτής της βιβλιοθήκης δεν αντιστοιχεί στο «{query}».
-	Right-click an item to move it into this group.	Κάντε δεξί κλικ σε στοιχείο για να το μετακινήσετε σε αυτήν την ομάδα.
+	Drag an item here, or right-click one, to put it in this group.	Σύρετε εδώ ένα στοιχείο ή κάντε δεξί κλικ σε ένα για να το βάλετε σε αυτήν την ομάδα.
 	Move to Group	Μετακίνηση σε ομάδα
 	No Group	Χωρίς ομάδα
 	Import Library…	Εισαγωγή βιβλιοθήκης…
@@ -5195,5 +5195,7 @@ effect	Points	Σημεία
 	Plastic Wrap	Πλαστική μεμβράνη
 	Chrome…	Χρώμιο…
 	Chrome	Χρώμιο
+	Drop here to take it out of its group	Αφήστε εδώ για να το βγάλετε από την ομάδα του
+	Move Library Group	Μετακίνηση ομάδας βιβλιοθήκης
 	Plaster…	Γύψος…
 	Plaster	Γύψος

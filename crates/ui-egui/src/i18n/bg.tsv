@@ -3093,7 +3093,7 @@
 	Delete Library Item	Изтриване на елемент от библиотека
 	No results	Няма резултати
 	No items in this library match “{query}”.	Няма елементи в тази библиотека, съвпадащи с „{query}“.
-	Right-click an item to move it into this group.	Щракнете с десния бутон върху елемент, за да го преместите в тази група.
+	Drag an item here, or right-click one, to put it in this group.	Плъзнете елемент тук или щракнете с десния бутон върху него, за да го поставите в тази група.
 	New Group	Нова група
 	New Group…	Нова група…
 	Move to Group	Преместване в група
@@ -5204,5 +5204,7 @@ theme	Appearance	Външен вид
 	Plastic Wrap	Найлоново фолио
 	Chrome…	Хром…
 	Chrome	Хром
+	Drop here to take it out of its group	Пуснете тук, за да го извадите от групата му
+	Move Library Group	Преместване на библиотечна група
 	Plaster…	Гипс…
 	Plaster	Гипс

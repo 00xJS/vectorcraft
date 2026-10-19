@@ -1577,7 +1577,7 @@ lighting	Light	Światło
 	This library is empty	Ta biblioteka jest pusta
 	No results	Brak wyników
 	No items in this library match “{query}”.	Żaden element tej biblioteki nie pasuje do „{query}”.
-	Right-click an item to move it into this group.	Kliknij element prawym przyciskiem, aby przenieść go do tej grupy.
+	Drag an item here, or right-click one, to put it in this group.	Przeciągnij tu element albo kliknij go prawym przyciskiem, aby umieścić go w tej grupie.
 	New Group	Nowa grupa
 	New Group…	Nowa grupa…
 	Move to Group	Przenieś do grupy
@@ -5095,5 +5095,7 @@ mark-style	Japanese	Japońskie
 	Plastic Wrap	Folia plastikowa
 	Chrome…	Chrom…
 	Chrome	Chrom
+	Drop here to take it out of its group	Upuść tutaj, aby wyjąć go z grupy
+	Move Library Group	Przenieś grupę biblioteki
 	Plaster…	Gips…
 	Plaster	Gips
