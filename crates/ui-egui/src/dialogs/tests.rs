@@ -211,6 +211,7 @@ fn raster_filter_dialogs_preview_and_apply() {
         ("pixelate.mezzotint", "type", "longLines"),
         ("pixelate.pointillize", "cellSize", "12"),
         ("sketch.halftonePattern", "patternType", "line"),
+        ("sketch.plaster", "lightDirection", "bottomLeft"),
         ("texture.craquelure", "crackDepth", "9"),
         ("texture.grain", "grainType", "stippled"),
         ("texture.mosaicTiles", "tileSize", "20"),

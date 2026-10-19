@@ -2,7 +2,7 @@
 //! Poster Edges, Blur › Radial Blur and Smart Blur, Brush Strokes › Accented Edges, Angled Strokes,
 //! Crosshatch, Dark Strokes, Ink Outlines, Spatter, Sprayed Strokes and Sumi-e, Distort › Diffuse
 //! Glow, Glass and Ocean Ripple, Pixelate › Color Halftone, Crystallize, Mezzotint and Pointillize,
-//! Sharpen › Unsharp Mask, Sketch › Chalk & Charcoal, Graphic Pen, Halftone Pattern and
+//! Sharpen › Unsharp Mask, Sketch › Chalk & Charcoal, Graphic Pen, Halftone Pattern, Plaster and
 //! Reticulation, Stylize ›
 //! Glowing Edges, Texture
 //! › Craquelure, Grain, Mosaic Tiles, Patchwork, Stained Glass and Texturizer, and Video ›
@@ -41,7 +41,7 @@ pub use sketch::{HALFTONE_TYPES, HalftonePattern};
 pub use texture::{GRAIN_TYPES, Grain, LIGHT_DIRECTIONS, Light, TEXTURES, Texture};
 
 /// The Photoshop-style effect ids (all raster effects, see [`crate::is_raster`]).
-pub const PIXEL_EFFECTS: [&str; 37] = [
+pub const PIXEL_EFFECTS: [&str; 38] = [
     "artistic.cutout",
     "artistic.filmGrain",
     "artistic.neonGlow",
@@ -69,6 +69,7 @@ pub const PIXEL_EFFECTS: [&str; 37] = [
     "sketch.chrome",
     "sketch.graphicPen",
     "sketch.halftonePattern",
+    "sketch.plaster",
     "sketch.reticulation",
     "stylize.glowingEdges",
     "texture.craquelure",
@@ -160,6 +161,10 @@ pub enum PixelFx {
     /// Sketch › Halftone Pattern: black ink on white paper through a `kind` screen of cells `size`
     /// (1..12) apart, its edges as hard as `contrast` (0..50) says.
     HalftonePattern { size: f64, contrast: f64, kind: HalftonePattern },
+    /// Sketch › Plaster: relief plaster lit from `light`; dark areas raised, light recessed;
+    /// `imageBalance` (1..50) shifts more of the image lower at higher values; `smoothness` (1..15)
+    /// softens the relief.
+    Plaster { image_balance: f64, smoothness: f64, light: Light },
     /// Sketch › Reticulation: black ink on white paper through a high-contrast film-grain screen;
     /// `density` (0..50), `foreground` and `background` (0..50) pull tones before the grain.
     Reticulation { density: f64, foreground: f64, background: f64 },
@@ -353,6 +358,11 @@ pub(crate) fn parse(id: &str, p: &Value) -> Option<PixelFx> {
             contrast: num(p, "contrast", 5.0).clamp(0.0, 50.0),
             kind: HalftonePattern::parse(text(p, "patternType", "dot")),
         },
+        "sketch.plaster" => PixelFx::Plaster {
+            image_balance: num(p, "imageBalance", 20.0).clamp(1.0, 50.0),
+            smoothness: num(p, "smoothness", 8.0).clamp(1.0, 15.0),
+            light: Light::parse(text(p, "lightDirection", "top")),
+        },
         "sketch.reticulation" => PixelFx::Reticulation {
             density: num(p, "density", 12.0).clamp(0.0, 50.0),
             foreground: num(p, "foregroundLevel", 6.0).clamp(0.0, 50.0),
@@ -440,6 +450,7 @@ impl PixelFx {
             | PixelFx::ChalkCharcoal { .. }
             | PixelFx::Chrome { .. }
             | PixelFx::HalftonePattern { .. }
+            | PixelFx::Plaster { .. }
             | PixelFx::Reticulation { .. } => 0.0,
             PixelFx::GlowingEdges { width, smoothness, .. } => width.max(smoothness * 3.0),
             PixelFx::FilmGrain { .. }
@@ -493,6 +504,7 @@ impl PixelFx {
             PixelFx::ChalkCharcoal { .. } => Some(sketch::CHALK_CHARCOAL_REACH),
             PixelFx::Chrome { smoothness, .. } => Some(sketch::chrome_reach(smoothness)),
             PixelFx::FilmGrain { .. } | PixelFx::Mezzotint { .. } | PixelFx::HalftonePattern { .. } | PixelFx::Reticulation { .. } => Some(0.0),
+            PixelFx::Plaster { smoothness, .. } => Some(sketch::plaster_reach(smoothness)),
             // Cutout's palette comes from the whole object.
             PixelFx::Cutout { .. } => None,
             // The softened tones around the pixel.
@@ -552,6 +564,7 @@ impl PixelFx {
             PixelFx::Chrome { detail, smoothness } => sketch::chrome(px, w, h, space, detail, smoothness),
             PixelFx::GraphicPen { length, balance, direction } => brushstrokes::graphic_pen(px, w, h, space, length, balance, direction),
             PixelFx::HalftonePattern { size, contrast, kind } => sketch::halftone_pattern(px, w, h, space, size, contrast, kind),
+            PixelFx::Plaster { image_balance, smoothness, light } => sketch::plaster(px, w, h, space, image_balance, smoothness, light),
             PixelFx::Reticulation { density, foreground, background } => sketch::reticulation(px, w, h, space, density, foreground, background),
             PixelFx::GlowingEdges { width, brightness, smoothness } => edges::glow(px, w, h, to_px(width), brightness, to_px(smoothness)),
             PixelFx::ColorHalftone { max_radius, angles } => pixelate::color_halftone(px, w, h, space, max_radius, angles),

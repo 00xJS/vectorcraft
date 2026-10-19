@@ -2150,6 +2150,44 @@ fn halftone_pattern_type_changes_the_pattern() {
     }
 }
 
+/// Plaster of `p` over `w` × `h` pixels of `src`, laid out by `s`.
+fn plaster(p: serde_json::Value, src: &[u8], w: usize, h: usize, s: &PixelSpace) -> Vec<u8> {
+    let mut out = src.to_vec();
+    fx("sketch.plaster", p).apply(&mut out, w, h, s);
+    out
+}
+
+#[test]
+fn plaster_params_take_defaults_and_stay_in_range() {
+    use super::texture::Light;
+    assert_eq!(
+        fx("sketch.plaster", json!({})),
+        PixelFx::Plaster { image_balance: 20.0, smoothness: 8.0, light: Light::Top }
+    );
+    assert_eq!(
+        fx("sketch.plaster", json!({"imageBalance": 0, "smoothness": 1e9, "lightDirection": "bottomRight"})),
+        PixelFx::Plaster { image_balance: 1.0, smoothness: 15.0, light: Light::BottomRight }
+    );
+    assert_eq!(fx("sketch.plaster", json!({"lightDirection": "nonsense"})), fx("sketch.plaster", json!({})));
+    let doc = crate::effect_info("sketch.plaster").unwrap().params;
+    assert!(doc.contains("\"bottomRight\""), "{doc}");
+    let f = fx("sketch.plaster", json!({"smoothness": 24}));
+    assert_eq!(f.reach(), Some(super::sketch::plaster_reach(15.0)));
+}
+
+/// Plaster changes the image and different light directions give different results.
+#[test]
+fn plaster_light_direction_shifts_shading() {
+    let (w, h) = (48, 32);
+    let src = image(w, h, |x, y| grey((16 + (x + y) % 200) as u8));
+    let s = space(w, h);
+    let base = plaster(json!({"imageBalance": 20, "smoothness": 6, "lightDirection": "top"}), &src, w, h, &s);
+    assert_ne!(base, src, "plaster changes opaque pixels");
+    let left = plaster(json!({"lightDirection": "left"}), &src, w, h, &s);
+    let right = plaster(json!({"lightDirection": "right"}), &src, w, h, &s);
+    assert_ne!(left, right, "light direction changes the relief shading");
+}
+
 #[test]
 fn halftone_contrast_sharpens_the_screen() {
     let (w, h) = (64, 32);
