@@ -223,11 +223,11 @@ from G14 and the budget run of G15: **~170–270 h** one agent, ~50–80 h wall 
 
 ## G2 Photoshop-style raster effects and the Effect Gallery
 
-- **Missing:** 24 of 57 filters (the remaining 11 Artistic filters and 13 of Sketch's 14), the Effect Gallery dialog, Load
+- **Missing:** 23 of 57 filters (the remaining 11 Artistic filters and 12 of Sketch's 14), the Effect Gallery dialog, Load
   Texture for Texturizer. Measured in
   [effects-parity.md](effects-parity.md).
-- **Done:** the pixel-filter pipeline and 33 filters (Artistic: Cutout, Film Grain, Neon Glow, Poster Edges, Blur, Brush Strokes, Distort, Pixelate, Sharpen, Sketch:
-  Halftone Pattern, Stylize, Texture, Video), Brush Strokes on 2026-10-11, Film Grain on 2026-10-12, Halftone Pattern on 2026-10-16, Cutout, Neon Glow and Poster Edges on 2026-10-16, and Smart Blur's Edge Only and Overlay Edge
+- **Done:** the pixel-filter pipeline and 34 filters (Artistic: Cutout, Film Grain, Neon Glow, Poster Edges, Blur, Brush Strokes, Distort, Pixelate, Sharpen, Sketch:
+  Graphic Pen and Halftone Pattern, Stylize, Texture, Video), Brush Strokes on 2026-10-11, Film Grain on 2026-10-12, Halftone Pattern on 2026-10-16, Graphic Pen on 2026-10-18, Cutout, Neon Glow and Poster Edges on 2026-10-16, and Smart Blur's Edge Only and Overlay Edge
   modes.
 - **Estimate:** 21–35 h (measured 0.7–1.2 h per filter); parallelizes well.
 
