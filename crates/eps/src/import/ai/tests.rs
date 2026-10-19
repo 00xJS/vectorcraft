@@ -5,7 +5,7 @@ use std::sync::Arc;
 use kurbo::{Point, Rect};
 use vectorcraft_color::gradient::GradientKind;
 use vectorcraft_color::{BlendMode, Color, Paint};
-use vectorcraft_doc::{AppearanceItem, ColorMode, Document, Knockout, LayerColor, LineCap, LineJoin, Node, NodeKind};
+use vectorcraft_doc::{AppearanceItem, ColorMode, Document, Knockout, LayerColor, LineCap, LineJoin, Node, NodeKind, Unit};
 
 use super::*;
 
@@ -31,6 +31,20 @@ fn read_ok(body: &str) -> Structure {
         Ok(i) => i,
         Err(e) => panic!("{e}"),
     }
+}
+
+#[test]
+fn ruler_units_from_the_header_set_the_documents_units() {
+    let body = layer("");
+    let with_mm = format!(
+        "%!PS-Adobe-3.0\n%%Creator: test\n%AI5_FileFormat 14.0\n%AI5_RulerUnits: 1\n%AI3_Cropmarks: 0 0 200 100\n%%EndComments\n%%BeginProlog\n%%EndProlog\n%%BeginSetup\n%%EndSetup\n{body}\n%%PageTrailer\ngsave annotatepage grestore showpage\n%%Trailer\n%%EOF\n"
+    );
+    assert_eq!(read_ok(&with_mm).doc.units, Unit::Millimeters);
+    assert_eq!(read_ok(&stream(&body)).doc.units, Unit::Points, "default when the comment is absent");
+    let with_in = with_mm.replace("AI5_RulerUnits: 1", "AI5_RulerUnits: 0");
+    assert_eq!(read(with_in.as_bytes()).unwrap().doc.units, Unit::Inches);
+    let with_px = with_mm.replace("AI5_RulerUnits: 1", "AI5_RulerUnits: 6");
+    assert_eq!(read(with_px.as_bytes()).unwrap().doc.units, Unit::Pixels);
 }
 
 /// The children of the first layer.
@@ -1434,12 +1448,7 @@ fn winding_declared_compound_members_keep_the_final_gradient() {
 #[test]
 fn path_guides_from_the_star_operator() {
     let line = |x0: f64, y0: f64, x1: f64, y1: f64| format!("{x0} {y0} m\n{x1} {y1} L\n(N) *\n");
-    let body = format!(
-        "{RED}{}f\n{}{}",
-        rect_path(0.0, 0.0, 50.0, 50.0),
-        line(10.0, 20.0, 90.0, 20.0),
-        "(N) *\n15 10 m\n15 80 L\n(N) *\n",
-    );
+    let body = format!("{RED}{}f\n{}{}", rect_path(0.0, 0.0, 50.0, 50.0), line(10.0, 20.0, 90.0, 20.0), "(N) *\n15 10 m\n15 80 L\n(N) *\n",);
     let kids = art(&read_ok(&layer(&body)).doc);
     assert_eq!(kids.len(), 3);
     let guides = kids.iter().filter(|n| matches!(n.kind, NodeKind::Path { guide: true, .. })).count();
