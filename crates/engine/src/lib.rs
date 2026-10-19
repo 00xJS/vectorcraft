@@ -774,6 +774,7 @@ pub(crate) fn deselect_guides(d: &Document, sel: &mut Selection) -> bool {
         sel.remove(id);
     }
     sel.guides.clear();
+    sel.key_guide = None;
     any
 }
 
@@ -2148,6 +2149,8 @@ mod tests_interactivity;
 mod tests_intertwine;
 #[cfg(test)]
 mod tests_journal;
+#[cfg(test)]
+mod tests_keyguide;
 #[cfg(test)]
 mod tests_knockout;
 #[cfg(test)]

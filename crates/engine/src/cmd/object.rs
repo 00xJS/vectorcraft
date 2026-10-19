@@ -243,7 +243,7 @@ pub fn specs() -> Vec<CommandSpec> {
             "Align",
             ["Window", "Align"],
             None,
-            "{horizontal?: \"left\"|\"center\"|\"right\", vertical?: \"top\"|\"center\"|\"bottom\", to?: \"selection\"|\"artboard\"|\"key\" (default: the key object when the selection has one, select.key, else the selection), artboard?: index (0-based; with to: \"artboard\", the artboard to align to; the app passes the active one; default: the artboard under the center of the selection, else the first), bounds?: \"preview\"|\"geometric\" (default: the Use Preview Bounds preference; preview bounds take in strokes), patterns?: bool (Transform Patterns: pattern fills and strokes transform with the art; default: prefs transformPatternTiles)} With anchor points selected (Direct Selection), the points align instead: to their own bounds, or to the artboard (#1180)",
+            "{horizontal?: \"left\"|\"center\"|\"right\", vertical?: \"top\"|\"center\"|\"bottom\", to?: \"selection\"|\"artboard\"|\"key\" (default: the key object when the selection has one, select.key, else the selection; a key guide, select.key {guide}, stays put and the objects line up on its line: a vertical guide sets where left, center and right go and vertical alignment leaves them, a horizontal one the other way round), artboard?: index (0-based; with to: \"artboard\", the artboard to align to; the app passes the active one; default: the artboard under the center of the selection, else the first), bounds?: \"preview\"|\"geometric\" (default: the Use Preview Bounds preference; preview bounds take in strokes), patterns?: bool (Transform Patterns: pattern fills and strokes transform with the art; default: prefs transformPatternTiles)} With anchor points selected (Direct Selection), the points align instead: to their own bounds, or to the artboard (#1180)",
             has_selection,
             align
         ),
@@ -1270,10 +1270,32 @@ fn apply_moves(s: &mut Session, label: &str, p: &Value, ids: &[NodeId], moves: &
     ok()
 }
 
-/// What `object.align` aligns to: `to`, else the key object when there is one, else the
-/// selection.
+/// What `object.align` aligns to: `to`, else the key object (or key guide) when there is one,
+/// else the selection.
 fn align_to<'a>(s: &Session, p: &'a Value) -> Option<&'a str> {
-    str_param(p, "to").or_else(|| s.doc().ok()?.selection.key.map(|_| "key"))
+    str_param(p, "to").or_else(|| s.doc().ok()?.selection.has_key().then_some("key"))
+}
+
+/// The key guide `object.align` lines the objects up on (aligning to the key with one set,
+/// [`vectorcraft_doc::Selection::key_guide`]): its position, and whether it is vertical.
+fn key_guide(s: &Session, p: &Value) -> Option<(f64, bool)> {
+    let st = s.doc().ok()?;
+    let g = st.doc.guides.get(st.selection.key_guide?)?;
+    (align_to(s, p) == Some("key")).then_some((g.pos, g.vertical))
+}
+
+/// Where Align puts the objects, `r`, and the axes it moves them along (x, y): a key guide gives
+/// the line across its axis only (a vertical guide fixes x, a horizontal one y), so the other
+/// axis stays as it is.
+fn align_reference(s: &Session, p: &Value, ids: &[NodeId], preview: bool, own: Option<Rect>) -> Result<(Rect, bool, bool)> {
+    if let Some((pos, vertical)) = key_guide(s, p) {
+        return Ok((Rect::new(pos, pos, pos, pos), vertical, !vertical));
+    }
+    let r = match own {
+        Some(b) if align_to(s, p) != Some("artboard") => b,
+        _ => reference_rect(s, p, ids, preview)?,
+    };
+    Ok((r, true, true))
 }
 
 fn reference_rect(s: &Session, p: &Value, ids: &[NodeId], preview: bool) -> Result<Rect> {
@@ -1328,7 +1350,8 @@ fn align(s: &mut Session, p: &Value) -> Result<Value> {
     if !s.doc()?.selection.anchors.is_empty() {
         return align_anchors(s, p, &ids, (h, v));
     }
-    let r = reference_rect(s, p, &ids, preview)?;
+    let (r, along_x, along_y) = align_reference(s, p, &ids, preview, None)?;
+    let (h, v) = (h.filter(|_| along_x), v.filter(|_| along_y));
     let key = key_root(s, &ids);
     let moves: Vec<(NodeId, Vec2)> = {
         let d = &s.doc()?.doc;
@@ -1367,8 +1390,10 @@ fn align_anchors(s: &mut Session, p: &Value, ids: &[NodeId], (h, v): (Option<&st
     let Some(bounds) = pts.iter().skip(1).fold(pts.first().map(|q| Rect::from_points(*q, *q)), |b, q| b.map(|b| b.union_pt(*q))) else {
         return ok();
     };
-    // shortcut: no key anchor yet, so Align To Key Object aligns to the points' bounds as Selection does.
-    let r = if align_to(s, p) == Some("artboard") { reference_rect(s, p, ids, false)? } else { bounds };
+    // shortcut: no key anchor yet, so Align To Key Object aligns to the points' bounds as Selection does
+    // (or to a key guide).
+    let (r, along_x, along_y) = align_reference(s, p, ids, false, Some(bounds))?;
+    let (h, v) = (h.filter(|_| along_x), v.filter(|_| along_y));
     let target = |q: Point| {
         let x = match h {
             Some("left") => r.x0,
