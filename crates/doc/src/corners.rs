@@ -187,14 +187,15 @@ impl<'a> LiveCorners<'a> {
         &self.sources
     }
 
-    /// The radius (document units) and kind `corners` share (each `None` when they differ, or
-    /// for no corners).
+    /// The radius and kind `corners` share (each `None` when they differ, or for no corners).
+    /// Radius is what was set ([`LiveCorners::radius`]: document lengths, or a fraction in 0..1
+    /// when [`LiveCorners::radii_relative`]), not the fitted draw size ([`LiveCorners::drawn_radius`]).
     pub fn style(&self, corners: &BTreeSet<usize>) -> (Option<f64>, Option<CornerKind>) {
         fn shared<T: Copy>(mut it: impl Iterator<Item = T>, same: impl Fn(T, T) -> bool) -> Option<T> {
             let first = it.next()?;
             it.all(|x| same(x, first)).then_some(first)
         }
-        let radius = shared(corners.iter().map(|k| self.drawn_radius(*k)), |a, b| (a - b).abs() < 1e-9);
+        let radius = shared(corners.iter().map(|k| self.radius(*k)), |a, b| (a - b).abs() < 1e-9);
         (radius, shared(corners.iter().map(|k| self.kind(*k)), |a, b| a == b))
     }
 }
