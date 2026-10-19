@@ -142,6 +142,41 @@ fn number(params: &Value, key: &str, default: f32) -> Result<f32, String> {
     }
 }
 
+/// Legacy workspaces (no saved `docking` layout): reorder tabs in the dock strip or a floating
+/// group without promoting to a shared layout.
+fn legacy_same_strip_reorder(app: &mut VectorcraftApp, panel: &str, before: &str) -> Result<Value, String> {
+    use crate::state::DockTab;
+    if crate::state::DockTab::from_id(panel).is_some()
+        && DockTab::from_id(before).is_some()
+        && crate::floating::group_of(&app.ui, panel).is_none()
+        && crate::floating::group_of(&app.ui, before).is_none()
+    {
+        let mut order: Vec<DockTab> = crate::floating::docked_tabs(&app.ui).collect();
+        let from = order.iter().position(|t| t.info().0 == panel).ok_or("panel is not in the dock strip")?;
+        let to = order.iter().position(|t| t.info().0 == before).ok_or("before is not in the dock strip")?;
+        if from != to {
+            let item = order.remove(from);
+            order.insert(to, item);
+            crate::floating::set_dock_tab_order(&mut app.ui, order);
+        }
+        return Ok(json!({ "panel": panel, "before": before }));
+    }
+    let gi = crate::floating::group_of(&app.ui, panel).ok_or("panel is not in a tab group")?;
+    if crate::floating::group_of(&app.ui, before) != Some(gi) {
+        return Err("before must name a tab in the same group".into());
+    }
+    let g = app.ui.floating_panels.get_mut(gi).ok_or("panel group missing")?;
+    let from = g.panels.iter().position(|id| id == panel).ok_or("panel is not in the group")?;
+    let to = g.panels.iter().position(|id| id == before).ok_or("before is not in the group")?;
+    if from != to {
+        let active = g.panels.get(g.active).cloned();
+        let moved = g.panels.remove(from);
+        g.panels.insert(to, moved);
+        g.active = active.and_then(|id| g.panels.iter().position(|p| *p == id)).unwrap_or(0);
+    }
+    Ok(json!({ "panel": panel, "before": before }))
+}
+
 fn placement(params: &Value) -> Result<Placement<String>, String> {
     if let Some(before) = params.get("before") {
         let id = before.as_str().and_then(normalize).ok_or("before must name a panel")?;
@@ -294,6 +329,10 @@ fn apply_action(app: &mut VectorcraftApp, action: Action<String>) -> Result<Valu
 
 fn change(app: &mut VectorcraftApp, operation: &str, params: &Value) -> Result<Value, String> {
     let panel = params.get("panel").and_then(Value::as_str).and_then(normalize).ok_or("panel must name a registered panel")?;
+    if app.ui.docking.is_none() && operation == "move" && params.get("before").is_some() {
+        let before = params.get("before").and_then(Value::as_str).and_then(normalize).ok_or("before must name a panel")?;
+        return legacy_same_strip_reorder(app, panel, before);
+    }
     if app.ui.docking.as_ref().is_some_and(|layout| !valid(layout)) {
         return Err("saved panel layout is invalid; reset the workspace first".into());
     }

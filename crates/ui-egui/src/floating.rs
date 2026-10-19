@@ -209,11 +209,30 @@ fn ids_of(g: &FloatingPanels) -> Vec<&'static str> {
     g.panels.iter().filter_map(|p| panel(p)).map(|(id, _)| id).collect()
 }
 
+/// Saved dock tab order, appending any tabs missing from older preferences.
+pub(crate) fn resolved_dock_tab_order(ui: &UiState) -> Vec<DockTab> {
+    if ui.dock_tab_order.is_empty() {
+        DockTab::ALL.to_vec()
+    } else {
+        let mut order = ui.dock_tab_order.clone();
+        for tab in DockTab::ALL {
+            if !order.contains(&tab) {
+                order.push(tab);
+            }
+        }
+        order
+    }
+}
+
+/// Persist dock tab order when it differs from the default visible strip.
+pub(crate) fn set_dock_tab_order(ui: &mut UiState, visible: Vec<DockTab>) {
+    let default = DockTab::ALL.iter().copied().filter(|t| group_of(ui, t.info().0).is_none()).collect::<Vec<_>>();
+    ui.dock_tab_order = if visible == default { Vec::new() } else { visible };
+}
+
 /// The dock tabs left in the dock, in tab order.
 pub fn docked_tabs(ui: &UiState) -> impl Iterator<Item = DockTab> + '_ {
-    let order: Vec<DockTab> =
-        if ui.dock_tab_order.is_empty() { DockTab::ALL.to_vec() } else { ui.dock_tab_order.clone() };
-    order.into_iter().filter(|t| group_of(ui, t.info().0).is_none())
+    resolved_dock_tab_order(ui).into_iter().filter(|t| group_of(ui, t.info().0).is_none())
 }
 
 /// The dock tab the tabbed group shows: the chosen one, or the first left when it floats.
@@ -659,15 +678,16 @@ fn apply(app: &mut VectorcraftApp, ctx: &egui::Context, action: Option<Action>) 
         Some(Action::Detach(gi, left)) => detach(app, ctx, gi, left),
         Some(Action::Tear(id, left)) => tear(app, ctx, &[id], id, strip_grab(ctx, left)),
         Some(Action::Reorder(gi, from, to)) => {
-            if let Some(g) = app.ui.floating_panels.get_mut(gi)
-                && from < g.panels.len()
-                && to < g.panels.len()
-                && from != to
+            let ids = app.ui.floating_panels.get(gi).and_then(|g| {
+                if from == to { None } else { Some((g.panels.get(from).cloned(), g.panels.get(to).cloned())) }
+            });
+            if let Some((Some(from_id), Some(to_id))) = ids
+                && let Err(error) = app.run(
+                    "window.panel.move",
+                    json!({ "panel": from_id, "anchor": to_id, "before": to_id }),
+                )
             {
-                let active = g.panels.get(g.active).cloned();
-                let panel = g.panels.remove(from);
-                g.panels.insert(to.min(g.panels.len()), panel);
-                g.active = active.and_then(|id| g.panels.iter().position(|p| *p == id)).unwrap_or(0);
+                app.ui.status = error;
             }
         }
         Some(Action::Undock(gi, grab)) => {
