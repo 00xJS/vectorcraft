@@ -294,22 +294,12 @@ from G14 and the budget run of G15: **~170–270 h** one agent, ~50–80 h wall 
 
 ## G6 Automation and scripting
 
-- **Missing:** a scripting surface over the command registry (Illustrator: JavaScript), image and graph
-  variable kinds (dataset CSV import/export and Batch are open as PRs). Actions, Variables (text and
-  visibility) and full agent control over MCP are done.
-- **Estimate:** 6–12 h.
-- **Missing:** a scripting surface over the command registry (Illustrator: JavaScript), Batch, image variable kind and dataset import/export (graph variables land separately). Actions, Variables (text,
-  visibility, graph) and full agent control over MCP are done.
-- **Estimate:** 8–14 h.
-- **Missing:** a scripting surface over the command registry (Illustrator: JavaScript), Batch, graph variable
-  kinds. Actions, Variables (text, visibility and image), dataset CSV import/export and full agent control over
-  kinds, dataset import/export. Actions, Variables (text, visibility and image) and full agent control over
+- **Missing:** a scripting surface over the command registry (Illustrator: JavaScript, File › Scripts;
+  #1183 is open). Actions, Batch, Variables (text, visibility, image and graph), data set CSV import and
+  export, and full agent control over MCP are done.
+- **Estimate:** 4–8 h.
 - **Done (2026-10-16):** the MCP server hears the client during a long call: `notifications/cancelled` stops a queued or running export (PDF pages, flattening, baking, drawing, artboards) without writing anything or changing the document, `ping` and the list methods answer at once, any other request that would wait behind a call running for two seconds or more is refused as busy (`-32003`, naming the call), and `_meta.progressToken` gets page progress (#2165, #2171, #2172). Reading the document during an export is not served (refused as busy); estimate unchanged.
 - **Exposed in MCP:** `add_text {vertical: true}` uses the existing vertical point, area and path type commands. Horizontal writing remains the default; the broader automation gap and estimate are unchanged.
-- **Missing:** a scripting surface over the command registry (Illustrator: JavaScript), Batch, image and graph
-  variable kinds, dataset import/export. Actions, Variables (text and visibility) and full agent control over
-  MCP are done.
-- **Estimate:** 4–8 h.
 
 ## G15 Performance budgets and a GPU renderer
 
