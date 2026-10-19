@@ -509,8 +509,7 @@ fn hebrew_typing_and_visual_arrows_keep_logical_text() {
     assert_eq!(t.plain_text(), "שלום");
 }
 
-/// Where new type goes snaps to Smart Guides (#506): a click beside a rect lines up with its
-/// centre, and hovering shows it first; an area's corners land on its anchors.
+/// View › Snap to Glyph: new point type placed near live text snaps to its baseline.
 #[test]
 fn snap_to_glyph_lines_up_new_point_type_with_a_baseline() {
     let (d, _) = doc_with_text("Baseline");
