@@ -462,8 +462,14 @@ fn press_quality_writes_cmyk_in_an_rgb_document_too() {
     for (what, blob) in [("CMYK image", tiff), ("RGB image", png_blob)] {
         let mut d = image_doc(blob, 4, 4);
         d.color_mode = ColorMode::Rgb;
-        let w = written(&export_with_report(&d, &press()).unwrap().bytes);
+        let out = export_with_report(&d, &press()).unwrap();
+        let w = written(&out.bytes);
         assert_eq!(w.len(), 1, "{what}: {w:?}");
         assert_eq!(w[0].space, "DeviceCMYK", "{what} in an RGB document");
+        // Preserve Numbers: the CMYK image comes back with the inks it had.
+        if what == "CMYK image" {
+            let back = import(&out.bytes).unwrap();
+            assert_eq!(all_images(&back)[0].cmyk().unwrap().data, flat(ink, 16), "{what} inks");
+        }
     }
 }
