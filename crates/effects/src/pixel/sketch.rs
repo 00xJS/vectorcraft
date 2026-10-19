@@ -1,19 +1,24 @@
-//! Effect › Sketch (Chalk & Charcoal, Halftone Pattern and Reticulation; Graphic Pen lives in
+//! Effect › Sketch (Chalk & Charcoal, Chrome, Halftone Pattern and Reticulation; Graphic Pen lives in
 //! [`super::brushstrokes`]). Original filters built from public behaviour documentation:
 //! <https://helpx.adobe.com/illustrator/using/summary-effects.html> (Sketch effects redraw in
 //! black and white) and the public Photoshop Elements Artistic filters guide. Visual
 //! approximations, not proprietary reproductions.
 
-use std::f64::consts::TAU;
+use std::f64::consts::{FRAC_1_SQRT_2, TAU};
+
+use vectorcraft_geom::Vec2;
 
 use super::edges::sobel;
 use super::pixelate::{Place, cell, rand, value_noise};
-use super::texture::{Tones, luma, premultiply, straight};
+use super::texture::{Tones, luma, premultiply, smooth_noise, straight};
 use super::{PixelSpace, blur_plane, pick};
 
 const SALT_CHALK: u64 = 216;
+const SALT_CHROME: u64 = 0xC40_4D45;
 const EDGE_SOFT: f64 = 0.8;
 const TONE_SOFT: f64 = 1.0;
+/// Light from the top left (document axes, y down), as on polished relief surfaces.
+const CHROME_LIGHT: Vec2 = Vec2::new(-FRAC_1_SQRT_2, -FRAC_1_SQRT_2);
 
 /// How far (document units) Chalk & Charcoal samples softened tones and edges.
 pub(super) const CHALK_CHARCOAL_REACH: f64 = 3.0 * TONE_SOFT + 1.0 + 3.0 * EDGE_SOFT;
@@ -135,6 +140,70 @@ pub(super) fn chalk_charcoal(px: &mut [[u8; 4]], w: usize, h: usize, space: &Pix
         grey *= 1.0 - down;
         grey += (1.0 - grey) * up;
         *p = premultiply([grey, grey, grey], f32::from(p[3]) / 255.0);
+    });
+}
+
+/// How far (document units) Chrome reaches for `smoothness` (0..10): 3 σ of the height-field blur
+/// plus the Sobel neighbours.
+pub(super) fn chrome_reach(smoothness: f64) -> f64 {
+    let smoothness = smoothness.clamp(0.0, 10.0);
+    3.0 * (0.4 + 0.55 * smoothness) + 1.0
+}
+
+/// Chrome: the object as a polished chrome surface lit from the top left. `detail` (0..10) adds
+/// finer relief; `smoothness` (0..10) softens the height field before the highlights and shadows
+/// are drawn. Coverage is kept.
+pub(super) fn chrome(px: &mut [[u8; 4]], w: usize, h: usize, space: &PixelSpace, detail: f64, smoothness: f64) {
+    if w == 0 || h == 0 {
+        return;
+    }
+    let detail = detail.clamp(0.0, 10.0);
+    let smoothness = smoothness.clamp(0.0, 10.0);
+    let Some(place) = Place::new(space, w, h) else { return };
+    let sigma = (0.4 + smoothness * 0.55) / place.px.max(1e-9);
+    let cell = (14.0 - detail * 1.2).max(1.5);
+    let bump = (detail / 10.0) * 0.4;
+    let strength = 2.5 + detail * 0.35;
+    let mut height: Vec<f32> = Vec::with_capacity(w * h);
+    let mut alpha: Vec<f32> = Vec::with_capacity(w * h);
+    for y in 0..h {
+        for x in 0..w {
+            let p = px[y * w + x];
+            let a = f32::from(p[3]) / 255.0;
+            alpha.push(a);
+            if a <= 0.0 {
+                height.push(0.0);
+                continue;
+            }
+            let q = place.at(x, y);
+            let base = f64::from(luma(straight(p)));
+            let n = if bump > 0.0 { bump * smooth_noise(SALT_CHROME, q, cell) } else { 0.0 };
+            height.push((base + n).clamp(0.0, 1.0) as f32);
+        }
+    }
+    blur_plane(&mut height, w, h, sigma);
+    blur_plane(&mut alpha, w, h, sigma);
+    let tone: Vec<f64> = height
+        .iter()
+        .zip(&alpha)
+        .map(|(h, a)| if *a > 1e-4 { f64::from(*h / *a).clamp(0.0, 1.0) } else { 0.0 })
+        .collect();
+    let px_unit = place.px.max(1e-9);
+    place.each(px, |x, y, p| {
+        if p[3] == 0 {
+            return;
+        }
+        let at = |dx: isize, dy: isize| {
+            let (xx, yy) = ((x as isize + dx).clamp(0, w as isize - 1) as usize, (y as isize + dy).clamp(0, h as isize - 1) as usize);
+            tone[yy * w + xx]
+        };
+        let h0 = tone[y * w + x];
+        let gx = 0.5 * (at(1, 0) - at(-1, 0)) / px_unit;
+        let gy = 0.5 * (at(0, 1) - at(0, -1)) / px_unit;
+        let face = -(gx * CHROME_LIGHT.x + gy * CHROME_LIGHT.y);
+        let spec = (face * strength + (h0 - 0.5) * 1.5).tanh();
+        let grey = (0.5 + 0.5 * spec).clamp(0.0, 1.0);
+        *p = premultiply([grey as f32; 3], f32::from(p[3]) / 255.0);
     });
 }
 

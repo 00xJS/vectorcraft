@@ -2187,11 +2187,50 @@ fn halftone_draws_in_black_and_white_only() {
     }
 }
 
+fn chrome(p: serde_json::Value, src: &[u8], w: usize, h: usize, s: &PixelSpace) -> Vec<u8> {
+    let mut out = src.to_vec();
+    fx("sketch.chrome", p).apply(&mut out, w, h, s);
+    out
+}
+
 /// Reticulation of `p` over `w` × `h` pixels of `src`, laid out by `s`.
 fn reticulation(p: serde_json::Value, src: &[u8], w: usize, h: usize, s: &PixelSpace) -> Vec<u8> {
     let mut out = src.to_vec();
     fx("sketch.reticulation", p).apply(&mut out, w, h, s);
     out
+}
+
+#[test]
+fn chrome_params_take_defaults_and_stay_in_range() {
+    assert_eq!(fx("sketch.chrome", json!({})), PixelFx::Chrome { detail: 4.0, smoothness: 4.0 });
+    assert_eq!(fx("sketch.chrome", json!({"detail": -1, "smoothness": 99})), PixelFx::Chrome { detail: 0.0, smoothness: 10.0 });
+    assert_eq!(fx("sketch.chrome", json!({"detail": "x"})), fx("sketch.chrome", json!({})));
+    let doc = crate::effect_info("sketch.chrome").unwrap().params;
+    assert!(doc.contains("detail") && doc.contains("smoothness"), "{doc}");
+    let f = fx("sketch.chrome", json!({}));
+    assert_eq!(f.outset(Rect::new(0.0, 0.0, 100.0, 50.0)), 0.0);
+    assert_eq!(f.reach(), Some(sketch::chrome_reach(4.0)));
+    assert_eq!(fx("sketch.chrome", json!({"smoothness": 10})).reach(), Some(sketch::chrome_reach(10.0)));
+}
+
+/// Chrome redraws in greyscale, keeps coverage, and more detail changes the pattern.
+#[test]
+fn chrome_draws_polished_greyscale_relief() {
+    let (w, h) = (64, 64);
+    let src = image(w, h, |x, y| {
+        let t = ((x + y) * 4) as u8;
+        [t, t / 2, 255 - t, 255]
+    });
+    let soft = chrome(json!({"detail": 0, "smoothness": 8}), &src, w, h, &space(w, h));
+    let sharp = chrome(json!({"detail": 10, "smoothness": 0}), &src, w, h, &space(w, h));
+    assert_ne!(soft, sharp);
+    for out in [&soft, &sharp] {
+        for (p, q) in out.as_chunks::<4>().0.iter().zip(src.as_chunks::<4>().0) {
+            assert_eq!(p[3], q[3], "coverage kept");
+            assert!(p[0] == p[1] && p[1] == p[2], "greyscale {p:?}");
+        }
+        assert!(share(out, |p| p[0] > 10 && p[0] < 245) > 0.05, "midtones");
+    }
 }
 
 #[test]
