@@ -68,7 +68,8 @@ pub struct PanelOptions {
     pub layers_only: bool,
     /// Locate Selected Objects (off by default): when the last selected object changes outside the
     /// panel, on the canvas or by a command, the panel opens the rows around it and scrolls to its
-    /// row, as after Locate Object, without highlighting the row.
+    /// row, as after Locate Object, without highlighting the row. When Show Layers Only, a search or
+    /// the filter leaves the object without a row, the panel opens no rows for it.
     pub locate_selected: bool,
     /// Row height in points: [`ROW_SMALL`], [`ROW_MEDIUM`], [`ROW_LARGE`] or another (12–100).
     pub row_size: f32,
