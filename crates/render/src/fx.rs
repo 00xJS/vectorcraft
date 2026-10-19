@@ -2492,6 +2492,43 @@ mod tests {
         assert!(r.render(&d, 400, 400, Affine::scale(2.0), &opts).pixels == first.pixels, "made again alike");
     }
 
+    /// An Outer Glow whose whole reach is over the budget is made coarser over that whole reach and
+    /// kept for any pan: its grid starts at the reach's first whole device pixel, which a pan by whole
+    /// pixels moves with the art, so the raster drawn after the pan is the one a fresh renderer makes,
+    /// also for pans that aren't multiples of the raster's scale. Here a 100 pt glow at 500% (scale
+    /// 2) and a 2 pt glow round the page at 800% (scale 3, near the narrowest blur made coarser).
+    #[test]
+    fn a_coarser_glow_kept_whole_draws_after_a_pan_as_made_again() {
+        let size = (640, 360);
+        for (rect, blur, zoom, center, scale) in [
+            (Rect::new(200.0, 300.0, 400.0, 500.0), 100.0, 5.0, (440.0, 400.0), 2.0),
+            (Rect::new(0.0, 0.0, 595.0, 842.0), 2.0, 8.0, (595.0, 421.0), 3.0),
+        ] {
+            let mut d = Document::new(595.0, 842.0);
+            let layer = d.layers[0].id;
+            let mut n =
+                Node::path(d.alloc_id(), shapes::rectangle(rect), Appearance::basic(Paint::solid(Color::rgb(0.1, 0.3, 0.9)), Paint::None, 0.0));
+            n.appearance.effects = vec![Effect { id: "stylize.outerGlow".into(), params: json!({"blur": blur}), visible: true }];
+            d.insert(Some(layer), 0, n).unwrap();
+            let base = Affine::translate((320.0, 180.0)) * Affine::scale(zoom) * Affine::translate((-center.0, -center.1));
+            let opts = RenderOptions { background: Some([255, 255, 255, 255]), ..Default::default() };
+            let mut r = Renderer::new();
+            r.threads = 2;
+            r.render(&d, size.0, size.1, base, &opts);
+            let image = |r: &Renderer| r.shadows.values().map(|e| std::sync::Arc::as_ptr(&e.image)).collect::<Vec<_>>();
+            let kept = image(&r);
+            assert!(r.shadows.values().all(|e| e.scale == scale && e.view.is_none()), "blur {blur}: coarser, over the whole reach");
+            for pan in [(37.0, -21.0), (1.0, 0.0), (-3.0, 5.0)] {
+                let xf = Affine::translate(pan) * base;
+                let panned = r.render(&d, size.0, size.1, xf, &opts);
+                assert_eq!(image(&r), kept, "blur {blur}, pan {pan:?}: the raster kept is drawn");
+                let mut fresh = Renderer::new();
+                fresh.threads = 2;
+                assert!(panned.pixels == fresh.render(&d, size.0, size.1, xf, &opts).pixels, "blur {blur}, pan {pan:?}");
+            }
+        }
+    }
+
     /// The multithreaded rasterizer draws the same pixels with any number of workers, so the
     /// automatic thread count can follow the machine.
     #[test]
