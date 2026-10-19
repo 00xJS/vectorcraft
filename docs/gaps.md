@@ -45,7 +45,7 @@ from G14 and the budget run of G15: **~170–270 h** one agent, ~50–80 h wall 
 
 - **Canvas review follow-up:** Cached canvas dimensions match the renderer limit before cache-key creation, view construction and worker submission. Controlled-worker regression checks oversized width and height, high DPI and the render transform without allocating oversized images. G1 scope and estimates are unchanged.
 
-- **Implemented, regression-tested and contributor-confirmed:** cached canvas reprojection preserves scale during resize, rotation and DPI changes. Original-file acceptance confirmed 2026-10-19; broader G1 scope and estimates unchanged.
+- **Done (#3106):** while the window is resized, rotated or moved to a screen of another DPI, the cached canvas frame is redrawn at its own scale until the next render, at most the renderer's largest raster size. Broader G1 scope and estimates unchanged.
 
 - **Done (#2877):** a selected Mirror Repeat shows its axis: drag the line or the center handle to move it, an end handle to rotate it (Shift: 45°); each drag is one undo step and Escape cancels it. Bounding-box handles take priority over the axis line; the center and end handles keep their actions. Broader G1 estimates unchanged.
 
