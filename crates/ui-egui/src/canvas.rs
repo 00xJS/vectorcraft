@@ -285,7 +285,11 @@ pub fn show(app: &mut VectorcraftApp, ui: &mut Ui) {
 
     // Artwork raster.
     let ppp = ui.ctx().pixels_per_point();
-    let (w, h) = ((rect.width() * ppp).round().max(1.0) as u32, (rect.height() * ppp).round().max(1.0) as u32);
+    // Match Renderer::render_as before recording the cache extent or building its view.
+    let (w, h) = (
+        ((rect.width() * ppp).round().max(1.0) as u32).min(u32::from(u16::MAX)),
+        ((rect.height() * ppp).round().max(1.0) as u32).min(u32::from(u16::MAX)),
+    );
     // View › Pixel Preview: the art as it rasterizes, one pixel per point, while a document pixel
     // is bigger than a screen pixel (below that the screen render already shows it).
     let pixel = (app.ui.view.pixel_preview && v.zoom * ppp as f64 > 1.0).then(|| pixel_region(&xf)).flatten();
@@ -4869,6 +4873,39 @@ mod tests {
         assert!(app.canvas.key.as_ref().is_some_and(|k| !k.interacting), "rendered again");
         assert_eq!(app.canvas.renderer.stats.moved, 0);
         assert!(!app.canvas.moved);
+    }
+
+    /// Cache metadata, worker requests and view transforms use the renderer's bounded raster size.
+    /// Keep the worker controlled so huge virtual viewports never allocate huge test images.
+    #[test]
+    fn canvas_render_jobs_use_renderer_limited_dimensions() {
+        let ctx = egui::Context::default();
+        crate::theme::install_fonts(&ctx);
+        let mut app = VectorcraftApp::new(Session::new(), Default::default());
+        app.session.execute("file.new", &json!({"width": 400, "height": 300})).unwrap();
+        app.canvas.worker_started = true;
+        app.ui.view.rulers = false;
+        let frame = |app: &mut VectorcraftApp, size, ppp| {
+            let mut input = egui::RawInput { screen_rect: Some(egui::Rect::from_min_size(pos2(0.0, 0.0), size)), ..Default::default() };
+            input.viewports.get_mut(&egui::ViewportId::ROOT).unwrap().native_pixels_per_point = Some(ppp);
+            let mut output = ctx.run_ui(input, |ui| show(app, ui));
+            output.textures_delta.clear();
+        };
+        frame(&mut app, vec2(400.0, 300.0), 1.0);
+        let (worker, jobs, _completed) = crate::render_worker::Worker::test_channel();
+        app.canvas.worker = Some(worker);
+        app.canvas.last_ms = 50.0;
+        for (size, ppp, wide) in [(vec2(70000.25, 32.0), 1.0, true), (vec2(32.0, 70000.25), 1.0, false), (vec2(40000.25, 32.0), 2.0, true)] {
+            frame(&mut app, size, ppp);
+            let job = jobs.try_recv().expect("oversized viewport queued on controlled worker");
+            assert_eq!((job.key.w, job.key.h), (job.w, job.h));
+            assert_eq!(if wide { job.w } else { job.h }, u32::from(u16::MAX));
+            assert!((1..=u32::from(u16::MAX)).contains(&job.w));
+            assert!((1..=u32::from(u16::MAX)).contains(&job.h));
+            let center = job.view * Point::new(job.key.cx, job.key.cy);
+            assert!((center.x - f64::from(job.w) / 2.0).abs() < 0.001);
+            assert!((center.y - f64::from(job.h) / 2.0).abs() < 0.001);
+        }
     }
 
     /// A cached texture keeps the renderer's document mapping when the viewport changes. The
