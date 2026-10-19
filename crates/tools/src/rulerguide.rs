@@ -271,7 +271,7 @@ impl GuideEdit {
             PointerKind::Up => {
                 self.drag = None;
                 self.snap = GuideSnap::default();
-                if d.began && on_ruler(cx, d.source_vertical != ev.mods.alt, ev.pos) {
+                if d.began && on_ruler(cx, d.source_vertical, ev.pos) {
                     // Dropped on its ruler: the guide goes (a copy is just not made).
                     let mut out = vec![Action::Cancel];
                     if !ev.mods.alt {
@@ -318,7 +318,7 @@ impl GuideEdit {
         } else {
             // The other selected guides follow the pointer: vertical ones across, horizontal ones down.
             let (dx, dy) = if d.source_vertical { (at - d.from, moved.y) } else { (moved.x, at - d.from) };
-            out.push(Action::Preview("guide.move".into(), json!({ "dx": dx, "dy": dy })));
+            out.push(Action::Preview("guide.move".into(), json!({ "dx": dx, "dy": dy, "copy": false })));
         }
         out
     }
@@ -865,10 +865,11 @@ mod tests {
                     flipped.press(&c, &ev(PointerKind::Down, start.0, start.1, Mods::default())).unwrap();
                     flipped.pointer(&c, &ev(PointerKind::Drag, to.0, to.1, Mods { alt: true, ..Default::default() })).unwrap();
                     let flipped_vertical = !vertical;
+                    let origin = c.ruler_origin;
                     let want_flip = format!(
                         "{}: {}",
                         if flipped_vertical { "X" } else { "Y" },
-                        c.len(if flipped_vertical { to.0 } else { to.1 })
+                        c.len(if flipped_vertical { to.0 - origin.x } else { to.1 - origin.y })
                     );
                     assert!(
                         matches!(flipped.overlays(&c).last(), Some(Overlay::Measure { text, .. }) if text == &want_flip),
