@@ -1881,6 +1881,7 @@ fn hit_with<T>(
         path_only: prefs.object_selection_by_path_only,
         type_path_only: prefs.type_selection_by_path_only,
         scope: app.session.active().and_then(|st| st.isolation),
+        ..Default::default()
     };
     test(&app.session.active()?.doc, p, opt)
 }

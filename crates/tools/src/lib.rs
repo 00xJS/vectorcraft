@@ -403,6 +403,7 @@ impl ToolContext<'_> {
             path_only: self.path_only,
             type_path_only: self.type_path_only,
             scope: self.isolation,
+            skip_guides: !self.guides,
         }
     }
 }
