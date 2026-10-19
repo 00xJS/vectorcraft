@@ -645,6 +645,7 @@ fn artboard_list(app: &VectorcraftApp, ui: &mut Ui, cur: usize) -> Option<usize>
     .inner
 }
 
+/// Draw the status message, bounded readouts and artboard navigation controls.
 pub fn status_bar(app: &mut VectorcraftApp, ui: &mut Ui) {
     let t = Tokens::get(ui.ctx());
     egui::Panel::bottom("status_bar")
@@ -1128,10 +1129,12 @@ mod tests {
         elided: bool,
     }
 
+    /// Collect status-bar text layout from a headless frame without pointer events.
     fn status_readout_frame(app: &mut crate::VectorcraftApp, ctx: &egui::Context, width: f32) -> Vec<StatusText> {
         status_readout_frame_events(app, ctx, width, vec![])
     }
 
+    /// Collect status-bar text, positions, clips and elision state with explicit pointer events.
     fn status_readout_frame_events(app: &mut crate::VectorcraftApp, ctx: &egui::Context, width: f32, events: Vec<egui::Event>) -> Vec<StatusText> {
         let screen = egui::Rect::from_min_size(egui::Pos2::ZERO, egui::vec2(width, 300.0));
         let mut out = ctx.run_ui(egui::RawInput { screen_rect: Some(screen), events, ..Default::default() }, |ui| super::status_bar(app, ui));
@@ -1151,10 +1154,12 @@ mod tests {
             .collect()
     }
 
+    /// Find a required text record by prefix, failing the test when it is absent.
     fn status_text<'a>(texts: &'a [StatusText], prefix: &str) -> &'a StatusText {
         texts.iter().find(|t| t.text.starts_with(prefix)).unwrap_or_else(|| panic!("missing {prefix:?}: {texts:?}"))
     }
 
+    /// Prepare an English test document with the app fonts and a status message.
     fn status_readout_app() -> (crate::VectorcraftApp, egui::Context) {
         crate::i18n::set_current(crate::i18n::Lang::EN);
         let mut app = crate::VectorcraftApp::new(Session::new(), Default::default());
@@ -1216,6 +1221,7 @@ mod tests {
         );
     }
 
+    /// Canvas hover entry and exit keep the status message at the same origin.
     #[test]
     fn status_messages_keep_their_origin_when_the_pointer_enters_and_leaves() {
         let (mut app, ctx) = status_readout_app();
@@ -1235,6 +1241,7 @@ mod tests {
         }
     }
 
+    /// Hovering a coordinate preserves its document-scoped value for inspection.
     #[test]
     fn hovering_a_coordinate_retains_its_full_value_for_inspection() {
         let (mut app, ctx) = status_readout_app();
@@ -1254,6 +1261,7 @@ mod tests {
         assert!(!other.iter().any(|t| t.text.starts_with("X:")));
     }
 
+    /// Narrow windows hide optional readouts while keeping the status message visible.
     #[test]
     fn narrow_status_bars_preserve_the_message_and_hide_optional_readouts() {
         let (mut app, ctx) = status_readout_app();
@@ -1283,6 +1291,7 @@ mod tests {
         assert!(message.clip.left() >= status_text(&texts, "Selection").bounds.right());
     }
 
+    /// Busy-job transitions preserve message placement, labels and accessibility.
     #[test]
     fn background_activity_keeps_the_status_message_origin() {
         let (mut app, ctx) = status_readout_app();
@@ -1322,6 +1331,7 @@ mod tests {
         assert_eq!((before.at, before.clip), (after.at, after.clip));
     }
 
+    /// Ordinary signed coordinates fit without elision in every supported unit.
     #[test]
     fn ordinary_coordinates_are_readable_in_every_unit() {
         let (mut app, ctx) = status_readout_app();
@@ -1341,6 +1351,7 @@ mod tests {
         }
     }
 
+    /// Localized diagnostics remain readable without moving neighboring fields.
     #[test]
     fn localized_diagnostics_are_readable_and_keep_their_field_bounds() {
         let (mut app, ctx) = status_readout_app();
@@ -1425,6 +1436,7 @@ mod tests {
         r
     }
 
+    /// Artboard navigation updates the active artboard and fitted view together.
     #[test]
     fn the_artboard_navigator_goes_to_artboards_and_fitting_shows_the_current_one() {
         use vectorcraft_geom::Point;
@@ -1720,6 +1732,7 @@ mod tests {
         artboard_navigation_delete(None);
     }
 
+    /// Navigating artboards preserves other tools, their selections and undo history.
     #[test]
     fn artboard_navigation_preserves_other_tools_selection_and_history() {
         for tool in ["selection", "rectangle"] {
