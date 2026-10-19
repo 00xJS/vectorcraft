@@ -3181,7 +3181,7 @@ mark-style	Japanese	Японский
 	Delete Library Item	Удалить элемент библиотеки
 	No results	Ничего не найдено
 	No items in this library match “{query}”.	В этой библиотеке нет элементов, соответствующих «{query}».
-	Right-click an item to move it into this group.	Щёлкните элемент правой кнопкой мыши, чтобы переместить его в эту группу.
+	Drag an item here, or right-click one, to put it in this group.	Перетащите сюда элемент или щёлкните его правой кнопкой мыши, чтобы поместить его в эту группу.
 	New Group	Новая группа
 	New Group…	Новая группа…
 	Move to Group	Переместить в группу
@@ -4853,5 +4853,7 @@ lighting	Light	Свет
 	Plastic Wrap	Целлофановая упаковка
 	Chrome…	Хром…
 	Chrome	Хром
+	Drop here to take it out of its group	Отпустите здесь, чтобы вынуть его из группы
+	Move Library Group	Переместить группу библиотеки
 	Plaster…	Гипс…
 	Plaster	Гипс

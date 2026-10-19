@@ -4362,7 +4362,7 @@ theme	Appearance	Erscheinungsbild
 	Move to Group	In Gruppe verschieben
 	No results	Keine Ergebnisse
 	No items in this library match “{query}”.	Keine Elemente in dieser Bibliothek entsprechen „{query}“.
-	Right-click an item to move it into this group.	Klicken Sie mit der rechten Maustaste auf ein Element, um es in diese Gruppe zu verschieben.
+	Drag an item here, or right-click one, to put it in this group.	Ziehen Sie ein Element hierher oder klicken Sie mit der rechten Maustaste darauf, um es in diese Gruppe zu legen.
 @msg	Imported library {name}	Bibliothek {name} importiert
 # Linked files changed on disk.
 	Update Changed Links	Geänderte Verknüpfungen aktualisieren
@@ -4823,5 +4823,7 @@ effect	Soft	Weich
 	Plastic Wrap	Kunststofffolie
 	Chrome…	Chrom…
 	Chrome	Chrom
+	Drop here to take it out of its group	Hier ablegen, um es aus seiner Gruppe zu nehmen
+	Move Library Group	Bibliotheksgruppe verschieben
 	Plaster…	Gipsabdruck…
 	Plaster	Gipsabdruck

@@ -1503,7 +1503,7 @@ lighting	Light	Licht
 	This library is empty	Deze bibliotheek is leeg
 	No results	Geen resultaten
 	No items in this library match “{query}”.	Geen items in deze bibliotheek komen overeen met „{query}”.
-	Right-click an item to move it into this group.	Klik met de rechtermuisknop op een item om het naar deze groep te verplaatsen.
+	Drag an item here, or right-click one, to put it in this group.	Sleep een item hierheen, of klik er met de rechtermuisknop op, om het in deze groep te zetten.
 	New Group	Nieuwe groep
 	New Group…	Nieuwe groep…
 	Move to Group	Verplaatsen naar groep
@@ -5264,5 +5264,7 @@ swatch	Bright Violet	Felviolet
 	Plastic Wrap	Plasticfolie
 	Chrome…	Chroom…
 	Chrome	Chroom
+	Drop here to take it out of its group	Zet het hier neer om het uit de groep te halen
+	Move Library Group	Bibliotheekgroep verplaatsen
 	Plaster…	Gips…
 	Plaster	Gips

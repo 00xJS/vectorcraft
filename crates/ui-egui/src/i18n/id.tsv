@@ -1489,7 +1489,7 @@ lighting	Light	Cahaya
 	This library is empty	Pustaka ini kosong
 	No results	Tidak ada hasil
 	No items in this library match “{query}”.	Tidak ada item di pustaka ini yang cocok dengan “{query}”.
-	Right-click an item to move it into this group.	Klik kanan item untuk memindahkannya ke grup ini.
+	Drag an item here, or right-click one, to put it in this group.	Seret item ke sini, atau klik kanan item, untuk memasukkannya ke grup ini.
 	New Group	Grup baru
 	New Group…	Grup baru…
 	Move to Group	Pindahkan ke grup
@@ -5222,5 +5222,7 @@ swatch	Bright Violet	Violet cerah
 	Plastic Wrap	Pembungkus plastik
 	Chrome…	Krom…
 	Chrome	Krom
+	Drop here to take it out of its group	Lepaskan di sini untuk mengeluarkannya dari grupnya
+	Move Library Group	Pindahkan grup pustaka
 	Plaster…	Plester…
 	Plaster	Plester

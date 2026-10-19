@@ -2911,7 +2911,7 @@ mark-style	Japanese	일본식
 	Delete Library Item	라이브러리 항목 삭제
 	No results	결과 없음
 	No items in this library match “{query}”.	이 라이브러리에 “{query}”와(과) 일치하는 항목이 없습니다.
-	Right-click an item to move it into this group.	항목을 마우스 오른쪽 버튼으로 클릭해 이 그룹으로 이동하세요.
+	Drag an item here, or right-click one, to put it in this group.	항목을 여기로 끌어 놓거나 마우스 오른쪽 버튼으로 클릭해 이 그룹에 넣으세요.
 	New Group	새 그룹
 	New Group…	새 그룹…
 	Move to Group	그룹으로 이동
@@ -4820,5 +4820,7 @@ lighting	Light	광원
 	Plastic Wrap	비닐 랩
 	Chrome…	크롬…
 	Chrome	크롬
+	Drop here to take it out of its group	그룹에서 빼려면 여기에 놓으세요
+	Move Library Group	라이브러리 그룹 이동
 	Plaster…	석고…
 	Plaster	석고

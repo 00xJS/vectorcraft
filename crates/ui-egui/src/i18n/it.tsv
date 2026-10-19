@@ -3185,7 +3185,7 @@ mark-style	Japanese	Giapponese
 	Delete Library Item	Elimina elemento della libreria
 	No results	Nessun risultato
 	No items in this library match “{query}”.	Nessun elemento di questa libreria corrisponde a “{query}”.
-	Right-click an item to move it into this group.	Fai clic con il pulsante destro su un elemento per spostarlo in questo gruppo.
+	Drag an item here, or right-click one, to put it in this group.	Trascina qui un elemento, o fai clic con il pulsante destro su uno, per metterlo in questo gruppo.
 	New Group	Nuovo gruppo
 	New Group…	Nuovo gruppo…
 	Move to Group	Sposta nel gruppo
@@ -4857,5 +4857,7 @@ lighting	Light	Luce
 	Plastic Wrap	Pellicola plastica
 	Chrome…	Cromo…
 	Chrome	Cromo
+	Drop here to take it out of its group	Rilascia qui per toglierlo dal suo gruppo
+	Move Library Group	Sposta gruppo di libreria
 	Plaster…	Gesso…
 	Plaster	Gesso

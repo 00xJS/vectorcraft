@@ -1489,7 +1489,7 @@ lighting	Light	Lys
 	This library is empty	Dette bibliotek er tomt
 	No results	Ingen resultater
 	No items in this library match “{query}”.	Ingen elementer i dette bibliotek matcher »{query}«.
-	Right-click an item to move it into this group.	Højreklik på et element for at flytte det til denne gruppe.
+	Drag an item here, or right-click one, to put it in this group.	Træk et element hertil, eller højreklik på et, for at lægge det i denne gruppe.
 	New Group	Ny gruppe
 	New Group…	Ny gruppe…
 	Move to Group	Flyt til gruppe
@@ -5222,5 +5222,7 @@ swatch	Bright Violet	Kraftig violet
 	Plastic Wrap	Plastfolie
 	Chrome…	Krom…
 	Chrome	Krom
+	Drop here to take it out of its group	Slip her for at tage det ud af gruppen
+	Move Library Group	Flyt biblioteksgruppe
 	Plaster…	Gips…
 	Plaster	Gips

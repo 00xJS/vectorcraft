@@ -3152,7 +3152,7 @@
 	Delete Library Item	Eliminar elemento de la biblioteca
 	No results	Sin resultados
 	No items in this library match “{query}”.	Ningún elemento de esta biblioteca coincide con “{query}”.
-	Right-click an item to move it into this group.	Haz clic con el botón derecho en un elemento para moverlo a este grupo.
+	Drag an item here, or right-click one, to put it in this group.	Arrastra aquí un elemento, o haz clic con el botón derecho en uno, para ponerlo en este grupo.
 	New Group	Nuevo grupo
 	New Group…	Nuevo grupo…
 	Move to Group	Mover al grupo
@@ -5185,5 +5185,7 @@ mark-style	Japanese	Japonesas
 	Plastic Wrap	Envoltura plástica
 	Chrome…	Cromo…
 	Chrome	Cromo
+	Drop here to take it out of its group	Suelta aquí para sacarlo de su grupo
+	Move Library Group	Mover grupo de biblioteca
 	Plaster…	Yeso…
 	Plaster	Yeso
