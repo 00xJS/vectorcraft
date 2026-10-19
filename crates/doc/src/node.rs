@@ -102,6 +102,8 @@ pub enum LiveShape {
     },
     Polygon {
         radius: f64,
+        /// 3–1000, as [`LiveShape::set_sides`] gives it; a file's count is clamped when read.
+        #[serde(deserialize_with = "de_sides")]
         sides: u32,
         xf: Affine,
         /// Corner radii in document units, by vertex from the first one clockwise (none: sharp).
@@ -324,6 +326,12 @@ impl LiveShape {
 
 fn all_round(kinds: &[CornerKind]) -> bool {
     kinds.iter().all(|k| *k == CornerKind::Round)
+}
+
+/// A polygon's side count read from a file, clamped as the commands clamp it: the outline and its
+/// corner lists hold one entry per side, so a huge count would allocate gigabytes.
+fn de_sides<'de, D: serde::Deserializer<'de>>(d: D) -> Result<u32, D::Error> {
+    u32::deserialize(d).map(|n| n.clamp(3, 1000))
 }
 
 /// Whether `a` only moves (no rotation, scale, shear or reflection).
@@ -2188,6 +2196,24 @@ mod tests {
         assert_eq!((json["shape"].as_str(), json.get("kinds")), (Some("path"), None));
         assert_eq!(serde_json::from_value::<LiveShape>(json).unwrap(), path);
         assert_eq!(path.label(), "Path");
+    }
+
+    /// A polygon read from a file has 3 to 1000 sides, as the commands give it: selecting one
+    /// with four billion made its outline and corner lists allocate tens of gigabytes.
+    #[test]
+    fn a_polygon_from_a_file_has_3_to_1000_sides() {
+        let read = |sides: u32| {
+            let json = serde_json::json!({"shape": "polygon", "radius": 10.0, "sides": sides, "xf": [1, 0, 0, 1, 0, 0]});
+            serde_json::from_value::<LiveShape>(json).unwrap()
+        };
+        let sides_of = |l: &LiveShape| match l {
+            LiveShape::Polygon { sides, .. } => *sides,
+            _ => panic!("not a polygon: {l:?}"),
+        };
+        let huge = read(4_000_000_000);
+        assert_eq!([0, 5, 1000].map(|n| sides_of(&read(n))), [3, 5, 1000]);
+        assert_eq!(sides_of(&huge), 1000);
+        assert_eq!(huge.polygon_outline().anchor_count(), 1000);
     }
 
     #[test]
