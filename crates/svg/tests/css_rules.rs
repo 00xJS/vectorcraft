@@ -298,11 +298,9 @@ fn font_family_ends_with_a_generic_family_for_viewers_without_the_font() {
 
 #[test]
 fn font_family_with_quote_or_backslash_is_escaped() {
-    for (family, want) in [
-        ("Bob's Font", r"'Bob\'s Font', sans-serif"),
-        (r"Back\slash Font", r"'Back\\slash Font', sans-serif"),
-        ("Bob's", r"'Bob\'s', sans-serif"),
-    ] {
+    for (family, want) in
+        [("Bob's Font", r"'Bob\'s Font', sans-serif"), (r"Back\slash Font", r"'Back\\slash Font', sans-serif"), ("Bob's", r"'Bob\'s', sans-serif")]
+    {
         let mut d = doc();
         let st = CharStyle { font_family: family.into(), size: 18.0, ..CharStyle::default() };
         let n = text(&mut d, "Hello", st);
