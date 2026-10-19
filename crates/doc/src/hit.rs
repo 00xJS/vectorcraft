@@ -62,11 +62,14 @@ pub struct HitOptions {
     /// (point type's baseline, area type's frame, type on a path's path), not anywhere in its
     /// bounds.
     pub type_path_only: bool,
+    /// Guide objects (paths made into guides) are not hittable: View › Guides › Lock Guides is
+    /// on or the guides are hidden.
+    pub skip_guides: bool,
 }
 
 impl Default for HitOptions {
     fn default() -> Self {
-        Self { tol: 3.0, outline: false, path_only: false, type_path_only: false, scope: None }
+        Self { tol: 3.0, outline: false, path_only: false, type_path_only: false, skip_guides: false, scope: None }
     }
 }
 
@@ -316,6 +319,9 @@ fn may_hit(parent: &Node, i: usize, c: &Node, p: Point, opt: HitOptions, symbols
     }
     // Read-only samples can read locked/template art; hidden art never participates.
     if !c.visible || editable_only && (c.locked || c.is_template()) {
+        return false;
+    }
+    if opt.skip_guides && matches!(c.kind, NodeKind::Path { guide: true, .. }) {
         return false;
     }
     // (An envelope's content sits where it was, not where the envelope draws it.)

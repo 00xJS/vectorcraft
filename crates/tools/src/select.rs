@@ -1679,6 +1679,38 @@ mod tests {
         assert_eq!(a, vec![Action::Exec("select.set".into(), json!({"ids": [id.0]}))]);
     }
 
+    /// #3036: with Lock Guides on, a guide object neither takes the press nor stops a marquee
+    /// from starting over it; with guides unlocked, the press still picks it.
+    #[test]
+    fn marquee_passes_through_locked_guide_objects() {
+        let (mut d, id) = doc_with_rect();
+        let l = d.layers[0].id;
+        let g = d.alloc_id();
+        let pts = [Point::new(20.0, 20.0), Point::new(400.0, 20.0), Point::new(400.0, 400.0), Point::new(20.0, 400.0)];
+        let path = vectorcraft_geom::PathData::single(vectorcraft_geom::SubPath::polyline(&pts, true));
+        let mut guide = vectorcraft_doc::Node::path(g, path, vectorcraft_doc::Appearance::default_art());
+        let vectorcraft_doc::NodeKind::Path { guide: flag, .. } = &mut guide.kind else { panic!("a path") };
+        *flag = true;
+        d.insert(Some(l), 1, guide).unwrap();
+        let s = Selection::default();
+        let p = paint();
+        let locked = ToolContext { guides: false, ..cx(&d, &s, &p) };
+        for (x, y) in [(20.0, 60.0), (50.0, 50.0)] {
+            let mut t = SelectionTool::default();
+            assert!(t.pointer(&locked, &ev(PointerKind::Down, x, y)).is_empty(), "press at ({x}, {y})");
+            t.pointer(&locked, &ev(PointerKind::Drag, 250.0, 250.0));
+            assert!(matches!(t.state, State::Marquee { .. }), "press at ({x}, {y})");
+            // The rectangle is rubber-band selected (the engine leaves locked guides out).
+            let a = t.pointer(&locked, &ev(PointerKind::Up, 250.0, 250.0));
+            let Some(Action::Exec(c, v)) = a.first() else { panic!("press at ({x}, {y}): {a:?}") };
+            assert_eq!(c, "select.set", "press at ({x}, {y})");
+            assert!(v["ids"].as_array().unwrap().contains(&json!(id.0)), "press at ({x}, {y}): {a:?}");
+        }
+        let unlocked = ToolContext { guides: true, ..cx(&d, &s, &p) };
+        let mut t = SelectionTool::default();
+        assert_eq!(t.pointer(&unlocked, &ev(PointerKind::Down, 20.0, 60.0)), vec![Action::Exec("select.set".into(), json!({"ids": [g.0]}))]);
+    }
+
     #[test]
     fn handle_drag_scales() {
         let (d, id) = doc_with_rect();
