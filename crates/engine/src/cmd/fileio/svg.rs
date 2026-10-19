@@ -147,6 +147,19 @@ fn plan(doc: &Document, p: &Value) -> Result<(ExportOptions, Vec<Option<usize>>,
     Ok((opts, named.unwrap_or_else(|| vec![0]).into_iter().map(Some).collect(), chosen))
 }
 
+/// What a save of `doc` as SVG (format `label`) with options `p` loses of several artboards: the
+/// file is one artboard and reopens as one, unless it carries the native document (Preserve
+/// Editing Capabilities).
+pub(super) fn lost_artboards_warning(doc: &Document, p: &Value, label: &str) -> Option<String> {
+    let n = doc.artboards.len();
+    let preserved = plan(doc, p).is_ok_and(|(opts, ..)| opts.preserve_editing);
+    (n > 1 && !preserved).then(|| {
+        format!(
+            "{label} keeps 1 of the document's {n} artboards (the first, unless one is chosen) and reopens with only that one: turn on Preserve Editing Capabilities or save as VectorCraft to keep them all"
+        )
+    })
+}
+
 /// Encode `doc` as SVG (or gzipped, SVGZ): one file per chosen artboard, with the images they
 /// link to and the writer's warnings.
 pub(super) fn encode(doc: &Document, p: &Value, compressed: bool) -> Result<Encoded, String> {

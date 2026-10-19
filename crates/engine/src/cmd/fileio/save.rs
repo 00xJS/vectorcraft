@@ -322,19 +322,6 @@ fn fidelity_warning(f: &Format) -> Option<String> {
     })
 }
 
-/// What an SVG save loses of a document with several artboards: the file is one artboard and
-/// reopens as one, unless it carries the native document (Preserve Editing Capabilities).
-fn artboards_warning(f: &Format, doc: &Document, params: &Value) -> Option<String> {
-    let n = doc.artboards.len();
-    let preserved = super::svg::options_map(params).ok().and_then(|m| m.get("preserveEditing").and_then(Value::as_bool)).unwrap_or(false);
-    (is_svg(f) && n > 1 && !preserved).then(|| {
-        format!(
-            "{} keeps 1 of the document's {n} artboards (the first, unless one is chosen) and reopens with only that one: turn on Preserve Editing Capabilities or save as VectorCraft to keep them all",
-            f.label
-        )
-    })
-}
-
 /// A save of the active document, snapshotted and ready to encode and write anywhere (Background
 /// Save does both on a worker thread): [`save_job`], then [`SaveJob::write`], then
 /// [`SaveJob::finish`]. Cheap to clone (the documents are shared).
@@ -564,7 +551,8 @@ impl SaveJob {
         }
         // Lost artboards first: the status bar shows only the first warning.
         let f = self.plan.format;
-        enc.warnings.splice(0..0, artboards_warning(f, &self.doc, &self.params).into_iter().chain(fidelity_warning(f)));
+        let lost = if is_svg(f) { super::svg::lost_artboards_warning(&self.doc, &self.params, f.label) } else { None };
+        enc.warnings.splice(0..0, lost.into_iter().chain(fidelity_warning(f)));
         Ok(enc)
     }
 
