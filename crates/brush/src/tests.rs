@@ -158,11 +158,15 @@ fn art_brush_overlap_splits_at_corners() {
     bp.move_to((0.0, 0.0));
     bp.line_to((100.0, 0.0));
     bp.line_to((100.0, 100.0));
-    let brush = |overlap: bool| {
-        Brush {
-            name: "a".into(),
-            kind: BrushKind::Art(ArtBrush { art: rect_art(10.0, 4.0), scale: ArtScale::Stretch, overlap, colorization: Colorization::None, ..Default::default() }),
-        }
+    let brush = |overlap: bool| Brush {
+        name: "a".into(),
+        kind: BrushKind::Art(ArtBrush {
+            art: rect_art(10.0, 4.0),
+            scale: ArtScale::Stretch,
+            overlap,
+            colorization: Colorization::None,
+            ..Default::default()
+        }),
     };
     let one = stroke_pieces(&Document::new(1.0, 1.0), &brush(false), &bp, &stroke(1.0));
     let two = stroke_pieces(&Document::new(1.0, 1.0), &brush(true), &bp, &stroke(1.0));
