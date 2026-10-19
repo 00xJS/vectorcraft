@@ -984,6 +984,24 @@ fn set_handle_refuses_a_subpath_that_is_not_a_whole_number() {
 }
 
 #[test]
+fn move_anchor_takes_its_handles_along_and_refuses_a_subpath_that_is_not_a_whole_number() {
+    let mut s = session();
+    let id = two_subpaths(&mut s);
+    let p = json!({"id": id.0, "anchor": 0, "x": 140, "y": 250});
+    refuses_an_index_that_is_not_whole(&mut s, "path.moveAnchor", &p, "subpath");
+    edits_the_subpath_given(&mut s, "path.moveAnchor", &p, id);
+    // The anchor lands on (x, y) and its handles keep their offsets from it.
+    s.execute("path.setHandle", &json!({"id": id.0, "anchor": 0, "which": "out", "x": 30, "y": 40})).unwrap();
+    let a = path(&s, id).subpaths[0].anchors[0];
+    s.execute("path.moveAnchor", &json!({"id": id.0, "anchor": 0, "x": a.p.x + 15.0, "y": a.p.y - 5.0})).unwrap();
+    let b = path(&s, id).subpaths[0].anchors[0];
+    assert_eq!(b.p, a.p + vectorcraft_geom::Vec2::new(15.0, -5.0));
+    assert_eq!(b.h_out - b.p, a.h_out - a.p);
+    assert_eq!(b.h_in - b.p, a.h_in - a.p);
+    assert!(s.execute("path.moveAnchor", &json!({"id": id.0, "anchor": 99, "x": 0, "y": 0})).is_err());
+}
+
+#[test]
 fn insert_anchor_refuses_a_subpath_that_is_not_a_whole_number() {
     let mut s = session();
     let id = two_subpaths(&mut s);
