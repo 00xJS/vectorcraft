@@ -5,8 +5,8 @@
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    BleedSettings, Compatibility, CompressionSettings, Downsample, ImageCodec, ImageCompression, JpegQuality, MonoCodec, MonoCompression,
-    PdfSettings, Standard,
+    BleedSettings, ColorConversion, Compatibility, CompressionSettings, Downsample, ImageCodec, ImageCompression, JpegQuality, MonoCodec,
+    MonoCompression, OutputSettings, PdfSettings, Standard,
 };
 
 /// The built-in preset every PDF export starts from.
@@ -62,10 +62,18 @@ pub fn builtin_presets() -> Vec<PdfPreset> {
             PdfSettings { preserve_editing: true, ..Default::default() },
         ),
         preset("High Quality Print", "For desktop printers and proofs: images stay at print resolution.", print(ImageCodec::Auto, false)),
+        // Converted to the document's profile, its own numbers kept: in a CMYK document RGB colours
+        // and images come out CMYK, as a press needs (#2950). A printer's published settings for
+        // the [Press Quality] preset list the same Output: Convert to Destination (Preserve
+        // Numbers), Document CMYK, no profiles included
+        // (https://postmediasolutions.com/hubfs/Website/Client%20Resources/PostmediaPrintPDFSpecSheet.pdf).
         preset(
             "Press Quality",
-            "For commercial printing: high-resolution images compressed losslessly, the document's bleed.",
-            print(ImageCodec::Zip, true),
+            "For commercial printing: high-resolution images compressed losslessly, the document's bleed, colours converted to the document's profile with its own numbers kept (RGB comes out CMYK in a CMYK document).",
+            PdfSettings {
+                output: OutputSettings { conversion: ColorConversion::PreserveNumbers, ..Default::default() },
+                ..print(ImageCodec::Zip, true)
+            },
         ),
         preset(
             "Smallest File Size",
