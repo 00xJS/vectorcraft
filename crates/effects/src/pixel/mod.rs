@@ -1,8 +1,8 @@
 //! Photoshop-style raster effects (Effect › Artistic › Cutout, Film Grain, Neon Glow and Poster Edges, Blur › Radial Blur and Smart Blur, Brush Strokes ›
-//! Accented Edges, Angled Strokes, Crosshatch, Dark Strokes, Ink Outlines, Spatter, Sprayed Strokes
+//! Accented Edges, Angled Strokes, Crosshatch, Dark Strokes, Graphic Pen, Ink Outlines, Spatter,
+//! Sprayed Strokes
 //! and Sumi-e, Distort › Diffuse Glow, Glass and Ocean Ripple, Pixelate › Color Halftone,
-//! Crystallize, Mezzotint and Pointillize, Sharpen › Unsharp Mask, Sketch › Chalk & Charcoal and
-//! Halftone Pattern, Stylize ›
+//! Crystallize, Mezzotint and Pointillize, Sharpen › Unsharp Mask, Sketch › Chalk & Charcoal, Graphic/n//! Pen and Halftone Pattern, Stylize ›
 //! Glowing Edges, Texture
 //! › Craquelure, Grain, Mosaic Tiles, Patchwork, Stained Glass and Texturizer, and Video ›
 //! De-Interlace and NTSC Colors): filters over premultiplied RGBA8 pixels.
@@ -40,7 +40,7 @@ pub use sketch::{HALFTONE_TYPES, HalftonePattern};
 pub use texture::{GRAIN_TYPES, Grain, LIGHT_DIRECTIONS, Light, TEXTURES, Texture};
 
 /// The Photoshop-style effect ids (all raster effects, see [`crate::is_raster`]).
-pub const PIXEL_EFFECTS: [&str; 33] = [
+pub const PIXEL_EFFECTS: [&str; 34] = [
     "artistic.cutout",
     "artistic.filmGrain",
     "artistic.neonGlow",
@@ -64,6 +64,7 @@ pub const PIXEL_EFFECTS: [&str; 33] = [
     "pixelate.pointillize",
     "sharpen.unsharpMask",
     "sketch.chalkCharcoal",
+    "sketch.graphicPen",
     "sketch.halftonePattern",
     "stylize.glowingEdges",
     "texture.craquelure",
@@ -144,6 +145,9 @@ pub enum PixelFx {
     /// Sketch › Chalk & Charcoal: chalk highlights in light areas and charcoal in dark ones;
     /// `chalk` and `charcoal` (0..20) set how much, `pressure` (0..5) the stroke weight.
     ChalkCharcoal { chalk: f64, charcoal: f64, pressure: f64 },
+    /// Sketch › Graphic Pen: fine linear ink strokes along `dir`, each `length` (1..15) points long
+    /// on white paper; `balance` (0..100) sets how much of the tone range becomes black ink.
+    GraphicPen { length: f64, balance: f64, direction: StrokeDirection },
     /// Sketch › Halftone Pattern: black ink on white paper through a `kind` screen of cells `size`
     /// (1..12) apart, its edges as hard as `contrast` (0..50) says.
     HalftonePattern { size: f64, contrast: f64, kind: HalftonePattern },
@@ -321,6 +325,11 @@ pub(crate) fn parse(id: &str, p: &Value) -> Option<PixelFx> {
             charcoal: num(p, "charcoalArea", 6.0).clamp(0.0, 20.0),
             pressure: num(p, "strokePressure", 2.0).clamp(0.0, 5.0),
         },
+        "sketch.graphicPen" => PixelFx::GraphicPen {
+            length: num(p, "strokeLength", 5.0).clamp(1.0, 15.0),
+            balance: num(p, "lightDarkBalance", 50.0).clamp(0.0, 100.0),
+            direction: StrokeDirection::parse(text(p, "strokeDirection", "rightDiagonal")),
+        },
         "sketch.halftonePattern" => PixelFx::HalftonePattern {
             size: num(p, "size", 1.0).clamp(1.0, 12.0),
             contrast: num(p, "contrast", 5.0).clamp(0.0, 50.0),
@@ -391,7 +400,9 @@ impl PixelFx {
             PixelFx::SmartBlur { radius, .. } => radius,
             PixelFx::AccentedEdges { .. } => 0.0,
             // Strokes reach out of the object as far as they reach into it.
-            PixelFx::AngledStrokes { length, .. } | PixelFx::InkOutlines { length, .. } => brushstrokes::stroke_reach(length),
+            PixelFx::AngledStrokes { length, .. } | PixelFx::GraphicPen { length, .. } | PixelFx::InkOutlines { length, .. } => {
+                brushstrokes::stroke_reach(length)
+            }
             PixelFx::Crosshatch { length, .. } => brushstrokes::stroke_reach(length) + brushstrokes::rough(length),
             PixelFx::DarkStrokes { .. } => brushstrokes::stroke_reach(brushstrokes::LIGHT_LENGTH),
             PixelFx::Spatter { radius, .. } => brushstrokes::spatter_shift(radius),
@@ -432,7 +443,9 @@ impl PixelFx {
             PixelFx::SmartBlur { radius, samples, .. } => Some(blur::edge_reach(radius, samples)),
             PixelFx::AccentedEdges { width, smoothness, .. } => Some(brushstrokes::accent_reach(width, smoothness)),
             // The strokes, and the softened tones that choose them.
-            PixelFx::AngledStrokes { length, .. } => Some(brushstrokes::stroke_reach(length).max(brushstrokes::TONE_REACH)),
+            PixelFx::AngledStrokes { length, .. } | PixelFx::GraphicPen { length, .. } => {
+                Some(brushstrokes::stroke_reach(length).max(brushstrokes::TONE_REACH))
+            }
             PixelFx::Crosshatch { length, .. } => {
                 Some((brushstrokes::stroke_reach(length) + brushstrokes::rough(length)).max(brushstrokes::TONE_REACH))
             }
@@ -505,6 +518,7 @@ impl PixelFx {
             PixelFx::OceanRipple { size, magnitude } => distort::ocean_ripple(px, w, h, space, size, magnitude),
             PixelFx::UnsharpMask { amount, radius, threshold } => sharpen::unsharp(px, w, h, amount, to_px(radius), threshold),
             PixelFx::ChalkCharcoal { chalk, charcoal, pressure } => sketch::chalk_charcoal(px, w, h, space, chalk, charcoal, pressure),
+            PixelFx::GraphicPen { length, balance, direction } => brushstrokes::graphic_pen(px, w, h, space, length, balance, direction),
             PixelFx::HalftonePattern { size, contrast, kind } => sketch::halftone_pattern(px, w, h, space, size, contrast, kind),
             PixelFx::GlowingEdges { width, brightness, smoothness } => edges::glow(px, w, h, to_px(width), brightness, to_px(smoothness)),
             PixelFx::ColorHalftone { max_radius, angles } => pixelate::color_halftone(px, w, h, space, max_radius, angles),

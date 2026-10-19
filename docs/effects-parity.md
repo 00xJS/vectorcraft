@@ -44,7 +44,7 @@ its resolution, PDF export warns once per object with the requested and the lowe
 | Distort | Diffuse Glow, Glass, Ocean Ripple | 3/3 | — |
 | Pixelate | Color Halftone, Crystallize, Mezzotint, Pointillize | 4/4 | — |
 | Sharpen | Unsharp Mask | 1/1 | — |
-| Sketch | Bas Relief, Chalk & Charcoal, Charcoal, Chrome, Conté Crayon, Graphic Pen, Halftone Pattern, Note Paper, Photocopy, Plaster, Reticulation, Stamp, Torn Edges, Water Paper | 1/14 | Bas Relief, Chalk & Charcoal, Charcoal, Chrome, Conté Crayon, Graphic Pen, Note Paper, Photocopy, Plaster, Reticulation, Stamp, Torn Edges, Water Paper |
+| Sketch | Bas Relief, Chalk & Charcoal, Charcoal, Chrome, Conté Crayon, Graphic Pen, Halftone Pattern, Note Paper, Photocopy, Plaster, Reticulation, Stamp, Torn Edges, Water Paper | 2/14 | Bas Relief, Chalk & Charcoal, Charcoal, Chrome, Conté Crayon, Note Paper, Photocopy, Plaster, Reticulation, Stamp, Torn Edges, Water Paper |
 | Stylize | Glowing Edges | 1/1 | — |
 | Texture | Craquelure, Grain, Mosaic Tiles, Patchwork, Stained Glass, Texturizer | 6/6 | Texturizer's Load Texture |
 | Video | De-Interlace, NTSC Colors | 2/2 | — |

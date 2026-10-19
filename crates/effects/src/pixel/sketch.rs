@@ -1,5 +1,4 @@
-//! Effect › Sketch (Chalk & Charcoal, Halftone Pattern). Original filters built from public
-//! behaviour documentation:
+//! Effect › Sketch (Chalk & Charcoal, Halftone Pattern; Graphic Pen lives in [`super::brushstrokes`]).\n//! Original filters built from public behaviour documentation:
 //! <https://helpx.adobe.com/illustrator/using/summary-effects.html> (Sketch effects redraw in
 //! black and white) and the public Photoshop Elements Artistic filters guide. Visual
 //! approximations, not proprietary reproductions.

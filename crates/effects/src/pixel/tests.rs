@@ -2055,6 +2055,41 @@ fn period(values: &[u8]) -> usize {
 }
 
 #[test]
+fn graphic_pen_params_take_defaults_and_stay_in_range() {
+    use super::STROKE_DIRECTIONS;
+    assert_eq!(
+        fx("sketch.graphicPen", json!({})),
+        PixelFx::GraphicPen { length: 5.0, balance: 50.0, direction: StrokeDirection::RightDiagonal }
+    );
+    assert_eq!(
+        fx("sketch.graphicPen", json!({"strokeLength": 0, "lightDarkBalance": 200, "strokeDirection": "VERTICAL"})),
+        PixelFx::GraphicPen { length: 1.0, balance: 100.0, direction: StrokeDirection::Vertical }
+    );
+    let doc = crate::effect_info("sketch.graphicPen").unwrap().params;
+    assert!(STROKE_DIRECTIONS.iter().all(|(_, v)| doc.contains(&format!("\"{v}\""))), "{doc}");
+    let f = fx("sketch.graphicPen", json!({"strokeLength": 15}));
+    assert_eq!(f.outset(Rect::new(0.0, 0.0, 100.0, 50.0)), brushstrokes::stroke_reach(15.0));
+    assert_eq!(f.reach(), Some(brushstrokes::stroke_reach(15.0).max(brushstrokes::TONE_REACH)));
+    assert_eq!(
+        fx("sketch.graphicPen", json!({"strokeLength": 99})),
+        PixelFx::GraphicPen { length: 15.0, balance: 50.0, direction: StrokeDirection::RightDiagonal }
+    );
+}
+
+/// Graphic Pen on a mid-grey field draws both black ink and white paper.
+#[test]
+fn graphic_pen_draws_ink_and_paper_on_grey() {
+    let (w, h) = (48, 48);
+    let src = image(w, h, |_, _| grey(32));
+    let mut out = src.clone();
+    fx("sketch.graphicPen", json!({"strokeLength": 4, "lightDarkBalance": 50})).apply(&mut out, w, h, &space(w, h));
+    let lumas: Vec<u8> = out.as_chunks::<4>().0.iter().map(|p| p[0]).collect();
+    let (min, max) = lumas.iter().fold((255u8, 0u8), |(lo, hi), l| (lo.min(*l), hi.max(*l)));
+    assert!(min < 80 && max > 200, "min {min} max {max}");
+    assert_ne!(out, src, "the filter should change the raster");
+}
+
+#[test]
 fn halftone_pattern_params_take_defaults_and_stay_in_range() {
     assert_eq!(fx("sketch.halftonePattern", json!({})), PixelFx::HalftonePattern { size: 1.0, contrast: 5.0, kind: HalftonePattern::Dot });
     assert_eq!(

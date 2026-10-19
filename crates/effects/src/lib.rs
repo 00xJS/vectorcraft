@@ -153,6 +153,7 @@ fn lengths_of(id: &str) -> Lengths {
         "texture.mosaicTiles" => always(&["tileSize"]),
         "texture.patchwork" => always(&["squareSize"]),
         "texture.stainedGlass" => always(&["cellSize"]),
+        "sketch.graphicPen" => always(&["strokeLength"]),
         "sketch.halftonePattern" => always(&["size"]),
         RASTERIZE => always(&["addAround"]),
         _ => Lengths::default(),
@@ -473,6 +474,13 @@ pub fn effect_catalog() -> Vec<EffectInfo> {
             SKETCH,
             "{chalkArea: 0..20 (6; chalk in light areas), charcoalArea: 0..20 (6; charcoal in dark areas), strokePressure: 0..5 (2)} redraws the object with chalk highlights and charcoal strokes on white paper, keeping its coverage. Original visual approximation from public documentation; slider ranges and defaults are VectorCraft choices, not verified proprietary values.",
             json!({"chalkArea": 6.0, "charcoalArea": 6.0, "strokePressure": 2.0}),
+        ),
+        r(
+            "sketch.graphicPen",
+            "Graphic Pen…",
+            SKETCH,
+            "{strokeLength: pt 1..15 (5; the longest ink stroke), lightDarkBalance: 0..100 (50; more black when higher), strokeDirection: \"rightDiagonal\"|\"horizontal\"|\"leftDiagonal\"|\"vertical\" (\"rightDiagonal\")} redraws the object in fine linear black ink on white paper, with strokes denser in darker areas. Control names from public helpx; numeric defaults and ranges are an unverified visual match to Illustrator.",
+            json!({"strokeLength": 5.0, "lightDarkBalance": 50.0, "strokeDirection": "rightDiagonal"}),
         ),
         r(
             "sketch.halftonePattern",
