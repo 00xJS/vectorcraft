@@ -509,7 +509,12 @@ pub fn doc_tabs(app: &mut VectorcraftApp, ui: &mut Ui) {
             crate::panels::artboards::select(app, selected);
         }
     }
-    // Isolation mode breadcrumb bar.
+}
+
+/// The isolation mode breadcrumb bar. It is drawn over the top of `area` (the canvas), after the
+/// canvas, so entering isolation mode does not change the canvas's size (#3126).
+pub fn isolation_bar(app: &mut VectorcraftApp, ui: &mut Ui, area: egui::Rect) {
+    let t = Tokens::get(ui.ctx());
     if let Some(st) = app.session.active()
         && let Some(iso) = st.isolation
     {
@@ -520,7 +525,8 @@ pub fn doc_tabs(app: &mut VectorcraftApp, ui: &mut Ui) {
         if let Some(pn) = &pattern_edit {
             crumbs.push(pn.clone());
         }
-        let (bar, _) = ui.allocate_exact_size(vec2(ui.available_width(), 24.0), Sense::hover());
+        let bar = egui::Rect::from_min_size(area.min, vec2(area.width(), 24.0));
+        ui.interact(bar, ui.id().with("iso-bar"), Sense::click_and_drag());
         ui.painter().rect_filled(bar, 0.0, t.panel);
         let back = egui::Rect::from_min_size(bar.min + vec2(6.0, 3.0), vec2(18.0, 18.0));
         let bresp = ui.interact(back, ui.id().with("iso-back"), Sense::click());
@@ -1874,6 +1880,34 @@ mod tests {
         let mut out = ctx.run_ui(egui::RawInput { screen_rect: Some(screen), events, ..Default::default() }, |ui| super::control_bar(app, ui));
         out.textures_delta.clear();
         ctx.viewport(|vp| vp.prev_pass.widgets.get(egui::Id::new(super::ISOLATION_BUTTON)).map(|w| w.rect))
+    }
+
+    /// Entering isolation mode leaves the canvas where it was: the breadcrumb bar is drawn over the
+    /// canvas and takes no layout height from it (#3126).
+    #[test]
+    fn the_isolation_bar_does_not_take_layout_height_from_the_canvas() {
+        let mut app = crate::VectorcraftApp::new(Session::new(), Default::default());
+        app.run("file.new", json!({"width": 400, "height": 200})).unwrap();
+        let id = app.run("shape.rectangle", json!({"x": 10, "y": 10, "width": 30, "height": 20})).unwrap()["id"].as_u64().unwrap();
+        let ctx = egui::Context::default();
+        crate::theme::install_fonts(&ctx);
+        let screen = egui::Rect::from_min_size(egui::Pos2::ZERO, egui::vec2(1200.0, 700.0));
+        let top = |app: &mut crate::VectorcraftApp| {
+            let mut below = 0.0;
+            let mut out = ctx.run_ui(egui::RawInput { screen_rect: Some(screen), ..Default::default() }, |ui| {
+                super::doc_tabs(app, ui);
+                below = ui.available_rect_before_wrap().top();
+                let area = ui.available_rect_before_wrap();
+                super::isolation_bar(app, ui, area);
+                assert_eq!(ui.available_rect_before_wrap().top(), below, "the bar takes no layout space");
+            });
+            out.textures_delta.clear();
+            below
+        };
+        let before = top(&mut app);
+        app.run("object.isolate", json!({"id": id})).unwrap();
+        assert!(app.session.active().unwrap().isolation.is_some());
+        assert_eq!(top(&mut app), before, "isolation mode leaves the canvas where it was");
     }
 
     /// The Control bar's Isolate Selected Object isolates a path inside a group that Direct

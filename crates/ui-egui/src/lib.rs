@@ -1466,6 +1466,13 @@ impl VectorcraftApp {
                 chrome::doc_tabs(self, ui);
             }
             canvas::show(self, ui);
+            // Over the canvas inside the rulers, so the rulers and scroll bars stay uncovered.
+            if self.ui.screen_mode < 3
+                && !menus::home_showing(self)
+                && let Some(area) = self.canvas_rect
+            {
+                chrome::isolation_bar(self, ui, area);
+            }
         });
         dock::floating_panel(self, &ctx);
         floating::show(self, &ctx);
