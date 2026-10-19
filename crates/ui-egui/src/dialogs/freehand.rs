@@ -164,8 +164,13 @@ mod tests {
         }
         assert!(!text.contains("Size:"), "{text}");
         let d = app.ui.dialog.as_mut().unwrap();
-        assert_eq!((d.f64("fidelity", 0.0), d.bool("fill"), d.bool("altSmooth"), d.f64("closeWithin", 0.0), d.f64("editWithin", 0.0)), (1.5, false, true, 15.0, 12.0));
-        for (k, v) in [("fidelity", json!(6.5)), ("fill", json!(true)), ("altSmooth", json!(false)), ("closeWithin", json!(0)), ("editWithin", json!(20))] {
+        assert_eq!(
+            (d.f64("fidelity", 0.0), d.bool("fill"), d.bool("altSmooth"), d.f64("closeWithin", 0.0), d.f64("editWithin", 0.0)),
+            (1.5, false, false, 15.0, 12.0)
+        );
+        for (k, v) in
+            [("fidelity", json!(6.5)), ("fill", json!(true)), ("altSmooth", json!(true)), ("closeWithin", json!(0)), ("editWithin", json!(20))]
+        {
             d.fields.insert(k.into(), v);
         }
         super::super::confirm(&mut app).unwrap();
@@ -173,7 +178,7 @@ mod tests {
         let o = app.session.tool_options_of("pencil");
         assert_eq!(
             (o["fidelity"].as_f64(), o["fill"].as_bool(), o["altSmooth"].as_bool(), o["closeWithin"].as_f64(), o["editWithin"].as_f64()),
-            (Some(6.5), Some(true), Some(false), Some(0.0), Some(20.0))
+            (Some(6.5), Some(true), Some(true), Some(0.0), Some(20.0))
         );
         // The Paintbrush keeps its own: the Pencil's change left it alone.
         app.run("tool.options", json!({"tool": "paintbrush"})).unwrap();
@@ -186,7 +191,13 @@ mod tests {
         app.run("tool.options", json!({"tool": "smooth"})).unwrap();
         let text = painted(&mut app);
         assert!(text.contains("Smooth Tool Options") && text.contains("Fidelity:"), "{text}");
-        assert!(!text.contains("Fill new strokes") && !text.contains("Keep selected") && !text.contains("Alt key toggles to Smooth Tool") && !text.contains("Size:"), "{text}");
+        assert!(
+            !text.contains("Fill new strokes")
+                && !text.contains("Keep selected")
+                && !text.contains("Alt key toggles to Smooth Tool")
+                && !text.contains("Size:"),
+            "{text}"
+        );
         for tool in ["blobBrush", "eraser"] {
             app.run("tool.options", json!({"tool": tool})).unwrap();
             let text = painted(&mut app);

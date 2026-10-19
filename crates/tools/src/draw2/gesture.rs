@@ -79,7 +79,8 @@ impl GestureTool {
             size: 10.0,
             fill: false,
             keep_selected: id != "blobBrush",
-            alt_smooth: id == "pencil",
+            // Off, as Pencil Tool Options ships it: Alt keeps drawing a closed path until it is on.
+            alt_smooth: false,
             smoothing: false,
             merge_only_selection: false,
             edit_within: 12.0,
@@ -190,10 +191,7 @@ impl GestureTool {
         let tol = cx.tol(self.edit_within);
         if self.smoothing {
             if has_sel && pts.len() >= 2 {
-                return vec![Action::Exec(
-                    "path.smoothRegion".into(),
-                    json!({"points": points_json(pts), "radius": tol, "fidelity": self.fidelity}),
-                )];
+                return vec![Action::Exec("path.smoothRegion".into(), json!({"points": points_json(pts), "radius": tol, "fidelity": self.fidelity}))];
             }
             return vec![];
         }
@@ -248,7 +246,11 @@ impl Tool for GestureTool {
                 self.extend = if self.draws_path() && !self.smoothing { self.find_extend(cx, p) } else { None };
                 self.redraw = if self.draws_path() && !self.smoothing && self.extend.is_none() { self.find_redraw(cx, p) } else { None };
                 // A path continued starts at its end, one redrawn on it; a new one where it snaps.
-                let start = if self.snaps() && !self.smoothing && self.extend.is_none() && self.redraw.is_none() { self.snap.press(cx, p, &[], None) } else { p };
+                let start = if self.snaps() && !self.smoothing && self.extend.is_none() && self.redraw.is_none() {
+                    self.snap.press(cx, p, &[], None)
+                } else {
+                    p
+                };
                 self.clear();
                 self.push(start, ev.pressure);
                 vec![]
@@ -287,7 +289,8 @@ impl Tool for GestureTool {
                 self.snap.clear();
                 if self.points.last().is_some_and(|l| l.distance(p) >= cx.tol(1.0)) {
                     self.push(end, ev.pressure);
-                } else if self.snaps() && !self.smoothing
+                } else if self.snaps()
+                    && !self.smoothing
                     && self.points.len() > 1
                     && let Some(last) = self.points.last_mut()
                 {
@@ -595,9 +598,10 @@ mod tests {
         let p = paint();
         let cx = cx(&d, &s, &p);
 
-        // Pencil has alt_smooth on by default.
+        // Off by default, as Pencil Tool Options ships it; on, Alt lends the Smooth tool.
         let mut t = GestureTool::new("pencil");
-        assert_eq!(t.options()["altSmooth"], json!(true));
+        assert_eq!(t.options()["altSmooth"], json!(false));
+        t.set_option("altSmooth", &json!(true));
 
         // When alt is pressed, cursor shows smooth tool.
         let alt_mod = Mods { alt: true, ..Default::default() };
