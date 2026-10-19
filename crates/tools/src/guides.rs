@@ -13,9 +13,9 @@ use std::sync::Arc;
 
 use vectorcraft_doc::hit::{HitOptions, hit_test};
 use vectorcraft_doc::{Document, Node, NodeId, NodeKind, OrientedBox, Selection};
-use vectorcraft_text::{FontDb, layout as layout_text};
 use vectorcraft_geom::kurbo::ParamCurveNearest;
 use vectorcraft_geom::{Affine, Line, ParamCurve, PathSeg, Point, Rect, Shape, SubPath, Vec2, constrain_angle_from};
+use vectorcraft_text::{FontDb, layout as layout_text};
 
 use crate::bbox::Handle;
 use crate::{Overlay, ScreenFrame, ToolContext};
