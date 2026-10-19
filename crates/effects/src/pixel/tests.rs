@@ -2007,10 +2007,7 @@ fn chalk_charcoal(p: serde_json::Value, src: &[u8], w: usize, h: usize, s: &Pixe
 
 #[test]
 fn chalk_charcoal_params_take_defaults_and_stay_in_range() {
-    assert_eq!(
-        fx("sketch.chalkCharcoal", json!({})),
-        PixelFx::ChalkCharcoal { chalk: 6.0, charcoal: 6.0, pressure: 2.0 }
-    );
+    assert_eq!(fx("sketch.chalkCharcoal", json!({})), PixelFx::ChalkCharcoal { chalk: 6.0, charcoal: 6.0, pressure: 2.0 });
     assert_eq!(
         fx("sketch.chalkCharcoal", json!({"chalkArea": 1e9, "charcoalArea": -2, "strokePressure": 99})),
         PixelFx::ChalkCharcoal { chalk: 20.0, charcoal: 0.0, pressure: 5.0 }
@@ -2057,10 +2054,7 @@ fn period(values: &[u8]) -> usize {
 #[test]
 fn graphic_pen_params_take_defaults_and_stay_in_range() {
     use super::STROKE_DIRECTIONS;
-    assert_eq!(
-        fx("sketch.graphicPen", json!({})),
-        PixelFx::GraphicPen { length: 5.0, balance: 50.0, direction: StrokeDirection::RightDiagonal }
-    );
+    assert_eq!(fx("sketch.graphicPen", json!({})), PixelFx::GraphicPen { length: 5.0, balance: 50.0, direction: StrokeDirection::RightDiagonal });
     assert_eq!(
         fx("sketch.graphicPen", json!({"strokeLength": 0, "lightDarkBalance": 200, "strokeDirection": "VERTICAL"})),
         PixelFx::GraphicPen { length: 1.0, balance: 100.0, direction: StrokeDirection::Vertical }
@@ -2271,10 +2265,7 @@ fn artistic_params_take_defaults_and_stay_in_range() {
         fx("artistic.neonGlow", json!({"glowSize": -1e308, "glowBrightness": 80, "color": "#ff0000"})),
         PixelFx::NeonGlow { size: -24.0, brightness: 50.0, colour: [1.0, 0.0, 0.0] }
     );
-    assert_eq!(
-        fx("artistic.plasticWrap", json!({})),
-        PixelFx::PlasticWrap { highlight: 20.0, detail: 12.0, smoothness: 15.0 }
-    );
+    assert_eq!(fx("artistic.plasticWrap", json!({})), PixelFx::PlasticWrap { highlight: 20.0, detail: 12.0, smoothness: 15.0 });
     assert_eq!(
         fx("artistic.plasticWrap", json!({"highlightStrength": -1, "detail": 99, "smoothness": 0})),
         PixelFx::PlasticWrap { highlight: 0.0, detail: 15.0, smoothness: 1.0 }
@@ -2343,7 +2334,8 @@ fn plastic_wrap_adds_specular_highlights_and_keeps_coverage() {
     let mut strong = src.clone();
     fx("artistic.plasticWrap", json!({"highlightStrength": 4})).apply(&mut weak, w, h, &space(w, h));
     fx("artistic.plasticWrap", json!({"highlightStrength": 20})).apply(&mut strong, w, h, &space(w, h));
-    let lift = |a: &[u8], b: &[u8]| a.as_chunks::<4>().0.iter().zip(b.as_chunks::<4>().0).map(|(o, s)| i32::from(o[0]) - i32::from(s[0])).sum::<i32>();
+    let lift =
+        |a: &[u8], b: &[u8]| a.as_chunks::<4>().0.iter().zip(b.as_chunks::<4>().0).map(|(o, s)| i32::from(o[0]) - i32::from(s[0])).sum::<i32>();
     assert!(lift(&strong, &src) > lift(&weak, &src), "stronger highlights lift more");
 }
 
