@@ -553,7 +553,7 @@ pub const UI_COMMANDS: &[(&str, &str, &str, &str)] = &[
         "ui.layersPanelOptions",
         "Panel Options…",
         "",
-        "{} open the Layers panel's Panel Options: dialog `layersPanelOptions`, fields layersOnly, rowSize (small|medium|large|other), otherSize (12–100 pt), thumbLayers, thumbGroups, thumbObjects; OK applies them (kept with the UI state)",
+        "{} open the Layers panel's Panel Options: dialog `layersPanelOptions`, fields layersOnly, locateSelected (Locate Selected Objects, off by default: when the last selected object changes outside the panel, on the canvas or by a command, the panel opens the layers and groups around it and scrolls to its row, as after layer.locate, without highlighting the row; when Show Layers Only, a search or the filter leaves the object without a row, the panel opens no rows for it and scrolls as with the option off; a change made during a drag is located when the drag ends), rowSize (small|medium|large|other), otherSize (12–100 pt), thumbLayers, thumbGroups, thumbObjects; OK applies them (kept with the UI state)",
     ),
     (
         "ui.layersExpand",
