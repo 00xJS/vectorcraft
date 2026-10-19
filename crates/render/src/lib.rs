@@ -2528,3 +2528,5 @@ mod tests_setup;
 mod tests_strokegradient;
 #[cfg(test)]
 mod tests_tileedge;
+#[cfg(test)]
+mod tests_viewraster;
