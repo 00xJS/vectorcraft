@@ -177,6 +177,16 @@ mod tests {
         }
     }
 
+    /// Appearance (effects) and Pathfinder both lived in the icon column; they used the same
+    /// overlapping-squares motif (storytold/vectorcraft#2681).
+    #[test]
+    fn appearance_panel_icon_is_not_the_pathfinder_icon() {
+        let appearance = String::from_utf8_lossy(include_bytes!("../../../assets/icons/dc-appearance.svg"));
+        let pathfinder = String::from_utf8_lossy(include_bytes!("../../../assets/icons/dc-pathfinder.svg"));
+        assert_ne!(appearance.as_bytes(), pathfinder.as_bytes());
+        assert!(appearance.contains("<circle") && !pathfinder.contains("<circle"), "appearance should read as a list, not overlapping squares");
+    }
+
     #[test]
     fn shared_catalog_preserves_fallback_and_tool_aliases() {
         let ImageSource::Bytes { uri, bytes } = source("missing-icon") else { panic!("expected SVG bytes") };
