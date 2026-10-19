@@ -1429,3 +1429,44 @@ fn winding_declared_compound_members_keep_the_final_gradient() {
     let r = read_ok(&format!("{defs}{}", layer(&body.replace("1 D\n", "").replace("0 D\n", ""))));
     assert!(matches!(art(&r.doc)[0].kind, NodeKind::Group { .. }));
 }
+
+/// #779: path guides from Illustrator's `(op) *` operator (AI7 §6.1) import as guide paths.
+#[test]
+fn path_guides_from_the_star_operator() {
+    let line = |x0: f64, y0: f64, x1: f64, y1: f64| format!("{x0} {y0} m\n{x1} {y1} L\n(N) *\n");
+    let body = format!(
+        "{RED}{}f\n{}{}",
+        rect_path(0.0, 0.0, 50.0, 50.0),
+        line(10.0, 20.0, 90.0, 20.0),
+        "(N) *\n15 10 m\n15 80 L\n(N) *\n",
+    );
+    let kids = art(&read_ok(&layer(&body)).doc);
+    assert_eq!(kids.len(), 3);
+    let guides = kids.iter().filter(|n| matches!(n.kind, NodeKind::Path { guide: true, .. })).count();
+    assert_eq!(guides, 2, "the two construction lines are guide paths");
+    assert!(matches!(kids[0].kind, NodeKind::Path { guide: false, .. }));
+    for g in kids.iter().filter(|n| matches!(n.kind, NodeKind::Path { guide: true, .. })) {
+        assert!(g.appearance.items.is_empty(), "an (N) guide is non-printing geometry with no paint");
+    }
+}
+
+/// Legacy version 7 writes `(N) *` before and after the path (§6).
+#[test]
+fn path_guides_wrapped_before_and_after_the_path() {
+    let body = "(N) *\n20 30 m\n80 30 L\n(N) *\n";
+    let kids = art(&read_ok(&layer(body)).doc);
+    assert_eq!(kids.len(), 1);
+    assert!(matches!(kids[0].kind, NodeKind::Path { guide: true, .. }));
+}
+
+/// A stroked guide keeps the stroke for display but stays a guide path.
+#[test]
+fn stroked_path_guides_from_the_star_operator() {
+    let body = "1 w\n0 0 0 1 k\n10 10 m\n90 10 L\n(S) *\n";
+    let kids = art(&read_ok(&layer(body)).doc);
+    assert_eq!(kids.len(), 1);
+    let n = &kids[0];
+    assert!(matches!(n.kind, NodeKind::Path { guide: true, .. }));
+    assert_eq!(n.appearance.items.len(), 1);
+    assert!(matches!(n.appearance.items[0], AppearanceItem::Stroke(_)));
+}
