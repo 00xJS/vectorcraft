@@ -487,12 +487,17 @@ pub fn caret_horizontal(layout: &TextLayout, byte: usize, right: bool) -> usize 
     caret_horizontal_filtered(layout, byte, right, |_| true)
 }
 
-/// Like [`caret_horizontal`], but exclude glyph stops inside a grapheme of `text`.
+/// Like [`caret_horizontal`], but exclude glyph stops and line edges inside a grapheme of `text`.
 pub fn caret_horizontal_cluster(layout: &TextLayout, text: &str, byte: usize, right: bool) -> usize {
     use unicode_segmentation::GraphemeCursor;
-    caret_horizontal_filtered(layout, byte, right, |b| {
-        text.is_char_boundary(b) && GraphemeCursor::new(b, text.len(), true).is_boundary(text, 0).unwrap_or(false)
-    })
+    let valid = |b| text.is_char_boundary(b) && GraphemeCursor::new(b, text.len(), true).is_boundary(text, 0).unwrap_or(false);
+    let to = caret_horizontal_filtered(layout, byte, right, valid);
+    if to == byte || valid(to) {
+        return to;
+    }
+    // Wrapping can split a grapheme; normalize only the fallback in its logical direction.
+    let Some(line) = layout.lines.get(layout.line_of(byte)) else { return byte };
+    if right != line.rtl { edit::next_cluster(text, to) } else { edit::prev_cluster(text, to) }
 }
 
 fn caret_horizontal_filtered(layout: &TextLayout, byte: usize, right: bool, valid: impl Fn(usize) -> bool) -> usize {
