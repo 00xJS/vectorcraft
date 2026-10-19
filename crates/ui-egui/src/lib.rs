@@ -398,6 +398,8 @@ pub struct VectorcraftApp {
     pub titlebar_inset: f32,
     /// Last applied effect (Effect → Apply Last Effect).
     pub last_effect: Option<(String, serde_json::Value)>,
+    /// Last confirmed Warp Options (bend, distortion, orientation) for the next new warp dialog.
+    pub last_warp: Option<serde_json::Value>,
     /// Commands run through [`Self::run`] so far: the native menu bar reads its rows again when it
     /// moves ([`native_menu::sync`]).
     run_count: u64,
@@ -542,6 +544,7 @@ impl VectorcraftApp {
             perf: Perf::default(),
             titlebar_inset: 0.0,
             last_effect: None,
+            last_warp: None,
             run_count: 0,
             clipboard_out: None,
             clipboard_published: None,
