@@ -108,6 +108,23 @@ fn evaluates_live(n: &Node) -> bool {
     is_live(n) || (is_container(n) && to_members && !effects::has_pathfinder(n) && subtree_has_live(n))
 }
 
+/// Can the art [`Renderer::fx_art`] makes for `n` change while `n` stays the same, other than
+/// through live objects it evaluates? It can when `n` holds type (laid out in the fonts installed),
+/// a symbol instance (made from its symbol's art), or an object with a 3D effect or a color
+/// adjustment (shaded or recolored through the color settings), in it or in the opacity masks of
+/// the objects in it.
+fn reads_outside(n: &Node) -> bool {
+    let mut reads = false;
+    n.walk(&mut |c| {
+        reads |= matches!(c.kind, NodeKind::Text(_) | NodeKind::SymbolInstance { .. })
+            || effects::has_revolve(c)
+            || effects::has_solid(c)
+            || effects::has_adjustment(c)
+            || c.extras().mask.as_ref().is_some_and(|m| reads_outside(&m.art))
+    });
+    reads
+}
+
 /// What [`Renderer::raster_fx`] paints effects around.
 struct Content<'a> {
     /// The object the effects belong to (cached shadows are checked against it).
@@ -1358,8 +1375,9 @@ impl Renderer {
     /// as their evaluated art (groups and layers: [`effects::evaluate_container`], keeping their
     /// knockout setting), recoloured by the colour adjustments in it ([`Self::adjusted_art`]);
     /// without the object's transparency and effects (a path keeps its geometry effects). Art that
-    /// is made from live objects it evaluated ([`evaluates_live`]) is kept only while the inputs of
-    /// their evaluation stay the same ([`Self::live_found`]).
+    /// is made from live objects it evaluated ([`evaluates_live`]), or from type, symbol art or
+    /// colors shaded through the color settings ([`reads_outside`]), is kept only while what it
+    /// reads from outside `a` stays the same ([`Self::live_found`]).
     fn fx_art(&mut self, doc: &vectorcraft_doc::Document, a: &Arc<Node>, cache: bool) -> Arc<Node> {
         let key = Arc::as_ptr(a) as usize;
         let mut kept = None;
@@ -1372,7 +1390,7 @@ impl Renderer {
                 Some(was) => kept = Some((art.clone(), was.0)),
             }
         }
-        let found = (kept.is_some() || (cache && evaluates_live(a))).then(|| self.live_found(doc, a));
+        let found = (kept.is_some() || (cache && (evaluates_live(a) || reads_outside(a)))).then(|| self.live_found(doc, a));
         if let Some((art, was)) = kept
             && found.as_ref().is_some_and(|f| f.0 == was)
         {

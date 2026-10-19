@@ -313,8 +313,6 @@ from G14 and the budget run of G15: **~170–270 h** one agent, ~50–80 h wall 
   on 2026-10-13, missed all three render budgets at 20k paths), a spatial index for zoomed-in frames, dirty-region
   rendering, the GPU backend spike (M5). Large-selection edits, cached live effects and Pathfinder Trim, Merge,
   Crop and Outline landed in #1173.
-- **Not redrawn:** the canvas keeps drawing these objects as they were:
-  in the web build, type with a geometry effect keeps a substitute font's outlines after its own font has loaded.
 - **Estimate:** 15–25 h (the budget run and fixes block beta).
 
 ## G16 Localization: the three missing key languages
