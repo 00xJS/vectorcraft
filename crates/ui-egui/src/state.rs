@@ -422,6 +422,9 @@ pub struct UiState {
     /// Current workspace (Window → Workspace).
     #[serde(default = "default_workspace")]
     pub workspace: String,
+    /// Workspace before Preferences › Devices › Enable Touch Workspace switched to Touch (#394).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub touch_workspace_restore: Option<String>,
     /// User-saved workspaces (New Workspace…).
     #[serde(default)]
     pub custom_workspaces: Vec<crate::workspaces::Workspace>,
@@ -824,6 +827,7 @@ impl Default for UiState {
             shortcut_overrides: Default::default(),
             shortcut_set: default_shortcut_set(),
             workspace: default_workspace(),
+            touch_workspace_restore: None,
             custom_workspaces: vec![],
             recent_files: vec![],
             recent_fonts: vec![],

@@ -39,7 +39,11 @@ pub fn open(app: &mut VectorcraftApp, category: Option<&str>) {
 pub fn confirm(app: &mut VectorcraftApp) -> Result<Value, String> {
     let Some(d) = app.ui.dialog.clone() else { return Err("no dialog open".into()) };
     let values: Map<String, Value> = d.fields.iter().filter(|(k, _)| !k.starts_with("__")).map(|(k, v)| (k.clone(), v.clone())).collect();
+    let touch_ws = values.get("touchWorkspace").and_then(Value::as_bool);
     app.run("prefs.set", json!({ "values": values }))?;
+    if touch_ws.is_some() {
+        crate::workspaces::sync_touch_workspace(app, app.touch_screen);
+    }
     app.ui.view.smart_guides = d.fields.get("__smartGuides").and_then(Value::as_bool).unwrap_or(app.ui.view.smart_guides);
     app.ui.view.snap_to_grid = d.fields.get("__snapToGrid").and_then(Value::as_bool).unwrap_or(app.ui.view.snap_to_grid);
     app.ui.task_bar = d.fields.get("__taskBar").and_then(Value::as_bool).unwrap_or(app.ui.task_bar);
@@ -148,6 +152,11 @@ pub fn apply_runtime(app: &mut VectorcraftApp, ctx: &egui::Context) {
     let z = app.session.prefs.ui_scaling.clamp(0.75, 2.0) as f32;
     if (ctx.zoom_factor() - z).abs() > 1e-3 {
         ctx.set_zoom_factor(z);
+    }
+    let touch = ctx.input(|i| i.has_touch_screen());
+    if touch != app.touch_screen {
+        app.touch_screen = touch;
+        crate::workspaces::sync_touch_workspace(app, touch);
     }
 }
 
