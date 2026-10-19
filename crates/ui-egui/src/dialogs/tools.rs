@@ -19,7 +19,13 @@ pub fn open_tool_dialog(app: &mut VectorcraftApp, kind: &str, p: Value) {
         // The grids: the tool's stored options (divider counts and skews, switches) at the default size.
         "rectangularGrid" | "polarGrid" => {
             let mut fields = app.session.tool_options_of(kind);
-            for (key, value) in [("x", json!(x)), ("y", json!(y)), ("width", json!("100 pt")), ("height", json!("100 pt"))] {
+            for (key, value) in [
+                ("x", json!(x)),
+                ("y", json!(y)),
+                ("width", json!("100 pt")),
+                ("height", json!("100 pt")),
+                ("reference", json!(0)),
+            ] {
                 fields[key] = value;
             }
             Dialog::new(kind, fields)
