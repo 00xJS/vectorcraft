@@ -7206,11 +7206,12 @@ mod tests {
         let b = pos2(150.0, 120.0);
         let mut first = false;
         let mut second = false;
-        let mut out = ctx.run_ui(egui::RawInput { screen_rect: Some(rect), events: vec![egui::Event::PointerMoved(a)], ..Default::default() }, |ui| {
-            let pointer = ui.input(|i| i.pointer.clone());
-            first = tool_drag_moved(ui, &xf, a, &pointer);
-            second = tool_drag_moved(ui, &xf, a, &pointer);
-        });
+        let mut out =
+            ctx.run_ui(egui::RawInput { screen_rect: Some(rect), events: vec![egui::Event::PointerMoved(a)], ..Default::default() }, |ui| {
+                let pointer = ui.input(|i| i.pointer.clone());
+                first = tool_drag_moved(ui, &xf, a, &pointer);
+                second = tool_drag_moved(ui, &xf, a, &pointer);
+            });
         out.textures_delta.clear();
         assert!(first, "the first drag sample at a position runs");
         assert!(!second, "the same position without a delta is not sent again");
