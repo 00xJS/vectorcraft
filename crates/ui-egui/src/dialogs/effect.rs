@@ -154,7 +154,7 @@ fn body(app: &mut VectorcraftApp, ui: &mut egui::Ui, d: &mut Dialog) -> bool {
     }
     // Plug-in effects get fields from their parameter schema; colour adjustments their sliders.
     let changed = match vectorcraft_plugins::effect::installed(&id) {
-        Some(plugin) => form::schema_fields(ui, d, &plugin.manifest().params),
+        Some(plugin) => form::schema_fields(app, ui, d, plugin.manifest()),
         None if vectorcraft_effects::is_adjustment(&id) => adjust_fields(ui, d),
         None if id == GLASS => glass_fields(app, ui, d),
         None if id == TRANSFORM => transform_fields(ui, d, app.session.general_unit()),
@@ -336,7 +336,7 @@ pub(super) fn own_choices(effect: &str, key: &str, cmyk: bool) -> Option<Vec<(&'
 /// of these lists.
 pub(crate) fn shown_choices(effect: &str, key: &str, params: &Map<String, Value>, cmyk: bool) -> Option<Vec<(String, String)>> {
     if let Some(plugin) = vectorcraft_plugins::effect::installed(effect) {
-        return plugin.manifest().params.iter().find(|(k, _)| k == key).and_then(|(_, spec)| match spec {
+        return plugin.manifest().param(key).and_then(|p| match &p.spec {
             vectorcraft_plugins::ParamSpec::Choice { options, .. } => Some(options.iter().map(|o| (o.clone(), o.clone())).collect()),
             _ => None,
         });

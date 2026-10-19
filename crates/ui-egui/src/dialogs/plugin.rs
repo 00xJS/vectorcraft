@@ -115,7 +115,7 @@ fn params(d: &Dialog) -> Value {
 
 fn body(app: &mut VectorcraftApp, ui: &mut egui::Ui, d: &mut Dialog) -> bool {
     let Some(plugin) = described(ui, d) else { return true };
-    form::schema_fields(ui, d, &plugin.manifest().params);
+    form::schema_fields(app, ui, d, plugin.manifest());
     let (label, p) = (d.str("__label"), params(d));
     form::preview(app, ui, d, &label, CMD, p);
     false
@@ -146,9 +146,9 @@ pub fn open_export(app: &mut VectorcraftApp, plugin: &Plugin, export: Value) {
     app.ui.dialog = Some(Dialog { kind: EXPORT_KIND.into(), fields });
 }
 
-fn export_body(_: &mut VectorcraftApp, ui: &mut egui::Ui, d: &mut Dialog) -> bool {
+fn export_body(app: &mut VectorcraftApp, ui: &mut egui::Ui, d: &mut Dialog) -> bool {
     let Some(plugin) = described(ui, d) else { return true };
-    form::schema_fields(ui, d, &plugin.manifest().params);
+    form::schema_fields(app, ui, d, plugin.manifest());
     false
 }
 

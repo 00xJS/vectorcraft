@@ -522,7 +522,7 @@ fn given_headings_are_shown_as_they_are() {
 struct PluginIntField {
     ctx: egui::Context,
     d: Dialog,
-    specs: Vec<(String, vectorcraft_plugins::ParamSpec)>,
+    m: vectorcraft_plugins::Manifest,
     pos: egui::Pos2,
 }
 
@@ -531,8 +531,17 @@ impl PluginIntField {
         let ctx = egui::Context::default();
         theme::install_fonts(&ctx);
         theme::apply(&ctx, Default::default());
-        let specs = vec![("seed".into(), vectorcraft_plugins::ParamSpec::Int { min, max, default: 0 })];
-        let mut f = PluginIntField { ctx, d: Dialog::new(plugin::KIND, json!({ "seed": start })), specs, pos: egui::Pos2::ZERO };
+        let m = vectorcraft_plugins::Manifest {
+            id: "test.seed".into(),
+            name: "Seed".into(),
+            version: String::new(),
+            kind: vectorcraft_plugins::Kind::Filter,
+            description: String::new(),
+            author: String::new(),
+            params: vec![("seed".into(), vectorcraft_plugins::ParamSpec::Int { min, max, default: 0 }.into())],
+            extensions: Vec::new(),
+        };
+        let mut f = PluginIntField { ctx, d: Dialog::new(plugin::KIND, json!({ "seed": start })), m, pos: egui::Pos2::ZERO };
         fn number_rect(shape: &egui::Shape, text: &str) -> Option<egui::Rect> {
             match shape {
                 egui::Shape::Text(t) if t.galley.text() == text => Some(t.visual_bounding_rect()),
@@ -546,9 +555,9 @@ impl PluginIntField {
     }
 
     fn run(&mut self, events: Vec<egui::Event>) -> egui::FullOutput {
-        let (d, specs) = (&mut self.d, &self.specs);
+        let (d, m) = (&mut self.d, &self.m);
         let mut out = self.ctx.run_ui(egui::RawInput { events, ..Default::default() }, |ui| {
-            form::schema_fields(ui, d, specs);
+            form::schema_rows(ui, d, m);
         });
         out.textures_delta.clear();
         out
