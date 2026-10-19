@@ -1448,12 +1448,7 @@ fn winding_declared_compound_members_keep_the_final_gradient() {
 #[test]
 fn path_guides_from_the_star_operator() {
     let line = |x0: f64, y0: f64, x1: f64, y1: f64| format!("{x0} {y0} m\n{x1} {y1} L\n(N) *\n");
-    let body = format!(
-        "{RED}{}f\n{}{}",
-        rect_path(0.0, 0.0, 50.0, 50.0),
-        line(10.0, 20.0, 90.0, 20.0),
-        "(N) *\n15 10 m\n15 80 L\n(N) *\n",
-    );
+    let body = format!("{RED}{}f\n{}{}", rect_path(0.0, 0.0, 50.0, 50.0), line(10.0, 20.0, 90.0, 20.0), "(N) *\n15 10 m\n15 80 L\n(N) *\n",);
     let kids = art(&read_ok(&layer(&body)).doc);
     assert_eq!(kids.len(), 3);
     let guides = kids.iter().filter(|n| matches!(n.kind, NodeKind::Path { guide: true, .. })).count();
