@@ -486,7 +486,7 @@ pub fn effect_catalog() -> Vec<EffectInfo> {
             "sketch.graphicPen",
             "Graphic Pen…",
             SKETCH,
-            "{strokeLength: pt 1..15 (5; the longest ink stroke), lightDarkBalance: 0..100 (50; more black when higher), strokeDirection: \"rightDiagonal\"|\"horizontal\"|\"leftDiagonal\"|\"vertical\" (\"rightDiagonal\")} redraws the object in fine linear black ink on white paper, with strokes denser in darker areas. Control names from public helpx; numeric defaults and ranges are an unverified visual match to Illustrator.",
+            "{strokeLength: pt 1..15 (5; the longest ink stroke), lightDarkBalance: 0..100 (50; more black when higher), strokeDirection: \"rightDiagonal\"|\"horizontal\"|\"leftDiagonal\"|\"vertical\" (\"rightDiagonal\")} redraws the object in fine linear black ink on white paper, with strokes denser in darker areas. Control names and ranges follow the public documentation; the defaults are unverified.",
             json!({"strokeLength": 5.0, "lightDarkBalance": 50.0, "strokeDirection": "rightDiagonal"}),
         ),
         r(
