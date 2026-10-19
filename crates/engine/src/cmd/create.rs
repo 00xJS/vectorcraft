@@ -214,6 +214,7 @@ fn rectangle(s: &mut Session, p: &Value) -> Result<Value> {
         h: r.height(),
         radii: [radius; 4],
         kinds: Default::default(),
+        radii_relative: false,
         xf: rect_transform(r, p, "shape.rectangle")?,
     };
     let label = if radius > 0.0 { "Rounded Rectangle" } else { "Rectangle" };
@@ -232,7 +233,7 @@ fn polygon(s: &mut Session, p: &Value) -> Result<Value> {
     let sides = p.get("sides").and_then(Value::as_u64).unwrap_or(6).clamp(3, 1000) as u32;
     let rot = f64_or(p, "rotation", 0.0);
     let xf = Affine::translate(c.to_vec2()) * Affine::rotate(rot.to_radians());
-    let live = LiveShape::Polygon { radius: r, sides, xf, radii: vec![], kinds: vec![] };
+    let live = LiveShape::Polygon { radius: r, sides, xf, radii: vec![], kinds: vec![], radii_relative: false };
     add_art(s, "Polygon", path_kind(live.to_path(), Some(live)), None)
 }
 

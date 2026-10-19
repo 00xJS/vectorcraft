@@ -664,12 +664,15 @@ fn corners(path: &PathData, live: Option<&LiveShape>) -> Option<Corners> {
     // Sizes and radii in document units.
     match live.map(LiveShape::folded).as_ref() {
         // CSS rounds corners only: an inverted round or chamfered corner has no border radius.
-        Some(LiveShape::Rectangle { w, h, radii, kinds, xf })
+        Some(LiveShape::Rectangle { w, h, radii, kinds, radii_relative, xf })
             if upright(xf) && radii.iter().zip(kinds).all(|(r, k)| *r <= 0.0 || *k == CornerKind::Round) =>
         {
             // The radii as drawn: no two neighbours' cuts add up to more than their side, so CSS
             // draws them as they are.
-            let radii = shapes::fitted_corner_radii(*w, *h, *radii);
+            let base = shapes::rectangle(vectorcraft_geom::Rect::new(0.0, 0.0, *w, *h));
+            let resolved = vectorcraft_doc::corners::resolve_stored_radii(&base, radii, *radii_relative);
+            let stored = std::array::from_fn(|i| resolved.get(i).copied().unwrap_or(0.0));
+            let radii = shapes::fitted_corner_radii(*w, *h, stored);
             if radii.iter().all(|r| *r <= 0.0) {
                 Some(Corners::Square)
             } else if radii.iter().all(|r| (r - radii[0]).abs() < 1e-9) {
