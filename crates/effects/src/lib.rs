@@ -364,6 +364,13 @@ pub fn effect_catalog() -> Vec<EffectInfo> {
             json!({"glowSize": 5.0, "glowBrightness": 15.0, "color": "#4da6ff"}),
         ),
         r(
+            "artistic.plasticWrap",
+            "Plastic Wrap…",
+            ARTISTIC,
+            "{highlightStrength: 0..20 (20; brighter specular highlights), detail: 0..15 (12; finer wrinkles in document space), smoothness: 1..15 (15; softer folds)} coats the object in shiny plastic, keeping its coverage. highlightStrength 0 leaves the art unchanged. Original visual approximation; chosen VectorCraft defaults.",
+            json!({"highlightStrength": 20.0, "detail": 12.0, "smoothness": 15.0}),
+        ),
+        r(
             "artistic.posterEdges",
             "Poster Edges…",
             ARTISTIC,

@@ -1,9 +1,9 @@
-//! Photoshop-style raster effects (Effect › Artistic › Cutout, Film Grain, Neon Glow and Poster Edges, Blur › Radial Blur and Smart Blur, Brush Strokes ›
-//! Accented Edges, Angled Strokes, Crosshatch, Dark Strokes, Graphic Pen, Ink Outlines, Spatter,
-//! Sprayed Strokes
-//! and Sumi-e, Distort › Diffuse Glow, Glass and Ocean Ripple, Pixelate › Color Halftone,
-//! Crystallize, Mezzotint and Pointillize, Sharpen › Unsharp Mask, Sketch › Chalk & Charcoal, Graphic
-//! Pen, Halftone Pattern and Reticulation, Stylize ›
+//! Photoshop-style raster effects (Effect › Artistic › Cutout, Film Grain, Neon Glow, Plastic Wrap and
+//! Poster Edges, Blur › Radial Blur and Smart Blur, Brush Strokes › Accented Edges, Angled Strokes,
+//! Crosshatch, Dark Strokes, Ink Outlines, Spatter, Sprayed Strokes and Sumi-e, Distort › Diffuse
+//! Glow, Glass and Ocean Ripple, Pixelate › Color Halftone, Crystallize, Mezzotint and Pointillize,
+//! Sharpen › Unsharp Mask, Sketch › Chalk & Charcoal, Graphic Pen, Halftone Pattern and
+//! Reticulation, Stylize ›
 //! Glowing Edges, Texture
 //! › Craquelure, Grain, Mosaic Tiles, Patchwork, Stained Glass and Texturizer, and Video ›
 //! De-Interlace and NTSC Colors): filters over premultiplied RGBA8 pixels.
@@ -41,10 +41,11 @@ pub use sketch::{HALFTONE_TYPES, HalftonePattern};
 pub use texture::{GRAIN_TYPES, Grain, LIGHT_DIRECTIONS, Light, TEXTURES, Texture};
 
 /// The Photoshop-style effect ids (all raster effects, see [`crate::is_raster`]).
-pub const PIXEL_EFFECTS: [&str; 35] = [
+pub const PIXEL_EFFECTS: [&str; 36] = [
     "artistic.cutout",
     "artistic.filmGrain",
     "artistic.neonGlow",
+    "artistic.plasticWrap",
     "artistic.posterEdges",
     "blur.radial",
     "blur.smart",
@@ -93,6 +94,9 @@ pub enum PixelFx {
     /// light areas (`size` above 0) or the dark ones (below 0), spread by |`size`| (-24..24), as
     /// strong as `brightness` (0..50).
     NeonGlow { size: f64, brightness: f64, colour: [f32; 3] },
+    /// Artistic › Plastic Wrap: specular highlights as strong as `highlight` (0..20) on a relief
+    /// wrinkled by `detail` (0..15) and softened by `smoothness` (1..15).
+    PlasticWrap { highlight: f64, detail: f64, smoothness: f64 },
     /// Artistic › Poster Edges: colours posterized to `posterization` + 2 levels (0..6) with black
     /// lines on the edges, as thick as `thickness` (0..10) and as dark as `intensity` (0..10).
     PosterEdges { thickness: f64, intensity: f64, posterization: f64 },
@@ -255,6 +259,11 @@ pub(crate) fn parse(id: &str, p: &Value) -> Option<PixelFx> {
             grain: num(p, "grain", 4.0).clamp(0.0, 20.0),
             highlight: num(p, "highlightArea", 0.0).clamp(0.0, 20.0),
             intensity: num(p, "intensity", 10.0).clamp(0.0, 10.0),
+        },
+        "artistic.plasticWrap" => PixelFx::PlasticWrap {
+            highlight: num(p, "highlightStrength", 20.0).clamp(0.0, 20.0),
+            detail: num(p, "detail", 12.0).clamp(0.0, 15.0),
+            smoothness: num(p, "smoothness", 15.0).clamp(1.0, 15.0),
         },
         "blur.radial" => PixelFx::RadialBlur {
             amount: num(p, "amount", 10.0).clamp(1.0, 100.0),
@@ -428,6 +437,7 @@ impl PixelFx {
             PixelFx::FilmGrain { .. }
             | PixelFx::Cutout { .. }
             | PixelFx::NeonGlow { .. }
+            | PixelFx::PlasticWrap { .. }
             | PixelFx::PosterEdges { .. }
             | PixelFx::ColorHalftone { .. }
             | PixelFx::Mezzotint { .. }
@@ -478,6 +488,7 @@ impl PixelFx {
             PixelFx::Cutout { .. } => None,
             // The softened tones around the pixel.
             PixelFx::NeonGlow { size, .. } => Some(3.0 * artistic::glow_spread(size)),
+            PixelFx::PlasticWrap { smoothness, .. } => Some(artistic::plastic_reach(smoothness)),
             // The edges' lines, spread round them.
             PixelFx::PosterEdges { thickness, .. } => Some(3.0 * (0.3 + 0.25 * thickness) + 1.0),
             // The dots' points, and the softened colour around them.
@@ -502,6 +513,7 @@ impl PixelFx {
         match *self {
             PixelFx::Cutout { levels, simplicity, fidelity } => artistic::cutout(px, w, h, space, levels, simplicity, fidelity),
             PixelFx::FilmGrain { grain, highlight, intensity } => artistic::film_grain(px, w, h, space, grain, highlight, intensity),
+            PixelFx::PlasticWrap { highlight, detail, smoothness } => artistic::plastic_wrap(px, w, h, space, highlight, detail, smoothness),
             PixelFx::NeonGlow { size, brightness, colour } => artistic::neon_glow(px, w, h, space, size, brightness, colour),
             PixelFx::PosterEdges { thickness, intensity, posterization } => {
                 artistic::poster_edges(px, w, h, space, thickness, intensity, posterization)

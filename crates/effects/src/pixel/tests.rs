@@ -2271,7 +2271,15 @@ fn artistic_params_take_defaults_and_stay_in_range() {
         fx("artistic.neonGlow", json!({"glowSize": -1e308, "glowBrightness": 80, "color": "#ff0000"})),
         PixelFx::NeonGlow { size: -24.0, brightness: 50.0, colour: [1.0, 0.0, 0.0] }
     );
-    for id in ["artistic.cutout", "artistic.neonGlow", "artistic.posterEdges"] {
+    assert_eq!(
+        fx("artistic.plasticWrap", json!({})),
+        PixelFx::PlasticWrap { highlight: 20.0, detail: 12.0, smoothness: 15.0 }
+    );
+    assert_eq!(
+        fx("artistic.plasticWrap", json!({"highlightStrength": -1, "detail": 99, "smoothness": 0})),
+        PixelFx::PlasticWrap { highlight: 0.0, detail: 15.0, smoothness: 1.0 }
+    );
+    for id in ["artistic.cutout", "artistic.neonGlow", "artistic.plasticWrap", "artistic.posterEdges"] {
         assert_eq!(fx(id, json!({})).outset(Rect::new(0.0, 0.0, 40.0, 30.0)), 0.0, "{id} keeps the object's shape");
     }
 }
@@ -2289,6 +2297,7 @@ fn artistic_filters_leave_invalid_coordinate_spaces_alone() {
     let filters = [
         PixelFx::Cutout { levels: 4.0, simplicity: 4.0, fidelity: 2.0 },
         PixelFx::NeonGlow { size: 5.0, brightness: 15.0, colour },
+        PixelFx::PlasticWrap { highlight: 20.0, detail: 12.0, smoothness: 15.0 },
         PixelFx::PosterEdges { thickness: 2.0, intensity: 1.0, posterization: 2.0 },
     ];
     for f in &filters {
@@ -2317,6 +2326,25 @@ fn artistic_filters_leave_invalid_coordinate_spaces_alone() {
         }
     }
     assert!(changed.is_empty(), "directly constructed non-finite parameters and invalid spaces are harmless: {changed:?}");
+}
+
+#[test]
+fn plastic_wrap_adds_specular_highlights_and_keeps_coverage() {
+    let (w, h) = (48, 32);
+    let src = image(w, h, |x, y| grey((((x + y) * 5) % 200 + 30) as u8));
+    let mut none = src.clone();
+    fx("artistic.plasticWrap", json!({"highlightStrength": 0})).apply(&mut none, w, h, &space(w, h));
+    assert_eq!(none, src);
+    let mut out = src.clone();
+    fx("artistic.plasticWrap", json!({})).apply(&mut out, w, h, &space(w, h));
+    assert!(out != src, "defaults brighten some pixels");
+    assert!(out.as_chunks::<4>().0.iter().zip(src.as_chunks::<4>().0).all(|(o, s)| o[3] == s[3]));
+    let mut weak = src.clone();
+    let mut strong = src.clone();
+    fx("artistic.plasticWrap", json!({"highlightStrength": 4})).apply(&mut weak, w, h, &space(w, h));
+    fx("artistic.plasticWrap", json!({"highlightStrength": 20})).apply(&mut strong, w, h, &space(w, h));
+    let lift = |a: &[u8], b: &[u8]| a.as_chunks::<4>().0.iter().zip(b.as_chunks::<4>().0).map(|(o, s)| i32::from(o[0]) - i32::from(s[0])).sum::<i32>();
+    assert!(lift(&strong, &src) > lift(&weak, &src), "stronger highlights lift more");
 }
 
 #[test]
