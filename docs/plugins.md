@@ -161,7 +161,9 @@ parameters uses `label`, `unit`, `help` and `visibleWhen`, and lists the paramet
 order (bottom first): the selected ones and those inside selected groups and layers; hidden, locked, guide and clipping
 paths are left out, and so are other kinds of object (type, images, symbols, live blends…), which a filter never
 touches. With nothing selected the list is empty (a generator then adds its own objects). A live effect gets one
-object, holding only geometry (`type`, `path`, `fillRule`, `bounds`).
+object: its geometry (`type`, `path`, `fillRule`, `bounds`) and its `fills` and `strokes`, as a filter gets them (hosts
+from before these give geometry only). The paints are read only: an effect may draw as wide as a stroke or use a
+fill's colour to decide its shape, but it changes only the geometry.
 
 An **exporter** gets something else: the document as a native `.vectorcraft` file's JSON, as `document.save` writes it
 but without indentation (the format is documented in [`crates/format/src/lib.rs`](../crates/format/src/lib.rs)). That is every layer, object,
@@ -209,7 +211,9 @@ type and `blob` but without their data, which follows the JSON in a saved file; 
 
 `mode` is `"filter"`, `"effect"` or `"export"`; `bounds` the selection's geometric bounds (a live effect: the reference
 box of the effect, the object's bounds or those of the previous effect's result); `artboard` (filters) the artboard
-under the selection's centre, else the first. An export's `_context` is `{"mode": "export", "extension": "plt",
+under the selection's centre, else the first. A live effect's `item` says where it sits: `"object"` (one of the
+object's effects), or `{"fill": i}` / `{"stroke": i}` (in the own effects of the object's `i`th fill or stroke,
+counted from the bottom as in `fills` and `strokes`). An export's `_context` is `{"mode": "export", "extension": "plt",
 "name": "Poster"}` instead: the extension of the file being written (one the exporter lists) and its name without the
 extension (the document's name when the export is not given a path), which some formats keep in their header.
 
@@ -257,13 +261,15 @@ The crate is not a workspace member. Any language that targets core WebAssembly 
 WAT…), as long as the module has no imports: in Rust, `std` on `wasm32-unknown-unknown` is fine as long as it never
 touches WASI. `vectorcraft_plugins::wat::module` is the skeleton of a plug-in in WebAssembly text, which the tests
 build their plug-ins from; `wat::echo_exporter` is an exporter whose file is its input or its parameters (with a
-base64 encoder written out in WebAssembly text), which the tests read back what the host hands a plug-in with.
+base64 encoder written out in WebAssembly text), which the tests read back what the host hands a plug-in with, and
+`wat::when_given` a plug-in whose output depends on whether its input or parameters hold a given text, which shows in a
+live effect's geometry.
 
 ## Performance
 
 The interpreter costs roughly 10–100× native speed per instruction. Filters handle a selection in one call, so a
 plug-in that parses and writes JSON with `serde_json` takes milliseconds for hundreds of paths. Live effects run once
-per change of their input (results are cached), not per frame.
+per change of their input, parameters or paints (results are cached), not per frame.
 
 ## Not in v1
 
