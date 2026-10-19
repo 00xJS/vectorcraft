@@ -45,24 +45,9 @@ pub const OPTIONS: &[FormatOption] = &[
         default: "\"layerNames\"",
         description: "layerNames (readable ids from names) | minimal (only referenced ids) | unique (content-hashed prefix on every id and class)",
     },
-    FormatOption {
-        name: "decimals",
-        ty: "integer",
-        default: "3",
-        description: "coordinate precision, 1–7 decimal places",
-    },
-    FormatOption {
-        name: "minify",
-        ty: "boolean",
-        default: "false",
-        description: "no XML declaration, indentation or line breaks",
-    },
-    FormatOption {
-        name: "responsive",
-        ty: "boolean",
-        default: "false",
-        description: "no width/height: the SVG scales to its container",
-    },
+    FormatOption { name: "decimals", ty: "integer", default: "3", description: "coordinate precision, 1–7 decimal places" },
+    FormatOption { name: "minify", ty: "boolean", default: "false", description: "no XML declaration, indentation or line breaks" },
+    FormatOption { name: "responsive", ty: "boolean", default: "false", description: "no width/height: the SVG scales to its container" },
     FormatOption {
         name: "preserveEditing",
         ty: "boolean",
@@ -148,20 +133,12 @@ pub fn options_map(p: &Value) -> Result<Map<String, Value>, String> {
 fn plan(doc: &Document, p: &Value) -> Result<(ExportOptions, Vec<Option<usize>>, bool), String> {
     let mut m = options_map(p)?;
     // Fonts: unless chosen, Document Setup → Type → Export decides (appearance = outlines).
-    if !m.contains_key("outlineText")
-        && doc.setup.export_text == vectorcraft_doc::ExportText::Appearance
-    {
+    if !m.contains_key("outlineText") && doc.setup.export_text == vectorcraft_doc::ExportText::Appearance {
         m.insert("outlineText".into(), Value::Bool(true));
     }
-    let picks: Map<String, Value> = ARTBOARD_PARAMS
-        .iter()
-        .chain(["useArtboards"].iter())
-        .filter_map(|k| m.remove_entry(*k))
-        .collect();
-    let boards =
-        Boards::deserialize(Value::Object(picks)).map_err(|e| format!("SVG options: {e}"))?;
-    let opts =
-        ExportOptions::deserialize(Value::Object(m)).map_err(|e| format!("SVG options: {e}"))?;
+    let picks: Map<String, Value> = ARTBOARD_PARAMS.iter().chain(["useArtboards"].iter()).filter_map(|k| m.remove_entry(*k)).collect();
+    let boards = Boards::deserialize(Value::Object(picks)).map_err(|e| format!("SVG options: {e}"))?;
+    let opts = ExportOptions::deserialize(Value::Object(m)).map_err(|e| format!("SVG options: {e}"))?;
     opts.check().map_err(|e| format!("SVG options: {e}"))?;
     let n = doc.artboards.len();
     if n == 0 || boards.use_artboards == Some(false) {
@@ -169,15 +146,7 @@ fn plan(doc: &Document, p: &Value) -> Result<(ExportOptions, Vec<Option<usize>>,
     }
     let named = boards.pick.resolve(n)?;
     let chosen = named.is_some();
-    Ok((
-        opts,
-        named
-            .unwrap_or_else(|| vec![0])
-            .into_iter()
-            .map(Some)
-            .collect(),
-        chosen,
-    ))
+    Ok((opts, named.unwrap_or_else(|| vec![0]).into_iter().map(Some).collect(), chosen))
 }
 
 /// What a save of `doc` as SVG (format `label`) with options `p` loses of several artboards: the
@@ -187,9 +156,7 @@ pub(super) fn lost_artboards_warning(doc: &Document, p: &Value, label: &str) -> 
     let n = doc.artboards.len();
     let preserved = plan(doc, p).is_ok_and(|(opts, ..)| opts.preserve_editing);
     (n > 1 && !preserved).then(|| {
-        format!(
-            "{label} keeps 1 of the document's {n} artboards: the file reopens with one. Turn on Preserve Editing Capabilities to keep them all."
-        )
+        format!("{label} keeps 1 of the document's {n} artboards: the file reopens with one. Turn on Preserve Editing Capabilities to keep them all.")
     })
 }
 
@@ -198,44 +165,23 @@ pub(super) fn lost_artboards_warning(doc: &Document, p: &Value, label: &str) -> 
 pub(super) fn encode(doc: &Document, p: &Value, compressed: bool) -> Result<Encoded, String> {
     let (opts, boards, chosen) = plan(doc, p)?;
     // Preserve editing embeds the native document (once, shared by every file).
-    let native = opts
-        .preserve_editing
-        .then(|| vectorcraft_format::save(doc, false));
+    let native = opts.preserve_editing.then(|| vectorcraft_format::save(doc, false));
     // Draw linked files as vectors when available, or their previews with a warning. Keep
     // that preparation out of the native attachment so missing links remain relinkable.
     let (full, warnings) = crate::cmd::place::document::full_documents(doc);
     let doc = &*full;
     // A chosen artboard's file holds the art over it; otherwise the file holds all of it.
-    let regions: Option<Vec<vectorcraft_geom::Rect>> = chosen.then(|| {
-        boards
-            .iter()
-            .flatten()
-            .filter_map(|b| doc.artboards.get(*b))
-            .map(|a| a.rect)
-            .collect()
-    });
+    let regions: Option<Vec<vectorcraft_geom::Rect>> =
+        chosen.then(|| boards.iter().flatten().filter_map(|b| doc.artboards.get(*b)).map(|a| a.rect).collect());
     let overflow = crate::cmd::fonts::export_overflow_warning(doc, &doc.layers, regions.as_deref());
     // SVG has no filters for the Photoshop-style effects: their objects go in as images.
     let flat = crate::cmd::rasterfx::flatten_pixel_effects(doc);
     let doc = flat.as_ref().unwrap_or(doc);
-    let mut enc = Encoded {
-        warnings,
-        ..Encoded::default()
-    };
+    let mut enc = Encoded { warnings, ..Encoded::default() };
     for artboard in boards {
         // A chosen artboard's file holds the art over it (#550).
-        let over = artboard
-            .filter(|_| chosen)
-            .and_then(|b| doc.artboards.get(b))
-            .map(|a| super::export::art_over(doc, a.rect));
-        let mut out = vectorcraft_svg::export_full(
-            over.as_ref().unwrap_or(doc),
-            &ExportOptions {
-                artboard,
-                ..opts.clone()
-            },
-            native.as_deref(),
-        );
+        let over = artboard.filter(|_| chosen).and_then(|b| doc.artboards.get(b)).map(|a| super::export::art_over(doc, a.rect));
+        let mut out = vectorcraft_svg::export_full(over.as_ref().unwrap_or(doc), &ExportOptions { artboard, ..opts.clone() }, native.as_deref());
         let bytes = out.take_bytes();
         for l in out.linked {
             if !enc.linked.iter().any(|e| e.name == l.name) {
@@ -247,14 +193,7 @@ pub(super) fn encode(doc: &Document, p: &Value, compressed: bool) -> Result<Enco
                 enc.warnings.push(w);
             }
         }
-        enc.files.push((
-            artboard,
-            if compressed {
-                vectorcraft_svg::compress_bytes(&bytes)
-            } else {
-                bytes
-            },
-        ));
+        enc.files.push((artboard, if compressed { vectorcraft_svg::compress_bytes(&bytes) } else { bytes }));
     }
     // Live type names its fonts; outlines and embedded fonts are the fallback font's.
     if (opts.outline_text || opts.embed_fonts)
