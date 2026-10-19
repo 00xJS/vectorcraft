@@ -249,6 +249,8 @@ re-measure of the panels added since. Slider rails show on Medium Dark (#1808, #
 
 - [x] Native saves restore Show Transparency Grid (#1968), without dirtying the document or adding an undo step.
 
+- [x] Compact Color Picker with a distinct header, stacked actions and aligned input groups. #2008; translated action widths, visible warnings, stable mode switching and vertical scrolling in narrow windows; real egui events and two UI scales covered; German and enlarged English renders reviewed locally. Scores unchanged
+
 ## Revision history
 
 | Date | Change | Summary |
@@ -257,6 +259,7 @@ re-measure of the panels added since. Slider rails show on Medium Dark (#1808, #
 | 2026-10-19 | minor | Status messages and readouts use stable responsive allocations sized for localized labels and ordinary coordinates. Contributor original-file acceptance confirmed; scores and estimates unchanged. |
 | 2026-10-19 | minor | Cached canvas dimensions match the renderer limit before cache-key creation, view construction and worker submission. Regression coverage; scores and estimates unchanged. |
 | 2026-10-19 | minor | Cached canvas reprojection preserves scale during resize, rotation and DPI changes. Contributor original-file acceptance confirmed; scores and estimates unchanged. |
+| 2026-10-19 | minor | Color Picker layout (#2008): compact controls, centered header, stacked actions and aligned inputs; screen-reader channel values, current shared button names and styling, screen sampler and model-by-model Tab order retained. Narrow windows scroll vertically; scores and hours unchanged. |
 | 2026-10-18 | minor | Mirror Repeat shows its axis when selected (#2877): drag the line or center handle to move it, drag an end handle to rotate it (Shift: 45°), Escape cancels and each drag is one undo step. Engine and headless canvas gesture regressions passed; native move, rotation and Escape screenshots reviewed. Formatting, Clippy, WASM and repository checks passed; the undo label reuses translated Repeat Options. (#2877) Scores and hours unchanged. |
 | 2026-10-18 | minor | Bounding-box handles take priority where a selected Mirror Repeat axis crosses them: the Top handle scales the repeat, while the center still moves it and the ends still rotate it. A headless canvas regression confirms height changes while width stays fixed; scores and hours unchanged. |
 | 2026-10-17 | minor | Blend spine Anchor Point conversions, selection/stacking priority and Shift regression coverage (#2544); scores and hours unchanged. Windows native canvas checks and screenshots reviewed in PR #2643. |
