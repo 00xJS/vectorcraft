@@ -380,6 +380,11 @@ impl ToolContext<'_> {
     pub fn offset_label(&self, dx: f64, dy: f64) -> String {
         format!("dX: {}\ndY: {}", self.len(dx), self.len(dy))
     }
+    /// A segment label while drawing: distance, angle and offsets between two points.
+    pub fn segment_measure_label(&self, a: Point, b: Point) -> String {
+        let (dist, ang, dx, dy) = xform::measure(a, b);
+        format!("D: {}\nAngle: {ang:.1}°\n{}", self.len(dist), self.offset_label(dx, dy))
+    }
     /// What Snap to Grid snaps to: the grid's subdivisions (or its lines without any).
     pub fn grid_step(&self) -> f64 {
         self.doc.grid.spacing / self.doc.grid.subdivisions.max(1) as f64
