@@ -1969,6 +1969,26 @@ fn open_anchor_delete_preserves_curves_appearance_and_history() {
 }
 
 #[test]
+fn closed_anchor_delete_then_join_closes_with_a_line() {
+    let mut s = session();
+    let data = "M100 100C120 60 180 60 200 100C220 140 280 140 300 100C320 60 380 60 400 100C420 140 480 140 500 100C500 200 100 200 100 100Z";
+    let id = NodeId(s.execute("path.create", &json!({"d": data})).unwrap()["id"].as_u64().unwrap());
+    s.execute("select.anchors", &json!({"id": id.0, "anchors": [[0, 2]]})).unwrap();
+    s.execute("path.deleteAnchors", &json!({})).unwrap();
+    let result = path(&s, id);
+    assert_eq!(result.subpaths.len(), 1);
+    let sp = &result.subpaths[0];
+    assert!(!sp.closed);
+    assert!(!sp.anchors.first().unwrap().has_in() && !sp.anchors.last().unwrap().has_out(), "dangling handles are cleared");
+    s.execute("path.join", &json!({"ids": [id.0]})).unwrap();
+    let joined = path(&s, id);
+    let sp = &joined.subpaths[0];
+    assert!(sp.closed);
+    let closing = sp.segment(sp.segment_count() - 1);
+    assert!(closing.p1 == closing.p0 && closing.p2 == closing.p3, "closing segment is a line: {closing:?}");
+}
+
+#[test]
 fn open_anchor_delete_does_not_change_explicit_remove_anchors() {
     for command in ["path.removeAnchors", "path.removeAnchor"] {
         let mut s = session();

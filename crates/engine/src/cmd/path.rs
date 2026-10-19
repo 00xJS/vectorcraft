@@ -602,7 +602,6 @@ fn without_anchors(sp: SubPath, removed: &BTreeSet<usize>) -> Vec<SubPath> {
     if gone.is_empty() {
         return vec![sp];
     }
-    let keep = |anchors: Vec<Anchor>| (anchors.len() >= 2).then(|| SubPath::new(anchors, false));
     let mut runs: Vec<Vec<Anchor>> = vec![];
     let mut run = vec![];
     for (i, anchor) in sp.anchors.into_iter().enumerate() {
@@ -630,7 +629,7 @@ fn without_anchors(sp: SubPath, removed: &BTreeSet<usize>) -> Vec<SubPath> {
     } else if !run.is_empty() {
         runs.push(run);
     }
-    runs.into_iter().filter_map(keep).collect()
+    runs.into_iter().filter_map(open_run).collect()
 }
 
 /// Remove connections, splitting open/closed contours into their surviving open runs.
