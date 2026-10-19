@@ -818,6 +818,8 @@ Moved from the ROADMAP's "Shipped so far" on 2026-10-10. Update it when a featur
 
 - **Plug-in effects after a plug-in changes:** when a plug-in is installed for the first time, installed again or removed (`plugin.install`, `plugin.reload`, `plugin.remove`, File › Open of a `.wasm` file, the Additional Plug-ins Folder preference), the next frame the canvas draws uses the plug-ins then installed for objects with a plug-in effect and their raster effects, for the blends, envelopes and repeats that show such objects, and for pattern tiles and symbol instances whose art holds one.
 
+- **Effect art after font and color settings changes:** when a font becomes available (fonts added, Refresh Font List, `text.rescanFonts`), the next frame the canvas draws outlines type in it where a geometry effect reshapes the type, a group that holds it or a symbol instance whose art holds it. When the color settings change (Edit › Color Settings, `edit.colorSettings`), the next frame shades objects with Revolve, Extrude & Bevel, Inflate or Rotate, and recolors objects and groups with a color adjustment, through the new settings.
+
 - **Full font names (#1258):** OpenType name ID 4 identifies its face alongside family/legacy/PostScript names, including localized names, for loaded fonts, cataloged files and Missing Fonts searches. Synthetic name-table regressions cover full names distinct from their PostScript name, real-family precedence and variable fonts' default faces. Windows font-service activation remains unverified; scores and hours are unchanged.
 ### Corpus integrity evidence
 
