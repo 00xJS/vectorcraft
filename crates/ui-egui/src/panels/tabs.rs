@@ -592,10 +592,12 @@ mod tests {
         let from = position(&app);
         drag_on_ruler(&ctx, &mut app, from, 41.6, true);
         assert_eq!(position(&app), 40.0);
-        // In an inches document the ticks are a tenth of an inch (7.2 pt) apart.
+        // In an inches document the ticks divide the inch in half, not in ten (#2827), so the
+        // nearest one to 100 pt is 99 pt -- 1 3/8 in, an eighth of an inch from 1 1/4.
         app.session.execute("document.setUnits", &json!({"units": "in"})).unwrap();
         drag_on_ruler(&ctx, &mut app, 40.0, 100.0, true);
-        assert!((position(&app) - 100.8).abs() < 1e-9, "{}", position(&app));
+        assert!((position(&app) - 99.0).abs() < 1e-9, "{}", position(&app));
+        assert_eq!((position(&app) / 72.0 * 8.0).round(), position(&app) / 72.0 * 8.0, "a binary fraction of an inch");
     }
 
     /// One frame of the panel menu with `events` → the rows' texts and where they are painted.
