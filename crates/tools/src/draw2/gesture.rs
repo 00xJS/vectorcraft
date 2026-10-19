@@ -50,6 +50,9 @@ pub struct GestureTool {
     /// Where the Pencil's stroke began, before its start snapped, and how far snapping moved it:
     /// the samples near the start take part of that move ([`ease`]).
     start_shift: (Point, Vec2),
+    /// Where the pointer was for the last sample taken, before easing moved it: the steps between
+    /// samples, and whether the release adds one, are measured from there.
+    last_raw: Point,
 }
 
 /// How far, in multiples of the move, the samples near a snapped end follow it (#2958).
@@ -97,6 +100,7 @@ impl GestureTool {
             close_within: 15.0,
             snap: DrawSnap::default(),
             start_shift: (Point::ZERO, Vec2::ZERO),
+            last_raw: Point::ZERO,
         }
     }
 
@@ -252,6 +256,7 @@ impl Tool for GestureTool {
                 // A path continued starts at its end, one redrawn on it; a new one where it snaps.
                 let start = if self.snaps() && self.extend.is_none() && self.redraw.is_none() { self.snap.press(cx, p, &[], None) } else { p };
                 self.start_shift = (p, start - p);
+                self.last_raw = p;
                 self.clear();
                 self.push(start, ev.pressure);
                 vec![]
@@ -264,10 +269,11 @@ impl Tool for GestureTool {
                     // Where the stroke would end: shown, taken on release.
                     self.snap.drag(cx, p, None);
                 }
-                if self.points.last().is_some_and(|l| l.distance(p) < cx.tol(1.0)) {
+                if !self.points.is_empty() && self.last_raw.distance(p) < cx.tol(1.0) {
                     return vec![];
                 }
                 let (from, shift) = self.start_shift;
+                self.last_raw = p;
                 self.push(ease(p, from, shift), ev.pressure);
                 if !self.draws_path() {
                     return vec![];
@@ -287,7 +293,7 @@ impl Tool for GestureTool {
                 let end = if self.snaps() { self.snap.drag(cx, p, None) } else { p };
                 self.snap.clear();
                 // Was the last step away from where the button went up (before the samples bend)?
-                let away = self.points.last().is_some_and(|l| l.distance(p) >= cx.tol(1.0));
+                let away = !self.points.is_empty() && self.last_raw.distance(p) >= cx.tol(1.0);
                 // The samples before a snapped end bend to it too (the start's already did).
                 let end_shift = end - p;
                 if let Some((_, rest)) = self.points.split_first_mut() {
@@ -463,6 +469,24 @@ mod tests {
         // Halfway along, the hand's points as drawn.
         let mid = out[out.len() / 2];
         assert!((mid.1 - y).abs() < 1e-9, "{mid:?}");
+    }
+
+    /// #3013 review: a stroke shorter than the start's easing has its last sample moved by it; a
+    /// release where that sample was drawn still adds no step back to the hand's position.
+    #[test]
+    fn a_short_eased_stroke_ends_without_a_step_back() {
+        let (mut d, _) = doc_with_rect();
+        d.grid = vectorcraft_doc::GridPrefs { spacing: 100.0, subdivisions: 1 };
+        let s = Selection::default();
+        let p = paint();
+        let cx = ToolContext { snap_to_grid: true, ..cx(&d, &s, &p) };
+        let mut t = GestureTool::new("pencil");
+        // Pressed at x 51 (snaps to 100), dragged and released at 200, on a gridline.
+        let acts = drag(&mut t, &cx, &[(51.0, 100.0), (200.0, 100.0), (200.0, 100.0)], Mods::default());
+        let Some(Action::Preview(_, v)) = acts.last().and_then(|a| a.first()) else { panic!("{acts:?}") };
+        let xs: Vec<f64> = v["points"].as_array().unwrap().iter().map(|q| q[0].as_f64().unwrap()).collect();
+        assert!(xs.windows(2).all(|w| w[1] > w[0]), "no step back: {xs:?}");
+        assert_eq!((xs.first().copied(), xs.last().copied()), (Some(100.0), Some(200.0)), "{xs:?}");
     }
 
     /// #852: the Paintbrush sends each point's pen pressure; a mouse (always fully pressed) and
