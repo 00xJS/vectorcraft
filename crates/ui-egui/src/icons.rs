@@ -184,10 +184,7 @@ mod tests {
         let appearance = String::from_utf8_lossy(include_bytes!("../../../assets/icons/dc-appearance.svg"));
         let pathfinder = String::from_utf8_lossy(include_bytes!("../../../assets/icons/dc-pathfinder.svg"));
         assert_ne!(appearance.as_bytes(), pathfinder.as_bytes());
-        assert!(
-            appearance.contains("<circle") && !pathfinder.contains("<circle"),
-            "appearance should read as a list, not overlapping squares"
-        );
+        assert!(appearance.contains("<circle") && !pathfinder.contains("<circle"), "appearance should read as a list, not overlapping squares");
     }
 
     #[test]
