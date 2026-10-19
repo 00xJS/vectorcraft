@@ -5,10 +5,10 @@ use serde_json::{Value, json};
 use vectorcraft_geom::{Point, Rect};
 
 use super::{DialogSpec, form, run_and_close};
-use crate::panels::transform::artboard_rect;
-use crate::widgets;
 use crate::VectorcraftApp;
+use crate::panels::transform::artboard_rect;
 use crate::state::Dialog;
+use crate::widgets;
 
 pub(super) const SPEC: DialogSpec = DialogSpec { heading: |d| title(&d.kind).into(), body, confirm, ..DialogSpec::FORM };
 
