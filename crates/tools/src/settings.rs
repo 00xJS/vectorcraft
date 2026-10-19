@@ -31,6 +31,8 @@ const ROWS: &[Row] = &[
     (&["rectangularGrid"], None, &["rows", "columns", "rowSkew", "columnSkew", "frame", "fill"]),
     (&["polarGrid"], None, &["concentric", "radial", "concentricSkew", "radialSkew", "compound", "fill"]),
     (&["pencil", "paintbrush"], None, &["fidelity", "fill", "keepSelected", "editWithin", "closeWithin"]),
+    // Pencil Tool Options' Alt key toggles to Smooth Tool (the Paintbrush has no such option).
+    (&["pencil"], None, &["altSmooth"]),
     (&["smooth"], None, &["fidelity"]),
     (&["blobBrush", "eraser"], None, &["size"]),
     (&["blobBrush"], None, &["keepSelected", "mergeOnlySelection"]),
