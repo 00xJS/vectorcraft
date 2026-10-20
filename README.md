@@ -163,6 +163,8 @@ exposes to agents, and exported by VectorCraft's own renderer. The source files 
 
 ## Quick start
 
+For posters and sewing patterns, see [Print a large poster across multiple pages](docs/print-tiling.md).
+
 ```sh
 git clone https://github.com/storytold/vectorcraft
 cd vectorcraft
