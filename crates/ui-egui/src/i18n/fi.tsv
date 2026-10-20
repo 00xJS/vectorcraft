@@ -4076,6 +4076,25 @@ imageTrace	Outline	Ääriviiva
 @msg	a PostScript error ({name} in `{op}`: {at})	tapahtui PostScript-virhe ({name} kohdassa `{op}`: {at})
 @msg	a PostScript error ({name} in `{op}`: {at}), in {procs}	tapahtui PostScript-virhe ({name} kohdassa `{op}`: {at}), proseduurissa {procs}
 @msg	a PostScript error ({name})	tapahtui PostScript-virhe ({name})
+@msg	a PostScript error ({name} in `{op}`; {meaning})	tapahtui PostScript-virhe ({name} kohdassa `{op}`; {meaning})
+@msg	a PostScript error ({name} in `{op}`; {meaning}), in {procs}	tapahtui PostScript-virhe ({name} kohdassa `{op}`; {meaning}), proseduurissa {procs}
+@msg	a PostScript error ({name} in `{op}`: {at}; {meaning})	tapahtui PostScript-virhe ({name} kohdassa `{op}`: {at}; {meaning})
+@msg	a PostScript error ({name} in `{op}`: {at}; {meaning}), in {procs}	tapahtui PostScript-virhe ({name} kohdassa `{op}`: {at}; {meaning}), proseduurissa {procs}
+@msg	a PostScript error ({name}; {meaning})	tapahtui PostScript-virhe ({name}; {meaning})
+@msg	the program ends a dictionary it didn't begin	ohjelma päättää sanakirjan, jota se ei aloittanut
+@msg	the program opens a file, which the reader can't do	ohjelma avaa tiedoston, mitä PostScript-lukija ei osaa
+@msg	the program restores a saved state that was already restored	ohjelma palauttaa tallennetun tilan, joka on jo palautettu
+@msg	data the program reads is damaged or cut short, or the program asks for a position in a file that has none	ohjelman lukemat tiedot ovat vioittuneet tai katkenneet, tai ohjelma pyytää sijaintia tiedostossa, jolla sitä ei ole
+@msg	the program goes past one of the reader's limits	ohjelma ylittää yhden PostScript-lukijan rajoista
+@msg	the path has no point to continue from	polulla ei ole pistettä, josta jatkaa
+@msg	a value is outside the range the operator takes	arvo on operaattorin hyväksymän alueen ulkopuolella
+@msg	the operator needs more values than the stack holds	operaattori tarvitsee enemmän arvoja kuin pinossa on
+@msg	part of the program isn't valid PostScript text	osa ohjelmasta ei ole kelvollista PostScript-tekstiä
+@msg	a value has the wrong type for the operator	arvo on väärää tyyppiä operaattorille
+@msg	the program runs, deletes or renames a file, which the reader can't do	ohjelma suorittaa, poistaa tai nimeää uudelleen tiedoston, mitä PostScript-lukija ei osaa
+@msg	the program asks for a resource that isn't defined	ohjelma pyytää resurssia, jota ei ole määritetty
+@msg	a calculation has no result, as in a division by zero	laskutoimituksella ei ole tulosta, kuten nollalla jaettaessa
+@msg	the operator looks for a mark on the stack and finds none	operaattori etsii pinosta merkkiä eikä löydä sitä
 @msg	a bitmap is empty	bittikartta on tyhjä
 @msg	a bitmap is too large to read	bittikartta on liian suuri luettavaksi
 @msg	a colour index is 0 to {_1}, not {n}	väri-indeksi on väliltä 0–{_1}, ei {n}

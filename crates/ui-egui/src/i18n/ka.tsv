@@ -3650,6 +3650,25 @@ effect	Regular	ჩვეულებრივი
 @msg	a PostScript error ({name} in `{op}`: {at})	PostScript-ის შეცდომა ({name} `{op}`-ში: {at})
 @msg	a PostScript error ({name} in `{op}`: {at}), in {procs}	PostScript-ის შეცდომა ({name} `{op}`-ში: {at}), {procs}-ში
 @msg	a PostScript error ({name})	PostScript-ის შეცდომა ({name})
+@msg	a PostScript error ({name} in `{op}`; {meaning})	PostScript-ის შეცდომა ({name} `{op}`-ში; {meaning})
+@msg	a PostScript error ({name} in `{op}`; {meaning}), in {procs}	PostScript-ის შეცდომა ({name} `{op}`-ში; {meaning}), {procs}-ში
+@msg	a PostScript error ({name} in `{op}`: {at}; {meaning})	PostScript-ის შეცდომა ({name} `{op}`-ში: {at}; {meaning})
+@msg	a PostScript error ({name} in `{op}`: {at}; {meaning}), in {procs}	PostScript-ის შეცდომა ({name} `{op}`-ში: {at}; {meaning}), {procs}-ში
+@msg	a PostScript error ({name}; {meaning})	PostScript-ის შეცდომა ({name}; {meaning})
+@msg	the program ends a dictionary it didn't begin	პროგრამა ასრულებს ლექსიკონს, რომელიც მას არ დაუწყია
+@msg	the program opens a file, which the reader can't do	პროგრამა ფაილს ხსნის, რაც PostScript-ის წამკითხველს არ შეუძლია
+@msg	the program restores a saved state that was already restored	პროგრამა აღადგენს შენახულ მდგომარეობას, რომელიც უკვე აღდგენილია
+@msg	data the program reads is damaged or cut short, or the program asks for a position in a file that has none	მონაცემები, რომლებსაც პროგრამა კითხულობს, დაზიანებული ან შეწყვეტილია, ან პროგრამა ითხოვს პოზიციას ფაილში, რომელსაც პოზიცია არ აქვს
+@msg	the program goes past one of the reader's limits	პროგრამა PostScript-ის წამკითხველის ერთ-ერთ ზღვარს სცდება
+@msg	the path has no point to continue from	ტრაექტორიას არ აქვს წერტილი, საიდანაც გაგრძელდება
+@msg	a value is outside the range the operator takes	მნიშვნელობა ოპერატორის მისაღებ დიაპაზონს სცდება
+@msg	the operator needs more values than the stack holds	ოპერატორს სტეკში არსებულზე მეტი მნიშვნელობა სჭირდება
+@msg	part of the program isn't valid PostScript text	პროგრამის ნაწილი სწორი PostScript ტექსტი არ არის
+@msg	a value has the wrong type for the operator	მნიშვნელობას ოპერატორისთვის არასწორი ტიპი აქვს
+@msg	the program runs, deletes or renames a file, which the reader can't do	პროგრამა ფაილს უშვებს, შლის ან გადაარქმევს, რაც PostScript-ის წამკითხველს არ შეუძლია
+@msg	the program asks for a resource that isn't defined	პროგრამა ითხოვს რესურსს, რომელიც განსაზღვრული არ არის
+@msg	a calculation has no result, as in a division by zero	გამოთვლას შედეგი არ აქვს, მაგალითად ნულზე გაყოფისას
+@msg	the operator looks for a mark on the stack and finds none	ოპერატორი სტეკზე ნიშნულს ეძებს და ვერ პოულობს
 @msg	a bitmap is empty	ბიტმაპი ცარიელია
 @msg	a bitmap is too large to read	ბიტმაპი წასაკითხად ზედმეტად დიდია
 @msg	a colour index is 0 to {_1}, not {n}	ფერის ინდექსი არის 0-დან {_1}-მდე და არა {n}

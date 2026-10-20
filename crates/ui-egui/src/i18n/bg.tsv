@@ -3771,6 +3771,25 @@ axis	Both	И двете
 @msg	a PostScript error ({name} in `{op}`: {at})	PostScript грешка ({name} в `{op}`: {at})
 @msg	a PostScript error ({name} in `{op}`: {at}), in {procs}	PostScript грешка ({name} в `{op}`: {at}), в {procs}
 @msg	a PostScript error ({name})	PostScript грешка ({name})
+@msg	a PostScript error ({name} in `{op}`; {meaning})	PostScript грешка ({name} в `{op}`; {meaning})
+@msg	a PostScript error ({name} in `{op}`; {meaning}), in {procs}	PostScript грешка ({name} в `{op}`; {meaning}), в {procs}
+@msg	a PostScript error ({name} in `{op}`: {at}; {meaning})	PostScript грешка ({name} в `{op}`: {at}; {meaning})
+@msg	a PostScript error ({name} in `{op}`: {at}; {meaning}), in {procs}	PostScript грешка ({name} в `{op}`: {at}; {meaning}), в {procs}
+@msg	a PostScript error ({name}; {meaning})	PostScript грешка ({name}; {meaning})
+@msg	the program ends a dictionary it didn't begin	програмата затваря речник, който не е отворила
+@msg	the program opens a file, which the reader can't do	програмата отваря файл, което четецът не може да прави
+@msg	the program restores a saved state that was already restored	програмата възстановява запазено състояние, което вече е възстановено
+@msg	data the program reads is damaged or cut short, or the program asks for a position in a file that has none	данните, които програмата чете, са повредени или прекъснати, или програмата иска позиция във файл, който няма такава
+@msg	the program goes past one of the reader's limits	програмата надхвърля едно от ограниченията на четеца
+@msg	the path has no point to continue from	пътят няма точка, от която да продължи
+@msg	a value is outside the range the operator takes	стойност е извън обхвата, който операторът приема
+@msg	the operator needs more values than the stack holds	операторът се нуждае от повече стойности, отколкото има в стека
+@msg	part of the program isn't valid PostScript text	част от програмата не е валиден текст на PostScript
+@msg	a value has the wrong type for the operator	стойност е от неправилен тип за оператора
+@msg	the program runs, deletes or renames a file, which the reader can't do	програмата изпълнява, изтрива или преименува файл, което четецът не може да прави
+@msg	the program asks for a resource that isn't defined	програмата изисква ресурс, който не е дефиниран
+@msg	a calculation has no result, as in a division by zero	изчисление няма резултат, както при деление на нула
+@msg	the operator looks for a mark on the stack and finds none	операторът търси маркер в стека и не намира такъв
 @msg	a bitmap is empty	битовата карта е празна
 @msg	a bitmap is too large to read	битовата карта е твърде голяма за четене
 @msg	a colour index is 0 to {_1}, not {n}	цветовият индекс е от 0 до {_1}, а не {n}

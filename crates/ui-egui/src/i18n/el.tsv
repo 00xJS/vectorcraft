@@ -3828,6 +3828,25 @@ theme	Appearance	Εμφάνιση
 @msg	a PostScript error ({name} in `{op}`: {at})	σφάλμα PostScript ({name} στην εντολή `{op}`: {at})
 @msg	a PostScript error ({name} in `{op}`: {at}), in {procs}	σφάλμα PostScript ({name} στην εντολή `{op}`: {at}), στις διαδικασίες {procs}
 @msg	a PostScript error ({name})	σφάλμα PostScript ({name})
+@msg	a PostScript error ({name} in `{op}`; {meaning})	σφάλμα PostScript ({name} στην εντολή `{op}`; {meaning})
+@msg	a PostScript error ({name} in `{op}`; {meaning}), in {procs}	σφάλμα PostScript ({name} στην εντολή `{op}`; {meaning}), στις διαδικασίες {procs}
+@msg	a PostScript error ({name} in `{op}`: {at}; {meaning})	σφάλμα PostScript ({name} στην εντολή `{op}`: {at}; {meaning})
+@msg	a PostScript error ({name} in `{op}`: {at}; {meaning}), in {procs}	σφάλμα PostScript ({name} στην εντολή `{op}`: {at}; {meaning}), στις διαδικασίες {procs}
+@msg	a PostScript error ({name}; {meaning})	σφάλμα PostScript ({name}; {meaning})
+@msg	the program ends a dictionary it didn't begin	το πρόγραμμα κλείνει ένα λεξικό που δεν άνοιξε
+@msg	the program opens a file, which the reader can't do	το πρόγραμμα ανοίγει ένα αρχείο, κάτι που ο αναγνώστης δεν μπορεί να κάνει
+@msg	the program restores a saved state that was already restored	το πρόγραμμα επαναφέρει μια αποθηκευμένη κατάσταση που έχει ήδη επαναφερθεί
+@msg	data the program reads is damaged or cut short, or the program asks for a position in a file that has none	τα δεδομένα που διαβάζει το πρόγραμμα είναι κατεστραμμένα ή περικομμένα, ή το πρόγραμμα ζητά θέση σε ένα αρχείο που δεν έχει θέση
+@msg	the program goes past one of the reader's limits	το πρόγραμμα ξεπερνά ένα από τα όρια του αναγνώστη
+@msg	the path has no point to continue from	η διαδρομή δεν έχει σημείο από το οποίο να συνεχίσει
+@msg	a value is outside the range the operator takes	μια τιμή είναι εκτός του εύρους που δέχεται η εντολή
+@msg	the operator needs more values than the stack holds	η εντολή χρειάζεται περισσότερες τιμές από όσες έχει η στοίβα
+@msg	part of the program isn't valid PostScript text	μέρος του προγράμματος δεν είναι έγκυρο κείμενο PostScript
+@msg	a value has the wrong type for the operator	μια τιμή έχει λάθος τύπο για την εντολή
+@msg	the program runs, deletes or renames a file, which the reader can't do	το πρόγραμμα εκτελεί, διαγράφει ή μετονομάζει ένα αρχείο, κάτι που ο αναγνώστης δεν μπορεί να κάνει
+@msg	the program asks for a resource that isn't defined	το πρόγραμμα ζητά έναν πόρο που δεν έχει οριστεί
+@msg	a calculation has no result, as in a division by zero	ένας υπολογισμός δεν έχει αποτέλεσμα, όπως σε μια διαίρεση με το μηδέν
+@msg	the operator looks for a mark on the stack and finds none	η εντολή αναζητά ένα σημάδι στη στοίβα και δεν βρίσκει κανένα
 @msg	a bitmap is empty	το bitmap είναι κενό
 @msg	a bitmap is too large to read	το bitmap είναι πολύ μεγάλο για ανάγνωση
 @msg	a colour index is 0 to {_1}, not {n}	ο δείκτης χρώματος πρέπει να είναι από 0 έως {_1}, όχι {n}

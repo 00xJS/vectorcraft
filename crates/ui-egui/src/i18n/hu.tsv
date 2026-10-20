@@ -4391,6 +4391,25 @@ imageTrace	Outline	Körvonal
 @msg	a PostScript error ({name} in `{op}`: {at})	PostScript-hiba ({name}, itt: `{op}`: {at})
 @msg	a PostScript error ({name} in `{op}`: {at}), in {procs}	PostScript-hiba ({name}, itt: `{op}`: {at}), eljárás: {procs}
 @msg	a PostScript error ({name})	PostScript-hiba ({name})
+@msg	a PostScript error ({name} in `{op}`; {meaning})	PostScript-hiba ({name}, itt: `{op}`; {meaning})
+@msg	a PostScript error ({name} in `{op}`; {meaning}), in {procs}	PostScript-hiba ({name}, itt: `{op}`; {meaning}), eljárás: {procs}
+@msg	a PostScript error ({name} in `{op}`: {at}; {meaning})	PostScript-hiba ({name}, itt: `{op}`: {at}; {meaning})
+@msg	a PostScript error ({name} in `{op}`: {at}; {meaning}), in {procs}	PostScript-hiba ({name}, itt: `{op}`: {at}; {meaning}), eljárás: {procs}
+@msg	a PostScript error ({name}; {meaning})	PostScript-hiba ({name}; {meaning})
+@msg	the program ends a dictionary it didn't begin	a program lezár egy szótárt, amelyet nem nyitott meg
+@msg	the program opens a file, which the reader can't do	a program fájlt nyit meg, amire a PostScript-olvasó nem képes
+@msg	the program restores a saved state that was already restored	a program egy már visszaállított mentett állapotot állít vissza
+@msg	data the program reads is damaged or cut short, or the program asks for a position in a file that has none	a program által olvasott adatok sérültek vagy csonkák, vagy a program pozíciót kér egy olyan fájlban, amelynek nincs pozíciója
+@msg	the program goes past one of the reader's limits	a program túllépi a PostScript-olvasó egyik korlátját
+@msg	the path has no point to continue from	az útvonalnak nincs pontja, ahonnan folytatódhatna
+@msg	a value is outside the range the operator takes	egy érték kívül esik az operátor által elfogadott tartományon
+@msg	the operator needs more values than the stack holds	az operátornak több értékre van szüksége, mint amennyi a veremben van
+@msg	part of the program isn't valid PostScript text	a program egy része nem érvényes PostScript-szöveg
+@msg	a value has the wrong type for the operator	egy érték típusa nem megfelelő az operátorhoz
+@msg	the program runs, deletes or renames a file, which the reader can't do	a program fájlt futtat, töröl vagy nevez át, amire a PostScript-olvasó nem képes
+@msg	the program asks for a resource that isn't defined	a program olyan erőforrást kér, amely nincs definiálva
+@msg	a calculation has no result, as in a division by zero	egy számításnak nincs eredménye, például nullával való osztáskor
+@msg	the operator looks for a mark on the stack and finds none	az operátor jelölőt keres a veremben, de nem talál
 @msg	a preset named `{_1}` exists	már van ilyen nevű előbeállítás: `{_1}`
 @msg	a swatch or color group named `{n}` exists	már van ilyen nevű színminta vagy színcsoport: `{n}`
 @msg	a slice size must be a positive number of points	a szelet mérete pozitív pontérték kell legyen

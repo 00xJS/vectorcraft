@@ -552,8 +552,11 @@ pub fn label_or_name(lang: Lang, s: &str, built_in: bool) -> &str {
     if built_in { tr(lang, s) } else { s }
 }
 
-/// How deep [`message`] translates placeholder values that are messages themselves.
-const MESSAGE_DEPTH: usize = 3;
+/// How deep [`message`] translates placeholder values that are messages themselves. The status
+/// bar's line for an EPS file that can't be opened has five levels: `Couldn't open {name}: {e}`,
+/// the loader's `can't open …: {e}` (matched by `{path}: {e}`), the reader's `this PostScript file
+/// can't be read ({why}): …`, `a PostScript error (…; {meaning})` and the meaning.
+const MESSAGE_DEPTH: usize = 5;
 
 /// Translate a status or error message for display (see the module docs). Unknown messages, and
 /// parts of them (file names, numbers, a reason with no entry), stay as they are.

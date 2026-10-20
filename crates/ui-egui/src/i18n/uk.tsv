@@ -3871,6 +3871,25 @@ axis	Both	Обидві
 @msg	a PostScript error ({name} in `{op}`: {at})	помилка PostScript ({name} у `{op}`: {at})
 @msg	a PostScript error ({name} in `{op}`: {at}), in {procs}	помилка PostScript ({name} `{op}`: {at}), {procs}
 @msg	a PostScript error ({name})	помилка PostScript ({name})
+@msg	a PostScript error ({name} in `{op}`; {meaning})	помилка PostScript ({name} у `{op}`; {meaning})
+@msg	a PostScript error ({name} in `{op}`; {meaning}), in {procs}	помилка PostScript ({name} у `{op}`; {meaning}), у {procs}
+@msg	a PostScript error ({name} in `{op}`: {at}; {meaning})	помилка PostScript ({name} у `{op}`: {at}; {meaning})
+@msg	a PostScript error ({name} in `{op}`: {at}; {meaning}), in {procs}	помилка PostScript ({name} у `{op}`: {at}; {meaning}), у {procs}
+@msg	a PostScript error ({name}; {meaning})	помилка PostScript ({name}; {meaning})
+@msg	the program ends a dictionary it didn't begin	програма закриває словник, який вона не відкривала
+@msg	the program opens a file, which the reader can't do	програма відкриває файл, а читач PostScript цього не вміє
+@msg	the program restores a saved state that was already restored	програма відновлює збережений стан, який уже відновлено
+@msg	data the program reads is damaged or cut short, or the program asks for a position in a file that has none	дані, які читає програма, пошкоджені або обірвані, або програма запитує позицію у файлі, який її не має
+@msg	the program goes past one of the reader's limits	програма виходить за одну з меж читача PostScript
+@msg	the path has no point to continue from	контур не має точки, від якої можна продовжити
+@msg	a value is outside the range the operator takes	значення поза діапазоном, який приймає оператор
+@msg	the operator needs more values than the stack holds	операторові потрібно більше значень, ніж є в стеку
+@msg	part of the program isn't valid PostScript text	частина програми не є допустимим текстом PostScript
+@msg	a value has the wrong type for the operator	значення має неправильний тип для оператора
+@msg	the program runs, deletes or renames a file, which the reader can't do	програма запускає, видаляє або перейменовує файл, а читач PostScript цього не вміє
+@msg	the program asks for a resource that isn't defined	програма запитує ресурс, який не визначено
+@msg	a calculation has no result, as in a division by zero	обчислення не має результату, як під час ділення на нуль
+@msg	the operator looks for a mark on the stack and finds none	оператор шукає мітку в стеку й не знаходить її
 @msg	a bitmap is empty	растрове зображення порожнє
 @msg	a bitmap is too large to read	растрове зображення занадто велике для читання
 @msg	a colour index is 0 to {_1}, not {n}	індекс кольору від 0 до {_1}, а не {n}

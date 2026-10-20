@@ -4141,6 +4141,25 @@ swatch	Bright Violet	ビビッドバイオレット
 @msg	a PostScript error ({name} in `{op}`: {at})	PostScript エラー (`{op}` での {name}: {at})
 @msg	a PostScript error ({name} in `{op}`: {at}), in {procs}	{procs} 内の PostScript エラー (`{op}` での {name}: {at})
 @msg	a PostScript error ({name})	PostScript エラー ({name})
+@msg	a PostScript error ({name} in `{op}`; {meaning})	PostScript エラー (`{op}` での {name}、{meaning})
+@msg	a PostScript error ({name} in `{op}`; {meaning}), in {procs}	{procs} 内の PostScript エラー (`{op}` での {name}、{meaning})
+@msg	a PostScript error ({name} in `{op}`: {at}; {meaning})	PostScript エラー (`{op}` での {name}: {at}、{meaning})
+@msg	a PostScript error ({name} in `{op}`: {at}; {meaning}), in {procs}	{procs} 内の PostScript エラー (`{op}` での {name}: {at}、{meaning})
+@msg	a PostScript error ({name}; {meaning})	PostScript エラー ({name}、{meaning})
+@msg	the program ends a dictionary it didn't begin	プログラムが、開始していない辞書を終了しようとしています
+@msg	the program opens a file, which the reader can't do	プログラムがファイルを開こうとしていますが、PostScript 読み込み機能はファイルを開けません
+@msg	the program restores a saved state that was already restored	プログラムが、すでに復元された保存状態を復元しようとしています
+@msg	data the program reads is damaged or cut short, or the program asks for a position in a file that has none	プログラムが読み込むデータが壊れているか途中で切れているか、プログラムが位置を持たないファイルの位置を求めています
+@msg	the program goes past one of the reader's limits	プログラムが PostScript 読み込み機能の制限を超えています
+@msg	the path has no point to continue from	パスに続きを描く起点がありません
+@msg	a value is outside the range the operator takes	値がオペレーターの受け付ける範囲外です
+@msg	the operator needs more values than the stack holds	オペレーターに必要な値がスタックに足りません
+@msg	part of the program isn't valid PostScript text	プログラムの一部が有効な PostScript テキストではありません
+@msg	a value has the wrong type for the operator	値の型がオペレーターに合っていません
+@msg	the program runs, deletes or renames a file, which the reader can't do	プログラムがファイルの実行、削除、名前の変更をしようとしていますが、PostScript 読み込み機能はこれを行えません
+@msg	the program asks for a resource that isn't defined	プログラムが定義されていないリソースを要求しています
+@msg	a calculation has no result, as in a division by zero	ゼロによる除算などで、計算の結果が得られません
+@msg	the operator looks for a mark on the stack and finds none	オペレーターがスタック上のマークを探しましたが、見つかりません
 @msg	it uses `{at}`, which VectorCraft's PostScript reader doesn't know	VectorCraft の PostScript 読み込み機能が対応していない `{at}` を使用しています
 @msg	the file was read up to an error ({why}): what follows it was left out	ファイルはエラーが発生した箇所まで読み込まれました ({why}): それ以降の内容は除外されました
 @msg	this file's PostScript couldn't be read ({why}): {what}	このファイルの PostScript を読み込めませんでした ({why}): {what}

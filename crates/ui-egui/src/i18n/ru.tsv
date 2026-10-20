@@ -3883,6 +3883,25 @@ axis	Both	Оба
 @msg	a PostScript error ({name} in `{op}`: {at})	ошибка PostScript ({name} в `{op}`: {at})
 @msg	a PostScript error ({name} in `{op}`: {at}), in {procs}	ошибка PostScript ({name} в `{op}`: {at}), в {procs}
 @msg	a PostScript error ({name})	ошибка PostScript ({name})
+@msg	a PostScript error ({name} in `{op}`; {meaning})	ошибка PostScript ({name} в `{op}`; {meaning})
+@msg	a PostScript error ({name} in `{op}`; {meaning}), in {procs}	ошибка PostScript ({name} в `{op}`; {meaning}), в {procs}
+@msg	a PostScript error ({name} in `{op}`: {at}; {meaning})	ошибка PostScript ({name} в `{op}`: {at}; {meaning})
+@msg	a PostScript error ({name} in `{op}`: {at}; {meaning}), in {procs}	ошибка PostScript ({name} в `{op}`: {at}; {meaning}), в {procs}
+@msg	a PostScript error ({name}; {meaning})	ошибка PostScript ({name}; {meaning})
+@msg	the program ends a dictionary it didn't begin	программа закрывает словарь, который она не открывала
+@msg	the program opens a file, which the reader can't do	программа открывает файл, а читатель PostScript этого не умеет
+@msg	the program restores a saved state that was already restored	программа восстанавливает сохранённое состояние, которое уже восстановлено
+@msg	data the program reads is damaged or cut short, or the program asks for a position in a file that has none	данные, которые читает программа, повреждены или обрываются, или программа запрашивает позицию в файле, у которого её нет
+@msg	the program goes past one of the reader's limits	программа выходит за один из пределов читателя PostScript
+@msg	the path has no point to continue from	у контура нет точки, от которой можно продолжить
+@msg	a value is outside the range the operator takes	значение вне диапазона, который принимает оператор
+@msg	the operator needs more values than the stack holds	оператору нужно больше значений, чем есть в стеке
+@msg	part of the program isn't valid PostScript text	часть программы не является допустимым текстом PostScript
+@msg	a value has the wrong type for the operator	значение имеет неверный тип для оператора
+@msg	the program runs, deletes or renames a file, which the reader can't do	программа запускает, удаляет или переименовывает файл, а читатель PostScript этого не умеет
+@msg	the program asks for a resource that isn't defined	программа запрашивает ресурс, который не определён
+@msg	a calculation has no result, as in a division by zero	у вычисления нет результата, как при делении на ноль
+@msg	the operator looks for a mark on the stack and finds none	оператор ищет метку в стеке и не находит её
 @msg	a bitmap is empty	растровое изображение пусто
 @msg	a bitmap is too large to read	растровое изображение слишком велико для чтения
 @msg	a colour index is 0 to {_1}, not {n}	индекс цвета от 0 до {_1}, а не {n}

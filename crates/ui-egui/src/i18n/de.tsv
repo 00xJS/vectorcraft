@@ -3785,6 +3785,25 @@ theme	Appearance	Erscheinungsbild
 @msg	a PostScript error ({name} in `{op}`: {at})	ein PostScript-Fehler ({name} in `{op}`: {at})
 @msg	a PostScript error ({name} in `{op}`: {at}), in {procs}	ein PostScript-Fehler ({name} in `{op}`: {at}), in {procs}
 @msg	a PostScript error ({name})	ein PostScript-Fehler ({name})
+@msg	a PostScript error ({name} in `{op}`; {meaning})	ein PostScript-Fehler ({name} in `{op}`; {meaning})
+@msg	a PostScript error ({name} in `{op}`; {meaning}), in {procs}	ein PostScript-Fehler ({name} in `{op}`; {meaning}), in {procs}
+@msg	a PostScript error ({name} in `{op}`: {at}; {meaning})	ein PostScript-Fehler ({name} in `{op}`: {at}; {meaning})
+@msg	a PostScript error ({name} in `{op}`: {at}; {meaning}), in {procs}	ein PostScript-Fehler ({name} in `{op}`: {at}; {meaning}), in {procs}
+@msg	a PostScript error ({name}; {meaning})	ein PostScript-Fehler ({name}; {meaning})
+@msg	the program ends a dictionary it didn't begin	das Programm beendet ein Wörterbuch, das es nicht begonnen hat
+@msg	the program opens a file, which the reader can't do	das Programm öffnet eine Datei, was der PostScript-Leser nicht kann
+@msg	the program restores a saved state that was already restored	das Programm stellt einen gesicherten Zustand wieder her, der bereits wiederhergestellt wurde
+@msg	data the program reads is damaged or cut short, or the program asks for a position in a file that has none	Daten, die das Programm liest, sind beschädigt oder abgeschnitten, oder das Programm fragt nach einer Position in einer Datei, die keine hat
+@msg	the program goes past one of the reader's limits	das Programm überschreitet eine der Grenzen des PostScript-Lesers
+@msg	the path has no point to continue from	der Pfad hat keinen Punkt, an dem er fortgesetzt werden kann
+@msg	a value is outside the range the operator takes	ein Wert liegt außerhalb des Bereichs, den der Operator annimmt
+@msg	the operator needs more values than the stack holds	der Operator braucht mehr Werte, als der Stapel enthält
+@msg	part of the program isn't valid PostScript text	ein Teil des Programms ist kein gültiger PostScript-Text
+@msg	a value has the wrong type for the operator	ein Wert hat den falschen Typ für den Operator
+@msg	the program runs, deletes or renames a file, which the reader can't do	das Programm führt eine Datei aus, löscht sie oder benennt sie um, was der PostScript-Leser nicht kann
+@msg	the program asks for a resource that isn't defined	das Programm fordert eine Ressource an, die nicht definiert ist
+@msg	a calculation has no result, as in a division by zero	eine Berechnung hat kein Ergebnis, etwa bei einer Division durch null
+@msg	the operator looks for a mark on the stack and finds none	der Operator sucht eine Marke auf dem Stapel und findet keine
 @msg	a bitmap is empty	eine Bitmap ist leer
 @msg	a bitmap is too large to read	eine Bitmap ist zu groß, um gelesen zu werden
 @msg	a colour index is 0 to {_1}, not {n}	ein Farbindex liegt zwischen 0 und {_1}, nicht {n}

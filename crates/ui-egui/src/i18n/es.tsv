@@ -3848,6 +3848,25 @@ axis	Both	Ambos
 @msg	a PostScript error ({name} in `{op}`: {at})	un error de PostScript ({name} en `{op}`: {at})
 @msg	a PostScript error ({name} in `{op}`: {at}), in {procs}	un error de PostScript ({name} en `{op}`: {at}), en {procs}
 @msg	a PostScript error ({name})	un error de PostScript ({name})
+@msg	a PostScript error ({name} in `{op}`; {meaning})	un error de PostScript ({name} en `{op}`; {meaning})
+@msg	a PostScript error ({name} in `{op}`; {meaning}), in {procs}	un error de PostScript ({name} en `{op}`; {meaning}), en {procs}
+@msg	a PostScript error ({name} in `{op}`: {at}; {meaning})	un error de PostScript ({name} en `{op}`: {at}; {meaning})
+@msg	a PostScript error ({name} in `{op}`: {at}; {meaning}), in {procs}	un error de PostScript ({name} en `{op}`: {at}; {meaning}), en {procs}
+@msg	a PostScript error ({name}; {meaning})	un error de PostScript ({name}; {meaning})
+@msg	the program ends a dictionary it didn't begin	el programa cierra un diccionario que no abrió
+@msg	the program opens a file, which the reader can't do	el programa abre un archivo, algo que el lector no puede hacer
+@msg	the program restores a saved state that was already restored	el programa restaura un estado guardado que ya se había restaurado
+@msg	data the program reads is damaged or cut short, or the program asks for a position in a file that has none	los datos que lee el programa están dañados o cortados, o el programa pide una posición en un archivo que no la tiene
+@msg	the program goes past one of the reader's limits	el programa supera uno de los límites del lector
+@msg	the path has no point to continue from	el trazado no tiene un punto desde el que continuar
+@msg	a value is outside the range the operator takes	un valor está fuera del intervalo que admite el operador
+@msg	the operator needs more values than the stack holds	el operador necesita más valores de los que tiene la pila
+@msg	part of the program isn't valid PostScript text	una parte del programa no es texto PostScript válido
+@msg	a value has the wrong type for the operator	un valor tiene un tipo incorrecto para el operador
+@msg	the program runs, deletes or renames a file, which the reader can't do	el programa ejecuta, elimina o cambia el nombre de un archivo, algo que el lector no puede hacer
+@msg	the program asks for a resource that isn't defined	el programa pide un recurso que no está definido
+@msg	a calculation has no result, as in a division by zero	un cálculo no tiene resultado, como en una división por cero
+@msg	the operator looks for a mark on the stack and finds none	el operador busca una marca en la pila y no encuentra ninguna
 @msg	a bitmap is empty	un mapa de bits está vacío
 @msg	a bitmap is too large to read	un mapa de bits es demasiado grande para leerlo
 @msg	a colour index is 0 to {_1}, not {n}	un índice de color va de 0 a {_1}, no {n}
