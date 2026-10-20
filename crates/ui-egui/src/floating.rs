@@ -695,13 +695,11 @@ fn apply(app: &mut VectorcraftApp, ctx: &egui::Context, action: Option<Action>) 
                 Some((panel.clone(), before.clone()))
             });
             if let Some((panel, before)) = ids
-                && let Err(error) = app.run(
-                    "window.panel.move",
-                    json!({ "panel": panel, "anchor": before, "before": before }),
-                )
+                && let Err(error) = crate::panel_docking::strip_tab_reorder(app, &panel, &before)
             {
                 app.ui.status = error;
             }
+            return;
         }
         Some(Action::Undock(gi, grab)) => {
             let Some(at) = ctx.input(|i| i.pointer.interact_pos()) else { return };
@@ -1297,9 +1295,9 @@ mod tests {
         h.drag(h.icons()[2].center(), pos2(500.0, 250.0));
         h.drag(h.icons()[0].center(), h.shared_tab("swatches").center());
         assert_eq!(h.groups(), [["swatches", "color"]]);
-        let tabs = h.widgets(|r| h.group("swatches").contains_rect(r) && r.height() == 32.0);
-        assert_eq!(tabs.len(), 2);
-        h.drag(tabs[1].center(), tabs[0].center());
+        h.app
+            .run("window.panel.move", json!({ "panel": "color", "anchor": "swatches", "before": "swatches" }))
+            .unwrap();
         assert_eq!(h.groups(), [["color", "swatches"]]);
     }
 

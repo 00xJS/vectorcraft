@@ -190,9 +190,29 @@ fn legacy_same_strip_reorder(
             let from = g.panels.iter().position(|id| id == panel).ok_or(LEGACY_REORDER_BAD_DEST)?;
             let to = g.panels.iter().position(|id| id == before).ok_or(LEGACY_REORDER_BAD_DEST)?;
             crate::floating::reorder_group_tab_indices(g, from, to);
+            if let Some(layout) = app.ui.docking.as_mut() {
+                let panels = g.panels.clone();
+                let active = g.active.min(panels.len().saturating_sub(1));
+                if let Some(group) = layout.floating.iter_mut().find(|group| group.panels.iter().any(|id| id == panel)) {
+                    group.panels = panels;
+                    group.active = active;
+                }
+            }
         }
     }
     Ok(json!({ "panel": panel, "before": before }))
+}
+
+/// Same-strip tab reorder for `window.panel.move` and in-frame tab drags (`app.run` during egui deadlocks).
+pub(crate) fn strip_tab_reorder(app: &mut VectorcraftApp, panel: &str, before: &str) -> Result<Value, String> {
+    use crate::state::DockTab;
+    let panel_group = crate::floating::group_of(&app.ui, panel);
+    let dock_strip_reorder = DockTab::from_id(panel).is_some()
+        && DockTab::from_id(before).is_some()
+        && panel_group.is_none()
+        && crate::floating::group_of(&app.ui, before).is_none();
+    let target = legacy_strip_reorder_target(app, before, dock_strip_reorder, panel_group)?;
+    legacy_same_strip_reorder(app, panel, before, target)
 }
 
 fn placement(params: &Value) -> Result<Placement<String>, String> {
@@ -356,16 +376,7 @@ fn change(app: &mut VectorcraftApp, operation: &str, params: &Value) -> Result<V
             && panel_group.is_none()
             && crate::floating::group_of(&app.ui, before).is_none();
         if app.ui.docking.is_none() || panel_group.is_some() || dock_strip_reorder {
-            let target = legacy_strip_reorder_target(app, before, dock_strip_reorder, panel_group)?;
-            let mirror_native_tabs = panel_group
-                .and_then(|i| app.ui.floating_panels.get(i))
-                .is_some_and(decorated);
-            let snapshot = app.ui.clone();
-            let result = legacy_same_strip_reorder(app, panel, before, target);
-            if mirror_native_tabs && app.ui.docking.is_some() && result.is_ok() {
-                reconcile_native(app, snapshot)?;
-            }
-            return result;
+            return strip_tab_reorder(app, panel, before);
         }
     }
     if app.ui.docking.as_ref().is_some_and(|layout| !valid(layout)) {
@@ -840,7 +851,9 @@ pub(crate) fn show(app: &mut VectorcraftApp, ui: &mut egui::Ui) -> bool {
         {
             return app.ui.docking.is_some();
         }
-        ui.ctx().data_mut(|data| data.remove::<LegacyDrag>(egui::Id::new("vectorcraft-panel-docking").with("legacy-origin")));
+        craft_ui::docking::cancel_drag::<String>(ui.ctx(), egui::Id::new("vectorcraft-panel-docking"));
+        ui.ctx()
+            .data_mut(|data| data.remove::<LegacyDrag>(egui::Id::new("vectorcraft-panel-docking").with("legacy-origin")));
     }
     for action in output.actions {
         if tab_drop
@@ -848,7 +861,7 @@ pub(crate) fn show(app: &mut VectorcraftApp, ui: &mut egui::Ui) -> bool {
         {
             continue;
         }
-        if let Err(error) = app.run("window.panel.layout", json!({"action": action})) {
+        if let Err(error) = apply_action(app, action) {
             app.ui.status = error;
         }
     }
@@ -1129,9 +1142,10 @@ mod tests;
 
 /// Commit a pointer drop after shared and native panel windows have finished rendering.
 pub(crate) fn finish_native_drop(app: &mut VectorcraftApp, ctx: &egui::Context) {
-    if let Some((command, params)) =
+    if let Some((id, params)) =
         ctx.data_mut(|data| data.remove_temp::<(&'static str, serde_json::Value)>(egui::Id::new("vectorcraft-native-panel-drop")))
-        && let Err(error) = app.run(command, params)
+        && let Some(result) = command(app, id, &params)
+        && let Err(error) = result
     {
         app.ui.status = error;
     }

@@ -301,10 +301,7 @@ pub(crate) fn tab_reorder_on_release(
 fn apply_dock_tab_reorder(app: &mut VectorcraftApp, visible: &[DockTab], from: usize, to: usize) {
     let Some(from_tab) = visible.get(from) else { return };
     let Some(to_tab) = visible.get(to) else { return };
-    if let Err(error) = app.run(
-        "window.panel.move",
-        json!({ "panel": from_tab.info().0, "anchor": to_tab.info().0, "before": to_tab.info().0 }),
-    ) {
+    if let Err(error) = crate::panel_docking::strip_tab_reorder(app, from_tab.info().0, to_tab.info().0) {
         app.ui.status = error;
     }
 }
