@@ -14,21 +14,41 @@ It has two backends:
 With no flag, the server tries `127.0.0.1:7979` and falls back to headless. Logs go to stderr; stdout carries
 only protocol messages.
 
-## Build and register
+## Install and register
+
+From the repository root, with Rust 1.95+ and the platform's source-build prerequisites installed:
 
 ```sh
-cargo build --release -p vectorcraft-cli
-claude mcp add vectorcraft -- "$PWD/target/release/vectorcraft-cli" mcp
+cargo install --path apps/vectorcraft-cli --locked
+# POSIX shells, for Cargo's default install location:
+export PATH="${CARGO_HOME:-$HOME/.cargo}/bin:$PATH"
+vectorcraft-cli --help
+claude mcp add vectorcraft -- vectorcraft-cli mcp
 # or pin a mode:
-claude mcp add vectorcraft-headless -- "$PWD/target/release/vectorcraft-cli" mcp --headless
-claude mcp add vectorcraft-app -- "$PWD/target/release/vectorcraft-cli" mcp --connect 127.0.0.1:7979
+claude mcp add vectorcraft-headless -- vectorcraft-cli mcp --headless
+claude mcp add vectorcraft-app -- vectorcraft-cli mcp --connect 127.0.0.1:7979
 ```
+
+Cargo installs a binary, not a symlink into `target/`, so it survives `cargo clean`.
+Re-run the install command after updating the checkout.
+By default the executable goes in `$CARGO_HOME/bin` (`~/.cargo/bin` when unset), or
+`%USERPROFILE%\.cargo\bin` on Windows. If you set `--root`, `CARGO_INSTALL_ROOT`, or
+Cargo's `install.root`, use that installation root's `bin` directory instead. Add it
+to the `PATH` inherited by the MCP client, not just an interactive shell, and restart
+the client after changing its environment. Installing does not start or register a server.
 
 Other clients use the same command in their JSON config:
 
 ```json
-{"mcpServers": {"vectorcraft": {"command": "/abs/path/target/release/vectorcraft-cli", "args": ["mcp"]}}}
+{"mcpServers": {"vectorcraft": {"command": "vectorcraft-cli", "args": ["mcp"]}}}
 ```
+
+If a client reports `ENOENT` or "Executable not found in $PATH", verify the install with
+`command -v vectorcraft-cli` (PowerShell: `Get-Command vectorcraft-cli`) in the client's
+environment. If that environment cannot be changed, set JSON `command` to the absolute
+installed binary path, not a literal `~` or `$HOME` expression. Avoid symlinks into
+`target/release`: cleaning the build directory breaks them. A source build alone does
+not put the CLI on `PATH`.
 
 For a live session, start the app first: `cargo run --release -p vectorcraft -- --control 7979`.
 
@@ -56,7 +76,7 @@ vectorcraft-cli mcp --automation-read-root /work/project --automation-write-root
 ```
 
 ```json
-{"mcpServers": {"vectorcraft": {"command": "/abs/path/target/release/vectorcraft-cli",
+{"mcpServers": {"vectorcraft": {"command": "vectorcraft-cli",
   "args": ["mcp", "--automation-read-root", "/work/project", "--automation-write-root", "/work/project/out"]}}}
 ```
 
