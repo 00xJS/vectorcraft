@@ -2,7 +2,7 @@
 //! Poster Edges, Smudge Stick, Sponge and Watercolor, Blur › Radial Blur and Smart Blur, Brush Strokes › Accented Edges, Angled Strokes,
 //! Crosshatch, Dark Strokes, Ink Outlines, Spatter, Sprayed Strokes and Sumi-e, Distort › Diffuse
 //! Glow, Glass and Ocean Ripple, Pixelate › Color Halftone, Crystallize, Mezzotint and Pointillize,
-//! Sharpen › Unsharp Mask, Sketch › Chalk & Charcoal, Graphic Pen, Halftone Pattern, Plaster and
+//! Sharpen › Unsharp Mask, Sketch › Chalk & Charcoal, Graphic Pen, Halftone Pattern, Note Paper, Plaster and
 //! Reticulation, Stylize ›
 //! Glowing Edges, Texture
 //! › Craquelure, Grain, Mosaic Tiles, Patchwork, Stained Glass and Texturizer, and Video ›
@@ -43,7 +43,7 @@ pub use sketch::{HALFTONE_TYPES, HalftonePattern};
 pub use texture::{GRAIN_TYPES, Grain, LIGHT_DIRECTIONS, Light, TEXTURES, Texture};
 
 /// The Photoshop-style effect ids (all raster effects, see [`crate::is_raster`]).
-pub const PIXEL_EFFECTS: [&str; 45] = [
+pub const PIXEL_EFFECTS: [&str; 46] = [
     "artistic.cutout",
     "artistic.filmGrain",
     "artistic.neonGlow",
@@ -76,6 +76,7 @@ pub const PIXEL_EFFECTS: [&str; 45] = [
     "sketch.chrome",
     "sketch.graphicPen",
     "sketch.halftonePattern",
+    "sketch.notePaper",
     "sketch.photocopy",
     "sketch.plaster",
     "sketch.reticulation",
@@ -180,6 +181,8 @@ pub enum PixelFx {
     /// Sketch › Halftone Pattern: black ink on white paper through a `kind` screen of cells `size`
     /// (1..12) apart, its edges as hard as `contrast` (0..50) says.
     HalftonePattern { size: f64, contrast: f64, kind: HalftonePattern },
+    /// Sketch › Note Paper: embossed tones on fibrous paper (`balance`, `graininess`, `relief`).
+    NotePaper { balance: f64, graininess: f64, relief: f64 },
     /// Sketch › Bas Relief: low relief lit from `light`, keeping the finer features as `detail`
     /// (1..15) says and rounded by `smoothness` (1..15).
     BasRelief { detail: f64, smoothness: f64, light: Light },
@@ -404,6 +407,11 @@ pub(crate) fn parse(id: &str, p: &Value) -> Option<PixelFx> {
             contrast: num(p, "contrast", 5.0).clamp(0.0, 50.0),
             kind: HalftonePattern::parse(text(p, "patternType", "dot")),
         },
+        "sketch.notePaper" => PixelFx::NotePaper {
+            balance: num(p, "imageBalance", 25.0).clamp(0.0, 50.0),
+            graininess: num(p, "graininess", 0.0).clamp(0.0, 10.0),
+            relief: num(p, "relief", 4.0).clamp(0.0, 50.0),
+        },
         "sketch.basRelief" => PixelFx::BasRelief {
             detail: num(p, "detail", 13.0).clamp(1.0, 15.0),
             smoothness: num(p, "smoothness", 3.0).clamp(1.0, 15.0),
@@ -512,6 +520,7 @@ impl PixelFx {
             | PixelFx::ChalkCharcoal { .. }
             | PixelFx::Chrome { .. }
             | PixelFx::HalftonePattern { .. }
+            | PixelFx::NotePaper { .. }
             | PixelFx::Plaster { .. }
             | PixelFx::Reticulation { .. } => 0.0,
             PixelFx::BasRelief { .. } | PixelFx::Charcoal { .. } | PixelFx::Photocopy { .. } | PixelFx::Stamp { .. } => 0.0,
@@ -575,7 +584,11 @@ impl PixelFx {
             PixelFx::Crystallize { cell } => Some(1.5 * cell),
             PixelFx::ChalkCharcoal { .. } => Some(sketch::CHALK_CHARCOAL_REACH),
             PixelFx::Chrome { smoothness, .. } => Some(sketch::chrome_reach(smoothness)),
-            PixelFx::FilmGrain { .. } | PixelFx::Mezzotint { .. } | PixelFx::HalftonePattern { .. } | PixelFx::Reticulation { .. } => Some(0.0),
+            PixelFx::FilmGrain { .. }
+            | PixelFx::Mezzotint { .. }
+            | PixelFx::HalftonePattern { .. }
+            | PixelFx::NotePaper { .. }
+            | PixelFx::Reticulation { .. } => Some(0.0),
             PixelFx::Plaster { smoothness, .. } => Some(sketch::plaster_reach(smoothness)),
             // Cutout's palette comes from the whole object.
             PixelFx::Cutout { .. } => None,
@@ -639,6 +652,7 @@ impl PixelFx {
             PixelFx::Chrome { detail, smoothness } => sketch::chrome(px, w, h, space, detail, smoothness),
             PixelFx::GraphicPen { length, balance, direction } => brushstrokes::graphic_pen(px, w, h, space, length, balance, direction),
             PixelFx::HalftonePattern { size, contrast, kind } => sketch::halftone_pattern(px, w, h, space, size, contrast, kind),
+            PixelFx::NotePaper { balance, graininess, relief } => sketch::note_paper(px, w, h, space, balance, graininess, relief),
             PixelFx::BasRelief { detail, smoothness, light } => sketch_ink::bas_relief(px, w, h, space, detail, smoothness, light),
             PixelFx::Charcoal { thickness, detail, balance } => sketch_ink::charcoal(px, w, h, space, thickness, detail, balance),
             PixelFx::Photocopy { detail, darkness } => sketch_ink::photocopy(px, w, h, space, detail, darkness),

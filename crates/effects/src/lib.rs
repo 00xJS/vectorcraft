@@ -155,6 +155,7 @@ fn lengths_of(id: &str) -> Lengths {
         "texture.stainedGlass" => always(&["cellSize"]),
         "sketch.graphicPen" => always(&["strokeLength"]),
         "sketch.halftonePattern" => always(&["size"]),
+        "sketch.notePaper" => always(&["relief"]),
         RASTERIZE => always(&["addAround"]),
         _ => Lengths::default(),
     }
@@ -535,8 +536,15 @@ pub fn effect_catalog() -> Vec<EffectInfo> {
             "sketch.halftonePattern",
             "Halftone Pattern…",
             SKETCH,
-            "{size: pt 1..12 (1; how far apart the screen's dots, rings or lines are), contrast: 0..50 (5; 50 draws pure black and white), patternType: \"circle\"|\"dot\"|\"line\" (\"dot\"; rings round the object's centre, dots on a square grid, horizontal lines)} redraws the object in black ink on white paper through a halftone screen whose ink covers as much as the colour is dark, keeping its coverage. Original visual approximation; chosen VectorCraft defaults.",
+            "{size: pt 1..12 (1; how far apart the screen's dots, rings or lines are), contrast: 0..50 (5; 50 draws pure black and white), patternType: \"circle\"|\"dot\"|\"line\" (\"dot\"; rings round the object's centre, dots on a square grid, horizontal lines)} redraws the object in black ink on white paper through a halftone screen whose ink covers as much as the colour is dark, keeping its coverage. Original visual approximation from the public Sketch effects reference; slider ranges follow the documented control names, numeric defaults are chosen for VectorCraft and are not verified against proprietary defaults (the public help pages give no numbers).",
             json!({"size": 1.0, "contrast": 5.0, "patternType": "dot"}),
+        ),
+        r(
+            "sketch.notePaper",
+            "Note Paper…",
+            SKETCH,
+            "{imageBalance: 0..50 (25; lower tones darken the emboss, higher lighten it), graininess: 0..10 (0; fibrous paper texture), relief: 0..50 (4; emboss strength in points)} embosses the object's tones on warm paper, keeping its coverage. Original visual approximation from the public Sketch effects reference; slider ranges follow the documented control names, numeric defaults are chosen for VectorCraft and are not verified against proprietary defaults (the public help pages give no numbers).",
+            json!({"imageBalance": 25.0, "graininess": 0.0, "relief": 4.0}),
         ),
         r(
             "sketch.photocopy",

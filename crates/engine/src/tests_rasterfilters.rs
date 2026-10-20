@@ -52,13 +52,14 @@ const PIXELATE: [(&str, &str); 4] =
     [("pixelate.colorHalftone", "{}"), ("pixelate.crystallize", "{}"), ("pixelate.mezzotint", "{}"), ("pixelate.pointillize", "{}")];
 
 /// Effect › Sketch, at their defaults.
-const SKETCH: [(&str, &str); 10] = [
+const SKETCH: [(&str, &str); 11] = [
     ("sketch.basRelief", "{}"),
     ("sketch.chalkCharcoal", "{}"),
     ("sketch.charcoal", "{}"),
     ("sketch.chrome", "{}"),
     ("sketch.graphicPen", "{}"),
     ("sketch.halftonePattern", "{}"),
+    ("sketch.notePaper", "{}"),
     ("sketch.photocopy", "{}"),
     ("sketch.plaster", "{}"),
     ("sketch.reticulation", "{}"),

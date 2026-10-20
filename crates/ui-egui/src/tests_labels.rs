@@ -187,6 +187,7 @@ fn effect_menu_lists_the_sketch_filters_between_sharpen_and_stylize() {
             "Chrome…",
             "Graphic Pen…",
             "Halftone Pattern…",
+            "Note Paper…",
             "Photocopy…",
             "Plaster…",
             "Reticulation…",
@@ -200,14 +201,16 @@ fn effect_menu_lists_the_sketch_filters_between_sharpen_and_stylize() {
     assert_eq!(sketch[3].params, json!({"effect": "sketch.chrome"}));
     assert_eq!(sketch[4].params, json!({"effect": "sketch.graphicPen"}));
     assert_eq!(sketch[5].params, json!({"effect": "sketch.halftonePattern"}));
-    assert_eq!(sketch[6].params, json!({"effect": "sketch.photocopy"}));
-    assert_eq!(sketch[7].params, json!({"effect": "sketch.plaster"}));
-    assert_eq!(sketch[8].params, json!({"effect": "sketch.reticulation"}));
-    assert_eq!(sketch[9].params, json!({"effect": "sketch.stamp"}));
+    assert_eq!(sketch[6].params, json!({"effect": "sketch.notePaper"}));
+    assert_eq!(sketch[7].params, json!({"effect": "sketch.photocopy"}));
+    assert_eq!(sketch[8].params, json!({"effect": "sketch.plaster"}));
+    assert_eq!(sketch[9].params, json!({"effect": "sketch.reticulation"}));
+    assert_eq!(sketch[10].params, json!({"effect": "sketch.stamp"}));
     let at = |label: &str| entries.iter().position(|e| e.path[0] == "Effect" && e.label == label).unwrap();
     assert!(at("Unsharp Mask…") < at("Chalk & Charcoal…") && at("Chalk & Charcoal…") < at("Chrome…"));
     assert!(at("Chrome…") < at("Graphic Pen…") && at("Graphic Pen…") < at("Halftone Pattern…"));
-    assert!(at("Halftone Pattern…") < at("Plaster…") && at("Plaster…") < at("Reticulation…"));
+    assert!(at("Halftone Pattern…") < at("Note Paper…") && at("Note Paper…") < at("Plaster…"));
+    assert!(at("Plaster…") < at("Reticulation…"));
     assert!(at("Reticulation…") < at("Glowing Edges…"));
 }
 
