@@ -142,38 +142,55 @@ fn number(params: &Value, key: &str, default: f32) -> Result<f32, String> {
     }
 }
 
+const LEGACY_REORDER_BAD_DEST: &str = "move requires an existing destination panel";
+
+enum LegacyStripReorder {
+    DockStrip,
+    FloatingGroup(usize),
+}
+
+fn legacy_strip_reorder_target(
+    app: &VectorcraftApp,
+    before: &str,
+    dock_strip: bool,
+    panel_group: Option<usize>,
+) -> Result<LegacyStripReorder, String> {
+    if dock_strip {
+        return Ok(LegacyStripReorder::DockStrip);
+    }
+    let gi = panel_group.ok_or(LEGACY_REORDER_BAD_DEST)?;
+    if crate::floating::group_of(&app.ui, before) != Some(gi) {
+        return Err(LEGACY_REORDER_BAD_DEST.into());
+    }
+    Ok(LegacyStripReorder::FloatingGroup(gi))
+}
+
 /// Legacy workspaces (no saved `docking` layout): reorder tabs in the dock strip or a floating
 /// group without promoting to a shared layout.
-fn legacy_same_strip_reorder(app: &mut VectorcraftApp, panel: &str, before: &str) -> Result<Value, String> {
+fn legacy_same_strip_reorder(
+    app: &mut VectorcraftApp,
+    panel: &str,
+    before: &str,
+    target: LegacyStripReorder,
+) -> Result<Value, String> {
     use crate::state::DockTab;
-    const BAD_DEST: &str = "move requires an existing destination panel";
-    if crate::state::DockTab::from_id(panel).is_some()
-        && DockTab::from_id(before).is_some()
-        && crate::floating::group_of(&app.ui, panel).is_none()
-        && crate::floating::group_of(&app.ui, before).is_none()
-    {
-        let mut order: Vec<DockTab> = crate::floating::docked_tabs(&app.ui).collect();
-        let from = order.iter().position(|t| t.info().0 == panel).ok_or(BAD_DEST)?;
-        let to = order.iter().position(|t| t.info().0 == before).ok_or(BAD_DEST)?;
-        if from != to {
-            let item = order.remove(from);
-            order.insert(to, item);
-            crate::floating::set_dock_tab_order(&mut app.ui, order);
+    match target {
+        LegacyStripReorder::DockStrip => {
+            let mut order: Vec<DockTab> = crate::floating::docked_tabs(&app.ui).collect();
+            let from = order.iter().position(|t| t.info().0 == panel).ok_or(LEGACY_REORDER_BAD_DEST)?;
+            let to = order.iter().position(|t| t.info().0 == before).ok_or(LEGACY_REORDER_BAD_DEST)?;
+            if from != to {
+                let item = order.remove(from);
+                order.insert(to, item);
+                crate::floating::set_dock_tab_order(&mut app.ui, order);
+            }
         }
-        return Ok(json!({ "panel": panel, "before": before }));
-    }
-    let gi = crate::floating::group_of(&app.ui, panel).ok_or(BAD_DEST)?;
-    if crate::floating::group_of(&app.ui, before) != Some(gi) {
-        return Err(BAD_DEST.into());
-    }
-    let g = app.ui.floating_panels.get_mut(gi).ok_or("invalid restored panel group")?;
-    let from = g.panels.iter().position(|id| id == panel).ok_or(BAD_DEST)?;
-    let to = g.panels.iter().position(|id| id == before).ok_or(BAD_DEST)?;
-    if from != to {
-        let active = g.panels.get(g.active).cloned();
-        let moved = g.panels.remove(from);
-        g.panels.insert(to, moved);
-        g.active = active.and_then(|id| g.panels.iter().position(|p| *p == id)).unwrap_or(0);
+        LegacyStripReorder::FloatingGroup(gi) => {
+            let g = app.ui.floating_panels.get_mut(gi).ok_or("invalid restored panel group")?;
+            let from = g.panels.iter().position(|id| id == panel).ok_or(LEGACY_REORDER_BAD_DEST)?;
+            let to = g.panels.iter().position(|id| id == before).ok_or(LEGACY_REORDER_BAD_DEST)?;
+            crate::floating::reorder_group_tab_indices(g, from, to);
+        }
     }
     Ok(json!({ "panel": panel, "before": before }))
 }
@@ -332,18 +349,19 @@ fn change(app: &mut VectorcraftApp, operation: &str, params: &Value) -> Result<V
     let panel = params.get("panel").and_then(Value::as_str).and_then(normalize).ok_or("panel must name a registered panel")?;
     if operation == "move" && params.get("before").is_some() {
         let before = params.get("before").and_then(Value::as_str).and_then(normalize).ok_or("before must name a panel")?;
-        let in_group = crate::floating::group_of(&app.ui, panel).is_some();
         use crate::state::DockTab;
+        let panel_group = crate::floating::group_of(&app.ui, panel);
         let dock_strip_reorder = DockTab::from_id(panel).is_some()
             && DockTab::from_id(before).is_some()
-            && crate::floating::group_of(&app.ui, panel).is_none()
+            && panel_group.is_none()
             && crate::floating::group_of(&app.ui, before).is_none();
-        if app.ui.docking.is_none() || in_group || dock_strip_reorder {
-            let mirror_native_tabs = crate::floating::group_of(&app.ui, panel)
+        if app.ui.docking.is_none() || panel_group.is_some() || dock_strip_reorder {
+            let target = legacy_strip_reorder_target(app, before, dock_strip_reorder, panel_group)?;
+            let mirror_native_tabs = panel_group
                 .and_then(|i| app.ui.floating_panels.get(i))
                 .is_some_and(decorated);
             let snapshot = app.ui.clone();
-            let result = legacy_same_strip_reorder(app, panel, before);
+            let result = legacy_same_strip_reorder(app, panel, before, target);
             if mirror_native_tabs && app.ui.docking.is_some() && result.is_ok() {
                 reconcile_native(app, snapshot)?;
             }

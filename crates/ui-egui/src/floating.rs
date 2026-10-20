@@ -138,6 +138,16 @@ pub fn group_of(ui: &UiState, id: &str) -> Option<usize> {
     ui.floating_panels.iter().position(|g| g.panels.iter().any(|p| p == id))
 }
 
+/// Reorder tabs in a floating group by index, keeping the active tab on the same panel.
+pub(crate) fn reorder_group_tab_indices(g: &mut FloatingPanels, from: usize, to: usize) {
+    if from != to && from < g.panels.len() && to < g.panels.len() {
+        let active = g.panels.get(g.active).cloned();
+        let moved = g.panels.remove(from);
+        g.panels.insert(to, moved);
+        g.active = active.and_then(|id| g.panels.iter().position(|p| *p == id)).unwrap_or(0);
+    }
+}
+
 /// The floating groups drawn with group `gi`, top to bottom: the groups of its set, or it alone.
 pub fn set_of(ui: &UiState, gi: usize) -> Vec<usize> {
     match ui.floating_panels.get(gi).and_then(|g| g.column) {
@@ -679,15 +689,18 @@ fn apply(app: &mut VectorcraftApp, ctx: &egui::Context, action: Option<Action>) 
         Some(Action::Detach(gi, left)) => detach(app, ctx, gi, left),
         Some(Action::Tear(id, left)) => tear(app, ctx, &[id], id, strip_grab(ctx, left)),
         Some(Action::Reorder(gi, from, to)) => {
-            if let Some(g) = app.ui.floating_panels.get_mut(gi)
-                && from != to
-                && from < g.panels.len()
-                && to < g.panels.len()
+            let ids = app.ui.floating_panels.get(gi).and_then(|g| {
+                let panel = g.panels.get(from)?;
+                let before = g.panels.get(to)?;
+                Some((panel.clone(), before.clone()))
+            });
+            if let Some((panel, before)) = ids
+                && let Err(error) = app.run(
+                    "window.panel.move",
+                    json!({ "panel": panel, "anchor": before, "before": before }),
+                )
             {
-                let active = g.panels.get(g.active).cloned();
-                let moved = g.panels.remove(from);
-                g.panels.insert(to, moved);
-                g.active = active.and_then(|id| g.panels.iter().position(|p| *p == id)).unwrap_or(0);
+                app.ui.status = error;
             }
         }
         Some(Action::Undock(gi, grab)) => {
