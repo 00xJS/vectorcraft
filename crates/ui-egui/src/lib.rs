@@ -175,20 +175,34 @@ pub use control::{ControlRequest, ControlResponse, Ticket as ControlTicket};
 pub use state::{UiState, View};
 pub use sysclip::{ClipboardProbeFactory, SystemClipboard};
 
+/// A file type a dialog filters by: its label, which shows translated, and its extensions without
+/// the dot.
+pub type FileFilter = (String, Vec<String>);
+
 /// What a file dialog shows: a suggested file name (save dialogs), the folder to start in and the
 /// file-type filters.
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct FilePick {
     pub name: String,
     pub folder: Option<String>,
-    /// `(label, extensions without the dot)`, the default type first; empty = every file.
-    pub filters: Vec<(&'static str, &'static [&'static str])>,
+    /// The default type first; empty = every file.
+    pub filters: Vec<FileFilter>,
 }
 
 impl FilePick {
     /// A save dialog suggesting `name`.
     pub fn named(name: &str) -> Self {
         Self { name: name.to_string(), ..Default::default() }
+    }
+
+    /// The file type `label` with `extensions`.
+    pub fn filter(label: &str, extensions: &[&str]) -> FileFilter {
+        (label.to_owned(), extensions.iter().map(|e| (*e).to_owned()).collect())
+    }
+
+    /// The file types of `list`, as the engine lists them: `(label, extensions)`.
+    pub fn filters<'a>(list: impl IntoIterator<Item = (&'a str, &'a [&'a str])>) -> Vec<FileFilter> {
+        list.into_iter().map(|(label, extensions)| Self::filter(label, extensions)).collect()
     }
 }
 

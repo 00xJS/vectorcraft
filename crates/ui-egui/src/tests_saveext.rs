@@ -35,7 +35,7 @@ fn last(w: &Written) -> String {
 }
 
 /// The file types each save panel was asked to show.
-type Shown = Rc<RefCell<Vec<Vec<(&'static str, &'static [&'static str])>>>>;
+type Shown = Rc<RefCell<Vec<Vec<crate::FileFilter>>>>;
 
 /// An app with a document whose save panel records the file types it shows and answers the
 /// suggested name in `/tmp`.
@@ -57,7 +57,7 @@ fn panel_app() -> (VectorcraftApp, Shown) {
 }
 
 /// The file types the last save panel showed.
-fn last_shown(s: &Shown) -> Vec<(&'static str, &'static [&'static str])> {
+fn last_shown(s: &Shown) -> Vec<crate::FileFilter> {
     s.borrow().last().cloned().unwrap_or_default()
 }
 
@@ -68,26 +68,26 @@ fn save_panels_show_the_file_type_they_write() {
     use vectorcraft_engine::cmd::{flatten, pdfcmds, perspgrid, printpresets};
     let (mut app, shown) = panel_app();
     app.run("docInfo.save", json!({})).unwrap();
-    assert_eq!(last_shown(&shown), [("Text", &["txt"][..])], "Document Info › Save");
+    assert_eq!(last_shown(&shown), FilePick::filters([("Text", &["txt"][..])]), "Document Info › Save");
     for format in ["vcswatches", "gpl", "ase", "css"] {
         app.run("ui.saveSwatchLibrary", json!({})).unwrap();
         app.ui.dialog.as_mut().unwrap().fields.insert("format".into(), json!(format));
         crate::dialogs::confirm(&mut app).unwrap();
         let label = if format == "css" { "CSS" } else { "Swatch libraries" };
-        assert_eq!(last_shown(&shown), [(label, &[format][..])], "Save Swatch Library as .{format}");
+        assert_eq!(last_shown(&shown), FilePick::filters([(label, &[format][..])]), "Save Swatch Library as .{format}");
     }
     app.run("ui.saveGraphicStyleLibrary", json!({})).unwrap();
     crate::dialogs::confirm(&mut app).unwrap();
-    assert_eq!(last_shown(&shown), [("Graphic Style Libraries", &["vcstyles"][..])], "Save Graphic Style Library");
+    assert_eq!(last_shown(&shown), FilePick::filters([("Graphic Style Libraries", &["vcstyles"][..])]), "Save Graphic Style Library");
     let id = app.run("library.create", json!({"name": "Brand"})).unwrap()["id"].as_str().unwrap().to_string();
     io::save_command_output_named(&mut app, "library.export", "Brand.vclibrary", json!({"library": id})).unwrap();
-    assert_eq!(last_shown(&shown), [("Libraries", &["vclibrary"][..])], "Libraries panel › Export Library…");
+    assert_eq!(last_shown(&shown), FilePick::filters([("Libraries", &["vclibrary"][..])]), "Libraries panel › Export Library…");
     app.run("css.exportFile", json!({"scope": "all"})).unwrap();
-    assert_eq!(last_shown(&shown), [("CSS", &["css"][..])], "CSS Properties › Export All…");
+    assert_eq!(last_shown(&shown), FilePick::filters([("CSS", &["css"][..])]), "CSS Properties › Export All…");
     app.run("file.print", json!({"format": "postscript"})).unwrap();
-    assert_eq!(last_shown(&shown), [("PostScript", &["ps"][..])], "Print to a PostScript file");
+    assert_eq!(last_shown(&shown), FilePick::filters([("PostScript", &["ps"][..])]), "Print to a PostScript file");
     app.run("shortcuts.export", json!({})).unwrap();
-    assert_eq!(last_shown(&shown), [("Shortcut sets", &["json"][..])], "Keyboard Shortcuts › Export…");
+    assert_eq!(last_shown(&shown), FilePick::filters([("Shortcut sets", &["json"][..])]), "Keyboard Shortcuts › Export…");
     let presets = [
         ("pdf.preset.save", json!({"name": "Mine"}), "pdf.preset.export", "PDF presets", pdfcmds::PRESET_EXTS),
         ("print.presets.save", json!({"name": "Mine"}), "print.presets.export", "Print presets", printpresets::PRESET_EXTS),
@@ -97,7 +97,7 @@ fn save_panels_show_the_file_type_they_write() {
     for (save, params, export, label, exts) in presets {
         app.run(save, params).unwrap();
         io::save_command_output(&mut app, export, exts[0], json!({"names": ["Mine"]})).unwrap();
-        assert_eq!(last_shown(&shown), [(label, exts)], "{export}: the presets dialog's Export…");
+        assert_eq!(last_shown(&shown), FilePick::filters([(label, exts)]), "{export}: the presets dialog's Export…");
     }
 }
 

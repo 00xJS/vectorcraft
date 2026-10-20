@@ -481,7 +481,7 @@ pub(crate) fn pick_library_file(app: &mut VectorcraftApp, path: Option<String>) 
         return Ok(None);
     }
     path.or_else(|| {
-        let pick = crate::FilePick { filters: vectorcraft_engine::cmd::fileio::open_filters().collect(), ..Default::default() };
+        let pick = crate::FilePick { filters: crate::FilePick::filters(vectorcraft_engine::cmd::fileio::open_filters()), ..Default::default() };
         crate::picks::open(app, &pick)
     })
     .map(Some)
