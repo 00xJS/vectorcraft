@@ -1411,6 +1411,7 @@ lighting	Light	Lys
 	Edit the selected point's colour in the Color panel	Redigér det markerede punkts farve i farvepanelet
 	Edit the stop	Redigér stoppet
 	Eyedropper: click the art to sample the stop's colour	Pipette: klik på grafikken for at prøvetage stoppets farve
+	Eyedropper: click the art to sample the key color	Pipette: klik på grafikken for at prøvetage nøglefarven
 	Gradient across stroke	Gradient på tværs af konturen
 	Gradient along stroke	Gradient langs konturen
 	Gradient Fill: click to apply, drag onto art	Gradientfyld: klik for at anvende, træk hen over grafikken
