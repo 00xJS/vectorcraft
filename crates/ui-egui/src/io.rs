@@ -487,9 +487,7 @@ pub fn save(app: &mut VectorcraftApp, mode: SaveMode, p: &Value, ask_options: bo
     if ask && asks_options(mode, chosen.format) {
         let path = chosen.path.clone().unwrap_or_default();
         let r = ask_format_options(app, mode, chosen.format, &path);
-        if let Some(d) = app.ui.dialog.as_mut() {
-            d.fields.insert(crate::dialogs::AFTER_PANEL.into(), json!(true));
-        }
+        crate::dialogs::opened_by_panel(app);
         return r;
     }
     write_plan(app, chosen)
@@ -712,6 +710,9 @@ pub fn hide_exports(app: &mut VectorcraftApp) -> Value {
 /// document keeps its path. → `{path, warnings, files?}` (`files`: every file when there are
 /// several).
 pub fn export(app: &mut VectorcraftApp, format: Option<&str>, path: Option<String>, params: &Value) -> Result<Value, String> {
+    // Options given as anything but an object are none: the path and format still reach the
+    // encoder (an exporter plug-in is told the file it writes).
+    let params = &if params.is_object() { params.clone() } else { json!({}) };
     let f = fileio::writable_format(format, path.as_deref())?;
     let st = app.session.active().ok_or("no document")?;
     let doc = match fileio::export_source(st, params).map_err(|e| e.to_string())? {
