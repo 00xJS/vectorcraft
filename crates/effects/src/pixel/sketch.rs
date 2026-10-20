@@ -128,7 +128,6 @@ pub(super) fn note_paper(px: &mut [[u8; 4]], w: usize, h: usize, space: &PixelSp
     };
     let emboss = relief / 50.0;
     let grain = graininess / 10.0;
-    let paper = [0.95_f32, 0.93, 0.88];
     let light = (-0.6_f64, -0.6, 0.8);
     let ln = (light.0 * light.0 + light.1 * light.1 + light.2 * light.2).sqrt().max(1e-9);
     place.each(px, |x, y, p| {
@@ -148,14 +147,9 @@ pub(super) fn note_paper(px: &mut [[u8; 4]], w: usize, h: usize, space: &PixelSp
         let shade = ((nx * light.0 + ny * light.1 + nz * light.2) / (nn * ln) * 0.5 + 0.5).clamp(0.0, 1.0);
         let tone = (0.35 + 0.65 * f64::from(h0)) * shade;
         let q = place.at(x, y);
-        let fibre = if grain > 0.0 {
-            value_noise(0x4e4f_5450, q.x * 0.35, q.y * 0.35) * grain * 0.18
-        } else {
-            0.0
-        };
+        let fibre = if grain > 0.0 { value_noise(0x4e4f_5450, q.x * 0.35, q.y * 0.35) * grain * 0.18 } else { 0.0 };
         let v = (tone + fibre).clamp(0.0, 1.0) as f32;
-        let rgb = paper.map(|c| c * v);
-        *p = premultiply(rgb, f32::from(p[3]) / 255.0);
+        *p = premultiply([v; 3], f32::from(p[3]) / 255.0);
     });
 }
 
