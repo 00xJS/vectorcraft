@@ -1386,7 +1386,7 @@ impl Renderer {
     /// Outline view, culled by its cached bounds ([`Self::bounds_of`]) and drawn with `c` as
     /// `fx_owner`, so its path and live-effect geometry come from the caches.
     fn draw_outline_member(&mut self, ctx: &mut RenderContext, f: &Frame, c: &Arc<Node>) {
-        if !c.visible || f.opts.hidden.contains(&c.id) {
+        if !c.visible || f.opts.hidden.contains(&c.id) || f.opts.hide_guides && matches!(c.kind, NodeKind::Path { guide: true, .. }) {
             return;
         }
         match self.bounds_of(f.symbols, c) {

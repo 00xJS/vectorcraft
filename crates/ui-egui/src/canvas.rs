@@ -5630,6 +5630,22 @@ mod tests {
         assert_eq!(dots(&mut app).len(), 2, "one anchor still shows them");
     }
 
+    /// #3219: a selected path made into a guide is deselected when guides are hidden, so the
+    /// selection overlay cannot reveal the hidden path.
+    #[test]
+    fn hide_guides_deselects_selected_guide_paths() {
+        let mut app = VectorcraftApp::new(Session::new(), Default::default());
+        app.run("file.new", json!({"width": 400, "height": 300})).unwrap();
+        let id = app.run("shape.rectangle", json!({"x": 100, "y": 100, "width": 100, "height": 100})).unwrap()["id"].as_u64().unwrap();
+        app.run("view.guides.make", json!({})).unwrap();
+        app.run("select.set", json!({"ids": [id]})).unwrap();
+        assert_eq!(app.session.active().unwrap().selection.objects, vec![vectorcraft_doc::NodeId(id)]);
+
+        app.run("view.guides", json!({})).unwrap();
+
+        assert!(app.session.active().unwrap().selection.objects.is_empty());
+    }
+
     /// Smart Guides › Object Highlighting (#394): the outline of the object under the pointer does not
     /// show with View › Snap to Grid or View › Pixel Preview on, even with Smart Guides and the option on.
     /// #3219: guide paths hidden by View > Hide Guides are not hittable and cannot reveal
