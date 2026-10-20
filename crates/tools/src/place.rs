@@ -220,7 +220,8 @@ mod tests {
         // A drag up and to the left grows the box from the press point, aspect kept.
         t.pointer(&c, &ev(PointerKind::Down, 100.0, 100.0));
         t.pointer(&c, &ev(PointerKind::Drag, 20.0, 90.0));
-        assert_eq!(t.overlays(&c), vec![Overlay::Marquee(Rect::new(20.0, 60.0, 100.0, 100.0))]);
+        let c_marquee_only = ToolContext { measurement_labels: false, ..c };
+        assert_eq!(t.overlays(&c_marquee_only), vec![Overlay::Marquee(Rect::new(20.0, 60.0, 100.0, 100.0))]);
         let acts = t.pointer(&c, &ev(PointerKind::Up, 20.0, 90.0));
         assert_eq!(acts[0], Action::Exec("file.place".into(), json!({"path": "f1.png", "rect": [20.0, 60.0, 80.0, 40.0]})));
         assert_eq!(t.options()["count"], 1);
@@ -247,7 +248,9 @@ mod tests {
             let measures = o.iter().filter(|x| matches!(x, Overlay::Measure { .. })).count();
             assert_eq!(measures, usize::from(on), "measurement labels {on}");
             if on {
-                assert!(o.iter().any(|x| matches!(x, Overlay::Measure { p, text, .. } if *p == Point::new(20.0, 90.0) && text == &c.size_label(r.width(), r.height()))));
+                assert!(o.iter().any(
+                    |x| matches!(x, Overlay::Measure { p, text, .. } if *p == Point::new(20.0, 90.0) && text == &c.size_label(r.width(), r.height()))
+                ));
             }
         }
     }
