@@ -3572,6 +3572,7 @@ mark-style	Japanese	Kiểu Nhật
 	Texturizer…	Texturizer…
 	Thai	Tiếng Thái
 	The bounds of the visible art.	Vùng giới hạn của đối tượng hiển thị.
+	The plug-in writes the whole document.	Plug-in xuất toàn bộ tài liệu.
 	The cell shows the type object's text as HTML.	Ô hiển thị văn bản của đối tượng chữ dưới dạng HTML.
 	The dialog was closed before its file dialog answered	Hộp thoại đã đóng trước khi hộp thoại tệp phản hồi
 	The document has no colour swatches.	Tài liệu không có mẫu màu.
@@ -4636,6 +4637,7 @@ theme	Appearance	Giao diện
 @msg	{_1} font families available	{_1} họ phông chữ khả dụng
 @msg	{_1} has no {_2} style	{_1} không có kiểu {_2}
 @msg	{_1} is a live effect (Effect › Plug-ins)	{_1} là hiệu ứng trực tiếp (Hiệu ứng › Plug-ins)
+@msg	{_1} is an exporter (File › Export › Export As…)	{_1} là plug-in xuất (Tệp › Xuất › Xuất thành…)
 @msg	{_1} is already used by {_2}	{_1} đã được dùng bởi {_2}
 @msg	{_1} linked file(s) can't be read here: their previews show	{_1} tệp liên kết không thể đọc ở đây: bản xem trước được hiển thị
 @msg	{_1} linked image(s) changed on disk: Update Links shows the new versions	{_1} ảnh liên kết đã thay đổi trên đĩa: Cập nhật liên kết hiển thị phiên bản mới

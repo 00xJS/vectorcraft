@@ -9,6 +9,8 @@ use crate::{Error, Result};
 pub const MAX_MANIFEST_BYTES: usize = 64 * 1024;
 /// Most parameters a plug-in may declare.
 pub const MAX_PARAMS: usize = 64;
+/// Most file extensions an exporter may declare.
+pub const MAX_EXTENSIONS: usize = 8;
 
 /// What a plug-in is.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
@@ -20,6 +22,9 @@ pub enum Kind {
     /// A live effect: rewrites one object's geometry each time it is drawn, from its appearance
     /// stack (Effect › Plug-ins, `effect.apply`).
     Effect,
+    /// An exporter: writes the document in a file format of its own, whose extensions the manifest
+    /// lists (File › Export › Export As, `document.export`; see [`crate::export`]).
+    Exporter,
 }
 
 impl Kind {
@@ -27,6 +32,7 @@ impl Kind {
         match self {
             Kind::Filter => "filter",
             Kind::Effect => "effect",
+            Kind::Exporter => "exporter",
         }
     }
 }
@@ -96,6 +102,10 @@ pub struct Manifest {
     /// Parameters in declaration (dialog) order; a JSON object `{"name": spec, …}` in the manifest.
     #[serde(default, deserialize_with = "ordered_params", serialize_with = "params_as_object")]
     pub params: Vec<(String, ParamSpec)>,
+    /// An exporter's file extensions, lower case and without the dot; the first is the one its
+    /// files get. Only exporters declare them.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub extensions: Vec<String>,
 }
 
 impl Manifest {
@@ -120,6 +130,7 @@ impl Manifest {
             description: String::new(),
             author: String::new(),
             params: Vec::new(),
+            extensions: Vec::new(),
         }
     }
 
@@ -134,6 +145,7 @@ impl Manifest {
         if self.version.len() > 32 || self.description.len() > 1024 || self.author.len() > 128 {
             return Err(Error::Manifest("`version`, `description` or `author` is too long".into()));
         }
+        self.validate_extensions()?;
         for (k, spec) in &self.params {
             if !valid_key(k) {
                 return Err(Error::Manifest(format!("invalid parameter name {k:?}")));
@@ -155,6 +167,29 @@ impl Manifest {
                     }
                 }
                 _ => {}
+            }
+        }
+        Ok(())
+    }
+
+    /// An exporter lists 1 to [`MAX_EXTENSIONS`] distinct extensions of 1 to 16 lower-case
+    /// letters and digits; other kinds list none.
+    fn validate_extensions(&self) -> Result<()> {
+        let exts = &self.extensions;
+        match self.kind {
+            Kind::Exporter => {}
+            _ if exts.is_empty() => return Ok(()),
+            _ => return Err(Error::Manifest("only an exporter declares `extensions`".into())),
+        }
+        if exts.is_empty() || exts.len() > MAX_EXTENSIONS {
+            return Err(Error::Manifest(format!("an exporter declares 1 to {MAX_EXTENSIONS} `extensions`")));
+        }
+        for (i, e) in exts.iter().enumerate() {
+            if !(1..=16).contains(&e.len()) || !e.bytes().all(|b| b.is_ascii_lowercase() || b.is_ascii_digit()) {
+                return Err(Error::Manifest(format!("extension {e:?}: use 1-16 lower-case letters and digits, without the dot")));
+            }
+            if exts.get(..i).is_some_and(|before| before.contains(e)) {
+                return Err(Error::Manifest(format!("extension {e:?} is listed twice")));
             }
         }
         Ok(())
@@ -352,6 +387,29 @@ mod tests {
         );
         for given in [Value::Null, json!({}), json!({"count": null, "seed": null, "amount": null})] {
             assert_eq!(Value::Object(m.resolve_params(&given).unwrap()), expected);
+        }
+    }
+
+    #[test]
+    fn an_exporter_lists_its_extensions_and_other_kinds_list_none() {
+        let m = Manifest::parse(br#"{"id":"org.example.plotter","name":"Plotter","kind":"exporter","extensions":["plt","plot"]}"#).unwrap();
+        assert_eq!((m.kind, m.extensions.as_slice()), (Kind::Exporter, &["plt".to_string(), "plot".to_string()][..]));
+        assert_eq!(serde_json::to_value(&m).unwrap()["extensions"], json!(["plt", "plot"]));
+        let filter = Manifest::parse(br#"{"id":"a","name":"x","kind":"filter"}"#).unwrap();
+        assert!(serde_json::to_value(&filter).unwrap().get("extensions").is_none());
+        for bad in [
+            r#"{"id":"a","name":"x","kind":"exporter"}"#,
+            r#"{"id":"a","name":"x","kind":"exporter","extensions":[]}"#,
+            r#"{"id":"a","name":"x","kind":"exporter","extensions":["PLT"]}"#,
+            r#"{"id":"a","name":"x","kind":"exporter","extensions":[".plt"]}"#,
+            r#"{"id":"a","name":"x","kind":"exporter","extensions":[""]}"#,
+            r#"{"id":"a","name":"x","kind":"exporter","extensions":["abcdefghijklmnopq"]}"#,
+            r#"{"id":"a","name":"x","kind":"exporter","extensions":["plt","plt"]}"#,
+            r#"{"id":"a","name":"x","kind":"exporter","extensions":["a","b","c","d","e","f","g","h","i"]}"#,
+            r#"{"id":"a","name":"x","kind":"filter","extensions":["plt"]}"#,
+            r#"{"id":"a","name":"x","kind":"effect","extensions":["plt"]}"#,
+        ] {
+            assert!(Manifest::parse(bad.as_bytes()).is_err(), "{bad}");
         }
     }
 

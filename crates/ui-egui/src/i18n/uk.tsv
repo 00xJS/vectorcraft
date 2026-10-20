@@ -3238,6 +3238,7 @@ effect	Points	Точки
 	Text Wrap Options	Параметри обтікання текстом
 	Text Wrap Options…	Параметри обтікання текстом…
 	The bounds of the visible art.	Кордони видимого малюнка.
+	The plug-in writes the whole document.	Модуль експортує весь документ.
 	The cell shows the type object's text as HTML.	Осередок показує текст текстового об’єкта як HTML.
 	The document has no colour swatches.	У документі немає кольорових зразків.
 	The edge of the paper the printer can't reach: the art goes inside it, and the preview shows it dashed.	Край паперу, до якого не приходить принтер: малюнок залишається всередині нього, а перегляд показує його пунктиром.
@@ -4265,6 +4266,7 @@ axis	Both	Обидві
 @msg	{_1} files are written by file.saveAsTemplate	файли {_1} записує file.saveAsTemplate
 @msg	{_1} font families available	доступно сімейства шрифтів: {_1}
 @msg	{_1} is a live effect (Effect › Plug-ins)	{_1} - динамічний ефект (Ефект › Модулі)
+@msg	{_1} is an exporter (File › Export › Export As…)	{_1} - модуль експорту (Файл › Експорт › Експортувати як…)
 @msg	{_1} is already used by {_2}	{_1} вже використовується {_2}
 @msg	{_1} linked file(s) can't be read here: their previews show	тут неможливо прочитати пов’язані файли: {_1}: відображаються їх попередні перегляди
 @msg	{_1} linked image(s) changed on disk: Update Links shows the new versions	пов’язаних зображень ({_1}) змінилися на диску: «Оновити зв’язки» покаже нові версії

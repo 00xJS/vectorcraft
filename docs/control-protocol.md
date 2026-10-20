@@ -198,7 +198,9 @@ Plug-in dialogs: `engine.execute {command: "plugin.dialog", params: {id}}` (Obje
 plug-in at once when it takes no parameters, else opens the `plugin` dialog: one field per declared parameter (named
 after it), `__plugin` (the plug-in id) and `preview`. It previews `plugin.run` on the canvas while open;
 `ui.dialog.confirm` keeps the result as one undo step and `ui.dialog.cancel` rolls it back. Live-effect plug-ins open
-the `effect` dialog (`effect.dialog {effect: "plugin.<id>"}`). `ui.installPlugin {path?}` installs a `.wasm` (without
+the `effect` dialog (`effect.dialog {effect: "plugin.<id>"}`). An exporter plug-in with parameters opens the
+`pluginExport` dialog once Export As has picked the file: one field per parameter, `__plugin`, and `__export` (the
+export's own parameters); `ui.dialog.confirm` writes the file. `ui.installPlugin {path?}` installs a `.wasm` (without
 a path it asks for one); see [plugins.md](plugins.md).
 
 Overprint Black: the Edit → Edit Colors → Overprint Black… menu item opens a `command` parameter dialog for

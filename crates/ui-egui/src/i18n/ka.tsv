@@ -1879,6 +1879,7 @@ lighting	Light	სინათლე
 	One file per artboard: <name>-<artboard>.{ext}	ერთი ფაილი თითო სამუშაო დაფაზე: <name>-<artboard>.{ext}
 	One page per artboard.	ერთი გვერდი თითო სამუშაო დაფაზე.
 	The bounds of the visible art.	ხილული ნახატის საზღვრები.
+	The plug-in writes the whole document.	პლაგინი მთელ დოკუმენტს ჩაწერს.
 	Use Artboards	სამუშაო დაფების გამოყენება
 	Choose a folder	საქაღალდის არჩევა
 	Create Sub-folders	ქვესაქაღალდეების შექმნა
@@ -4015,6 +4016,7 @@ effect	Regular	ჩვეულებრივი
 @msg	{_1} files can be opened but not written (see document.formats)	{_1} ფაილების გახსნა შესაძლებელია, ჩაწერა — არა (იხ. document.formats)
 @msg	{_1} font families available	ხელმისაწვდომი შრიფტების ოჯახები: {_1}
 @msg	{_1} is a live effect (Effect › Plug-ins)	{_1} ცოცხალი ეფექტია (ეფექტი › პლაგინები)
+@msg	{_1} is an exporter (File › Export › Export As…)	{_1} ექსპორტის პლაგინია (ფაილი › ექსპორტირება › ექსპორტირება ფორმატში…)
 @msg	{_1} is already used by {_2}	{_1} უკვე გამოიყენება აქ: {_2}
 @msg	{_1} linked file(s) can't be read here: their previews show	მიბმული ფაილების წაკითხვა აქ ვერ ხერხდება ({_1}): ჩანს მათი გადახედვა
 @msg	{_1} linked image(s) changed on disk: Update Links shows the new versions	მიბმული გამოსახულებები შეიცვალა დისკზე ({_1}): ბმულების განახლება აჩვენებს ახალ ვერსიებს

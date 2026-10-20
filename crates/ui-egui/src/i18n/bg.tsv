@@ -3153,6 +3153,7 @@
 	Text Wrap Options	Опции за обтичане на текст
 	Text Wrap Options…	Опции за обтичане на текст…
 	The bounds of the visible art.	Границите на видимия макет.
+	The plug-in writes the whole document.	Приставката експортира целия документ.
 	The cell shows the type object's text as HTML.	Клетката показва текста на текстовия обект като HTML.
 	The document has no colour swatches.	Документът няма цветови образци.
 	The edge of the paper the printer can't reach: the art goes inside it, and the preview shows it dashed.	Краят на хартията, до който принтерът не може да стигне: макетът навлиза в него, а прегледът го показва с пунктир.

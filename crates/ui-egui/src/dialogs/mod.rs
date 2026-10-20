@@ -324,6 +324,7 @@ registry! {
     PrintPreset: [print::PRESET_KIND] => print::PRESET_SPEC,
     PrintPresets: [print_presets::KIND] => print_presets::SPEC,
     Plugin: [plugin::KIND] => plugin::SPEC,
+    PluginExport: [plugin::EXPORT_KIND] => plugin::EXPORT_SPEC,
     ScriptCheck: [script_check::KIND] => script_check::SPEC,
     VectorHalftone: [halftone::KIND] => halftone::SPEC,
     SimplifySlider: [simplify_slider::KIND] => simplify_slider::SPEC,
@@ -576,6 +577,8 @@ mod tests_export;
 mod tests_import_pdf;
 #[cfg(test)]
 mod tests_package;
+#[cfg(test)]
+mod tests_plugin_export;
 #[cfg(test)]
 mod tests_raster_formats;
 #[cfg(test)]

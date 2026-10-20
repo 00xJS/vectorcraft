@@ -17,7 +17,7 @@ use crate::objects::{decode, output_geometry};
 use crate::{Error, Kind, Limits, Result, registry};
 
 /// The effect id prefix of live-effect plug-ins: `plugin.<plug-in id>`.
-pub const PREFIX: &str = "plugin.";
+pub const PREFIX: &str = crate::PREFIX;
 
 /// Wall-clock budget of one live-effect run (drawing waits for it), in milliseconds.
 pub const WALL_TIME_MS: u64 = 5_000;
@@ -104,6 +104,11 @@ pub fn apply(id: &str, params: &Value, path: &PathData, bounds: Rect, rule: Fill
         return out.clone();
     }
     let r = run(&plugin, resolved, path, bounds, rule);
+    // A drawing that was cancelled (an export stopped half way) says nothing about the plug-in:
+    // the next drawing runs it again.
+    if matches!(r, Err(Error::Cancelled)) {
+        return None;
+    }
     note(id, &r);
     let out = r.ok();
     let mut cache = CACHE.lock().unwrap_or_else(|e| e.into_inner());
