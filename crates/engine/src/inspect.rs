@@ -347,8 +347,23 @@ fn name_of<T: PartialEq>(table: &[(T, &'static str)], v: T) -> &'static str {
 /// else the topmost stroke of its own (groups and layers too). None without a stroke.
 pub fn node_stroke(n: &Node) -> Option<StrokeLayer> {
     match &n.kind {
-        NodeKind::Text(t) => Some(t.runs.first().map_or_else(|| vectorcraft_doc::CharStyle::default().stroke_layer(), |r| r.style.stroke_layer())),
+        NodeKind::Text(t) => {
+            let mut st = t.runs.first().map_or_else(|| vectorcraft_doc::CharStyle::default().stroke_layer(), |r| r.style.stroke_layer());
+            // Character strokes are drawn in text space: report the document-space weight.
+            if let Some(k) = vectorcraft_doc::Scaling::factor(t.xf).filter(|k| k.is_finite()) {
+                scale_layer(&mut st, k);
+            }
+            Some(st)
+        }
         _ => n.appearance.stroke().cloned(),
+    }
+}
+
+/// Scale a stroke's weight and dash lengths by `s`.
+pub(crate) fn scale_layer(st: &mut StrokeLayer, s: f64) {
+    st.width *= s;
+    if let Some(d) = &mut st.dash {
+        d.scale(s);
     }
 }
 
