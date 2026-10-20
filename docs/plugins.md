@@ -39,9 +39,10 @@ its extensions that no built-in format has; `selectedOnly` hands it the selectio
 
 In the app, installed filters appear under **Object › Plug-ins**, next to **Install Plug-in…** and **Reload
 Plug-ins**; live effects under **Effect › Plug-ins** and in the Appearance panel's effect menu. A plug-in with
-parameters gets a dialog generated from its schema (numbers, whole numbers, checkboxes, dropdowns) with a live
-preview; without parameters it runs at once. Parameters too many for the window's height scroll inside the dialog,
-which keeps its heading and buttons in view. Exporters are formats of **File › Export › Export As**, where Use
+parameters gets a dialog generated from its schema (numbers, whole numbers, checkboxes, dropdowns, text and lists
+of numbers, labelled, explained and sorted into sections as its manifest says) with a live preview; without
+parameters it runs at once. Parameters too many for the window's height scroll inside the dialog, which keeps its
+heading and buttons in view. Exporters are formats of **File › Export › Export As**, where Use
 Artboards is greyed out (the plug-in writes the whole document); one with parameters asks for them in a dialog of the
 same kind once the file is picked, and its Export button writes the file. **File › Open** of a `.wasm` file installs
 a plug-in too (on the web this is how plug-ins get in).
@@ -111,10 +112,11 @@ pointers are offsets into the module's memory.
   "author": "Example",
   "description": "What it does.",
   "params": {
-    "amount": {"type": "number", "min": 0, "max": 100, "default": 50},
-    "steps":  {"type": "int", "min": 1, "max": 16, "default": 4},
+    "amount": {"type": "number", "min": 0, "max": 100, "default": 50, "unit": "%"},
+    "steps":  {"type": "int", "min": 1, "max": 16, "default": 4, "label": "Steps per curve"},
     "closed": {"type": "bool", "default": false},
-    "mode":   {"type": "choice", "options": ["soft", "hard"], "default": "soft"}
+    "mode":   {"type": "choice", "options": ["soft", "hard"], "default": "soft",
+               "help": "Soft keeps the corners round; hard keeps them sharp."}
   }
 }
 ```
@@ -130,7 +132,28 @@ pointers are offsets into the module's memory.
 - `params`: in dialog order. Names are `[A-Za-z0-9_]`, not starting with `_`, and not `id`, `ids`, `params` or
   `preview`. The host validates the user's values before calling: missing values take the default, numbers are
   clamped to `min..max` (ints rounded), a wrong type or an unknown choice is an error. Numeric defaults
-  are also clamped to their range, including the implicit zero default of an `int` parameter.
+  are also clamped to their range, including the implicit zero default of an `int` parameter. Besides `number`,
+  `int`, `bool` and `choice` there are `string` (`{"type": "string", "default": "", "maxLength": 256}`: a text field;
+  longer text is cut to `maxLength`, at most 4,096 characters) and `numberList` (`{"type": "numberList", "min": 0,
+  "max": 360, "default": [45, 135], "minItems": 1, "maxItems": 16}`: numbers typed separated by commas or spaces,
+  each clamped to `min..max`; a list of too few or too many is an error, and `maxItems` is at most 256). A plug-in
+  declares up to 256 parameters, at most 64 of them outside groups.
+
+Each parameter may also say how dialogs show it. Hosts from before these keys ignore them, so a plug-in that
+declares them still installs there:
+
+| Key | What the dialog does with it |
+|---|---|
+| `label` | Labels the field (1–64 characters). Without one, the label is the name spaced out (`rowSpacing` → Row Spacing). |
+| `unit` | Shows the unit the value is in after it (1–16 characters, such as `mm` or `°`). Nothing is converted: the plug-in gets the number as typed. |
+| `group` | Puts the parameter in a section that folds (1–64 characters). Parameters outside any group come first, then each group in the order it first appears. |
+| `help` | Shows what the parameter does when the pointer rests on its label (1–1,000 characters; line breaks allowed). |
+| `helpUrl` | Opens this `https://` page (at most 512 bytes) from a button after the field. |
+| `visibleWhen` | `{"pattern": ["lines", "crosshatch"], "outline": [true]}` shows the parameter only while each parameter it names (a checkbox or a choice declared before it) has one of the values listed and is shown itself. |
+
+A hidden parameter still goes to the plug-in with its value: what the dialog showed never changes a run. The
+filter, live-effect and exporter dialogs use all of these keys. The Appearance panel's editor of a plug-in effect's
+parameters uses `label`, `unit`, `help` and `visibleWhen`, and lists the parameters without sections or help buttons.
 
 ### Input
 
