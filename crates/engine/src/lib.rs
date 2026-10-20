@@ -1998,7 +1998,8 @@ impl Session {
                     deselect_guides(&st.doc, &mut st.selection);
                 }
                 st.revision += 1;
-                journal = Some(g.journal);
+                // The journal goes back to where the first of the canceled groups began, whatever the order of the documents.
+                journal = Some(journal.map_or(g.journal, |len: usize| len.min(g.journal)));
             }
         }
         if let Some(len) = journal {

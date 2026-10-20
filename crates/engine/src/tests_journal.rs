@@ -343,6 +343,47 @@ fn a_failed_batch_gives_back_the_highlighted_rows_and_the_current_layer() {
     assert_eq!(documents(&r), documents(&s));
 }
 
+/// Canceling undo groups open in two documents undoes the edits of both and cuts the journal back
+/// to where the first of them began, whichever document comes first in the list.
+#[test]
+fn canceling_undo_groups_in_two_documents_drops_the_edits_of_both_from_the_journal() {
+    let mut s = Session::new();
+    s.execute("file.new", &json!({"created": null})).unwrap();
+    s.execute("file.new", &json!({"created": null})).unwrap();
+    let objects = |s: &Session| s.documents().iter().map(|d| d.doc.node_count()).collect::<Vec<_>>();
+    let before = objects(&s);
+    // The first document's group begins first, and the second document's group begins after it.
+    let journal = s.journal.len();
+    assert!(s.set_active(0));
+    s.begin_undo_group();
+    s.execute("shape.rectangle", &rect_step(10)["params"]).unwrap();
+    assert!(s.set_active(1));
+    s.begin_undo_group();
+    s.execute("shape.rectangle", &rect_step(50)["params"]).unwrap();
+    s.end_undo_group(true);
+    assert_eq!(objects(&s), before, "both documents' edits are undone");
+    assert_eq!(s.journal.len(), journal, "the journal holds neither group's edits");
+    assert_eq!(documents(&replayed(&s)), documents(&s));
+
+    // The commands do the same: neither group's begin nor its edit stays in the journal.
+    let journal = s.journal.len();
+    for (id, p) in [
+        ("document.activate", json!({"index": 0})),
+        ("edit.undoGroup.begin", json!({})),
+        ("shape.rectangle", rect_step(10)["params"].clone()),
+        ("document.activate", json!({"index": 1})),
+        ("edit.undoGroup.begin", json!({})),
+        ("shape.rectangle", rect_step(50)["params"].clone()),
+        ("edit.undoGroup.end", json!({"cancel": true})),
+    ] {
+        s.execute(id, &p).unwrap();
+    }
+    assert_eq!(objects(&s), before);
+    let ids = s.journal.since(journal).iter().map(|(id, _)| id.as_str()).collect::<Vec<_>>();
+    assert!(!ids.iter().any(|id| matches!(*id, "edit.undoGroup.begin" | "shape.rectangle")), "{ids:?}");
+    assert_eq!(ids.last(), Some(&"edit.undoGroup.end"));
+}
+
 /// The edits made in an undo group (a scrubbed numeric field, #400) are one undo step, journaled
 /// one by one; a cancelled group undoes them and leaves the journal as it was.
 #[test]
