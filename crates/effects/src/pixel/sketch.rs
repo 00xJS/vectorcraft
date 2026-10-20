@@ -429,4 +429,3 @@ pub(super) fn water_paper(px: &mut [[u8; 4]], w: usize, h: usize, space: &PixelS
         *p = premultiply(rgb, f32::from(p[3]) / 255.0);
     });
 }
-

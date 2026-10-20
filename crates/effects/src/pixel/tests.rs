@@ -2153,10 +2153,7 @@ fn note_paper_embosses_a_gradient_and_grain_changes_pixels() {
 
 #[test]
 fn water_paper_params_take_defaults_and_stay_in_range() {
-    assert_eq!(
-        fx("sketch.waterPaper", json!({})),
-        PixelFx::WaterPaper { fiber_length: 15.0, brightness: 50.0, contrast: 50.0 }
-    );
+    assert_eq!(fx("sketch.waterPaper", json!({})), PixelFx::WaterPaper { fiber_length: 15.0, brightness: 50.0, contrast: 50.0 });
     assert_eq!(
         fx("sketch.waterPaper", json!({"fiberLength": 1, "brightness": -5, "contrast": 200})),
         PixelFx::WaterPaper { fiber_length: 3.0, brightness: 0.0, contrast: 100.0 }
@@ -2165,10 +2162,7 @@ fn water_paper_params_take_defaults_and_stay_in_range() {
     assert!(f.outset(Rect::new(0.0, 0.0, 100.0, 50.0)) > 0.0);
     assert!(f.reach().unwrap_or(0.0) > 0.0);
     let doc = crate::effect_info("sketch.waterPaper").unwrap().params;
-    assert!(
-        doc.contains("helpx.adobe.com/illustrator/using/summary-effects.html") && doc.contains("unverified"),
-        "{doc}"
-    );
+    assert!(doc.contains("helpx.adobe.com/illustrator/using/summary-effects.html") && doc.contains("unverified"), "{doc}");
 }
 
 #[test]
@@ -2176,10 +2170,10 @@ fn water_paper_softens_and_textures_a_flat_fill_without_losing_coverage() {
     let (w, h) = (64, 64);
     let src = image(w, h, |_, _| [200, 80, 40, 255]);
     let out = water_paper(json!({"fiberLength": 20, "brightness": 50, "contrast": 40}), &src, w, h, &space(w, h));
-    assert!(out.chunks_exact(4).filter(|p| p[3] > 200).count() > w * h / 2, "most of the fill stays visible");
+    assert!(out.as_chunks::<4>().0.iter().filter(|p| p[3] > 200).count() > w * h / 2, "most of the fill stays visible");
     assert_ne!(out, src, "the wash changes pixels");
     let spread = |d: &[u8]| {
-        let reds: Vec<u8> = d.chunks_exact(4).map(|p| p[0]).collect();
+        let reds: Vec<u8> = d.as_chunks::<4>().0.iter().map(|p| p[0]).collect();
         let (min, max) = (reds.iter().min().unwrap(), reds.iter().max().unwrap());
         max - min
     };

@@ -601,7 +601,9 @@ impl PixelFx {
             | PixelFx::NotePaper { .. }
             | PixelFx::Reticulation { .. } => Some(0.0),
             PixelFx::Plaster { smoothness, .. } => Some(sketch::plaster_reach(smoothness)),
-            PixelFx::WaterPaper { fiber_length, .. } => Some(sketch::water_paper_shift(fiber_length) + 3.0 * (0.06 * fiber_length.clamp(3.0, 50.0)).max(0.35)),
+            PixelFx::WaterPaper { fiber_length, .. } => {
+                Some(sketch::water_paper_shift(fiber_length) + 3.0 * (0.06 * fiber_length.clamp(3.0, 50.0)).max(0.35))
+            }
             // Cutout's palette comes from the whole object.
             PixelFx::Cutout { .. } => None,
             // The softened tones around the pixel.
@@ -671,9 +673,7 @@ impl PixelFx {
             PixelFx::Stamp { balance, smoothness } => sketch_ink::stamp(px, w, h, space, balance, smoothness),
             PixelFx::Plaster { image_balance, smoothness, light } => sketch::plaster(px, w, h, space, image_balance, smoothness, light),
             PixelFx::Reticulation { density, foreground, background } => sketch::reticulation(px, w, h, space, density, foreground, background),
-            PixelFx::WaterPaper { fiber_length, brightness, contrast } => {
-                sketch::water_paper(px, w, h, space, fiber_length, brightness, contrast)
-            }
+            PixelFx::WaterPaper { fiber_length, brightness, contrast } => sketch::water_paper(px, w, h, space, fiber_length, brightness, contrast),
             PixelFx::GlowingEdges { width, brightness, smoothness } => edges::glow(px, w, h, to_px(width), brightness, to_px(smoothness)),
             PixelFx::ColorHalftone { max_radius, angles } => pixelate::color_halftone(px, w, h, space, max_radius, angles),
             PixelFx::Crystallize { cell } => pixelate::crystallize(px, w, h, space, cell),
