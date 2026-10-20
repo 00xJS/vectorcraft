@@ -156,8 +156,8 @@ fn body(app: &mut VectorcraftApp, ui: &mut egui::Ui, d: &mut Dialog) -> bool {
     let changed = match vectorcraft_plugins::effect::installed(&id) {
         Some(plugin) => form::schema_fields(app, ui, d, plugin.manifest()),
         None if vectorcraft_effects::is_adjustment(&id) => adjust_fields(ui, d),
-        None if id == GLASS => glass_fields(app, ui, d),
-        None if id == TEXTURIZER => texturizer_fields(app, ui, d),
+        None if id == GLASS => glass_fields(app, ui, d, GLASS),
+        None if id == TEXTURIZER => glass_fields(app, ui, d, TEXTURIZER),
         None if id == TRANSFORM => transform_fields(ui, d, app.session.general_unit()),
         None if id == ZIG_ZAG => zig_zag_fields(ui, d, app.session.general_unit()),
         None if id == DROP_SHADOW => drop_shadow_fields(ui, d, app.session.general_unit()),
@@ -223,50 +223,23 @@ const GLASS: &str = "distort.glass";
 /// The Texturizer effect (Effect › Texture › Texturizer…).
 const TEXTURIZER: &str = "texture.texturizer";
 
-/// Glass's dialog: its parameters, the Texture menu ending with Loaded Texture once a texture is
+/// Glass and Texturizer: parameters, the Texture menu ending with Loaded Texture once a texture is
 /// loaded, and Load Texture… with the loaded texture's size. Returns whether the values differ from
 /// those last previewed.
-fn glass_fields(app: &mut VectorcraftApp, ui: &mut egui::Ui, d: &mut Dialog) -> bool {
+fn glass_fields(app: &mut VectorcraftApp, ui: &mut egui::Ui, d: &mut Dialog, id: &str) -> bool {
     use vectorcraft_effects::pixel::{TEXTURE_IMAGE, texture};
     // The stored texture is shown as its size, not as a text field.
     let stored = d.fields.remove(TEXTURE_IMAGE);
     let size = stored.as_ref().and_then(Value::as_str).and_then(texture).map(|t| t.size());
-    let menu = glass_textures(size.is_some());
-    let doc = vectorcraft_effects::effect_info(GLASS).map(|e| e.params).unwrap_or_default();
+    let menu = if id == TEXTURIZER {
+        texturizer_textures(size.is_some())
+    } else {
+        glass_textures(size.is_some())
+    };
+    let doc = vectorcraft_effects::effect_info(id).map(|e| e.params).unwrap_or_default();
     let unit = app.session.general_unit();
-    let pick = |k: &str| if k == "texture" { Some(menu) } else { choices(GLASS, k) };
-    form::param_fields(ui, d, &|k| vectorcraft_effects::is_length(GLASS, k, false), &pick, &|k| doc_rank(doc, k), unit);
-    if let Some(v) = stored {
-        d.fields.insert(TEXTURE_IMAGE.into(), v);
-    }
-    let mut load = false;
-    ui.horizontal(|ui| {
-        let can_read = app.services.read.is_some();
-        load = ui.add_enabled_ui(can_read, |ui| widgets::flat_button(ui, tl!("Load Texture…"), 110.0)).inner.clicked();
-        if let Some((w, h)) = size {
-            widgets::dim_label(ui, &format!("{w} × {h} px"));
-        }
-    });
-    if load
-        && let Err(e) = crate::picks::in_dialog(app, d, load_texture)
-        && e != "cancelled"
-    {
-        app.status(e);
-    }
-    values_changed(d)
-}
-
-/// Texturizer's dialog: its parameters, the Texture menu ending with Loaded Texture once a texture
-/// is loaded, and Load Texture… with the loaded texture's size.
-fn texturizer_fields(app: &mut VectorcraftApp, ui: &mut egui::Ui, d: &mut Dialog) -> bool {
-    use vectorcraft_effects::pixel::{TEXTURE_IMAGE, texture};
-    let stored = d.fields.remove(TEXTURE_IMAGE);
-    let size = stored.as_ref().and_then(Value::as_str).and_then(texture).map(|t| t.size());
-    let menu = texturizer_textures(size.is_some());
-    let doc = vectorcraft_effects::effect_info(TEXTURIZER).map(|e| e.params).unwrap_or_default();
-    let unit = app.session.general_unit();
-    let pick = |k: &str| if k == "texture" { Some(menu) } else { choices(TEXTURIZER, k) };
-    form::param_fields(ui, d, &|k| vectorcraft_effects::is_length(TEXTURIZER, k, false), &pick, &|k| doc_rank(doc, k), unit);
+    let pick = |k: &str| if k == "texture" { Some(menu) } else { choices(id, k) };
+    form::param_fields(ui, d, &|k| vectorcraft_effects::is_length(id, k, false), &pick, &|k| doc_rank(doc, k), unit);
     if let Some(v) = stored {
         d.fields.insert(TEXTURE_IMAGE.into(), v);
     }

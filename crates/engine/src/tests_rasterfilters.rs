@@ -264,10 +264,6 @@ fn glass_params(s: &Session, g: u64) -> Value {
     s.doc().unwrap().doc.node(NodeId(g)).unwrap().appearance.effects[0].params.clone()
 }
 
-fn texturizer_params(s: &Session, g: u64) -> Value {
-    s.doc().unwrap().doc.node(NodeId(g)).unwrap().appearance.effects[0].params.clone()
-}
-
 /// Effect › Distort › Glass › Load Texture: an image file, given by path or as bytes, is stored
 /// with the effect as its gray levels and picked; the canvas draws it, and a save and open keeps it.
 #[test]
@@ -348,10 +344,10 @@ fn texturizer_loads_a_texture_and_draws_it() {
     let (mut s, g) = striped();
     let file = json!({"name": "rings.png", "dataBase64": data});
     s.execute("effect.apply", &json!({"effect": "texture.texturizer", "ids": [g], "params": {"relief": 20, "textureImage": file}})).unwrap();
-    let p = texturizer_params(&s, g);
+    let p = glass_params(&s, g);
     assert_eq!(p["texture"], json!("loaded"));
     let loaded = render(&s);
-    assert!(texturizer_params(&s, g)["textureImage"].as_str().is_some());
+    assert!(glass_params(&s, g)["textureImage"].as_str().is_some());
     for (_, builtin) in vectorcraft_render::effects::pixel::TEXTURES {
         s.execute("effect.setParams", &json!({"index": 0, "ids": [g], "params": {"texture": builtin}})).unwrap();
         assert!(mean_diff(&loaded, &render(&s)) > 0.001, "{builtin}");
@@ -359,7 +355,7 @@ fn texturizer_loads_a_texture_and_draws_it() {
     s.execute("effect.setParams", &json!({"index": 0, "ids": [g], "params": {"texture": "loaded"}})).unwrap();
     assert_eq!(render(&s).pixels, loaded.pixels);
     let doc = vectorcraft_format::load(&vectorcraft_format::save(&s.doc().unwrap().doc, false)).unwrap();
-    assert_eq!(doc.node(NodeId(g)).unwrap().appearance.effects[0].params, texturizer_params(&s, g));
+    assert_eq!(doc.node(NodeId(g)).unwrap().appearance.effects[0].params, glass_params(&s, g));
     assert_eq!(Renderer::new().render_region(&doc, Rect::new(0.0, 0.0, 200.0, 200.0), 1.0, true).pixels, loaded.pixels);
 }
 
