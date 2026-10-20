@@ -639,18 +639,24 @@ fn arrange(s: &mut Session, how: Arrange) -> Result<Value> {
                 None => by_parent.push((par, vec![*id])),
             }
         }
-        for (par, group) in by_parent {
+        for (par, mut group) in by_parent {
+            // In a clip group or a clipping layer the bottom child is the clipping path: it stays
+            // there, and the art above it never goes below it (#3188).
+            let floor = usize::from(par.and_then(|p| d.node(p)).is_some_and(vectorcraft_doc::Node::clips));
+            if floor > 0 {
+                group.retain(|id| d.position(*id).is_some_and(|(_, idx, _)| idx >= floor));
+            }
             for (k, id) in group.iter().enumerate() {
                 let Some((_, idx, len)) = d.position(*id) else { continue };
-                if len == 0 {
+                if len <= floor {
                     continue;
                 }
                 let last = len - 1;
                 let to = match how {
-                    Arrange::Front => last.saturating_sub(k),
-                    Arrange::Back => k.min(last),
+                    Arrange::Front => last.saturating_sub(k).max(floor),
+                    Arrange::Back => (floor + k).min(last),
                     Arrange::Forward => (idx + 1).min(last.saturating_sub(k)).max(idx),
-                    Arrange::Backward => idx.saturating_sub(1).max(k.min(idx)),
+                    Arrange::Backward => idx.saturating_sub(1).max(floor + k.min(idx.saturating_sub(floor))),
                 };
                 if to != idx {
                     d.move_node(*id, par, to)?;
