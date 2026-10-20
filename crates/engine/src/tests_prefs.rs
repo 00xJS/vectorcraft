@@ -1060,6 +1060,38 @@ fn type_increments_step_the_type() {
     assert_eq!((style_at(&s, id, 0).size, style_at(&s, id, 6).size), (22.0, 25.0));
 }
 
+/// Auto leading steps from the leading its paragraph's Justification › Auto Leading sets, which
+/// is what the layout shows; a run spanning paragraphs with different Auto Leading is split.
+/// Fill with Placeholder Text counts lines at that leading too.
+#[test]
+fn auto_leading_steps_and_fills_from_the_paragraph_auto_leading() {
+    let mut s = new_doc();
+    let id = NodeId(s.execute("text.create", &json!({"x": 100, "y": 100, "text": "One\nTwo", "size": 20})).unwrap()["id"].as_u64().unwrap());
+    s.execute("text.setFormat", &json!({"ids": [id.0], "autoLeading": 200, "start": 5, "end": 5})).unwrap();
+    s.execute("select.set", &json!({"ids": [id.0]})).unwrap();
+    s.execute("type.step", &json!({"attribute": "leading"})).unwrap();
+    let lead = |s: &Session, byte| style_at(s, id, byte).leading.unwrap();
+    assert!((lead(&s, 0) - (20.0 * 1.2 + 2.0)).abs() < 1e-9, "default Auto Leading 120%");
+    assert!((lead(&s, 3) - (20.0 * 1.2 + 2.0)).abs() < 1e-9, "the line break is the first paragraph's");
+    assert!((lead(&s, 5) - (20.0 * 2.0 + 2.0)).abs() < 1e-9, "Auto Leading 200%");
+    s.execute("edit.undo", &json!({})).unwrap();
+    assert_eq!((style_at(&s, id, 0).leading, style_at(&s, id, 5).leading), (None, None), "one undo step");
+
+    let area = |s: &mut Session, x: f64| {
+        let r = s.execute("text.create", &json!({"x": x, "y": 10, "text": "x", "size": 10, "area": {"width": 100, "height": 200}})).unwrap();
+        NodeId(r["id"].as_u64().unwrap())
+    };
+    let (normal, airy) = (area(&mut s, 10.0), area(&mut s, 200.0));
+    s.execute("text.setFormat", &json!({"ids": [airy.0], "autoLeading": 240})).unwrap();
+    s.execute("type.fillPlaceholder", &json!({"ids": [normal.0, airy.0]})).unwrap();
+    let len = |s: &Session, id: NodeId| match s.doc().unwrap().doc.node(id).map(|n| &n.kind) {
+        Some(vectorcraft_doc::NodeKind::Text(t)) => t.plain_text().len(),
+        _ => panic!("not text"),
+    };
+    let (n, a) = (len(&s, normal), len(&s, airy));
+    assert!(a * 3 < n * 2 && a * 3 > n, "half as many lines at twice the leading: {a} vs {n}");
+}
+
 /// Cmd/Ctrl+Alt+Shift+. and , step the font size by five times the Size/Leading increment, on
 /// the selected type objects and on the Type tool's selected text.
 #[test]
