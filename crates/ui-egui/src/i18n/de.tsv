@@ -4934,6 +4934,14 @@ effect	Soft	Weich
 	Minimum must not exceed Desired, nor Desired Maximum.	Das Minimum darf den optimalen Wert nicht übersteigen, der optimale Wert nicht das Maximum.
 	Minimum	Minimum
 	Justification	Abstände
+	Add filters from the list above	Filter aus der Liste oben hinzufügen
+	Add to Stack	Zum Stapel hinzufügen
+	Applied Filters	Angewendete Filter
+	Categories	Kategorien
+	Choose a filter	Filter wählen
+	Effect Gallery	Effekt-Galerie
+	Filters	Filter
+	Select artwork to apply effects	Wählen Sie Grafik aus, um Effekte anzuwenden
 @msg	the file's variables and data sets weren't read (variables: {variables}, data sets: {data_sets}): the Variables panel doesn't list them	die Variablen und Datensätze der Datei wurden nicht gelesen (Variablen: {variables}, Datensätze: {data_sets}): Das Bedienfeld „Variablen“ listet sie nicht auf
 # Select by Color (select.color)
 	Select by Color	Nach Farbe auswählen

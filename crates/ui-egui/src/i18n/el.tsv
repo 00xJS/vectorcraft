@@ -5305,6 +5305,14 @@ effect	Points	Σημεία
 	Full Justify	Στοίχιση και στα δύο άκρα
 	Minimum must not exceed Desired, nor Desired Maximum.	Το ελάχιστο δεν πρέπει να υπερβαίνει το επιθυμητό, ούτε το επιθυμητό το μέγιστο.
 	Justification	Πλήρης στοίχιση
+	Add filters from the list above	Προσθέστε φίλτρα από τη λίστα παραπάνω
+	Add to Stack	Προσθήκη στη στοίβα
+	Applied Filters	Εφαρμοσμένα φίλτρα
+	Categories	Κατηγορίες
+	Choose a filter	Επιλέξτε φίλτρο
+	Effect Gallery	Συλλογή εφέ
+	Filters	Φίλτρα
+	Select artwork to apply effects	Επιλέξτε γραφικά για να εφαρμόσετε εφέ
 @msg	the file's variables and data sets weren't read (variables: {variables}, data sets: {data_sets}): the Variables panel doesn't list them	οι μεταβλητές και τα σύνολα δεδομένων του αρχείου δεν διαβάστηκαν (μεταβλητές: {variables}, σύνολα δεδομένων: {data_sets}): ο πίνακας Μεταβλητές δεν τα εμφανίζει
 # Select by Color (select.color)
 	Select by Color	Επιλογή βάσει χρώματος

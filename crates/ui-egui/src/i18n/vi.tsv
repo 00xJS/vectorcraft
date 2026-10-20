@@ -4948,6 +4948,14 @@ theme	Appearance	Giao diện
 	Minimum must not exceed Desired, nor Desired Maximum.	Giá trị tối thiểu không được vượt quá giá trị mong muốn, và giá trị mong muốn không được vượt quá tối đa.
 	Minimum	Tối thiểu
 	Justification	Căn đều
+	Add filters from the list above	Thêm bộ lọc từ danh sách phía trên
+	Add to Stack	Thêm vào ngăn xếp
+	Applied Filters	Bộ lọc đã áp dụng
+	Categories	Danh mục
+	Choose a filter	Chọn bộ lọc
+	Effect Gallery	Thư viện hiệu ứng
+	Filters	Bộ lọc
+	Select artwork to apply effects	Chọn đồ họa để áp dụng hiệu ứng
 @msg	the file's variables and data sets weren't read (variables: {variables}, data sets: {data_sets}): the Variables panel doesn't list them	các biến và tập dữ liệu của tệp chưa được đọc (biến: {variables}, tập dữ liệu: {data_sets}): bảng Biến không liệt kê chúng
 # Select by Color (select.color)
 	Select by Color	Chọn theo màu

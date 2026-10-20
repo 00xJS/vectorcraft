@@ -4948,6 +4948,14 @@ lighting	Light	Світло
 	Minimum must not exceed Desired, nor Desired Maximum.	Мінімум не може перевищувати бажане значення, а бажане — максимум.
 	Minimum	Мінімум
 	Justification	Вирівнювання за шириною
+	Add filters from the list above	Додайте фільтри зі списку вище
+	Add to Stack	Додати до стека
+	Applied Filters	Застосовані фільтри
+	Categories	Категорії
+	Choose a filter	Виберіть фільтр
+	Effect Gallery	Галерея ефектів
+	Filters	Фільтри
+	Select artwork to apply effects	Виберіть графіку, щоб застосувати ефекти
 @msg	the file's variables and data sets weren't read (variables: {variables}, data sets: {data_sets}): the Variables panel doesn't list them	змінні та набори даних файлу не прочитано (змінних: {variables}, наборів даних: {data_sets}): панель «Змінні» їх не показує
 # Select by Color (select.color)
 	Select by Color	Виділити за кольором

@@ -5192,6 +5192,14 @@ lighting	Light	光源
 	Minimum must not exceed Desired, nor Desired Maximum.	最小值不能超过所需值，所需值不能超过最大值。
 	Minimum	最小值
 	Justification	对齐设置
+	Add filters from the list above	从上方列表添加滤镜
+	Add to Stack	添加到堆栈
+	Applied Filters	已应用的滤镜
+	Categories	类别
+	Choose a filter	选择滤镜
+	Effect Gallery	效果库
+	Filters	滤镜
+	Select artwork to apply effects	选择要应用效果的图稿
 @msg	the file's variables and data sets weren't read (variables: {variables}, data sets: {data_sets}): the Variables panel doesn't list them	文件的变量和数据集未被读取（变量：{variables}，数据集：{data_sets}）：“变量”面板不会列出它们
 # Select by Color (select.color)
 	Select by Color	按颜色选择

@@ -5205,6 +5205,14 @@ mark-style	Japanese	Japońskie
 	Full Justify	Pełne justowanie
 	Minimum must not exceed Desired, nor Desired Maximum.	Minimum nie może przekraczać wartości optymalnej, a wartość optymalna maksimum.
 	Justification	Justowanie
+	Add filters from the list above	Dodaj filtry z listy powyżej
+	Add to Stack	Dodaj do stosu
+	Applied Filters	Zastosowane filtry
+	Categories	Kategorie
+	Choose a filter	Wybierz filtr
+	Effect Gallery	Galeria efektów
+	Filters	Filtry
+	Select artwork to apply effects	Wybierz grafikę, aby zastosować efekty
 @msg	the file's variables and data sets weren't read (variables: {variables}, data sets: {data_sets}): the Variables panel doesn't list them	zmienne i zestawy danych pliku nie zostały wczytane (zmienne: {variables}, zestawy danych: {data_sets}): panel Zmienne ich nie wyświetla
 # Select by Color (select.color)
 	Select by Color	Zaznacz według koloru
