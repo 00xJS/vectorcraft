@@ -23,14 +23,8 @@ const CATEGORIES: [(&str, &[&str]); 6] = [
     ("Texture", &["Effect", "Texture"]),
 ];
 
-pub(super) const SPEC: DialogSpec = DialogSpec {
-    heading: |_| tl!("Effect Gallery").into(),
-    body,
-    confirm,
-    min_width: 720.0,
-    max_width: Some(820.0),
-    ..DialogSpec::FORM
-};
+pub(super) const SPEC: DialogSpec =
+    DialogSpec { heading: |_| tl!("Effect Gallery").into(), body, confirm, min_width: 720.0, max_width: Some(820.0), ..DialogSpec::FORM };
 
 #[derive(Clone)]
 struct StackEntry {
@@ -45,19 +39,14 @@ pub fn open(app: &mut VectorcraftApp, _p: &Value) -> Result<Value, String> {
         return Err(tl!("Select artwork to apply effects").into());
     }
     let selected = effects_in_category(0).first().map(|e| e.id).unwrap_or("");
-    app.ui.dialog = Some(Dialog::new(
-        KIND,
-        json!({ "category": 0, "selected": selected, "stack": [], "stackSelected": 0, "stackFocus": false }),
-    ));
+    app.ui.dialog = Some(Dialog::new(KIND, json!({ "category": 0, "selected": selected, "stack": [], "stackSelected": 0, "stackFocus": false })));
     Ok(Value::Null)
 }
 
 fn effects_in_category(cat: usize) -> Vec<EffectInfo> {
     let path = CATEGORIES.get(cat).map(|(_, p)| *p).unwrap_or(CATEGORIES[0].1);
-    let mut out: Vec<EffectInfo> = vectorcraft_effects::effect_catalog()
-        .into_iter()
-        .filter(|e| e.menu == path && PIXEL_EFFECTS.contains(&e.id))
-        .collect();
+    let mut out: Vec<EffectInfo> =
+        vectorcraft_effects::effect_catalog().into_iter().filter(|e| e.menu == path && PIXEL_EFFECTS.contains(&e.id)).collect();
     out.sort_by(|a, b| a.label.cmp(b.label));
     out
 }
@@ -99,10 +88,7 @@ fn stack_of(d: &Dialog) -> Vec<StackEntry> {
 }
 
 fn write_stack(d: &mut Dialog, stack: &[StackEntry]) {
-    let rows: Vec<Value> = stack
-        .iter()
-        .map(|e| json!({ "effect": e.effect, "visible": e.visible, "params": e.params }))
-        .collect();
+    let rows: Vec<Value> = stack.iter().map(|e| json!({ "effect": e.effect, "visible": e.visible, "params": e.params })).collect();
     d.fields.insert("stack".into(), Value::Array(rows));
 }
 
@@ -129,11 +115,7 @@ fn set_stack_focus(d: &mut Dialog, on: bool) {
 fn browse_params(d: &Dialog) -> Map<String, Value> {
     let effect = d.fields.get("browseEffect").and_then(Value::as_str).unwrap_or("");
     let stored = d.fields.get("browseParams").and_then(Value::as_object).cloned().unwrap_or_default();
-    if effect.is_empty() {
-        stored
-    } else {
-        merged_params(effect, &stored)
-    }
+    if effect.is_empty() { stored } else { merged_params(effect, &stored) }
 }
 
 fn set_browse_params(d: &mut Dialog, effect: &str, params: Map<String, Value>) {
@@ -150,20 +132,16 @@ fn param_target(d: &Dialog, stack: &[StackEntry], stack_sel: usize, browse: &str
         }
     }
     let id = browse.to_string();
-    let params = if d.fields.get("browseEffect").and_then(Value::as_str) == Some(browse) {
-        browse_params(d)
-    } else {
-        default_params(browse)
-    };
+    let params = if d.fields.get("browseEffect").and_then(Value::as_str) == Some(browse) { browse_params(d) } else { default_params(browse) };
     (id, params)
 }
 
 fn write_param_target(d: &mut Dialog, stack: &mut [StackEntry], stack_sel: usize, browse: &str, effect: &str, params: Map<String, Value>) {
     if stack_focus(d) {
-        if let Some(e) = stack.get_mut(stack_sel) {
-            if e.effect == effect {
-                e.params = params;
-            }
+        if let Some(e) = stack.get_mut(stack_sel)
+            && e.effect == effect
+        {
+            e.params = params;
         }
         return;
     }
@@ -177,9 +155,8 @@ fn effect_param_fields(app: &mut VectorcraftApp, ui: &mut egui::Ui, effect_id: &
     if effect_id.is_empty() {
         return;
     }
-    let label = vectorcraft_effects::effect_info(effect_id)
-        .map(|e| e.label.trim_end_matches('…').to_string())
-        .unwrap_or_else(|| effect_id.to_string());
+    let label =
+        vectorcraft_effects::effect_info(effect_id).map(|e| e.label.trim_end_matches('…').to_string()).unwrap_or_else(|| effect_id.to_string());
     let mut fields = params.clone();
     fields.insert("__effect".into(), json!(effect_id));
     fields.insert("__label".into(), json!(label));
@@ -214,10 +191,8 @@ fn thumb(ui: &mut egui::Ui, id: &str, size: f32) {
                 255,
             )
         };
-        let band = Rect::from_min_max(
-            egui::pos2(rect.left() + rect.width() * t0, rect.top()),
-            egui::pos2(rect.left() + rect.width() * t1, rect.bottom()),
-        );
+        let band =
+            Rect::from_min_max(egui::pos2(rect.left() + rect.width() * t0, rect.top()), egui::pos2(rect.left() + rect.width() * t1, rect.bottom()));
         painter.rect_filled(band, 0.0, mix((t0 + t1) * 0.5));
     }
     painter.rect_stroke(rect, 0.0, Stroke::new(1.0, Tokens::get(ui.ctx()).input_border), egui::StrokeKind::Inside);
@@ -382,11 +357,8 @@ fn body(app: &mut VectorcraftApp, ui: &mut egui::Ui, d: &mut Dialog) -> bool {
 }
 
 fn add_selected(d: &mut Dialog, id: &str) {
-    let params = if !stack_focus(d) && d.fields.get("browseEffect").and_then(Value::as_str) == Some(id) {
-        browse_params(d)
-    } else {
-        default_params(id)
-    };
+    let params =
+        if !stack_focus(d) && d.fields.get("browseEffect").and_then(Value::as_str) == Some(id) { browse_params(d) } else { default_params(id) };
     let mut stack = stack_of(d);
     stack.push(StackEntry { effect: id.to_string(), visible: true, params });
     write_stack(d, &stack);
