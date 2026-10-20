@@ -1032,7 +1032,8 @@ impl GradientMesh {
 
     /// Mesh tool Alt-click: delete the mesh lines through point `index` (interior lines only).
     pub fn remove_point_lines(&mut self, index: usize) -> bool {
-        if index >= self.points.len() {
+        // A mesh from a file may not have the points its rows and columns need: it is indexed below.
+        if !self.is_valid() || index >= self.points.len() {
             return false;
         }
         let w = self.cols as usize + 1;
@@ -1872,5 +1873,19 @@ mod tests {
         // A corner in another space mixes them all in RGB.
         m.points[1].color = Color::rgb(1.0, 0.0, 0.0);
         assert!(matches!(m.color_at(0, 0, 0.5, 0.5).0, Color::Rgb { .. }));
+    }
+
+    /// Alt-clicking a point of a mesh from a file with fewer points than its rows and columns need
+    /// deletes nothing (it indexed past the points, a panic).
+    #[test]
+    fn mesh_lines_of_a_malformed_mesh_stay() {
+        let point = |i: u32| MeshPoint { p: Point::new(f64::from(i), 0.0), color: Color::BLACK, opacity: 1.0, handles: [Vec2::ZERO; 4] };
+        // An interior row's point and an interior column's point, each with 3 of the 6 points.
+        for (rows, cols, index) in [(2, 1, 2), (1, 2, 1)] {
+            let mut m = GradientMesh { rows, cols, points: (0..3).map(point).collect() };
+            let before = m.clone();
+            assert!(!m.remove_point_lines(index), "{rows}×{cols}, point {index}");
+            assert_eq!(m, before);
+        }
     }
 }
