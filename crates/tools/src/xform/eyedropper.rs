@@ -146,6 +146,27 @@ mod tests {
         assert!(t.pointer(&cx, &PointerEvent::new(PointerKind::Down, 400.0, 400.0)).is_empty());
     }
 
+    /// On a clip group's mask edge, where the art it clips lies over it, the eyedropper copies the
+    /// art's appearance, not the unpainted clipping path's (the selection tools take the path there).
+    #[test]
+    fn on_a_masks_edge_the_eyedropper_copies_the_art() {
+        let (d, _, _, art) = doc_with_masked_square();
+        let (s, p) = (Selection::default(), paint());
+        let a = EyedropperTool::default().pointer(&cx(&d, &s, &p), &PointerEvent::new(PointerKind::Down, 498.5, 450.0));
+        assert_eq!(a, vec![Action::Exec("appearance.copyFrom".into(), json!({"source": art.0}))]);
+    }
+
+    /// The tools that act on what is drawn hit with options that don't take a clipping path on
+    /// its outline; only the selection tools' do.
+    #[test]
+    fn only_the_selection_options_take_clipping_paths_on_their_outline() {
+        let (d, _) = doc_with_rect();
+        let (s, p) = (Selection::default(), paint());
+        let cx = cx(&d, &s, &p);
+        assert!(!cx.hit_options().clip_outlines);
+        assert!(cx.selection_hit_options().clip_outlines);
+    }
+
     #[test]
     fn the_stop_option_samples_into_the_selected_stop_then_switches_back() {
         let (d, _) = doc_with_rect();

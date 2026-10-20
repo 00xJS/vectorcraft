@@ -1991,10 +1991,18 @@ fn walk_drawn<'a>(n: &'a Node, f: &mut impl FnMut(&'a Node)) {
     }
 }
 
-/// The topmost editable object under document point `p` at `zoom`, as the selection tools pick it
-/// ([`hit_with`]).
+/// The topmost editable object under document point `p` at `zoom`, as what is drawn there
+/// ([`hit_with`]): a swatch or a symbol dropped on art.
 fn hit_at(app: &VectorcraftApp, p: Point, zoom: f64) -> Option<vectorcraft_doc::hit::Hit> {
     hit_with(app, p, zoom, vectorcraft_doc::hit::hit_test)
+}
+
+/// The topmost editable object under document point `p` at `zoom`, as the selection tools pick
+/// it: [`hit_at`], and a clipping path on its outline before the art it clips
+/// ([`vectorcraft_doc::hit::HitOptions::clip_outlines`]). Object Highlighting and a right-click's
+/// selection show and take what a click of those tools would.
+fn selection_hit_at(app: &VectorcraftApp, p: Point, zoom: f64) -> Option<vectorcraft_doc::hit::Hit> {
+    hit_with(app, p, zoom, |doc, p, opt| vectorcraft_doc::hit::hit_test(doc, p, vectorcraft_doc::hit::HitOptions { clip_outlines: true, ..opt }))
 }
 
 /// `test` on the active document at document point `p`, with the options the selection tools hit
@@ -2030,7 +2038,7 @@ fn context_menu(app: &mut VectorcraftApp, resp: &egui::Response, xf: &Xf) {
         let locked = hit_with(app, p, xf.zoom, |doc, p, opt| Some(vectorcraft_doc::hit::locked_objects_at(doc, p, opt)));
         app.ui.context_locked = app.session.active().map(|st| st.uid).zip(locked);
         if let Some(st) = app.session.active()
-            && let Some(top) = hit_at(app, p, xf.zoom).map(|h| h.top_object(st.isolation))
+            && let Some(top) = selection_hit_at(app, p, xf.zoom).map(|h| h.top_object(st.isolation))
             && !st.selection.contains(top)
         {
             // A locked or hidden object can't be selected; the menu is then for the selection as is.
@@ -2125,7 +2133,7 @@ fn hover_highlight(app: &VectorcraftApp, p: &egui::Painter, xf: &Xf) {
         return;
     }
     let Some(st) = app.session.active() else { return };
-    let Some(hit) = hit_at(app, h, xf.zoom) else { return };
+    let Some(hit) = selection_hit_at(app, h, xf.zoom) else { return };
     let id = if app.session.tool_id() == "selection" { hit.top_object(st.isolation) } else { hit.leaf };
     if st.selection.contains(id) {
         return;

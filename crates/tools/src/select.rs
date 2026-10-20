@@ -321,7 +321,7 @@ impl SelectionTool {
             return None;
         }
         let reach = cx.tol(HOVER_REACH);
-        let under = hit_test(cx.doc, p, cx.hit_options()).map(|h| h.top_object(cx.isolation));
+        let under = hit_test(cx.doc, p, cx.selection_hit_options()).map(|h| h.top_object(cx.isolation));
         let nearest = |points: &mut dyn Iterator<Item = Point>| {
             points.filter(|q| q.distance(p) <= reach).min_by(|a, b| a.distance(p).total_cmp(&b.distance(p)))
         };
@@ -372,8 +372,9 @@ fn thread_params(cx: &ToolContext, from: NodeId, start: Point, end: Point) -> Va
     let frame = |n: &vectorcraft_doc::Node| {
         is_area_type(n) || matches!(&n.kind, vectorcraft_doc::NodeKind::Path { path, .. } if path.subpaths.first().is_some_and(|s| s.closed))
     };
-    let to =
-        hit_test(cx.doc, start, cx.hit_options()).map(|h| h.top_object(cx.isolation)).filter(|id| *id != from && cx.doc.node(*id).is_some_and(frame));
+    let to = hit_test(cx.doc, start, cx.selection_hit_options())
+        .map(|h| h.top_object(cx.isolation))
+        .filter(|id| *id != from && cx.doc.node(*id).is_some_and(frame));
     match to {
         Some(to) => json!({ "from": from.0, "to": to.0 }),
         None => json!({ "from": from.0, "at": [start.x, start.y] }),
@@ -488,7 +489,7 @@ impl Tool for SelectionTool {
                 if crate::rulerguide::guide_at(cx, p).is_some() {
                     return vec![];
                 }
-                if let Some(h) = hit_test(cx.doc, p, cx.hit_options()) {
+                if let Some(h) = hit_test(cx.doc, p, cx.selection_hit_options()) {
                     let top = h.top_object(cx.isolation);
                     if cx.doc.node(top).is_some_and(|n| matches!(n.kind, vectorcraft_doc::NodeKind::Text(_))) {
                         return vec![Action::SwitchTool("type".into())];
@@ -567,7 +568,7 @@ impl Tool for SelectionTool {
                     self.state = State::Moving { start: p, began: false, deselect: None, key: None };
                     return vec![Action::Exec("select.set".into(), json!({ "ids": [behind.0] }))];
                 }
-                match hit_test(cx.doc, p, cx.hit_options()) {
+                match hit_test(cx.doc, p, cx.selection_hit_options()) {
                     Some(h) => {
                         let top = h.top_object(cx.isolation);
                         let mut out = vec![];
@@ -789,7 +790,7 @@ impl Tool for SelectionTool {
         if cx.snap_to_point && matches!(Self::hover_point(cx, p), Some((_, "anchor"))) {
             return Cursor::ArrowHollow;
         }
-        if let Some(h) = hit_test(cx.doc, p, cx.hit_options()) {
+        if let Some(h) = hit_test(cx.doc, p, cx.selection_hit_options()) {
             if cx.selection.contains(h.top_object(cx.isolation)) || m.alt {
                 return Cursor::Move;
             }
@@ -802,7 +803,7 @@ impl Tool for SelectionTool {
 /// Select Behind: of the objects under `p` (topmost first), the one below the lowest selected
 /// one, back to the topmost after the bottom one; the topmost when none is selected.
 fn object_behind(cx: &ToolContext, p: Point) -> Option<NodeId> {
-    let stack = objects_at(cx.doc, p, cx.hit_options(), cx.isolation);
+    let stack = objects_at(cx.doc, p, cx.selection_hit_options(), cx.isolation);
     let next = stack.iter().rposition(|id| cx.selection.contains(*id)).map_or(0, |i| i + 1);
     stack.get(next).or(stack.first()).copied()
 }
@@ -844,7 +845,7 @@ pub(crate) fn release_guide_at(cx: &ToolContext, p: Point, m: Mods) -> Option<Ac
     if let Some(i) = crate::rulerguide::guide_at(cx, p) {
         return Some(Action::Exec("view.guides.release".into(), json!({ "index": i })));
     }
-    let leaf = hit_test(cx.doc, p, cx.hit_options())?.leaf;
+    let leaf = hit_test(cx.doc, p, cx.selection_hit_options())?.leaf;
     let guide = cx.doc.node(leaf).is_some_and(|n| matches!(n.kind, vectorcraft_doc::NodeKind::Path { guide: true, .. }));
     guide.then(|| Action::Exec("view.guides.release".into(), json!({ "ids": [leaf.0] })))
 }
@@ -871,6 +872,21 @@ mod tests {
 
     fn ev(kind: PointerKind, x: f64, y: f64) -> PointerEvent {
         PointerEvent::new(kind, x, y)
+    }
+
+    /// A Selection tool press on a clip group's mask edge, where the art it clips lies over it,
+    /// selects the clip group, as a press on the art inside does.
+    #[test]
+    fn a_press_on_a_masks_edge_selects_its_clip_group() {
+        let (d, g, _, _) = doc_with_masked_square();
+        let (s, p) = (Selection::default(), paint());
+        for x in [500.0, 501.5, 450.0] {
+            let a = SelectionTool::default().pointer(&cx(&d, &s, &p), &ev(PointerKind::Down, x, 450.0));
+            assert!(a.iter().any(|a| matches!(a, Action::Exec(c, v) if c == "select.set" && v["ids"] == json!([g.0]))), "at {x}: {a:?}");
+        }
+        // Just outside the mask, beyond the tolerance, the clipped-away art isn't there.
+        let a = SelectionTool::default().pointer(&cx(&d, &s, &p), &ev(PointerKind::Down, 520.0, 450.0));
+        assert!(!a.iter().any(|a| matches!(a, Action::Exec(c, _) if c == "select.set")), "{a:?}");
     }
 
     /// #955: grabbed by an anchor and dropped near another object's anchor, the anchor lands
