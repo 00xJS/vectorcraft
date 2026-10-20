@@ -2428,11 +2428,11 @@ fn set_live_shape(s: &mut Session, p: &Value) -> Result<Value> {
                 }
                 *path = l.to_path();
             }
-            if let Some(on) = relative_radii {
-                if let Some(l) = live.as_deref_mut() {
-                    convert_radii_relative(l, on);
-                    *path = l.to_path();
-                }
+            if let Some(on) = relative_radii
+                && let Some(l) = live.as_deref_mut()
+            {
+                convert_radii_relative(l, on);
+                *path = l.to_path();
             }
             if radius.is_none() && kind.is_none() {
                 continue;
