@@ -139,6 +139,41 @@ fn distribute_with_a_huge_spacing_from_the_key_object() {
 }
 
 #[test]
+fn distribute_with_a_huge_spacing_from_a_key_guide() {
+    for (vertical, pos) in [(true, 50.0), (true, 10000.0), (false, -10000.0)] {
+        for p in [json!({"horizontal": "left", "spacing": 1e308}), json!({"vertical": "bottom", "spacing": -1e308})] {
+            let mut s = Fixture::Multi.session();
+            s.execute("guide.add", &json!({"vertical": vertical, "pos": pos})).unwrap();
+            s.execute("guide.select", &json!({"indexes": [0], "toggle": true})).unwrap();
+            s.execute("select.key", &json!({"guide": 0})).unwrap();
+            if no_panic(s.execute("object.distribute", &p)).is_ok() {
+                check_session(&s).unwrap_or_else(|e| panic!("guide at {pos}, {p}: {e}"));
+                vectorcraft_testkit::invariants::check_native_roundtrip(&s.doc().unwrap().doc).unwrap_or_else(|e| panic!("guide at {pos}, {p}: {e}"));
+            }
+        }
+    }
+}
+
+#[test]
+fn distribute_guides_selected_alone_with_a_huge_spacing() {
+    for (cmd, p) in [
+        ("object.distributeSpacing", json!({"axis": "horizontal", "spacing": 1e308})),
+        ("object.distributeSpacing", json!({"axis": "vertical", "spacing": -1e308})),
+        ("object.distribute", json!({"horizontal": "center", "to": "artboard", "artboard": 99})),
+    ] {
+        let mut s = Fixture::Empty.session();
+        for (v, pos) in [(true, 10.0), (true, 20.0), (true, 9000.0), (false, -9000.0), (false, 0.0)] {
+            s.execute("guide.add", &json!({"vertical": v, "pos": pos})).unwrap();
+        }
+        s.execute("guide.select", &json!({"indexes": [0, 1, 2, 3, 4]})).unwrap();
+        if no_panic(s.execute(cmd, &p)).is_ok() {
+            check_session(&s).unwrap_or_else(|e| panic!("{cmd} {p}: {e}"));
+            vectorcraft_testkit::invariants::check_native_roundtrip(&s.doc().unwrap().doc).unwrap_or_else(|e| panic!("{cmd} {p}: {e}"));
+        }
+    }
+}
+
+#[test]
 fn bug_artboard_huge_props_break_svg() {
     for key in ["x", "y", "width", "height"] {
         let mut s = Fixture::Single.session();
