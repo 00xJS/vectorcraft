@@ -1,7 +1,7 @@
 //! Paragraph panel: seven alignment buttons, Paragraph Direction (with the Indic options), indents,
-//! space before/after, Hyphenate, Mojikumi Set and Kinsoku Set (with the East Asian options); the panel menu
-//! turns Roman Hanging Punctuation on and off, opens Justification… and Hyphenation… and picks the
-//! Single-line or Every-line Composer.
+//! space before/after, Hyphenate, Insert Kashidas (with the Indic options), Mojikumi Set and Kinsoku
+//! Set (with the East Asian options); the panel menu turns Roman Hanging Punctuation on and off,
+//! opens Justification… and Hyphenation… and picks the Single-line or Every-line Composer.
 
 use egui::{Ui, vec2};
 use serde_json::{Value, json};
@@ -247,6 +247,28 @@ pub fn show(app: &mut VectorcraftApp, ui: &mut Ui) {
         return;
     }
     hyphenate_check(app, ui, &para);
+    // How long the kashidas are that justify Arabic lines, with the Middle Eastern (Indic) options.
+    if app.session.prefs.show_indic_options {
+        ui.horizontal(|ui| {
+            use vectorcraft_doc::text::Kashida;
+            widgets::dim_label(ui, tl!("Insert Kashidas"));
+            let kinds = [
+                (tl!("None"), Kashida::None, "none"),
+                (tl!("Short"), Kashida::Short, "short"),
+                (tl!("Medium"), Kashida::Medium, "medium"),
+                (tl!("Long"), Kashida::Long, "long"),
+                (tl!("Stylistic"), Kashida::Stylistic, "stylistic"),
+            ];
+            let names = kinds.map(|k| k.0);
+            let current = kinds.iter().find(|k| k.1 == para.kashida).map_or(names[0], |k| k.0);
+            // Already translated: shown as they are.
+            if let Some(i) = widgets::dropdown_names(ui, "pa-kashida", current, &names, ui.available_width() - 4.0)
+                && let Some((_, _, key)) = kinds.get(i)
+            {
+                format(app, json!({"kashida": key}));
+            }
+        });
+    }
     // Japanese composition: how punctuation is spaced (JLREQ 3.1), with the East Asian options.
     if app.session.prefs.show_east_asian_options {
         ui.horizontal(|ui| {
@@ -345,7 +367,7 @@ pub fn menu(app: &mut VectorcraftApp, ui: &mut Ui) {
 /// Reset Panel: the paragraphs the panel acts on ([`format`]) take Auto alignment, no indents or
 /// paragraph spacing, Hyphenate off with the default Hyphenation and Justification options, Auto
 /// direction, Bottom-to-Bottom Leading, Regular burasagari, the Hard kinsoku set, the Every-line
-/// Composer and Roman Hanging Punctuation off.
+/// Composer, Roman Hanging Punctuation off and no kashidas.
 fn reset_panel(app: &mut VectorcraftApp) {
     let h = HyphenationOptions::default();
     let j = vectorcraft_doc::JustificationOptions::default();
@@ -355,7 +377,7 @@ fn reset_panel(app: &mut VectorcraftApp) {
         json!({
             "leftIndent": 0, "rightIndent": 0, "firstLineIndent": 0, "spaceBefore": 0, "spaceAfter": 0, "hyphenate": false,
             "wordsLongerThan": h.words_longer_than, "afterFirst": h.after_first, "beforeLast": h.before_last,
-            "hyphenLimit": h.hyphen_limit, "hyphenationZone": h.zone, "hyphenateCapitalized": h.capitalized,
+            "hyphenLimit": h.hyphen_limit, "hyphenationZone": h.zone, "hyphenateCapitalized": h.capitalized, "kashida": "none",
             "wordSpacing": j.word_spacing, "letterSpacing": j.letter_spacing, "glyphScaling": j.glyph_scaling,
             "autoLeading": j.auto_leading, "singleWordJustification": "fullJustify",
             "direction": "auto", "leadingModel": "romanBaseline", "burasagari": "standard", "kinsoku": "hard", "composer": "everyLine",
@@ -585,6 +607,32 @@ mod tests {
         let without = tips(&mut app);
         app.session.prefs.show_indic_options = true;
         assert!(tips(&mut app) > without, "two more buttons");
+    }
+
+    /// Insert Kashidas is in the panel with the Middle Eastern (Indic) options only, shows the
+    /// paragraph's setting, and Reset Panel sets it back to None.
+    #[test]
+    fn insert_kashidas_shows_with_the_indic_options_and_reset_panel_turns_it_off() {
+        let mut app = VectorcraftApp::new(Session::new(), Default::default());
+        app.run("file.new", json!({"width": 400, "height": 200})).unwrap();
+        let id = app.run("text.create", json!({"x": 20, "y": 50, "text": "كتب محمد"})).unwrap()["id"].clone();
+        app.run("select.set", json!({"ids": [id]})).unwrap();
+        crate::i18n::set_current(crate::i18n::Lang::EN);
+        let painted = |app: &mut VectorcraftApp| crate::tests_labels::painted_text(app, show);
+        assert!(!painted(&mut app).contains("Insert Kashidas"));
+        app.session.prefs.show_indic_options = true;
+        let text = painted(&mut app);
+        assert!(text.contains("Insert Kashidas") && text.contains("None"), "{text}");
+        app.run("text.setFormat", json!({"kashida": "medium"})).unwrap();
+        assert!(painted(&mut app).contains("Medium"));
+        let kashida = |app: &VectorcraftApp| {
+            let node = app.session.active().unwrap().doc.node(vectorcraft_doc::NodeId(id.as_u64().unwrap())).unwrap();
+            let NodeKind::Text(text) = &node.kind else { panic!("text") };
+            text.para_at(0).kashida
+        };
+        assert_eq!(kashida(&app), vectorcraft_doc::text::Kashida::Medium);
+        reset_panel(&mut app);
+        assert_eq!(kashida(&app), vectorcraft_doc::text::Kashida::None);
     }
 
     /// Reset Panel turns Hyphenate and Roman Hanging Punctuation off and sets the Hyphenation and

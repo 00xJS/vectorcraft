@@ -1098,6 +1098,43 @@ mod area_tests {
         assert!(text(&s).para_at(1).roman_hanging);
     }
 
+    /// Paragraph panel › Insert Kashidas: `text.setFormat {kashida}` sets it per paragraph in one
+    /// undo step, the paragraph is saved with it only when it is not None and opens with it, an
+    /// unknown value changes nothing, and paragraph styles carry it.
+    #[test]
+    fn insert_kashidas_is_set_per_paragraph_and_saved_only_when_set() {
+        use vectorcraft_doc::text::Kashida;
+        let mut s = Session::new();
+        s.execute("file.new", &json!({"width": 400, "height": 400})).unwrap();
+        let id = s
+            .execute("text.create", &json!({"x": 10, "y": 10, "size": 20, "text": "كتب محمد\nعلي", "area": {"width": 300, "height": 200}}))
+            .unwrap()["id"]
+            .as_u64()
+            .unwrap();
+        let text = |s: &Session| match &s.doc().unwrap().doc.node(NodeId(id)).unwrap().kind {
+            NodeKind::Text(t) => (**t).clone(),
+            _ => panic!("text"),
+        };
+        assert_eq!(text(&s).para_at(0).kashida, Kashida::None);
+        assert!(serde_json::to_value(text(&s).para_at(0)).unwrap().get("kashida").is_none());
+        s.execute("select.set", &json!({"ids": [id]})).unwrap();
+        // Only the first paragraph (the caret's range).
+        s.execute("text.setFormat", &json!({"kashida": "medium", "start": 0, "end": 0})).unwrap();
+        assert_eq!((text(&s).para_at(0).kashida, text(&s).para_at(1).kashida), (Kashida::Medium, Kashida::None));
+        assert_eq!(serde_json::to_value(text(&s).para_at(0)).unwrap()["kashida"], "medium");
+        let reopened = vectorcraft_format::load(&vectorcraft_format::save(&s.doc().unwrap().doc, false)).unwrap();
+        let Some(NodeKind::Text(back)) = reopened.node(NodeId(id)).map(|n| &n.kind) else { panic!("text") };
+        assert_eq!((back.para_at(0).kashida, back.para_at(1).kashida), (Kashida::Medium, Kashida::None));
+        assert!(s.execute("text.setFormat", &json!({"kashida": "wide"})).is_err());
+        assert_eq!(text(&s).para_at(0).kashida, Kashida::Medium, "an unknown value changes nothing");
+        s.execute("edit.undo", &json!({})).unwrap();
+        assert_eq!(text(&s).para_at(0).kashida, Kashida::None);
+        // A paragraph style carries it.
+        s.execute("paraStyle.new", &json!({"name": "Stretched", "attrs": {"kashida": "stylistic"}})).unwrap();
+        s.execute("paraStyle.apply", &json!({"name": "Stretched", "id": id})).unwrap();
+        assert_eq!(text(&s).para_at(1).kashida, Kashida::Stylistic);
+    }
+
     /// Paragraph panel menu › Justification…: `text.setFormat` sets each paragraph's word and
     /// letter spacing, glyph scaling, Auto Leading and Single Word Justification, clamped to their
     /// ranges, in one undo step; Minimum ≤ Desired ≤ Maximum must hold or nothing changes. They

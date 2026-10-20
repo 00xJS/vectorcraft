@@ -4,6 +4,7 @@ use std::ops::Range;
 
 use kurbo::{Affine, BezPath, PathEl, Point, Rect, Shape, Vec2};
 use unicode_bidi::{BidiInfo, Level};
+use vectorcraft_doc::text::Kashida;
 use vectorcraft_doc::{
     Burasagari, CharStyle, HyphenationOptions, InlineArt, Justify, Kinsoku, LeadingModel, Mojikumi, ParaDirection, ParaStyle, PathAlign, PathEffect,
     SingleWordJustify, TextKind, TextObject,
@@ -14,6 +15,7 @@ use crate::composer::{Breakpoint, Params, compose};
 use crate::fontdb::FontDb;
 use crate::hyphen::hyphen_points_with;
 use crate::justify::{Flex, LineFit, apply_desired, fit_line, is_word_space};
+use crate::kashida;
 use crate::shape::{
     Punct, SGlyph, Tcy, cap_x_heights, hyphen_glyph, is_cjk, mark_word_ends, no_line_end, no_line_start, punct, shape_range, soft_line_start,
     style_metrics,
@@ -139,6 +141,34 @@ impl Ctx<'_> {
             rtl: g.level.is_rtl() && !self.vertical,
             scale: 1.0,
         });
+    }
+
+    /// Draw a kashida `len` points long from `at` (the pen on the baseline) on line `line`, as
+    /// tatweels in the face, size and style of glyph `g`. Short, Medium and Long kashidas are one
+    /// tatweel stretched along the baseline; a Stylistic one is tatweels side by side. Each tatweel
+    /// is a glyph at `g`'s byte offset that stands for no character (length 0) and does not
+    /// advance: `g`'s advance takes the kashida in.
+    fn emit_kashida(&mut self, g: &SGlyph, kind: Kashida, len: f64, at: Point, line: usize) {
+        let Some((gid, t)) = kashida::tatweel(g) else { return };
+        let mut k = g.clone();
+        k.gid = gid;
+        k.adv = t;
+        k.dx = 0.0;
+        k.dy = 0.0;
+        k.len = 0;
+        k.lead = 0.0;
+        k.ch = kashida::TATWEEL;
+        k.inline = None;
+        k.tcy = None;
+        if kind == Kashida::Stylistic {
+            let n = (len / t).round().clamp(1.0, kashida::MAX_TATWEELS) as usize;
+            for m in 0..n {
+                let x = at.x + m as f64 * t;
+                self.emit(&k, Affine::translate((x, at.y)), Point::new(x, at.y), 0.0, 0.0, line);
+            }
+            return;
+        }
+        self.emit(&k, Affine::translate((at.x, at.y)) * Affine::scale_non_uniform(len / t, 1.0), at, 0.0, 0.0, line);
     }
 }
 
@@ -1934,6 +1964,11 @@ fn flow(cx: &mut Ctx<'_>, paras: &[Range<usize>], t: &TextObject, regions: Optio
                 (true, SingleWordJustify::AlignCenter) => (1, false),
                 (true, SingleWordJustify::AlignRight) => (2, false),
             };
+            // Insert Kashidas: the Arabic words of a horizontal line take its room on kashidas,
+            // and the word spaces and gaps take what is left.
+            let kashidas =
+                if justify && !cx.vertical && room > w + EPS { kashida::plan(cx.text, &sg, i..body, para.kashida, room - w) } else { vec![] };
+            let w = w + kashidas.iter().map(|k| k.1).sum::<f64>();
             if justify && (room - w).abs() > EPS {
                 let line_flex = |j: usize| if held.contains(&j) { Flex::default() } else { flex.get(j).copied().unwrap_or_default() };
                 if cjk_gaps > 0 && room > w {
@@ -1989,7 +2024,7 @@ fn flow(cx: &mut Ctx<'_>, paras: &[Range<usize>], t: &TextObject, regions: Optio
             let leading_space_width: f64 =
                 order.iter().take_while(|&&offset| i + offset >= trimmed).filter_map(|&offset| sg.get(i + offset)).map(|g| g.adv).sum();
             let mut x = start_x - leading_space_width;
-            for offset in order {
+            for (oi, &offset) in order.iter().enumerate() {
                 let j = i + offset;
                 let Some(g) = sg.get(j) else { continue };
                 let mut adv = g.adv;
@@ -2020,6 +2055,16 @@ fn flow(cx: &mut Ctx<'_>, paras: &[Range<usize>], t: &TextObject, regions: Optio
                         adv += per_gap;
                     }
                 }
+                // The kashida before a cluster in the text is drawn at the cluster's right, between
+                // it and the letter before it, and the cluster's last glyph advances over it: the
+                // caret, selection and hit testing take it as part of the cluster.
+                let kashida = kashidas
+                    .binary_search_by_key(&g.byte, |k| k.0)
+                    .ok()
+                    .and_then(|at| kashidas.get(at))
+                    .filter(|_| order.get(oi + 1).and_then(|&o| sg.get(i + o)).is_none_or(|next| next.byte != g.byte))
+                    .map(|k| k.1);
+                adv += kashida.unwrap_or(0.0);
                 let y = baseline - align_shift(g, cx.style_at(g.byte).char_align, line_em, cx.vertical);
                 let place = if scale != 1.0 { Affine::translate((x, y)) * Affine::scale_non_uniform(scale, 1.0) } else { Affine::translate((x, y)) };
                 cx.emit(g, place, Point::new(x, y), 0.0, adv, li);
@@ -2033,6 +2078,9 @@ fn flow(cx: &mut Ctx<'_>, paras: &[Range<usize>], t: &TextObject, regions: Optio
                     if let Some(tab) = cx.out.glyphs.last_mut() {
                         tab.outline.extend(dots);
                     }
+                }
+                if let Some(len) = kashida {
+                    cx.emit_kashida(g, para.kashida, len, Point::new(x + adv - len, y), li);
                 }
                 x += adv;
                 if j < trimmed {
