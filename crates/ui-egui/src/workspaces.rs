@@ -223,7 +223,9 @@ fn remember(ui: &mut UiState) {
     let w = capture(ui, &current);
     ui.workspace_changes.retain(|x| x.name != current);
     ui.workspace_changes.push(w);
-    ui.workspace_changes.truncate(64);
+    // Over the cap, the oldest go: the layout just kept is the newest.
+    let over = ui.workspace_changes.len().saturating_sub(64);
+    ui.workspace_changes.drain(..over);
 }
 
 /// Switch to workspace `name` as it was left (its changes since it was saved), else as saved.
@@ -601,6 +603,24 @@ mod tests {
         save_as(&mut ui, "Other").unwrap();
         switch(&mut ui, ESSENTIALS).unwrap();
         assert!(!ui.control_bar, "Essentials didn't remember the deleted workspace's layout");
+    }
+
+    #[test]
+    fn a_full_list_of_remembered_layouts_drops_the_oldest_not_the_newest() {
+        let mut ui = UiState::default();
+        let names: Vec<String> = (0..70).map(|i| format!("W{i}")).collect();
+        for name in &names {
+            save_as(&mut ui, name).unwrap();
+        }
+        for name in &names {
+            switch(&mut ui, name).unwrap();
+            ui.control_bar = true;
+        }
+        switch(&mut ui, ESSENTIALS).unwrap();
+        assert_eq!(ui.workspace_changes.len(), 64);
+        assert!(ui.workspace_changes.iter().all(|w| w.name != "W0"), "the oldest went");
+        switch(&mut ui, "W69").unwrap();
+        assert!(ui.control_bar, "the layout just left is kept");
     }
 
     #[test]
