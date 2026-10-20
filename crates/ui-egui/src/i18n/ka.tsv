@@ -4917,6 +4917,13 @@ imageTrace	Outline	კონტური
 	Time (hhmmss)	დრო (hhmmss)
 	PDF Print	PDF (ბეჭდვა)
 	Merge only with selection	შერწყმა მხოლოდ მონიშნულთან
+	Consider Open Filled Paths as Closed	შევსებული ღია ტრაექტორიების შეკრულად მიჩნევა
+	Pick Color From:	ფერის წყარო:
+	Artwork	ნახატი
+	Cursor Swatch Preview	ფერის ნიმუშები მაჩვენებელთან
+	Selection:	მონიშვნა:
+	Straight Line	სწორი ხაზი
+	Highlight:	გამოკვეთა:
 	Words Longer Than:	სიტყვები, რომელთა სიგრძე აღემატება:
 	After First:	პირველის შემდეგ:
 	Before Last:	ბოლომდე:
