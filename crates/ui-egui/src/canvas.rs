@@ -91,8 +91,9 @@ enum Drag {
         start_rot: f64,
         snaps: bool,
     },
-    /// A Selection tool move dragged off the canvas: the panels get the art
-    /// ([`widgets::PanelDrag::Art`]).
+    /// A Selection tool move over a panel or toolbar: the art waits where it last moved on the
+    /// canvas, and the panels get it ([`widgets::PanelDrag::Art`]) if it is released there. Back
+    /// on the canvas the move goes on, as in Illustrator (#2826).
     Art,
     /// Fingers making a touch gesture ([`crate::touch`]): the first one's press does nothing.
     Gesture,
@@ -106,6 +107,14 @@ fn drag_id() -> egui::Id {
 /// Where the pointer was last seen during a press on the canvas.
 fn drag_pos_id() -> egui::Id {
     egui::Id::new("canvas-drag-pos")
+}
+/// The layer the canvas was last drawn on: a release over another layer is over a panel (#2826).
+fn drag_layer_id() -> egui::Id {
+    egui::Id::new("canvas-drag-layer")
+}
+/// Whether `p` is over the canvas itself, not a panel or a floating window over it.
+fn on_canvas(ui: &Ui, resp: &egui::Response, p: Pos2) -> bool {
+    ui.clip_rect().contains(p) && ui.ctx().layer_id_at(p).is_none_or(|l| l == resp.layer_id)
 }
 /// The document point last sent to the tool as a drag during [`Drag::Tool`].
 fn tool_drag_doc_id() -> egui::Id {
@@ -860,6 +869,7 @@ fn handle_input(app: &mut VectorcraftApp, ui: &Ui, resp: &egui::Response, rect: 
             ui.data_mut(|dd| {
                 dd.insert_temp(drag_id(), d);
                 dd.insert_temp(drag_pos_id(), p);
+                dd.insert_temp(drag_layer_id(), resp.layer_id);
             });
         }
     } else if drag.is_none()
@@ -912,8 +922,18 @@ fn handle_input(app: &mut VectorcraftApp, ui: &Ui, resp: &egui::Response, rect: 
                     }
                     ui.data_mut(|dd| dd.insert_temp(drag_id(), Drag::ZoomScrub { start, held, moved }));
                 }
+                Drag::Art if on_canvas(ui, resp, p) => {
+                    // Back on the canvas: the move goes on from where it left, with the pointer.
+                    egui::DragAndDrop::clear_payload(ui.ctx());
+                    let ev = PointerEvent { kind: PointerKind::Drag, pos: xf.to_doc(p), mods: mods(m, space), pressure: pen_pressure(ui, false) };
+                    dispatch(app, &ev, view);
+                    ui.data_mut(|dd| {
+                        dd.insert_temp(drag_id(), Drag::Tool);
+                        dd.insert_temp(drag_pos_id(), p);
+                    });
+                }
                 Drag::Art | Drag::Gesture | Drag::Present => {}
-                Drag::Tool if drag_art_out(app, ui, resp, p, view) => {
+                Drag::Tool if drag_art_out(app, ui, resp, p) => {
                     ui.data_mut(|dd| dd.insert_temp(drag_id(), Drag::Art));
                 }
                 Drag::Tool => {
@@ -973,7 +993,22 @@ fn handle_input(app: &mut VectorcraftApp, ui: &Ui, resp: &egui::Response, rect: 
                     let ev = PointerEvent { kind: PointerKind::Up, pos: xf.to_doc(p), mods: mods(m, space), pressure: pen_pressure(ui, false) };
                     dispatch(app, &ev, view);
                 }
-                Drag::Art | Drag::Gesture | Drag::Present => {}
+                Drag::Art if on_canvas(ui, resp, p) => {
+                    // Came back to the canvas and released in one frame: finish the move here.
+                    egui::DragAndDrop::clear_payload(ui.ctx());
+                    let pressure = pen_pressure(ui, false);
+                    let pos = xf.to_doc(p);
+                    dispatch(app, &PointerEvent { kind: PointerKind::Drag, pos, mods: mods(m, space), pressure }, view);
+                    dispatch(app, &PointerEvent { kind: PointerKind::Up, pos, mods: mods(m, space), pressure }, view);
+                }
+                Drag::Art => {
+                    // Released over a panel: the move goes back. (The app ends it before the panels
+                    // see the release, so a panel can take the art; this is the headless path.)
+                    // With no document open there is nothing to roll back; the tool still gets its up.
+                    let _ = app.session.cancel_interaction();
+                    dispatch(app, &PointerEvent { kind: PointerKind::Up, pos: Point::ZERO, mods: Mods::default(), pressure: 1.0 }, view);
+                }
+                Drag::Gesture | Drag::Present => {}
                 Drag::Pan { .. } | Drag::RotateView { .. } => {}
             }
         }
@@ -1386,10 +1421,11 @@ fn drop_press(app: &mut VectorcraftApp, ui: &Ui, view: vectorcraft_engine::ViewI
     ui.data_mut(|d| d.insert_temp(drag_id(), Drag::Gesture));
 }
 
-/// A Selection tool move dragged off the canvas (to `p`, over a panel) turns into a panel drag of
-/// the selected art ([`widgets::PanelDrag::Art`]): the move is dropped, so the art stays where it
-/// was, and the panel it is released on takes it (the Graphic Styles panel makes a style of it).
-fn drag_art_out(app: &mut VectorcraftApp, ui: &Ui, resp: &egui::Response, p: Pos2, view: vectorcraft_engine::ViewInfo) -> bool {
+/// A Selection tool move dragged off the canvas (to `p`, over a panel) becomes a panel drag of
+/// the selected art ([`widgets::PanelDrag::Art`]): the art waits where it last moved on the
+/// canvas, and a panel it is released on takes it (the Graphic Styles panel makes a style of it).
+/// Back on the canvas, [`Drag::Art`] takes the move up again where the pointer is (#2826).
+fn drag_art_out(app: &VectorcraftApp, ui: &Ui, resp: &egui::Response, p: Pos2) -> bool {
     let off = !ui.clip_rect().contains(p) || ui.ctx().layer_id_at(p).is_some_and(|l| l != resp.layer_id);
     let Some(st) = app.session.active().filter(|_| off && app.session.tool_id() == "selection") else { return false };
     // The Selection tool's interaction while it moves (or Alt-copies) the selection.
@@ -1397,13 +1433,32 @@ fn drag_art_out(app: &mut VectorcraftApp, ui: &Ui, resp: &egui::Response, p: Pos
         return false;
     }
     let ids = st.selection.objects.clone();
-    if app.session.cancel_interaction().is_err() {
-        return false;
-    }
-    // With nothing left to commit, the tool's mouse-up just returns it to rest.
-    dispatch(app, &PointerEvent { kind: PointerKind::Up, pos: Point::ZERO, mods: Mods::default(), pressure: 1.0 }, view);
     egui::DragAndDrop::set_payload(ui.ctx(), widgets::PanelDrag::Art(ids));
     true
+}
+
+/// A Selection tool move released over a panel: end it before the panels see the release, so a
+/// panel that takes the art ([`widgets::PanelDrag::Art`]) takes it where it was, and no move is
+/// left open (#2826). The art stays where it last moved while the pointer is over the panel.
+pub(crate) fn release_over_panel(app: &mut VectorcraftApp, ctx: &egui::Context) {
+    if !ctx.input(|i| i.pointer.primary_released()) {
+        return;
+    }
+    let Some(p) = ctx.input(|i| i.pointer.interact_pos().or(i.pointer.latest_pos())) else { return };
+    if !matches!(ctx.data(|d| d.get_temp::<Drag>(drag_id())), Some(Drag::Art)) {
+        return;
+    }
+    let layer = ctx.data(|d| d.get_temp::<egui::LayerId>(drag_layer_id()));
+    let on = app.canvas_rect.is_some_and(|r| r.contains(p)) && ctx.layer_id_at(p).is_none_or(|l| Some(l) == layer);
+    if on {
+        // The canvas's release finishes the move.
+        return;
+    }
+    // With no document open there is nothing to roll back; the tool still gets its mouse-up.
+    let _ = app.session.cancel_interaction();
+    let view = app.view_info();
+    dispatch(app, &PointerEvent { kind: PointerKind::Up, pos: Point::ZERO, mods: Mods::default(), pressure: 1.0 }, view);
+    ctx.data_mut(|d| d.remove::<Drag>(drag_id()));
 }
 
 /// Send a pointer event to the active tool and act on UI requests (dialogs, tool switches).
@@ -7164,7 +7219,7 @@ mod tests {
     }
 
     #[test]
-    fn art_moved_off_the_canvas_becomes_a_panel_drag_and_stays_put() {
+    fn art_moved_off_the_canvas_waits_and_drops_on_the_panel() {
         let mut app = VectorcraftApp::new(Session::new(), Default::default());
         app.session.execute("file.new", &json!({"width": 400, "height": 300})).unwrap();
         let id = app.session.execute("shape.rectangle", &json!({"x": 50, "y": 50, "width": 100, "height": 100})).unwrap()["id"].as_u64().unwrap();
@@ -7182,21 +7237,62 @@ mod tests {
             modifiers: Default::default(),
         };
         let start = xf.to_screen(Point::new(100.0, 100.0));
+        let left = |app: &VectorcraftApp| app.session.active().unwrap().doc.node(id).unwrap().geometric_bounds().unwrap().x0;
+        let moved_to = |screen: Pos2| 50.0 + xf.to_doc(screen).x - 100.0;
         frame(&mut app, &ctx, vec![egui::Event::PointerMoved(start), button(start, true)]);
         // Moving on the canvas moves the art...
         frame(&mut app, &ctx, vec![egui::Event::PointerMoved(start + vec2(40.0, 0.0))]);
         assert!(app.session.active().unwrap().interaction.is_some());
-        // ...until the pointer leaves it: the move is dropped and the panels get the art.
+        // ...over a panel it waits where it was, and the panels get the art.
         frame(&mut app, &ctx, vec![egui::Event::PointerMoved(pos2(850.0, 100.0))]);
-        assert!(app.session.active().unwrap().interaction.is_none());
-        assert_eq!(*app.session.active().unwrap().doc, *before, "the art is back where it was");
+        assert!(app.session.active().unwrap().interaction.is_some(), "the move waits, not cancels");
+        assert!((left(&app) - moved_to(start + vec2(40.0, 0.0))).abs() < 0.01, "the art stays where it last moved");
         assert_eq!(egui::DragAndDrop::payload::<widgets::PanelDrag>(&ctx).as_deref(), Some(&widgets::PanelDrag::Art(vec![id])));
-        assert!(!app.session.tool_busy());
-        // Released anywhere, nothing moves and nothing is recorded.
-        frame(&mut app, &ctx, vec![egui::Event::PointerMoved(start), button(start, false)]);
+        // Released over the panel, the move goes back and nothing is recorded.
+        frame(&mut app, &ctx, vec![button(pos2(850.0, 100.0), false)]);
         let st = app.session.active().unwrap();
+        assert!(st.interaction.is_none());
         assert_eq!(*st.doc, *before);
         assert_eq!(st.history.undo.len(), undo);
+    }
+
+    /// #2826: a move taken over a panel waits where it left the canvas, and goes on with the
+    /// pointer when it comes back — it isn't dropped or put back.
+    #[test]
+    fn art_moved_off_the_canvas_resumes_when_the_pointer_returns() {
+        let mut app = VectorcraftApp::new(Session::new(), Default::default());
+        app.session.execute("file.new", &json!({"width": 400, "height": 300})).unwrap();
+        let id = app.session.execute("shape.rectangle", &json!({"x": 50, "y": 50, "width": 100, "height": 100})).unwrap()["id"].as_u64().unwrap();
+        app.select_tool("selection");
+        let ctx = egui::Context::default();
+        frame(&mut app, &ctx, vec![]);
+        let xf = Xf::new(app.canvas_rect.unwrap(), app.view().unwrap());
+        let undo = app.session.active().unwrap().history.undo.len();
+        let button = |pos: Pos2, pressed: bool| egui::Event::PointerButton {
+            pos,
+            button: egui::PointerButton::Primary,
+            pressed,
+            modifiers: Default::default(),
+        };
+        let start = xf.to_screen(Point::new(100.0, 100.0));
+        let left = |app: &VectorcraftApp| app.session.active().unwrap().doc.node(vectorcraft_doc::NodeId(id)).unwrap().geometric_bounds().unwrap().x0;
+        let moved_to = |screen: Pos2| 50.0 + xf.to_doc(screen).x - 100.0;
+        frame(&mut app, &ctx, vec![egui::Event::PointerMoved(start), button(start, true)]);
+        frame(&mut app, &ctx, vec![egui::Event::PointerMoved(start + vec2(40.0, 0.0))]);
+        assert!((left(&app) - moved_to(start + vec2(40.0, 0.0))).abs() < 0.01, "the move is live");
+        // Over a panel the move waits where it last moved, and stays live.
+        frame(&mut app, &ctx, vec![egui::Event::PointerMoved(pos2(850.0, 100.0))]);
+        assert!(app.session.active().unwrap().interaction.is_some(), "the move waits, not cancels");
+        assert!((left(&app) - moved_to(start + vec2(40.0, 0.0))).abs() < 0.01, "the art stays where it last moved");
+        // Back on the canvas it goes on with the pointer, 60 pt right.
+        frame(&mut app, &ctx, vec![egui::Event::PointerMoved(start + vec2(60.0, 0.0))]);
+        assert!(app.session.active().unwrap().interaction.is_some(), "the move is live again");
+        assert!((left(&app) - moved_to(start + vec2(60.0, 0.0))).abs() < 0.01, "the move resumes with the pointer");
+        frame(&mut app, &ctx, vec![egui::Event::PointerMoved(start + vec2(70.0, 0.0))]);
+        frame(&mut app, &ctx, vec![button(start + vec2(70.0, 0.0), false)]);
+        let st = app.session.active().unwrap();
+        assert!((left(&app) - moved_to(start + vec2(70.0, 0.0))).abs() < 0.01, "released where the pointer was");
+        assert_eq!(st.history.undo.len(), undo + 1, "one move, one undo step");
     }
 
     /// One frame of keyboard handling and canvas, as the app runs them; returns the IME output.
@@ -7219,6 +7315,50 @@ mod tests {
             NodeKind::Text(t) => t.plain_text(),
             _ => panic!("not text"),
         }
+    }
+
+    /// #2826: the app ends a move released over a panel before the panels draw, so a panel takes
+    /// the art as it was, and no move is left open.
+    #[test]
+    fn a_move_released_over_a_panel_ends_before_the_panels_draw() {
+        let mut app = VectorcraftApp::new(Session::new(), Default::default());
+        app.session.execute("file.new", &json!({"width": 400, "height": 300})).unwrap();
+        let id = app.session.execute("shape.rectangle", &json!({"x": 50, "y": 50, "width": 100, "height": 100})).unwrap()["id"].as_u64().unwrap();
+        app.select_tool("selection");
+        let ctx = egui::Context::default();
+        frame(&mut app, &ctx, vec![]);
+        let xf = Xf::new(app.canvas_rect.unwrap(), app.view().unwrap());
+        let before = app.session.active().unwrap().doc.clone();
+        let undo = app.session.active().unwrap().history.undo.len();
+        let button = |pos: Pos2, pressed: bool| egui::Event::PointerButton {
+            pos,
+            button: egui::PointerButton::Primary,
+            pressed,
+            modifiers: Default::default(),
+        };
+        let start = xf.to_screen(Point::new(100.0, 100.0));
+        frame(&mut app, &ctx, vec![egui::Event::PointerMoved(start), button(start, true)]);
+        frame(&mut app, &ctx, vec![egui::Event::PointerMoved(start + vec2(40.0, 0.0))]);
+        frame(&mut app, &ctx, vec![egui::Event::PointerMoved(pos2(850.0, 100.0))]);
+        assert!(app.session.active().unwrap().interaction.is_some());
+        let raw = egui::RawInput {
+            screen_rect: Some(egui::Rect::from_min_size(Pos2::ZERO, vec2(800.0, 600.0))),
+            events: vec![button(pos2(850.0, 100.0), false)],
+            ..Default::default()
+        };
+        let mut out = ctx.run_ui(raw, |ui| {
+            crate::canvas::release_over_panel(&mut app, ui.ctx());
+            assert!(app.session.active().unwrap().interaction.is_none(), "the move is ended");
+            assert_eq!(*app.session.active().unwrap().doc, *before, "the art is back where it was");
+            assert_eq!(
+                egui::DragAndDrop::payload::<widgets::PanelDrag>(ui.ctx()).as_deref(),
+                Some(&widgets::PanelDrag::Art(vec![vectorcraft_doc::NodeId(id)])),
+                "the panel still gets the art"
+            );
+            assert!(ui.ctx().data(|d| d.get_temp::<Drag>(drag_id())).is_none(), "no drag is left");
+        });
+        out.textures_delta.clear();
+        assert_eq!(app.session.active().unwrap().history.undo.len(), undo);
     }
 
     #[test]
