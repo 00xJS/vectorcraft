@@ -428,6 +428,10 @@ pub struct UiState {
     /// User-saved workspaces (New Workspace…).
     #[serde(default)]
     pub custom_workspaces: Vec<crate::workspaces::Workspace>,
+    /// Layout changes made in a workspace since it was saved (or last reset), by workspace name:
+    /// switching back to it brings them back; Reset <name> drops them.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub workspace_changes: Vec<crate::workspaces::Workspace>,
     /// File → Open Recent Files, most recent first.
     #[serde(default)]
     pub recent_files: Vec<String>,
@@ -771,6 +775,11 @@ impl UiState {
         crate::edit_toolbar::sanitize(&mut self.toolbar_edits);
         self.docking = self.docking.filter(crate::panel_docking::valid);
         self.docking_icons.retain(|id| ICON_PANELS.iter().any(|entry| entry.0 == id));
+        // Changes kept for workspaces that still exist, one per workspace (a hand-edited file).
+        let mut seen = std::collections::BTreeSet::new();
+        let custom: Vec<String> = self.custom_workspaces.iter().map(|w| w.name.clone()).collect();
+        self.workspace_changes.retain(|w| (crate::workspaces::is_builtin(&w.name) || custom.contains(&w.name)) && seen.insert(w.name.clone()));
+        self.workspace_changes.truncate(64);
         // Overrides that can't fire (modifier-only chords recorded by older versions, #487) give
         // the default back.
         self.shortcut_overrides.retain(|_, c| c.is_empty() || crate::shortcut_editor::normalize(c).is_some());
@@ -829,6 +838,7 @@ impl Default for UiState {
             workspace: default_workspace(),
             touch_workspace_restore: None,
             custom_workspaces: vec![],
+            workspace_changes: vec![],
             recent_files: vec![],
             recent_fonts: vec![],
             favorite_fonts: vec![],

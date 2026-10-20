@@ -1,6 +1,11 @@
 //! Window → Workspace: saved panel/bar layouts (Essentials, Essentials Classic, Painting, …),
 //! Reset, New Workspace…, Manage Workspaces…. A workspace is a snapshot of `UiState` layout
 //! flags; UI brightness and everything else is untouched when switching.
+//!
+//! As in Illustrator, a workspace remembers the changes made in it: switching to another one keeps
+//! the layout as it was left (`UiState::workspace_changes`, kept with the preferences), switching
+//! back brings it back, and Reset <name> returns to the workspace as saved. New Workspace… with
+//! the name of a user workspace saves the current layout as it.
 
 use std::sync::atomic::Ordering;
 
@@ -209,13 +214,47 @@ pub fn apply(ui: &mut UiState, w: &Workspace) {
     ui.workspace = w.name.clone();
 }
 
-/// A workspace by name (user workspaces shadow nothing: names are unique across both lists).
-pub fn find(ui: &UiState, name: &str) -> Option<Workspace> {
+/// Keep the layout of the current workspace as it is now, so switching back brings it back.
+fn remember(ui: &mut UiState) {
+    let current = ui.workspace.clone();
+    if find_saved(ui, &current).is_none() {
+        return;
+    }
+    let w = capture(ui, &current);
+    ui.workspace_changes.retain(|x| x.name != current);
+    ui.workspace_changes.push(w);
+    ui.workspace_changes.truncate(64);
+}
+
+/// Switch to workspace `name` as it was left (its changes since it was saved), else as saved.
+pub fn switch(ui: &mut UiState, name: &str) -> Result<String, String> {
+    let saved = find_saved(ui, name).ok_or_else(|| format!("unknown workspace (one of {})", names(ui).join(", ")))?;
+    remember(ui);
+    let w = ui.workspace_changes.iter().find(|w| w.name == saved.name).cloned().unwrap_or(saved);
+    apply(ui, &w);
+    Ok(w.name)
+}
+
+/// Reset the current workspace to the way it was saved, dropping its changes.
+pub fn reset(ui: &mut UiState) -> String {
+    let w = find_saved(ui, &ui.workspace.clone()).unwrap_or_default();
+    ui.workspace_changes.retain(|x| x.name != w.name);
+    apply(ui, &w);
+    w.name
+}
+
+/// A workspace by name as saved (user workspaces shadow nothing: names are unique across both lists).
+pub fn find_saved(ui: &UiState, name: &str) -> Option<Workspace> {
     ui.custom_workspaces
         .iter()
         .find(|w| w.name.eq_ignore_ascii_case(name))
         .cloned()
         .or_else(|| builtins().into_iter().find(|w| w.name.eq_ignore_ascii_case(name)))
+}
+
+/// A workspace by name as saved.
+pub fn find(ui: &UiState, name: &str) -> Option<Workspace> {
+    find_saved(ui, name)
 }
 
 /// Every workspace name: built-ins then user workspaces.
@@ -232,11 +271,14 @@ pub fn save_as(ui: &mut UiState, name: &str) -> Result<(), String> {
     if is_builtin(name) {
         return Err(format!("`{name}` is a built-in workspace; choose another name"));
     }
+    // The changes go into the workspace saved, which starts with none; the one left keeps the
+    // changes it had (none of these).
     let w = capture(ui, name);
     match ui.custom_workspaces.iter_mut().find(|x| x.name == name) {
         Some(x) => *x = w,
         None => ui.custom_workspaces.push(w),
     }
+    ui.workspace_changes.retain(|x| x.name != name);
     ui.workspace = name.into();
     Ok(())
 }
@@ -247,8 +289,13 @@ pub fn delete(ui: &mut UiState, name: &str) -> Result<(), String> {
     if ui.custom_workspaces.len() == before {
         return Err(if is_builtin(name) { format!("`{name}` is built in and can't be deleted") } else { format!("no workspace `{name}`") });
     }
+    ui.workspace_changes.retain(|w| w.name != name);
+    // The current workspace deleted: Essentials (as it was left) takes over, rather than its layout
+    // staying on screen under Essentials's name, to be remembered as Essentials's changes.
     if ui.workspace == name {
-        ui.workspace = ESSENTIALS.into();
+        let essentials =
+            ui.workspace_changes.iter().find(|w| w.name == ESSENTIALS).cloned().or_else(|| find_saved(ui, ESSENTIALS)).unwrap_or_default();
+        apply(ui, &essentials);
     }
     Ok(())
 }
@@ -260,6 +307,9 @@ pub fn rename(ui: &mut UiState, from: &str, to: &str) -> Result<(), String> {
     }
     let w = ui.custom_workspaces.iter_mut().find(|w| w.name == from).ok_or_else(|| format!("no user workspace `{from}`"))?;
     w.name = to.into();
+    for w in ui.workspace_changes.iter_mut().filter(|w| w.name == from) {
+        w.name = to.into();
+    }
     if ui.workspace == from {
         ui.workspace = to.into();
     }
@@ -337,18 +387,8 @@ pub fn popup(app: &mut VectorcraftApp, ui: &mut egui::Ui) {
 pub fn run_command(app: &mut VectorcraftApp, id: &str, p: &Value) -> Option<Result<Value, String>> {
     let s = |k: &str| p.get(k).and_then(Value::as_str).map(str::to_string);
     let r = match id {
-        "window.workspace" => match s("name").and_then(|n| find(&app.ui, &n)) {
-            Some(w) => {
-                apply(&mut app.ui, &w);
-                Ok(json!({"workspace": w.name}))
-            }
-            None => Err(format!("unknown workspace (one of {})", names(&app.ui).join(", "))),
-        },
-        "window.workspace.reset" => {
-            let w = find(&app.ui, &app.ui.workspace.clone()).unwrap_or_default();
-            apply(&mut app.ui, &w);
-            Ok(json!({"workspace": w.name}))
-        }
+        "window.workspace" => switch(&mut app.ui, &s("name").unwrap_or_default()).map(|name| json!({"workspace": name})),
+        "window.workspace.reset" => Ok(json!({"workspace": reset(&mut app.ui)})),
         "window.workspace.new" => match s("name") {
             Some(n) => save_as(&mut app.ui, &n).map(|_| json!({"workspace": n})),
             None => {
@@ -507,6 +547,77 @@ mod tests {
         let back: UiState = serde_json::from_value(serde_json::to_value(&ui).unwrap()).unwrap();
         assert_eq!(back.custom_workspaces, ui.custom_workspaces);
         assert_eq!(back.workspace, "Mine");
+    }
+
+    #[test]
+    fn a_workspace_keeps_its_changes_across_switches_until_reset() {
+        let mut ui = UiState::default();
+        save_as(&mut ui, "Görkem").unwrap();
+        // Changes made in it after saving (a panel moved, the control bar shown)…
+        ui.control_bar = true;
+        ui.dock_tab = DockTab::Layers;
+        ui.docking_icons.insert("color".into());
+        // …are still there after switching away and back.
+        switch(&mut ui, ESSENTIALS).unwrap();
+        assert!(!ui.control_bar && ui.docking_icons.is_empty(), "Essentials comes as saved");
+        switch(&mut ui, "Görkem").unwrap();
+        assert!(ui.control_bar && ui.dock_tab == DockTab::Layers && ui.docking_icons.contains("color"));
+        // Built-in workspaces remember theirs too.
+        switch(&mut ui, ESSENTIALS).unwrap();
+        ui.status_bar = false;
+        switch(&mut ui, "Görkem").unwrap();
+        switch(&mut ui, ESSENTIALS).unwrap();
+        assert!(!ui.status_bar);
+        // They survive a restart (the preferences' JSON round trip).
+        let mut ui: UiState = serde_json::from_value(serde_json::to_value(&ui).unwrap()).unwrap();
+        ui = ui.sanitized();
+        switch(&mut ui, "Görkem").unwrap();
+        assert!(ui.control_bar);
+        // Reset Görkem: back to the way it was saved.
+        assert_eq!(reset(&mut ui), "Görkem");
+        assert!(!ui.control_bar && ui.docking_icons.is_empty());
+        switch(&mut ui, ESSENTIALS).unwrap();
+        switch(&mut ui, "Görkem").unwrap();
+        assert!(!ui.control_bar, "a reset workspace stays reset");
+        // Renamed, it keeps its changes; deleted, they go.
+        ui.control_bar = true;
+        switch(&mut ui, ESSENTIALS).unwrap();
+        rename(&mut ui, "Görkem", "G").unwrap();
+        switch(&mut ui, "G").unwrap();
+        assert!(ui.control_bar);
+        switch(&mut ui, ESSENTIALS).unwrap();
+        delete(&mut ui, "G").unwrap();
+        assert!(ui.workspace_changes.iter().all(|w| w.name != "G"));
+    }
+
+    #[test]
+    fn deleting_the_current_workspace_switches_to_essentials_without_leaking_its_layout() {
+        let mut ui = UiState::default();
+        save_as(&mut ui, "Tmp").unwrap();
+        ui.control_bar = true;
+        delete(&mut ui, "Tmp").unwrap();
+        assert_eq!(ui.workspace, ESSENTIALS);
+        assert!(!ui.control_bar, "Essentials's layout is shown, not the deleted one's");
+        save_as(&mut ui, "Other").unwrap();
+        switch(&mut ui, ESSENTIALS).unwrap();
+        assert!(!ui.control_bar, "Essentials didn't remember the deleted workspace's layout");
+    }
+
+    #[test]
+    fn saving_a_workspace_moves_the_changes_into_it() {
+        let mut ui = UiState { control_bar: true, ..Default::default() };
+        save_as(&mut ui, "Mine").unwrap();
+        switch(&mut ui, ESSENTIALS).unwrap();
+        assert!(!ui.control_bar, "Essentials stays as saved: the changes went into Mine");
+        switch(&mut ui, "Mine").unwrap();
+        assert!(ui.control_bar);
+        // Saving again under the same name takes the current layout and starts with no changes.
+        ui.status_bar = false;
+        save_as(&mut ui, "Mine").unwrap();
+        assert!(ui.workspace_changes.iter().all(|w| w.name != "Mine"));
+        ui.status_bar = true;
+        assert_eq!(reset(&mut ui), "Mine");
+        assert!(!ui.status_bar);
     }
 
     #[test]
