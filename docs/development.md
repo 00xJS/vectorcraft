@@ -104,6 +104,8 @@ On macOS the menus live in the system menu bar, not in the window's app bar (whi
 
 ## Linux: Wayland and X11
 
+On GNOME/Wayland, enable **Preferences › User Interface › System Title Bar** and restart to use winit's font-free Adwaita window controls (`wayland-csd-adwaita-notitle`); the existing custom title bar remains the Linux default.
+
 The window runs natively on Wayland (eframe's `wayland` feature) and on X11. On machines with two GPUs it renders on the one the desktop runs on unless Preferences say otherwise; see [Desktop graphics processor](#desktop-graphics-processor) (#502). The system clipboard (`apps/vectorcraft/src/clipboard.rs`) is arboard with its `wayland-data-control` feature:
 
 - **Clipboard:** under Wayland arboard talks to the compositor through the data-control protocol (wlroots compositors such as Sway and Hyprland, KDE Plasma), so bitmaps (`image/png`), SVG markup and text copied in any app paste (#398). Where the compositor lacks the protocol (GNOME's Mutter, [arboard#223](https://github.com/1Password/arboard/issues/223)), arboard falls back to the X11 clipboard through XWayland, which only holds what X11 apps copied. egui's own text paste into fields goes through smithay-clipboard and works either way.
