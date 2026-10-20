@@ -29,6 +29,7 @@ pub mod export_progress;
 pub mod find_font;
 pub mod floating;
 pub mod font_menu;
+mod frame_rate;
 mod free_transform;
 pub mod graphics;
 pub mod i18n;
@@ -420,7 +421,8 @@ pub struct VectorcraftApp {
     /// Installed fonts added to the UI's for characters its own fonts lack (CJK names…).
     ui_fonts: ui_fonts::UiFonts,
     frame: u64,
-    last_time: f64,
+    /// The status bar's frame rate ([`frame_rate`]).
+    frame_rate: frame_rate::FrameRate,
     /// Canvas rect of the last frame (screen points), for control-channel coordinate mapping.
     pub canvas_rect: Option<egui::Rect>,
     /// Hover position in document coordinates.
@@ -563,7 +565,7 @@ impl VectorcraftApp {
             context: 0,
             ui_fonts: Default::default(),
             frame: 0,
-            last_time: 0.0,
+            frame_rate: Default::default(),
             canvas_rect: None,
             hover_doc: None,
             custom_titlebar: false,
@@ -1194,11 +1196,7 @@ impl VectorcraftApp {
         }
         self.frame += 1;
         let now = ctx.input(|i| i.time);
-        let dt = now - self.last_time;
-        if dt > 0.0 {
-            self.perf.fps = self.perf.fps * 0.9 + (1.0 / dt).min(240.0) * 0.1;
-        }
-        self.last_time = now;
+        self.perf.fps = self.frame_rate.frame(now, self.perf.frame_ms / 1000.0);
         self.sync_views();
         // Read the system clipboard only when that alone decides whether Paste is enabled. A
         // background thread reads it where the host installs one (an unresponsive owner must never
