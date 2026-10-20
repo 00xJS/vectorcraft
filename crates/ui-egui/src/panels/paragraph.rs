@@ -7,7 +7,7 @@ use egui::{Ui, vec2};
 use serde_json::{Value, json};
 use vectorcraft_doc::{Composer, HyphenationOptions, Justify, NodeKind, ParaDirection, ParaStyle};
 
-use super::character::text_style;
+use super::character::{Metric, Shared, text_style};
 use super::{pstate, set_pstate};
 use crate::VectorcraftApp;
 use crate::theme::Tokens;
@@ -142,79 +142,37 @@ fn collect_text_alignment(text: &vectorcraft_doc::TextObject, range: Option<(usi
     record(index, &plain, start, end) // Includes empty text and the paragraph after a final newline.
 }
 
-/// Compare paragraph distances with the same tolerance as Character dimensional fields.
-struct ParaMetric(f64);
-
-impl PartialEq for ParaMetric {
-    fn eq(&self, other: &Self) -> bool {
-        (self.0 - other.0).abs() <= 1e-9 * self.0.abs().max(other.0.abs()).max(1.0)
-    }
-}
-
-enum ParaShared<T> {
-    None,
-    Same(T),
-    Differ,
-}
-
-impl<T: PartialEq> ParaShared<T> {
-    fn add(&mut self, v: T) {
-        match self {
-            Self::None => *self = Self::Same(v),
-            Self::Same(old) if *old == v => {}
-            _ => *self = Self::Differ,
-        }
-    }
-    fn value(self) -> Option<T> {
-        match self {
-            Self::Same(v) => Some(v),
-            _ => None,
-        }
-    }
-}
-
-/// Visit every paragraph the Paragraph panel acts on; stop early when `f` returns false.
-fn visit_paragraphs(app: &VectorcraftApp, mut f: impl FnMut(&ParaStyle) -> bool) -> bool {
-    let Some(st) = app.session.active() else { return false };
+/// Visit every paragraph the Paragraph panel acts on.
+fn visit_paragraphs(app: &VectorcraftApp, mut f: impl FnMut(&ParaStyle)) {
+    let Some(st) = app.session.active() else { return };
     if let Some((id, a, b)) = super::character::text_editing(app)
         && let Some(NodeKind::Text(text)) = st.doc.node(id).map(|n| &n.kind)
     {
         let range = text.paragraphs_in(a, b);
         for i in range {
-            if !f(text.para_at(i)) {
-                return false;
-            }
+            f(text.para_at(i));
         }
-        return true;
+        return;
     }
-    let mut ok = true;
     for node in st.selection.objects.iter().filter_map(|id| st.doc.node(*id)) {
         node.walk(&mut |c| {
             if let NodeKind::Text(t) = &c.kind {
                 for i in 0..t.paragraph_count() {
-                    if !f(t.para_at(i)) {
-                        ok = false;
-                    }
+                    f(t.para_at(i));
                 }
             }
         });
-        if !ok {
-            return false;
-        }
     }
-    ok
 }
 
 /// A distance shared by every paragraph in scope, or `None` when they differ (blank spin field).
 fn shared_para_field(app: &VectorcraftApp, field: impl Fn(&ParaStyle) -> f64) -> Option<f64> {
-    let mut acc = ParaShared::None;
+    let mut acc = Shared::None;
     let mut any = false;
-    let record = |p: &ParaStyle| {
+    visit_paragraphs(app, |p| {
         any = true;
-        acc.add(ParaMetric(field(p)));
-        true
-    };
-    visit_paragraphs(app, record);
+        acc.add(Metric(field(p)));
+    });
     if !any {
         return text_style(app).map(|(_, p)| field(&p));
     }
