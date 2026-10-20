@@ -520,6 +520,80 @@ fn an_undo_group_is_one_undo_step() {
     assert_eq!(undo_len(&s), undo + 2);
 }
 
+/// An undo scope ([`Session::begin_undo_scope`]) in a document without an open undo group opens
+/// one, and [`Session::end_undo_scope`] closes that group only, whichever document is active, and
+/// leaves another document's group open; canceled, it undoes only that group's edits and cuts the
+/// journal back to where the group began.
+#[test]
+fn an_undo_scope_closes_only_its_own_documents_group() {
+    let mut s = Session::new();
+    let rect = json!({"x": 10, "y": 10, "width": 100, "height": 50});
+    let objects = |d: &DocState| d.doc.layers[0].children().map_or(0, |c| c.len());
+    s.execute("file.new", &json!({"width": 400, "height": 300})).unwrap();
+    s.begin_undo_group();
+    s.execute("shape.rectangle", &rect).unwrap();
+    s.execute("file.new", &json!({"width": 400, "height": 300})).unwrap();
+    let journal = s.journal.len();
+    let scope = s.begin_undo_scope().unwrap();
+    assert!(s.doc().unwrap().undo_group.is_some(), "the scope opens a group");
+    s.execute("shape.rectangle", &rect).unwrap();
+    s.execute("shape.rectangle", &rect).unwrap();
+    s.end_undo_scope(scope, true);
+    assert_eq!(objects(s.doc().unwrap()), 0, "canceled: the document's edits are undone");
+    assert_eq!(s.journal.len(), journal, "and dropped from the journal");
+    assert!(s.documents()[0].undo_group.is_some(), "the other document's group stays open");
+    assert_eq!(objects(&s.documents()[0]), 1, "with its edit");
+
+    let undo = s.doc().unwrap().history.undo.len();
+    let scope = s.begin_undo_scope().unwrap();
+    s.execute("shape.rectangle", &rect).unwrap();
+    s.execute("shape.rectangle", &rect).unwrap();
+    s.set_active(0);
+    s.end_undo_scope(scope, false);
+    let second = &s.documents()[1];
+    assert_eq!(second.history.undo.len(), undo + 1, "closed: one undo step");
+    assert!(second.undo_group.is_none(), "closed while another document is active");
+    assert!(s.documents()[0].undo_group.is_some(), "the active document's group stays open");
+}
+
+/// An undo scope begun while the document's undo group is open joins the group: ended, its edits
+/// are part of the group's step and the group stays open; canceled, the document goes back to
+/// where it stood when the scope began, with the edits made in the group before it, the journal
+/// drops the scope's entries, and a step that the scope's first edit recorded goes too.
+#[test]
+fn an_undo_scope_in_an_open_group_takes_back_only_its_own_edits() {
+    let mut s = Session::new();
+    let rect = json!({"x": 10, "y": 10, "width": 100, "height": 50});
+    let objects = |s: &Session| s.doc().unwrap().doc.layers[0].children().map_or(0, |c| c.len());
+    let undo_len = |s: &Session| s.doc().unwrap().history.undo.len();
+    s.execute("file.new", &json!({"width": 400, "height": 300})).unwrap();
+    let undo = undo_len(&s);
+    s.begin_undo_group();
+    let journal = s.journal.len();
+    let scope = s.begin_undo_scope().unwrap();
+    s.execute("shape.rectangle", &rect).unwrap();
+    s.end_undo_scope(scope, true);
+    assert_eq!((objects(&s), undo_len(&s), s.journal.len()), (0, undo, journal), "the group had no step: none is left");
+    assert!(s.doc().unwrap().undo_group.is_some(), "the group stays open");
+
+    s.execute("shape.rectangle", &rect).unwrap();
+    let journal = s.journal.len();
+    let scope = s.begin_undo_scope().unwrap();
+    s.execute("shape.rectangle", &rect).unwrap();
+    s.execute("shape.rectangle", &rect).unwrap();
+    s.end_undo_scope(scope, true);
+    assert_eq!((objects(&s), undo_len(&s), s.journal.len()), (1, undo + 1, journal), "the group's own edit stays");
+
+    let scope = s.begin_undo_scope().unwrap();
+    s.execute("shape.rectangle", &rect).unwrap();
+    s.end_undo_scope(scope, false);
+    assert_eq!((objects(&s), undo_len(&s)), (2, undo + 1), "ended: the edit joins the group's step");
+    assert!(s.doc().unwrap().undo_group.is_some(), "the group stays open");
+    s.end_undo_group(false);
+    s.execute("edit.undo", &json!({})).unwrap();
+    assert_eq!(objects(&s), 0, "one undo takes back the group's edits");
+}
+
 /// A move drag is named for what its last preview did: Alt pressed or released during the drag
 /// turns it into a copy or back (the Selection and Direct Selection tools).
 #[test]

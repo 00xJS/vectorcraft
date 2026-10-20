@@ -932,16 +932,13 @@ fn use_item(s: &mut Session, p: &Value) -> Result<Value> {
     }
 }
 
-/// Run `f`'s commands as one undo step (undone together when it fails), unless an undo group is
-/// already open (its own step then holds them).
+/// Run `f`'s commands as one undo step, or as part of the step of an undo group open in the active
+/// document, and undo them together when it fails ([`Session::begin_undo_scope`]).
 fn in_one_step<T>(s: &mut Session, f: impl FnOnce(&mut Session) -> Result<T>) -> Result<T> {
-    let open = s.active().is_some_and(|st| st.undo_group.is_some());
-    if !open {
-        s.begin_undo_group();
-    }
+    let scope = s.begin_undo_scope();
     let r = f(s);
-    if !open {
-        s.end_undo_group(r.is_err());
+    if let Some(scope) = scope {
+        s.end_undo_scope(scope, r.is_err());
     }
     r
 }

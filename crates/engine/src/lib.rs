@@ -305,6 +305,19 @@ pub struct UndoGroup {
     label: Option<String>,
 }
 
+/// One undo step begun with [`Session::begin_undo_scope`], which [`Session::end_undo_scope`] ends.
+#[derive(Clone, Debug)]
+pub struct UndoScope {
+    /// The document ([`DocState::uid`]).
+    uid: u64,
+    /// The journal's length when the scope began.
+    journal: usize,
+    /// When the document's undo group was open already: the document, its selection and the document
+    /// that the group's undo step keeps, as they were when the scope began; `None` when the scope
+    /// opened the group.
+    joined: Option<(Arc<Document>, Selection, Option<Arc<Document>>)>,
+}
+
 /// Per-document editing state.
 #[derive(Clone, Debug)]
 pub struct DocState {
@@ -2052,6 +2065,72 @@ impl Session {
         }
         let gone: Vec<usize> = journal.into_iter().filter(|(_, index)| index.is_none()).map(|(n, _)| n).collect();
         self.journal.remove(&gone);
+    }
+
+    /// [`Session::end_undo_group`] for the open document with [`DocState::uid`] `uid` only (it may
+    /// have closed since): its open undo group closes, and undo groups open in other documents stay
+    /// open.
+    fn end_document_undo_group(&mut self, uid: u64, cancel: bool) {
+        // The other documents' groups are set aside while `end_undo_group` closes this one's.
+        let others: Vec<(u64, UndoGroup)> =
+            self.docs.iter_mut().filter(|st| st.uid != uid).filter_map(|st| Some((st.uid, st.undo_group.take()?))).collect();
+        self.end_undo_group(cancel);
+        for (other, g) in others {
+            if let Some(st) = self.document_mut(other) {
+                st.undo_group = Some(g);
+            }
+        }
+    }
+
+    /// Make the edits that follow in the active document one undo step, until
+    /// [`Session::end_undo_scope`]: open an undo group there or, when one is open already, join it,
+    /// so that the edits are part of its step. `None` without a document.
+    pub fn begin_undo_scope(&mut self) -> Option<UndoScope> {
+        let journal = self.journal.len();
+        let st = self.active()?;
+        let uid = st.uid;
+        let joined = st.undo_group.as_ref().map(|g| (st.doc.clone(), st.selection.clone(), g.first.clone()));
+        if joined.is_none() {
+            self.begin_undo_group();
+        }
+        Some(UndoScope { uid, journal, joined })
+    }
+
+    /// End `scope` in its own document, whichever document is active now; undo groups open in other
+    /// documents stay open. The undo group the scope opened closes as [`Session::end_undo_group`]
+    /// closes it. A scope that joined an open group leaves the group open; with `cancel`, it puts the
+    /// document and its selection back as they were when the scope began and cuts the journal back to
+    /// where the scope began (only while the group's step is still the newest one), and an undo step
+    /// that the scope's first edit recorded goes too.
+    pub fn end_undo_scope(&mut self, scope: UndoScope, cancel: bool) {
+        let Some((doc, selection, first)) = scope.joined else {
+            self.end_document_undo_group(scope.uid, cancel);
+            return;
+        };
+        let guides_locked = self.menu.guides_locked;
+        let Some(st) = self.document_mut(scope.uid) else { return };
+        let Some(g) = &mut st.undo_group else { return };
+        let newest = g.first.as_ref().is_some_and(|f| st.history.undo.last().is_some_and(|e| Arc::ptr_eq(&e.doc, f)));
+        if !cancel || !newest {
+            return;
+        }
+        match &first {
+            // The scope's first edit recorded the group's step.
+            None => {
+                st.history.undo.pop();
+                g.first = None;
+            }
+            Some(f) if g.first.as_ref().is_some_and(|now| Arc::ptr_eq(now, f)) => {}
+            Some(_) => return,
+        }
+        st.doc = doc;
+        st.selection = selection;
+        if guides_locked {
+            deselect_guides(&st.doc, &mut st.selection);
+        }
+        st.history.recost_last(&st.doc);
+        st.revision += 1;
+        self.journal.truncate(scope.journal);
     }
 
     /// Commands with enablement (for menus, palette, MCP `list_commands`).
