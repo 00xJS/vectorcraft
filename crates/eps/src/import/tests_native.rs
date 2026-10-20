@@ -1332,3 +1332,23 @@ fn raster_print_page_recovers_legacy_mesh_vector_mask_and_editable_curve() {
     let r = import(wrong.as_bytes()).unwrap();
     assert!(r.warnings.iter().any(|w| w.contains("for a 100 × 100 pt page, not the file's 120 × 100 pt page")), "{:?}", r.warnings);
 }
+
+#[test]
+fn envelope_options_keep_the_source_text_hidden_under_its_outlined_appearance() {
+    let doc = text_document(&[("CHONKYCATS\r", 0, (8200.0, 8180.0), (0.0, 0.0), 0.0)]);
+    let slot: String = text_object(0).lines().map(|line| format!("%_{line}\n")).collect();
+    let envelope =
+        format!("%_/ArtDictionary :\n%_1 /Int (AIDeformOptionsKey) ,\n%_198 /Real (AIDeformArtHeightKey) ,\n%_X=\n%_0 Ae\n%_u\n{slot}%_U\n%_;\n");
+    let art = native_with_text(&layer("Art", true, &format!("{}\n{envelope}", square(10, 10))), &doc);
+    let r = import(&eps(&page_square(10, 10), &art)).unwrap();
+    assert_eq!(names(&r.document), ["Art"], "{:?}", r.warnings);
+    assert_eq!(kinds(&r.document.layers[0]), ["path", "text"], "{:?}", r.warnings);
+    let mut texts = vec![];
+    r.document.walk(|n| {
+        if let NodeKind::Text(t) = &n.kind {
+            texts.push((t.plain_text(), n.visible));
+        }
+    });
+    assert_eq!(texts, [("CHONKYCATS".to_string(), false)], "{:?}", r.warnings);
+    assert!(r.warnings.is_empty(), "{:?}", r.warnings);
+}

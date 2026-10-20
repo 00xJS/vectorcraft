@@ -1412,17 +1412,33 @@ impl<'a> Reader<'a> {
             return Ok(());
         }
         let Some(f) = self.frames.pop() else { return Ok(()) };
-        let Kind::Obj(mut o) = f.kind else { return Ok(()) };
-        obj::close(&mut o, &mut self.stack, f.base);
-        self.obj_hidden = f.hidden;
+        let Frame { kind, children, base, hidden, gs, after, .. } = f;
+        let Kind::Obj(mut o) = kind else { return Ok(()) };
+        obj::close(&mut o, &mut self.stack, base);
+        self.obj_hidden = hidden;
         // Art made inside a dictionary (type's paths) isn't kept.
-        self.gs = f.gs;
-        self.after_object = f.after;
+        self.gs = gs;
+        self.after_object = after;
         if matches!(self.frames.last(), Some(Frame { kind: Kind::Obj(_), .. })) {
             return self.push(V::Obj(Rc::new(*o)));
         }
         match o.ty.as_str() {
-            "ArtDictionary" => self.art_dictionary(&o),
+            "ArtDictionary" => {
+                let envelope = o.get("AIDeformOptionsKey").is_some();
+                self.art_dictionary(&o);
+                if envelope {
+                    let mut slots = vec![];
+                    for child in &children {
+                        envelope_text_slots(child, &mut slots);
+                    }
+                    for mut slot in slots {
+                        // The editing data keeps the source text inside the envelope's options;
+                        // its visible result is the outlined art the PDF page carries.
+                        slot.visible = false;
+                        self.add(slot, false)?;
+                    }
+                }
+            }
             "Document" => self.document(&o),
             "AI11Text" => self.text_slot(&o)?,
             "SymbolInstance" => self.unreadable("symbols"),
@@ -2333,6 +2349,17 @@ impl<'a> Reader<'a> {
             slot_names: self.slot_names,
             warnings,
         })
+    }
+}
+
+/// The source text inside an envelope options dictionary, carried through its containing metadata.
+fn envelope_text_slots(node: &Node, out: &mut Vec<Node>) {
+    if slot_of(node.name.as_deref()).is_some() {
+        out.push(node.clone());
+    } else if let Some(children) = node.children() {
+        for child in children {
+            envelope_text_slots(child, out);
+        }
     }
 }
 
