@@ -2162,7 +2162,7 @@ fn water_paper_params_take_defaults_and_stay_in_range() {
     assert!(f.outset(Rect::new(0.0, 0.0, 100.0, 50.0)) > 0.0);
     assert!(f.reach().unwrap_or(0.0) > 0.0);
     let doc = crate::effect_info("sketch.waterPaper").unwrap().params;
-    assert!(doc.contains("helpx.adobe.com/illustrator/using/summary-effects.html") && doc.contains("unverified"), "{doc}");
+    assert!(doc.contains("unverified"), "{doc}");
 }
 
 #[test]

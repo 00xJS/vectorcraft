@@ -579,7 +579,7 @@ pub fn effect_catalog() -> Vec<EffectInfo> {
             "sketch.waterPaper",
             "Water Paper…",
             SKETCH,
-            "{fiberLength: pt 3..50 (15; scale of paper fibers and blotchy daubs), brightness: 0..100 (50), contrast: 0..100 (50)} washes the object's colours as if painted on damp fibrous paper, with soft flow and a fibrous modulation (behaviour per https://helpx.adobe.com/illustrator/using/summary-effects.html). Public helpx names Fiber Length, Brightness and Contrast but not slider ranges or dialog defaults; ranges and defaults here are unverified VectorCraft choices. Original visual approximation, not a proprietary reproduction.",
+            "{fiberLength: pt 3..50 (15; scale of paper fibers and blotchy daubs), brightness: 0..100 (50), contrast: 0..100 (50)} washes the object's colours as if painted on damp fibrous paper, with soft flow and a fibrous modulation. Public helpx names Fiber Length, Brightness and Contrast but not slider ranges or dialog defaults; ranges and defaults here are unverified VectorCraft choices. Original visual approximation, not a proprietary reproduction.",
             json!({"fiberLength": 15.0, "brightness": 50.0, "contrast": 50.0}),
         ),
         r(
