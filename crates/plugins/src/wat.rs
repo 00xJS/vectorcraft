@@ -41,6 +41,52 @@ pub fn returning(manifest: &str, output: &str) -> String {
     module(manifest, &run, &extra, (OUTPUT_AT + output.len()).div_ceil(0x1_0000) as u32 + 1)
 }
 
+/// What [`when_given`] looks through.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Given {
+    /// The input JSON (the objects).
+    Input,
+    /// The parameters JSON, `_context` included.
+    Params,
+}
+
+/// Where [`when_given`] keeps the text it looks for.
+const NEEDLE_AT: usize = 0x8000;
+
+/// A plug-in that returns `output` when what it is given (`given`) holds the text `needle`, and
+/// its input unchanged otherwise. A live effect made from it draws one shape or the other, so a
+/// test sees from the geometry whether the host handed the plug-in something.
+pub fn when_given(manifest: &str, given: Given, needle: &str, output: &str) -> String {
+    let (src, len) = match given {
+        Given::Input => ("$in", "$il"),
+        Given::Params => ("$pp", "$pl"),
+    };
+    let n = needle.len();
+    // For each place `$i` the needle fits, compare it byte by byte (`$j`).
+    let run = format!(
+        r#"(local $i i32) (local $j i32)
+    (block $found
+      (block $none
+        (loop $at
+          (br_if $none (i32.gt_u (i32.add (local.get $i) (i32.const {n})) (local.get {len})))
+          (local.set $j (i32.const 0))
+          (block $next
+            (loop $cmp
+              (br_if $found (i32.eq (local.get $j) (i32.const {n})))
+              (br_if $next (i32.ne (i32.load8_u (i32.add (local.get {src}) (i32.add (local.get $i) (local.get $j))))
+                                   (i32.load8_u (i32.add (i32.const {NEEDLE_AT}) (local.get $j)))))
+              (local.set $j (i32.add (local.get $j) (i32.const 1)))
+              (br $cmp)))
+          (local.set $i (i32.add (local.get $i) (i32.const 1)))
+          (br $at)))
+      (return {ECHO}))
+    (i64.or (i64.shl (i64.const {out}) (i64.const 32)) (i64.const {OUTPUT_AT}))"#,
+        out = output.len(),
+    );
+    let extra = format!(r#"(data (i32.const {NEEDLE_AT}) "{}") (data (i32.const {OUTPUT_AT}) "{}")"#, string(needle), string(output));
+    module(manifest, &run, &extra, (OUTPUT_AT + output.len()).div_ceil(0x1_0000) as u32 + 1)
+}
+
 /// The manifest of a test plug-in `id` of `kind` with `params` (a JSON object of specs).
 pub fn manifest(id: &str, kind: &str, params: &str) -> String {
     format!(r#"{{"id":"{id}","name":"Test {id}","version":"1","kind":"{kind}","params":{params}}}"#)

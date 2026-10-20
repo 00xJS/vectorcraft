@@ -83,18 +83,23 @@ pub fn geometry(n: &Node) -> Option<(PathData, FillRule, bool)> {
     }
 }
 
-/// A path or compound path as plug-ins see it (`None` for other objects): `{id, type, name?, path,
-/// fillRule, fills, strokes, opacity, bounds}`.
-pub fn encode(n: &Node) -> Option<Value> {
-    let (path, rule, compound) = geometry(n)?;
-    let fills: Vec<Value> =
-        n.appearance.items.iter().filter_map(|i| if let AppearanceItem::Fill(f) = i { Some(paint_json(&f.paint)) } else { None }).collect();
-    let strokes: Vec<Value> = n
-        .appearance
+/// The fills and strokes of appearance `ap` as plug-ins see them, each in paint order: a fill is
+/// its paint, a stroke `{paint, width}`. Filters and live effects are given the same.
+pub(crate) fn paint_lists(ap: &Appearance) -> (Vec<Value>, Vec<Value>) {
+    let fills = ap.items.iter().filter_map(|i| if let AppearanceItem::Fill(f) = i { Some(paint_json(&f.paint)) } else { None }).collect();
+    let strokes = ap
         .items
         .iter()
         .filter_map(|i| if let AppearanceItem::Stroke(s) = i { Some(json!({"paint": paint_json(&s.paint), "width": s.width})) } else { None })
         .collect();
+    (fills, strokes)
+}
+
+/// A path or compound path as plug-ins see it (`None` for other objects): `{id, type, name?, path,
+/// fillRule, fills, strokes, opacity, bounds}`.
+pub fn encode(n: &Node) -> Option<Value> {
+    let (path, rule, compound) = geometry(n)?;
+    let (fills, strokes) = paint_lists(&n.appearance);
     let mut o = json!({
         "id": n.id.0, "type": if compound { "compound" } else { "path" }, "path": path, "fillRule": rule_name(rule),
         "fills": fills, "strokes": strokes, "opacity": n.opacity, "bounds": rect_json(path.bounds()),

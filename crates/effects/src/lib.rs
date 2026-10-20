@@ -56,7 +56,7 @@ mod tests;
 mod tests_scale;
 
 use serde_json::{Map, Value, json};
-use vectorcraft_doc::{AppearanceItem, Effect, Node, NodeKind, StrokeLayer};
+use vectorcraft_doc::{Appearance, AppearanceItem, Effect, Node, NodeKind, StrokeLayer};
 use vectorcraft_geom::{BezPath, FillRule, PathData, Rect};
 
 pub use adjust::{
@@ -941,6 +941,12 @@ pub struct GeomContext<'a> {
     /// The seed of the Transform effect's Random: the object's id, so each object varies its own
     /// way and keeps its result on every redraw.
     pub seed: u64,
+    /// The object's appearance, which live-effect plug-ins are given read only (their fills and
+    /// strokes).
+    pub appearance: Option<&'a Appearance>,
+    /// The index in `appearance.items` of the fill or stroke whose own effects these are; `None`:
+    /// the object's effects.
+    pub item: Option<usize>,
 }
 
 impl<'a> GeomContext<'a> {
@@ -950,15 +956,17 @@ impl<'a> GeomContext<'a> {
             NodeKind::Path { rule, .. } | NodeKind::Compound { rule, .. } => *rule,
             _ => FillRule::NonZero,
         };
-        Self { stroke: n.appearance.stroke().filter(|s| !s.paint.is_none() && s.width > 0.0), rule, seed: n.id.0 }
+        let stroke = n.appearance.stroke().filter(|s| !s.paint.is_none() && s.width > 0.0);
+        Self { stroke, rule, seed: n.id.0, appearance: Some(&n.appearance), item: None }
     }
 
     /// The context of the effects on `item`, one of the same object's appearance items: a
-    /// stroke's own effects outline that stroke.
+    /// stroke's own effects outline that stroke, and a plug-in is told which item it is on.
     pub fn item(self, item: &'a AppearanceItem) -> Self {
+        let at = self.appearance.and_then(|a| a.items.iter().position(|i| std::ptr::eq(i, item)));
         match item {
-            AppearanceItem::Stroke(s) => Self { stroke: Some(s), ..self },
-            AppearanceItem::Fill(_) => self,
+            AppearanceItem::Stroke(s) => Self { stroke: Some(s), item: at, ..self },
+            AppearanceItem::Fill(_) => Self { item: at, ..self },
         }
     }
 }
@@ -997,7 +1005,8 @@ pub fn apply_geometry_bez(effects: &[Effect], path: &BezPath, bounds: Rect, ctx:
 pub(crate) fn apply_one(id: &str, p: &Value, path: &PathData, b: Rect, ctx: &GeomContext) -> PathData {
     use util::*;
     if let Some(plugin) = vectorcraft_plugins::effect::plugin_id(id) {
-        return vectorcraft_plugins::effect::apply(plugin, p, path, b, ctx.rule).unwrap_or_else(|| path.clone());
+        let paints = vectorcraft_plugins::effect::Paints { appearance: ctx.appearance, item: ctx.item };
+        return vectorcraft_plugins::effect::apply(plugin, p, path, b, ctx.rule, paints).unwrap_or_else(|| path.clone());
     }
     match id {
         "distort.freeDistort" => distort::free_distort(path, b, p),
