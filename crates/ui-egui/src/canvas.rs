@@ -330,6 +330,7 @@ pub fn show(app: &mut VectorcraftApp, ui: &mut Ui) {
         outline: app.ui.view.outline,
         trim: app.ui.view.trim_view,
         templates: app.ui.view.templates,
+        guides: app.ui.view.guides,
         ppp,
         hidden: vec![],
         rot: v.rotation,
@@ -383,6 +384,7 @@ pub fn show(app: &mut VectorcraftApp, ui: &mut Ui) {
             overprint_preview: vectorcraft_render::proof::overprint_preview_on(),
             trim: app.ui.view.trim_view,
             hide_templates: !app.ui.view.templates,
+            hide_guides: !app.ui.view.guides,
             tile_edge: vectorcraft_color::Color::from_hex(&app.session.prefs.pattern_tile_edge_color).map_or(opts.tile_edge, |c| {
                 let [r, g, b, _] = c.to_rgba8(1.0);
                 [r, g, b]
@@ -1951,7 +1953,7 @@ fn hit_with<T>(
         path_only: prefs.object_selection_by_path_only,
         type_path_only: prefs.type_selection_by_path_only,
         scope: app.session.active().and_then(|st| st.isolation),
-        ..Default::default()
+        skip_guides: !app.ui.view.guides,
     };
     test(&app.session.active()?.doc, p, opt)
 }
@@ -5630,6 +5632,25 @@ mod tests {
 
     /// Smart Guides › Object Highlighting (#394): the outline of the object under the pointer does not
     /// show with View › Snap to Grid or View › Pixel Preview on, even with Smart Guides and the option on.
+    /// #3219: guide paths hidden by View > Hide Guides are not hittable and cannot reveal
+    /// themselves through Smart Guides object highlighting.
+    #[test]
+    fn hidden_guide_paths_have_no_hover_highlight() {
+        let mut app = VectorcraftApp::new(Session::new(), Default::default());
+        app.run("file.new", json!({"width": 400, "height": 300})).unwrap();
+        let id = app.run("shape.rectangle", json!({"x": 100, "y": 100, "width": 100, "height": 100})).unwrap()["id"].as_u64().unwrap();
+        app.run("view.guides.make", json!({})).unwrap();
+        app.run("select.none", json!({})).unwrap();
+        app.select_tool("selection");
+        app.ui.view.guides = false;
+        let ctx = egui::Context::default();
+        frame(&mut app, &ctx, vec![]);
+        let xf = Xf::new(app.canvas_rect.unwrap(), app.view().unwrap());
+        let color = c32(app.session.active().unwrap().doc.layer_color(vectorcraft_doc::NodeId(id)));
+        frame(&mut app, &ctx, vec![egui::Event::PointerMoved(xf.to_screen(Point::new(100.0, 150.0)))]);
+        assert!(drawn_in(&mut app, &ctx, color, 1.5).is_empty(), "a hidden guide has no hover highlight");
+    }
+
     #[test]
     fn snap_to_grid_and_pixel_preview_hide_the_hover_outline() {
         let mut app = VectorcraftApp::new(Session::new(), Default::default());

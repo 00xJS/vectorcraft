@@ -354,8 +354,10 @@ pub struct CacheKey {
     pub h: u32,
     pub outline: bool,
     pub trim: bool,
-    /// View › Hide Template: template layers left out ([`vectorcraft_render::RenderOptions::skip_templates`]).
+    /// View › Hide Template: template layers left out ([`vectorcraft_render::RenderOptions::hide_templates`]).
     pub templates: bool,
+    /// View › Show/Hide Guides: whether guide paths are visible in the artwork raster.
+    pub guides: bool,
     pub ppp: f32,
     pub hidden: Vec<u64>,
     pub rot: f64,

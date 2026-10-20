@@ -166,3 +166,23 @@ fn guides_draw_on_screen_only() {
     assert!(drawn(false) > 0, "on screen the guide shows");
     assert_eq!(drawn(true), 0, "exports leave it out");
 }
+
+/// #3219: View > Hide Guides hides paths made into guides without using the export/template
+/// filtering switch; Show Guides (the default) draws them again.
+#[test]
+fn hide_guides_hides_guide_paths_on_screen() {
+    let mut d = Document::new(100.0, 100.0);
+    let l = d.layers[0].id;
+    let mut g = Node::path(d.alloc_id(), shapes::rectangle(Rect::new(70.0, 70.0, 90.0, 90.0)), Appearance::default());
+    if let NodeKind::Path { guide, .. } = &mut g.kind {
+        *guide = true;
+    }
+    d.insert(Some(l), 0, g).unwrap();
+    let pixels = |hide_guides: bool| {
+        let opts = RenderOptions { background: Some([255; 4]), hide_guides, ..Default::default() };
+        let r = Renderer::new().render(&d, 100, 100, Affine::IDENTITY, &opts);
+        (60..100).flat_map(|y| (60..100).map(move |x| (x, y))).filter(|&(x, y)| r.pixel(x, y) != [255; 4]).count()
+    };
+    assert!(pixels(false) > 0, "Show Guides draws the guide path");
+    assert_eq!(pixels(true), 0, "Hide Guides leaves the guide path out");
+}

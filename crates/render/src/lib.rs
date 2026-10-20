@@ -125,6 +125,9 @@ pub struct RenderOptions {
     pub skip_templates: bool,
     /// View › Hide Template: template layers left out of the screen view (guides stay).
     pub hide_templates: bool,
+    /// View › Hide Guides: paths made into guides left out of the screen view. Exports use
+    /// `skip_templates`, which independently leaves both templates and guides out.
+    pub hide_guides: bool,
     /// Pattern editing mode's tile edge and swatch bounds colour (Object → Pattern → Tile Edge
     /// Color), RGB.
     pub tile_edge: [u8; 3],
@@ -246,6 +249,7 @@ impl Default for RenderOptions {
             trim: false,
             skip_templates: false,
             hide_templates: false,
+            hide_guides: false,
             tile_edge: vectorcraft_doc::LAYER_COLORS[0].1,
             guide: ([0x4a, 0xd8, 0xff], false),
             mask_view: None,
@@ -1036,9 +1040,9 @@ impl Renderer {
 
     /// Whether `a` is left out of this frame: hidden, a skipped template or guide, or culled.
     fn skipped(&mut self, f: &Frame, a: &Arc<Node>) -> bool {
-        let skipped_template = (f.opts.skip_templates || f.opts.hide_templates) && matches!(a.kind, NodeKind::Layer { template: true, .. })
-            || f.opts.skip_templates && matches!(a.kind, NodeKind::Path { guide: true, .. });
-        if !a.visible || skipped_template || f.opts.hidden.contains(&a.id) {
+        let skipped_view_item = (f.opts.skip_templates || f.opts.hide_templates) && matches!(a.kind, NodeKind::Layer { template: true, .. })
+            || (f.opts.skip_templates || f.opts.hide_guides) && matches!(a.kind, NodeKind::Path { guide: true, .. });
+        if !a.visible || skipped_view_item || f.opts.hidden.contains(&a.id) {
             return true;
         }
         match self.bounds_of(f.symbols, a) {
