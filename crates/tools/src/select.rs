@@ -372,9 +372,9 @@ fn thread_params(cx: &ToolContext, from: NodeId, start: Point, end: Point) -> Va
     let frame = |n: &vectorcraft_doc::Node| {
         is_area_type(n) || matches!(&n.kind, vectorcraft_doc::NodeKind::Path { path, .. } if path.subpaths.first().is_some_and(|s| s.closed))
     };
-    let to = hit_test(cx.doc, start, cx.selection_hit_options())
-        .map(|h| h.top_object(cx.isolation))
-        .filter(|id| *id != from && cx.doc.node(*id).is_some_and(frame));
+    // The art the text flows into: what is drawn, not a clipping path's outline.
+    let to =
+        hit_test(cx.doc, start, cx.hit_options()).map(|h| h.top_object(cx.isolation)).filter(|id| *id != from && cx.doc.node(*id).is_some_and(frame));
     match to {
         Some(to) => json!({ "from": from.0, "to": to.0 }),
         None => json!({ "from": from.0, "at": [start.x, start.y] }),
@@ -489,7 +489,8 @@ impl Tool for SelectionTool {
                 if crate::rulerguide::guide_at(cx, p).is_some() {
                     return vec![];
                 }
-                if let Some(h) = hit_test(cx.doc, p, cx.selection_hit_options()) {
+                // A double-click edits what is drawn: not a clipping path's outline.
+                if let Some(h) = hit_test(cx.doc, p, cx.hit_options()) {
                     let top = h.top_object(cx.isolation);
                     if cx.doc.node(top).is_some_and(|n| matches!(n.kind, vectorcraft_doc::NodeKind::Text(_))) {
                         return vec![Action::SwitchTool("type".into())];
@@ -845,7 +846,7 @@ pub(crate) fn release_guide_at(cx: &ToolContext, p: Point, m: Mods) -> Option<Ac
     if let Some(i) = crate::rulerguide::guide_at(cx, p) {
         return Some(Action::Exec("view.guides.release".into(), json!({ "index": i })));
     }
-    let leaf = hit_test(cx.doc, p, cx.selection_hit_options())?.leaf;
+    let leaf = hit_test(cx.doc, p, cx.hit_options())?.leaf;
     let guide = cx.doc.node(leaf).is_some_and(|n| matches!(n.kind, vectorcraft_doc::NodeKind::Path { guide: true, .. }));
     guide.then(|| Action::Exec("view.guides.release".into(), json!({ "ids": [leaf.0] })))
 }
@@ -2086,6 +2087,62 @@ mod tests {
         // The bounding box's corner handle below the port still resizes the frame.
         let corner = Point::new(port.x, port.y + crate::text::PORT_RISE_PX);
         assert_eq!(t.pointer(&cx, &ev(PointerKind::Down, corner.x, corner.y)), vec![Action::Begin("Resize Type Area".into())]);
+    }
+
+    /// Loaded text clicked just inside a layer's clipping mask, where art is drawn over the mask's
+    /// edge, threads into that art, not into the unpainted mask: placing text acts on what is drawn,
+    /// so it takes the ordinary hit, not the selection tools' clipping-path outline.
+    #[test]
+    fn loaded_text_threads_into_the_art_on_a_layer_masks_edge() {
+        let (mut d, id, _, port) = overflowing_area_type();
+        let art = d.alloc_id();
+        let picture = vectorcraft_doc::Node::path(
+            art,
+            vectorcraft_geom::shapes::rectangle(Rect::new(350.0, 350.0, 550.0, 550.0)),
+            vectorcraft_doc::Appearance::default_art(),
+        );
+        add_masked_layer(&mut d, Rect::new(400.0, 400.0, 500.0, 500.0), picture);
+        let mut s = Selection::default();
+        s.set([id]);
+        let p = paint();
+        let cx = cx(&d, &s, &p);
+        assert!(cx.selection_hit_options().clip_outlines, "the selection tools would take the mask here");
+        let mut t = SelectionTool::default();
+        t.pointer(&cx, &ev(PointerKind::Down, port.x, port.y));
+        t.pointer(&cx, &ev(PointerKind::Up, port.x, port.y));
+        t.pointer(&cx, &ev(PointerKind::Down, 498.5, 450.0));
+        assert_eq!(
+            t.pointer(&cx, &ev(PointerKind::Up, 498.5, 450.0)),
+            vec![Action::Exec("text.thread.add".into(), json!({"from": id.0, "to": art.0}))]
+        );
+    }
+
+    /// A double-click on type where a layer's clipping mask edge runs through it edits the type,
+    /// though a press there selects the mask: what a double-click edits is what is drawn.
+    #[test]
+    fn a_double_click_on_type_at_a_layer_masks_edge_edits_it() {
+        let (d, _, at) = doc_with_type_on_a_layer_masks_edge();
+        let (s, p) = (Selection::default(), paint());
+        let a = SelectionTool::default().pointer(&cx(&d, &s, &p), &ev(PointerKind::DoubleClick, at.x, at.y));
+        assert_eq!(a, vec![Action::SwitchTool("type".into())]);
+    }
+
+    /// A Cmd/Ctrl+Shift double-click releases a guide path where it crosses a layer's clipping
+    /// mask edge (its left side, x = 450, just inside the mask's bottom): the mask, unpainted and
+    /// never a guide, doesn't stand in front of it.
+    #[test]
+    fn a_guide_on_a_layer_masks_edge_is_released() {
+        let (mut d, _) = doc_with_rect();
+        let id = d.alloc_id();
+        let mut guide_path =
+            vectorcraft_doc::Node::path(id, vectorcraft_geom::shapes::rectangle(Rect::new(450.0, 350.0, 550.0, 550.0)), Default::default());
+        let vectorcraft_doc::NodeKind::Path { guide, .. } = &mut guide_path.kind else { panic!("a path") };
+        *guide = true;
+        add_masked_layer(&mut d, Rect::new(400.0, 400.0, 500.0, 500.0), guide_path);
+        let (s, p) = (Selection::default(), paint());
+        let both = Mods { cmd: true, shift: true, ..Mods::default() };
+        let a = SelectionTool::default().pointer(&cx(&d, &s, &p), &ev(PointerKind::DoubleClick, 450.0, 498.5).with_mods(both));
+        assert_eq!(a, vec![Action::Exec("view.guides.release".into(), json!({"ids": [id.0]}))]);
     }
 
     /// Escape drops the loaded text, and the next click is an ordinary one; type that fits its

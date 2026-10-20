@@ -2022,6 +2022,7 @@ fn hit_with<T>(
         type_path_only: prefs.type_selection_by_path_only,
         scope: app.session.active().and_then(|st| st.isolation),
         skip_guides: !app.ui.view.guides,
+        ..Default::default()
     };
     test(&app.session.active()?.doc, p, opt)
 }

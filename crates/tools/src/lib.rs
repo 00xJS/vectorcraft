@@ -419,6 +419,8 @@ impl ToolContext<'_> {
 
     /// [`Self::hit_options`] for the selection tools (Selection, Direct Selection, Group
     /// Selection): a clipping path is also hit on its outline ([`HitOptions::clip_outlines`]).
+    /// Only for what a press or a hover selects: a double-click, loaded text or a guide's release
+    /// acts on what is drawn and takes [`Self::hit_options`].
     ///
     /// [`HitOptions::clip_outlines`]: vectorcraft_doc::hit::HitOptions::clip_outlines
     pub fn selection_hit_options(&self) -> vectorcraft_doc::hit::HitOptions {
@@ -885,6 +887,33 @@ pub(crate) mod testutil {
             Node::new(g, vectorcraft_doc::NodeKind::Group { children: vec![std::sync::Arc::new(path), std::sync::Arc::new(picture)], clip: true });
         d.insert(Some(l), 1, group).unwrap();
         (d, g, clip, art)
+    }
+
+    /// A new layer of `d`, above the others, with the unpainted rectangle `mask` as its clipping
+    /// mask and `art` clipped by it: the layer and the clipping mask.
+    pub fn add_masked_layer(d: &mut Document, mask: Rect, art: Node) -> (NodeId, NodeId) {
+        let l = d.add_layer(Some("Masked"));
+        let clip = d.alloc_id();
+        let mut path = Node::path(clip, shapes::rectangle(mask), Default::default());
+        if let vectorcraft_doc::NodeKind::Path { clipping, .. } = &mut path.kind {
+            *clipping = true;
+        }
+        d.insert(Some(l), 0, path).unwrap();
+        d.insert(Some(l), 1, art).unwrap();
+        d.node_mut(l).unwrap().set_clips(true);
+        (l, clip)
+    }
+
+    /// A layer clipped to (250, 250)–(360, 400), its mask's right edge through 120 × 40 area type
+    /// at (300, 300): the type, and a point on it just inside the mask's edge, within the
+    /// selection tolerance, where the selection tools take the mask.
+    pub fn doc_with_type_on_a_layer_masks_edge() -> (Document, NodeId, Point) {
+        let (mut d, _) = doc_with_rect();
+        let id = d.alloc_id();
+        let mut t = vectorcraft_doc::TextObject::point(Point::new(300.0, 300.0), "Some words", Default::default());
+        t.kind = vectorcraft_doc::TextKind::Area { frame: shapes::rectangle(Rect::new(0.0, 0.0, 120.0, 40.0)) };
+        add_masked_layer(&mut d, Rect::new(250.0, 250.0, 360.0, 400.0), Node::new(id, vectorcraft_doc::NodeKind::Text(Box::new(t))));
+        (d, id, Point::new(358.5, 320.0))
     }
 
     /// [`doc_with_rect`] plus 120 × 40 area type at (300, 300).

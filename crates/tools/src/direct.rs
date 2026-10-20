@@ -486,10 +486,8 @@ impl Tool for DirectSelectionTool {
                 if crate::rulerguide::guide_at(cx, p).is_some() {
                     return vec![];
                 }
-                if hit_test(cx.doc, p, cx.selection_hit_options())
-                    .and_then(|h| cx.doc.node(h.leaf))
-                    .is_some_and(|n| matches!(n.kind, NodeKind::Text(_)))
-                {
+                // A double-click edits what is drawn: not a clipping path's outline.
+                if hit_test(cx.doc, p, cx.hit_options()).and_then(|h| cx.doc.node(h.leaf)).is_some_and(|n| matches!(n.kind, NodeKind::Text(_))) {
                     return vec![Action::SwitchTool("type".into())];
                 }
                 vec![]
@@ -2040,6 +2038,16 @@ mod tests {
             let (x, y) = (v["matrix"][4].as_f64().unwrap(), v["matrix"][5].as_f64().unwrap());
             assert!((x - 14.0).abs() < 1e-9 && y.abs() < 1e-9, "group: {group}: {v}");
         }
+    }
+
+    /// Direct Selection's double-click on type where a layer's clipping mask edge runs through it
+    /// edits the type, though a press there takes the mask's segment.
+    #[test]
+    fn a_double_click_on_type_at_a_layer_masks_edge_edits_it() {
+        let (d, _, at) = doc_with_type_on_a_layer_masks_edge();
+        let (s, p) = (Selection::default(), paint());
+        let acts = DirectSelectionTool::new(false).pointer(&cx(&d, &s, &p), &PointerEvent::new(PointerKind::DoubleClick, at.x, at.y));
+        assert_eq!(acts, vec![Action::SwitchTool("type".into())]);
     }
 
     #[test]
