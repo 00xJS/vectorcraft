@@ -188,7 +188,7 @@ fn write_css(lib: &SwatchLibrary, keep: impl Fn(&&Swatch) -> bool) -> String {
                 Paint::Solid { color, .. } => css_color(color, 1.0),
                 Paint::Gradient(g) if g.gradient.kind != GradientKind::Freeform => {
                     let stops: Vec<String> =
-                        g.gradient.stops.iter().map(|s| format!("{} {}%", css_color(&s.color, s.opacity), (s.offset * 100.0).round())).collect();
+                        g.gradient.stops.iter().map(|s| format!("{} {}%", css_color(&s.color, s.opacity), s.offset * 100.0)).collect();
                     match g.gradient.kind {
                         GradientKind::Radial => format!("radial-gradient(circle, {})", stops.join(", ")),
                         _ => format!("linear-gradient({}deg, {})", (90.0 - g.angle).rem_euclid(360.0).round(), stops.join(", ")),
@@ -813,6 +813,32 @@ mod tests {
         let text = written(&lib, PaletteFormat::Css);
         assert!(text.contains("--red: #000000;") && text.contains("--red-2: #000000;"));
         assert!(read(&text, "x").is_err(), "CSS is written only");
+    }
+
+    #[test]
+    fn css_preserves_fractional_gradient_stop_positions() {
+        for kind in [GradientKind::Linear, GradientKind::Radial] {
+            let lib = SwatchLibrary {
+                name: "Positions".into(),
+                swatches: vec![Swatch {
+                    name: "Ramp".into(),
+                    paint: Paint::Gradient(Box::new(GradientPaint::new(Gradient {
+                        kind,
+                        stops: vec![
+                            GradientStop::new(0.0, Color::BLACK),
+                            GradientStop::new(0.125, Color::rgb8(255, 0, 0)),
+                            GradientStop::new(0.12890625, Color::WHITE),
+                            GradientStop::new(1.0, Color::rgb8(0, 0, 255)),
+                        ],
+                    }))),
+                    global: false,
+                    spot: false,
+                }],
+                groups: vec![],
+            };
+            let text = written(&lib, PaletteFormat::Css);
+            assert!(text.contains("#000000 0%, #ff0000 12.5%, #ffffff 12.890625%, #0000ff 100%"), "{kind:?}: {text}");
+        }
     }
 
     #[test]
