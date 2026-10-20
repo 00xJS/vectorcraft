@@ -59,6 +59,10 @@ fn plugin_by_id(cmd: &str, p: &Value) -> Result<Arc<Plugin>> {
     registry::get(id).ok_or_else(|| err(vectorcraft_plugins::Error::NotFound(id.into())))
 }
 
+/// `plugin.run`: runs filter `id` on `ids` (else the selected paths and compound paths) with its
+/// parameters and `_context`, and applies its output as one undo step ([`objects::apply_output`];
+/// effect records as [`admit_effects`] admits them). → `{plugin, ids}`: what it made or changed,
+/// which is then selected.
 fn run(s: &mut Session, p: &Value) -> Result<Value> {
     const C: &str = "plugin.run";
     let plugin = plugin_by_id(C, p)?;

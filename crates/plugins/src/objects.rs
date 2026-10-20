@@ -76,7 +76,7 @@ impl OutStroke {
 /// host's to say.
 pub type AdmitEffects<'a> = &'a dyn Fn(&[Effect], &Node) -> std::result::Result<Vec<Effect>, String>;
 
-/// The names plug-ins use for line joins and caps, as SVG's.
+/// The name plug-ins use for line join `j`, as SVG's `stroke-linejoin`.
 fn join_name(j: LineJoin) -> &'static str {
     match j {
         LineJoin::Miter => "miter",
@@ -85,6 +85,7 @@ fn join_name(j: LineJoin) -> &'static str {
     }
 }
 
+/// The name plug-ins use for line cap `c`, as SVG's `stroke-linecap`.
 fn cap_name(c: LineCap) -> &'static str {
     match c {
         LineCap::Butt => "butt",
@@ -265,6 +266,9 @@ fn opt<'a>(o: &'a serde_json::Map<String, Value>, key: &str) -> Option<&'a Value
     o.get(key).filter(|v| !v.is_null())
 }
 
+/// Object `v` of a plug-in's output (`at` names it in errors), its anchors added to `anchors` and
+/// held to [`MAX_ANCHORS`]: each key it has checked, numbers clamped into range, as [`decode`] reads
+/// them.
 fn decode_object(v: &Value, at: &str, anchors: &mut usize) -> Result<OutObject> {
     let o = v.as_object().ok_or_else(|| out_err(at, "an object must be a JSON object"))?;
     let mut out = OutObject::default();

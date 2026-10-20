@@ -46,6 +46,8 @@ fn targets_are_selected_paths_in_paint_order() {
     assert_eq!(filter_targets(&d, &[layer]), [ids[0], ids[2]]);
 }
 
+/// Objects as plug-ins are given them (type, name, fill rule, fills, strokes, bounds); handed back
+/// unchanged, they change nothing, swatch links included.
 #[test]
 fn objects_round_trip_through_the_json_model() {
     let (mut d, ids, _) = doc();
@@ -90,6 +92,8 @@ fn an_unchanged_path_stays_a_live_shape() {
     assert!(matches!(&d.node(a).unwrap().kind, NodeKind::Path { live: None, .. }), "moved: a plain path");
 }
 
+/// An output updates the input objects it lists, deletes the ones it leaves out, and adds new
+/// objects where it lists them.
 #[test]
 fn outputs_update_add_and_delete_in_place() {
     let (mut d, ids, layer) = doc();
@@ -109,6 +113,8 @@ fn outputs_update_add_and_delete_in_place() {
     assert!(n1.appearance.stroke().is_none());
 }
 
+/// New objects take the place of the input objects they replace, or go on top of the given
+/// container when there were none.
 #[test]
 fn new_objects_take_the_place_of_replaced_inputs_or_go_on_top() {
     let (mut d, ids, layer) = doc();
@@ -121,6 +127,8 @@ fn new_objects_take_the_place_of_replaced_inputs_or_go_on_top() {
     assert_eq!(names(&d, layer).last().map(String::as_str), Some("X"));
 }
 
+/// An output turns a path into a compound path and back and sets its fill rule, strokes (weights
+/// clamped), opacity and name.
 #[test]
 fn geometry_type_and_strokes_change() {
     let (mut d, ids, _) = doc();
@@ -143,6 +151,8 @@ fn geometry_type_and_strokes_change() {
     assert!(n.appearance.stroke().is_none());
 }
 
+/// A paint handed back as it was keeps its swatch link and any other is unlinked; a pattern paint
+/// must name a pattern the document has.
 #[test]
 fn changed_paints_lose_swatch_links_and_patterns_must_exist() {
     let (mut d, ids, _) = doc();
@@ -160,6 +170,7 @@ fn changed_paints_lose_swatch_links_and_patterns_must_exist() {
     assert!(apply_output(&mut d, &[a], decode_json(pattern).unwrap(), None, &keep).is_ok());
 }
 
+/// Output the host can't read as objects is refused, whatever is wrong with it.
 #[test]
 fn bad_outputs_are_refused() {
     let (d, ids, _) = doc();
@@ -234,6 +245,7 @@ fn stroke_styles_and_effect_records_round_trip() {
     assert_eq!((e.to_string().contains("objects[0].effects: not an effect"), &d), (true, &before), "{e}");
 }
 
+/// Stroke styles and effect records in a form the host doesn't read are refused.
 #[test]
 fn bad_stroke_styles_and_effect_records_are_refused() {
     let a = doc().1[0].0;

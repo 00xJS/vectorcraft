@@ -141,6 +141,9 @@ fn check_revolve_count(n: &Node, cmd: &str) -> Result<()> {
 
 pub(crate) const ONE_3D: &str = "An object takes one 3D effect. Edit the existing effect's options, or remove it first.";
 
+/// `effect.apply`: adds effect `effect` (or `id`) with `params`, its defaults filled in, to the
+/// targets' active item as one undo step. A 3D effect must fit each target, which takes only one;
+/// a Pathfinder effect on loose objects groups them first. → `{ids, index, item}`.
 pub(crate) fn apply(s: &mut Session, p: &Value) -> Result<Value> {
     const C: &str = "effect.apply";
     let id = str_param(p, "effect").or_else(|| str_param(p, "id")).ok_or_else(|| bad(C, "missing `effect` id"))?;
@@ -329,6 +332,9 @@ fn lighting_preset(s: &mut Session, p: &Value) -> Result<Value> {
     set_params(s, &options)
 }
 
+/// `effect.setParams`: merges `params` into the effect at `index` of the targets' active item, and
+/// sets its Warp style (`warpStyle`) or visibility (`visible`), as one undo step. They are checked
+/// as `effect.apply` checks them, and a visible 3D effect must still fit. → `{ids}`.
 fn set_params(s: &mut Session, p: &Value) -> Result<Value> {
     const C: &str = "effect.setParams";
     let index = index_param(p, "index", C)?;
