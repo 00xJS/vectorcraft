@@ -3226,6 +3226,7 @@ theme	Appearance	Tampilan
 	Scale Corners	Skalakan sudut
 	Scale Cursor Proportional to UI	Skalakan kursor proporsional dengan UI
 	Scale Strokes & Effects	Skalakan guratan & efek
+	Scale Text Attributes	Skalakan atribut teks
 	Scratch Disks	Disk scratch
 	Secondary	Sekunder
 	Select Same Tint %	Pilih tint yang sama %
@@ -4936,6 +4937,7 @@ mark-style	Japanese	Jepang
 @msg	Measured anchor no longer exists	Titik jangkar yang diukur sudah tidak ada
 @msg	Measured segment no longer exists	Segmen yang diukur sudah tidak ada
 @msg	Non-finite dimension	Dimensi bukan bilangan berhingga
+@msg	Scale Text Attributes: selected type has no scale to bake	Skalakan atribut teks: teks yang dipilih tidak memiliki skala untuk diterapkan
 @msg	Scale must be drawing:real, for example 1:10	Skala harus dalam format gambar:sebenarnya, misalnya 1:10
 @msg	Scale ratio must be between 1:1000000 and 1000000:1	Rasio skala harus antara 1:1000000 dan 1000000:1
 @msg	Second measured segment no longer exists	Segmen yang diukur kedua sudah tidak ada

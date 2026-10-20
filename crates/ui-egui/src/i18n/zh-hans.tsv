@@ -2671,6 +2671,7 @@ font-script	Japanese	汉字
 	Scale Cursor Proportional to UI	光标随界面等比缩放
 	Scale Lineweights	缩放线宽
 	Scale Strokes & Effects	缩放描边和效果
+	Scale Text Attributes	缩放文本属性
 	Scale to Fit Artboard	缩放以适合画板
 	Scale Tool	比例缩放工具
 	Scale:	缩放：
@@ -4304,6 +4305,7 @@ imageTrace	Outline	轮廓
 @msg	Measured anchor no longer exists	测量锚点已不存在
 @msg	Measured segment no longer exists	测量线段已不存在
 @msg	Non-finite dimension	尺寸标注不是有限值
+@msg	Scale Text Attributes: selected type has no scale to bake	缩放文本属性：所选文本没有可应用的缩放
 @msg	Scale must be drawing:real, for example 1:10	比例必须为 图纸:实际，例如 1:10
 @msg	Scale ratio must be between 1:1000000 and 1000000:1	比例必须介于 1:1000000 和 1000000:1 之间
 @msg	Second measured segment no longer exists	第二条测量线段已不存在

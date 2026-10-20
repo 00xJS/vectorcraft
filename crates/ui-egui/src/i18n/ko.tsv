@@ -2687,6 +2687,7 @@ mark-style	Japanese	일본식
 	Scale Cursor Proportional to UI	UI에 비례해 커서 크기 조절
 	Scale Lineweights	선 두께 크기 조절
 	Scale Strokes & Effects	선 및 효과 크기 조절
+	Scale Text Attributes	텍스트 속성 크기 조절
 	Scale Tool	크기 조절 도구
 	Scale to Fit Artboard	아트보드에 맞게 크기 조절
 	Scale:	크기 조절:
@@ -4782,6 +4783,7 @@ lighting	Light	광원
 @msg	Measured anchor no longer exists	측정한 고정점이 더 이상 없습니다
 @msg	Measured segment no longer exists	측정한 세그먼트가 더 이상 없습니다
 @msg	Non-finite dimension	유한하지 않은 치수
+@msg	Scale Text Attributes: selected type has no scale to bake	텍스트 속성 크기 조절: 선택한 텍스트에 적용할 크기 조절이 없습니다
 @msg	Scale must be drawing:real, for example 1:10	축척은 도면:실제 형식이어야 합니다(예: 1:10)
 @msg	Scale ratio must be between 1:1000000 and 1000000:1	축척 비율은 1:1000000에서 1000000:1 사이여야 합니다
 @msg	Second measured segment no longer exists	두 번째 측정 세그먼트가 더 이상 없습니다

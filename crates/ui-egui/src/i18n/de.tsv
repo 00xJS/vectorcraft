@@ -2765,6 +2765,7 @@ mark-style	Japanese	Japanisch
 	Scale Cursor Proportional to UI	Cursor proportional zur Benutzeroberfläche skalieren
 	Scale Lineweights	Linienstärken skalieren
 	Scale Strokes & Effects	Konturen und Effekte skalieren
+	Scale Text Attributes	Textattribute skalieren
 	Scale to Fit Artboard	Auf Zeichenfläche skalieren
 	Scale Tool	Skalieren-Werkzeug
 	Scale:	Skalierung:
@@ -4785,6 +4786,7 @@ effect	Soft	Weich
 @msg	Measured anchor no longer exists	Der gemessene Ankerpunkt existiert nicht mehr
 @msg	Measured segment no longer exists	Das gemessene Segment existiert nicht mehr
 @msg	Non-finite dimension	Die Bemaßung ist keine endliche Zahl
+@msg	Scale Text Attributes: selected type has no scale to bake	Textattribute skalieren: Der ausgewählte Text weist keine zu übernehmende Skalierung auf
 @msg	Scale must be drawing:real, for example 1:10	Der Maßstab muss Zeichnung:Realität sein, zum Beispiel 1:10
 @msg	Scale ratio must be between 1:1000000 and 1000000:1	Das Maßstabsverhältnis muss zwischen 1:1000000 und 1000000:1 liegen
 @msg	Second measured segment no longer exists	Das zweite gemessene Segment existiert nicht mehr

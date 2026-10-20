@@ -3119,6 +3119,7 @@ mark-style	Japanese	Kiểu Nhật
 	Scale Lineweights	Tỷ lệ độ dày nét
 	Scale Proportionately	Phóng to/thu nhỏ đều
 	Scale Strokes & Effects	Tỷ lệ nét & hiệu ứng
+	Scale Text Attributes	Tỷ lệ thuộc tính văn bản
 	Scale to Fit Artboard	Tỷ lệ vừa bảng vẽ
 	Scale Tool	Công cụ Tỷ lệ
 	Scale:	Tỷ lệ:
@@ -4799,6 +4800,7 @@ theme	Appearance	Giao diện
 @msg	Measured anchor no longer exists	Điểm neo được đo không còn tồn tại
 @msg	Measured segment no longer exists	Đoạn được đo không còn tồn tại
 @msg	Non-finite dimension	Kích thước không phải là số hữu hạn
+@msg	Scale Text Attributes: selected type has no scale to bake	Tỷ lệ thuộc tính văn bản: văn bản được chọn không có tỷ lệ để áp dụng
 @msg	Scale must be drawing:real, for example 1:10	Tỷ lệ phải có dạng bản vẽ:thực tế, ví dụ 1:10
 @msg	Scale ratio must be between 1:1000000 and 1000000:1	Tỷ lệ phải nằm trong khoảng 1:1000000 đến 1000000:1
 @msg	Second measured segment no longer exists	Đoạn được đo thứ hai không còn tồn tại

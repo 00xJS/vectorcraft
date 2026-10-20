@@ -2823,6 +2823,7 @@ mark-style	Japanese	Giapponese
 	Scale Cursor Proportional to UI	Scala il cursore in proporzione all'interfaccia
 	Scale Lineweights	Scala spessori linea
 	Scale Strokes & Effects	Scala tracce ed effetti
+	Scale Text Attributes	Scala attributi di testo
 	Scale to Fit Artboard	Scala per adattare alla tavola da disegno
 	Scale Tool	Strumento Scala
 	Scale:	Scala:
@@ -4819,6 +4820,7 @@ lighting	Light	Luce
 @msg	Measured anchor no longer exists	Il punto di ancoraggio misurato non esiste più
 @msg	Measured segment no longer exists	Il segmento misurato non esiste più
 @msg	Non-finite dimension	Quota non finita
+@msg	Scale Text Attributes: selected type has no scale to bake	Scala attributi di testo: il testo selezionato non ha una scala da incorporare
 @msg	Scale must be drawing:real, for example 1:10	La scala deve essere disegno:reale, ad esempio 1:10
 @msg	Scale ratio must be between 1:1000000 and 1000000:1	Il rapporto di scala deve essere compreso tra 1:1000000 e 1000000:1
 @msg	Second measured segment no longer exists	Il secondo segmento misurato non esiste più
