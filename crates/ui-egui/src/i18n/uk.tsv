@@ -4755,6 +4755,9 @@ lighting	Light	Світло
 	Softness	М'якість
 	Ambient Light	Навколишнє світло
 	Light behind the object	Світло позаду об'єкта
+	3D Lighting Preset	Попереднє налаштування 3D освітлення
+	Standard	Стандартне
+	Diffuse	Розсіяне
 # 3D light management.
 	Lights	Джерела світла
 	Add Light	Додати світло

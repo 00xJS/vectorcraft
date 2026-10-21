@@ -5165,6 +5165,9 @@ theme	Appearance	Apparence
 	Softness	Douceur
 	Ambient Light	Lumière ambiante
 	Light behind the object	Lumière derrière l'objet
+	3D Lighting Preset	Préréglage d’éclairage 3D
+	Standard	Standard
+	Diffuse	Diffus
 # 3D light management.
 	Lights	Lumières
 	Add Light	Ajouter une lumière

@@ -4828,6 +4828,9 @@ mark-style	Japanese	Jepang
 	Softness	Kelembutan
 	Ambient Light	Cahaya ambient
 	Light behind the object	Cahaya di belakang objek
+	3D Lighting Preset	Preset Pencahayaan 3D
+	Standard	Standar
+	Diffuse	Difus
 # 3D light management.
 	Lights	Lampu
 	Add Light	Tambah Lampu

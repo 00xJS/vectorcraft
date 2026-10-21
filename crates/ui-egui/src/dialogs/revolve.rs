@@ -293,6 +293,7 @@ fn lighting_controls(ui: &mut egui::Ui, d: &mut Dialog) {
         }
     });
     ui.add_enabled_ui(d.bool("shade"), |ui| {
+        lighting_presets(ui, d);
         light_list(ui, d);
         let mut selected = selected_light(d);
         let before = light_record(&selected);
@@ -308,6 +309,26 @@ fn lighting_controls(ui: &mut egui::Ui, d: &mut Dialog) {
             store_selected(d, &selected);
         }
     });
+}
+
+fn lighting_presets(ui: &mut egui::Ui, d: &mut Dialog) {
+    let names = [tl!("Standard"), tl!("Diffuse"), tl!("Top Left"), tl!("Right")];
+    let current = vectorcraft_effects::matching_lighting_preset(&super::form::params(d));
+    ui.horizontal(|ui| {
+        ui.spacing_mut().item_spacing.x = 6.0;
+        label(ui, tl!("Presets"));
+        let shown = current.and_then(|i| names.get(i).copied()).unwrap_or(tl!("Custom"));
+        if let Some(preset) = widgets::dropdown(ui, "three-d-lighting-presets", shown, &names, VALUE_W + rail_width(ui) + 6.0)
+            .and_then(|i| vectorcraft_effects::LIGHTING_PRESETS.get(i))
+            && let Some(patch) = preset.params().as_object()
+        {
+            d.fields.extend(patch.clone());
+            d.fields.insert("__light".into(), json!(0));
+            ui.memory_mut(|m| m.stop_text_input());
+            super::revolve_gizmo::clear(ui.ctx());
+        }
+    });
+    ui.add_space(4.0);
 }
 
 const LIGHT_KEYS: [(&str, &str); 6] = [

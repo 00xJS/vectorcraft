@@ -4872,6 +4872,9 @@ theme	Appearance	Εμφάνιση
 	 to set spacing and orientation	 για ορισμό απόστασης και προσανατολισμού
 	:	:
 	Light behind the object	Φως πίσω από το αντικείμενο
+	3D Lighting Preset	Προεπιλογή φωτισμού 3D
+	Standard	Τυπικός
+	Diffuse	Διάχυτος
 # 3D light management.
 	Lights	Φώτα
 	Add Light	Προσθήκη φωτός

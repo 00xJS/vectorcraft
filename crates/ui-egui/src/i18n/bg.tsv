@@ -5065,6 +5065,9 @@ theme	Appearance	Външен вид
 	Softness	Мекота
 	Ambient Light	Околна светлина
 	Light behind the object	Светлина зад обекта
+	3D Lighting Preset	Предварителна настройка за 3D осветление
+	Standard	Стандартно
+	Diffuse	Дифузно
 # 3D light management.
 	Lights	Светлини
 	Add Light	Добавяне на светлина

@@ -5106,6 +5106,9 @@ mark-style	Japanese	Japonesas
 	Softness	Suavidad
 	Ambient Light	Luz ambiental
 	Light behind the object	Luz detrás del objeto
+	3D Lighting Preset	Ajuste preestablecido de iluminación 3D
+	Standard	Estándar
+	Diffuse	Difusa
 # 3D light management.
 	Lights	Luces
 	Add Light	Añadir luz

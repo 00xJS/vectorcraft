@@ -4814,6 +4814,9 @@ lighting	Light	ライト
 	Softness	柔らかさ
 	Ambient Light	環境光
 	Light behind the object	オブジェクトの背後のライト
+	3D Lighting Preset	3D ライティングプリセット
+	Standard	標準
+	Diffuse	拡散
 # 3D light management.
 	Lights	ライト一覧
 	Add Light	ライトを追加

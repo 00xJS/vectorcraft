@@ -56,6 +56,15 @@ pub fn specs() -> Vec<CommandSpec> {
             set_params
         ),
         cmd!(
+            "effect.lightingPreset",
+            "3D Lighting Preset",
+            [],
+            None,
+            "{index: int, preset: standard|diffuse|topLeft|right, item?: appearance item index|null (omitted: the active item, else the object's), ids?|id?: [..], target?: object|contents} replace an applied 3D effect's light rig and ambient with an original lighting preset; preserve shading, geometry and view; all targets must have a 3D effect at index; one undo step → {ids}",
+            has_doc,
+            lighting_preset
+        ),
+        cmd!(
             "effect.expandAppearance",
             "Expand Appearance",
             ["Object"],
@@ -298,6 +307,30 @@ pub(crate) fn set_params_effects(s: &Session, p: &Value) -> Vec<String> {
         Some(ap.effects_at(item.effects_item(ap, C).ok()?)?.get(index)?.id.clone())
     };
     ids.iter().filter_map(effect).collect()
+}
+
+fn lighting_preset(s: &mut Session, p: &Value) -> Result<Value> {
+    const C: &str = "effect.lightingPreset";
+    let patch = str_param(p, "preset")
+        .and_then(effects::lighting_preset_params)
+        .ok_or_else(|| bad(C, "preset must be standard, diffuse, topLeft or right"))?;
+    let index = index_param(p, "index", C)?;
+    let item = item_target(s, p, C)?;
+    // Validate the whole selection before changing any object. An unrelated effect or
+    // a missing index must not leave just some objects with a new lighting rig.
+    for id in appearance_targets(s, p)? {
+        let n = s.doc()?.doc.node(id).ok_or(EngineError::NoNode(id))?;
+        let slot = item.effects_item(&n.appearance, C)?;
+        let effect = n.appearance.effects_at(slot).and_then(|fx| fx.get(index));
+        if !effect.is_some_and(|e| effects::is_three_d(&e.id)) {
+            return Err(bad(C, format!("object {} needs a 3D effect at index {index}", id.0)));
+        }
+    }
+    let mut options = p.clone();
+    let map = options.as_object_mut().ok_or_else(|| bad(C, "parameters must be an object"))?;
+    map.remove("preset");
+    map.insert("params".into(), patch);
+    set_params(s, &options)
 }
 
 fn set_params(s: &mut Session, p: &Value) -> Result<Value> {
@@ -672,6 +705,10 @@ fn expand_appearance(s: &mut Session, p: &Value) -> Result<Value> {
     }
     Ok(out)
 }
+
+#[cfg(test)]
+#[path = "tests_lighting_presets.rs"]
+mod lighting_presets_tests;
 
 #[cfg(test)]
 mod tests {
