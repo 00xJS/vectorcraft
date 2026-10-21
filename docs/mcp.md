@@ -4441,7 +4441,9 @@ when it is Single-line). Every-line, the default, picks the breaks of the whole 
 justified text gets even word spacing, ragged text (left, centre or right aligned) an even rag, so it may move a word
 that fits to the next line to avoid a lone short word on the last line or a full line next to a short one.
 Single-line fills each line as far as it goes. Point type and type on a path have no line width, so both composers
-give the same result there; paragraphs that mix type sizes fall back to Single-line.
+give the same result there. A paragraph whose characters differ in line metrics (type size, font, leading or vertical
+scale, or an inline graphic taller than the text) is composed with Every-line in rectangular area type, rows and
+columns included; in area type of another shape, or with text wrap, it falls back to Single-line.
 
 ```json
 {"name":"run_command","arguments":{"command":"text.setFormat","params":{"ids":[7],"composer":"singleLine"}}}

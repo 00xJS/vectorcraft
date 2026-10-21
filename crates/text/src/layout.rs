@@ -1607,7 +1607,9 @@ fn hyphen_breaks(text: &str, g: &[SGlyph], ws: usize, we: usize, opts: &Hyphenat
 }
 
 /// Break candidates for the every-line composer: hyphenation points under `hyphenate` (the
-/// paragraph's Hyphenation options) when it is given.
+/// paragraph's Hyphenation options) when it is given. No break comes before a space: a line that
+/// may end after a dash, a Thai word or a space ends after the spaces that follow it, as in
+/// [`break_line`].
 fn candidates(text: &str, g: &[SGlyph], hyphenate: Option<&HyphenationOptions>, kinsoku: Kinsoku) -> Vec<Breakpoint> {
     let mut v = vec![];
     let mut ws = 0;
@@ -1622,7 +1624,7 @@ fn candidates(text: &str, g: &[SGlyph], hyphenate: Option<&HyphenationOptions>, 
                 }
             }
             let hy = if gl.is_soft_hyphen() { hyphen_glyph(gl).adv } else { 0.0 };
-            if j + 1 < g.len() && g[j + 1].byte != gl.byte && kinsoku_allows(g, j, kinsoku) {
+            if j + 1 < g.len() && g[j + 1].byte != gl.byte && !g[j + 1].is_space() && kinsoku_allows(g, j, kinsoku) {
                 v.push(Breakpoint { end: j + 1, hyphen: hy });
             }
             ws = j + 1;
@@ -1643,8 +1645,9 @@ fn candidates(text: &str, g: &[SGlyph], hyphenate: Option<&HyphenationOptions>, 
 /// Paragraphs longer than this (glyphs) are always broken line by line.
 const MAX_COMPOSE_GLYPHS: usize = 200_000;
 
-/// Every-line composition of paragraph glyphs `sg` if applicable (area text with uniform line
-/// metrics, justified or ragged); `None` falls back to the greedy single-line composer.
+/// Every-line composition of paragraph glyphs `sg` if applicable (area text, justified or ragged,
+/// with uniform line metrics or in rectangular cells without text wrap); `None` falls back to the
+/// greedy single-line composer.
 fn compose_para(cx: &Ctx<'_>, sg: &[SGlyph], flex: &[Flex], para: &ParaStyle, pen: &Pen<'_>, rtl: bool) -> Option<Vec<(usize, bool)>> {
     let ragged = matches!(para.justify, Justify::Auto | Justify::Left | Justify::Center | Justify::Right);
     let composer = cx.opts.composer.unwrap_or(para.composer);
@@ -1658,10 +1661,16 @@ fn compose_para(cx: &Ctx<'_>, sg: &[SGlyph], flex: &[Flex], para: &ParaStyle, pe
         return None;
     }
     let m = Metrics::of(&sg[0]);
-    if sg.iter().any(|g| Metrics::of(g) != m) {
+    // Line widths are independent of the breaks when every line has the same metrics, or when
+    // a line's width does not depend on how far down the frame it is set: rectangular cells
+    // without text wrap. Then a paragraph whose characters differ in line metrics (type size,
+    // font, leading, vertical scale, an inline graphic taller than the text) is composed too. In
+    // other shapes, or with text wrap, a taller line can move the lines below it to where the
+    // frame is narrower, so such a paragraph is broken line by line.
+    let plain = pen.regions.is_some_and(|r| r.iter().all(|r| (r.rect || r.polys.is_empty()) && r.wraps.is_empty()));
+    if !plain && sg.iter().any(|g| Metrics::of(g) != m) {
         return None;
     }
-    // Line widths are independent of the breaks when every line has the same metrics.
     let total: f64 = sg.iter().map(|g| g.adv).sum();
     let mut sim = pen.clone();
     let mut widths = vec![];
