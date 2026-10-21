@@ -55,6 +55,7 @@ Text options: {e}
 `background` must be a colour
 `burasagari` must be "none", "standard" or "forced"
 `charAlign` must be "romanBaseline", "emBoxTop", "emBoxCenter", "emBoxBottom", "icfTop" or "icfBottom"
+`charDirection` must be "default", "leftToRight" or "rightToLeft"
 `color` needs a `rule` to make the theme from
 `colors` is empty
 `columnType` is vertical, uniform, repeating or sliding
