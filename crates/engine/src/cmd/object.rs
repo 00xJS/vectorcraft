@@ -252,7 +252,7 @@ pub fn specs() -> Vec<CommandSpec> {
             "Distribute",
             ["Window", "Align"],
             None,
-            "{horizontal?: \"left\"|\"center\"|\"right\", vertical?: \"top\"|\"center\"|\"bottom\", spacing?: pt (used with a key object, select.key: the key object stays put and the lines are placed this far apart, outward from its line, in their order on that line; 0 puts them all on its line; not used without a key object or with anchor points selected), to?: \"selection\"|\"artboard\"|\"key\" (default: the selection; \"key\" distributes as \"selection\" does; not used with anchor points selected, or with spacing and a key object), artboard?: index (0-based; with to: \"artboard\", the artboard to distribute across; the app passes the active one; default: as object.align's), bounds?: \"preview\"|\"geometric\" (default: the Use Preview Bounds preference; preview bounds take in strokes), patterns?: bool (Transform Patterns: pattern fills and strokes transform with the art; default: prefs transformPatternTiles)} space the objects' left edges, centers or right edges (top edges, centers or bottom edges) in their order on that line: without spacing and a key object they are spaced evenly, the first and last objects stay put, and fewer than three objects don't move; with spacing and a key object, see spacing (two objects are enough); with to: \"artboard\", the first one's left (top) edge goes to the artboard's left (top) edge, the last one's right (bottom) edge goes to the artboard's right (bottom) edge, and two objects are enough. With anchor points selected (Direct Selection), the points are spaced evenly between the first and the last along the axis instead (#1636)",
+            "{horizontal?: \"left\"|\"center\"|\"right\", vertical?: \"top\"|\"center\"|\"bottom\", spacing?: pt (used with a key, select.key: the key object, or the key guide, select.key {guide}, stays put and the lines are placed this far apart, outward from its line, in their order on that line; 0 puts them all on its line; a key guide along the axis leaves everything where it is; not used without a key or with anchor points selected), to?: \"selection\"|\"artboard\"|\"key\" (default: the key while there is one, else the selection; \"key\" without spacing distributes as \"selection\" does; not used with anchor points selected, or with spacing and a key object; with a key guide, \"selection\" or \"artboard\" distributes without it as the key), artboard?: index (0-based; with to: \"artboard\", the artboard to distribute across; the app passes the active one; default: as object.align's), bounds?: \"preview\"|\"geometric\" (default: the Use Preview Bounds preference; preview bounds take in strokes), patterns?: bool (Transform Patterns: pattern fills and strokes transform with the art; default: prefs transformPatternTiles)} space the selected objects' left edges, centers or right edges (top edges, centers or bottom edges) in their order on that line, with the selected ruler guides across the axis (vertical ones for horizontal; #1597): a guide has no size, so its edges and center are its line, and guides along the axis stay. Without spacing and a key they are spaced evenly, the first and last stay put, and fewer than three don't move; with spacing and a key, see spacing (two are enough); with to: \"artboard\", the first one's left (top) edge goes to the artboard's left (top) edge, the last one's right (bottom) edge goes to the artboard's right (bottom) edge, and two are enough. With anchor points selected (Direct Selection), the points are spaced evenly between the first and the last along the axis instead (#1636)",
             can_distribute,
             distribute
         ),
@@ -261,7 +261,7 @@ pub fn specs() -> Vec<CommandSpec> {
             "Distribute Spacing",
             ["Window", "Align"],
             None,
-            "{axis: \"horizontal\"|\"vertical\", spacing?: pt (the key object, select.key, stays put and the others are spaced from it), to?: \"selection\"|\"artboard\"|\"key\" (used without spacing and without anchor points selected; default: the selection; \"key\" spaces as \"selection\" does), artboard?: index (0-based; with to: \"artboard\", the artboard to space across; the app passes the active one; default: as object.align's), bounds?: \"preview\"|\"geometric\" (default: the Use Preview Bounds preference; preview bounds take in strokes), patterns?: bool (Transform Patterns: pattern fills and strokes transform with the art; default: prefs transformPatternTiles)} without spacing, make the gaps between the objects equal, in the order of their left (top) edges: the first object's left (top) edge and the last one's right (bottom) edge stay put, or with to: \"artboard\" go to the artboard's left (top) and right (bottom) edges. With anchor points selected (Direct Selection), the points are spaced evenly along the axis instead, or `spacing` apart from the first (#1636)",
+            "{axis: \"horizontal\"|\"vertical\", spacing?: pt (the key object, select.key, or the key guide, select.key {guide}, stays put and the others are spaced from it; a key guide along the axis leaves everything where it is), to?: \"selection\"|\"artboard\"|\"key\" (used without spacing and without anchor points selected, and with a key guide; default: the key while there is one, else the selection; \"key\" without spacing spaces as \"selection\" does), artboard?: index (0-based; with to: \"artboard\", the artboard to space across; the app passes the active one; default: as object.align's), bounds?: \"preview\"|\"geometric\" (default: the Use Preview Bounds preference; preview bounds take in strokes), patterns?: bool (Transform Patterns: pattern fills and strokes transform with the art; default: prefs transformPatternTiles)} without spacing, make the gaps between the selected objects equal, in the order of their left (top) edges, with the selected ruler guides across the axis as items with no size (#1597; guides along the axis stay): the first item's left (top) edge and the last one's right (bottom) edge stay put, or with to: \"artboard\" go to the artboard's left (top) and right (bottom) edges. With anchor points selected (Direct Selection), the points are spaced evenly along the axis instead, or `spacing` apart from the first (#1636)",
             can_distribute,
             distribute_spacing
         ),
@@ -1473,10 +1473,68 @@ fn align_anchors(s: &mut Session, p: &Value, ids: &[NodeId], (h, v): (Option<&st
     ok()
 }
 
-/// Distribute needs two or more objects, or anchor points selected with Direct Selection (they
-/// may all be on one path).
+/// Distribute needs two or more objects and ruler guides, or anchor points selected with Direct
+/// Selection (they may all be on one path).
 fn can_distribute(s: &Session) -> std::result::Result<(), String> {
-    if s.active().is_some_and(|st| !st.selection.anchors.is_empty()) { Ok(()) } else { has_multi(s) }
+    if s.active().is_some_and(|st| !st.selection.anchors.is_empty() || st.selection.len() + st.selection.guides.len() >= 2) {
+        Ok(())
+    } else {
+        has_multi(s)
+    }
+}
+
+/// What Distribute and Distribute Spacing space: a selected object, or a selected ruler guide
+/// across the axis (#1597), which has no size.
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+enum Spaced {
+    Object(NodeId),
+    Guide(usize),
+}
+
+/// The selected objects `ids` with their bounds (`preview`: visual bounds), and the selected
+/// ruler guides across the axis (vertical ones when `horiz`) with their line as their bounds.
+/// Guides along the axis are left out, so they stay where they are.
+fn spaced_items(s: &Session, ids: &[NodeId], preview: bool, horiz: bool) -> Result<Vec<(Spaced, Rect)>> {
+    let st = s.doc()?;
+    let objects = items_bounds(&st.doc, ids, preview).into_iter().map(|(id, r)| (Spaced::Object(id), r));
+    let guides = st.selection.guides.iter().filter_map(|&i| {
+        let g = st.doc.guides.get(i).filter(|g| g.vertical == horiz)?;
+        Some((Spaced::Guide(i), Rect::new(g.pos, g.pos, g.pos, g.pos)))
+    });
+    Ok(objects.chain(guides).collect())
+}
+
+/// The index in `items` of what Distribute and Distribute Spacing keep in place with a spacing:
+/// the selected root that is the key object or contains it ([`key_root`]), or the key guide when
+/// aligning to the key (#2143).
+fn spaced_key(s: &Session, p: &Value, ids: &[NodeId], items: &[(Spaced, Rect)]) -> Option<usize> {
+    let key = match key_root(s, ids) {
+        Some(id) => Spaced::Object(id),
+        None => key_guide(s, p).and(s.doc().ok()?.selection.key_guide).map(Spaced::Guide)?,
+    };
+    items.iter().position(|(it, _)| *it == key)
+}
+
+/// Whether the key is a guide along the axis (a horizontal guide for a horizontal distribution),
+/// aligning to the key. It has no line there, so a spacing from it leaves everything where it
+/// is, as Align does.
+fn key_guide_along(s: &Session, p: &Value, horiz: bool) -> bool {
+    key_guide(s, p).is_some_and(|(_, vertical)| vertical != horiz)
+}
+
+/// Moves each of `deltas` that far along the axis (x when `horiz`) as undo step `label`, as
+/// [`apply_moves`] does: an object by that offset, a ruler guide to its new position.
+fn apply_spaced(s: &mut Session, label: &str, p: &Value, ids: &[NodeId], horiz: bool, deltas: &[(Spaced, f64)]) -> Result<Value> {
+    let along = |d: f64| if horiz { Vec2::new(d, 0.0) } else { Vec2::new(0.0, d) };
+    let (mut moves, mut guides) = (vec![], vec![]);
+    let d = &s.doc()?.doc;
+    for &(it, delta) in deltas {
+        match it {
+            Spaced::Object(id) => moves.push((id, along(delta))),
+            Spaced::Guide(i) => guides.extend(d.guides.get(i).map(|g| (i, g.pos + delta))),
+        }
+    }
+    apply_moves(s, label, p, ids, &moves, &guides)
 }
 
 /// [`distribute`] and [`distribute_spacing`] of the selected anchor points (whole paths among them
@@ -1530,7 +1588,6 @@ fn distribute(s: &mut Session, p: &Value) -> Result<Value> {
             (h, _) => distribute_anchors(s, "Distribute", h.is_some(), None),
         };
     }
-    let mut items = items_bounds(&s.doc()?.doc, &ids, preview);
     let (horiz, key): (bool, fn(&Rect, bool) -> f64) = match direction(p, "object.distribute")? {
         (Some(h), _) => (
             true,
@@ -1550,41 +1607,46 @@ fn distribute(s: &mut Session, p: &Value) -> Result<Value> {
         ),
         _ => return Err(bad("object.distribute", "give horizontal or vertical")),
     };
+    // The selected guides across the axis are spaced with the objects (#1597). A guide has no
+    // size, so its left edge, center and right edge are all its line.
+    let mut items = spaced_items(s, &ids, preview, horiz)?;
     items.sort_by(|a, b| key(&a.1, horiz).total_cmp(&key(&b.1, horiz)));
     let n = items.len();
-    // With a spacing, the key object (or the compound path or selected group it is in) stays where
-    // it is, and the lines are placed `spacing` apart, outward from its line, in their order.
-    // Without a key object the spacing is not used. `from_key` is the key's index in `items` and
-    // the spacing.
-    let from_key = spacing.zip(key_root(s, &ids)).and_then(|(g, k)| Some((items.iter().position(|(id, _)| *id == k)?, g)));
-    // Two objects are enough on an artboard, where they go to its edges, and when they are spaced
-    // from a key object.
+    if spacing.is_some() && key_guide_along(s, p, horiz) {
+        return ok();
+    }
+    // With a spacing, the key object (or the compound path or selected group it is in) or the key
+    // guide stays where it is, and the lines are placed `spacing` apart, outward from its line, in
+    // their order. Without a key the spacing is not used. `from_key` is the key's index in
+    // `items` and the spacing.
+    let from_key = spacing.zip(spaced_key(s, p, &ids, &items)).map(|(g, k)| (k, g));
+    // Two items are enough on an artboard, where they go to its edges, and when they are spaced
+    // from a key.
     if n < 2 || (n < 3 && board.is_none() && from_key.is_none()) {
         return ok();
     }
     let (first_box, last_box) = (&items[0].1, &items[n - 1].1);
-    // `first` and `last` are the lines that the first and last objects end on. Without an artboard
-    // the first and last objects stay where they are. On an artboard the first object moves until
-    // its left (top) edge is on the artboard's left (top) edge, and the last object moves until its
+    // `first` and `last` are the lines that the first and last items end on. Without an artboard
+    // the first and last items stay where they are. On an artboard the first item moves until
+    // its left (top) edge is on the artboard's left (top) edge, and the last item moves until its
     // right (bottom) edge is on the artboard's right (bottom) edge.
     let (first, last) = match board {
         Some(r) if horiz => (key(first_box, horiz) + r.x0 - first_box.x0, key(last_box, horiz) + r.x1 - last_box.x1),
         Some(r) => (key(first_box, horiz) + r.y0 - first_box.y0, key(last_box, horiz) + r.y1 - last_box.y1),
         None => (key(first_box, horiz), key(last_box, horiz)),
     };
-    let moves: Vec<(NodeId, Vec2)> = items
+    let deltas: Vec<(Spaced, f64)> = items
         .iter()
         .enumerate()
-        .map(|(i, (id, r))| {
+        .map(|(i, (it, r))| {
             let target = match from_key {
                 Some((k, g)) => key(&items[k].1, horiz) + g * (i as f64 - k as f64),
                 None => first + (last - first) * i as f64 / (n - 1) as f64,
             };
-            let delta = target - key(r, horiz);
-            (*id, if horiz { Vec2::new(delta, 0.0) } else { Vec2::new(0.0, delta) })
+            (*it, target - key(r, horiz))
         })
         .collect();
-    apply_moves(s, "Distribute", p, &ids, &moves, &[])
+    apply_spaced(s, "Distribute", p, &ids, horiz, &deltas)
 }
 
 fn distribute_spacing(s: &mut Session, p: &Value) -> Result<Value> {
@@ -1596,16 +1658,21 @@ fn distribute_spacing(s: &mut Session, p: &Value) -> Result<Value> {
     if !s.doc()?.selection.anchors.is_empty() {
         return distribute_anchors(s, "Distribute Spacing", horiz, spacing);
     }
-    let mut items = items_bounds(&s.doc()?.doc, &ids, preview);
+    // The selected guides across the axis are spaced with the objects, as items with no size (#1597).
+    let mut items = spaced_items(s, &ids, preview, horiz)?;
     items.sort_by(|a, b| if horiz { a.1.x0.total_cmp(&b.1.x0) } else { a.1.y0.total_cmp(&b.1.y0) });
+    if spacing.is_some() && key_guide_along(s, p, horiz) {
+        return ok();
+    }
     let n = items.len();
     let &[(_, first), .., (_, last)] = items.as_slice() else {
-        return Err(EngineError::Other("select two or more objects to distribute".into()));
+        // Selected guides along the axis have nothing to space.
+        return if s.doc()?.selection.guides.is_empty() { Err(EngineError::Other("select two or more objects to distribute".into())) } else { ok() };
     };
     let size = |r: &Rect| if horiz { r.width() } else { r.height() };
     let start = |r: &Rect| if horiz { r.x0 } else { r.y0 };
-    // The objects start at `lo`, and without a spacing the last one ends at `hi`. These are the
-    // first object's left (top) edge and the last one's right (bottom) edge, or the artboard's
+    // The items start at `lo`, and without a spacing the last one ends at `hi`. These are the
+    // first item's left (top) edge and the last one's right (bottom) edge, or the artboard's
     // edges with Align to Artboard and no spacing.
     let (lo, hi) = match board.filter(|_| spacing.is_none()) {
         Some(r) if horiz => (r.x0, r.x1),
@@ -1619,17 +1686,15 @@ fn distribute_spacing(s: &mut Session, p: &Value) -> Result<Value> {
     };
     let mut pos = lo;
     let mut deltas = vec![];
-    for (id, r) in &items {
-        deltas.push((*id, pos - start(r)));
+    for (it, r) in &items {
+        deltas.push((*it, pos - start(r)));
         pos += size(r) + gap;
     }
-    // With a spacing (aligning to a key object) the key object stays where it is, with the
-    // compound path or selected group it is in: the others are spaced from it.
-    let key = key_root(s, &ids);
-    let fixed = spacing.and_then(|_| deltas.iter().find(|(id, _)| Some(*id) == key)).map_or(0.0, |k| k.1);
-    let moves: Vec<(NodeId, Vec2)> =
-        deltas.into_iter().map(|(id, d)| (id, if horiz { Vec2::new(d - fixed, 0.0) } else { Vec2::new(0.0, d - fixed) })).collect();
-    apply_moves(s, "Distribute Spacing", p, &ids, &moves, &[])
+    // With a spacing the key stays where it is: the key object, with the compound path or
+    // selected group it is in, or the key guide (#2143). The others are spaced from it.
+    let fixed = spacing.and_then(|_| spaced_key(s, p, &ids, &items)).and_then(|k| deltas.get(k)).map_or(0.0, |k| k.1);
+    let deltas: Vec<(Spaced, f64)> = deltas.into_iter().map(|(it, d)| (it, d - fixed)).collect();
+    apply_spaced(s, "Distribute Spacing", p, &ids, horiz, &deltas)
 }
 
 fn set_bounds(s: &mut Session, p: &Value) -> Result<Value> {

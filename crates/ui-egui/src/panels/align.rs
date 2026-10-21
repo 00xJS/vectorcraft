@@ -123,9 +123,9 @@ fn guide_for_key(app: &VectorcraftApp) -> Option<usize> {
     app.session.active().filter(|st| !st.selection.is_empty()).and_then(|st| st.selection.guides.first().copied())
 }
 
-/// Whether the key is an object, which Distribute Spacing spaces from (not a guide).
-fn has_key_object(app: &VectorcraftApp) -> bool {
-    app.session.active().is_some_and(|st| st.selection.key.is_some())
+/// The number of selected ruler guides, which Distribute spaces with the objects (#1597).
+fn selected_guides(app: &VectorcraftApp) -> usize {
+    app.session.active().map_or(0, |st| st.selection.guides.len())
 }
 
 /// The topmost selected object, the last in paint order.
@@ -145,12 +145,12 @@ pub fn show(app: &mut VectorcraftApp, ui: &mut Ui) {
     let n = selection_len(app);
     let to = align_to(app);
     // `spacing` is the Distribute Spacing value. The Distribute Objects and Distribute Spacing
-    // buttons send it while there is a key object.
+    // buttons send it while there is a key object or a key guide (#2143).
     let spacing: f64 = pstate::<Option<f64>>(ui.ctx(), "align-spacing").unwrap_or(0.0);
-    let key = to == AlignTo::Key && has_key_object(app);
+    let key = to == AlignTo::Key;
     let sp = if key { Some(spacing) } else { None };
-    // Two or more objects, or anchor points, which may all be on one path.
-    let distributes = n >= 2 || has_anchors(app);
+    // Two or more objects and ruler guides (#1597), or anchor points, which may all be on one path.
+    let distributes = n + selected_guides(app) >= 2 || has_anchors(app);
     widgets::subheader(ui, tl!("Align Objects:"));
     ui.horizontal(|ui| {
         ui.spacing_mut().item_spacing.x = 5.0;
@@ -631,6 +631,74 @@ mod tests {
         set_pstate(&ctx, "align-spacing", Some(15.0));
         click(&ctx, &mut app, left.center(), show);
         assert_eq!(lefts(&app), [35.0, 50.0, 65.0], "15 pt apart: {}", app.ui.status);
+    }
+
+    /// #2143: with a key guide, the Distribute Objects and Distribute Spacing buttons send the
+    /// Distribute Spacing value too, and the objects are spaced from the guide, which stays put.
+    #[test]
+    fn the_distribute_buttons_send_the_spacing_with_a_key_guide() {
+        let mut app = VectorcraftApp::new(vectorcraft_engine::Session::new(), Default::default());
+        app.run("file.new", json!({"width": 200, "height": 200})).unwrap();
+        let ids: Vec<Value> = [(10, 20), (50, 40), (120, 20)]
+            .into_iter()
+            .map(|(x, w)| app.run("shape.rectangle", json!({"x": x, "y": 10, "width": w, "height": 10})).unwrap()["id"].clone())
+            .collect();
+        app.run("guide.add", json!({"vertical": true, "pos": 100})).unwrap();
+        app.run("select.set", json!({"ids": ids})).unwrap();
+        app.run("guide.select", json!({"indexes": [0], "toggle": true})).unwrap();
+        app.run("select.key", json!({"guide": 0})).unwrap();
+        let lefts = |app: &VectorcraftApp| ids.iter().map(|id| left_edge(app, id)).collect::<Vec<_>>();
+        let sent = |app: &VectorcraftApp| {
+            let (id, p) = app.session.journal.last().unwrap();
+            (id.clone(), p["to"].clone(), p.get("spacing").cloned())
+        };
+        let ctx = egui::Context::default();
+        let (left, space) = distribute_buttons(&mut app, &ctx);
+        click(&ctx, &mut app, left.center(), show);
+        assert_eq!(sent(&app), ("object.distribute".to_string(), json!("key"), Some(json!(0.0))));
+        assert_eq!(lefts(&app), [100.0; 3], "on the guide: {}", app.ui.status);
+        app.run("edit.undo", json!({})).unwrap();
+        set_pstate(&ctx, "align-spacing", Some(15.0));
+        click(&ctx, &mut app, left.center(), show);
+        assert_eq!(lefts(&app), [70.0, 85.0, 115.0], "15 pt apart, outward from the guide: {}", app.ui.status);
+        assert_eq!(app.session.active().unwrap().doc.guides[0].pos, 100.0, "the guide stays put");
+        // Horizontal Distribute Space with 15: the object before the guide ends 15 pt before it,
+        // the one after it starts 15 pt after it.
+        click(&ctx, &mut app, space.center(), show);
+        assert_eq!(sent(&app), ("object.distributeSpacing".to_string(), json!("key"), Some(json!(15.0))));
+        assert_eq!(lefts(&app), [10.0, 45.0, 115.0], "{}", app.ui.status);
+        assert_eq!(app.session.active().unwrap().doc.guides[0].pos, 100.0, "the guide stays put");
+    }
+
+    /// Three vertical ruler guides selected without objects: the Distribute buttons are on, and
+    /// Horizontal Distribute Center puts the middle guide halfway between the other two, or with
+    /// Align to Artboard spaces them from its left edge to its right edge, as a public forum answer
+    /// describes for equal columns (https://community.adobe.com/questions-652/illustrator-equal-guides-822924).
+    #[test]
+    fn the_distribute_buttons_space_guides_selected_alone() {
+        let mut app = VectorcraftApp::new(vectorcraft_engine::Session::new(), Default::default());
+        app.run("file.new", json!({"width": 200, "height": 200})).unwrap();
+        for pos in [20, 50, 180] {
+            app.run("guide.add", json!({"vertical": true, "pos": pos})).unwrap();
+        }
+        app.run("guide.select", json!({"indexes": [0, 1, 2]})).unwrap();
+        let ctx = egui::Context::default();
+        frame_events(&ctx, &mut app, vec![], show);
+        let row = widget_rects(&ctx, egui::vec2(32.0, 32.0));
+        let bottom = row.iter().map(|r| r.top()).fold(f32::MIN, f32::max);
+        let mut row: Vec<egui::Rect> = row.into_iter().filter(|r| r.top() == bottom).collect();
+        row.sort_by(|a, b| a.left().total_cmp(&b.left()));
+        assert_eq!(row.len(), 6, "the Distribute row");
+        // Its fifth button is Horizontal Distribute Center.
+        click(&ctx, &mut app, row[4].center(), show);
+        let pos = |app: &VectorcraftApp| app.session.active().unwrap().doc.guides.iter().map(|g| g.pos).collect::<Vec<_>>();
+        assert_eq!(pos(&app), [20.0, 100.0, 180.0], "{}", app.ui.status);
+        app.run("edit.undo", json!({})).unwrap();
+        assert_eq!(pos(&app), [20.0, 50.0, 180.0], "one undo step");
+        // With Align to Artboard, the outermost guides go to its edges: equal columns across it.
+        app.ui.align_to = AlignTo::Artboard;
+        click(&ctx, &mut app, row[4].center(), show);
+        assert_eq!(pos(&app), [0.0, 100.0, 200.0], "{}", app.ui.status);
     }
 
     /// Runs the Object → Align item `label` as a click on it does.

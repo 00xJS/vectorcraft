@@ -1109,7 +1109,7 @@ With a key object (or a key guide), `object.align` moves the other selected rule
 Aligning to the selection or the artboard leaves guides where they are.
 `select.key {guide}` makes a selected ruler guide (its `guide.list` index) the key instead, while one or more objects are selected (#2143).
 `object.align` then lines the objects up on the guide and the guide stays put: a vertical guide sets where their left edges, centres or right edges go and vertical alignment leaves them where they are, a horizontal guide the other way round.
-Selected anchor points align to it the same way. Distribute Spacing doesn't space from a key guide.
+Selected anchor points align to it the same way. `object.distribute {spacing}` and `object.distributeSpacing {spacing}` space the objects from it (see [Align to Artboard](#align-to-artboard)).
 A click with the Selection tool on a guide selected with objects runs `select.key {guide}`, and a click on the key guide again runs `select.key {}`.
 The key guide goes when it leaves the selection or no object is left selected, and an object key replaces it (and the other way round).
 It returns `{key}`, the key object's id or null, with `guide`, the key guide's index, when a guide is the key.
@@ -2252,16 +2252,30 @@ left or top edge of the first object, in the order of those edges, on the artboa
 right or bottom edge of the last object on the artboard's right or bottom edge, with equal gaps between the objects.
 With `to: "selection"` or `"key"`, or without `to`, `object.distribute` and `object.distributeSpacing` without `spacing`
 keep the first and last objects where they are, and `object.distribute` without `spacing` moves nothing with fewer than
-three objects. With `spacing`, `object.distributeSpacing` does not use `to`, and `object.distribute` does not use it
-while the selection has a key object. With anchor points selected (Direct Selection), both commands space the points
+three objects. With `spacing` and a key object, `object.distribute` and `object.distributeSpacing` do not use `to`;
+with a key guide, `to` decides whether the guide is the key. With anchor points selected (Direct Selection), both commands space the points
 among themselves and do not use `to` or `artboard`.
 
 `object.distribute {spacing}` (the Distribute Objects buttons while the selection has a key object, `select.key`) keeps
 the key object where it is, with the compound path or selected group that contains it. It places the objects' lines
 (left edges, centers or right edges; top edges, centers or bottom edges) `spacing` points apart, outward from the key
 object's line, in their order on that line. With `spacing: 0`, every object ends on the key object's line. Two objects
-are enough. Without a key object, or with anchor points selected, `object.distribute` does not use `spacing`. A
-`spacing` that is not a number is an error.
+are enough. Without a key object or key guide, or with anchor points selected, `object.distribute` does not use
+`spacing`. A `spacing` that is not a number is an error.
+
+`object.distribute` and `object.distributeSpacing` space the selected ruler guides across the axis (vertical guides
+for the horizontal options, horizontal guides for the vertical ones) with the selected objects, as items with no size
+(#1597). A guide's left edge, center and right edge are all its line, so the three options of an axis give the same
+result for it. Guides along the axis stay where they are. Two or more guides selected without objects are enough, and
+the Align panel's buttons are enabled for them; with `to: "artboard"`, the outermost items go to the artboard's edges.
+
+With a key guide (`select.key {guide}`, #2143), `object.distribute {spacing}` and `object.distributeSpacing {spacing}`
+(the Align panel's Distribute buttons send the Distribute Spacing value then too) keep the guide where it is and
+space the other items from it, as from a key object with no size: `object.distribute` places their lines `spacing`
+points apart, outward from the guide's line, and `object.distributeSpacing` leaves gaps of `spacing` points, the guide
+included. With `spacing: 0`, `object.distribute` puts every line on the guide. A key guide along the axis leaves
+everything where it is, as `object.align` does. `to: "selection"` or `"artboard"` distributes without the key guide
+as the key, as with `object.align`, and without `spacing` a key guide is spaced as any selected guide.
 
 The desktop app adds its active artboard, the one the Artboards panel highlights, to the `object.align`,
 `object.distribute`, `object.distributeSpacing` and `select.allOnArtboard` calls it runs without `artboard`, as it does
