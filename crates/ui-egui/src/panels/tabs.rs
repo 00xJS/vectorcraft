@@ -92,13 +92,30 @@ fn stops_json(stops: &[TabStop]) -> Value {
     )
 }
 
-fn apply(app: &mut VectorcraftApp, stops: &[TabStop]) {
+/// Run `text.tabs.set` with `stops` on the text the panel acts on. Returns false when it fails.
+fn apply(app: &mut VectorcraftApp, stops: &[TabStop]) -> bool {
     if let Some((id, a, b)) = super::character::text_editing(app) {
         super::character::end_typing(app);
-        app.run("text.tabs.set", json!({"stops": stops_json(stops), "ids": [id.0], "start": a, "end": b})).ok();
+        app.run("text.tabs.set", json!({"stops": stops_json(stops), "ids": [id.0], "start": a, "end": b})).is_ok()
     } else {
-        app.run("text.tabs.set", json!({"stops": stops_json(stops)})).ok();
+        app.run("text.tabs.set", json!({"stops": stops_json(stops)})).is_ok()
     }
+}
+
+/// Move stop `i` to `position`, sort the stops by position and set them, then select the first
+/// stop within 1e-6 pt of `position` on the ruler, the stop `text.tabs.set` keeps of those it
+/// merges. Returns its index, or `None` when the stops are not set and `stops` and the selection
+/// stay as they were.
+fn apply_moved(app: &mut VectorcraftApp, ctx: &egui::Context, stops: &mut Vec<TabStop>, i: usize, position: f64) -> Option<usize> {
+    let mut moved = stops.clone();
+    moved.get_mut(i)?.position = position;
+    moved.sort_by(|a, b| a.position.total_cmp(&b.position));
+    let sel = moved.iter().position(|s| (s.position - position).abs() < 1e-6).unwrap_or(0);
+    apply(app, &moved).then(|| {
+        *stops = moved;
+        set_pstate(ctx, "tabs-sel", sel);
+        sel
+    })
 }
 
 pub fn show(app: &mut VectorcraftApp, ui: &mut Ui) {
@@ -140,11 +157,9 @@ pub fn show(app: &mut VectorcraftApp, ui: &mut Ui) {
         ui.label(egui::RichText::new("X:").color(t.text));
         let x = stops.get(sel).map(|s| s.position);
         if let Some(v) = widgets::spin_field(ui, "tabs-x", x, app.session.general_unit(), 90.0, 1.0, 0.0, &[])
-            && let Some(s) = stops.get_mut(sel)
+            && let Some(i) = apply_moved(app, ui.ctx(), &mut stops, sel, v.max(0.0))
         {
-            s.position = v.max(0.0);
-            stops.sort_by(|a, b| a.position.total_cmp(&b.position));
-            apply(app, &stops);
+            sel = i;
         }
         ui.end_row();
         ui.label(egui::RichText::new(tl!("Leader:")).color(t.text));
@@ -242,11 +257,10 @@ pub fn show(app: &mut VectorcraftApp, ui: &mut Ui) {
             if pos.y > rect.bottom() + 20.0 {
                 // Dragged off the ruler: delete.
                 stops.remove(i);
+                apply(app, &stops);
             } else {
-                stops[i].position = place(pos.x);
-                stops.sort_by(|a, b| a.position.total_cmp(&b.position));
+                apply_moved(app, ui.ctx(), &mut stops, i, place(pos.x));
             }
-            apply(app, &stops);
         }
     } else if resp.clicked()
         && let Some(pos) = resp.interact_pointer_pos()
@@ -598,6 +612,123 @@ mod tests {
         drag_on_ruler(&ctx, &mut app, 40.0, 100.0, true);
         assert!((position(&app) - 99.0).abs() < 1e-9, "{}", position(&app));
         assert_eq!((position(&app) / 72.0 * 8.0).round(), position(&app) / 72.0 * 8.0, "a binary fraction of an inch");
+    }
+
+    /// One frame of the panel with `events` → the texts painted and where.
+    fn panel_frame(ctx: &egui::Context, app: &mut VectorcraftApp, events: Vec<egui::Event>) -> Vec<(String, egui::Rect)> {
+        let screen = egui::Rect::from_min_size(egui::Pos2::ZERO, vec2(400.0, 400.0));
+        let mut out = ctx.run_ui(egui::RawInput { screen_rect: Some(screen), events, ..Default::default() }, |ui| show(app, ui));
+        out.textures_delta.clear();
+        out.shapes
+            .iter()
+            .filter_map(|c| match &c.shape {
+                egui::Shape::Text(t) => Some((t.galley.text().to_string(), t.visual_bounding_rect())),
+                _ => None,
+            })
+            .collect()
+    }
+
+    /// A stop dragged past another stays selected once the stops are sorted, so the X field shows
+    /// where it was dropped.
+    #[test]
+    fn a_stop_dragged_past_another_stays_selected() {
+        let mut app = VectorcraftApp::new(Session::new(), Default::default());
+        app.session.execute("file.new", &json!({})).unwrap();
+        app.session.execute("text.create", &json!({"x": 10, "y": 20, "text": "a	b", "area": {"width": 300, "height": 100}})).unwrap();
+        app.session.execute("text.tabs.set", &json!({"stops": [{"position": 30}, {"position": 50}]})).unwrap();
+        let ctx = egui::Context::default();
+        drag_on_ruler(&ctx, &mut app, 50.0, 10.0, false);
+        let stops = current(&app).unwrap().1;
+        assert_eq!(stops.len(), 2);
+        assert!((stops[0].position - 10.0).abs() < 1.0 && stops[1].position == 30.0, "{stops:?}");
+        assert_eq!(pstate::<usize>(&ctx, "tabs-sel"), 0);
+        let shown = app.session.general_unit().format(stops[0].position);
+        let texts = panel_frame(&ctx, &mut app, vec![]);
+        assert!(texts.iter().any(|(t, _)| *t == shown), "{shown} in {texts:?}");
+    }
+
+    /// An X typed past the next stop keeps the stop selected once the stops are sorted. An X the
+    /// stops cannot take (past 100,000 pt) leaves the stops and the selection as they were.
+    #[test]
+    fn an_x_typed_past_the_next_stop_keeps_the_stop_selected() {
+        let mut app = VectorcraftApp::new(Session::new(), Default::default());
+        app.session.execute("file.new", &json!({})).unwrap();
+        app.session.execute("text.create", &json!({"x": 10, "y": 20, "text": "a	b", "area": {"width": 300, "height": 100}})).unwrap();
+        app.session.execute("text.tabs.set", &json!({"stops": [{"position": 30}, {"position": 50}]})).unwrap();
+        let ctx = egui::Context::default();
+        let key = |key, modifiers| egui::Event::Key { key, physical_key: None, pressed: true, repeat: false, modifiers };
+        // Click the X field showing `shown`, type `typed` over it and press Enter → the texts painted next.
+        let type_x = |app: &mut VectorcraftApp, shown: &str, typed: &str| {
+            let texts = panel_frame(&ctx, app, vec![]);
+            let at = texts.iter().find(|(t, _)| t == shown).unwrap_or_else(|| panic!("{shown} in {texts:?}")).1.center();
+            let button =
+                |pressed| egui::Event::PointerButton { pos: at, button: egui::PointerButton::Primary, pressed, modifiers: Default::default() };
+            panel_frame(&ctx, app, vec![egui::Event::PointerMoved(at), button(true)]);
+            panel_frame(&ctx, app, vec![button(false)]);
+            panel_frame(&ctx, app, vec![key(egui::Key::A, egui::Modifiers::COMMAND)]);
+            panel_frame(&ctx, app, vec![egui::Event::Text(typed.into())]);
+            panel_frame(&ctx, app, vec![key(egui::Key::Enter, egui::Modifiers::NONE)]);
+            panel_frame(&ctx, app, vec![])
+        };
+        let positions = |app: &VectorcraftApp| current(app).unwrap().1.iter().map(|s| s.position).collect::<Vec<_>>();
+        set_pstate(&ctx, "tabs-sel", 0usize);
+        let texts = type_x(&mut app, "30 pt", "70");
+        assert_eq!(positions(&app), [50.0, 70.0]);
+        assert_eq!(pstate::<usize>(&ctx, "tabs-sel"), 1);
+        assert!(texts.iter().any(|(t, _)| t == "70 pt"), "70 pt in {texts:?}");
+        set_pstate(&ctx, "tabs-sel", 0usize);
+        let texts = type_x(&mut app, "50 pt", "200000");
+        assert_eq!(positions(&app), [50.0, 70.0]);
+        assert_eq!(pstate::<usize>(&ctx, "tabs-sel"), 0);
+        assert!(texts.iter().any(|(t, _)| t == "50 pt"), "50 pt in {texts:?}");
+        // An X less than 1e-6 pt above another stop merges the two into the stop already there,
+        // which is selected.
+        app.session.execute("text.tabs.set", &json!({"stops": [{"position": 30}, {"position": 50}, {"position": 70}]})).unwrap();
+        set_pstate(&ctx, "tabs-sel", 0usize);
+        type_x(&mut app, "30 pt", "50.0000001");
+        assert_eq!(positions(&app), [50.0, 70.0]);
+        assert_eq!(pstate::<usize>(&ctx, "tabs-sel"), 0);
+    }
+
+    /// One frame of the panel with `events` → the stops' stems on the ruler, left to right, with
+    /// their colors.
+    fn stems_frame(ctx: &egui::Context, app: &mut VectorcraftApp, events: Vec<egui::Event>) -> Vec<(f32, egui::Color32)> {
+        let screen = egui::Rect::from_min_size(egui::Pos2::ZERO, vec2(400.0, 400.0));
+        let mut out = ctx.run_ui(egui::RawInput { screen_rect: Some(screen), events, ..Default::default() }, |ui| show(app, ui));
+        out.textures_delta.clear();
+        out.shapes
+            .iter()
+            .filter_map(|c| match &c.shape {
+                egui::Shape::LineSegment { points: [a, b], stroke } if stroke.width == 1.5 && a.x == b.x => Some((a.x, stroke.color)),
+                _ => None,
+            })
+            .collect()
+    }
+
+    /// In the frame where Enter commits an X the stops cannot take (past 100,000 pt), the ruler
+    /// shows the stops and the selected stop as they were.
+    #[test]
+    fn a_refused_x_leaves_the_ruler_as_it_was() {
+        let mut app = VectorcraftApp::new(Session::new(), Default::default());
+        app.session.execute("file.new", &json!({})).unwrap();
+        app.session.execute("text.create", &json!({"x": 10, "y": 20, "text": "a	b", "area": {"width": 300, "height": 100}})).unwrap();
+        app.session.execute("text.tabs.set", &json!({"stops": [{"position": 30}, {"position": 50}]})).unwrap();
+        let ctx = egui::Context::default();
+        set_pstate(&ctx, "tabs-sel", 1usize);
+        let before = stems_frame(&ctx, &mut app, vec![]);
+        assert_eq!(before.len(), 2, "{before:?}");
+        let texts = panel_frame(&ctx, &mut app, vec![]);
+        let at = texts.iter().find(|(t, _)| t == "50 pt").unwrap_or_else(|| panic!("50 pt in {texts:?}")).1.center();
+        let button = |pressed| egui::Event::PointerButton { pos: at, button: egui::PointerButton::Primary, pressed, modifiers: Default::default() };
+        let key = |key, modifiers| egui::Event::Key { key, physical_key: None, pressed: true, repeat: false, modifiers };
+        panel_frame(&ctx, &mut app, vec![egui::Event::PointerMoved(at), button(true)]);
+        panel_frame(&ctx, &mut app, vec![button(false)]);
+        panel_frame(&ctx, &mut app, vec![key(egui::Key::A, egui::Modifiers::COMMAND)]);
+        panel_frame(&ctx, &mut app, vec![egui::Event::Text("200000".into())]);
+        let committed = stems_frame(&ctx, &mut app, vec![key(egui::Key::Enter, egui::Modifiers::NONE)]);
+        assert_eq!(current(&app).unwrap().1.iter().map(|s| s.position).collect::<Vec<_>>(), [30.0, 50.0]);
+        assert_eq!(pstate::<usize>(&ctx, "tabs-sel"), 1);
+        assert_eq!(committed, before);
     }
 
     /// One frame of the panel menu with `events` → the rows' texts and where they are painted.
