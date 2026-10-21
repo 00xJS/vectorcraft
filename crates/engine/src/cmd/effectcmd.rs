@@ -448,7 +448,7 @@ fn raster_image(d: &mut Document, n: &Node) -> Option<(Node, bool)> {
 /// that repeat an id ([`repeats_an_id`]) and hold a random Transform effect ([`has_seeded`]) are
 /// expanded as well ([`expand_in_place`]). Then the members get ids of their own. Random in a
 /// Transform effect takes its seed from the id, and the canvas draws the pieces with the ids they
-/// have before that. Returns the ids each of those other members' expansions lists, by the member's
+/// have before that. Returns what each of those other members' expansions lists, by the member's
 /// new id.
 fn expand_pieces(
     d: &mut Document,
@@ -456,7 +456,7 @@ fn expand_pieces(
     all: bool,
     brushes: &[vectorcraft_brush::Brush],
     stroke_art: effects::StrokeArt,
-) -> std::collections::HashMap<NodeId, Vec<NodeId>> {
+) -> std::collections::HashMap<NodeId, Vec<Listed>> {
     let id = m.id;
     let mut seen = std::collections::HashSet::from([id]);
     let mut expanded = std::collections::HashMap::new();
@@ -484,8 +484,13 @@ fn repeats_an_id(n: &Node, seen: &std::collections::HashSet<NodeId>) -> bool {
     repeats
 }
 
-/// [`expanded_node`] of `c` in place. Returns the ids the expansion lists.
-fn expand_in_place(d: &mut Document, c: &mut Node, brushes: &[vectorcraft_brush::Brush]) -> Vec<NodeId> {
+/// An object whose appearance expanded: its id, and its place in the walk ([`Node::walk`]) of the
+/// art it was listed in. Art evaluated from an object can hold one id more than once, and the place
+/// tells which of those nodes it is.
+type Listed = (NodeId, usize);
+
+/// [`expanded_node`] of `c` in place. Returns what the expansion lists, by places in the walk of `c`.
+fn expand_in_place(d: &mut Document, c: &mut Node, brushes: &[vectorcraft_brush::Brush]) -> Vec<Listed> {
     let mut listed = vec![];
     if let Some(e) = expanded_node(d, c.clone(), brushes, &mut listed) {
         *c = e;
@@ -493,22 +498,15 @@ fn expand_in_place(d: &mut Document, c: &mut Node, brushes: &[vectorcraft_brush:
     listed
 }
 
-/// [`effects::fresh_ids`] on `c`, with each id in `listed` that names a node of `c` changed to
-/// that node's new id.
-fn fresh_ids_listed(d: &mut Document, c: &mut Node, seen: &mut std::collections::HashSet<NodeId>, listed: &mut [NodeId]) {
-    let mut before = vec![];
-    c.walk(&mut |n| before.push(n.id));
+/// [`effects::fresh_ids`] on `c`, with each of `listed` (places in the walk of `c`) given the new
+/// id of the node at its place.
+fn fresh_ids_listed(d: &mut Document, c: &mut Node, seen: &mut std::collections::HashSet<NodeId>, listed: &mut [Listed]) {
     effects::fresh_ids(d, c, seen);
-    let mut before = before.into_iter();
-    let mut renamed = std::collections::HashMap::new();
-    c.walk(&mut |n| {
-        if let Some(old) = before.next() {
-            renamed.entry(old).or_insert(n.id);
-        }
-    });
-    for e in listed {
-        if let Some(new) = renamed.get(e) {
-            *e = *new;
+    let mut ids = vec![];
+    c.walk(&mut |n| ids.push(n.id));
+    for (id, at) in listed {
+        if let Some(new) = ids.get(*at) {
+            *id = *new;
         }
     }
 }
@@ -518,7 +516,10 @@ fn fresh_ids_listed(d: &mut Document, c: &mut Node, seen: &mut std::collections:
 /// are baked, raster effects become an embedded image, and the object keeps its transparency.
 pub(crate) fn expand_node(d: &mut Document, id: NodeId, brushes: &[vectorcraft_brush::Brush], out: &mut Vec<NodeId>) {
     let Some(n) = d.node(id).cloned() else { return };
-    if let Some(m) = expanded_node(d, n, brushes, out)
+    let mut listed = vec![];
+    let m = expanded_node(d, n, brushes, &mut listed);
+    out.extend(listed.into_iter().map(|(id, _)| id));
+    if let Some(m) = m
         && let Some(slot) = d.node_mut(id)
     {
         *slot = m;
@@ -526,9 +527,9 @@ pub(crate) fn expand_node(d: &mut Document, id: NodeId, brushes: &[vectorcraft_b
 }
 
 /// [`expand_node`] of `n`, which need not be in `d`: `n` with its appearance expanded, `None` when
-/// it has nothing to expand. `out` gets the ids of the objects whose appearance expands, `n`'s
-/// first when its own does.
-fn expanded_node(d: &mut Document, mut n: Node, brushes: &[vectorcraft_brush::Brush], out: &mut Vec<NodeId>) -> Option<Node> {
+/// it has nothing to expand. `out` gets the objects whose appearance expands, by places in the walk
+/// of the expanded `n`, `n`'s first when its own does.
+fn expanded_node(d: &mut Document, mut n: Node, brushes: &[vectorcraft_brush::Brush], out: &mut Vec<Listed>) -> Option<Node> {
     let id = n.id;
     if !expandable(&n) {
         return None;
@@ -536,10 +537,13 @@ fn expanded_node(d: &mut Document, mut n: Node, brushes: &[vectorcraft_brush::Br
     // Colour adjustments: the colours inside become the adjusted ones (an embedded image a
     // recoloured copy), then the rest of the appearance expands.
     let mut changed = false;
+    // Is `n` in `out` yet?
+    let mut listed_n = false;
     if effects::has_adjustment(&n)
         && let Some(m) = effects::adjust_in_document(d, &n)
     {
-        out.push(id);
+        out.push((id, 0));
+        listed_n = true;
         n = m;
         changed = true;
         if !expandable(&n) {
@@ -563,8 +567,10 @@ fn expanded_node(d: &mut Document, mut n: Node, brushes: &[vectorcraft_brush::Br
                 effects::fresh_ids(d, c, &mut seen);
             }
         }
-        out.push(id);
-        out.extend(expanded);
+        if !listed_n {
+            out.push((id, 0));
+        }
+        out.extend(expanded.into_iter().map(|(id, at)| (id, at + 1)));
         return Some(m);
     }
     let image = raster_image(d, &n);
@@ -612,12 +618,15 @@ fn expanded_node(d: &mut Document, mut n: Node, brushes: &[vectorcraft_brush::Br
     if let Some(m) = expanded {
         n = m;
         changed = true;
-        if out.last() != Some(&id) {
-            out.push(id);
+        if !listed_n {
+            out.push((id, 0));
         }
     }
     if container {
+        // The place of each member in the walk of `n`: after `n` and the members before it.
+        let mut at = 1;
         for c in n.children_mut().into_iter().flatten() {
+            let from = out.len();
             match members.remove(&c.id) {
                 Some(listed) => out.extend(listed),
                 None => {
@@ -627,6 +636,10 @@ fn expanded_node(d: &mut Document, mut n: Node, brushes: &[vectorcraft_brush::Br
                     }
                 }
             }
+            for (_, place) in &mut out[from..] {
+                *place += at;
+            }
+            at += c.count();
         }
     }
     changed.then_some(n)

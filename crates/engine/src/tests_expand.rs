@@ -159,6 +159,40 @@ fn expanded_art_keeps_the_random_transforms_the_canvas_drew() {
     assert_eq!(differ, RANDOM_CASES.map(|case| (case, 0)));
 }
 
+/// The reply lists each object whose appearance expanded once, by the id it has in the document.
+/// In "group copies" the two copies of the square share an id until Expand Appearance gives them
+/// ids of their own, and the reply names the group, then each copy by its new id.
+#[test]
+fn the_reply_names_each_expanded_copy_by_its_own_id() {
+    for case in RANDOM_CASES {
+        let mut s = session();
+        let id = random_transforms(&mut s, case);
+        let r = run(&mut s, "effect.expandAppearance", json!({}));
+        let ids: Vec<u64> = r["ids"].as_array().unwrap().iter().map(|v| v.as_u64().unwrap()).collect();
+        let unique: std::collections::HashSet<_> = ids.iter().collect();
+        assert_eq!(unique.len(), ids.len(), "{case}: {ids:?}");
+        assert!(ids.iter().all(|&i| s.doc().unwrap().doc.node(NodeId(i)).is_some()), "{case}: {ids:?}");
+        if case == "group copies" {
+            let art = node(&s, id);
+            let copies: Vec<u64> = art.children().unwrap()[0].children().unwrap().iter().map(|c| c.id.0).collect();
+            assert_eq!(ids, [vec![id.0], copies].concat(), "{case}");
+        }
+    }
+}
+
+/// A square with a color adjustment and crop marks: the reply names the group of the square and its
+/// marks once. The adjusted square has a basic appearance, so the reply does not name it.
+#[test]
+fn the_reply_names_an_adjusted_object_with_crop_marks_once() {
+    let mut s = session();
+    let id = square(&mut s);
+    run(&mut s, "effect.apply", json!({"effect": "adjust.hueSaturation", "params": {"hue": 120}}));
+    run(&mut s, "effect.apply", json!({"effect": "cropMarks", "item": null}));
+    let r = run(&mut s, "effect.expandAppearance", json!({}));
+    assert!(node(&s, id).children().is_some_and(|c| c.len() > 1));
+    assert_eq!(r["ids"], json!([id.0]));
+}
+
 #[test]
 fn a_shadow_becomes_an_image_under_the_art_and_transparency_stays_on_the_group() {
     let mut s = session();
