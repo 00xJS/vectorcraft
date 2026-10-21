@@ -155,7 +155,8 @@ dialog open); without `name` it names a new style made from the selection (`grap
 (`graphicStyle.merge`). Deleting styles from the panel asks first with a `confirm` dialog (`graphicStyle.delete`).
 
 Symbols: `ui.symbolOptions` opens the `symbolOptions` dialog (field `name`) that the Symbols panel's New Symbol asks
-first; `ui.dialog.confirm` makes the symbol from the selection with that name (`symbol.new`).
+first; `ui.dialog.confirm` makes the symbol from the selection with that name (`symbol.new`). F8 runs
+`ui.symbolOptions` without params.
 
 Gradient panel: double-clicking a stop on the panel's slider opens the same `gradientStop` popover, with a `screen`
 field (`[x, y]`, screen points) in place of `x`/`y`. The panel's stop eyedropper selects the Eyedropper tool with the
