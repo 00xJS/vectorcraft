@@ -131,8 +131,8 @@ struct Gap {
 }
 
 /// The spacing a line's letters share (letter-spaced type), in ems: the gap a third of the way up
-/// from the narrowest, of three or more along the line. Never below zero, and at most half an em:
-/// glyphs set wider apart than that are words or columns, not tracked letters.
+/// from the narrowest, of three or more along the line. Never below zero, and none at all past
+/// half an em: glyphs set wider apart than that are words or columns, not tracked letters.
 fn common_gap(gaps: &[Gap]) -> f64 {
     let mut widths: Vec<f64> = gaps.iter().filter(|g| g.on_line).map(|g| g.width / g.em).filter(|w| w.is_finite()).collect();
     if widths.len() < 3 {
@@ -140,7 +140,7 @@ fn common_gap(gaps: &[Gap]) -> f64 {
     }
     let pivot = widths.len() / 3;
     let (_, common, _) = widths.select_nth_unstable_by(pivot, f64::total_cmp);
-    common.clamp(0.0, 0.5)
+    if *common > 0.5 { 0.0 } else { common.max(0.0) }
 }
 
 /// A line of type being gathered: runs of glyphs on one baseline.
@@ -385,12 +385,20 @@ impl TextLine {
         let mut t = TextObject::point(Point::ORIGIN, &first.text, first.style);
         t.runs.extend(runs);
         // A gap wider than a fifth of an em, past the spacing the line's letters share, reads as a
-        // space. Letter spacing is read only in text left in the file's order.
-        let common = if t.para.direction.is_none() { common_gap(&self.gaps) } else { 0.0 };
+        // space (one set at exactly a fifth still counts, whatever the rounding). Letter spacing is
+        // read only in text left in the file's order.
+        let space = |gap: &Gap, common: f64| gap.width / gap.em - common > 0.199;
+        let directed = vectorcraft_text::logical_order(&t.plain_text()).is_some();
+        let mut common = if directed { 0.0 } else { common_gap(&self.gaps) };
+        // Evenly spaced glyphs alone could be letters set apart or words of one letter each: the
+        // shared spacing is letter spacing only on a line that also shows where its words break,
+        // with spaces it draws or with gaps wider than the rest.
+        if self.drawn_spaces.is_empty() && !self.gaps.iter().any(|gap| space(gap, common)) {
+            common = 0.0;
+        }
         let mut spaces = vec![];
         for gap in &self.gaps {
-            // A word space set at exactly a fifth of an em still counts, whatever the rounding.
-            if gap.width / gap.em - common <= 0.199 {
+            if !space(gap, common) {
                 continue;
             }
             // After the earlier spaces, at the end of the run before it (the run it follows).
