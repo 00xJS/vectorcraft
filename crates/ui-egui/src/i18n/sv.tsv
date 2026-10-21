@@ -3938,6 +3938,7 @@ axis	Both	Båda
 @msg	no blend options	inga blandningsalternativ
 @msg	no bounds	inga gränser
 @msg	no brush named `{name}`	ingen pensel med namnet `{name}`
+@msg	a bristle brush name can have at most {max} characters: `{name}` has {count}	namnet på en borstpensel får ha högst {max} tecken: `{name}` har {count}
 @msg	no brush selected	ingen pensel är markerad
 @msg	brushes move only within their type	penslar kan bara flyttas inom sin egen typ
 @msg	no catalog	ingen katalog

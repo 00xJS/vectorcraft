@@ -3952,6 +3952,7 @@ theme	Appearance	Erscheinungsbild
 @msg	no blend options	keine Angleichungsoptionen
 @msg	no bounds	keine Begrenzung
 @msg	no brush named `{name}`	kein Pinsel namens `{name}`
+@msg	a bristle brush name can have at most {max} characters: `{name}` has {count}	der Name eines Borstenpinsels darf höchstens {max} Zeichen lang sein: `{name}` hat {count}
 @msg	no brush selected	kein Pinsel ausgewählt
 @msg	brushes move only within their type	Pinsel lassen sich nur innerhalb ihrer Art verschieben
 @msg	this kind of brush has no options dialog yet	für diese Pinselart gibt es noch kein Optionsdialogfeld

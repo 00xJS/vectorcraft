@@ -1,9 +1,10 @@
 //! Brush Options (double-click a brush in the Brushes panel, or the panel menu's Brush Options…).
 //! Calligraphic Brush Options: Name, then Angle, Roundness and Size, each Fixed, Random or
 //! Pressure with its Variation, over live previews of the nib and of a stroke (light, heavy, light
-//! pressure). Bristle Brush Options: Name, Shape and the bristle sliders. Scatter, Art and Pattern
-//! Brush Options: see [`super::brush_art_options`]. OK runs `brush.options` (strokes painted with
-//! the brush update); a name another brush has keeps the dialog open.
+//! pressure). Bristle Brush Options: Name (typing stops at [`Bristle::MAX_NAME_CHARS`]
+//! characters), Shape and the bristle sliders. Scatter, Art and Pattern Brush Options: see
+//! [`super::brush_art_options`]. OK runs `brush.options` (strokes painted with the brush update);
+//! a name another brush has, or a new bristle brush name that is too long, keeps the dialog open.
 //!
 //! Fields: `__brush` (the brush's name), `__type` (`calligraphic` | `bristle` | `scatter` | `art` |
 //! `pattern`), `name`.
@@ -233,7 +234,8 @@ fn params(d: &Dialog) -> Value {
 fn body(app: &mut VectorcraftApp, ui: &mut egui::Ui, d: &mut Dialog) -> bool {
     grid(ui, |ui| {
         label(ui, tl!("Name:"));
-        form::text(ui, d, "name", 240.0);
+        let max = if d.str("__type") == "bristle" { Bristle::MAX_NAME_CHARS } else { usize::MAX };
+        form::text_edit_limited(ui, d, "name", 240.0, max);
         ui.end_row();
     });
     ui.add_space(10.0);
@@ -344,7 +346,8 @@ fn nib_preview(ui: &mut egui::Ui, c: &Calligraphic, size: egui::Vec2) {
     p.rect_stroke(r, 0.0, Stroke::new(1.0, t.input_border), egui::StrokeKind::Inside);
 }
 
-/// OK: edit the brush (and rename it). A name another brush has keeps the dialog open.
+/// OK: edit the brush (and rename it). A name another brush has, or a new bristle brush name that
+/// is too long, keeps the dialog open.
 fn confirm(app: &mut VectorcraftApp, d: &Dialog) -> Result<Value, String> {
     let name = d.str("name").trim().to_string();
     let r = app.run("brush.options", json!({ "name": d.str("__brush"), "newName": name, "params": params(d) }));
@@ -424,6 +427,36 @@ mod tests {
         app.ui.dialog = None;
         assert!(app.run("ui.brushOptions", json!({"name": "Nope"})).is_err());
         assert!(app.ui.dialog.is_none());
+    }
+
+    /// Bristle Brush Options' Name field takes at most 31 characters as they are typed; the
+    /// Calligraphic Brush Options' Name field takes more.
+    #[test]
+    fn bristle_brush_options_name_field_takes_at_most_31_characters() {
+        let mut app = app();
+        let typed = "é".repeat(40);
+        for (brush, kept) in [("Bristle Round", 31), ("6 pt. Flat", 40)] {
+            let ctx = egui::Context::default();
+            crate::theme::install_fonts(&ctx);
+            let frame = |app: &mut VectorcraftApp, events: Vec<egui::Event>| {
+                let mut out = ctx.run_ui(egui::RawInput { events, ..Default::default() }, |ui| super::super::show(app, ui.ctx()));
+                out.textures_delta.clear();
+            };
+            app.run("ui.brushOptions", json!({ "name": brush })).unwrap();
+            // The Name field takes the focus with its text selected; typing replaces it.
+            frame(&mut app, vec![]);
+            frame(&mut app, vec![]);
+            frame(&mut app, vec![egui::Event::Text(typed.clone())]);
+            assert_eq!(app.ui.dialog.as_ref().unwrap().str("name"), "é".repeat(kept), "{brush}");
+            super::super::confirm(&mut app).unwrap();
+            assert!(app.run("brush.get", json!({ "name": "é".repeat(kept) })).is_ok(), "{brush}");
+        }
+        // A new name of more than 31 characters in the field (a longer saved name with some of its
+        // characters deleted) is refused, and the dialog stays open.
+        app.run("ui.brushOptions", json!({ "name": "é".repeat(31) })).unwrap();
+        set(&mut app, json!({ "name": "é".repeat(35) }));
+        assert!(super::super::confirm(&mut app).is_err());
+        assert!(app.ui.dialog.is_some());
     }
 
     /// A path painted with brush `name`, and the height of the art its stroke draws.

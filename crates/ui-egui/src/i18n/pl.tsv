@@ -4145,6 +4145,7 @@ imageTrace	Outline	Kontur
 @msg	no blend options	brak opcji przejścia
 @msg	no bounds	brak granic
 @msg	no brush named `{name}`	brak pędzla o nazwie `{name}`
+@msg	a bristle brush name can have at most {max} characters: `{name}` has {count}	nazwa pędzla włosiankowego może mieć najwyżej {max} znaków (liczba znaków w `{name}`: {count})
 @msg	no brush selected	nie zaznaczono pędzla
 @msg	brushes move only within their type	pędzle można przesuwać tylko w obrębie ich typu
 @msg	no catalog	brak katalogu

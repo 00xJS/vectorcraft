@@ -4018,6 +4018,7 @@ axis	Both	Les deux
 @msg	no blend options	aucune option de dégradé de formes
 @msg	no bounds	aucune limite
 @msg	no brush named `{name}`	aucune forme nommée `{name}`
+@msg	a bristle brush name can have at most {max} characters: `{name}` has {count}	le nom d’une forme Soies peut compter au plus {max} caractères, et `{name}` en compte {count}
 @msg	no brush selected	aucune forme sélectionnée
 @msg	brushes move only within their type	les formes ne se déplacent qu’à l’intérieur de leur type
 @msg	no catalog	aucun catalogue

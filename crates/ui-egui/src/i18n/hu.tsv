@@ -4658,6 +4658,7 @@ imageTrace	Outline	Körvonal
 @msg	no blend options	nincsenek összemosási beállítások
 @msg	no bounds	nincsenek határok
 @msg	no brush named `{name}`	nincs ilyen nevű ecset: `{name}`
+@msg	a bristle brush name can have at most {max} characters: `{name}` has {count}	a sörteecset neve legfeljebb {max} karakter hosszú lehet: `{name}` hossza {count} karakter
 @msg	no brush selected	nincs kijelölt ecset
 @msg	brushes move only within their type	az ecsetek csak a saját típusukon belül helyezhetők át
 @msg	no catalog	nincs katalógus

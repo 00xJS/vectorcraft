@@ -3933,6 +3933,7 @@ axis	Both	И двете
 @msg	no blend options	няма опции за преливане
 @msg	no bounds	няма граници
 @msg	no brush named `{name}`	няма четка с име `{name}`
+@msg	a bristle brush name can have at most {max} characters: `{name}` has {count}	най-голяма дължина на името на четка с косъм (знаци): {max}; в `{name}` знаците са {count}
 @msg	no brush selected	няма избрана четка
 @msg	brushes move only within their type	четките се преместват само в рамките на своя тип
 @msg	no catalog	няма каталог

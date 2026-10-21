@@ -4238,6 +4238,7 @@ imageTrace	Outline	Ääriviiva
 @msg	no blend options	ei sulautusasetuksia
 @msg	no bounds	ei rajoja
 @msg	no brush named `{name}`	ei sivellintä nimeltä `{name}`
+@msg	a bristle brush name can have at most {max} characters: `{name}` has {count}	harjassiveltimen nimessä voi olla enintään {max} merkkiä: nimessä `{name}` on {count} merkkiä
 @msg	no brush selected	sivellintä ei ole valittu
 @msg	brushes move only within their type	siveltimiä voi siirtää vain oman tyyppinsä sisällä
 @msg	no catalog	ei luetteloa
