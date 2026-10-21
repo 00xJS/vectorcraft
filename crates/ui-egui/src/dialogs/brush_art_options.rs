@@ -214,6 +214,13 @@ fn number(ui: &mut egui::Ui, d: &mut Dialog, key: &str, range: (f64, f64), suffi
     });
 }
 
+/// A row labeled `label` with a slider and a whole-number field (%) bound to `d.fields[key]`, both
+/// kept within `range`; screen readers call the slider `label`.
+fn slider_row(ui: &mut egui::Ui, d: &mut Dialog, key: &str, label: &str, range: (f64, f64)) {
+    let rail = Tokens::get(ui.ctx()).input_border;
+    widgets::label_row(ui, label, LABEL_W, |ui| super::form::slider_field_named(ui, d, key, label, range.0..=range.1, "%", &|_| rail));
+}
+
 /// A row of radio buttons bound to the string field `key`: (value, label).
 fn radios(ui: &mut egui::Ui, d: &mut Dialog, key: &str, options: &[(&str, &str)]) {
     let cur = d.str(key);
@@ -260,7 +267,7 @@ fn scatter_body(ui: &mut egui::Ui, d: &mut Dialog) {
 }
 
 fn art_body(ui: &mut egui::Ui, d: &mut Dialog) {
-    widgets::label_row(ui, tl!("Width:"), LABEL_W, |ui| number(ui, d, "width", ArtBrush::WIDTH_RANGE, "%", true));
+    slider_row(ui, d, "width", tl!("Width:"), ArtBrush::WIDTH_RANGE);
     ui.add_space(4.0);
     widgets::section_header(ui, tl!("Brush Scale Options"));
     let scales = [
@@ -318,7 +325,7 @@ fn arrow_button(ui: &mut egui::Ui, dir: Direction, selected: bool, tip: &str) ->
 }
 
 fn pattern_body(ui: &mut egui::Ui, d: &mut Dialog) {
-    widgets::label_row(ui, tl!("Scale:"), LABEL_W, |ui| number(ui, d, "scale", PatternBrush::SCALE_RANGE, "%", true));
+    slider_row(ui, d, "scale", tl!("Scale:"), PatternBrush::SCALE_RANGE);
     widgets::label_row(ui, tl!("Spacing:"), LABEL_W, |ui| number(ui, d, "spacing", PatternBrush::SPACING_RANGE, "%", true));
     ui.add_space(6.0);
     tiles(ui, d);

@@ -493,4 +493,21 @@ mod tests {
         );
         assert!((drawn_height(&app, id) / before - 2.0).abs() < 1e-6, "tiles twice the size");
     }
+
+    /// Art Brush Options' Width and Pattern Brush Options' Scale each have a slider beside their
+    /// field, which screen readers name as the row, with the field's number and text over the
+    /// value's whole range.
+    #[test]
+    fn art_width_and_pattern_scale_have_sliders() {
+        use crate::widgets::accessibility_tests::{slider_value, tree};
+        let mut app = app();
+        app.run("ui.brushOptions", json!({"name": "Arrow"})).unwrap();
+        set(&mut app, json!({"width": 250}));
+        let shown = tree(|ui| super::super::show(&mut app, ui.ctx()));
+        assert_eq!(slider_value(&shown, "Width:"), (Some(250.0), Some(1.0), Some(1000.0), Some("250%".into())));
+        app.ui.dialog = None;
+        app.run("ui.brushOptions", json!({"name": "Diamonds"})).unwrap();
+        let shown = tree(|ui| super::super::show(&mut app, ui.ctx()));
+        assert_eq!(slider_value(&shown, "Scale:"), (Some(100.0), Some(1.0), Some(10000.0), Some("100%".into())));
+    }
 }

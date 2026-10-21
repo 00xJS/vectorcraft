@@ -1317,6 +1317,24 @@ fn dialog_sliders_report_the_numbers_their_fields_show() {
     assert_eq!(slider_value(&shown, "Raster/Vector Balance:"), v(30.0, (0.0, 100.0), "30"));
 }
 
+/// Dragging Pattern Brush Options' Scale slider past its right end sets Scale to 10000%, and
+/// dragging Art Brush Options' Width slider past its left end sets Width to 1%; OK gives each
+/// brush its new value.
+#[test]
+fn brush_options_sliders_set_pattern_scale_and_art_width() {
+    use egui::accesskit::Role::Slider;
+    let mut app = app();
+    for (brush, label, key, by, want) in [("Diamonds", "Scale:", "scale", 400.0, 10000.0), ("Arrow", "Width:", "width", -400.0, 1.0)] {
+        app.run("ui.brushOptions", json!({ "name": brush })).unwrap();
+        let mut f = Frames::new();
+        let at = f.control(&mut app, label, Slider);
+        f.drag(&mut app, at, egui::vec2(by, 0.0));
+        assert_eq!(app.ui.dialog.as_ref().expect("Brush Options is open").f64(key, 0.0), want, "{brush}");
+        confirm(&mut app).unwrap();
+        assert_eq!(app.run("brush.get", json!({ "name": brush })).unwrap()[key], json!(want), "{brush}");
+    }
+}
+
 /// Frames of the dialog layer on one context (so a drag and the keyboard focus last from frame to
 /// frame), with the screen-reader tree turned on.
 struct Frames {
