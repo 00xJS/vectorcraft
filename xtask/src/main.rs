@@ -93,12 +93,14 @@ pub fn repo_files(root: &Path) -> Result<Vec<String>, String> {
     Ok(String::from_utf8_lossy(&out.stdout).lines().filter(|l| root.join(l).exists()).map(str::to_owned).collect())
 }
 
+/// A `cargo` command (the one running xtask, else `cargo` on the PATH) run in the workspace root.
 pub fn cargo() -> Command {
     let mut c = Command::new(std::env::var("CARGO").unwrap_or_else(|_| "cargo".into()));
     c.current_dir(root());
     c
 }
 
+/// Prints `what` and runs `cmd`, which must exit successfully.
 fn run(mut cmd: Command, what: &str) -> Result<(), String> {
     eprintln!("$ {what}");
     let status = cmd.status().map_err(|e| format!("{what}: failed to spawn: {e}"))?;
@@ -113,6 +115,8 @@ fn libraries_without_bundled_fonts() -> Result<(), String> {
     ["vectorcraft-ui-egui", "vectorcraft-mcp"].into_iter().try_for_each(without_bundled_fonts)
 }
 
+/// `package` shows vectorcraft-text's `bundled-fonts` in its feature tree with its default features
+/// and nowhere without them, for any target.
 fn without_bundled_fonts(package: &str) -> Result<(), String> {
     const FEATURE: &str = "vectorcraft-text feature \"bundled-fonts\"";
     let tree = |defaults: bool| -> Result<String, String> {
@@ -139,6 +143,7 @@ fn without_bundled_fonts(package: &str) -> Result<(), String> {
     Ok(())
 }
 
+/// `cargo metadata --no-deps` for the workspace, as JSON.
 pub fn metadata() -> Result<serde_json::Value, String> {
     let out = cargo().args(["metadata", "--format-version", "1", "--no-deps"]).output().map_err(|e| format!("cargo metadata: {e}"))?;
     if !out.status.success() {
@@ -213,6 +218,8 @@ fn cmd_wasm() -> Result<(), String> {
     if failed == 0 { Ok(()) } else { Err(format!("{failed} crate(s) failed the wasm check")) }
 }
 
+/// `cargo xtask ci`: each step in turn, stopping at the first that fails; the summary names the
+/// steps that passed and, after a failure, the one that failed and those skipped.
 fn cmd_ci() -> Result<(), String> {
     type Step = (&'static str, Box<dyn Fn() -> Result<(), String>>);
     let steps: Vec<Step> = vec![
