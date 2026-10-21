@@ -1180,6 +1180,8 @@ file-filter	Templates	範本
 	Large Gaps	大間隙
 	Gap Preview Color:	間隙預覽顏色：
 	Close Gaps With Paths	以路徑封閉間隙
+	Show Live Paint Gaps	顯示即時上色間隙
+	Hide Live Paint Gaps	隱藏即時上色間隙
 	Select Fills	選取填色
 	Select Strokes	選取筆畫
 	Gaussian Blur…	高斯模糊…

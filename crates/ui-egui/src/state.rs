@@ -231,6 +231,10 @@ pub struct ViewFlags {
     pub text_threads: bool,
     /// View → Show/Hide Gradient Annotator.
     pub gradient_annotator: bool,
+    /// View → Show/Hide Live Paint Gaps: draw the gaps of the selected Live Paint groups in their Gap
+    /// Preview Color.
+    #[serde(default)]
+    pub live_paint_gaps: bool,
     /// Type → Show Hidden Characters.
     pub hidden_chars: bool,
     /// View → Hide/Show Template: template layers drawn (dimmed) or left out of the canvas.
@@ -258,6 +262,7 @@ impl Default for ViewFlags {
             snap_to_glyph: false,
             text_threads: true,
             gradient_annotator: true,
+            live_paint_gaps: false,
             hidden_chars: false,
             templates: true,
         }

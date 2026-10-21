@@ -1200,6 +1200,8 @@
 	Large Gaps	Huecos grandes
 	Gap Preview Color:	Color de previsualización de huecos:
 	Close Gaps With Paths	Cerrar huecos con trazados
+	Show Live Paint Gaps	Mostrar huecos de pintura interactiva
+	Hide Live Paint Gaps	Ocultar huecos de pintura interactiva
 	Select Fills	Seleccionar rellenos
 	Select Strokes	Seleccionar trazos
 	Gaussian Blur…	Desenfoque gaussiano…

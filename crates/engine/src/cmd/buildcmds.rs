@@ -662,6 +662,12 @@ fn open_gaps(group: &Node, options: GapOptions) -> Vec<[Point; 2]> {
     po::find_gaps(&source_shapes(&source_nodes(group)).0, options.size.points())
 }
 
+/// The gaps View › Show Live Paint Gaps shows on `group`: those up to its Gap Options' size wide,
+/// as `livePaint.info` lists them. None when `group` is not a Live Paint group.
+pub fn live_paint_gaps(group: &Node) -> Vec<[Point; 2]> {
+    if is_live_paint(group) { open_gaps(group, group.gap_options()) } else { vec![] }
+}
+
 fn lp_gap_options(s: &mut Session, p: &Value) -> Result<Value> {
     const C: &str = "livePaint.gapOptions";
     let detect = match p.get("detect").filter(|v| !v.is_null()) {

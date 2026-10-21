@@ -1207,6 +1207,8 @@ file-filter	Templates	Шаблоны
 	Large Gaps	Большие зазоры
 	Gap Preview Color:	Цвет просмотра зазоров:
 	Close Gaps With Paths	Закрыть зазоры контурами
+	Show Live Paint Gaps	Показать зазоры быстрой заливки
+	Hide Live Paint Gaps	Скрыть зазоры быстрой заливки
 	Select Fills	Выделять заливки
 	Select Strokes	Выделять обводки
 	Gaussian Blur…	Размытие по Гауссу…

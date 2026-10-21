@@ -553,6 +553,9 @@ pub fn show(app: &mut VectorcraftApp, ui: &mut Ui) {
         if app.ui.view.text_threads {
             thread_overlay(app, &painter, &xf);
         }
+        if app.ui.view.live_paint_gaps {
+            overlays.extend(live_paint_gap_overlays(app));
+        }
         if app.ui.view.hidden_chars {
             app.canvas.hidden_chars = hidden_chars;
             hidden_chars_overlay(app, &painter, &xf);
@@ -2244,6 +2247,22 @@ fn thread_overlay(app: &VectorcraftApp, p: &egui::Painter, xf: &Xf) {
             }
         }
     }
+}
+
+/// View → Show Live Paint Gaps: the gaps of the selected Live Paint groups in each group's Gap
+/// Preview Color ([`crate::dialogs::live_paint_gaps::selected_gaps`]). Cached per revision.
+fn live_paint_gap_overlays(app: &mut VectorcraftApp) -> Vec<Overlay> {
+    let Some(st) = app.session.active() else { return vec![] };
+    let key = (st.uid, st.revision);
+    let gaps = match &app.canvas.live_paint_gaps {
+        Some((k, gaps)) if *k == key => gaps.clone(),
+        _ => {
+            let gaps = std::sync::Arc::new(crate::dialogs::live_paint_gaps::selected_gaps(app));
+            app.canvas.live_paint_gaps = Some((key, gaps.clone()));
+            gaps
+        }
+    };
+    gaps.to_vec()
 }
 
 /// Simplify's Show Original Path: the paths its preview ran on, as they were before it, in a band
@@ -5838,6 +5857,71 @@ mod tests {
         let w = widget(&app);
         double_click(&mut app, w.at);
         assert!(area(&app), "a double-click on the widget converts to area type");
+    }
+
+    /// View → Show Live Paint Gaps draws the gaps of each selected Live Paint group in the group's
+    /// Gap Preview Color, and nothing for a group or path that is not a selected Live Paint group;
+    /// Hide Live Paint Gaps and Hide Edges hide them.
+    #[test]
+    fn show_live_paint_gaps_draws_the_selected_groups_gaps_in_their_preview_color() {
+        let mut app = VectorcraftApp::new(Session::new(), Default::default());
+        app.session.execute("file.new", &json!({"width": 400, "height": 300})).unwrap();
+        // Open paths round a square, each ending 2 pt short of its start: one Small Gap each.
+        let square = |app: &mut VectorcraftApp, x: i64| {
+            let anchors = [(0, 0), (100, 0), (100, 100), (0, 100), (0, 2)].map(|(dx, y)| json!({"x": x + dx, "y": y}));
+            app.session.execute("path.create", &json!({ "anchors": anchors })).unwrap()["id"].as_u64().unwrap()
+        };
+        let mut groups = vec![];
+        for (x, color) in [(0, "#123456"), (150, "#654321")] {
+            let p = square(&mut app, x);
+            app.session.execute("select.set", &json!({"ids": [p]})).unwrap();
+            let g = app.session.execute("livePaint.make", &json!({})).unwrap()["id"].as_u64().unwrap();
+            app.session.execute("livePaint.gapOptions", &json!({"id": g, "color": color})).unwrap();
+            groups.push(g);
+        }
+        let plain = square(&mut app, 300);
+        let ctx = egui::Context::default();
+        let gaps = |app: &mut VectorcraftApp, rgb: [u8; 3]| {
+            let solid = egui::epaint::ColorMode::Solid(c32(rgb));
+            shapes(app, &ctx).iter().filter(|s| matches!(s, Shape::Path(ps) if ps.stroke.color == solid && ps.stroke.width == 2.0)).count()
+        };
+        let (first, second) = ([0x12, 0x34, 0x56], [0x65, 0x43, 0x21]);
+        // The color the plain path's gaps would be drawn in.
+        let plain_color = vectorcraft_doc::GapOptions::default().color;
+        app.session.execute("select.set", &json!({"ids": [groups[0], plain]})).unwrap();
+        assert_eq!((gaps(&mut app, first), gaps(&mut app, second)), (0, 0), "off until the item is chosen");
+        // View → Show Live Paint Gaps runs the command.
+        let tree = crate::menus::menu_tree();
+        let (_, view) = tree.iter().find(|(t, _)| *t == "View").unwrap();
+        assert!(view.iter().any(|i| matches!(i, crate::menus::Item::Cmd("Show Live Paint Gaps", "view.livePaintGaps", _))), "{view:?}");
+        crate::menus::invoke(&mut app, "view.livePaintGaps", json!({}));
+        assert!(app.ui.view.live_paint_gaps);
+        assert_eq!(
+            (gaps(&mut app, first), gaps(&mut app, second), gaps(&mut app, plain_color)),
+            (1, 0, 0),
+            "the selected group only; the plain path shows none"
+        );
+        app.session.execute("select.set", &json!({"ids": [groups[1]]})).unwrap();
+        assert_eq!((gaps(&mut app, first), gaps(&mut app, second)), (0, 1));
+        // The lines follow the group's Gap Preview Color and Paint Stops At size.
+        app.session.execute("livePaint.gapOptions", &json!({"id": groups[1], "color": "#123456"})).unwrap();
+        assert_eq!((gaps(&mut app, first), gaps(&mut app, second)), (1, 0));
+        app.session.execute("livePaint.gapOptions", &json!({"id": groups[1], "size": 1})).unwrap();
+        assert_eq!(gaps(&mut app, first), 0, "a 2 pt gap is wider than 1 pt");
+        app.session.execute("livePaint.gapOptions", &json!({"id": groups[1], "size": "small"})).unwrap();
+        app.ui.view.edges = false;
+        assert_eq!(gaps(&mut app, first), 0, "Hide Edges hides them");
+        app.ui.view.edges = true;
+        assert_eq!(gaps(&mut app, first), 1);
+        app.run("view.livePaintGaps", json!({})).unwrap();
+        assert!(!app.ui.view.live_paint_gaps);
+        assert_eq!(gaps(&mut app, first), 0, "View → Hide Live Paint Gaps");
+        // The setting is kept with the interface state; a state saved before it existed loads with it off.
+        app.ui.view.live_paint_gaps = true;
+        let mut saved = serde_json::to_value(&app.ui).unwrap();
+        assert_eq!(saved["view"]["live_paint_gaps"], json!(true));
+        saved["view"].as_object_mut().unwrap().remove("live_paint_gaps");
+        assert!(!serde_json::from_value::<crate::UiState>(saved).unwrap().view.live_paint_gaps);
     }
 
     /// #511: a star shows a widget in each of its ten corners with Direct Selection (none with

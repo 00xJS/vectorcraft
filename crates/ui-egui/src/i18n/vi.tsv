@@ -1395,6 +1395,8 @@ file-filter	Templates	Mẫu
 	Large Gaps	Khoảng cách lớn
 	Gap Preview Color:	Màu xem trước khoảng cách:
 	Close Gaps With Paths	Đóng khoảng cách bằng đường dẫn
+	Show Live Paint Gaps	Hiện khoảng cách tô trực tiếp
+	Hide Live Paint Gaps	Ẩn khoảng cách tô trực tiếp
 	Select Fills	Chọn vùng tô
 	Select Strokes	Chọn nét
 	Gaussian Blur	Mờ Gaussian
