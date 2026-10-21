@@ -1870,6 +1870,7 @@ lighting	Light	Valo
 	Select art and click New Symbol to make one.	Luo symboli valitsemalla kuvitus ja napsauttamalla Uusi symboli.
 	Symbol Libraries (on the roadmap)	Symbolikirjastot (suunnitteilla)
 	Align On:	Tasaa kohteeseen:
+	Bottom-Justified Tab	Alas tasattu sarkain
 	Center-Justified Tab	Keskitetty sarkain
 	Above Text	Tekstin yläpuolella
 	Position Panel Above Text	Sijoita paneeli tekstin yläpuolelle
@@ -1881,6 +1882,7 @@ lighting	Light	Valo
 	No text selected	Ei valittua tekstiä
 	Repeat Tab	Toista sarkain
 	Right-Justified Tab	Oikealle tasattu sarkain
+	Top-Justified Tab	Ylös tasattu sarkain
 	Select a text object to set its tab stops.	Valitse tekstiobjekti, jonka sarkainkohdat haluat asettaa.
 	Select text	Valitse teksti
 	Snap to Unit	Kohdista yksikköön

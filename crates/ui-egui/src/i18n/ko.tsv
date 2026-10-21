@@ -3221,6 +3221,7 @@ gradient-kind	Radial	방사형
 	Black and White Logo	흑백 로고
 	Bottom	아래쪽
 	Bottom in Front	아래쪽이 앞
+	Bottom-Justified Tab	아래쪽 정렬 탭
 	Bounds	경계
 	Bounds (Fill Proportionally)	경계(비율 유지하여 채우기)
 	Bounds (Fit Proportionally)	경계(비율 유지하여 맞추기)
@@ -3545,6 +3546,7 @@ file-filter	Templates	템플릿
 	Tip on the end point	끝이 끝점에 위치
 	Top	위쪽
 	Top in Front	위쪽이 앞
+	Top-Justified Tab	위쪽 정렬 탭
 	Transforms	변형
 	Transparent (Default)	투명 (기본값)
 	Trim marks	재단 표시

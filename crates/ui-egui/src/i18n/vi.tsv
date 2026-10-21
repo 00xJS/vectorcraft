@@ -354,6 +354,7 @@
 	Bottom Left	Dưới trái
 	Bottom Right	Dưới phải
 	Bottom to Top	Dưới lên trên
+	Bottom-Justified Tab	Tab căn dưới
 	Bottom-to-Bottom Leading	Giãn dòng đáy đến đáy
 	Bottom:	Dưới:
 	Bounds	Giới hạn
@@ -3644,6 +3645,7 @@ mark-style	Japanese	Kiểu Nhật
 	Top Left	Trên trái
 	Top Right	Trên phải
 	Top to Bottom	Trên xuống dưới
+	Top-Justified Tab	Tab căn trên
 	Top-to-Top Leading	Giãn dòng đỉnh đến đỉnh
 	Top:	Trên:
 	Total Width:	Tổng chiều rộng:

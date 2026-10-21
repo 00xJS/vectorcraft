@@ -285,6 +285,7 @@
 	Blur	Θόλωση
 	Bottom	Κάτω
 	Bottom in Front	Κάτω αντικείμενο μπροστά
+	Bottom-Justified Tab	Στηλοθέτης κάτω στοίχισης
 	Bottom:	Κάτω:
 	Bounds	Όρια
 	Bounds (Fill Proportionally)	Όρια (αναλογικό γέμισμα)
@@ -3587,6 +3588,7 @@ theme	Appearance	Εμφάνιση
 	Toolbar: Remove Tool	Γραμμή εργαλείων: Αφαίρεση εργαλείου
 	Toolbar: Reset	Γραμμή εργαλείων: Επαναφορά
 	Top in Front	Επάνω μπροστά
+	Top-Justified Tab	Στηλοθέτης επάνω στοίχισης
 	Total Width:	Συνολικό πλάτος:
 	Touch Type Tool	Επεξεργασία χαρακτήρων με αφή (Touch Type Tool)
 	Trace	Διανυσματοποίηση

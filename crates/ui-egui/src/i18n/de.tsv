@@ -289,6 +289,7 @@
 	Blur	Weichzeichnen
 	Bottom	Unten
 	Bottom in Front	Unten im Vordergrund
+	Bottom-Justified Tab	Unten ausgerichteter Tabulator
 	Bottom:	Unten:
 	Bounds	Begrenzung
 	Bounds (Fill Proportionally)	Begrenzung (proportional füllen)
@@ -3238,6 +3239,7 @@ effect	Points	Punkte
 	Tools	Werkzeuge
 	Top	Oben
 	Top in Front	Oben im Vordergrund
+	Top-Justified Tab	Oben ausgerichteter Tabulator
 	Top:	Oben:
 	Total Width:	Gesamtbreite:
 	Touch Type	Touch-Type

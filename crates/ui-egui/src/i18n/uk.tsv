@@ -301,6 +301,7 @@
 	Blur	Розмиття
 	Bottom	Внизу
 	Bottom in Front	Нижній спереду
+	Bottom-Justified Tab	Табуляція з вирівнюванням по нижньому краю
 	Bottom:	Внизу:
 	Bounds	Межі
 	Bounds (Fill Proportionally)	Межі (заповнювати пропорційно)
@@ -3298,6 +3299,7 @@ effect	Points	Точки
 	Tools	Інструменти
 	Top	Вгорі
 	Top in Front	Верхній спереду
+	Top-Justified Tab	Табуляція з вирівнюванням по верхньому краю
 	Top:	Вгорі:
 	Total Width:	Загальна ширина:
 	Touch Type	Налаштування тексту

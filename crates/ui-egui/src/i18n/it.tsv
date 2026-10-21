@@ -307,6 +307,7 @@
 	Blur	Sfocatura
 	Bottom	In basso
 	Bottom in Front	Inferiore davanti
+	Bottom-Justified Tab	Tabulazione allineata in basso
 	Bottom:	In basso:
 	Bounds	Limiti
 	Bounds (Fill Proportionally)	Limiti (riempi proporzionalmente)
@@ -3305,6 +3306,7 @@ mark-style	Japanese	Giapponese
 	Tools	Strumenti
 	Top	In alto
 	Top in Front	Superiore davanti
+	Top-Justified Tab	Tabulazione allineata in alto
 	Top:	In alto:
 	Total Width:	Larghezza totale:
 	Touch Type	Ritocco testo

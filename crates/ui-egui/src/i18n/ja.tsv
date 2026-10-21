@@ -3228,6 +3228,7 @@ gradient-kind	Radial	円形
 	Black and White Logo	白黒ロゴ
 	Bottom	下
 	Bottom in Front	下が前面
+	Bottom-Justified Tab	下揃えタブ
 	Bounds	境界
 	Bounds (Fill Proportionally)	境界 (縦横比を保って全体を覆う)
 	Bounds (Fit Proportionally)	境界 (縦横比を保って収める)
@@ -3552,6 +3553,7 @@ file-filter	Templates	テンプレート
 	Tip on the end point	先端をパスの端点に合わせる
 	Top	上
 	Top in Front	上が前面
+	Top-Justified Tab	上揃えタブ
 	Transforms	変形
 	Transparent (Default)	透明 (デフォルト)
 	Trim marks	トリムマーク

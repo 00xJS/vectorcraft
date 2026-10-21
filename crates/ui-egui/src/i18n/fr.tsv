@@ -308,6 +308,7 @@
 	Blur	Flou
 	Bottom	Bas
 	Bottom in Front	Bas au premier plan
+	Bottom-Justified Tab	Tabulation alignée en bas
 	Bottom:	Bas :
 	Bounds	Limites
 	Bounds (Fill Proportionally)	Limites (remplir proportionnellement)
@@ -3269,6 +3270,7 @@
 	Tools	Outils
 	Top	Haut
 	Top in Front	Haut au premier plan
+	Top-Justified Tab	Tabulation alignée en haut
 	Top:	Haut :
 	Total Width:	Largeur totale :
 	Touch Type Tool	Outil Retouche de texte

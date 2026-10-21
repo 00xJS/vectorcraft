@@ -432,6 +432,7 @@
 	Bottom Left	Bal alsó
 	Bottom Right	Jobb alsó
 	Bottom to Top	Lentről felfelé
+	Bottom-Justified Tab	Alulra igazító tabulátor
 	Bottom-to-Bottom Leading	Alulról alulra mért sorköz
 	Bottom:	Alsó:
 	Bounding Box	Befoglaló keret
@@ -3945,6 +3946,7 @@ mark-style	Japanese	Japán
 	Top Left	Bal felső
 	Top Right	Jobb felső
 	Top to Bottom	Fentről lefelé
+	Top-Justified Tab	Felülre igazító tabulátor
 	Top-to-Top Leading	Felülről felülre mért sorköz
 	Top:	Felső:
 	Total Width:	Teljes szélesség:

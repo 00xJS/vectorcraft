@@ -1724,6 +1724,7 @@ lighting	Light	Lys
 	Select art and click New Symbol to make one.	Markér grafik, og klik på Nyt symbol for at oprette et.
 	Symbol Libraries (on the roadmap)	Symbolbiblioteker (på roadmappen)
 	Align On:	Justér på:
+	Bottom-Justified Tab	Bundjusteret tabulator
 	Center-Justified Tab	Midterjusteret tabulator
 	Above Text	Over teksten
 	Position Panel Above Text	Placér panel over teksten
@@ -1735,6 +1736,7 @@ lighting	Light	Lys
 	No text selected	Ingen tekst markeret
 	Repeat Tab	Gentag tabulator
 	Right-Justified Tab	Højrejusteret tabulator
+	Top-Justified Tab	Topjusteret tabulator
 	Select a text object to set its tab stops.	Markér et tekstobjekt for at angive dets tabulatorstop.
 	Select text	Markér tekst
 	Snap to Unit	Fastgør til enhed

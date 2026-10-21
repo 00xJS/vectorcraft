@@ -296,6 +296,7 @@
 	Blur	Oskärpa
 	Bottom	Nederkant
 	Bottom in Front	Nederkant framför
+	Bottom-Justified Tab	Bottenjusterad tabb
 	Bottom:	Nederkant:
 	Bounds	Gränser
 	Bounds (Fill Proportionally)	Gränser (fyll proportionellt)
@@ -3213,6 +3214,7 @@
 	Tools	Verktyg
 	Top	Överkant
 	Top in Front	Ovansidan framför
+	Top-Justified Tab	Toppjusterad tabb
 	Top:	Överkant:
 	Total Width:	Total bredd:
 	Touch Type Tool	Beröringstextverktyg
