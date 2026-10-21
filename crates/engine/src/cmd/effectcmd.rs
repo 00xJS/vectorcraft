@@ -13,6 +13,7 @@ use vectorcraft_geom::{FillRule, PathData};
 use vectorcraft_render::effects;
 
 use super::appearance::{ItemTarget, appearance_targets, index_param, item_target, item_target_at};
+use super::expand::has_seeded;
 use super::rasterfx;
 use super::*;
 
@@ -442,18 +443,70 @@ fn raster_image(d: &mut Document, n: &Node) -> Option<(Node, bool)> {
     Some((rasterfx::raster_image(d, n, below, true)?, below))
 }
 
-/// Give the members of `m`, art evaluated from the object of the same id (its pieces share that
-/// id), ids of their own and expand the pieces: those made from its own fills and strokes, or with
-/// `all` every member.
-fn expand_pieces(d: &mut Document, m: &mut Node, all: bool, stroke_art: effects::StrokeArt) {
+/// Expand the pieces of `m`, art evaluated from the object of the same id (its pieces share that
+/// id): those made from its own fills and strokes, or with `all` every member. The other members
+/// that repeat an id ([`repeats_an_id`]) and hold a random Transform effect ([`has_seeded`]) are
+/// expanded as well ([`expand_in_place`]). Then the members get ids of their own. Random in a
+/// Transform effect takes its seed from the id, and the canvas draws the pieces with the ids they
+/// have before that. Returns what each of those other members' expansions lists, by the member's
+/// new id.
+fn expand_pieces(
+    d: &mut Document,
+    m: &mut Node,
+    all: bool,
+    brushes: &[vectorcraft_brush::Brush],
+    stroke_art: effects::StrokeArt,
+) -> std::collections::HashMap<NodeId, Vec<Listed>> {
     let id = m.id;
     let mut seen = std::collections::HashSet::from([id]);
+    let mut expanded = std::collections::HashMap::new();
     for c in m.children_mut().into_iter().flatten() {
-        let own = all || c.id == id;
         let c = Arc::make_mut(c);
-        effects::fresh_ids(d, c, &mut seen);
-        if own {
+        let mut listed = None;
+        if all || c.id == id {
             effects::expand_art(d, c, stroke_art);
+        } else if has_seeded(c) && repeats_an_id(c, &seen) {
+            listed = Some(expand_in_place(d, c, brushes));
+        }
+        fresh_ids_listed(d, c, &mut seen, listed.as_deref_mut().unwrap_or_default());
+        if let Some(listed) = listed {
+            expanded.insert(c.id, listed);
+        }
+    }
+    expanded
+}
+
+/// Does `n` hold an id of `seen`, or one id twice: does [`effects::fresh_ids`] give it new ids?
+fn repeats_an_id(n: &Node, seen: &std::collections::HashSet<NodeId>) -> bool {
+    let mut ids = std::collections::HashSet::new();
+    let mut repeats = false;
+    n.walk(&mut |c| repeats |= seen.contains(&c.id) || !ids.insert(c.id));
+    repeats
+}
+
+/// An object whose appearance expanded: its id, and its place in the walk ([`Node::walk`]) of the
+/// art it was listed in. Art evaluated from an object can hold one id more than once, and the place
+/// tells which of those nodes it is.
+type Listed = (NodeId, usize);
+
+/// [`expanded_node`] of `c` in place. Returns what the expansion lists, by places in the walk of `c`.
+fn expand_in_place(d: &mut Document, c: &mut Node, brushes: &[vectorcraft_brush::Brush]) -> Vec<Listed> {
+    let mut listed = vec![];
+    if let Some(e) = expanded_node(d, c.clone(), brushes, &mut listed) {
+        *c = e;
+    }
+    listed
+}
+
+/// [`effects::fresh_ids`] on `c`, with each of `listed` (places in the walk of `c`) given the new
+/// id of the node at its place.
+fn fresh_ids_listed(d: &mut Document, c: &mut Node, seen: &mut std::collections::HashSet<NodeId>, listed: &mut [Listed]) {
+    effects::fresh_ids(d, c, seen);
+    let mut ids = vec![];
+    c.walk(&mut |n| ids.push(n.id));
+    for (id, at) in listed {
+        if let Some(new) = ids.get(*at) {
+            *id = *new;
         }
     }
 }
@@ -462,46 +515,71 @@ fn expand_pieces(d: &mut Document, m: &mut Node, all: bool, stroke_art: effects:
 /// stroke becomes an object of its own (strokes outlined, brushes as their art), geometry effects
 /// are baked, raster effects become an embedded image, and the object keeps its transparency.
 pub(crate) fn expand_node(d: &mut Document, id: NodeId, brushes: &[vectorcraft_brush::Brush], out: &mut Vec<NodeId>) {
-    let Some(mut n) = d.node(id).cloned() else { return };
+    let Some(n) = d.node(id).cloned() else { return };
+    let mut listed = vec![];
+    let m = expanded_node(d, n, brushes, &mut listed);
+    out.extend(listed.into_iter().map(|(id, _)| id));
+    if let Some(m) = m
+        && let Some(slot) = d.node_mut(id)
+    {
+        *slot = m;
+    }
+}
+
+/// [`expand_node`] of `n`, which need not be in `d`: `n` with its appearance expanded, `None` when
+/// it has nothing to expand. `out` gets the objects whose appearance expands, by places in the walk
+/// of the expanded `n`, `n`'s first when its own does.
+fn expanded_node(d: &mut Document, mut n: Node, brushes: &[vectorcraft_brush::Brush], out: &mut Vec<Listed>) -> Option<Node> {
+    let id = n.id;
     if !expandable(&n) {
-        return;
+        return None;
     }
     // Colour adjustments: the colours inside become the adjusted ones (an embedded image a
     // recoloured copy), then the rest of the appearance expands.
+    let mut changed = false;
+    // Is `n` in `out` yet?
+    let mut listed_n = false;
     if effects::has_adjustment(&n)
         && let Some(m) = effects::adjust_in_document(d, &n)
-        && let Some(slot) = d.node_mut(id)
     {
-        *slot = m.clone();
-        out.push(id);
+        out.push((id, 0));
+        listed_n = true;
         n = m;
+        changed = true;
         if !expandable(&n) {
-            return;
+            return Some(n);
         }
     }
     // (A symbol instance has become its art, a group.)
     let container = is_container(&n);
-    // Crop Marks: a group of the object and its marks, then the object expands on its own.
+    // Crop Marks: the object and its marks become a group. The object expands on its own first,
+    // with `id`: the canvas draws it with that id, which Random in a Transform effect takes its
+    // seed from. Then the object and the marks get ids of their own.
     if let Some(mut m) = effects::crop_marks_art(&n) {
         let mut seen = std::collections::HashSet::from([id]);
-        for c in m.children_mut().into_iter().flatten() {
-            effects::fresh_ids(d, Arc::make_mut(c), &mut seen);
+        let mut expanded = vec![];
+        for (i, c) in m.children_mut().into_iter().flatten().enumerate() {
+            let c = Arc::make_mut(c);
+            if i == 0 {
+                expanded = expand_in_place(d, c, brushes);
+                fresh_ids_listed(d, c, &mut seen, &mut expanded);
+            } else {
+                effects::fresh_ids(d, c, &mut seen);
+            }
         }
-        let object = m.children().and_then(|c| c.first()).map(|c| c.id);
-        if let Some(slot) = d.node_mut(id) {
-            *slot = m;
-            out.push(id);
+        if !listed_n {
+            out.push((id, 0));
         }
-        if let Some(object) = object {
-            expand_node(d, object, brushes, out);
-        }
-        return;
+        out.extend(expanded.into_iter().map(|(id, at)| (id, at + 1)));
+        return Some(m);
     }
     let image = raster_image(d, &n);
     let mut v = n.clone();
     rasterfx::strip_raster(&mut v, false);
     let mut stroke_art =
         |d: &mut Document, path: &PathData, rule: FillRule, st: &StrokeLayer| super::pathops::outlined_stroke(d, brushes, path, rule, st);
+    // Members of a group or layer that `expand_pieces` expanded, by id, with what their expansion lists.
+    let mut members = std::collections::HashMap::new();
     let expanded = match image {
         // Blur, feather and inner glow change the object itself: it becomes the image (a layer
         // keeps it as its only member).
@@ -510,7 +588,7 @@ pub(crate) fn expand_node(d: &mut Document, id: NodeId, brushes: &[vectorcraft_b
             let m = if container {
                 // A group's or layer's own fills and strokes become art among its members.
                 effects::evaluate_container(&v).map(|mut m| {
-                    expand_pieces(d, &mut m, false, &mut stroke_art);
+                    members = expand_pieces(d, &mut m, false, brushes, &mut stroke_art);
                     m
                 })
             } else if matches!(n.kind, NodeKind::Path { .. } | NodeKind::Compound { .. }) && !effects::has_gradient_copies(&v) {
@@ -523,7 +601,7 @@ pub(crate) fn expand_node(d: &mut Document, id: NodeId, brushes: &[vectorcraft_b
                     _ => None,
                 };
                 effects::expand_outlined(&v, symbol.as_deref()).map(|mut m| {
-                    expand_pieces(d, &mut m, true, &mut stroke_art);
+                    expand_pieces(d, &mut m, true, brushes, &mut stroke_art);
                     m
                 })
             };
@@ -537,20 +615,34 @@ pub(crate) fn expand_node(d: &mut Document, id: NodeId, brushes: &[vectorcraft_b
             }
         }
     };
-    if let Some(m) = expanded
-        && let Some(slot) = d.node_mut(id)
-    {
-        *slot = m;
-        if out.last() != Some(&id) {
-            out.push(id);
+    if let Some(m) = expanded {
+        n = m;
+        changed = true;
+        if !listed_n {
+            out.push((id, 0));
         }
     }
     if container {
-        let children: Vec<NodeId> = d.node(id).and_then(|n| n.children()).map(|c| c.iter().map(|c| c.id).collect()).unwrap_or_default();
-        for c in children {
-            expand_node(d, c, brushes, out);
+        // The place of each member in the walk of `n`: after `n` and the members before it.
+        let mut at = 1;
+        for c in n.children_mut().into_iter().flatten() {
+            let from = out.len();
+            match members.remove(&c.id) {
+                Some(listed) => out.extend(listed),
+                None => {
+                    if let Some(e) = expanded_node(d, (**c).clone(), brushes, out) {
+                        *c = Arc::new(e);
+                        changed = true;
+                    }
+                }
+            }
+            for (_, place) in &mut out[from..] {
+                *place += at;
+            }
+            at += c.count();
         }
     }
+    changed.then_some(n)
 }
 
 fn expand_appearance(s: &mut Session, p: &Value) -> Result<Value> {
