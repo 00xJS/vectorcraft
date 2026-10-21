@@ -4837,6 +4837,10 @@ imageTrace	Outline	კონტური
 	Arrange Intertwine Area	გადახლართვის არის დალაგება
 @msg	select an Intertwine group	მონიშნეთ გადახლართვის ჯგუფი
 @msg	select an Objects on Path group	მონიშნეთ ტრაექტორიაზე ობიექტების ჯგუფი
+@msg	a path inside a compound path, blend, envelope, repeat or Intertwine group can't take objects	შედგენილ ტრაექტორიაში, გადასვლაში, გარსში, გამეორებაში ან გადახლართვის ჯგუფში მყოფ ტრაექტორიაზე ობიექტების მიმაგრება ვერ ხერხდება
+@msg	a clipping path can't take objects	მომჭრელ ტრაექტორიაზე ობიექტების მიმაგრება ვერ ხერხდება
+@msg	objects inside a blend, envelope, repeat or Intertwine group can't be attached to a path	გადასვლაში, გარსში, გამეორებაში ან გადახლართვის ჯგუფში მყოფი ობიექტების ტრაექტორიაზე მიმაგრება ვერ ხერხდება
+@msg	a clipping path can't be attached to a path	მომჭრელი ტრაექტორიის ტრაექტორიაზე მიმაგრება ვერ ხერხდება
 	Registration:	საბაზისო წერტილი:
 @msg	span must be "object" or "selection", got {v}	span უნდა იყოს "object" ან "selection", მიღებულია {v}
 @msg	span: "selection" places a `gradient`, not a swatch	span: "selection" ათავსებს `gradient`-ს და არა ფერის ნიმუშს

@@ -1733,6 +1733,39 @@ fn blend_spine_param_errors_are_translated() {
     assert!(untranslated.is_empty(), "untranslated spine errors:\n{}", untranslated.join("\n"));
 }
 
+/// Objects on Path's refusals of a path inside a compound path, blend, envelope, repeat or
+/// Intertwine group, of an object inside a blend, envelope, repeat or Intertwine group, and of a
+/// clipping path, whose text the scan above doesn't read, are translated whole in each language of
+/// [`COMPLETE_MESSAGES`].
+#[test]
+fn objects_on_path_refusals_are_translated() {
+    use serde_json::json;
+    use vectorcraft_engine::Session;
+    let mut s = Session::new();
+    s.execute("file.new", &json!({})).unwrap();
+    let rectangle =
+        |s: &mut Session, x: u64| s.execute("shape.rectangle", &json!({"x": x, "y": 0, "width": 40, "height": 40})).unwrap()["id"].clone();
+    let path = s.execute("shape.line", &json!({"x1": 0, "y1": 300, "x2": 300, "y2": 300})).unwrap()["id"].clone();
+    let object = rectangle(&mut s, 0);
+    let (member, hole) = (rectangle(&mut s, 100), rectangle(&mut s, 110));
+    s.execute("select.set", &json!({"ids": [member, hole]})).unwrap();
+    s.execute("object.compoundPath.make", &json!({})).unwrap();
+    let (art, mask) = (rectangle(&mut s, 200), rectangle(&mut s, 210));
+    s.execute("select.set", &json!({"ids": [art, mask]})).unwrap();
+    s.execute("object.clippingMask.make", &json!({})).unwrap();
+    let source = rectangle(&mut s, 300);
+    s.execute("select.set", &json!({"ids": [source]})).unwrap();
+    s.execute("object.repeat.grid", &json!({})).unwrap();
+    for (p, ids) in [(&member, &object), (&mask, &object), (&path, &source), (&path, &mask)] {
+        let e = s.execute("object.objectsOnPath.attach", &json!({"path": p, "ids": [ids]})).unwrap_err();
+        let vectorcraft_engine::EngineError::BadParams { msg, .. } = &e else { panic!("{e}") };
+        for code in COMPLETE_MESSAGES {
+            let shown = message(Lang::from_code(code).unwrap(), &e.to_string());
+            assert!(!shown.contains(msg.as_str()), "{code}: {shown}");
+        }
+    }
+}
+
 /// The parameter error of Save as Template for a `.ait` with `aiVersion` 7 is translated whole in
 /// each language of [`COMPLETE_MESSAGES`].
 #[test]

@@ -3698,6 +3698,10 @@ axis	Both	Ambos
 @msg	select a repeat	selecione uma repetição
 @msg	select an Intertwine group	selecione um grupo entrelaçado
 @msg	select an Objects on Path group	selecione um grupo de objetos no caminho
+@msg	a path inside a compound path, blend, envelope, repeat or Intertwine group can't take objects	um caminho dentro de um caminho composto, mesclagem, envelope, repetição ou grupo entrelaçado não pode receber objetos
+@msg	a clipping path can't take objects	um caminho de recorte não pode receber objetos
+@msg	objects inside a blend, envelope, repeat or Intertwine group can't be attached to a path	objetos dentro de uma mesclagem, envelope, repetição ou grupo entrelaçado não podem ser anexados a um caminho
+@msg	a clipping path can't be attached to a path	um caminho de recorte não pode ser anexado a um caminho
 @msg	select a stroke with a variable width	selecione um traço com largura variável
 @msg	select a symbol instance	selecione uma instância de símbolo
 @msg	select an Image Trace object	selecione um objeto de Vetorização de imagem

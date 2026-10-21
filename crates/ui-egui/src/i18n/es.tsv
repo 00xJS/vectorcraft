@@ -4118,6 +4118,10 @@ axis	Both	Ambos
 @msg	select a repeat	selecciona una repetición
 @msg	select an Intertwine group	selecciona un grupo entrelazado
 @msg	select an Objects on Path group	selecciona un grupo de objetos en trazado
+@msg	a path inside a compound path, blend, envelope, repeat or Intertwine group can't take objects	un trazado dentro de un trazado compuesto, una fusión, una envolvente, una repetición o un grupo entrelazado no puede recibir objetos
+@msg	a clipping path can't take objects	un trazado de recorte no puede recibir objetos
+@msg	objects inside a blend, envelope, repeat or Intertwine group can't be attached to a path	los objetos dentro de una fusión, una envolvente, una repetición o un grupo entrelazado no se pueden adjuntar a un trazado
+@msg	a clipping path can't be attached to a path	un trazado de recorte no se puede adjuntar a un trazado
 @msg	select a stroke with a variable width	selecciona un trazo con anchura variable
 @msg	select a symbol instance	selecciona una instancia de símbolo
 @msg	select an Image Trace object	selecciona un objeto de calco de imagen
