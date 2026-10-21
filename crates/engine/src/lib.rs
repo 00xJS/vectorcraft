@@ -297,8 +297,10 @@ pub(crate) struct PreviewCopies {
 pub struct UndoGroup {
     /// The document before the group's first edit, as the undo step that edit recorded keeps it.
     first: Option<Arc<Document>>,
-    /// The journal's length when the group began: a cancelled group drops the entries after it.
-    journal: usize,
+    /// The numbers of the journal entries made in the group's document while it was open: a canceled
+    /// group drops them. An entry that changed the active document has the index of the document it
+    /// left active, and a canceled group turns it into that change.
+    journal: Vec<(usize, Option<usize>)>,
     /// The undo step's name; else the first edit's.
     label: Option<String>,
 }
@@ -1594,6 +1596,9 @@ impl Session {
             }
             (spec.run)(s, params)
         };
+        // The entries the command journals belong to the undo groups of the documents it edits, and to
+        // the group of the document it starts in when it ends there too.
+        let (doc, journal, grouped) = (self.active().map(|d| d.uid), self.journal.len(), self.undo_group_docs());
         let r = if self.depth == 0 { self.run_guarded(id, run) } else { self.run_nested(run) };
         let r = r?;
         if self.depth == 0 {
@@ -1604,6 +1609,7 @@ impl Session {
             self.journal.push((id.to_string(), p));
         }
         if self.depth == 0 {
+            self.journal_in_undo_groups(doc, &grouped, journal);
             self.after_command();
         }
         Ok(r)
@@ -1933,7 +1939,9 @@ impl Session {
         if perspective_again.is_some() {
             st.last_perspective = perspective_again;
         }
+        let (doc, journal, grouped) = (self.active().map(|d| d.uid), self.journal.len(), self.undo_group_docs());
         self.journal.push(preview);
+        self.journal_in_undo_groups(doc, &grouped, journal);
         Ok(())
     }
 
@@ -1972,18 +1980,48 @@ impl Session {
 
     /// [`Session::begin_undo_group`] with the undo step named `label` (else after its first edit).
     pub fn begin_named_undo_group(&mut self, label: Option<String>) {
-        let journal = self.journal.len();
         if let Some(st) = self.active_mut()
             && st.undo_group.is_none()
         {
-            st.undo_group = Some(UndoGroup { first: None, journal, label });
+            st.undo_group = Some(UndoGroup { first: None, journal: vec![], label });
+        }
+    }
+
+    /// The documents with an undo group open ([`DocState::uid`]), each with the document it holds.
+    fn undo_group_docs(&self) -> Vec<(u64, *const Document)> {
+        self.docs.iter().filter(|st| st.undo_group.is_some()).map(|st| (st.uid, Arc::as_ptr(&st.doc))).collect()
+    }
+
+    /// Note the journal entries from number `from` on in the undo groups they belong to: the group of
+    /// each document in `grouped` ([`Session::undo_group_docs`] before the entries) that they changed,
+    /// each group they opened and edited, and the group of the document with [`DocState::uid`] `doc`
+    /// when they started in it and it is still the active one. A cancel drops them. The last entry of a command that changed the
+    /// active document keeps the index of the document it left active.
+    fn journal_in_undo_groups(&mut self, doc: Option<u64>, grouped: &[(u64, *const Document)], from: usize) {
+        let to = self.journal.len();
+        let active = self.active().map(|d| d.uid);
+        let switched = if active == doc { None } else { self.active };
+        for st in &mut self.docs {
+            let Some(g) = &mut st.undo_group else { continue };
+            let started = doc == Some(st.uid) && active == doc;
+            // A group the entries opened has an edit of theirs once it has a first edit.
+            let edited = match grouped.iter().find(|&&(uid, _)| uid == st.uid) {
+                Some(&(_, d)) => !std::ptr::eq(d, Arc::as_ptr(&st.doc)),
+                None => g.first.is_some(),
+            };
+            if started || edited {
+                // A committed interaction inside the command noted its entry already.
+                let noted = g.journal.partition_point(|&(n, _)| n < from);
+                g.journal.truncate(noted);
+                g.journal.extend((from..to).map(|n| (n, switched.filter(|_| n + 1 == to))));
+            }
         }
     }
 
     /// Close the open undo groups: their edits stay one undo step or, `cancel`led (Escape), are
     /// undone and dropped from the journal.
     pub fn end_undo_group(&mut self, cancel: bool) {
-        let mut journal = None;
+        let mut journal: Vec<(usize, Option<usize>)> = vec![];
         for st in &mut self.docs {
             let Some(g) = st.undo_group.take() else { continue };
             // Only while the group's step is still the newest one.
@@ -1998,12 +2036,22 @@ impl Session {
                     deselect_guides(&st.doc, &mut st.selection);
                 }
                 st.revision += 1;
-                journal = Some(g.journal);
+                // The journal drops only the canceled groups' own entries and keeps the ones made in other documents meanwhile.
+                journal.extend(g.journal);
             }
         }
-        if let Some(len) = journal {
-            self.journal.truncate(len);
+        // A batch that edited two of the documents is in both groups.
+        journal.sort_unstable();
+        journal.dedup_by_key(|&mut (n, _)| n);
+        // An entry that changed the active document becomes that change, so the entries after it run
+        // in the same document when the journal is replayed.
+        for &(n, index) in &journal {
+            if let Some(index) = index {
+                self.journal.replace(n, ("document.activate".to_string(), serde_json::json!({ "index": index })));
+            }
         }
+        let gone: Vec<usize> = journal.into_iter().filter(|(_, index)| index.is_none()).map(|(n, _)| n).collect();
+        self.journal.remove(&gone);
     }
 
     /// Commands with enablement (for menus, palette, MCP `list_commands`).
