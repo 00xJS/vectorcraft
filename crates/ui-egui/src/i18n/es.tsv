@@ -4567,6 +4567,9 @@ axis	Both	Ambos
 @msg	before must name a panel	before debe indicar un panel
 @msg	docking action contains an unknown panel or an excessive split path	La acción de anclaje contiene un panel desconocido o una ruta de divisiones demasiado larga
 @msg	group must be true or false	group debe ser true o false
+@msg	icon must be true or false	icon debe ser true o false
+@msg	icon only docks a panel in the icon column, with no anchor	icon solo acopla un panel en la columna de iconos, sin anchor
+@msg	column docks a set as a dock column, with no anchor or icon	column acopla un conjunto como columna del acoplamiento, sin anchor ni icon
 @msg	move requires a destination panel	Para mover se requiere un panel de destino
 @msg	move requires an existing destination panel	Para mover se requiere un panel de destino existente
 @msg	onto must name a floating panel	onto debe indicar un panel flotante

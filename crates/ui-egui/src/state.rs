@@ -145,6 +145,12 @@ pub fn all_panels() -> impl Iterator<Item = (&'static str, &'static str)> {
     tabs.chain(ICON_PANELS.iter().map(|&(id, label, _)| (id, label)))
 }
 
+/// Panel `id`'s id, English label and icon if it can live in the icon column: an icon panel, or
+/// one of the tabbed group's panels dropped there.
+pub fn rail_panel(id: &str) -> Option<(&'static str, &'static str, &'static str)> {
+    ICON_PANELS.iter().find(|entry| entry.0 == id).copied().or_else(|| DockTab::from_id(id).map(DockTab::info))
+}
+
 /// Panels that live as collapsed icons in the dock (Essentials Classic).
 pub const ICON_PANELS: &[(&str, &str, &str)] = &[
     ("color", "Color", "palette"),
@@ -774,7 +780,8 @@ impl UiState {
         FloatingPanels::sanitize(&mut self.floating_panels, &mut self.toolbar_pos);
         crate::edit_toolbar::sanitize(&mut self.toolbar_edits);
         self.docking = self.docking.filter(crate::panel_docking::valid);
-        self.docking_icons.retain(|id| ICON_PANELS.iter().any(|entry| entry.0 == id));
+        // The tabbed group's panels live in the icon column too once dropped there.
+        self.docking_icons.retain(|id| rail_panel(id).is_some());
         // Changes kept for workspaces that still exist, under their saved spelling and one per
         // workspace whatever the case (a hand-edited file).
         let mut seen = std::collections::BTreeSet::new();

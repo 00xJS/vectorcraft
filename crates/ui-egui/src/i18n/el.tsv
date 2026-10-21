@@ -4469,6 +4469,9 @@ theme	Appearance	Εμφάνιση
 @msg	before must name a panel	το before πρέπει να ορίζει πίνακα
 @msg	docking action contains an unknown panel or an excessive split path	η ενέργεια σύνδεσης περιέχει άγνωστο πίνακα ή υπερβολικά βαθιά διαδρομή διαίρεσης
 @msg	group must be true or false	το group πρέπει να είναι true ή false
+@msg	icon must be true or false	το icon πρέπει να είναι true ή false
+@msg	icon only docks a panel in the icon column, with no anchor	το icon αγκυρώνει πάνελ μόνο στη στήλη εικονιδίων, χωρίς anchor
+@msg	column docks a set as a dock column, with no anchor or icon	το column αγκυρώνει ένα σύνολο ως στήλη αγκύρωσης, χωρίς anchor ή icon
 @msg	move requires a destination panel	η μετακίνηση απαιτεί πίνακα προορισμού
 @msg	move requires an existing destination panel	η μετακίνηση απαιτεί υπάρχοντα πίνακα προορισμού
 @msg	onto must name a floating panel	το onto πρέπει να ορίζει αιωρούμενο πίνακα

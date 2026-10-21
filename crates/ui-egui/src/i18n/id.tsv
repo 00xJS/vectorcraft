@@ -4450,6 +4450,9 @@ imageTrace	Outline	Kontur
 @msg	before must name a panel	before harus menyebutkan panel
 @msg	docking action contains an unknown panel or an excessive split path	tindakan docking berisi panel tidak dikenal atau jalur pemisahan berlebihan
 @msg	group must be true or false	group harus true atau false
+@msg	icon must be true or false	icon harus true atau false
+@msg	icon only docks a panel in the icon column, with no anchor	icon hanya menambatkan panel di kolom ikon, tanpa anchor
+@msg	column docks a set as a dock column, with no anchor or icon	column menambatkan satu set sebagai kolom dok, tanpa anchor atau icon
 @msg	move requires a destination panel	move memerlukan panel tujuan
 @msg	move requires an existing destination panel	move memerlukan panel tujuan yang sudah ada
 @msg	onto must name a floating panel	onto harus menyebutkan panel mengambang

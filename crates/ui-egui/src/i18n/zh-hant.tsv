@@ -2258,6 +2258,9 @@ file-filter	Templates	範本
 @msg	before must name a panel	before 必須指定面板
 @msg	docking action contains an unknown panel or an excessive split path	停駐動作包含未知的面板或過長的分割路徑
 @msg	group must be true or false	group 必須是 true 或 false
+@msg	icon must be true or false	icon 必須為 true 或 false
+@msg	icon only docks a panel in the icon column, with no anchor	icon 只會將面板停駐到圖示欄中，不能帶 anchor
+@msg	column docks a set as a dock column, with no anchor or icon	column 會將一組面板停駐為停駐欄，不能帶 anchor 或 icon
 @msg	move requires a destination panel	移動需要目的地面板
 @msg	move requires an existing destination panel	移動需要現有的目的地面板
 @msg	onto must name a floating panel	onto 必須指定浮動面板
