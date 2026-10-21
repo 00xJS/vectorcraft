@@ -415,7 +415,8 @@ mode. To press the key during a drag, end one
 With nothing being dragged, `e` chooses the tool bound to E.
 
 Appearance stacks: an object can carry several fills and strokes (`appearance.addFill`, `appearance.addStroke`), indexed
-in paint order (0 is painted first, the bottom row of the Appearance panel). `paint.setFill`, `paint.setStroke`,
+in paint order (0 is painted first, the bottom row of the Appearance panel). Cmd+/ runs `appearance.addFill` and
+Cmd+Alt+/ runs `appearance.addStroke` (`press_key {key: "/", mods: {cmd: true, alt: true}}`). `paint.setFill`, `paint.setStroke`,
 `stroke.set`, `stroke.setAdvanced`, `paint.editGradient`, `paint.setGradientGeom` and `transparency.set` take
 `item` to edit one of them; `run_command appearance.setActiveItem {"index": n}` makes that row the target of later
 calls that omit `item` (as clicking the row in the Appearance panel does) until the selection changes; the proxy of

@@ -189,6 +189,9 @@ tools, never checked side by side) isn't captured row by row.
 
 ## Keyboard shortcuts
 
+Cmd/Ctrl+/ (`appearance.addFill`) and Cmd/Ctrl+Alt+/ (`appearance.addStroke`) add a new fill and a new stroke to the
+selected objects, as the Appearance panel's Add New Fill and Add New Stroke buttons do.
+
 ~110 distinct modified shortcuts on menu commands plus single-key tool shortcuts for the default toolbar
 (`crates/tools/src/catalog.rs`), a shortcut editor with chords, and saved sets. Not yet diffed item by item
 against Illustrator's published default shortcut list; estimated ~70% of it. Remaining: the panel shortcuts,
