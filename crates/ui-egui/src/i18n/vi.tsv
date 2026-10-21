@@ -253,6 +253,7 @@
 	Arrange: Bring to Front	Sắp xếp: Đưa lên trên cùng
 	Arrowheads:	Đầu mũi tên:
 	Art	Tác phẩm
+	Art Brush	Cọ bản vẽ
 	Art Brush Options	Tùy chọn cọ bản vẽ
 	Art using a deleted global swatch keeps its colour.	Tác phẩm dùng mẫu màu toàn cục đã xóa vẫn giữ màu của nó.
 	Artboard	Bảng vẽ
@@ -376,6 +377,7 @@
 	Bring Forward	Đưa lên trước
 	Bring to Front	Đưa lên trên cùng
 	Bristle	Lông cứng
+	Bristle Brush	Cọ lông
 	Bristle Brush Options	Tùy chọn cọ lông
 	Bristle Brush Strokes	Nét cọ lông cứng
 	Bristle Density:	Mật độ lông cọ:
@@ -383,6 +385,7 @@
 	Bristle Thickness:	Độ dày lông cọ:
 	Browser	Trình duyệt
 	Brush Affects:	Cọ tác động:
+	Brush Art	Đối tượng của cọ
 	Brush Definition	Định nghĩa cọ
 	Brush Libraries	Thư viện cọ
 	Brush Libraries (on the roadmap)	Thư viện cọ (trong lộ trình)
@@ -401,6 +404,7 @@
 	Butt Cap	Đầu nét vuông
 	Byte Order:	Thứ tự byte:
 	Calligraphic	Thư pháp
+	Calligraphic Brush	Cọ thư pháp
 	Calligraphic Brush Options	Tùy chọn cọ thư pháp
 	Can't open “{name}”.	Không thể mở “{name}”.
 	Can't save “{name}”.	Không thể lưu “{name}”.
@@ -2202,6 +2206,7 @@ file-filter	Templates	Mẫu
 	New Art Has Basic Appearance	Bản vẽ mới có diện mạo cơ bản
 	New Artboard	Bảng vẽ mới
 	New Bristle Brush	Cọ lông mới
+	New Brush	Cọ mới
 	New Brush…	Cọ mới…
 	New Calligraphic Brush	Cọ thư pháp mới
 	New Character Style	Kiểu ký tự mới
@@ -2532,6 +2537,7 @@ file-filter	Templates	Mẫu
 	Path Length	Độ dài đường dẫn
 	Paths: {paths}    Anchors: {anchors}    Colors: {colors}	Đường dẫn: {paths}    Điểm neo: {anchors}    Màu: {colors}
 	Pattern	Họa tiết
+	Pattern Brush	Cọ họa tiết
 	Pattern Brush Options	Tùy chọn cọ họa tiết
 	Pattern Editing	Chỉnh sửa họa tiết
 	Pattern Options	Tùy chọn họa tiết
@@ -3118,6 +3124,7 @@ mark-style	Japanese	Kiểu Nhật
 	Scallop Tool	Công cụ Vỏ sò
 	Scans:	Lần quét:
 	Scatter	Phân tán
+	Scatter Brush	Cọ phân tán
 	Scatter Brush Options	Tùy chọn cọ phân tán
 	Scatter Graph Tool	Công cụ Biểu đồ phân tán
 	Scatter:	Phân tán:
@@ -3173,6 +3180,7 @@ mark-style	Japanese	Kiểu Nhật
 	Select art and choose Object › Pattern › Make.	Chọn đối tượng và chọn Đối tượng › Họa tiết › Tạo.
 	Select art and click New Symbol to make one.	Chọn đối tượng và bấm Ký hiệu mới để tạo.
 	Select art and use New Brush to make one.	Chọn đối tượng và dùng Cọ mới để tạo.
+	Select art to make a scatter, art or pattern brush.	Chọn đối tượng để tạo cọ phân tán, cọ bản vẽ hoặc cọ họa tiết.
 	Select Bound Object	Chọn đối tượng gắn
 	Select Data Set	Chọn tập dữ liệu
 	Select Freeform Point	Chọn điểm tự do

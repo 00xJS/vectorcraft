@@ -11,6 +11,10 @@
 //! `angleMode`, `roundnessMode`, `sizeMode` (`fixed` | `random` | `pressure`) and
 //! `angleVariation`, `roundnessVariation`, `sizeVariation`. Bristle: `shape` (`roundPoint`…),
 //! `size` (pt), `length` (25..300 %), `density`, `thickness`, `opacity`, `stiffness` (1..100 %).
+//!
+//! New Brush opens the dialog for a brush that does not exist yet ([`open_new`]), with `__create`
+//! and, for dropped art, `__ids`: OK runs `brush.new` instead, which gives a name another brush has
+//! a number, and Cancel adds nothing.
 
 use egui::{Color32, Sense, Stroke, pos2, vec2};
 use serde_json::{Map, Value, json};
@@ -25,7 +29,13 @@ use crate::{VectorcraftApp, widgets};
 /// The dialog kind of Brush Options.
 pub const KIND: &str = "brushOptions";
 
-pub(super) const SPEC: DialogSpec = DialogSpec { heading, body, confirm, min_width: 440.0, ..DialogSpec::FORM };
+pub(super) const SPEC: DialogSpec = DialogSpec { heading, body, confirm: ok, min_width: 440.0, ..DialogSpec::FORM };
+
+/// The field of a Brush Options dialog that New Brush opened.
+const CREATE: &str = "__create";
+
+/// The field of such a dialog holding the ids of the art dropped on the Brushes panel.
+const IDS: &str = "__ids";
 
 /// Calligraphic values: (field, label, suffix, decimals), in [`Calligraphic::RANGES`] order.
 const CALLI: [(&str, &str, &str, usize); 3] = [("angle", "Angle:", "°", 0), ("roundness", "Roundness:", "%", 0), ("size", "Size:", " pt", 1)];
@@ -84,8 +94,15 @@ pub fn open(app: &mut VectorcraftApp, name: Option<&str>) -> Result<Value, Strin
     };
     let def = app.run("brush.get", json!({ "name": name }))?;
     let b: Brush = serde_json::from_value(def.clone()).map_err(|e| e.to_string())?;
-    let mut f = Map::new();
+    let mut f = fields(&b, def)?;
     f.insert("__brush".into(), json!(b.name));
+    app.ui.dialog = Some(Dialog { kind: KIND.into(), fields: f });
+    Ok(Value::Null)
+}
+
+/// The fields of brush `b`, whose definition is `def`.
+fn fields(b: &Brush, def: Value) -> Result<Map<String, Value>, String> {
+    let mut f = Map::new();
     f.insert("name".into(), json!(b.name));
     f.insert("__type".into(), json!(b.kind.type_id()));
     match &b.kind {
@@ -105,10 +122,9 @@ pub fn open(app: &mut VectorcraftApp, name: Option<&str>) -> Result<Value, Strin
             }
         }
         // The definition goes along, for the preview (and the art it carries).
-        BrushKind::Scatter(_) | BrushKind::Art(_) | BrushKind::Pattern(_) => brush_art_options::fields(&b, def, &mut f),
+        BrushKind::Scatter(_) | BrushKind::Art(_) | BrushKind::Pattern(_) => brush_art_options::fields(b, def, &mut f),
     }
-    app.ui.dialog = Some(Dialog { kind: KIND.into(), fields: f });
-    Ok(Value::Null)
+    Ok(f)
 }
 
 /// Can Brush Options open without a name (the selected path's brush, else the current one, exists)?
@@ -122,6 +138,61 @@ fn target(app: &VectorcraftApp) -> Option<String> {
     let st = app.session.active()?;
     let selected = st.selection.subjects().first().and_then(|id| st.doc.node(*id)).and_then(|n| n.appearance.stroke()?.brush.clone());
     selected.or_else(|| vectorcraft_brush::current(&st.doc))
+}
+
+/// Open the Brush Options of a new brush of type `ty` (`calligraphic` | `scatter` | `art` |
+/// `bristle` | `pattern`), the second step of New Brush. The fields start from the type's default
+/// values and the name "New <Type> Brush", numbered when another brush has it. A scatter or art
+/// brush takes the art `brush.selectionArt` gives for `ids` (else for the selection) as its art,
+/// and a pattern brush takes it as its side tile; the preview draws it. Without that art nothing
+/// opens.
+pub(super) fn open_new(app: &mut VectorcraftApp, ty: &str, ids: Option<Value>) -> Result<Value, String> {
+    let st = app.session.active().ok_or("no document open")?;
+    let title: String = ty.chars().take(1).flat_map(char::to_uppercase).chain(ty.chars().skip(1)).collect();
+    let name = vectorcraft_brush::unique_name(&vectorcraft_brush::library(&st.doc), &format!("New {title} Brush"));
+    let mut def = json!({ "name": name, "type": ty });
+    let art_key = match ty {
+        "scatter" | "art" => Some("art"),
+        "pattern" => Some("side"),
+        _ => None,
+    };
+    if let Some(key) = art_key {
+        let mut r = app.run("brush.selectionArt", ids.clone().map_or_else(|| json!({}), |ids| json!({ "ids": ids })))?;
+        let art = r["art"].take();
+        if art.is_null() {
+            return Err("nothing selected".into());
+        }
+        def[key] = art;
+    }
+    let mut b: Brush = serde_json::from_value(def).map_err(|e| e.to_string())?;
+    b.sanitize();
+    let def = serde_json::to_value(&b).map_err(|e| e.to_string())?;
+    let mut f = fields(&b, def)?;
+    f.insert(CREATE.into(), json!(true));
+    if let Some(ids) = ids {
+        f.insert(IDS.into(), ids);
+    }
+    app.ui.dialog = Some(Dialog { kind: KIND.into(), fields: f });
+    Ok(Value::Null)
+}
+
+/// OK of a new brush's Brush Options: `brush.new` with the type, the name, the values set and the
+/// dropped art's ids. The dialog closes once the brush is made.
+fn create(app: &mut VectorcraftApp, d: &Dialog) -> Result<Value, String> {
+    let mut p = json!({ "type": d.str("__type"), "name": d.str("name").trim(), "params": params(d) });
+    if let Some(ids) = d.fields.get(IDS) {
+        p["ids"] = ids.clone();
+    }
+    let r = app.run("brush.new", p);
+    if r.is_ok() {
+        app.ui.dialog = None;
+    }
+    r
+}
+
+/// OK: make the new brush when New Brush opened the dialog, else edit the brush.
+fn ok(app: &mut VectorcraftApp, d: &Dialog) -> Result<Value, String> {
+    if d.bool(CREATE) { create(app, d) } else { confirm(app, d) }
 }
 
 /// The value of field `key` within `range`.

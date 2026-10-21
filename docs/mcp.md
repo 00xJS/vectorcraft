@@ -1295,6 +1295,14 @@ already walks Image Trace. Short agent entry points:
   mask and graphic style link. With a Live Paint group among the objects, `livePaint.make` adds the others to it as
   `livePaint.merge` does, and so does `livePaint.fill {ids}` when `point` is outside that group's faces.
 
+`brush.selectionArt {ids?|id?}` (a query) replies `{art}`: the object that `brush.new` given the same `ids` or `id`,
+or the same selection, takes as a new scatter or art brush's art and as a new pattern brush's side tile. Several
+objects become one group, and `art` is `null` when nothing is selected or `ids` name no object. In the app, the
+Brushes panel's New Brush button, its menu's New Brush… and art dropped on the panel open New Brush
+(`ui.newBrush {ids?}`, dialog `newBrush`, field `type`). Scatter, art and pattern need art. OK opens that type's
+Brush Options for the new brush; for a scatter, art or pattern brush they preview the art from `brush.selectionArt`.
+Their OK runs `brush.new {type, name, params, ids?}`, and Cancel adds no brush.
+
 `dataset.select`, `dataset.next` and `dataset.prev` reply `{name, applied, skipped}`. They add `overflow: [id…]`
 when area type or type on a path whose text they rewrote doesn't fit, as `text.setText` does (see
 [Fitting area type](#fitting-area-type-auto-size-shrink-text-to-fit-overflow)). They skip an object that is

@@ -323,6 +323,7 @@
 	Art	Grafikus
 	Art & Illustration	Grafika és illusztráció
 	Art and Bright Colors	Grafika és élénk színek
+	Art Brush	Grafikus ecset
 	Art Brush Options	Grafikus ecset beállításai
 	Art Optimized	Grafikára optimalizált
 	Art using a deleted global swatch keeps its colour.	A törölt globális színmintát használó grafika megtartja a színét.
@@ -457,6 +458,7 @@
 	Bring Forward	Eggyel előre
 	Bring to Front	Előre hozás
 	Bristle	Sörte
+	Bristle Brush	Sörteecset
 	Bristle Brush Options	Sörteecset beállításai
 	Bristle Brush Strokes	Sörteecset-vonások
 	Bristle Density:	Sörtesűrűség:
@@ -465,6 +467,7 @@
 	Brown	Barna
 	Browser	Böngésző
 	Brush Affects:	Az ecset ezekre hat:
+	Brush Art	Ecsetgrafika
 	Brush Definition	Ecsetdefiníció
 	Brush Libraries	Ecsetkönyvtárak
 	Brush Libraries (on the roadmap)	Ecsetkönyvtárak (tervezett funkció)
@@ -485,6 +488,7 @@
 	Butt Cap	Lapos vonalvég
 	Byte Order:	Bájtsorrend:
 	Calligraphic	Kalligrafikus
+	Calligraphic Brush	Kalligrafikus ecset
 	Calligraphic Brush Options	Kalligrafikus ecset beállításai
 	Can't open “{name}”.	Nem nyitható meg: „{name}”.
 	Can't save “{name}”.	Nem menthető: „{name}”.
@@ -2394,6 +2398,7 @@ file-filter	Templates	Sablonok
 	New Art Has Basic Appearance	Új grafika alapmegjelenéssel
 	New Artboard	Új rajztábla
 	New Bristle Brush	Új sörteecset
+	New Brush	Új ecset
 	New Brush…	Új ecset…
 	New Calligraphic Brush	Új kalligrafikus ecset
 	New Character Style	Új karakterstílus
@@ -2724,6 +2729,7 @@ file-filter	Templates	Sablonok
 	Path Length	Útvonalak hossza
 	Paths: {paths}    Anchors: {anchors}    Colors: {colors}	Útvonalak: {paths}    Horgonypontok: {anchors}    Színek: {colors}
 	Pattern	Mintázat
+	Pattern Brush	Mintázatecset
 	Pattern Brush Options	Mintázatecset beállításai
 	Pattern Editing	Mintázatszerkesztés
 	Pattern Options	Mintázat beállításai
@@ -3367,6 +3373,7 @@ mark-style	Japanese	Japán
 	Scallop Tool	Csipkézés
 	Scans:	Letapogatások:
 	Scatter	Szóró
+	Scatter Brush	Szóróecset
 	Scatter Brush Options	Szóróecset beállításai
 	Scatter Graph Tool	Pontdiagram
 	Scatter:	Szóródás:
@@ -3423,6 +3430,7 @@ mark-style	Japanese	Japán
 	Select art and choose Object › Pattern › Make.	Jelölj ki egy grafikát, és válaszd az Objektum › Mintázat › Létrehozás parancsot.
 	Select art and click New Symbol to make one.	Jelölj ki egy grafikát, és kattints az Új szimbólum gombra.
 	Select art and use New Brush to make one.	Jelölj ki egy grafikát, és hozz létre belőle ecsetet az Új ecset paranccsal.
+	Select art to make a scatter, art or pattern brush.	Jelölj ki egy grafikát szóró-, grafikus vagy mintázatecset létrehozásához.
 	Select Bound Object	Kötött objektum kijelölése
 	Select Data Set	Adatkészlet kiválasztása
 	Select Freeform Point	Szabad formájú pont kijelölése

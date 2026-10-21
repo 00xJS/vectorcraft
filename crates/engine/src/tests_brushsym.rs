@@ -230,6 +230,29 @@ fn brush_rename_reaches_the_tile_that_pattern_cancel_puts_back() {
     assert_eq!(brushes, ["Chalk"]);
 }
 
+/// `brush.selectionArt` gives the art `brush.new` takes: the selected object, a group of the selected
+/// objects, the object of `ids`, or null when nothing is selected. It changes nothing.
+#[test]
+fn selection_art_is_the_art_new_brush_takes() {
+    let mut s = session();
+    let art = |s: &mut Session, p: Value| s.execute("brush.selectionArt", &p).unwrap()["art"].clone();
+    s.select(|_, sel| sel.clear()).unwrap();
+    assert_eq!(art(&mut s, json!({})), Value::Null);
+    let a = rect(&mut s, 0.0, 0.0, 40.0, 8.0);
+    let b = rect(&mut s, 0.0, 20.0, 40.0, 8.0);
+    let steps = s.doc().unwrap().history.undo.len();
+    select(&mut s, &[a, b]);
+    let group: Node = serde_json::from_value(art(&mut s, json!({}))).unwrap();
+    assert!(matches!(&group.kind, NodeKind::Group { children, .. } if children.len() == 2), "{group:?}");
+    let one: Node = serde_json::from_value(art(&mut s, json!({"ids": [a.0]}))).unwrap();
+    assert_eq!(one.geometric_bounds(), Some(bounds(&s, a)));
+    // The art brush `brush.new` makes from the same selection holds the same art.
+    s.execute("brush.new", &json!({"type": "art", "name": "Two"})).unwrap();
+    let made: Node = serde_json::from_value(s.execute("brush.get", &json!({"name": "Two"})).unwrap()["art"].clone()).unwrap();
+    assert_eq!(made.geometric_bounds(), group.geometric_bounds());
+    assert_eq!(s.doc().unwrap().history.undo.len(), steps + 1, "only brush.new is an undo step");
+}
+
 #[test]
 fn brush_options_rename_duplicate_and_delete_update_strokes() {
     let mut s = session();
