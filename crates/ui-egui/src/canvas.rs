@@ -265,6 +265,11 @@ pub fn show(app: &mut VectorcraftApp, ui: &mut Ui) {
         egui::Popup::close_all(ui.ctx());
     } else {
         handle_input(app, ui, &resp, rect);
+        // `hover_doc` is the document point under the pointer in the view `handle_input` left. The
+        // wheel, a pan, a Rotate View drag, the Zoom tool and a Presentation Mode click move the view
+        // there.
+        let moved = Xf::new(rect, app.view().unwrap_or(&View::default()));
+        app.hover_doc = ui.input(|i| i.pointer.hover_pos()).filter(|p| rect.contains(*p)).map(|p| moved.to_doc(p));
     }
     let v = *app.view().unwrap_or(&View::default());
     let xf = Xf::new(rect, &v);
@@ -762,33 +767,10 @@ fn handle_input(app: &mut VectorcraftApp, ui: &Ui, resp: &egui::Response, rect: 
     if turn.glide != 0.0 {
         ui.ctx().request_repaint();
     }
-    let v = *app.view().unwrap_or(&View::default());
-    let xf = Xf::new(rect, &v);
     let hover = pointer.hover_pos().filter(|p| rect.contains(*p));
-    // A lifted pen or finger takes the pointer away in the frame it lifts (egui's `PointerGone`),
-    // so a tap whose press and lift come in one frame has no hover position: it presses (and
-    // double-taps) where it was seen last (#491).
-    let at = hover.or_else(|| pointer.interact_pos().filter(|p| rect.contains(*p)));
-    app.hover_doc = hover.map(|p| xf.to_doc(p));
-    let view = app.view_info();
-    touch_gestures(app, ui, rect, view);
-    // Pressed and held still, a pen or a finger opens the context menu (egui's long touch): the
-    // tool's press is dropped, as a right-click presses nothing.
-    if resp.long_touched() {
-        drop_press(app, ui, view);
-    }
-    let drag: Option<Drag> = ui.data(|d| d.get_temp(drag_id()));
-    // A modifier pressed or released over the canvas re-hovers the tool, so what it changes shows
-    // without moving the mouse (Alt switches the Shape Builder to erase mode).
-    let mods_changed = ui.data_mut(|d| {
-        let id = egui::Id::new("canvas-mods");
-        let prev = d.get_temp::<egui::Modifiers>(id);
-        d.insert_temp(id, m);
-        prev.is_some_and(|prev| prev != m)
-    });
-
     // Zoom around the pointer, and scroll ([`wheel`]): fingers pinching on a touch screen may also
-    // slide. Then turn the view about the pointer for a trackpad rotation ([`trackpad_turn`]).
+    // slide. Then turn the view about the pointer for a trackpad rotation ([`trackpad_turn`]). The
+    // tool's events below take their document points from the view this moves to.
     if resp.hovered() {
         if (factor - 1.0).abs() > 1e-6
             && let (Some(p), Some(vm)) = (hover, app.view_mut())
@@ -808,6 +790,28 @@ fn handle_input(app: &mut VectorcraftApp, ui: &Ui, resp: &egui::Response, rect: 
             rotate_about(vm, rect, p, deg);
         }
     }
+    let v = *app.view().unwrap_or(&View::default());
+    let xf = Xf::new(rect, &v);
+    // A lifted pen or finger takes the pointer away in the frame it lifts (egui's `PointerGone`),
+    // so a tap whose press and lift come in one frame has no hover position: it presses (and
+    // double-taps) where it was seen last (#491).
+    let at = hover.or_else(|| pointer.interact_pos().filter(|p| rect.contains(*p)));
+    let view = app.view_info();
+    touch_gestures(app, ui, rect, view);
+    // Pressed and held still, a pen or a finger opens the context menu (egui's long touch): the
+    // tool's press is dropped, as a right-click presses nothing.
+    if resp.long_touched() {
+        drop_press(app, ui, view);
+    }
+    let drag: Option<Drag> = ui.data(|d| d.get_temp(drag_id()));
+    // A modifier pressed or released over the canvas re-hovers the tool, so what it changes shows
+    // without moving the mouse (Alt switches the Shape Builder to erase mode).
+    let mods_changed = ui.data_mut(|d| {
+        let id = egui::Id::new("canvas-mods");
+        let prev = d.get_temp::<egui::Modifiers>(id);
+        d.insert_temp(id, m);
+        prev.is_some_and(|prev| prev != m)
+    });
 
     // In Presentation Mode a click anywhere goes to the next artboard. The tool receives no press,
     // drag or hover, and a drag does not pan the view. A drag that began before the mode was turned
@@ -6311,6 +6315,102 @@ mod tests {
         assert!(first > 1.0 && first < done, "the first frame takes only part of it ({first} of {done})");
         run(&mut app);
         assert_eq!(app.view().unwrap().zoom / before, done, "and it stops");
+    }
+
+    /// In each frame where a wheel scroll moves the view, the hover point (read by the rulers'
+    /// pointer marks, the Info panel, the hover highlight and the tool cursor) is the document point
+    /// under the pointer in the view the canvas draws in that frame.
+    #[test]
+    fn the_hover_point_follows_a_wheel_scroll_in_the_frame_it_moves() {
+        let mut app = VectorcraftApp::new(Session::new(), Default::default());
+        app.session.execute("file.new", &json!({"width": 400, "height": 300})).unwrap();
+        let ctx = egui::Context::default();
+        frame(&mut app, &ctx, vec![]);
+        let rect = app.canvas_rect.unwrap();
+        let at = rect.center() + vec2(60.0, 40.0);
+        frame(&mut app, &ctx, vec![egui::Event::PointerMoved(at)]);
+        let under = |app: &VectorcraftApp| Xf::new(rect, app.view().unwrap()).to_doc(at);
+        let wheel = egui::Event::MouseWheel {
+            unit: egui::MouseWheelUnit::Point,
+            delta: vec2(0.0, -60.0),
+            phase: egui::TouchPhase::Move,
+            modifiers: Default::default(),
+        };
+        let mut events = vec![wheel];
+        let mut moved = 0;
+        for k in 0..30 {
+            let before = app.view().unwrap().center;
+            frame(&mut app, &ctx, std::mem::take(&mut events));
+            moved += usize::from(app.view().unwrap().center != before);
+            let hover = app.hover_doc.unwrap();
+            assert!(hover.distance(under(&app)) < 1e-9, "frame {k}: {hover:?}, under the pointer {:?}", under(&app));
+        }
+        assert!(moved > 0, "the wheel scrolls the view");
+    }
+
+    /// While a middle-button pan or a Rotate View drag moves the view, the hover point is the
+    /// document point under the pointer in the view the canvas draws in that frame.
+    #[test]
+    fn the_hover_point_follows_a_view_drag_in_the_frame_it_moves() {
+        for (tool, button) in [("rectangle", egui::PointerButton::Middle), ("rotateView", egui::PointerButton::Primary)] {
+            let mut app = VectorcraftApp::new(Session::new(), Default::default());
+            app.session.execute("file.new", &json!({"width": 400, "height": 300})).unwrap();
+            app.select_tool(tool);
+            let ctx = egui::Context::default();
+            frame(&mut app, &ctx, vec![]);
+            let rect = app.canvas_rect.unwrap();
+            let press = |pos, pressed| egui::Event::PointerButton { pos, button, pressed, modifiers: Default::default() };
+            let a = rect.center() + vec2(100.0, 20.0);
+            frame(&mut app, &ctx, vec![egui::Event::PointerMoved(a)]);
+            frame(&mut app, &ctx, vec![press(a, true)]);
+            let mut p = a;
+            for k in 1..=3 {
+                p = a + vec2(-20.0, 30.0) * k as f32;
+                let before = *app.view().unwrap();
+                frame(&mut app, &ctx, vec![egui::Event::PointerMoved(p)]);
+                let after = *app.view().unwrap();
+                assert!(after.center != before.center || after.rotation != before.rotation, "{tool}: the drag moves the view");
+                let under = Xf::new(rect, &after).to_doc(p);
+                let hover = app.hover_doc.unwrap();
+                assert!(hover.distance(under) < 1e-9, "{tool}, step {k}: {hover:?}, under the pointer {under:?}");
+            }
+            frame(&mut app, &ctx, vec![press(p, false)]);
+        }
+    }
+
+    /// A tool drag goes on at the document point under the pointer in the view a wheel scroll moved
+    /// to, in the frame the wheel scrolls.
+    #[test]
+    fn a_tool_drag_follows_a_wheel_scroll_in_the_frame_it_moves() {
+        let mut app = VectorcraftApp::new(Session::new(), Default::default());
+        app.session.execute("file.new", &json!({"width": 400, "height": 300})).unwrap();
+        // With Zoom with Mouse Wheel on, Shift-wheel scrolls up and down in the frame it comes in.
+        app.session.execute("prefs.set", &json!({"key": "zoomWithMouseWheel", "value": true})).unwrap();
+        app.ui.view.smart_guides = false;
+        app.select_tool("rectangle");
+        let ctx = egui::Context::default();
+        frame(&mut app, &ctx, vec![]);
+        let rect = app.canvas_rect.unwrap();
+        let (a, b) = (rect.center() - vec2(80.0, 60.0), rect.center() + vec2(40.0, 30.0));
+        frame(&mut app, &ctx, vec![egui::Event::PointerMoved(a)]);
+        frame(&mut app, &ctx, vec![primary(a, true)]);
+        frame(&mut app, &ctx, vec![egui::Event::PointerMoved(b)]);
+        let before = *app.view().unwrap();
+        let wheel = egui::Event::MouseWheel {
+            unit: egui::MouseWheelUnit::Point,
+            delta: vec2(0.0, -40.0),
+            phase: egui::TouchPhase::Move,
+            modifiers: egui::Modifiers::SHIFT,
+        };
+        frame(&mut app, &ctx, vec![wheel]);
+        let after = *app.view().unwrap();
+        assert!(after.center != before.center, "Shift-wheel scrolls the view");
+        let want = Xf::new(rect, &after).to_doc(b);
+        let bounds = |app: &VectorcraftApp| app.session.active().unwrap().doc.layers[0].children().unwrap()[0].geometric_bounds().unwrap();
+        let r = bounds(&app);
+        assert!((r.x1 - want.x).abs() < 1e-6 && ((r.y0 - want.y).abs() < 1e-6 || (r.y1 - want.y).abs() < 1e-6), "{r:?} reaches {want:?}");
+        frame(&mut app, &ctx, vec![primary(b, false)]);
+        assert_eq!(bounds(&app), r, "the rectangle drawn");
     }
 
     /// Two fingers dragged together on a touch screen pan the canvas with them, under either
