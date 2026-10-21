@@ -113,6 +113,12 @@ pub struct CharStyle {
     /// these characters are drawn in, whatever digits were typed.
     #[serde(default, skip_serializing_if = "crate::skip::is_default")]
     pub digits: Digits,
+    /// No Break (Character panel menu): these characters are not broken across lines, including
+    /// at a space or a hyphenation point inside the run. A run longer than the line stays together
+    /// and can overflow it.
+    /// <https://helpx.adobe.com/illustrator/using/hyphenation-line-breaks.html>
+    #[serde(default, rename = "noBreak", skip_serializing_if = "crate::skip::is_default")]
+    pub no_break: bool,
 }
 
 /// The numeral system digits are drawn in ([`CharStyle::digits`]): as typed, or every digit of
@@ -285,6 +291,7 @@ impl Default for CharStyle {
             proportional_metrics: false,
             small_caps: None,
             digits: Digits::Default,
+            no_break: false,
         }
     }
 }

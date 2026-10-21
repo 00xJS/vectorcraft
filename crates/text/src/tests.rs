@@ -1272,3 +1272,20 @@ fn thai_loanwords_stay_whole() {
     let word = text.find("โปรแกรม").unwrap();
     assert!(l.lines.iter().all(|ln| ln.end <= word || ln.end >= word + "โปรแกรม".len()), "{lines:?}");
 }
+
+/// No Break (Character panel menu) keeps the marked words on one line, where the same text wraps
+/// at the space without the mark.
+#[test]
+fn no_break_keeps_marked_words_on_one_line() {
+    let plain = style(20.0);
+    let marked = CharStyle { no_break: true, ..plain.clone() };
+    let hello: f64 = layout(db(), &point("hello ", plain.clone())).glyphs.iter().map(|g| g.advance).sum();
+    let whole: f64 = layout(db(), &point("hello world", plain.clone())).glyphs.iter().map(|g| g.advance).sum();
+    assert!(whole > hello + 1.0, "the second word takes room");
+    let frame = Rect::new(0.0, 0.0, hello + 1.0, 200.0);
+    let wrapped = layout(db(), &area("hello world", plain, frame, Justify::Left));
+    assert!(wrapped.lines.len() > 1, "it wraps at the space");
+    let kept = layout(db(), &area("hello world", marked, frame, Justify::Left));
+    assert_eq!(kept.lines.len(), 1, "the marked words stay together");
+    assert_eq!(kept.lines[0].end, "hello world".len());
+}
