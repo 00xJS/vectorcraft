@@ -200,6 +200,12 @@ pub(super) fn clamped(d: &Dialog, key: &str, (lo, hi): (f64, f64)) -> f64 {
     d.f64(key, lo).clamp(lo, hi)
 }
 
+/// Is `d` Scatter, Art or Pattern Brush Options with Colorization Tips open? Escape then closes
+/// Tips, not the dialog.
+pub(crate) fn tips_open(d: &Dialog) -> bool {
+    d.kind == KIND && d.bool("tips") && !matches!(d.str("__type").as_str(), "bristle" | "calligraphic")
+}
+
 /// The Calligraphic brush the fields describe.
 fn calligraphic(d: &Dialog) -> Calligraphic {
     let value = |i: usize| CALLI.get(i).zip(Calligraphic::RANGES.get(i)).map_or(0.0, |((key, ..), r)| clamped(d, key, *r));
@@ -286,11 +292,15 @@ fn bristle_body(app: &mut VectorcraftApp, ui: &mut egui::Ui, d: &mut Dialog) {
 }
 
 /// A stroke painted with the brush the fields describe (type `ty`, definition fields `def`).
-pub(super) fn stroke_preview(ui: &mut egui::Ui, ty: &str, mut def: Value, size: egui::Vec2) {
-    def["name"] = json!("preview");
-    def["type"] = json!(ty);
+pub(super) fn stroke_preview(ui: &mut egui::Ui, ty: &str, def: Value, size: egui::Vec2) {
+    let mut def = match def {
+        Value::Object(o) => o,
+        _ => Map::new(),
+    };
+    def.insert("name".into(), json!("preview"));
+    def.insert("type".into(), json!(ty));
     let (r, _) = ui.allocate_exact_size(size, Sense::hover());
-    crate::panels::brushes::chip(ui, r, &def);
+    crate::panels::brushes::chip(ui, r, &Value::Object(def));
     ui.painter().rect_stroke(r, 0.0, Stroke::new(1.0, Tokens::get(ui.ctx()).input_border), egui::StrokeKind::Inside);
 }
 
@@ -522,6 +532,161 @@ mod tests {
         set(&mut app, json!({"scaleMode": "stretch"}));
         super::super::confirm(&mut app).unwrap();
         assert_eq!(app.run("brush.get", json!({"name": "Arrow"})).unwrap()["scale"], json!({"mode": "stretch"}));
+    }
+
+    /// A context with the app's fonts and theme, for [`frame`].
+    fn ctx() -> egui::Context {
+        let ctx = egui::Context::default();
+        crate::theme::install_fonts(&ctx);
+        crate::theme::apply(&ctx, Default::default());
+        ctx
+    }
+
+    /// Runs one 1200 × 900 frame with `events` through the app's key handling and the dialogs, and
+    /// returns the center of the text `label` if the frame shows it.
+    fn frame(ctx: &egui::Context, app: &mut VectorcraftApp, events: Vec<egui::Event>, label: &str) -> Option<egui::Pos2> {
+        use egui::{Pos2, Rect};
+        let raw = egui::RawInput { screen_rect: Some(Rect::from_min_size(Pos2::ZERO, vec2(1200.0, 900.0))), events, ..Default::default() };
+        let mut out = ctx.run_ui(raw, |ui| {
+            crate::shortcuts::handle(app, ui.ctx());
+            super::super::show(app, ui.ctx());
+        });
+        out.textures_delta.clear();
+        out.shapes.iter().find_map(|s| match &s.shape {
+            egui::Shape::Text(t) if t.galley.text() == label => Some(egui::Rect::from_min_size(t.pos, t.galley.size()).center()),
+            _ => None,
+        })
+    }
+
+    /// Clicks the text `label` the open dialog shows.
+    fn click_text(ctx: &egui::Context, app: &mut VectorcraftApp, label: &str) {
+        use egui::{Event, PointerButton};
+        frame(ctx, app, vec![], label);
+        let at = frame(ctx, app, vec![], label).unwrap_or_else(|| panic!("no {label:?} shown"));
+        let button = |pressed| Event::PointerButton { pos: at, button: PointerButton::Primary, pressed, modifiers: Default::default() };
+        frame(ctx, app, vec![Event::PointerMoved(at), button(true)], label);
+        frame(ctx, app, vec![button(false)], label);
+        frame(ctx, app, vec![], label);
+    }
+
+    /// Presses Escape.
+    fn escape(ctx: &egui::Context, app: &mut VectorcraftApp) {
+        let key = egui::Event::Key { key: egui::Key::Escape, physical_key: None, pressed: true, repeat: false, modifiers: Default::default() };
+        frame(ctx, app, vec![key], "");
+        frame(ctx, app, vec![], "");
+    }
+
+    /// Scatter, Art and Pattern Brush Options have a Tips button beside Method. A click on it opens
+    /// Colorization Tips, which names each method and what it does beside a sample of the brush,
+    /// and a second click closes it. Screen readers name the button, the popover and each sample.
+    #[test]
+    fn tips_names_each_colorization_method_beside_a_sample() {
+        use crate::widgets::accessibility_tests::{role_and_state, tree};
+        use egui::accesskit::Role;
+        let mut app = app();
+        for name in ["Confetti", "Arrow", "Chain"] {
+            app.run("ui.brushOptions", json!({ "name": name })).unwrap();
+            let text = shown(&mut app);
+            assert!(text.lines().any(|l| l == "Tips") && !text.contains("Colorization Tips"), "{name}: {text}");
+        }
+        app.run("ui.brushOptions", json!({"name": "Confetti"})).unwrap();
+        let ctx = ctx();
+        click_text(&ctx, &mut app, "Tips");
+        assert!(app.ui.dialog.as_ref().unwrap().bool("tips"), "Tips opens Colorization Tips");
+        let text = shown(&mut app);
+        for label in [
+            "Colorization Tips",
+            "The samples show this brush on a blue stroke.",
+            "None",
+            "The art keeps its own colors.",
+            "Tints",
+            "Black becomes the stroke color and white stays white. Other colors become tints of the stroke color by their lightness.",
+            "Tints and Shades",
+            "Hue Shift",
+            "The key color becomes the stroke color. The other colors shift their hue by the same amount and keep their saturation and brightness.",
+            "Black and white stay as they are. Dark colors become shades of the stroke color and light colors become tints of it.",
+        ] {
+            assert!(text.contains(label), "{label} in {text}");
+        }
+        let nodes = tree(|ui| super::super::show(&mut app, ui.ctx()));
+        assert_eq!(role_and_state(&nodes, "Tips").0, Role::Button);
+        assert_eq!(role_and_state(&nodes, "Colorization Tips").0, Role::Dialog);
+        for method in ["None", "Tints", "Tints and Shades", "Hue Shift"] {
+            assert!(nodes.iter().any(|n| n.role() == Role::Image && n.label() == Some(method)), "a sample named {method}");
+        }
+        click_text(&ctx, &mut app, "Tips");
+        assert!(!app.ui.dialog.as_ref().unwrap().bool("tips"), "a second click closes it");
+        assert!(!shown(&mut app).contains("Colorization Tips"));
+        // `ui.dialog.set {field: "tips", value: true}` opens it too.
+        set(&mut app, json!({"tips": true}));
+        assert!(shown(&mut app).contains("Colorization Tips"));
+    }
+
+    /// Escape with Colorization Tips or the Method list open closes only that: Brush Options stays
+    /// open with its edits, and the next Escape cancels it.
+    #[test]
+    fn escape_closes_tips_or_the_method_list_and_leaves_the_dialog_open() {
+        let (mut app, ctx) = (app(), ctx());
+        app.run("ui.brushOptions", json!({"name": "Confetti"})).unwrap();
+        set(&mut app, json!({"colorization": "tints"}));
+        click_text(&ctx, &mut app, "Tips");
+        assert!(app.ui.dialog.as_ref().unwrap().bool("tips"));
+        escape(&ctx, &mut app);
+        let d = app.ui.dialog.as_ref().expect("Escape closes Tips, not Brush Options");
+        assert!(!d.bool("tips") && d.str("colorization") == "tints");
+        assert!(frame(&ctx, &mut app, vec![], "Colorization Tips").is_none());
+        click_text(&ctx, &mut app, "Tints");
+        assert!(egui::Popup::is_any_open(&ctx), "the Method list is open");
+        escape(&ctx, &mut app);
+        assert!(app.ui.dialog.as_ref().is_some_and(|d| d.str("colorization") == "tints"), "Escape closes the list, not Brush Options");
+        assert!(!egui::Popup::is_any_open(&ctx));
+        escape(&ctx, &mut app);
+        assert!(app.ui.dialog.is_none(), "the next Escape cancels Brush Options");
+        // Calligraphic Brush Options has no Tips: with `tips` set, Escape still cancels it.
+        app.run("ui.brushOptions", json!({"name": "6 pt. Flat"})).unwrap();
+        set(&mut app, json!({"tips": true}));
+        escape(&ctx, &mut app);
+        assert!(app.ui.dialog.is_none(), "Escape cancels Calligraphic Brush Options");
+    }
+
+    /// Each Colorization Tips sample paints the brush with its own method on the blue stroke:
+    /// Confetti's black and gray art keeps its colors with None, its black becomes the stroke color
+    /// with Tints and with Hue Shift (black is its key color), and stays black with Tints and Shades.
+    #[test]
+    fn each_tips_sample_paints_the_brush_with_its_method() {
+        let mut app = app();
+        app.run("ui.brushOptions", json!({"name": "Confetti"})).unwrap();
+        let d = app.ui.dialog.as_ref().unwrap();
+        let key: vectorcraft_color::Color = serde_json::from_value(d.fields["keyColor"].clone()).unwrap();
+        let colors = |id: &str| -> Vec<String> {
+            let method = vectorcraft_brush::Colorization::parse(id, key).unwrap();
+            let doc = brush_art_options::tip_doc(&brush_art_options::edited_def(d), "scatter", method, 120.0, 44.0).unwrap();
+            let mut hex: Vec<String> = vectorcraft_brush::art_colors(doc.layers.iter().map(|l| l.as_ref())).iter().map(|c| c.to_hex()).collect();
+            hex.sort();
+            hex
+        };
+        let (black, blue) = ("#000000".to_string(), brush_art_options::TIP_STROKE.to_hex());
+        let confetti = vectorcraft_brush::defaults().iter().find(|b| b.name == "Confetti").unwrap();
+        let art: Vec<String> = vectorcraft_brush::art_colors(confetti.art()).iter().map(|c| c.to_hex()).collect();
+        let none = colors("none");
+        assert!(none.len() == 2 && art.iter().all(|c| none.contains(c)), "None keeps the art's colors {art:?}: {none:?}");
+        let (tints, shades, hue) = (colors("tints"), colors("tintsAndShades"), colors("hueShift"));
+        assert!(tints.contains(&blue) && !tints.contains(&black), "{tints:?}");
+        assert!(shades.contains(&black) && !shades.contains(&blue), "{shades:?}");
+        assert!(hue.contains(&blue) && !hue.contains(&black), "{hue:?}");
+        assert!(tints != hue && tints != shades && none != shades, "four different samples");
+    }
+
+    /// `ui.dialog.set` writes any field, `__def` included. With a brush definition that is not
+    /// an object, Brush Options and Colorization Tips still draw.
+    #[test]
+    fn a_brush_definition_that_is_not_an_object_still_draws() {
+        let (mut app, ctx) = (app(), ctx());
+        app.run("ui.brushOptions", json!({"name": "Confetti"})).unwrap();
+        crate::tests_synthetic::control(&mut app, &ctx, "ui.dialog.set", json!({"field": "__def", "value": 5}));
+        crate::tests_synthetic::control(&mut app, &ctx, "ui.dialog.set", json!({"field": "tips", "value": true}));
+        let text = shown(&mut app);
+        assert!(text.contains("Scatter Brush Options") && text.contains("Colorization Tips"), "{text}");
     }
 
     #[test]

@@ -2632,6 +2632,13 @@ theme	Appearance	Εμφάνιση
 	Tints and Shades	Αποχρώσεις και σκιάσεις
 	Hue Shift	Μετατόπιση απόχρωσης
 	Key Color:	Βασικό χρώμα:
+	Tips	Συμβουλές
+	Colorization Tips	Συμβουλές χρωματισμού
+	The samples show this brush on a blue stroke.	Τα δείγματα δείχνουν αυτό το πινέλο σε μπλε περίγραμμα.
+	The art keeps its own colors.	Το σχέδιο διατηρεί τα δικά του χρώματα.
+	Black becomes the stroke color and white stays white. Other colors become tints of the stroke color by their lightness.	Το μαύρο γίνεται το χρώμα του περιγράμματος και το λευκό μένει λευκό. Τα άλλα χρώματα γίνονται αποχρώσεις του χρώματος του περιγράμματος, και όσο πιο ανοιχτό είναι ένα χρώμα, τόσο πιο ανοιχτή είναι η απόχρωσή του.
+	Black and white stay as they are. Dark colors become shades of the stroke color and light colors become tints of it.	Το μαύρο μένει μαύρο και το λευκό μένει λευκό. Τα άλλα χρώματα γίνονται σκιάσεις του χρώματος του περιγράμματος όταν είναι σκούρα και αποχρώσεις του όταν είναι ανοιχτά.
+	The key color becomes the stroke color. The other colors shift their hue by the same amount and keep their saturation and brightness.	Το βασικό χρώμα γίνεται το χρώμα του περιγράμματος. Τα άλλα χρώματα μετακινούνται στον χρωματικό τροχό όσο και το βασικό χρώμα και διατηρούν τον κορεσμό και τη φωτεινότητά τους.
 	Bristle Length:	Μήκος τριχών:
 	Bristle Density:	Πυκνότητα τριχών:
 	Bristle Thickness:	Πάχος τριχών:

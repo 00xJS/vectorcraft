@@ -1870,6 +1870,13 @@ lighting	Light	Licht
 	Tints and Shades	Tinten en schakeringen
 	Hue Shift	Tintverschuiving
 	Key Color:	Sleutelkleur:
+	Tips	Tips
+	Colorization Tips	Tips voor inkleuring
+	The samples show this brush on a blue stroke.	De voorbeelden tonen dit penseel op een blauwe contour.
+	The art keeps its own colors.	De illustratie behoudt haar eigen kleuren.
+	Black becomes the stroke color and white stays white. Other colors become tints of the stroke color by their lightness.	Zwart wordt de contourkleur en wit blijft wit. Andere kleuren worden tinten van de contourkleur, en hoe lichter een kleur is, hoe lichter de tint is.
+	Black and white stay as they are. Dark colors become shades of the stroke color and light colors become tints of it.	Zwart blijft zwart en wit blijft wit. Andere kleuren worden schakeringen van de contourkleur als ze donker zijn en tinten ervan als ze licht zijn.
+	The key color becomes the stroke color. The other colors shift their hue by the same amount and keep their saturation and brightness.	De sleutelkleur wordt de contourkleur. De andere kleuren draaien even ver over de kleurencirkel als de sleutelkleur en behouden hun verzadiging en helderheid.
 	Size:	Grootte:
 	Calligraphic Brush Options	Opties voor kalligrafisch penseel
 	Bristle Brush Options	Opties voor borstelpenseel

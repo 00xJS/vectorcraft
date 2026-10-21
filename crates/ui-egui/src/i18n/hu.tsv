@@ -3941,6 +3941,13 @@ mark-style	Japanese	Japán
 	Tint	Tónus
 	Tints	Tónusok
 	Tints and Shades	Tónusok és árnyalatok
+	Tips	Tippek
+	Colorization Tips	Színezési tippek
+	The samples show this brush on a blue stroke.	A minták ezt az ecsetet kék körvonalon mutatják.
+	The art keeps its own colors.	A grafika megtartja a saját színeit.
+	Black becomes the stroke color and white stays white. Other colors become tints of the stroke color by their lightness.	A fekete a körvonal színévé válik, a fehér pedig fehér marad. A többi szín a körvonalszín tónusává válik, és minél világosabb egy szín, annál világosabb a tónusa.
+	Black and white stay as they are. Dark colors become shades of the stroke color and light colors become tints of it.	A fekete fekete marad, a fehér pedig fehér marad. A többi szín a körvonalszín sötét árnyalatává válik, ha sötét, és a tónusává, ha világos.
+	The key color becomes the stroke color. The other colors shift their hue by the same amount and keep their saturation and brightness.	A kulcsszín a körvonal színévé válik. A többi szín ugyanannyit fordul el a színkörön, mint a kulcsszín, és megtartja a telítettségét és a fényességét.
 	Tiny Lens	Apró lencsék
 	Tip extends past the end point	A hegy túlnyúlik a végponton
 	Tip on the end point	A hegy a végponton van

@@ -1928,6 +1928,13 @@
 	Tints	Teintes
 	Tints and Shades	Teintes et ombres
 	Hue Shift	Décalage de teinte
+	Tips	Conseils
+	Colorization Tips	Conseils de colorisation
+	The samples show this brush on a blue stroke.	Les exemples montrent cette forme sur un contour bleu.
+	The art keeps its own colors.	L’illustration garde ses propres couleurs.
+	Black becomes the stroke color and white stays white. Other colors become tints of the stroke color by their lightness.	Le noir devient la couleur du contour et le blanc reste blanc. Les autres couleurs deviennent des teintes de la couleur du contour, et plus une couleur est claire, plus sa teinte est claire.
+	Black and white stay as they are. Dark colors become shades of the stroke color and light colors become tints of it.	Le noir reste noir et le blanc reste blanc. Les autres couleurs deviennent des ombres de la couleur du contour quand elles sont foncées et des teintes de celle-ci quand elles sont claires.
+	The key color becomes the stroke color. The other colors shift their hue by the same amount and keep their saturation and brightness.	La couleur clé devient la couleur du contour. Les autres couleurs tournent sur le cercle chromatique autant que la couleur clé et gardent leur saturation et leur luminosité.
 	Key Color:	Couleur clé :
 	Roundness:	Arrondi :
 	Fixed	Fixe

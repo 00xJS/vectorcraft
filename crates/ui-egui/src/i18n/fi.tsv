@@ -2002,6 +2002,13 @@ lighting	Light	Valo
 	Tints and Shades	Vaaleat ja tummat sävyt
 	Hue Shift	Sävynsiirto
 	Key Color:	Avainväri:
+	Tips	Vinkit
+	Colorization Tips	Värityksen vinkit
+	The samples show this brush on a blue stroke.	Näytteissä tämä sivellin on sinisellä viivalla.
+	The art keeps its own colors.	Kuvitus säilyttää omat värinsä.
+	Black becomes the stroke color and white stays white. Other colors become tints of the stroke color by their lightness.	Mustasta tulee viivan väri, ja valkoinen pysyy valkoisena. Muista väreistä tulee viivan värin vaaleita sävyjä, ja mitä vaaleampi väri on, sitä vaaleampi on sen sävy.
+	Black and white stay as they are. Dark colors become shades of the stroke color and light colors become tints of it.	Musta pysyy mustana, ja valkoinen pysyy valkoisena. Tummista väreistä tulee viivan värin tummia sävyjä ja vaaleista sen vaaleita sävyjä.
+	The key color becomes the stroke color. The other colors shift their hue by the same amount and keep their saturation and brightness.	Avainväristä tulee viivan väri. Muut värit siirtyvät väriympyrällä yhtä paljon kuin avainväri ja säilyttävät kylläisyytensä ja kirkkautensa.
 	Size:	Koko:
 	Calligraphic Brush Options	Kalligrafisen siveltimen asetukset
 	Bristle Brush Options	Harjassiveltimen asetukset
