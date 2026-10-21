@@ -1068,15 +1068,16 @@ fn isolate(s: &mut Session, p: &Value) -> Result<Value> {
     if matches!(st.doc.node(id).ok_or(EngineError::NoNode(id))?.kind, NodeKind::Text(_)) {
         return Err(bad("object.isolate", "type objects can't be isolated"));
     }
+    let isolation = st.doc.node(id).filter(|n| n.extras().shaper.is_some()).and_then(|n| n.children()).and_then(|c| c.first()).map_or(id, |n| n.id);
     // A hidden or locked object, one in a hidden or locked group or layer, and a guide path while
     // Lock Guides is on aren't isolated either: a click with the Selection tool doesn't select them.
-    if !st.doc.is_editable(id) {
+    // A Shaper Group isolates its source group, so that group is the one checked.
+    if !st.doc.is_editable(isolation) {
         return Err(bad("object.isolate", "the object is hidden or locked"));
     }
-    if guides_locked && crate::is_guide_path(&st.doc, id) {
+    if guides_locked && crate::is_guide_path(&st.doc, isolation) {
         return Err(EngineError::Other("guides are locked".into()));
     }
-    let isolation = st.doc.node(id).filter(|n| n.extras().shaper.is_some()).and_then(|n| n.children()).and_then(|c| c.first()).map_or(id, |n| n.id);
     st.isolation = Some(isolation);
     st.selection.clear();
     st.revision += 1;
