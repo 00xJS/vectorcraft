@@ -792,7 +792,12 @@ pub fn menu(app: &mut VectorcraftApp, ui: &mut Ui) {
         });
         ui.separator();
     }
-    for l in ["Standard Vertical Roman Alignment", "Tate-chu-yoko", "Fractional Widths", "System Layout", "No Break"] {
+    // No Break: the selected characters stay on one line.
+    let no_break = s.as_ref().is_some_and(|s| s.no_break);
+    if menu_item(ui, tl!("No Break"), has, no_break) {
+        format(app, json!({"noBreak": !no_break}));
+    }
+    for l in ["Standard Vertical Roman Alignment", "Tate-chu-yoko", "Fractional Widths", "System Layout"] {
         menu_item(ui, tl!(l), false, l == "Fractional Widths");
     }
     ui.separator();
@@ -811,8 +816,8 @@ pub fn menu(app: &mut VectorcraftApp, ui: &mut Ui) {
 /// Reset Panel: the characters the panel acts on ([`char_cmd`]) take tracking 0, Auto leading and
 /// kerning, no baseline shift, 100% scales, no rotation, no underline or strikethrough, All Caps
 /// and Small Caps off, the normal position (neither superscript nor subscript), Roman Baseline
-/// character alignment, Proportional Metrics off and the Default digits, whether or not Show
-/// East Asian Options and Show Indic Options are on.
+/// character alignment, Proportional Metrics and No Break off and the Default digits, whether
+/// or not Show East Asian Options and Show Indic Options are on.
 fn reset_panel(app: &mut VectorcraftApp) {
     let d = CharStyle::default();
     style(app, json!({"tracking": 0, "leading": "auto"}));
@@ -821,7 +826,7 @@ fn reset_panel(app: &mut VectorcraftApp) {
         json!({
             "kerning": "auto", "baselineShift": 0, "hScale": 100, "vScale": 100, "rotation": 0, "underline": false, "strikethrough": false,
             "allCaps": false, "smallCaps": d.small_caps.is_some(), "position": d.position.id(), "charAlign": d.char_align,
-            "proportionalMetrics": d.proportional_metrics, "digits": d.digits
+            "proportionalMetrics": d.proportional_metrics, "noBreak": d.no_break, "digits": d.digits
         }),
     );
 }
@@ -1168,10 +1173,37 @@ mod tests {
         assert!(shown(&mut app));
     }
 
+    /// No Break is in the panel menu, and choosing it marks the selected characters.
+    #[test]
+    fn no_break_menu_item_toggles_the_selected_characters() {
+        let mut app = VectorcraftApp::new(Session::new(), Default::default());
+        app.run("file.new", json!({"width": 300, "height": 200})).unwrap();
+        let id = app.session.execute("text.create", &json!({"x": 20, "y": 50, "text": "Hello"})).unwrap()["id"].as_u64().unwrap();
+        app.session.execute("select.set", &json!({"ids": [id]})).unwrap();
+        let ctx = egui::Context::default();
+        let painted = |app: &mut VectorcraftApp| crate::tests_labels::painted_text(app, menu);
+        assert!(painted(&mut app).contains("No Break"));
+        assert!(!painted(&mut app).contains("✓ No Break"));
+        let on = |app: &VectorcraftApp| match &app.session.active().unwrap().doc.node(NodeId(id)).unwrap().kind {
+            NodeKind::Text(t) => t.runs.iter().all(|r| r.style.no_break),
+            _ => panic!("text"),
+        };
+        assert!(!on(&app));
+        let texts = super::super::tests_appearance::frame_events(&ctx, &mut app, vec![], menu);
+        let at = texts.iter().find(|(t, _)| t.trim_start_matches(['✓', ' ']) == "No Break").unwrap_or_else(|| panic!("{texts:?}")).1;
+        super::super::tests_appearance::click(&ctx, &mut app, at.center(), menu);
+        assert!(on(&app));
+        assert!(painted(&mut app).contains("✓ No Break"));
+        let texts = super::super::tests_appearance::frame_events(&ctx, &mut app, vec![], menu);
+        let at = texts.iter().find(|(t, _)| t.trim_start_matches(['✓', ' ']) == "No Break").unwrap().1;
+        super::super::tests_appearance::click(&ctx, &mut app, at.center(), menu);
+        assert!(!on(&app));
+    }
+
     /// Reset Panel sets every character attribute the panel shows, except the font family, style
     /// and size, back to its default (Small Caps, the position, Character Alignment, Proportional
-    /// Metrics and Digits included), in the selected type and in the text the Type tool has
-    /// selected while it edits.
+    /// Metrics, No Break and Digits included), in the selected type and in the text the Type tool
+    /// has selected while it edits.
     #[test]
     fn reset_panel_resets_every_attribute_but_the_font() {
         let mut app = VectorcraftApp::new(Session::new(), Default::default());
@@ -1197,6 +1229,7 @@ mod tests {
                 s.position != d.position,
                 s.char_align != d.char_align,
                 s.proportional_metrics != d.proportional_metrics,
+                s.no_break != d.no_break,
                 s.digits != d.digits,
             ]
         };
@@ -1206,16 +1239,16 @@ mod tests {
                 json!({
                     "id": id, "tracking": 50, "leading": 30, "kerning": 20, "baselineShift": 3, "hScale": 120, "vScale": 90, "rotation": 15,
                     "underline": true, "strikethrough": true, "allCaps": true, "smallCaps": true, "position": "superscript",
-                    "charAlign": "emBoxCenter", "proportionalMetrics": true, "digits": "hindi"
+                    "charAlign": "emBoxCenter", "proportionalMetrics": true, "noBreak": true, "digits": "hindi"
                 }),
             )
             .unwrap();
         };
         let plain = runs(&app)[0].1.clone();
-        assert_eq!(differs(&plain, &CharStyle::default()), [false; 15]);
+        assert_eq!(differs(&plain, &CharStyle::default()), [false; 16]);
         custom(&mut app);
         let styled = runs(&app)[0].1.clone();
-        assert_eq!(differs(&styled, &CharStyle::default()), [true; 15]);
+        assert_eq!(differs(&styled, &CharStyle::default()), [true; 16]);
         app.run("select.set", json!({"ids": [id]})).unwrap();
         reset_panel(&mut app);
         assert_eq!(runs(&app), [("One 12".to_string(), plain.clone())]);

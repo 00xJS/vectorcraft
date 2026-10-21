@@ -1292,6 +1292,19 @@ fn break_line(
         while g.get(cluster_end).is_some_and(|next| next.byte == gl.byte) {
             cluster_end += 1;
         }
+        // No Break: the marked characters stay on one line, including across a space inside the run.
+        if gl.no_break {
+            while let Some(n) = g.get(cluster_end) {
+                if !n.no_break {
+                    break;
+                }
+                let b = n.byte;
+                cluster_end += 1;
+                while g.get(cluster_end).is_some_and(|next| next.byte == b) {
+                    cluster_end += 1;
+                }
+            }
+        }
         let cluster_width: f64 = if gl.ch == '\t' {
             tab_advance(tabs, 0.0, x_start + x, g.get(cluster_end..).unwrap_or_default()).0
         } else {
@@ -1310,7 +1323,7 @@ fn break_line(
         }
         x += cluster_width;
         let last = &g[cluster_end - 1];
-        if last.break_after() && kinsoku_allows(g, cluster_end - 1, kinsoku) {
+        if last.break_after() && kinsoku_allows(g, cluster_end - 1, kinsoku) && !splits_no_break(g, cluster_end) {
             if last.is_soft_hyphen() {
                 if x + hyphen_glyph(last).adv <= width + EPS {
                     last_break = Some((cluster_end, true));
@@ -1342,8 +1355,10 @@ fn break_line(
             we += 1;
         }
         let x_ws: f64 = g[i..word_start].iter().map(|g| g.adv).sum();
-        let pts: Vec<usize> =
-            hyphen_breaks(text, g, word_start, we, opts).into_iter().filter(|&k| k > 0 && kinsoku_allows(g, k - 1, kinsoku)).collect();
+        let pts: Vec<usize> = hyphen_breaks(text, g, word_start, we, opts)
+            .into_iter()
+            .filter(|&k| k > 0 && kinsoku_allows(g, k - 1, kinsoku) && !splits_no_break(g, k))
+            .collect();
         for &k in pts.iter().rev() {
             if k <= j && k > i {
                 let w = x_ws + g[word_start..k].iter().map(|g| g.adv).sum::<f64>() + hyphen_glyph(&g[k - 1]).adv;
@@ -1443,6 +1458,11 @@ fn optical_hangs_rtl(line: &[(&SGlyph, f64)], share: fn(&SGlyph) -> f64) -> (f64
     (left, right, left_glyphs, right_glyphs)
 }
 
+/// Would a line ending at glyph index `end` split a No Break run?
+fn splits_no_break(g: &[SGlyph], end: usize) -> bool {
+    end > 0 && g.get(end - 1).is_some_and(|a| a.no_break) && g.get(end).is_some_and(|b| b.no_break)
+}
+
 /// Does kinsoku allow a line break after glyph `j`? Not after an opening bracket, nor before a
 /// closing one, a comma, a full stop, a small kana… (the character is pushed to the next line
 /// with the one before it).
@@ -1500,6 +1520,7 @@ mod wrapping_tests {
                 proportional: false,
                 vpal: None,
                 level: unicode_bidi::Level::ltr(),
+                no_break: false,
             })
             .collect()
     }
@@ -1579,6 +1600,38 @@ mod wrapping_tests {
 
         let next_cluster_byte = shaped.get(first_end).map(|g| g.byte);
         assert_eq!(result.lines.first().map(|line| line.end), next_cluster_byte);
+    }
+
+    /// No Break keeps the marked characters on one line, including across a space, and moves a
+    /// marked run that does not fit to the next line whole.
+    #[test]
+    fn no_break_keeps_marked_characters_on_one_line() {
+        let text = "A B";
+        let plain = synthetic_glyphs(&[(0, 1, 10.0, 'A'), (1, 1, 4.0, ' '), (2, 1, 10.0, 'B')]);
+        let (end, hyphen) = break_line(text, &plain, 0, 16.0, &[], 0.0, None, Burasagari::None, Kinsoku::None);
+        assert!(!hyphen);
+        assert_eq!(end, 2, "without the mark the line ends after the space");
+
+        let mut marked = plain;
+        for g in &mut marked {
+            g.no_break = true;
+        }
+        let (end, hyphen) = break_line(text, &marked, 0, 16.0, &[], 0.0, None, Burasagari::None, Kinsoku::None);
+        assert!(!hyphen);
+        assert_eq!(end, 3, "the marked words stay together even though they are wider than the line");
+
+        // 日 and 本 may break between them. Marked, they move together when they do not fit after "A ".
+        let text = "A 日本";
+        let mut glyphs = synthetic_glyphs(&[(0, 1, 8.0, 'A'), (1, 1, 2.0, ' '), (2, 3, 10.0, '日'), (5, 3, 10.0, '本')]);
+        glyphs[2].no_break = true;
+        glyphs[3].no_break = true;
+        let (end, _) = break_line(text, &glyphs, 0, 22.0, &[], 0.0, None, Burasagari::None, Kinsoku::None);
+        assert_eq!(end, 2, "the marked pair moves to the next line together");
+        let (end, _) = break_line(text, &glyphs, end, 15.0, &[], 0.0, None, Burasagari::None, Kinsoku::None);
+        assert_eq!(end, 4, "on its own line the pair stays together even when it is wider than the line");
+
+        let breaks = candidates(text, &glyphs, None, Kinsoku::None);
+        assert!(breaks.iter().all(|b| b.end != 3), "no break between the marked characters: {breaks:?}");
     }
 }
 
@@ -1660,12 +1713,14 @@ fn candidates(text: &str, g: &[SGlyph], hyphenate: Option<&HyphenationOptions>, 
             if let Some(opts) = hyphenate
                 && j > ws
             {
-                for k in hyphen_breaks(text, g, ws, j, opts).into_iter().filter(|&k| k > 0 && kinsoku_allows(g, k - 1, kinsoku)) {
+                for k in
+                    hyphen_breaks(text, g, ws, j, opts).into_iter().filter(|&k| k > 0 && kinsoku_allows(g, k - 1, kinsoku) && !splits_no_break(g, k))
+                {
                     v.push(Breakpoint { end: k, hyphen: hyphen_glyph(&g[k - 1]).adv });
                 }
             }
             let hy = if gl.is_soft_hyphen() { hyphen_glyph(gl).adv } else { 0.0 };
-            if j + 1 < g.len() && g[j + 1].byte != gl.byte && !g[j + 1].is_space() && kinsoku_allows(g, j, kinsoku) {
+            if j + 1 < g.len() && g[j + 1].byte != gl.byte && !g[j + 1].is_space() && kinsoku_allows(g, j, kinsoku) && !splits_no_break(g, j + 1) {
                 v.push(Breakpoint { end: j + 1, hyphen: hy });
             }
             ws = j + 1;
@@ -1674,7 +1729,9 @@ fn candidates(text: &str, g: &[SGlyph], hyphenate: Option<&HyphenationOptions>, 
     if let Some(opts) = hyphenate
         && g.len() > ws
     {
-        for k in hyphen_breaks(text, g, ws, g.len(), opts).into_iter().filter(|&k| k > 0 && kinsoku_allows(g, k - 1, kinsoku)) {
+        for k in
+            hyphen_breaks(text, g, ws, g.len(), opts).into_iter().filter(|&k| k > 0 && kinsoku_allows(g, k - 1, kinsoku) && !splits_no_break(g, k))
+        {
             v.push(Breakpoint { end: k, hyphen: hyphen_glyph(&g[k - 1]).adv });
         }
     }
