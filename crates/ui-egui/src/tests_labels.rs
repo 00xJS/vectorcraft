@@ -97,6 +97,7 @@ fn effect_menu_lists_the_artistic_filters_before_blur() {
             "Palette Knife…",
             "Plastic Wrap…",
             "Poster Edges…",
+            "Rough Pastels…",
             "Smudge Stick…",
             "Sponge…",
             "Underpainting…",

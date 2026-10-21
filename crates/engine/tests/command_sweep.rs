@@ -373,6 +373,10 @@ fn structured_junk() {
         ("effect.apply", json!({"effect": "artistic.dryBrush", "params": {"brushSize": -1e308, "brushDetail": "NaN", "texture": 1e308}})),
         ("effect.apply", json!({"effect": "artistic.neonGlow", "params": {"glowSize": -1e308, "glowBrightness": "1e999", "color": [1]}})),
         ("effect.apply", json!({"effect": "artistic.posterEdges", "params": {"edgeThickness": 1e308, "edgeIntensity": [], "posterization": -7}})),
+        (
+            "effect.apply",
+            json!({"effect": "artistic.roughPastels", "params": {"strokeLength": 1e308, "strokeDetail": "NaN", "texture": -1e308, "scaling": "bad", "lightDirection": "nope"}}),
+        ),
         ("effect.apply", json!({"effect": "sketch.chrome", "params": {"detail": -1e308, "smoothness": "NaN"}})),
         ("effect.apply", json!({"effect": "sketch.graphicPen", "params": {"strokeLength": -1e308, "lightDarkBalance": "NaN", "strokeDirection": 3}})),
         ("effect.apply", json!({"effect": "sketch.halftonePattern", "params": {"size": -1e308, "contrast": "NaN", "patternType": 3}})),

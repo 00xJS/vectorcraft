@@ -1,5 +1,5 @@
 //! Effect › Artistic (Cutout, Dry Brush, Film Grain, Neon Glow, Paint Daubs, Palette Knife, Plastic Wrap, Poster
-//! Edges, Smudge Stick, Sponge, Underpainting and Watercolor). Original filters built from
+//! Edges, Rough Pastels, Smudge Stick, Sponge, Underpainting and Watercolor). Original filters built from
 //! public behaviour documentation:
 //! <https://helpx.adobe.com/illustrator/using/summary-effects.html> and
 //! <https://helpx.adobe.com/photoshop-elements/using/artistic-filters.html>.
@@ -7,16 +7,18 @@
 
 use std::f64::consts::TAU;
 
-use super::brushstrokes::{Smear, mix, stroke_reach, unit, unpremultiply};
+use super::brushstrokes::{LEFT, RIGHT, Smear, TONE_SOFTNESS, mix, streak, stroke_reach, unit, unpremultiply};
 use super::edges::sobel;
 use super::pixelate::{Around, Place, Soft, cell, point_in, rand, value_noise};
-use super::texture::{self, Light, Texture, luma, premultiply, straight};
+use super::texture::{self, Light, Texture, Tones, luma, premultiply, straight, texturizer};
 use super::{PixelSpace, blur_plane, pick};
 use vectorcraft_geom::{Point, Vec2};
 
 const SALT_DRY: u64 = 264;
 const MARGIN: f64 = 1.0;
 const SALT_PLASTIC: u64 = 512;
+
+const SALT_PASTEL: u64 = 200;
 
 const SALT_FILM: u64 = 256;
 const SALT_DAUB: u64 = 272;
@@ -523,6 +525,65 @@ pub(super) fn underpainting(
             (soft[2] * mix + tex[2] * coverage).clamp(0.0, 1.0),
         ];
         *p = premultiply(c, a);
+    }
+}
+
+/// How far (document units) Rough Pastels reaches with strokes `len` long.
+pub(super) fn rough_pastels_reach(len: f64) -> f64 {
+    super::brushstrokes::stroke_reach(len).max(super::brushstrokes::TONE_REACH)
+}
+
+/// Rough Pastels: soft diagonal pastel strokes `length` (0..40) long with bristle `detail` (1..20),
+/// then the shared Texturizer surface (`texture`, `scaling`, `relief`, `light`, `invert`).
+/// Coverage is kept.
+#[allow(clippy::too_many_arguments)]
+pub(super) fn rough_pastels(
+    px: &mut [[u8; 4]],
+    w: usize,
+    h: usize,
+    space: &PixelSpace,
+    length: f64,
+    detail: f64,
+    texture: &Texture,
+    scaling: f64,
+    relief: f64,
+    light: Light,
+    invert: bool,
+) {
+    if !([length, detail, scaling, relief].iter().all(|v| v.is_finite()) && space.px.is_finite() && space.px > 0.0) {
+        return;
+    }
+    let length = length.clamp(0.0, 40.0);
+    let detail = detail.clamp(1.0, 20.0);
+    if length > 0.0 {
+        let Some(place) = Place::new(space, w, h) else { return };
+        let smear = Smear::new(px, w, h, &place, length.max(1.0));
+        let tones = Tones::new(px, w, h, TONE_SOFTNESS / place.px);
+        let row = (0.18 * smear.len).max(1.0);
+        let stroke_mix = (0.35 + 0.0225 * detail).clamp(0.35, 0.8) as f32;
+        let bristle = (0.015 + 0.0035 * detail) as f32;
+        let src = px.to_vec();
+        place.each(px, |x, y, p| {
+            if p[3] == 0 {
+                return;
+            }
+            let q = place.at(x, y);
+            let pm = mix(smear.stroke(SALT_PASTEL, q, RIGHT, row), smear.stroke(SALT_PASTEL + 1, q, LEFT, row), 0.5);
+            let orig = unit(src.get(y * w + x).copied().unwrap_or([0; 4]));
+            let pm = mix(orig, pm, stroke_mix);
+            let (mut c, a) = unpremultiply(pm);
+            if a <= 0.0 {
+                *p = [0; 4];
+                return;
+            }
+            let dir = if tones.get(x, y) > 0.52 { RIGHT } else { LEFT };
+            let n = bristle * streak(SALT_PASTEL + 2, q, dir, smear.len.max(1.0), row) as f32;
+            c = c.map(|v| (v + n).clamp(0.0, 1.0));
+            *p = premultiply(c, orig[3]);
+        });
+    }
+    if relief > 0.0 {
+        texturizer(px, w, h, space, texture, scaling, relief, light, invert);
     }
 }
 
