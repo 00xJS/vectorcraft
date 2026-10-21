@@ -156,6 +156,7 @@ fn lengths_of(id: &str) -> Lengths {
         "sketch.graphicPen" => always(&["strokeLength"]),
         "sketch.halftonePattern" => always(&["size"]),
         "sketch.notePaper" => always(&["relief"]),
+        "sketch.waterPaper" => always(&["fiberLength"]),
         RASTERIZE => always(&["addAround"]),
         _ => Lengths::default(),
     }
@@ -573,6 +574,13 @@ pub fn effect_catalog() -> Vec<EffectInfo> {
             SKETCH,
             "{lightDarkBalance: 0..50 (25; the larger, the more of the object prints black), smoothness: 1..50 (5; rounds the shapes)} simplifies the object to solid black and white, as a rubber stamp would print it. Coverage is kept. Original visual approximation; chosen VectorCraft defaults.",
             json!({"lightDarkBalance": 25.0, "smoothness": 5.0}),
+        ),
+        r(
+            "sketch.waterPaper",
+            "Water Paper…",
+            SKETCH,
+            "{fiberLength: pt 3..50 (15; scale of paper fibers and blotchy daubs), brightness: 0..100 (50), contrast: 0..100 (50)} washes the object's colours as if painted on damp fibrous paper, with soft flow and a fibrous modulation. Public helpx names Fiber Length, Brightness and Contrast but not slider ranges or dialog defaults; ranges and defaults here are unverified VectorCraft choices. Original visual approximation, not a proprietary reproduction.",
+            json!({"fiberLength": 15.0, "brightness": 50.0, "contrast": 50.0}),
         ),
         r(
             "stylize.glowingEdges",

@@ -223,7 +223,7 @@ from G14 and the budget run of G15: **~170–270 h** one agent, ~50–80 h wall 
 
 ## G2 Photoshop-style raster effects and the Effect Gallery
 
-- **Missing:** 11 of 57 filters (7 Artistic, 3 Sketch and 1 more), the Effect Gallery dialog, Load
+- **Missing:** 10 of 57 filters (7 Artistic, 2 Sketch and 1 more), the Effect Gallery dialog, Load
   Texture for Texturizer. Measured in
   [effects-parity.md](effects-parity.md).
 - **Done:** the pixel-filter pipeline and 45 filters (Artistic: Cutout, Film Grain, Neon Glow, Plastic Wrap, Poster Edges, Smudge Stick, Sponge, Watercolor; Blur, Brush Strokes, Distort, Pixelate, Sharpen; Sketch:

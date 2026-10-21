@@ -12,7 +12,7 @@ Part of [target-app-parity.md](target-app-parity.md); open work is in [gaps.md](
 | Group | Illustrator | VectorCraft | % | Remaining (h) |
 |---|---:|---:|---:|---:|
 | Illustrator effects (vector and stylize) | 50 | 46 | 92% | 6–10 |
-| Photoshop effects (raster, Effect Gallery) | 57 | 46 | 81% | 8–14 |
+| Photoshop effects (raster, Effect Gallery) | 57 | 47 | 82% | 8–14 |
 | 3D and Materials | 4 (+3 Classic) | 4 (initial: Extrude & Bevel, Revolve, Inflate, Rotate) | ~25% | 25–45 |
 | Beyond Illustrator: Effect › Color Adjustments (6), effect plug-ins (WebAssembly) | — | 6 + plug-ins | — | — |
 
@@ -44,7 +44,7 @@ its resolution, PDF export warns once per object with the requested and the lowe
 | Distort | Diffuse Glow, Glass, Ocean Ripple | 3/3 | — |
 | Pixelate | Color Halftone, Crystallize, Mezzotint, Pointillize | 4/4 | — |
 | Sharpen | Unsharp Mask | 1/1 | — |
-| Sketch | Bas Relief, Chalk & Charcoal, Charcoal, Chrome, Conté Crayon, Graphic Pen, Halftone Pattern, Note Paper, Photocopy, Plaster, Reticulation, Stamp, Torn Edges, Water Paper | 11/14 (approximate Bas Relief, Chalk & Charcoal, Charcoal, Chrome, Graphic Pen, Halftone Pattern, Note Paper, Photocopy, Plaster, Reticulation, Stamp; Chalk & Charcoal, Graphic Pen and Note Paper defaults unverified) | Conté Crayon, Torn Edges, Water Paper |
+| Sketch | Bas Relief, Chalk & Charcoal, Charcoal, Chrome, Conté Crayon, Graphic Pen, Halftone Pattern, Note Paper, Photocopy, Plaster, Reticulation, Stamp, Torn Edges, Water Paper | 12/14 (approximate Bas Relief, Chalk & Charcoal, Charcoal, Chrome, Graphic Pen, Halftone Pattern, Note Paper, Photocopy, Plaster, Reticulation, Stamp, Water Paper; Chalk & Charcoal, Graphic Pen, Note Paper and Water Paper defaults unverified) | Conté Crayon, Torn Edges |
 | Stylize | Glowing Edges | 1/1 | — |
 | Texture | Craquelure, Grain, Mosaic Tiles, Patchwork, Stained Glass, Texturizer | 6/6 | Texturizer's Load Texture |
 | Video | De-Interlace, NTSC Colors | 2/2 | — |
@@ -178,6 +178,7 @@ angular cut caps, exact visibility, 3D Classic, Turntable, 3D export) is 25–45
 
 | Date | Change | Summary |
 |---|---|---|
+| 2026-10-20 | minor | G2: Effect › Sketch › Water Paper (Fiber Length, Brightness, Contrast; colours flow on damp fibrous paper, defaults unverified, #2955); measured Photoshop filters 47/57, Sketch 12/14. |
 | 2026-10-20 | minor | G2: Effect › Sketch › Note Paper (Image Balance, Graininess, Relief; embossed tones on fibrous paper); Halftone Pattern and Note Paper parameter ranges follow public control names, numeric defaults are unverified VectorCraft choices (public help gives no numbers); measured Photoshop filters 46/57, Sketch 11/14. |
 | 2026-10-19 | minor | Sketch › Chalk & Charcoal, Graphic Pen and Reticulation and Artistic › Plastic Wrap landed (#2972, #2967, #2976, #3034): 36/57 Photoshop effects (estimated; defaults unverified) |
 | 2026-10-16 | minor | Zig Zag with Smooth points draws a continuous wave: every peak and valley is a smooth point with handles along the path, a third of the way to the next ridge, so each span follows a half cosine through the path instead of a straight diagonal with rounded tips, also at the ends of open paths and for ridges much taller than they are apart (#2343); score unchanged (estimated) |

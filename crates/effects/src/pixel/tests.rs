@@ -2046,6 +2046,13 @@ fn halftone(p: serde_json::Value, src: &[u8], w: usize, h: usize, s: &PixelSpace
     out
 }
 
+/// Water Paper of `p` over `w` × `h` pixels of `src`, laid out by `s`.
+fn water_paper(p: serde_json::Value, src: &[u8], w: usize, h: usize, s: &PixelSpace) -> Vec<u8> {
+    let mut out = src.to_vec();
+    fx("sketch.waterPaper", p).apply(&mut out, w, h, s);
+    out
+}
+
 /// The smallest period of `values` (their length when they don't repeat).
 fn period(values: &[u8]) -> usize {
     (1..values.len()).find(|p| values.iter().zip(&values[*p..]).all(|(a, b)| a == b)).unwrap_or(values.len())
@@ -2142,6 +2149,35 @@ fn note_paper_embosses_a_gradient_and_grain_changes_pixels() {
         out
     };
     assert_ne!(flat, grainy, "graininess adds fibre");
+}
+
+#[test]
+fn water_paper_params_take_defaults_and_stay_in_range() {
+    assert_eq!(fx("sketch.waterPaper", json!({})), PixelFx::WaterPaper { fiber_length: 15.0, brightness: 50.0, contrast: 50.0 });
+    assert_eq!(
+        fx("sketch.waterPaper", json!({"fiberLength": 1, "brightness": -5, "contrast": 200})),
+        PixelFx::WaterPaper { fiber_length: 3.0, brightness: 0.0, contrast: 100.0 }
+    );
+    let f = fx("sketch.waterPaper", json!({"fiberLength": 40}));
+    assert!(f.outset(Rect::new(0.0, 0.0, 100.0, 50.0)) > 0.0);
+    assert!(f.reach().unwrap_or(0.0) > 0.0);
+    let doc = crate::effect_info("sketch.waterPaper").unwrap().params;
+    assert!(doc.contains("unverified"), "{doc}");
+}
+
+#[test]
+fn water_paper_softens_and_textures_a_flat_fill_without_losing_coverage() {
+    let (w, h) = (64, 64);
+    let src = image(w, h, |_, _| [200, 80, 40, 255]);
+    let out = water_paper(json!({"fiberLength": 20, "brightness": 50, "contrast": 40}), &src, w, h, &space(w, h));
+    assert!(out.as_chunks::<4>().0.iter().filter(|p| p[3] > 200).count() > w * h / 2, "most of the fill stays visible");
+    assert_ne!(out, src, "the wash changes pixels");
+    let spread = |d: &[u8]| {
+        let reds: Vec<u8> = d.as_chunks::<4>().0.iter().map(|p| p[0]).collect();
+        let (min, max) = (reds.iter().min().unwrap(), reds.iter().max().unwrap());
+        max - min
+    };
+    assert!(spread(&out) > spread(&src) / 2, "fibers add tonal variation");
 }
 
 /// Line's rows repeat every Size points: Size pixels at 72 ppi, twice as many at 144 ppi.
