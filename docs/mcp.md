@@ -1142,6 +1142,8 @@ and `select.recall`. They leave out hidden and locked objects with the objects i
 locked or template layers and sublayers and, in isolation mode, everything outside the isolated group or layer. When
 the isolated group or layer, or a group or layer it is in, is hidden, locked or a template layer, they also leave out
 everything in it, and `select.all`, `select.allOnArtboard` and `select.inverse` select nothing.
+`select.object.bristleBrushStrokes` selects the objects whose topmost stroke has a bristle brush (type `bristle` in
+`brush.list`), whatever the brush is named; a brush of another type with "Bristle" in its name does not count.
 `select.nextAbove` and `select.nextBelow` select the nearest such object above or below the first selected object
 among the objects beside it in its group or layer, passing over hidden and locked objects and sublayers. When there
 is no such object, the selection stays as it is.

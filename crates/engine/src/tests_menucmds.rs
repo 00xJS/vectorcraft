@@ -1217,6 +1217,27 @@ fn select_point_and_area_text() {
     assert_eq!(s.execute("select.object.brushStrokes", &json!({})).unwrap()["count"], 0);
 }
 
+/// Select › Object › Bristle Brush Strokes goes by the brush's type: a bristle brush counts
+/// whatever it is named, and a brush of another type with "Bristle" in its name does not.
+#[test]
+fn bristle_brush_strokes_select_by_brush_type() {
+    let mut s = session();
+    let round = rect(&mut s, 0.0, 0.0, 10.0, 10.0);
+    let soft = rect(&mut s, 20.0, 0.0, 10.0, 10.0);
+    let nib = rect(&mut s, 40.0, 0.0, 10.0, 10.0);
+    let _plain = rect(&mut s, 60.0, 0.0, 10.0, 10.0);
+    s.execute("brush.apply", &json!({"name": "Bristle Round", "ids": [round.0]})).unwrap();
+    s.execute("brush.apply", &json!({"name": "Bristle Flat Fan", "ids": [soft.0]})).unwrap();
+    s.execute("brush.options", &json!({"name": "Bristle Flat Fan", "newName": "Soft"})).unwrap();
+    s.execute("brush.new", &json!({"type": "calligraphic", "name": "Bristle-like"})).unwrap();
+    s.execute("brush.apply", &json!({"name": "Bristle-like", "ids": [nib.0]})).unwrap();
+    let brush = |s: &Session, id: NodeId| s.doc().unwrap().doc.node(id).and_then(|n| n.appearance.stroke()).and_then(|st| st.brush.clone());
+    assert_eq!(brush(&s, soft).as_deref(), Some("Soft"));
+    assert_eq!(brush(&s, nib).as_deref(), Some("Bristle-like"));
+    assert_eq!(s.execute("select.object.bristleBrushStrokes", &json!({})).unwrap()["count"], 2);
+    assert_eq!(selected(&s), vec![round, soft]);
+}
+
 /// Select › Object and Select › Same leave out hidden and locked objects, and the objects in hidden
 /// or locked groups and sublayers, as Select All does.
 #[test]
