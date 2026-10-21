@@ -329,6 +329,13 @@ pub struct CanvasCache {
     /// The frame shown was rendered on the worker: an interaction's frames stay there
     /// ([`canvas::show`]).
     pub from_worker: bool,
+    /// Set in the web build, which has no render worker: while the view changes on a document whose
+    /// last render took more than 8 ms, the canvas draws the frame shown reprojected and renders
+    /// once the view has been still for [`canvas::STILL_SECS`].
+    pub waits_for_still: bool,
+    /// The cache key the canvas last asked for and when it first asked for it (seconds, egui's
+    /// input time), kept while [`Self::waits_for_still`] is set.
+    pub still: Option<(CacheKey, f64)>,
     pub worker: Option<render_worker::Worker>,
     pub worker_started: bool,
     /// The slices as laid out for (document uid, revision): the canvas draws them every frame.
@@ -559,6 +566,8 @@ impl VectorcraftApp {
                 last_ms: 0.0,
                 moved: false,
                 from_worker: false,
+                waits_for_still: cfg!(target_arch = "wasm32"),
+                still: None,
                 worker: None,
                 worker_started: false,
                 slices: None,

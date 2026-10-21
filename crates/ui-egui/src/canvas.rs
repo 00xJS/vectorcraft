@@ -380,7 +380,19 @@ pub fn show(app: &mut VectorcraftApp, ui: &mut Ui) {
         app.canvas.moved = done.moved > 0;
         app.canvas.from_worker = true;
     }
-    if app.canvas.key.as_ref() != Some(&key) || app.canvas.texture.is_none() {
+    // With `waits_for_still` set (the web build, which has no render worker), a heavy document is
+    // not rendered while only the view changes: the frame shown is drawn reprojected below, and the
+    // first frame after the view has been still for STILL_SECS renders.
+    let wait = if app.canvas.waits_for_still {
+        let slow = app.canvas.last_ms > 8.0 && app.canvas.texture.is_some();
+        still_wait(&mut app.canvas.still, app.canvas.key.as_ref(), &key, slow, ui.input(|i| i.time))
+    } else {
+        None
+    };
+    if let Some(secs) = wait {
+        ui.ctx().request_repaint_after(std::time::Duration::from_secs_f64(secs));
+    }
+    if wait.is_none() && (app.canvas.key.as_ref() != Some(&key) || app.canvas.texture.is_none()) {
         let (w, h, view) = match pixel {
             Some([x0, y0, x1, y1]) => ((x1 - x0) as u32, (y1 - y0) as u32, Affine::translate((-x0 as f64, -y0 as f64))),
             None => (
@@ -672,6 +684,32 @@ pub fn show(app: &mut VectorcraftApp, ui: &mut Ui) {
         };
         ui.ctx().set_cursor_icon(cur);
     }
+}
+
+/// How long (seconds) the view must stay still before a canvas with
+/// [`crate::CanvasCache::waits_for_still`] set renders a heavy document again.
+pub const STILL_SECS: f64 = 0.2;
+
+/// Note that the canvas asks for `key` at time `now` (seconds, egui's input time) → how many more
+/// seconds it draws the frame `shown` reprojected instead of rendering `key`: while the last
+/// render was `slow`, only the view differs between the two, and the canvas has asked for `key`
+/// for less than [`STILL_SECS`]. `still` holds the key last asked for and when the canvas first
+/// asked for it. None: the canvas renders `key` now, unless it is the frame shown.
+fn still_wait(still: &mut Option<(CacheKey, f64)>, shown: Option<&CacheKey>, key: &CacheKey, slow: bool, now: f64) -> Option<f64> {
+    if still.as_ref().is_none_or(|(k, _)| k != key) {
+        *still = Some((key.clone(), now));
+    }
+    let waited = still.as_ref().map_or(0.0, |(_, at)| now - at);
+    // The clock went back (a new egui context): don't wait for it to catch up.
+    let waiting = (0.0..STILL_SECS).contains(&waited);
+    (slow && waiting && shown.is_some_and(|s| s != key && only_view_differs(s, key))).then_some(STILL_SECS - waited)
+}
+
+/// Whether two cache keys differ only in the view (zoom, center, rotation, canvas size, pixel
+/// density and Pixel Preview's document pixels), with Pixel Preview on in both or off in both.
+fn only_view_differs(a: &CacheKey, b: &CacheKey) -> bool {
+    a.pixel.is_some() == b.pixel.is_some()
+        && *a == CacheKey { zoom: a.zoom, cx: a.cx, cy: a.cy, w: a.w, h: a.h, ppp: a.ppp, rot: a.rot, pixel: a.pixel, ..b.clone() }
 }
 
 fn cursor_icon(c: Cursor) -> egui::CursorIcon {
@@ -5265,6 +5303,116 @@ mod tests {
         let at = Xf::new(rect, app.view().unwrap()).to_screen(Point::new(x0 as f64, y0 as f64));
         assert!((mesh.vertices[0].pos - at).length() < 0.01, "{:?} at {at:?}", mesh.vertices[0].pos);
         app.canvas.worker = None;
+    }
+
+    /// With the web build's setting (`waits_for_still`, no render worker), a heavy document's canvas
+    /// is not rendered while the view moves: each frame draws the frame shown moved and scaled with
+    /// the view and asks for a frame within STILL_SECS. The canvas renders once the view has been
+    /// still for STILL_SECS, and at once after an edit. With a worker's build settings the same frames render at once, as
+    /// before.
+    #[test]
+    fn without_a_worker_a_heavy_canvas_is_reprojected_until_the_view_is_still() {
+        let mut app = VectorcraftApp::new(Session::new(), Default::default());
+        app.session.execute("file.new", &json!({"width": 400, "height": 300})).unwrap();
+        app.session.execute("shape.rectangle", &json!({"x": 100, "y": 50, "width": 200, "height": 200})).unwrap();
+        assert!(!app.canvas.waits_for_still, "off the web build");
+        app.canvas.worker_started = true; // no worker, as in the web build
+        app.canvas.waits_for_still = true;
+        let ctx = egui::Context::default();
+        // One frame → (the bounds of the mesh that draws the art's texture, the repaint delay asked for).
+        let frame = |app: &mut VectorcraftApp| {
+            let raw = egui::RawInput { screen_rect: Some(egui::Rect::from_min_size(Pos2::ZERO, vec2(800.0, 600.0))), ..Default::default() };
+            let mut out = ctx.run_ui(raw, |ui| show(app, ui));
+            out.textures_delta.clear();
+            let tex = app.canvas.texture.as_ref().unwrap().id();
+            let art = out.shapes.iter().find_map(|c| match &c.shape {
+                Shape::Mesh(m) if m.texture_id == tex => Some(m.calc_bounds()),
+                _ => None,
+            });
+            (art.expect("the art's texture is drawn"), out.viewport_output[&egui::ViewportId::ROOT].repaint_delay)
+        };
+        frame(&mut app); // the first frame fits the view to the artboard
+        frame(&mut app);
+        let rect = app.canvas_rect.unwrap();
+        // A light document renders every change of view at once.
+        app.canvas.last_ms = 1.0;
+        app.view_mut().unwrap().center.x += 10.0;
+        frame(&mut app);
+        let shown = app.canvas.key.clone().unwrap();
+        assert_eq!(shown.cx, app.view().unwrap().center.x, "rendered at once");
+        // A heavy one draws the frame shown moved and scaled with the view.
+        app.canvas.last_ms = 50.0;
+        let old = Xf::new(rect, app.view().unwrap());
+        for (dx, zoom) in [(10.0, 1.0), (10.0, 1.5), (-25.0, 1.5)] {
+            let v = app.view_mut().unwrap();
+            v.center.x += dx;
+            v.zoom *= zoom;
+            let (b, delay) = frame(&mut app);
+            assert_eq!(app.canvas.key.as_ref(), Some(&shown), "not rendered while the view moves");
+            let new = Xf::new(rect, app.view().unwrap());
+            let (a, z) = (new.to_screen(old.to_doc(rect.min)), new.to_screen(old.to_doc(rect.max)));
+            assert!((b.min - a).length() < 0.01 && (b.max - z).length() < 0.01, "{b:?}: the frame shown at {a:?} to {z:?}");
+            assert!(delay <= std::time::Duration::from_secs_f64(STILL_SECS), "a frame within STILL_SECS: {delay:?}");
+        }
+        // The view stays still: frames at 60 fps (egui's input time without a clock) wait until
+        // STILL_SECS has passed, and the next one renders.
+        let mut frames = 0;
+        let b = loop {
+            frames += 1;
+            let (b, _) = frame(&mut app);
+            if app.canvas.key.as_ref() != Some(&shown) || frames == 60 {
+                break b;
+            }
+        };
+        assert!((12..=13).contains(&frames), "rendered after about 12 frames: {frames}");
+        let now = app.canvas.key.clone().unwrap();
+        assert_eq!((now.cx, now.zoom), (app.view().unwrap().center.x, app.view().unwrap().zoom), "rendered for the view");
+        assert!((b.min - rect.min).length() < 0.01 && (b.max - rect.max).length() < 0.01, "{b:?} over {rect:?}");
+        // An edit renders at once, even while the view moves.
+        app.canvas.last_ms = 50.0;
+        app.view_mut().unwrap().center.y += 10.0;
+        frame(&mut app);
+        assert_eq!(app.canvas.key.as_ref(), Some(&now), "waiting");
+        app.session.execute("shape.rectangle", &json!({"x": 10, "y": 10, "width": 20, "height": 20})).unwrap();
+        frame(&mut app);
+        let k = app.canvas.key.clone().unwrap();
+        assert_eq!((k.revision, k.cy), (app.session.active().unwrap().revision, app.view().unwrap().center.y), "rendered after the edit");
+        // With a worker's build settings and no worker (VECTORCRAFT_SYNC_RENDER), a heavy document
+        // renders every change of view at once.
+        app.canvas.waits_for_still = false;
+        app.canvas.last_ms = 50.0;
+        app.view_mut().unwrap().center.x += 10.0;
+        frame(&mut app);
+        assert_eq!(app.canvas.key.as_ref().map(|k| k.cx), Some(app.view().unwrap().center.x), "rendered at once");
+    }
+
+    /// [`still_wait`] waits while only the view changes on a slow canvas: each change starts
+    /// STILL_SECS again. It does not wait for a light document, a still view, a clock that went
+    /// back, an edit, a switch into Pixel Preview or a canvas with no frame shown.
+    #[test]
+    fn the_canvas_waits_only_while_the_view_of_a_slow_frame_changes() {
+        let mut app = VectorcraftApp::new(Session::new(), Default::default());
+        app.session.execute("file.new", &json!({"width": 400, "height": 300})).unwrap();
+        app.canvas.worker_started = true; // render on this thread
+        shapes(&mut app, &egui::Context::default());
+        let shown = app.canvas.key.clone().unwrap();
+        let mut still = Some((shown.clone(), 0.0));
+        let moved = CacheKey { cx: shown.cx + 5.0, zoom: shown.zoom * 2.0, ..shown.clone() };
+        assert_eq!(still_wait(&mut still, Some(&shown), &moved, true, 10.0), Some(STILL_SECS), "the view moved");
+        assert_eq!(still_wait(&mut still, Some(&shown), &moved, true, 10.0625), Some(STILL_SECS - 0.0625), "still for 62.5 ms");
+        let turned = CacheKey { rot: 15.0, w: shown.w + 40, ppp: 2.0, ..moved.clone() };
+        assert_eq!(still_wait(&mut still, Some(&shown), &turned, true, 11.0), Some(STILL_SECS), "turned and resized: again");
+        assert_eq!(still_wait(&mut still, Some(&shown), &turned, true, 11.25), None, "still for longer than STILL_SECS");
+        assert_eq!(still_wait(&mut still, Some(&shown), &turned, false, 11.0), None, "a light document");
+        assert_eq!(still_wait(&mut still, Some(&shown), &turned, true, 10.5), None, "the clock went back");
+        let edited = CacheKey { revision: shown.revision + 1, ..turned.clone() };
+        assert_eq!(still_wait(&mut still, Some(&shown), &edited, true, 12.0), None, "an edit");
+        let pixels = CacheKey { pixel: Some([0, 0, 10, 10]), ..moved.clone() };
+        assert_eq!(still_wait(&mut still, Some(&shown), &pixels, true, 13.0), None, "into Pixel Preview");
+        let shown_pixels = CacheKey { pixel: Some([5, 5, 20, 20]), ..shown.clone() };
+        assert_eq!(still_wait(&mut still, Some(&shown_pixels), &pixels, true, 13.0), Some(STILL_SECS), "Pixel Preview, moved");
+        assert_eq!(still_wait(&mut still, None, &moved, true, 14.0), None, "no frame shown");
+        assert_eq!(still_wait(&mut still, Some(&shown), &shown, true, 15.0), None, "the frame shown");
     }
 
     /// File Handling › Display Bitmaps as Anti-aliased Images in Pixel Preview (#394): off, Pixel
