@@ -1574,10 +1574,20 @@ of its kind in that panel (what Previous Library and Next Library do; a library 
 brought forward instead), `view` is `smallThumb`, `mediumThumb`, `largeThumb`, `smallList` or `largeList`,
 `showFind` shows or hides the find field, and `persistent: true` is the panel menu's Persistent: the panel
 reopens when the app starts, with its view and find field, where the saved layout had it (or floating). A
-library loaded from a file is read again from its path; one whose file is gone is left out, and the status bar
-says which. A closed persistent panel can still be set, so `persistent: false` stops it reopening. The reply
-is `{panel, kind, library, view, showFind, persistent, open}`, and `ui.inspect` lists every panel's settings
+library loaded from a file is read again from its path. When the file is gone, the panel still reopens and
+stays in the preferences: its tab shows the file's name, its body shows `Missing:` with the file's path and a
+Locate Library… button, and the status bar names the file. A persistent panel whose User Defined library's
+file is deleted while the app runs stays open with the same tab and `Missing:` body; any other panel closes.
+A closed persistent panel can still be set, so `persistent: false` stops it reopening. The reply is
+`{panel, kind, library, view, showFind, persistent, open}`, and `ui.inspect` lists every panel's settings
 under `ui.library_panels`.
+
+`ui.libraryPanel.locate {panel, path?}` is Locate Library…: it loads the library at `path` (without one, it
+asks for a file) as Other Library… does and shows it in the open panel `panel`, which keeps its view, find
+field and Persistent, and answers as `ui.libraryPanel` does. When the file's library already has a panel open,
+`panel` closes and is forgotten, and that panel is brought forward, made persistent when `panel` was.
+`window.swatchLibrary` and `window.graphicStyleLibrary` also take a missing library's id, so a closed missing
+panel opens again; they answer its file's name without the extension and `count: 0`.
 
 ```json
 {"name":"invoke_menu","arguments":{"command":"window.swatchLibrary","params":{"library":"pastels"}}}

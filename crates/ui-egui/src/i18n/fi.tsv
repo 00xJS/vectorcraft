@@ -5233,6 +5233,7 @@ mark-style	Japanese	Japanilainen
 @msg	the image's pixels can't be read	kuvan pikseleitä ei voi lukea
 	Persistent	Pysyvä
 	Library Panel Options	Kirjastopaneelin asetukset
+	Locate Library…	Paikanna kirjasto…
 @msg	Persistent libraries not found: {files}	Pysyviä kirjastoja ei löytynyt: {files}
 @msg	`{given}` isn't a library panel (see window.swatchLibrary)	`{given}` ei ole kirjastopaneeli (katso window.swatchLibrary)
 @msg	library panel `{given}` isn't open	kirjastopaneeli `{given}` ei ole auki

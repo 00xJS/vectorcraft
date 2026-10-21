@@ -623,6 +623,33 @@ fn an_import_shortcut_set_answer_goes_on_after_the_active_document_closes() {
     let _ = std::fs::remove_dir_all(dir);
 }
 
+/// Locate Library… acts on no document either: its answer shows the picked file's library in the
+/// missing library's panel even when the document active at the time closed meanwhile (Linux).
+#[test]
+fn a_locate_library_answer_goes_on_after_the_active_document_closes() {
+    let (mut app, shown, _) = with_dialogs(false);
+    let dir = std::env::temp_dir().join(format!("vc-picks-locate-{}", std::process::id()));
+    std::fs::create_dir_all(&dir).unwrap();
+    let (gone, found) = (dir.join("Gone.gpl"), dir.join("Found.gpl"));
+    std::fs::write(&found, "GIMP Palette\nName: Found\n#\n255   0   0\tRed\n").unwrap();
+    let id = format!("loaded/{}", gone.to_string_lossy());
+    let path = Some(gone.to_string_lossy().into_owned());
+    let missing = library_panel::LibraryPanel { kind: "swatches".into(), id: id.clone(), path, view: None, hide_find: false, persistent: true };
+    app.ui.library_panels.push(missing);
+    let panel = library_panel::panel_id("swatches", &id);
+    app.run("window.panel", json!({"panel": panel})).unwrap();
+    app.run("file.new", json!({"width": 100, "height": 80})).unwrap();
+    assert!(app.run("ui.libraryPanel.locate", json!({"panel": panel})).is_err());
+    app.run("file.close", json!({})).unwrap();
+    assert!(app.session.documents().is_empty());
+    shown.answer(&[&found.to_string_lossy()]);
+    poll(&mut app);
+    let located = library_panel::panel_id("swatches", &format!("loaded/{}", found.to_string_lossy()));
+    assert!(library_panel::is_open(&app.ui, &located) && !library_panel::is_open(&app.ui, &panel), "{}", app.ui.status);
+    assert_ne!(app.ui.status, CLOSED);
+    let _ = std::fs::remove_dir_all(dir);
+}
+
 /// Save Changes' Save, answered by its Save dialog, saves and closes the document it asked about,
 /// even when an earlier document closed meanwhile (Linux), then asks about the next one.
 #[test]

@@ -5186,6 +5186,7 @@ mark-style	Japanese	Japonesas
 @msg	the image's pixels can't be read	não é possível ler os pixels da imagem
 	Persistent	Persistente
 	Library Panel Options	Opções do Painel de Biblioteca
+	Locate Library…	Localizar Biblioteca…
 @msg	Persistent libraries not found: {files}	Bibliotecas persistentes não encontradas: {files}
 @msg	`{given}` isn't a library panel (see window.swatchLibrary)	`{given}` não é um painel de biblioteca (consulte window.swatchLibrary)
 @msg	library panel `{given}` isn't open	o painel de biblioteca `{given}` não está aberto

@@ -4850,6 +4850,7 @@ effect	Soft	Weich
 @msg	the image's pixels can't be read	die Pixel des Bildes können nicht gelesen werden
 	Persistent	Dauerhaft
 	Library Panel Options	Optionen für das Bibliotheksbedienfeld
+	Locate Library…	Bibliothek ausfindig machen…
 @msg	Persistent libraries not found: {files}	Dauerhafte Bibliotheken nicht gefunden: {files}
 @msg	`{given}` isn't a library panel (see window.swatchLibrary)	`{given}` ist kein Bibliotheksbedienfeld (siehe window.swatchLibrary)
 @msg	library panel `{given}` isn't open	Bibliotheksbedienfeld `{given}` ist nicht geöffnet

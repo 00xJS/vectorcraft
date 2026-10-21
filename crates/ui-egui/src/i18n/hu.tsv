@@ -5255,6 +5255,7 @@ imageTrace	Outline	Körvonal
 @msg	the image's pixels can't be read	a kép képpontjai nem olvashatók
 	Persistent	Állandó
 	Library Panel Options	Könyvtárpanel beállításai
+	Locate Library…	Könyvtár megkeresése…
 @msg	Persistent libraries not found: {files}	Nem találhatók állandó könyvtárak: {files}
 @msg	`{given}` isn't a library panel (see window.swatchLibrary)	A(z) `{given}` nem könyvtárpanel (lásd: window.swatchLibrary)
 @msg	library panel `{given}` isn't open	a(z) `{given}` könyvtárpanel nincs megnyitva

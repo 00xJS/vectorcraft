@@ -5221,6 +5221,7 @@ effect	Points	Σημεία
 @msg	the image's pixels can't be read	τα εικονοστοιχεία της εικόνας δεν μπορούν να διαβαστούν
 	Persistent	Μόνιμη
 	Library Panel Options	Επιλογές πίνακα βιβλιοθήκης
+	Locate Library…	Εντοπισμός βιβλιοθήκης…
 @msg	Persistent libraries not found: {files}	Δεν βρέθηκαν μόνιμες βιβλιοθήκες: {files}
 @msg	`{given}` isn't a library panel (see window.swatchLibrary)	Το `{given}` δεν είναι πίνακας βιβλιοθήκης (δείτε window.swatchLibrary)
 @msg	library panel `{given}` isn't open	ο πίνακας βιβλιοθήκης `{given}` δεν είναι ανοιχτός

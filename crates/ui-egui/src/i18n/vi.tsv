@@ -4863,6 +4863,7 @@ theme	Appearance	Giao diện
 @msg	the image's pixels can't be read	không đọc được các điểm ảnh của ảnh
 	Persistent	Lưu giữ
 	Library Panel Options	Tùy chọn bảng thư viện
+	Locate Library…	Xác định vị trí thư viện…
 @msg	Persistent libraries not found: {files}	Không tìm thấy thư viện lưu giữ: {files}
 @msg	`{given}` isn't a library panel (see window.swatchLibrary)	`{given}` không phải là bảng thư viện (xem window.swatchLibrary)
 @msg	library panel `{given}` isn't open	bảng thư viện `{given}` chưa được mở

@@ -508,7 +508,7 @@ pub const UI_COMMANDS: &[(&str, &str, &str, &str)] = &[
         "window.swatchLibrary",
         "Swatch Library",
         "",
-        "{library: id or name (see swatch.library.list) | null (close every swatch library panel)} open the swatch library in a read-only panel of its own, floating (panel id `library:swatches:<id>`, which window.panel.* moves, docks and closes), or bring its panel forward when it is open; clicking a swatch there runs swatch.library.add with apply. ui.libraryPanel sets its view, find field and Persistent (ui.inspect: ui.library_panels) → {open: id, panel, name, count}",
+        "{library: id or name (see swatch.library.list), or the id of a persistent panel's missing library | null (close every swatch library panel)} open the swatch library in a read-only panel of its own, floating (panel id `library:swatches:<id>`, which window.panel.* moves, docks and closes), or bring its panel forward when it is open; clicking a swatch there runs swatch.library.add with apply. ui.libraryPanel sets its view, find field and Persistent (ui.inspect: ui.library_panels) → {open: id, panel, name, count}",
     ),
     (
         "window.swatchLibrary.other",
@@ -521,6 +521,12 @@ pub const UI_COMMANDS: &[(&str, &str, &str, &str)] = &[
         "Library Panel Options",
         "",
         "{panel: a library panel's id (`library:swatches:pastels`, as window.swatchLibrary answers), library?: id or name of another library of its kind to show in the panel (Previous / Next Library; one open in a panel of its own is brought forward instead), view?: smallThumb|mediumThumb|largeThumb|smallList|largeList, showFind?: bool, persistent?: bool (reopen the panel when the app starts)} set an open library panel, or a closed persistent one's view, Show Find Field and Persistent; kept with the preferences (ui.inspect: ui.library_panels) → {panel, kind, library, view, showFind, persistent, open}",
+    ),
+    (
+        "ui.libraryPanel.locate",
+        "Locate Library…",
+        "",
+        "{panel: an open library panel's id, path?} (default: pick a file) Locate Library… of a persistent library panel whose library's file is missing: load the library from the file, as Other Library… does, and show it in the panel, which keeps its view, Show Find Field and Persistent. When the file's library has a panel open already, the panel closes and that one is brought forward, made persistent when the closed one was → what ui.libraryPanel answers",
     ),
     (
         "ui.saveSwatchLibrary",
@@ -608,7 +614,7 @@ pub const UI_COMMANDS: &[(&str, &str, &str, &str)] = &[
         "window.graphicStyleLibrary",
         "Graphic Style Library",
         "",
-        "{library: id or name (see graphicStyle.libraries) | null (close every graphic style library panel)} open the graphic style library in a read-only panel of its own, floating (panel id `library:graphicStyles:<id>`), or bring its panel forward when it is open; clicking a style there runs graphicStyle.addFromLibrary with apply (Alt: add). ui.libraryPanel sets its view, find field and Persistent → {open: id, panel, name, count}",
+        "{library: id or name (see graphicStyle.libraries), or the id of a persistent panel's missing library | null (close every graphic style library panel)} open the graphic style library in a read-only panel of its own, floating (panel id `library:graphicStyles:<id>`), or bring its panel forward when it is open; clicking a style there runs graphicStyle.addFromLibrary with apply (Alt: add). ui.libraryPanel sets its view, find field and Persistent → {open: id, panel, name, count}",
     ),
     (
         "window.graphicStyleLibrary.other",
@@ -1610,6 +1616,7 @@ pub fn run_ui_command(app: &mut VectorcraftApp, id: &str, p: &Value) -> Option<R
         "ui.flattenerPreview" => crate::panels::flattener_preview::command(app, p),
         "window.graphicStyleLibrary" => crate::panels::graphic_styles::open_library(app, p),
         "ui.libraryPanel" => crate::panels::library_panel::command(app, p),
+        "ui.libraryPanel.locate" => crate::panels::library_panel::locate(app, p),
         "window.graphicStyleLibrary.other" => crate::panels::graphic_styles::other_library(app, s("path")),
         "ui.saveGraphicStyleLibrary" => {
             let names = p.get("names").and_then(Value::as_array).map(|a| a.iter().filter_map(Value::as_str).map(str::to_string).collect());
