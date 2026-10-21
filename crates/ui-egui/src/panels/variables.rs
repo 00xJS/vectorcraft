@@ -392,7 +392,8 @@ mod tests {
 
     /// Choosing a data set, or stepping to one with the arrows, shows a status message when no
     /// object is bound to a variable it has a value for, for example after Import Data Sets…
-    /// defines new variables. With such an object bound, it shows none.
+    /// defines new variables. With such an object bound, choosing a data set or stepping to one
+    /// clears the message.
     #[test]
     fn a_data_set_with_nothing_bound_shows_a_status_message() {
         let mut app = VectorcraftApp::new(vectorcraft_engine::Session::new(), Default::default());
@@ -407,10 +408,18 @@ mod tests {
         app.run("dataset.prev", json!({})).unwrap();
         assert_eq!(app.ui.status, message("A"));
 
-        app.ui.status.clear();
         app.run("variable.bind", json!({"variable": "Name", "ids": [t]})).unwrap();
         app.run("dataset.select", json!({"name": "B"})).unwrap();
         assert_eq!(app.ui.status, "");
+        // Stepping to a data set that applies clears the message as well.
+        for step in ["dataset.next", "dataset.prev"] {
+            app.run("variable.unbind", json!({"variable": "Name", "ids": [t]})).unwrap();
+            app.run("dataset.select", json!({"name": "A"})).unwrap();
+            assert_eq!(app.ui.status, message("A"));
+            app.run("variable.bind", json!({"variable": "Name", "ids": [t]})).unwrap();
+            app.run(step, json!({})).unwrap();
+            assert_eq!(app.ui.status, "", "{step}");
+        }
     }
 
     #[test]
