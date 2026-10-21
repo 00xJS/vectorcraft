@@ -446,6 +446,11 @@ in the app runs `paint.setFill` (or `paint.setStroke`, the active proxy) with `i
 The Swatches panel menu's commands: `swatch.addUsedColors {selection?, global?}`, `swatch.unused` (a query: the
 names Select All Unused selects), `swatch.merge {names}` (the first is kept), `swatch.ungroup {name}` and
 `swatch.sortByKind`.
+`brush.move {name | names, to?, type?}` reorders brushes among the brushes of their type, as dragging one onto
+another of its type in the Brushes panel does. `to` is an index among the brushes of that type in `brush.list`
+order: the brushes go before the first brush of that type at or after `to` that is not moving, and after the last
+brush of that type when there is none or `to` is left out. A move that keeps the order records no undo step.
+Brushes of different types, or a `type` other than theirs, are refused with "brushes move only within their type".
 Document colour mode: `file.new {colorMode: "cmyk"}` starts a CMYK document with CMYK default swatches, and RGB
 colors applied to it (`paint.setFill`/`setStroke` colors, gradient stops and freeform points, `paint.editGradient`
 stops, `paint.freeform.addPoint`/`setPoint`, `paint.sampleColor`, `object.mesh.setPointColor`/`addLine`, the

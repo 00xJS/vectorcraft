@@ -2581,6 +2581,7 @@ theme	Appearance	Εμφάνιση
 	Move Slices	Μετακίνηση τομών
 	Move Spine Point	Μετακίνηση σημείου κεντρικής καμπύλης
 	Reshape Spine Segment	Αναδιαμόρφωση τμήματος κεντρικής καμπύλης
+	Move Brush	Μετακίνηση πινέλου
 	Move Swatch	Μετακίνηση δείγματος χρώματος
 	Move Up	Μετακίνηση επάνω
 	My Themes	Τα θέματά μου
@@ -3974,6 +3975,7 @@ theme	Appearance	Εμφάνιση
 @msg	no bounds	δεν υπάρχουν όρια
 @msg	no brush named `{name}`	δεν υπάρχει πινέλο με όνομα `{name}`
 @msg	no brush selected	δεν έχει επιλεγεί πινέλο
+@msg	brushes move only within their type	τα πινέλα μετακινούνται μόνο μέσα στον τύπο τους
 @msg	no catalog	δεν υπάρχει κατάλογος
 @msg	no changes since the last save	δεν υπάρχουν αλλαγές μετά την τελευταία αποθήκευση
 @msg	no clock to keep a heartbeat by	δεν υπάρχει ρολόι για τον παλμό διατήρησης σύνδεσης

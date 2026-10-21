@@ -2366,6 +2366,7 @@ file-filter	Templates	Sablonok
 	Move Rows	Sorok áthelyezése
 	Move Slices	Szeletek áthelyezése
 	Move Spine Point	Gerincpont áthelyezése
+	Move Brush	Ecset áthelyezése
 	Move Swatch	Színminta áthelyezése
 	Move to Group	Áthelyezés csoportba
 	Move Up	Feljebb
@@ -4643,6 +4644,7 @@ imageTrace	Outline	Körvonal
 @msg	no bounds	nincsenek határok
 @msg	no brush named `{name}`	nincs ilyen nevű ecset: `{name}`
 @msg	no brush selected	nincs kijelölt ecset
+@msg	brushes move only within their type	az ecsetek csak a saját típusukon belül helyezhetők át
 @msg	no catalog	nincs katalógus
 @msg	no changes since the last save	a legutóbbi mentés óta nincs módosítás
 @msg	no clock to keep a heartbeat by	nincs óra az életjel időzítéséhez

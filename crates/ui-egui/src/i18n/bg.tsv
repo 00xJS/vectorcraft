@@ -1826,6 +1826,7 @@
 	Move Slices	Преместване на резени
 	Move Spine Point	Преместване на точка от оста
 	Reshape Spine Segment	Промяна на формата на сегмент от оста
+	Move Brush	Преместване на четка
 	Move Swatch	Преместване на образец
 	Move Up	Преместване нагоре
 	Move…	Преместване…
@@ -3918,6 +3919,7 @@ axis	Both	И двете
 @msg	no bounds	няма граници
 @msg	no brush named `{name}`	няма четка с име `{name}`
 @msg	no brush selected	няма избрана четка
+@msg	brushes move only within their type	четките се преместват само в рамките на своя тип
 @msg	no catalog	няма каталог
 @msg	no changes since the last save	няма промени от последното запазване
 @msg	no clock to keep a heartbeat by	няма часовник за поддържане на ритъм

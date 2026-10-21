@@ -3309,6 +3309,7 @@ theme	Appearance	Tampilan
 	Delete Swatch	Hapus sampel
 	Duplicate Swatch	Duplikatkan sampel
 	Merge Swatches	Gabungkan sampel
+	Move Brush	Pindahkan kuas
 	Move Swatch	Pindahkan sampel
 	New Color Group	Grup warna baru
 	New Swatch	Sampel baru
@@ -4029,6 +4030,7 @@ imageTrace	Outline	Kontur
 @msg	no bounds	tidak ada batas
 @msg	no brush named `{name}`	tidak ada kuas bernama `{name}`
 @msg	no brush selected	tidak ada kuas yang dipilih
+@msg	brushes move only within their type	kuas hanya dapat dipindahkan di dalam jenisnya sendiri
 @msg	no catalog	tidak ada katalog
 @msg	no changes since the last save	tidak ada perubahan sejak penyimpanan terakhir
 @msg	no clock to keep a heartbeat by	tidak ada jam untuk menjaga detak

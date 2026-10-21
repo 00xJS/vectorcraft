@@ -1826,6 +1826,7 @@
 	Move Slices	Flytta skivor
 	Move Spine Point	Flytta ryggradspunkt
 	Reshape Spine Segment	Omforma ryggradssegment
+	Move Brush	Flytta pensel
 	Move Swatch	Flytta färgruta
 	Move Up	Flytta upp
 	Move…	Flytta…
@@ -3923,6 +3924,7 @@ axis	Both	Båda
 @msg	no bounds	inga gränser
 @msg	no brush named `{name}`	ingen pensel med namnet `{name}`
 @msg	no brush selected	ingen pensel är markerad
+@msg	brushes move only within their type	penslar kan bara flyttas inom sin egen typ
 @msg	no catalog	ingen katalog
 @msg	no changes since the last save	inga ändringar sedan senaste sparningen
 @msg	no clock to keep a heartbeat by	ingen klocka att styra hjärtslagen efter

@@ -351,7 +351,7 @@ fn swatch_new_group(s: &mut Session, p: &Value) -> Result<Value> {
 
 /// The name of the item that items moving to index `to` of `list` go before: the first one at or
 /// after `to` that isn't moving (`None`: the end).
-fn anchor<T>(list: &[T], to: Option<usize>, moving: &[String], name: impl Fn(&T) -> &str) -> Option<String> {
+pub(super) fn anchor<T>(list: &[T], to: Option<usize>, moving: &[String], name: impl Fn(&T) -> &str) -> Option<String> {
     list.iter().skip(to?).map(&name).find(|n| !moving.iter().any(|m| m == n)).map(str::to_string)
 }
 

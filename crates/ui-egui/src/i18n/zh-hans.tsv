@@ -1794,6 +1794,7 @@ file-filter	Templates	模板
 @msg	x and y must be finite	x 和 y 必须是有限值
 @msg	t, dx and dy must be finite	t、dx 和 dy 必须是有限值
 @msg	handle must be in or out	handle 必须是 in 或 out
+	Move Brush	移动画笔
 	Move Swatch	移动色板
 	Move Up	上移
 	Move…	移动…
@@ -3619,6 +3620,7 @@ imageTrace	Outline	轮廓
 @msg	Expand: no brush strokes selected	扩展：未选择画笔描边
 @msg	no brush named `{name}`	没有名为 `{name}` 的画笔
 @msg	no brush selected	未选择画笔
+@msg	brushes move only within their type	画笔只能在同一类型内移动
 @msg	no symbol instances selected	未选择符号实例
 @msg	select a symbol instance	请选择一个符号实例
 @msg	the art has no bounds	图稿没有边界

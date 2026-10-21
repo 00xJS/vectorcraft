@@ -1895,6 +1895,7 @@ file-filter	Templates	Шаблони
 	Move Slices	Перемістити фрагменти
 	Move Spine Point	Перемістити точку осі
 	Reshape Spine Segment	Змінити форму сегмента осі
+	Move Brush	Перемістити пензель
 	Move Swatch	Перемістити зразок
 	Move Up	Перемістити вгору
 	Move…	Перемістити…
@@ -4030,6 +4031,7 @@ axis	Both	Обидві
 @msg	no bounds	немає кордонів
 @msg	no brush named `{name}`	немає пензля з ім’ям `{name}`
 @msg	no brush selected	пензель не вибрано
+@msg	brushes move only within their type	пензлі можна переміщувати лише в межах їхнього типу
 @msg	no catalog	немає каталогу
 @msg	no changes since the last save	немає змін з моменту останнього збереження
 @msg	no clock to keep a heartbeat by	немає годинника для підтримки сигналу

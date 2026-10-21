@@ -140,6 +140,62 @@ fn brush_options_rename_duplicate_and_delete_update_strokes() {
     assert!(s.execute("brush.delete", &json!({"name": "5 pt. Round"})).is_err());
 }
 
+/// `brush.move`, which the Brushes panel runs when a brush is dragged, reorders brushes among those of
+/// their type in one undo step and refuses to move one into another type.
+#[test]
+fn brush_move_reorders_brushes_within_their_type() {
+    let mut s = session();
+    let names = |s: &mut Session, ty: &str| -> Vec<String> {
+        let list = s.execute("brush.list", &json!({})).unwrap();
+        let of_type = list["brushes"].as_array().unwrap().iter().filter(|b| ty.is_empty() || b["type"] == ty);
+        of_type.map(|b| b["name"].as_str().unwrap().to_string()).collect()
+    };
+    let undo = |s: &Session| s.doc().unwrap().history.undo.len();
+    let before = names(&mut s, "");
+    assert_eq!(names(&mut s, "calligraphic"), ["3 pt. Round", "6 pt. Flat", "10 pt. Oval"]);
+    let steps = undo(&s);
+    // To index 0 of the calligraphic brushes: before the first; the other types stay where they are.
+    let r = s.execute("brush.move", &json!({"name": "10 pt. Oval", "to": 0})).unwrap();
+    assert_eq!(r["moved"], json!(1));
+    assert_eq!(names(&mut s, "")[..3], ["10 pt. Oval", "3 pt. Round", "6 pt. Flat"]);
+    assert_eq!(names(&mut s, "")[3..], before[3..]);
+    assert_eq!(undo(&s), steps + 1);
+    // Several go in the order given, as one step.
+    s.execute("brush.move", &json!({"names": ["6 pt. Flat", "3 pt. Round"], "to": 0, "type": "calligraphic"})).unwrap();
+    assert_eq!(names(&mut s, "calligraphic"), ["6 pt. Flat", "3 pt. Round", "10 pt. Oval"]);
+    assert_eq!(undo(&s), steps + 2);
+    s.execute("edit.undo", &json!({})).unwrap();
+    assert_eq!(names(&mut s, "calligraphic"), ["10 pt. Oval", "3 pt. Round", "6 pt. Flat"]);
+    s.execute("edit.undo", &json!({})).unwrap();
+    assert_eq!(names(&mut s, ""), before);
+    // Into the scatter brushes, with a scatter brush, or with a `to` that isn't a whole number: an
+    // error, and nothing moves.
+    for (p, why) in [
+        (json!({"name": "3 pt. Round", "type": "scatter"}), "brushes move only within their type"),
+        (json!({"names": ["3 pt. Round", "Dots"], "to": 0}), "brushes move only within their type"),
+        (json!({"name": "3 pt. Round", "to": "1"}), "`to` must be a number, not \"1\""),
+        (json!({"name": "3 pt. Round", "to": 1.5}), "`to` must be a whole number"),
+        (json!({"name": "Nope", "to": 0}), "no brush named `Nope`"),
+    ] {
+        let r = s.execute("brush.move", &p);
+        assert!(matches!(&r, Err(EngineError::BadParams { msg, .. }) if msg == why), "{p}: {r:?}");
+    }
+    assert_eq!((names(&mut s, ""), undo(&s)), (before.clone(), steps));
+    // A move that keeps the order records no step.
+    s.execute("brush.move", &json!({"name": "3 pt. Round", "to": 0})).unwrap();
+    assert_eq!((names(&mut s, ""), undo(&s)), (before.clone(), steps));
+    // Without `to`, or past the last one: after the last brush of the type, even one listed after
+    // brushes of other types.
+    s.execute("brush.new", &json!({"type": "calligraphic", "name": "Quill"})).unwrap();
+    s.execute("brush.move", &json!({"name": "3 pt. Round"})).unwrap();
+    assert_eq!(names(&mut s, "calligraphic"), ["6 pt. Flat", "10 pt. Oval", "Quill", "3 pt. Round"]);
+    assert_eq!(names(&mut s, "").last().map(String::as_str), Some("3 pt. Round"));
+    s.execute("brush.move", &json!({"name": "6 pt. Flat", "to": 99})).unwrap();
+    assert_eq!(names(&mut s, "calligraphic"), ["10 pt. Oval", "Quill", "3 pt. Round", "6 pt. Flat"]);
+    s.execute("brush.move", &json!({"name": "Leaves", "to": 1})).unwrap();
+    assert_eq!(names(&mut s, "scatter"), ["Dots", "Leaves", "Confetti"]);
+}
+
 /// New Brush, Duplicate Brush and Brush Options trim the name they are given, as the Brush Options
 /// dialog does; the trimmed name is the one compared with the brushes there are, and a blank name
 /// gives the name the command gives when there is none.

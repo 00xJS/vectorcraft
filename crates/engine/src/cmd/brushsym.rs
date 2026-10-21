@@ -17,7 +17,7 @@ use vectorcraft_geom::{Affine, Point, Vec2};
 
 use super::edit::{outermost, selected_roots};
 use super::pathops::{remove_each, separate};
-use super::swatch::names_param;
+use super::swatch::{anchor, names_param};
 use super::*;
 use crate::EngineError;
 
@@ -75,6 +75,15 @@ pub fn specs() -> Vec<CommandSpec> {
             "{name} | {names: [name…]} delete brushes; strokes using them become plain strokes",
             has_doc,
             brush_delete
+        ),
+        cmd!(
+            "brush.move",
+            "Move Brush",
+            [],
+            None,
+            "{name? | names?: [brush names of one type, in order], to?: index among the brushes of that type in brush.list order (they go before the brush of that type now there that isn't moving; default: after the last one), type?: calligraphic|scatter|art|pattern|bristle (the type they go into; default: theirs)} reorder brushes within their type, as one undo step (none when the order stays as it was); brushes of different types, or a type that isn't theirs, are refused (brushes move only within their type) → {moved}",
+            has_doc,
+            brush_move
         ),
         cmd!(
             "brush.duplicate",
@@ -464,6 +473,54 @@ fn brush_delete(s: &mut Session, p: &Value) -> Result<Value> {
     let renames: Vec<(String, Option<String>)> = names.into_iter().map(|n| (n, None)).collect();
     save_library(s, "Delete Brush", lib, &renames)?;
     ok()
+}
+
+/// Moves the brushes in `name` or `names`, in that order, to index `to` among the brushes of their
+/// type in library order: before the first brush of that type at or after `to` that isn't moving,
+/// else after the last brush of that type that isn't moving. Brushes of different types, or a `type`
+/// that isn't theirs, are an error. A move that leaves the order as it was records no undo step.
+fn brush_move(s: &mut Session, p: &Value) -> Result<Value> {
+    const C: &str = "brush.move";
+    const WITHIN: &str = "brushes move only within their type";
+    let names = names_param(p, C)?;
+    check_numbers(p, &["to"], C)?;
+    let to = match p.get("to").filter(|v| !v.is_null()) {
+        Some(v) => Some(v.as_u64().map(|i| usize::try_from(i).unwrap_or(usize::MAX)).ok_or_else(|| bad(C, "`to` must be a whole number"))?),
+        None => None,
+    };
+    let old = brush::library(&s.doc()?.doc);
+    let mut lib = old.clone();
+    // `names_param` refuses an empty list, so the loop sets `kind`.
+    let mut kind = "";
+    for name in &names {
+        let b = lib.iter().find(|b| &b.name == name).ok_or_else(|| bad(C, format!("no brush named `{name}`")))?;
+        if !kind.is_empty() && kind != b.kind.type_id() {
+            return Err(bad(C, WITHIN));
+        }
+        kind = b.kind.type_id();
+    }
+    if p.get("type").filter(|v| !v.is_null()).is_some_and(|t| t.as_str() != Some(kind)) {
+        return Err(bad(C, WITHIN));
+    }
+    let same: Vec<&Brush> = lib.iter().filter(|b| b.kind.type_id() == kind).collect();
+    let before = anchor(&same, to, &names, |b| &b.name);
+    let first = lib.iter().position(|b| names.contains(&b.name)).unwrap_or(lib.len());
+    let mut items = vec![];
+    for name in &names {
+        if let Some(i) = lib.iter().position(|b| &b.name == name) {
+            items.push(lib.remove(i));
+        }
+    }
+    let at = match before {
+        Some(a) => lib.iter().position(|b| b.name == a),
+        None => lib.iter().rposition(|b| b.kind.type_id() == kind).map(|i| i + 1),
+    };
+    let at = at.unwrap_or(first).min(lib.len());
+    lib.splice(at..at, items);
+    if lib != old {
+        save_library(s, "Move Brush", lib, &[])?;
+    }
+    Ok(json!({ "moved": names.len() }))
 }
 
 /// Adds a copy of each brush in `name` or `names` at the end of the library. `newName`, given

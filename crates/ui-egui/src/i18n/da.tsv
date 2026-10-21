@@ -3309,6 +3309,7 @@ theme	Appearance	Udseende
 	Delete Swatch	Slet farveprøve
 	Duplicate Swatch	Duplikér farveprøve
 	Merge Swatches	Flet farveprøver
+	Move Brush	Flyt pensel
 	Move Swatch	Flyt farveprøve
 	New Color Group	Ny farvegruppe
 	New Swatch	Ny farveprøve
@@ -4029,6 +4030,7 @@ imageTrace	Outline	Kontur
 @msg	no bounds	ingen grænser
 @msg	no brush named `{name}`	ingen pensel med navnet `{name}`
 @msg	no brush selected	ingen pensel er markeret
+@msg	brushes move only within their type	pensler kan kun flyttes inden for deres egen type
 @msg	no catalog	intet katalog
 @msg	no changes since the last save	ingen ændringer siden sidste gemning
 @msg	no clock to keep a heartbeat by	intet ur at holde hjerteslag efter

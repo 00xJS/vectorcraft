@@ -3558,6 +3558,7 @@ theme	Appearance	Motiv
 	Delete Swatch	Odstranit položku vzorníku
 	Duplicate Swatch	Duplikovat položku vzorníku
 	Merge Swatches	Sloučit položky vzorníku
+	Move Brush	Přesunout štětec
 	Move Swatch	Přesunout položku vzorníku
 	New Color Group	Nová skupina barev
 	New Swatch	Nová položka vzorníku
@@ -4308,6 +4309,7 @@ imageTrace	Outline	Obrys
 @msg	no bounds	žádné hranice
 @msg	no brush named `{name}`	štětec s názvem `{name}` neexistuje
 @msg	no brush selected	není vybrán žádný štětec
+@msg	brushes move only within their type	štětce lze přesouvat jen v rámci jejich typu
 @msg	no catalog	chybí katalog
 @msg	no changes since the last save	od posledního uložení nejsou žádné změny
 @msg	no clock to keep a heartbeat by	chybí hodiny, podle kterých by šlo udržovat signál aktivity

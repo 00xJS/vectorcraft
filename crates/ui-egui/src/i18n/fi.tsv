@@ -3486,6 +3486,7 @@ theme	Appearance	Ulkoasu
 	Delete Swatch	Poista värimalli
 	Duplicate Swatch	Monista värimalli
 	Merge Swatches	Yhdistä värimallit
+	Move Brush	Siirrä sivellintä
 	Move Swatch	Siirrä värimallia
 	New Color Group	Uusi väriryhmä
 	New Swatch	Uusi värimalli
@@ -4223,6 +4224,7 @@ imageTrace	Outline	Ääriviiva
 @msg	no bounds	ei rajoja
 @msg	no brush named `{name}`	ei sivellintä nimeltä `{name}`
 @msg	no brush selected	sivellintä ei ole valittu
+@msg	brushes move only within their type	siveltimiä voi siirtää vain oman tyyppinsä sisällä
 @msg	no catalog	ei luetteloa
 @msg	no changes since the last save	ei muutoksia viimeisen tallennuksen jälkeen
 @msg	no clock to keep a heartbeat by	ei kelloa sykkeen ylläpitoon

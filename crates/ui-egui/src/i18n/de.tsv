@@ -1883,6 +1883,7 @@ file-filter	Templates	Vorlagen
 	Move Slices	Slices verschieben
 	Move Spine Point	Achsenpunkt verschieben
 	Reshape Spine Segment	Achsensegment umformen
+	Move Brush	Pinsel verschieben
 	Move Swatch	Farbfeld verschieben
 	Move Up	Nach oben verschieben
 	Move…	Verschieben…
@@ -3944,6 +3945,7 @@ theme	Appearance	Erscheinungsbild
 @msg	no bounds	keine Begrenzung
 @msg	no brush named `{name}`	kein Pinsel namens `{name}`
 @msg	no brush selected	kein Pinsel ausgewählt
+@msg	brushes move only within their type	Pinsel lassen sich nur innerhalb ihrer Art verschieben
 @msg	this kind of brush has no options dialog yet	für diese Pinselart gibt es noch kein Optionsdialogfeld
 @msg	no catalog	kein Katalog
 @msg	no changes since the last save	keine Änderungen seit dem letzten Speichern
