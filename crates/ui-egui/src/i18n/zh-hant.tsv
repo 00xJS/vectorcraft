@@ -4901,6 +4901,7 @@ lighting	Light	光源
 	Light/Dark Balance	明暗平衡
 	Enable Guides for 9-Slice Scaling	啟用 9-slice 縮放參考線
 	Persistent	持久
+	Locate Library…	尋找資料庫…
 	Library Panel Options	資料庫面板選項
 	Artboard {n} of {total}	工作區域 {n} / {total}
 	Encoding and writing the file…	正在編碼並寫入檔案…

@@ -4846,6 +4846,7 @@ lighting	Light	광원
 @msg	the image's pixels can't be read	이미지의 픽셀을 읽을 수 없습니다
 	Persistent	지속
 	Library Panel Options	라이브러리 패널 옵션
+	Locate Library…	라이브러리 찾기…
 @msg	Persistent libraries not found: {files}	지속 라이브러리를 찾을 수 없습니다: {files}
 @msg	`{given}` isn't a library panel (see window.swatchLibrary)	`{given}`은(는) 라이브러리 패널이 아닙니다(window.swatchLibrary 참조)
 @msg	library panel `{given}` isn't open	라이브러리 패널 `{given}`이(가) 열려 있지 않습니다

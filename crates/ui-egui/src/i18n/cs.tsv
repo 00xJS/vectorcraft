@@ -5269,6 +5269,7 @@ mark-style	Japanese	Japonské
 @msg	the image's pixels can't be read	pixely obrazu nelze přečíst
 	Persistent	Trvalé
 	Library Panel Options	Možnosti panelu knihovny
+	Locate Library…	Najít knihovnu…
 @msg	Persistent libraries not found: {files}	Trvalé knihovny nebyly nalezeny: {files}
 @msg	`{given}` isn't a library panel (see window.swatchLibrary)	`{given}` není panel knihovny (viz window.swatchLibrary)
 @msg	library panel `{given}` isn't open	panel knihovny `{given}` není otevřený

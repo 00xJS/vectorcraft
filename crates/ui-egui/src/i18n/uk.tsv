@@ -4863,6 +4863,7 @@ lighting	Light	Світло
 @msg	the image's pixels can't be read	не вдається прочитати пікселі зображення
 	Persistent	Постійна
 	Library Panel Options	Параметри панелі бібліотеки
+	Locate Library…	Знайти бібліотеку…
 @msg	Persistent libraries not found: {files}	Постійні бібліотеки не знайдено: {files}
 @msg	`{given}` isn't a library panel (see window.swatchLibrary)	`{given}` — не панель бібліотеки (див. window.swatchLibrary)
 @msg	library panel `{given}` isn't open	панель бібліотеки `{given}` не відкрита

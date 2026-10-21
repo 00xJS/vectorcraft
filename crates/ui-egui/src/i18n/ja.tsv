@@ -4923,6 +4923,7 @@ lighting	Light	ライト
 @msg	the image's pixels can't be read	画像のピクセルを読み取れません
 	Persistent	永続
 	Library Panel Options	ライブラリパネルオプション
+	Locate Library…	ライブラリを検索…
 @msg	Persistent libraries not found: {files}	永続ライブラリが見つかりません: {files}
 @msg	`{given}` isn't a library panel (see window.swatchLibrary)	`{given}` はライブラリパネルではありません (window.swatchLibrary を参照)
 @msg	library panel `{given}` isn't open	ライブラリパネル `{given}` は開いていません

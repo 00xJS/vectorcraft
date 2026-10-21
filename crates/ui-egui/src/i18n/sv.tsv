@@ -5225,6 +5225,7 @@ theme	Appearance	Utseende
 @msg	the image's pixels can't be read	bildens pixlar kan inte läsas
 	Persistent	Beständig
 	Library Panel Options	Alternativ för bibliotekspanelen
+	Locate Library…	Hitta bibliotek…
 @msg	Persistent libraries not found: {files}	Beständiga bibliotek hittades inte: {files}
 @msg	`{given}` isn't a library panel (see window.swatchLibrary)	`{given}` är inte en bibliotekspanel (se window.swatchLibrary)
 @msg	library panel `{given}` isn't open	bibliotekspanelen `{given}` är inte öppen

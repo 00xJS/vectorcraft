@@ -5101,6 +5101,7 @@ lighting	Light	光源
 @msg	the image's pixels can't be read	无法读取图像的像素
 	Persistent	持久
 	Library Panel Options	库面板选项
+	Locate Library…	查找库…
 @msg	Persistent libraries not found: {files}	找不到持久库：{files}
 @msg	`{given}` isn't a library panel (see window.swatchLibrary)	`{given}` 不是库面板 (请参阅 window.swatchLibrary)
 @msg	library panel `{given}` isn't open	库面板 `{given}` 未打开

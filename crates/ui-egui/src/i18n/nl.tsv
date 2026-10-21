@@ -5242,6 +5242,7 @@ swatch	Bright Violet	Felviolet
 	Typing	Typen
 	Persistent	Permanent
 	Library Panel Options	Opties voor bibliotheekpaneel
+	Locate Library…	Bibliotheek lokaliseren…
 
 @msg	Save writes {_1}, not {_2}: use file.saveAsTemplate to write it	Opslaan schrijft {_1}, niet {_2}: gebruik file.saveAsTemplate om het te schrijven
 @msg	`{key}` must be a #rrggbb color	`{key}` moet een #rrggbb-kleur zijn
