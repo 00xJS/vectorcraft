@@ -5335,3 +5335,8 @@ theme	Appearance	Utseende
 	Ruby	Ruby
 	Fresco…	Fresk…
 	Fresco	Fresk
+
+# Artwork drag between document tabs.
+	Drop Artwork	Släpp grafik
+@msg	{key} must be [x, y] with finite coordinates	{key} måste vara [x, y] med ändliga koordinater
+@msg	ids must contain 1–10000 object ids	ids måste innehålla 1–10000 objekt-id:n

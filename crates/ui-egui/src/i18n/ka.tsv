@@ -5289,3 +5289,8 @@ imageTrace	Outline	კონტური
 	Ruby	რუბი
 	Fresco…	ფრესკა…
 	Fresco	ფრესკა
+
+# Artwork drag between document tabs.
+	Drop Artwork	ნამუშევრის განთავსება
+@msg	{key} must be [x, y] with finite coordinates	{key} უნდა იყოს [x, y] სასრული კოორდინატებით
+@msg	ids must contain 1–10000 object ids	ids უნდა შეიცავდეს 1–10000 ობიექტის იდენტიფიკატორს

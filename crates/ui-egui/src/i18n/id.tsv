@@ -5352,3 +5352,8 @@ swatch	Bright Violet	Violet cerah
 	Ruby	Ruby
 	Fresco…	Fresko…
 	Fresco	Fresko
+
+# Artwork drag between document tabs.
+	Drop Artwork	Letakkan karya
+@msg	{key} must be [x, y] with finite coordinates	{key} harus berupa [x, y] dengan koordinat berhingga
+@msg	ids must contain 1–10000 object ids	ids harus berisi 1–10000 ID objek

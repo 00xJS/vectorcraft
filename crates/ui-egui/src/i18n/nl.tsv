@@ -5394,3 +5394,8 @@ swatch	Bright Violet	Felviolet
 	Ruby	Ruby
 	Fresco…	Fresco…
 	Fresco	Fresco
+
+# Artwork drag between document tabs.
+	Drop Artwork	Illustratie neerzetten
+@msg	{key} must be [x, y] with finite coordinates	{key} moet [x, y] met eindige coördinaten zijn
+@msg	ids must contain 1–10000 object ids	ids moet 1–10000 object-id’s bevatten

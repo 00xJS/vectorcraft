@@ -5041,3 +5041,8 @@ lighting	Light	ライト
 	Ruby	ルビ
 	Fresco…	フレスコ…
 	Fresco	フレスコ
+
+# Artwork drag between document tabs.
+	Drop Artwork	アートワークをドロップ
+@msg	{key} must be [x, y] with finite coordinates	{key} は有限の座標を持つ [x, y] である必要があります
+@msg	ids must contain 1–10000 object ids	ids には 1～10000 個のオブジェクト ID を指定してください

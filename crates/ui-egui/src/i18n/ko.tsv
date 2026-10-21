@@ -4957,3 +4957,8 @@ lighting	Light	광원
 	Ruby	루비
 	Fresco…	프레스코…
 	Fresco	프레스코
+
+# Artwork drag between document tabs.
+	Drop Artwork	아트워크 놓기
+@msg	{key} must be [x, y] with finite coordinates	{key}은(는) 유한한 좌표의 [x, y]여야 합니다
+@msg	ids must contain 1–10000 object ids	ids에는 1~10000개의 오브젝트 ID가 있어야 합니다

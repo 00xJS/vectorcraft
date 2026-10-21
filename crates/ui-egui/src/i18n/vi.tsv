@@ -4974,3 +4974,8 @@ theme	Appearance	Giao diện
 	Ruby	Ruby
 	Fresco…	Bích họa…
 	Fresco	Bích họa
+
+# Artwork drag between document tabs.
+	Drop Artwork	Thả hình đồ họa
+@msg	{key} must be [x, y] with finite coordinates	{key} phải là [x, y] với tọa độ hữu hạn
+@msg	ids must contain 1–10000 object ids	ids phải chứa từ 1 đến 10000 mã định danh đối tượng

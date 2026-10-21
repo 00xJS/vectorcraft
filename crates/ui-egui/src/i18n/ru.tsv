@@ -4990,3 +4990,8 @@ lighting	Light	Свет
 	Ruby	Руби
 	Fresco…	Фреска…
 	Fresco	Фреска
+
+# Artwork drag between document tabs.
+	Drop Artwork	Поместить графику
+@msg	{key} must be [x, y] with finite coordinates	{key} должен быть [x, y] с конечными координатами
+@msg	ids must contain 1–10000 object ids	ids должен содержать от 1 до 10000 идентификаторов объектов

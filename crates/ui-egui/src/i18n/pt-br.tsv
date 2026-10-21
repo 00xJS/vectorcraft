@@ -5296,3 +5296,8 @@ mark-style	Japanese	Japonesas
 	Ruby	Ruby
 	Fresco…	Afresco…
 	Fresco	Afresco
+
+# Artwork drag between document tabs.
+	Drop Artwork	Soltar arte
+@msg	{key} must be [x, y] with finite coordinates	{key} deve ser [x, y] com coordenadas finitas
+@msg	ids must contain 1–10000 object ids	ids deve conter de 1 a 10000 IDs de objetos

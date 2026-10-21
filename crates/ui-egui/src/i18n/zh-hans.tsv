@@ -5218,3 +5218,8 @@ lighting	Light	光源
 	Ruby	注音
 	Fresco…	壁画…
 	Fresco	壁画
+
+# Artwork drag between document tabs.
+	Drop Artwork	放置图稿
+@msg	{key} must be [x, y] with finite coordinates	{key} 必须是具有有限坐标的 [x, y]
+@msg	ids must contain 1–10000 object ids	ids 必须包含 1–10000 个对象 ID

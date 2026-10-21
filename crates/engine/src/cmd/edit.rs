@@ -73,6 +73,15 @@ pub fn specs() -> Vec<CommandSpec> {
             has_doc,
             global_rulers
         ),
+        cmd!(
+            "edit.dropSelection",
+            "Drop Artwork",
+            [],
+            None,
+            "{sourceDocument: uid, ids: [id…], grab: [x,y], at: [x,y]} copy 1–10000 editable source objects from an open document to the active document, preserving the grab point and clipboard, as one undo step",
+            has_doc,
+            drop_selection
+        ),
         cmd!("edit.undo", "Undo", ["Edit"], Some("Cmd+Z"), "{}", can_undo, undo),
         cmd!("edit.redo", "Redo", ["Edit"], Some("Cmd+Shift+Z"), "{}", can_redo, redo),
         cmd!(
@@ -571,6 +580,40 @@ fn clear(s: &mut Session, p: &Value) -> Result<Value> {
     ok()
 }
 
+/// Document ids scope node ids: two tabs may contain objects with the same node id.
+fn drop_selection(s: &mut Session, p: &Value) -> Result<Value> {
+    const CMD: &str = "edit.dropSelection";
+    let key = "sourceDocument";
+    let uid = p[key].as_u64().ok_or_else(|| bad(CMD, format!("missing integer `{key}`")))?;
+    let point = |key: &str| finite_numbers::<2>(&p[key]).ok_or_else(|| bad(CMD, format!("{key} must be [x, y] with finite coordinates")));
+    let grab = point("grab")?;
+    let at = point("at")?;
+    let source = s.documents().iter().find(|d| d.uid == uid).ok_or_else(|| bad(CMD, "that document is no longer open"))?;
+    let key = "ids";
+    let values = p[key].as_array().ok_or_else(|| bad(CMD, format!("{key} must be an array of non-negative integer object ids")))?;
+    if values.is_empty() || values.len() > 10000 {
+        return Err(bad(CMD, "ids must contain 1–10000 object ids"));
+    }
+    let ids = values
+        .iter()
+        .map(|value| value.as_u64().map(NodeId).ok_or_else(|| bad(CMD, format!("invalid object id {value}: expected a non-negative integer"))))
+        .collect::<Result<Vec<_>>>()?;
+    // Validate the entire batch in one walk; node ids are local to the source document.
+    let paths = source.doc.index_paths(ids.iter().copied());
+    if let Some(id) = ids.iter().find(|id| !paths.contains_key(id)) {
+        return Err(EngineError::NoNode(*id));
+    }
+    let clip = Clipboard::copy(source, &roots_of(&source.doc, ids));
+    let bounds = clip.bounds().ok_or_else(|| bad(CMD, "the art has no bounds"))?;
+    let center = bounds.center() + Vec2::new(at[0] - grab[0], at[1] - grab[1]);
+    if !center.x.is_finite() || !center.y.is_finite() {
+        return Err(bad(CMD, "result would exceed the canvas (coordinates out of range)"));
+    }
+    // A drop preserves the source colours even when the flyer has same-named swatches.
+    let choices = SwatchChoices::parse(PasteMode::Drag.label(), &json!({"swatchConflict": "add"}))?;
+    paste_clip(s, &json!({"center": [center.x, center.y]}), PasteMode::Drag, &clip, &choices)
+}
+
 #[derive(Clone, Copy, PartialEq, Eq)]
 enum PasteMode {
     Offset,
@@ -580,6 +623,7 @@ enum PasteMode {
     AllArtboards,
     /// A graphic from the Libraries panel: centred where it is placed, as Paste centres.
     Library,
+    Drag,
 }
 
 impl PasteMode {
@@ -591,6 +635,7 @@ impl PasteMode {
             PasteMode::AllArtboards => "Paste on All Artboards",
             PasteMode::Offset => "Paste",
             PasteMode::Library => "Place from Library",
+            PasteMode::Drag => "Drop Artwork",
         }
     }
 }
@@ -640,7 +685,10 @@ fn paste_clip(s: &mut Session, p: &Value, mode: PasteMode, clip: &Clipboard, cho
         .map(|all| (&clip.artboards, if mode == PasteMode::Offset { super::panelcmds::beside_artboards(&st.doc, all) } else { Vec2::ZERO }));
     // Paste Remembers Layers (not while isolating a group: pastes stay in it); an artboard's art
     // always goes back into its layers.
-    let remember = (st.doc.paste_remembers_layers || boards.is_some()) && parent.is_some_and(|p| st.doc.node(p).is_some_and(Node::is_layer));
+    // A drop goes into the current editable insertion context, not a same-named source layer.
+    let remember = mode != PasteMode::Drag
+        && (st.doc.paste_remembers_layers || boards.is_some())
+        && parent.is_some_and(|p| st.doc.node(p).is_some_and(Node::is_layer));
     // Front/back: relative to the selection (top-most / bottom-most selected object); with
     // nothing selected, the top / bottom of the current layer.
     let anchor = match mode {
@@ -653,7 +701,7 @@ fn paste_clip(s: &mut Session, p: &Value, mode: PasteMode, clip: &Clipboard, cho
     };
     let placements: Vec<Affine> = match (mode, boards) {
         (_, Some((_, dv))) => vec![Affine::translate(dv)],
-        (PasteMode::Offset | PasteMode::Library, None) => vec![match point_param(p, "center") {
+        (PasteMode::Offset | PasteMode::Library | PasteMode::Drag, None) => vec![match point_param(p, "center") {
             Some(c) => clip.bounds().map_or(Affine::IDENTITY, |b| Affine::translate(c - b.center())),
             None => Affine::translate((f64_or(p, "dx", off), f64_or(p, "dy", off))),
         }],
@@ -680,7 +728,9 @@ fn paste_clip(s: &mut Session, p: &Value, mode: PasteMode, clip: &Clipboard, cho
                 let mut c = d.reid(n);
                 imported.apply(&mut c);
                 if xf != Affine::IDENTITY {
-                    c.transform(xf, false);
+                    // A cross-document drag carries the graphic's appearance with it,
+                    // including the pattern phase, independently of transform-tool settings.
+                    c.transform(xf, vectorcraft_doc::Scaling { patterns: mode == PasteMode::Drag, ..Default::default() });
                 }
                 let layer = match clip.source_layers.get(k) {
                     Some(Some(name)) if remember => Some(*layers.entry(name).or_insert_with(|| layer_named(d, name))),
