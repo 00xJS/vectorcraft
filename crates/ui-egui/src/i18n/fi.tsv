@@ -1468,6 +1468,7 @@ lighting	Light	Valo
 	Edit the selected point's colour in the Color panel	Muokkaa valitun pisteen väriä Väri-paneelissa
 	Edit the stop	Muokkaa väripistettä
 	Eyedropper: click the art to sample the stop's colour	Pipetti: ota väripisteen väri näytteeksi napsauttamalla kuvitusta
+	Eyedropper: click the art to sample the key color	Pipetti: ota avainväri näytteeksi napsauttamalla kuvitusta
 	Gradient across stroke	Liukuväri viivan poikki
 	Gradient along stroke	Liukuväri viivaa pitkin
 	Gradient Fill: click to apply, drag onto art	Liukuväritäyttö: käytä napsauttamalla, vedä kuvituksen päälle

@@ -1408,6 +1408,7 @@ lighting	Light	Światło
 	Edit the selected point's colour in the Color panel	Edytuj kolor zaznaczonego punktu w panelu Kolor
 	Edit the stop	Edytuj punkt koloru
 	Eyedropper: click the art to sample the stop's colour	Kroplomierz: kliknij kompozycję, aby pobrać kolor punktu
+	Eyedropper: click the art to sample the key color	Kroplomierz: kliknij kompozycję, aby pobrać kolor kluczowy
 	Gradient across stroke	Gradient w poprzek obrysu
 	Gradient along stroke	Gradient wzdłuż obrysu
 	Gradient Fill: click to apply, drag onto art	Wypełnienie gradientem: kliknij, aby zastosować, przeciągnij na kompozycję

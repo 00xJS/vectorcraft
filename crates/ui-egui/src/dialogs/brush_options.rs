@@ -242,7 +242,7 @@ fn body(app: &mut VectorcraftApp, ui: &mut egui::Ui, d: &mut Dialog) -> bool {
     match d.str("__type").as_str() {
         "bristle" => bristle_body(app, ui, d),
         "calligraphic" => calligraphic_body(ui, d),
-        _ => brush_art_options::body(ui, d),
+        _ => brush_art_options::body(app, ui, d),
     }
     false
 }
@@ -519,6 +519,25 @@ mod tests {
         app.run("ui.brushOptions", json!({"name": "Confetti"})).unwrap();
         let d = app.ui.dialog.as_ref().unwrap();
         assert_eq!((d.str("sizeMode"), d.str("spacingMode"), d.str("colorization")), ("fixed".into(), "pressure".into(), "hueShift".into()));
+    }
+
+    #[test]
+    fn brush_key_color_eyedropper_updates_the_open_dialog() {
+        use vectorcraft_tools::{PointerEvent, PointerKind};
+        let mut app = app();
+        app.run("paint.setFill", json!({"color": "#336699"})).unwrap();
+        app.run("shape.rectangle", json!({"x": 40, "y": 40, "width": 80, "height": 60})).unwrap();
+        app.run("ui.brushOptions", json!({"name": "Confetti"})).unwrap();
+        set(&mut app, json!({"colorization": "hueShift"}));
+        let back = app.session.tool_id();
+        app.select_tool("eyedropper");
+        app.session.set_tool_option("brushKeyColor", &json!(true));
+        app.session.set_tool_option("stop", &json!(back));
+        let view = app.view_info();
+        crate::canvas::dispatch(&mut app, &PointerEvent::new(PointerKind::Down, 80.0, 70.0), view);
+        let key = app.ui.dialog.as_ref().unwrap().fields.get("keyColor").cloned().unwrap();
+        assert_eq!(vectorcraft_engine::cmd::color_value(&key).unwrap().to_hex(), "#336699");
+        assert_eq!(app.session.tool_id(), back);
     }
 
     #[test]

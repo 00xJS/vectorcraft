@@ -25,6 +25,7 @@ use vectorcraft_color::{Color, Paint};
 use vectorcraft_doc::{Appearance, Document, Node, NodeId};
 
 use super::brush_options::{clamped, mode_key, stroke_preview};
+use crate::VectorcraftApp;
 use crate::state::Dialog;
 use crate::theme::Tokens;
 use crate::widgets;
@@ -199,14 +200,14 @@ pub(super) fn params(d: &Dialog) -> Value {
 
 // ---------- body ----------
 
-pub(super) fn body(ui: &mut egui::Ui, d: &mut Dialog) {
+pub(super) fn body(app: &mut VectorcraftApp, ui: &mut egui::Ui, d: &mut Dialog) {
     match d.str("__type").as_str() {
         "scatter" => scatter_body(ui, d),
         "art" => art_body(ui, d),
         _ => pattern_body(ui, d),
     }
     ui.add_space(6.0);
-    colorization_body(ui, d);
+    colorization_body(app, ui, d);
     ui.add_space(10.0);
     // The brush as OK would make it, on a sample stroke.
     let ty = d.str("__type");
@@ -479,7 +480,15 @@ fn tile_doc(art: &Node, w: f64, h: f64) -> Option<Document> {
     Some(doc)
 }
 
-fn colorization_body(ui: &mut egui::Ui, d: &mut Dialog) {
+/// Key Color eyedropper: sample the next click on the art into this dialog's `keyColor`.
+fn key_color_eyedropper(app: &mut VectorcraftApp) {
+    let back = app.session.tool_id();
+    app.select_tool("eyedropper");
+    app.session.set_tool_option("brushKeyColor", &json!(true));
+    app.session.set_tool_option("stop", &json!(back));
+}
+
+fn colorization_body(app: &mut VectorcraftApp, ui: &mut egui::Ui, d: &mut Dialog) {
     widgets::section_header(ui, tl!("Colorization"));
     let methods = [tl!("None"), tl!("Tints"), tl!("Tints and Shades"), tl!("Hue Shift")];
     let cur = d.str("colorization");
@@ -513,6 +522,19 @@ fn colorization_body(ui: &mut egui::Ui, d: &mut Dialog) {
                     d.fields.insert("keyColor".into(), serde_json::to_value(c).unwrap_or_default());
                 }
             }
+            if widgets::icon_button(ui, "pipette", tl!("Eyedropper: click the art to sample the key color"), false, 22.0).clicked() {
+                key_color_eyedropper(app);
+            }
         });
     });
+}
+
+/// Apply a sampled colour to the open Brush Options dialog (`brushKeyColor` tool request).
+pub(super) fn apply_key_color_sample(app: &mut VectorcraftApp, color: &Value) {
+    let Some(d) = app.ui.dialog.as_mut().filter(|d| d.kind == super::brush_options::KIND) else { return };
+    if d.str("colorization") != "hueShift" {
+        return;
+    }
+    let Some(c) = vectorcraft_engine::cmd::color_value(color) else { return };
+    d.fields.insert("keyColor".into(), serde_json::to_value(c).unwrap_or_default());
 }
