@@ -343,8 +343,8 @@ fn a_failed_batch_gives_back_the_highlighted_rows_and_the_current_layer() {
     assert_eq!(documents(&r), documents(&s));
 }
 
-/// Canceling undo groups open in two documents undoes the edits of both and cuts the journal back
-/// to where the first of them began, whichever document comes first in the list.
+/// Canceling undo groups open in two documents undoes the edits of both and drops the entries of
+/// both from the journal, whichever document comes first in the list.
 #[test]
 fn canceling_undo_groups_in_two_documents_drops_the_edits_of_both_from_the_journal() {
     let mut s = Session::new();
@@ -382,6 +382,95 @@ fn canceling_undo_groups_in_two_documents_drops_the_edits_of_both_from_the_journ
     let ids = s.journal.since(journal).iter().map(|(id, _)| id.as_str()).collect::<Vec<_>>();
     assert!(!ids.iter().any(|id| matches!(*id, "edit.undoGroup.begin" | "shape.rectangle")), "{ids:?}");
     assert_eq!(ids.last(), Some(&"edit.undoGroup.end"));
+}
+
+/// A cancel drops only the canceled groups' own entries from the journal: an edit made in another
+/// document while a group was open stays in that document and in the journal.
+#[test]
+fn canceling_undo_groups_keeps_the_journal_entries_made_outside_them() {
+    let mut s = Session::new();
+    s.execute("file.new", &json!({"created": null})).unwrap();
+    s.execute("file.new", &json!({"created": null})).unwrap();
+    let objects = |s: &Session| s.documents().iter().map(|d| d.doc.node_count()).collect::<Vec<_>>();
+    let before = objects(&s);
+    // The second document's rectangle at 30 is drawn between the two groups and belongs to neither.
+    for (id, p) in [
+        ("document.activate", json!({"index": 0})),
+        ("edit.undoGroup.begin", json!({})),
+        ("shape.rectangle", rect_step(10)["params"].clone()),
+        ("document.activate", json!({"index": 1})),
+        ("shape.rectangle", rect_step(30)["params"].clone()),
+        ("edit.undoGroup.begin", json!({})),
+        ("shape.rectangle", rect_step(50)["params"].clone()),
+        ("edit.undoGroup.end", json!({"cancel": true})),
+    ] {
+        s.execute(id, &p).unwrap();
+    }
+    assert_eq!(objects(&s), vec![before[0], before[1] + 1], "only the groups' edits are undone");
+    let ids = s.journal.iter().map(|(id, _)| id.as_str()).collect::<Vec<_>>();
+    assert_eq!(ids.iter().filter(|id| **id == "shape.rectangle").count(), 1, "{ids:?}");
+    let r = replayed(&s);
+    assert_eq!(documents(&r), documents(&s));
+    assert_eq!(r.active_index(), s.active_index());
+
+    // With one group open, a rectangle drawn in the other document stays in the journal too. A live
+    // drag committed in the group goes with the group, and one committed in the other document stays.
+    let before = objects(&s);
+    let opacity = |s: &mut Session, opacity: i32| {
+        s.begin_interaction("Opacity").unwrap();
+        s.preview("transparency.set", &json!({ "opacity": opacity })).unwrap();
+        s.commit_interaction().unwrap();
+    };
+    for (id, p) in
+        [("document.activate", json!({"index": 0})), ("edit.undoGroup.begin", json!({})), ("shape.rectangle", rect_step(10)["params"].clone())]
+    {
+        s.execute(id, &p).unwrap();
+    }
+    opacity(&mut s, 50);
+    for (id, p) in [("document.activate", json!({"index": 1})), ("shape.rectangle", rect_step(70)["params"].clone())] {
+        s.execute(id, &p).unwrap();
+    }
+    opacity(&mut s, 40);
+    for (id, p) in [("document.activate", json!({"index": 0})), ("edit.undoGroup.end", json!({"cancel": true}))] {
+        s.execute(id, &p).unwrap();
+    }
+    assert_eq!(objects(&s), vec![before[0], before[1] + 1]);
+    let opacities = s.journal.iter().filter(|(id, _)| id == "transparency.set").map(|(_, p)| p["opacity"].clone()).collect::<Vec<_>>();
+    assert_eq!(opacities, vec![json!(40)]);
+    let r = replayed(&s);
+    assert_eq!(documents(&r), documents(&s));
+    assert_eq!(r.active_index(), s.active_index());
+
+    // A batch that edits the group's document and then switches documents goes with the group, and
+    // only its switch stays, so the rectangle drawn after it replays in the second document.
+    let before = objects(&s);
+    let steps = json!([rect_step(90), {"command": "document.activate", "params": {"index": 1}}]);
+    for (id, p) in [
+        ("document.activate", json!({"index": 0})),
+        ("edit.undoGroup.begin", json!({})),
+        ("command.batch", json!({ "commands": steps })),
+        ("shape.rectangle", rect_step(110)["params"].clone()),
+        ("edit.undoGroup.end", json!({"cancel": true})),
+    ] {
+        s.execute(id, &p).unwrap();
+    }
+    assert_eq!(objects(&s), vec![before[0], before[1] + 1]);
+    assert!(!s.journal.iter().any(|(id, _)| id == "command.batch"));
+    let r = replayed(&s);
+    assert_eq!(documents(&r), documents(&s));
+    assert_eq!(r.active_index(), s.active_index());
+
+    // So does a batch that opens the group itself before it switches documents.
+    let before = objects(&s);
+    s.execute("document.activate", &json!({"index": 0})).unwrap();
+    let steps = json!([{"command": "edit.undoGroup.begin"}, rect_step(130), {"command": "document.activate", "params": {"index": 1}}]);
+    s.execute("command.batch", &json!({ "commands": steps })).unwrap();
+    s.end_undo_group(true);
+    assert_eq!(objects(&s), before);
+    assert!(!s.journal.iter().any(|(id, _)| id == "command.batch"));
+    let r = replayed(&s);
+    assert_eq!(documents(&r), documents(&s));
+    assert_eq!(r.active_index(), s.active_index());
 }
 
 /// The edits made in an undo group (a scrubbed numeric field, #400) are one undo step, journaled
