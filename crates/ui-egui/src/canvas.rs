@@ -3114,9 +3114,22 @@ fn kurbo_flatten(p: &BezPath, tol: f64, f: &mut impl FnMut(PathEl)) {
     vectorcraft_geom::kurbo::flatten(p.elements().iter().copied(), tol, f);
 }
 
+/// The rendered raster `img` as an egui image. Both are premultiplied RGBA8, so its bytes are copied
+/// over whole instead of pixel by pixel, which costs milliseconds for a canvas on a large screen.
+/// A raster whose bytes don't match its size gives an empty image of that size.
+pub(crate) fn color_image(img: &vectorcraft_render::Rendered) -> egui::ColorImage {
+    let size = [img.width as usize, img.height as usize];
+    let mut pixels = vec![egui::Color32::TRANSPARENT; size[0] * size[1]];
+    let bytes: &mut [u8] = bytemuck::cast_slice_mut(&mut pixels);
+    if bytes.len() == img.pixels.len() {
+        bytes.copy_from_slice(&img.pixels);
+    }
+    egui::ColorImage::new(size, pixels)
+}
+
 /// Upload the art's raster; Pixel Preview's document pixels keep hard edges when magnified.
 fn upload(app: &mut VectorcraftApp, ctx: &egui::Context, img: &vectorcraft_render::Rendered, pixel: bool) {
-    let color = egui::ColorImage::from_rgba_premultiplied([img.width as usize, img.height as usize], &img.pixels);
+    let color = color_image(img);
     let options = if pixel { egui::TextureOptions::NEAREST } else { egui::TextureOptions::LINEAR };
     match &mut app.canvas.texture {
         Some(tex) => tex.set(color, options),
@@ -3432,6 +3445,23 @@ mod tests {
     use super::*;
     use vectorcraft_engine::Session;
     use vectorcraft_geom::Shape as _;
+
+    /// A rendered raster becomes the image egui's own conversion makes of it, half-transparent
+    /// edges and all; one whose bytes don't match its size becomes an empty image of that size.
+    #[test]
+    fn rendered_rasters_become_the_same_egui_images() {
+        let mut s = Session::new();
+        s.execute("file.new", &serde_json::json!({})).unwrap();
+        s.execute("shape.ellipse", &serde_json::json!({"x": 10, "y": 10, "width": 60, "height": 40})).unwrap();
+        s.execute("paint.setFill", &serde_json::json!({"color": "#3366cc"})).unwrap();
+        let doc = s.active().unwrap().doc.clone();
+        let img = vectorcraft_render::Renderer::new().render(&doc, 97, 61, Affine::IDENTITY, &vectorcraft_render::RenderOptions::default());
+        assert!(img.pixels.as_chunks::<4>().0.iter().any(|p| p[3] != 0 && p[3] != 255), "partly covered pixels");
+        let egui = egui::ColorImage::from_rgba_premultiplied([97, 61], &img.pixels);
+        assert_eq!(color_image(&img), egui);
+        let short = vectorcraft_render::Rendered { width: 3, height: 2, pixels: vec![255; 5] };
+        assert_eq!(color_image(&short), egui::ColorImage::new([3, 2], vec![egui::Color32::TRANSPARENT; 6]));
+    }
 
     /// With VECTORCRAFT_SYSTEM_CURSORS set the glyphs aren't drawn and the system's cursors stand in: those of
     /// the Pen and the other drawing tools are the system crosshair already, so Use Precise Cursors makes no
