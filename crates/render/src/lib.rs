@@ -2480,6 +2480,10 @@ fn text_geom_snapped(t: &TextObject, snap: Option<Affine>) -> TextGeom {
             alternate_candidates.push(AlternateCandidate { byte: g.byte, len: g.len, font_id: g.font_id, gid: g.gid, cell });
         }
     }
+    // Ruby (furigana) glyphs: painted with their base text's run.
+    for g in &layout.ruby {
+        push(&mut all, g.run, &g.outline);
+    }
     // Underline and strikethrough bars, painted as their run's type is (#847).
     for (run, bar) in vectorcraft_text::decorations(&layout, db, t) {
         push(&mut all, run, &bar);

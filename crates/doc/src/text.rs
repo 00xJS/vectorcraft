@@ -1235,6 +1235,10 @@ fn one() -> f64 {
     1.0
 }
 
+fn fifty() -> f64 {
+    50.0
+}
+
 impl InlineArt {
     pub fn new(symbol: impl Into<String>) -> Self {
         Self { symbol: symbol.into(), scale: 1.0, baseline_shift: 0.0, bounds: None }
@@ -1300,6 +1304,68 @@ fn reverse_from_end(path: &mut PathData) {
     }
 }
 
+/// Where ruby (furigana) text sits: above its base text in horizontal type, right of it in
+/// vertical type (the Japanese convention), or below (left in vertical type).
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub enum RubyPosition {
+    #[default]
+    Above,
+    Below,
+}
+
+/// How ruby text lines up over its base text when the two are different widths.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub enum RubyAlign {
+    /// Centred over the base text.
+    #[default]
+    Center,
+    /// Starting at the base text's start (left in horizontal type, top in vertical).
+    Start,
+    /// Ending at the base text's end (right in horizontal type, bottom in vertical).
+    End,
+}
+
+/// Ruby (furigana, phonetic guide): a reading set over a range of the text.
+///
+/// `start`/`end` are byte offsets into [`TextObject::plain_text`] (the same space as
+/// [`crate::TextObject`] commands' `start`/`end`). The base text itself stays the text;
+/// emptying the reading removes the ruby. New ruby is half the base text's size, centred, and
+/// allowed to overhang neighbouring characters when the reading is longer than its base.
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct RubySpan {
+    /// Byte offset of the first base character in the plain text.
+    pub start: usize,
+    /// Byte offset just past the last base character.
+    pub end: usize,
+    /// The reading, set in the base characters' font (its size comes from `size_percent`).
+    pub text: String,
+    #[serde(default)]
+    pub position: RubyPosition,
+    #[serde(default)]
+    pub align: RubyAlign,
+    /// Ruby size as a percentage of the base text's size, 1–100 (50 = half, the usual).
+    #[serde(default = "fifty")]
+    pub size_percent: f64,
+    /// Let a reading wider than its base hang over the neighbouring characters instead of being
+    /// squeezed to the base's width.
+    #[serde(default = "yes")]
+    pub overhang: bool,
+}
+
+impl RubySpan {
+    /// Ruby over `start..end` with reading `text`, at the defaults (half size, centred, overhanging).
+    pub fn new(start: usize, end: usize, text: impl Into<String>) -> Self {
+        Self { start, end, text: text.into(), position: RubyPosition::Above, align: RubyAlign::Center, size_percent: 50.0, overhang: true }
+    }
+    /// `size_percent` made finite and usable: 1–100% (untrusted input).
+    pub fn safe_size_percent(&self) -> f64 {
+        if self.size_percent.is_finite() { self.size_percent.clamp(1.0, 100.0) } else { 50.0 }
+    }
+}
+
 /// A text object. `runs` split into paragraphs at `\n`.
 ///
 /// Paragraph attributes: `para` is paragraph 0's (and, while `paras` is empty, every
@@ -1315,6 +1381,10 @@ pub struct TextObject {
     /// Maps text space (origin = first baseline start for point type) to the document.
     pub xf: Affine,
     pub runs: Vec<TextRun>,
+    /// Ruby (furigana / phonetic guide) over byte ranges of the plain text; empty = none. Kept on
+    /// the object, so the runs (and their styles) stay the text itself.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub ruby: Vec<RubySpan>,
     #[serde(default)]
     pub para: ParaStyle,
     /// Per-paragraph attributes (see the type's docs); empty = every paragraph uses `para`.
@@ -1438,6 +1508,7 @@ impl TextObject {
             kind: TextKind::Point,
             xf: Affine::translate(origin.to_vec2()),
             runs: vec![TextRun::new(text, style)],
+            ruby: Vec::new(),
             para: ParaStyle::default(),
             paras: Vec::new(),
             area: AreaOptions::default(),
@@ -1453,6 +1524,54 @@ impl TextObject {
     }
     pub fn plain_text(&self) -> String {
         self.runs.iter().map(|r| r.text.as_str()).collect()
+    }
+    /// Clamp the ruby spans to the plain text, drop empty/empty-reading ones and sort them.
+    ///
+    /// Called after loading and editing text: ranges from a file or an edit are untrusted, and a
+    /// range past the text or an inverted one would lay out nothing (or panic in a silly place).
+    pub fn normalize_ruby(&mut self) {
+        let len: usize = self.runs.iter().map(|r| r.text.len()).sum();
+        for r in &mut self.ruby {
+            r.start = r.start.min(len);
+            r.end = r.end.min(len);
+            if r.start > r.end {
+                std::mem::swap(&mut r.start, &mut r.end);
+            }
+            r.text = r.text.trim().to_string();
+        }
+        self.ruby.retain(|r| r.start < r.end && !r.text.is_empty());
+        self.ruby.sort_by_key(|r| (r.start, r.end));
+    }
+    /// The ruby span covering byte `byte` of the plain text, if any.
+    pub fn ruby_at(&self, byte: usize) -> Option<&RubySpan> {
+        self.ruby.iter().find(|r| r.start <= byte && byte < r.end)
+    }
+    /// Ruby spans touching the plain-text byte range `start..end`, with their ranges ordered.
+    pub fn ruby_in(&self, start: usize, end: usize) -> impl Iterator<Item = &RubySpan> {
+        let (a, b) = (start.min(end), start.max(end));
+        self.ruby.iter().filter(move |r| r.start < b && a < r.end)
+    }
+    /// Keep the ruby spans over the text after replacing plain-text bytes `start..end` with
+    /// `inserted` bytes of text: spans after the edit move with the text, ones the edit runs into
+    /// keep their start and end up where the replaced part ended. Call it after every edit of the
+    /// runs (`vectorcraft_text::edit`), then [`Self::normalize_ruby`] has the last word.
+    pub fn ruby_after_replace(&mut self, start: usize, end: usize, inserted: usize) {
+        let (start, end) = (start.min(end), start.max(end));
+        let delta = inserted as i64 - (end.saturating_sub(start)) as i64;
+        let shift = |v: usize| -> usize { (v as i64 + delta).max(0) as usize };
+        for r in &mut self.ruby {
+            if r.end <= start {
+                continue;
+            }
+            if r.start >= end {
+                r.start = shift(r.start);
+                r.end = shift(r.end);
+            } else {
+                r.start = r.start.min(start);
+                r.end = shift(r.end).max(r.start);
+            }
+        }
+        self.normalize_ruby();
     }
     /// Number of paragraphs (`\n`-separated; empty text has one).
     pub fn paragraph_count(&self) -> usize {
@@ -1744,11 +1863,56 @@ impl crate::Document {
             }
         }
     }
+
+    /// Clamps the ruby spans of the type in the layers, symbols, graph designs, pattern swatches
+    /// and the pattern definition that pattern editing's Cancel puts back (opacity-mask art
+    /// included) to their text ([`TextObject::normalize_ruby`]). Loaded files and edits carry
+    /// ranges from outside: a range past the text, an inverted one or an empty reading would lay
+    /// out nothing. It recurses through the art: call it on a document no deeper than
+    /// [`crate::depth::MAX_DEPTH`].
+    pub fn fix_ruby(&mut self) {
+        let mut fix = |n: &mut crate::Node| {
+            if let crate::NodeKind::Text(t) = &mut n.kind {
+                t.normalize_ruby();
+            }
+        };
+        let roots = self
+            .layers
+            .iter_mut()
+            .chain(self.symbols.iter_mut().map(|s| &mut s.art))
+            .chain(self.graph_designs.iter_mut().map(|g| &mut g.art))
+            .chain(self.patterns.iter_mut().flat_map(|p| p.art.iter_mut()))
+            .chain(self.pattern_edit.iter_mut().filter_map(|pe| pe.original.as_mut()).flat_map(|p| p.art.iter_mut()));
+        for root in roots {
+            crate::placed_document::each_mut(std::sync::Arc::make_mut(root), &mut fix);
+        }
+    }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// Ruby saves with the type and a file saved before it (no `ruby` key) reads with none.
+    #[test]
+    fn ruby_is_saved_and_missing_ruby_reads_as_none() {
+        let mut t = TextObject::point(Point::ZERO, "漢字", CharStyle::default());
+        t.ruby = vec![RubySpan { size_percent: 40.0, overhang: false, ..RubySpan::new(0, 6, "かんじ") }];
+        let json = serde_json::to_string(&t).unwrap();
+        assert!(json.contains("かんじ"));
+        let back: TextObject = serde_json::from_str(&json).unwrap();
+        assert_eq!(back.ruby, t.ruby);
+        assert!((back.ruby[0].size_percent - 40.0).abs() < 1e-9 && !back.ruby[0].overhang);
+        // Old files have no `ruby` key: none.
+        let mut old: serde_json::Value = serde_json::from_str(&json).unwrap();
+        old.as_object_mut().unwrap().remove("ruby");
+        assert!(serde_json::from_value::<TextObject>(old).unwrap().ruby.is_empty());
+        // A damaged file's range past the text and its empty reading are clamped away.
+        let mut damaged = t.clone();
+        damaged.ruby = vec![RubySpan::new(0, 10_000, "かんじ"), RubySpan::new(3, 2, " "), RubySpan::new(0, 3, "")];
+        damaged.normalize_ruby();
+        assert_eq!((damaged.ruby[0].start, damaged.ruby[0].end), (0, 6));
+    }
 
     /// Digits map every digit of the three sets into the chosen one, leave the rest alone, and
     /// are saved only when set.

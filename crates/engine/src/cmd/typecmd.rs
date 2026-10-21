@@ -4,7 +4,7 @@
 use std::sync::Arc;
 
 use serde_json::{Value, json};
-use vectorcraft_doc::{AreaFit, Document, Justify, Node, NodeId, NodeKind, TextObject};
+use vectorcraft_doc::{AreaFit, Document, Justify, Node, NodeId, NodeKind, RubyAlign, RubyPosition, RubySpan, TextObject};
 use vectorcraft_geom::{Affine, PathData, Vec2};
 
 use super::edit::selected_roots;
@@ -106,6 +106,15 @@ pub fn specs() -> Vec<CommandSpec> {
             has_doc,
             set_style
         ),
+        cmd!(
+            "type.ruby",
+            "Ruby…",
+            [],
+            None,
+            "{ids?|id?, start?: byte, end?: byte, text?: reading, position?: above|below (vertical type: right|left), align?: start|center|end, size?: 1–100 (percent of the base text's size, default 50), overhang?: bool (default true), remove?: bool} set the ruby (furigana) over the selected text's bytes in `start..end` (without them: all its text): the reading over the base characters, above them in horizontal type and right of them in vertical type; `remove` takes the ruby off the range instead → {ids, ruby: [{start, end, text, position, align, sizePercent, overhang}…] (the first object's ruby)}",
+            has_selection,
+            ruby
+        ),
     ]
 }
 
@@ -167,6 +176,67 @@ fn fractional_widths(s: &mut Session, p: &Value) -> Result<Value> {
         Ok(())
     })?;
     Ok(json!({"on": on, "ids": ids.iter().map(|id| id.0).collect::<Vec<_>>()}))
+}
+
+/// Type › Ruby: set or remove the ruby (furigana) over a byte range of the selected type in one
+/// undo step. Without `start`/`end` the range is all the text; a new reading replaces the ruby
+/// over the range. The reply lists the first object's ruby (start/end in bytes of its plain text).
+fn ruby(s: &mut Session, p: &Value) -> Result<Value> {
+    const C: &str = "type.ruby";
+    let ids = text_targets(s, p, C)?;
+    let range = TextRange::parse(p, C)?;
+    let remove = p.get("remove").and_then(Value::as_bool).unwrap_or(false);
+    let reading = str_param(p, "text").map(str::trim).filter(|t| !t.is_empty()).map(str::to_string);
+    if !remove && reading.is_none() {
+        return Err(bad(C, "give `text` (the reading) or `remove`"));
+    }
+    let position = match str_param(p, "position").map(str::to_ascii_lowercase).as_deref() {
+        None | Some("above") | Some("right") => RubyPosition::Above,
+        Some("below") | Some("left") => RubyPosition::Below,
+        Some(_) => return Err(bad(C, "`position` is above or below")),
+    };
+    let align = match str_param(p, "align").map(str::to_ascii_lowercase).as_deref() {
+        None | Some("center") | Some("centre") => RubyAlign::Center,
+        Some("start") | Some("left") | Some("top") => RubyAlign::Start,
+        Some("end") | Some("right") | Some("bottom") => RubyAlign::End,
+        Some(_) => return Err(bad(C, "`align` is start, center or end")),
+    };
+    let size = p.get("size").and_then(Value::as_f64).unwrap_or(50.0);
+    if !size.is_finite() || !(1.0..=100.0).contains(&size) {
+        return Err(bad(C, "`size` is a percentage of the base text's size, 1 to 100"));
+    }
+    let overhang = p.get("overhang").and_then(Value::as_bool).unwrap_or(true);
+    let mut first: Option<Value> = None;
+    s.edit("Ruby", |d, _| {
+        for id in &ids {
+            let Some(NodeKind::Text(t)) = d.node_mut(*id).map(|n| &mut n.kind) else {
+                return Err(EngineError::NoNode(*id));
+            };
+            let (a, b) = match range {
+                Some(r) => r.bytes(t),
+                None => (0, vectorcraft_text::edit::runs_len(&t.runs)),
+            };
+            // The ruby over the range goes; a new reading takes its place.
+            t.ruby.retain(|r| r.end <= a || r.start >= b);
+            if let Some(text) = &reading
+                && a < b
+            {
+                let mut span = RubySpan::new(a, b, text.clone());
+                span.position = position;
+                span.align = align;
+                span.size_percent = size;
+                span.overhang = overhang;
+                t.ruby.push(span);
+            }
+            t.normalize_ruby();
+            refresh_bounds(t);
+            if first.is_none() {
+                first = Some(serde_json::to_value(&t.ruby).unwrap_or(Value::Null));
+            }
+        }
+        Ok(())
+    })?;
+    Ok(json!({"ids": ids.iter().map(|id| id.0).collect::<Vec<_>>(), "ruby": first.unwrap_or(Value::Null)}))
 }
 
 /// Recompute the layout caches (bounds and baselines) after a text edit. Every engine text edit ends here (typing
@@ -580,6 +650,8 @@ fn set_text(s: &mut Session, p: &Value) -> Result<Value> {
             // Every paragraph of the new text takes the first paragraph's attributes.
             t.splice_paras(0, vectorcraft_text::edit::runs_len(&t.runs), &text);
             t.runs = vec![vectorcraft_doc::TextRun { text: text.clone(), style, inline: None }];
+            // The text is new: the ruby of the old one is gone.
+            t.ruby.clear();
             refresh_bounds(t);
         }
         Ok(())
@@ -1770,5 +1842,118 @@ mod headline_tests {
         let (w, avail, end) = headline_fit(t, tr).unwrap();
         assert_eq!(end, 10);
         assert!(avail - w < 5.0, "{w} of {avail}");
+    }
+}
+
+#[cfg(test)]
+mod ruby_tests {
+    use super::*;
+
+    fn session_with_text() -> (Session, u64) {
+        let mut s = Session::new();
+        s.execute("file.new", &json!({"width": 400, "height": 400})).unwrap();
+        let id = s.execute("text.create", &json!({"x": 10, "y": 10, "text": "漢字です", "size": 20})).unwrap()["id"].as_u64().unwrap();
+        s.execute("select.set", &json!({"ids": [id]})).unwrap();
+        (s, id)
+    }
+
+    fn text_of(s: &Session, id: u64) -> &TextObject {
+        let NodeKind::Text(t) = &s.doc().unwrap().doc.node(NodeId(id)).unwrap().kind else { panic!("text object") };
+        t
+    }
+
+    #[test]
+    fn ruby_command_sets_reports_removes_and_survives_undo() {
+        let (mut s, id) = session_with_text();
+        let r = s.execute("type.ruby", &json!({"text": "かんじ", "start": 0, "end": 6})).unwrap();
+        assert_eq!(r["ruby"][0]["start"], 0);
+        assert_eq!(r["ruby"][0]["end"], 6);
+        assert_eq!(r["ruby"][0]["text"], "かんじ");
+        let t = text_of(&s, id);
+        assert_eq!(t.ruby.len(), 1);
+        assert_eq!(t.ruby[0].position, RubyPosition::Above);
+        assert_eq!(t.ruby[0].align, RubyAlign::Center);
+        assert!(t.ruby[0].overhang);
+        assert!(t.cached_bounds.unwrap().height() > 20.0, "bounds cover the ruby");
+        // Options, and a new reading over the range replaces the old one.
+        s.execute("type.ruby", &json!({"text": "かん", "start": 0, "end": 3, "position": "below", "align": "end", "size": 80, "overhang": false}))
+            .unwrap();
+        let t = text_of(&s, id);
+        assert_eq!(t.ruby.len(), 1);
+        assert_eq!(t.ruby[0].position, RubyPosition::Below);
+        assert_eq!(t.ruby[0].align, RubyAlign::End);
+        assert!((t.ruby[0].size_percent - 80.0).abs() < 1e-9 && !t.ruby[0].overhang);
+        // Remove takes the ruby off the range; Undo brings it back.
+        let r = s.execute("type.ruby", &json!({"remove": true, "start": 0, "end": 6})).unwrap();
+        assert_eq!(r["ruby"].as_array().map(Vec::len), Some(0));
+        assert!(text_of(&s, id).ruby.is_empty());
+        s.execute("edit.undo", &json!({})).unwrap();
+        assert_eq!(text_of(&s, id).ruby.len(), 1);
+        s.execute("edit.redo", &json!({})).unwrap();
+        assert!(text_of(&s, id).ruby.is_empty());
+        // Bad input changes nothing.
+        for p in [
+            json!({"start": 0, "end": 6}),
+            json!({"text": "あ", "size": 0}),
+            json!({"text": "あ", "size": 101}),
+            json!({"text": "あ", "position": "sideways"}),
+            json!({"text": "あ", "align": "lean"}),
+        ] {
+            assert!(s.execute("type.ruby", &p).is_err(), "{p}");
+        }
+        assert!(text_of(&s, id).ruby.is_empty());
+    }
+
+    #[test]
+    fn typed_text_before_a_ruby_moves_it() {
+        let (mut s, id) = session_with_text();
+        s.execute("type.ruby", &json!({"text": "かんじ", "start": 0, "end": 6})).unwrap();
+        s.execute("text.editRange", &json!({"id": id, "start": 0, "end": 0, "insert": "あ"})).unwrap();
+        let t = text_of(&s, id);
+        assert_eq!((t.ruby[0].start, t.ruby[0].end), (3, 9), "the ruby follows the text");
+        assert_eq!(t.plain_text(), "あ漢字です");
+        // Setting all the text drops the old ruby (it isn't the same text any more).
+        s.execute("text.setText", &json!({"id": id, "text": "新しい"})).unwrap();
+        assert!(text_of(&s, id).ruby.is_empty());
+    }
+
+    /// Ruby is written to SVG and PDF with its text: SVG outlines the type where ruby is present
+    /// (a reader's `<text>` can't place the reading), PDF differs when the ruby is there.
+    #[test]
+    fn ruby_reaches_svg_and_pdf_exports() {
+        let (mut s, _) = session_with_text();
+        let export = |s: &mut Session, format: &str| -> Vec<u8> {
+            let r = s.execute("document.export", &json!({"format": format})).unwrap();
+            vectorcraft_format::base64_decode(r["dataBase64"].as_str().unwrap()).unwrap()
+        };
+        s.execute("type.ruby", &json!({"text": "かんじ", "start": 0, "end": 6})).unwrap();
+        let svg_ruby = String::from_utf8(export(&mut s, "svg")).unwrap();
+        let pdf_ruby = export(&mut s, "pdf");
+        assert!(!svg_ruby.contains("<text"), "ruby type is outlined: {svg_ruby}");
+        assert!(!pdf_ruby.is_empty());
+        s.execute("type.ruby", &json!({"remove": true})).unwrap();
+        let svg_plain = String::from_utf8(export(&mut s, "svg")).unwrap();
+        let pdf_plain = export(&mut s, "pdf");
+        assert!(svg_plain.contains("<text"), "without ruby the type stays live text: {svg_plain}");
+        assert_ne!(svg_ruby, svg_plain, "the SVG carries the ruby");
+        assert_ne!(pdf_ruby, pdf_plain, "the PDF carries the ruby");
+    }
+
+    #[test]
+    fn ruby_survives_a_native_round_trip() {
+        let (mut s, id) = session_with_text();
+        s.execute("type.ruby", &json!({"text": "かんじ", "start": 0, "end": 6, "position": "below", "size": 40})).unwrap();
+        let doc = s.doc().unwrap().doc.clone();
+        let bytes = vectorcraft_format::save(&doc, false);
+        let back = vectorcraft_format::load(&bytes).unwrap();
+        let NodeKind::Text(t) = &back.node(NodeId(id)).unwrap().kind else { panic!("text") };
+        assert_eq!(t.ruby.len(), 1);
+        assert_eq!((t.ruby[0].start, t.ruby[0].end), (0, 6));
+        assert_eq!(t.ruby[0].text, "かんじ");
+        assert_eq!(t.ruby[0].position, RubyPosition::Below);
+        assert!((t.ruby[0].size_percent - 40.0).abs() < 1e-9);
+        // The loaded type lays the reading out too.
+        let lay = vectorcraft_text::layout(vectorcraft_text::FontDb::global(), t);
+        assert!(!lay.ruby.is_empty());
     }
 }
