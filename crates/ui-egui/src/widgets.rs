@@ -928,13 +928,12 @@ pub fn fill_stroke_proxy(ui: &mut Ui, fill: &Paint, stroke: &Paint, mixed: (bool
 
 /// A [`PanelDrag::Paint`] released on a Fill/Stroke proxy square: highlight while held over it.
 fn proxy_paint_drop(ui: &Ui, resp: &Response) -> Option<serde_json::Value> {
-    if let Some(drag) = resp.dnd_hover_payload::<PanelDrag>() {
-        if let PanelDrag::Paint { params, .. } = &*drag {
-            if !params.is_null() {
-                let t = Tokens::get(ui.ctx());
-                ui.painter().rect_stroke(resp.rect, 0.0, Stroke::new(2.0, t.accent), StrokeKind::Outside);
-            }
-        }
+    if let Some(drag) = resp.dnd_hover_payload::<PanelDrag>()
+        && let PanelDrag::Paint { params, .. } = &*drag
+        && !params.is_null()
+    {
+        let t = Tokens::get(ui.ctx());
+        ui.painter().rect_stroke(resp.rect, 0.0, Stroke::new(2.0, t.accent), StrokeKind::Outside);
     }
     resp.dnd_release_payload::<PanelDrag>().and_then(|d| {
         let PanelDrag::Paint { params, .. } = &*d else { return None };
