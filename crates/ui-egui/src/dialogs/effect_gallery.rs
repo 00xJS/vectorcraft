@@ -1,7 +1,7 @@
 //! Effect → Effect Gallery: browse Photoshop-style raster filters by category, build a stack, and
 //! apply it as separate appearance effects in one undo step.
 
-use egui::{Color32, Rect, Sense, Stroke};
+use egui;
 use serde_json::{Map, Value, json};
 use vectorcraft_effects::{EffectInfo, PIXEL_EFFECTS};
 
@@ -23,8 +23,15 @@ const CATEGORIES: [(&str, &[&str]); 6] = [
     ("Texture", &["Effect", "Texture"]),
 ];
 
-pub(super) const SPEC: DialogSpec =
-    DialogSpec { heading: |_| tl!("Effect Gallery").into(), body, confirm, min_width: 720.0, max_width: Some(820.0), ..DialogSpec::FORM };
+pub(super) const SPEC: DialogSpec = DialogSpec {
+    heading: |_| tl!("Effect Gallery").into(),
+    body,
+    confirm,
+    preview: true,
+    min_width: 720.0,
+    max_width: Some(820.0),
+    ..DialogSpec::FORM
+};
 
 #[derive(Clone)]
 struct StackEntry {
@@ -39,7 +46,10 @@ pub fn open(app: &mut VectorcraftApp, _p: &Value) -> Result<Value, String> {
         return Err(tl!("Select artwork to apply effects").into());
     }
     let selected = effects_in_category(0).first().map(|e| e.id).unwrap_or("");
-    app.ui.dialog = Some(Dialog::new(KIND, json!({ "category": 0, "selected": selected, "stack": [], "stackSelected": 0, "stackFocus": false })));
+    app.ui.dialog = Some(Dialog::new(
+        KIND,
+        json!({ "category": 0, "selected": selected, "stack": [], "stackSelected": 0, "stackFocus": false, "preview": true }),
+    ));
     Ok(Value::Null)
 }
 
@@ -171,31 +181,66 @@ fn effect_param_fields(app: &mut VectorcraftApp, ui: &mut egui::Ui, effect_id: &
     }
 }
 
-/// A small procedural thumbnail from the effect id (no copied artwork).
-fn thumb(ui: &mut egui::Ui, id: &str, size: f32) {
-    let (rect, _) = ui.allocate_exact_size(egui::vec2(size, size), Sense::hover());
-    let hash = id.bytes().fold(0u32, |h, b| h.wrapping_mul(31).wrapping_add(b as u32));
-    let c1 = Color32::from_rgb((hash & 0xFF) as u8 | 40, ((hash >> 8) & 0xFF) as u8 | 40, ((hash >> 16) & 0xFF) as u8 | 40);
-    let c2 = Color32::from_rgb(((hash >> 4) & 0xFF) as u8 | 20, ((hash >> 12) & 0xFF) as u8 | 20, ((hash >> 20) & 0xFF) as u8 | 20);
-    let painter = ui.painter();
-    let steps = 6;
-    for i in 0..steps {
-        let t0 = i as f32 / steps as f32;
-        let t1 = (i + 1) as f32 / steps as f32;
-        let mix = |t: f32| {
-            let u = t;
-            Color32::from_rgba_unmultiplied(
-                (c1.r() as f32 * (1.0 - u) + c2.r() as f32 * u) as u8,
-                (c1.g() as f32 * (1.0 - u) + c2.g() as f32 * u) as u8,
-                (c1.b() as f32 * (1.0 - u) + c2.b() as f32 * u) as u8,
-                255,
-            )
-        };
-        let band =
-            Rect::from_min_max(egui::pos2(rect.left() + rect.width() * t0, rect.top()), egui::pos2(rect.left() + rect.width() * t1, rect.bottom()));
-        painter.rect_filled(band, 0.0, mix((t0 + t1) * 0.5));
+fn stack_batch_commands(stack: &[StackEntry]) -> Vec<Value> {
+    let mut commands = Vec::with_capacity(stack.len() * 2);
+    for (i, entry) in stack.iter().enumerate() {
+        let params = Value::Object(entry.params.clone());
+        commands.push(json!({ "command": "effect.apply", "params": { "effect": entry.effect, "params": params } }));
+        if !entry.visible {
+            commands.push(json!({ "command": "effect.setParams", "params": { "index": i, "visible": false } }));
+        }
     }
-    painter.rect_stroke(rect, 0.0, Stroke::new(1.0, Tokens::get(ui.ctx()).input_border), egui::StrokeKind::Inside);
+    commands
+}
+
+fn stack_batch_params(stack: &[StackEntry]) -> Value {
+    json!({ "label": "Effect Gallery", "commands": stack_batch_commands(stack) })
+}
+
+/// Live canvas preview of the stack (`command.batch` would settle the dialog interaction each frame).
+fn preview_stack_on_canvas(app: &mut VectorcraftApp, stack: &[StackEntry]) {
+    if app.session.in_interaction() {
+        let _ = app.session.cancel_interaction();
+    }
+    let _ = app.session.begin_interaction("Effect Gallery");
+    for (i, entry) in stack.iter().enumerate() {
+        let params = Value::Object(entry.params.clone());
+        if app.run("effect.apply", json!({ "effect": entry.effect, "params": params })).is_err() {
+            let _ = app.session.cancel_interaction();
+            return;
+        }
+        if !entry.visible && app.run("effect.setParams", json!({ "index": i, "visible": false })).is_err() {
+            let _ = app.session.cancel_interaction();
+            return;
+        }
+    }
+}
+
+fn stack_preview_row(app: &mut VectorcraftApp, ui: &mut egui::Ui, d: &mut Dialog, stack: &[StackEntry]) {
+    const LAST: &str = super::form::PREVIEWED;
+    ui.add_space(8.0);
+    let mut on = d.bool("preview");
+    if widgets::check(ui, tl!("Preview"), on, true) {
+        on = !on;
+        d.fields.insert("preview".into(), json!(on));
+    }
+    if !on {
+        if d.fields.remove(LAST).is_some() {
+            let _ = app.session.cancel_interaction();
+        }
+        return;
+    }
+    if stack.is_empty() {
+        if d.fields.remove(LAST).is_some() {
+            let _ = app.session.cancel_interaction();
+        }
+        return;
+    }
+    let batch = stack_batch_params(stack);
+    if d.fields.get(LAST) != Some(&batch) || !app.session.in_interaction() {
+        preview_stack_on_canvas(app, stack);
+        d.fields.insert(LAST.into(), batch);
+    }
 }
 
 fn effect_label(id: &str) -> String {
@@ -251,38 +296,23 @@ fn body(app: &mut VectorcraftApp, ui: &mut egui::Ui, d: &mut Dialog) -> bool {
             egui::ScrollArea::vertical().max_height(220.0).show(ui, |ui| {
                 for e in &effects {
                     let picked = e.id == sel;
-                    ui.horizontal(|ui| {
-                        thumb(ui, e.id, 28.0);
-                        let name = tl!(e.label).trim_end_matches('…').to_string();
-                        let resp = ui.add(egui::Button::selectable(picked, name));
-                        if resp.clicked() {
-                            set_selected(d, e.id);
-                            set_stack_focus(d, false);
-                        }
-                        if resp.double_clicked() {
-                            set_selected(d, e.id);
-                            set_stack_focus(d, false);
-                            add_selected(d, e.id);
-                            stack = stack_of(d);
-                        }
-                    });
+                    let name = tl!(e.label).trim_end_matches('…').to_string();
+                    let resp = ui.add(egui::Button::selectable(picked, name));
+                    if resp.clicked() {
+                        set_selected(d, e.id);
+                        set_stack_focus(d, false);
+                    }
+                    if resp.double_clicked() {
+                        set_selected(d, e.id);
+                        set_stack_focus(d, false);
+                        add_selected(d, e.id);
+                        stack = stack_of(d);
+                    }
                 }
             });
             if widgets::flat_button(ui, tl!("Add to Stack"), 120.0).clicked() && !sel.is_empty() {
                 add_selected(d, &sel);
                 stack = stack_of(d);
-            }
-        });
-        ui.add_space(8.0);
-        ui.vertical(|ui| {
-            widgets::subheader(ui, tl!("Preview"));
-            ui.set_width(200.0);
-            let (param_effect, _) = param_target(d, &stack, stack_sel, &sel);
-            if !param_effect.is_empty() {
-                thumb(ui, &param_effect, 160.0);
-                ui.label(egui::RichText::new(effect_label(&param_effect)).color(t.text_strong));
-            } else {
-                ui.label(egui::RichText::new(tl!("Choose a filter")).color(t.text_dim));
             }
         });
     });
@@ -353,6 +383,7 @@ fn body(app: &mut VectorcraftApp, ui: &mut egui::Ui, d: &mut Dialog) -> bool {
     }
     write_stack(d, &stack);
     d.fields.insert("stackSelected".into(), json!(stack_sel));
+    stack_preview_row(app, ui, d, &stack);
     false
 }
 
@@ -369,18 +400,17 @@ fn add_selected(d: &mut Dialog, id: &str) {
 fn confirm(app: &mut VectorcraftApp, d: &Dialog) -> Result<Value, String> {
     let stack = stack_of(d);
     if stack.is_empty() {
+        if app.session.in_interaction() {
+            let _ = app.session.cancel_interaction();
+        }
         app.ui.dialog = None;
         return Ok(Value::Null);
     }
-    let mut commands = Vec::with_capacity(stack.len() * 2);
-    for (i, entry) in stack.iter().enumerate() {
-        let params = Value::Object(entry.params.clone());
-        commands.push(json!({ "command": "effect.apply", "params": { "effect": entry.effect, "params": params } }));
-        if !entry.visible {
-            commands.push(json!({ "command": "effect.setParams", "params": { "index": i, "visible": false } }));
-        }
+    let batch = stack_batch_params(&stack);
+    if d.bool("preview") && app.session.in_interaction() {
+        return super::form::commit_preview(app, "command.batch", batch);
     }
-    let r = app.run("command.batch", json!({ "label": "Effect Gallery", "commands": commands }));
+    let r = app.run("command.batch", batch);
     if r.is_ok() {
         app.ui.dialog = None;
     }
@@ -401,6 +431,21 @@ mod tests {
         let raw = egui::RawInput { screen_rect: Some(egui::Rect::from_min_size(egui::Pos2::ZERO, egui::vec2(1200.0, 900.0))), ..Default::default() };
         let mut out = ctx.run_ui(raw, |ui| crate::dialogs::show(app, ui.ctx()));
         out.textures_delta.clear();
+    }
+
+    #[test]
+    fn stack_preview_is_one_interaction() {
+        let mut app = VectorcraftApp::new(Session::new(), Default::default());
+        app.run("file.new", json!({"width": 200, "height": 200})).unwrap();
+        let id = app.run("shape.rectangle", json!({"x": 10, "y": 10, "width": 40, "height": 40})).unwrap()["id"].as_u64().unwrap();
+        app.run("ui.effectGalleryDialog", json!({})).unwrap();
+        let d = app.ui.dialog.as_mut().unwrap();
+        d.fields.insert("stack".into(), json!([{ "effect": "artistic.cutout", "visible": true, "params": { "levels": 3 } }]));
+        frame(&mut app);
+        assert!(app.session.in_interaction(), "the stack previews on the canvas");
+        crate::dialogs::cancel(&mut app);
+        assert!(!app.session.in_interaction());
+        assert!(app.session.active().unwrap().doc.node(vectorcraft_doc::NodeId(id)).unwrap().appearance.effects.is_empty());
     }
 
     #[test]
