@@ -486,6 +486,7 @@ pub struct VectorcraftApp {
     /// the answer.
     font_check: Option<(std::sync::mpsc::Receiver<bool>, bool)>,
     /// When installed fonts were last checked in line (app time, s).
+    #[cfg(not(target_arch = "wasm32"))]
     font_install_check_at: f64,
     /// Keyboard pastes of something other than text (see [`shortcuts::PasteChord`]).
     pub(crate) paste_chord: shortcuts::PasteChord,
@@ -535,6 +536,7 @@ struct PendingScreenshot {
 /// Seconds between two looks at the system clipboard for [`VectorcraftApp::system_paste`].
 const SYSTEM_CLIPBOARD_POLL: f64 = 0.25;
 /// Seconds between looks for fonts a font manager activated while the app stays in front (#2576).
+#[cfg(not(target_arch = "wasm32"))]
 const FONT_INSTALL_POLL: f64 = 2.0;
 
 impl VectorcraftApp {
@@ -601,6 +603,7 @@ impl VectorcraftApp {
             picks: picks::Picks::default(),
             screen_sampler: None,
             font_check: None,
+            #[cfg(not(target_arch = "wasm32"))]
             font_install_check_at: f64::NEG_INFINITY,
             paste_chord: Default::default(),
             background: Default::default(),

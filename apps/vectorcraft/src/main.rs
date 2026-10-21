@@ -144,11 +144,7 @@ impl App {
         // again on its document when it answers.
         #[cfg(target_os = "macos")]
         if !self.app.file_dialog_open() {
-            // Files from the Finder and the Dock wait while a file dialog is open: what asked for it runs
-            // again on its document when it answers.
-            if !self.app.file_dialog_open() {
-                open_files(&mut self.app, open_documents::take());
-            }
+            open_files(&mut self.app, open_documents::take());
         }
         self.app.logic(ctx);
         window::track(ctx, &mut self.app.ui.window);
