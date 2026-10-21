@@ -380,6 +380,13 @@ pub fn effect_catalog() -> Vec<EffectInfo> {
             json!({"grain": 4.0, "highlightArea": 0.0, "intensity": 10.0}),
         ),
         r(
+            "artistic.fresco",
+            "Fresco…",
+            ARTISTIC,
+            "{brushSize: 1..10 (2; wider brush dabs), brushDetail: 0..10 (10; sharper edges and less smoothing), texture: 1..3 (1; deeper plaster relief)} repaints the object as coarse pigment on a textured wall, keeping its coverage. Original visual approximation; chosen VectorCraft defaults.",
+            json!({"brushSize": 2.0, "brushDetail": 10.0, "texture": 1.0}),
+        ),
+        r(
             "artistic.neonGlow",
             "Neon Glow…",
             ARTISTIC,

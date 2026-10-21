@@ -93,6 +93,7 @@ fn effect_menu_lists_the_artistic_filters_before_blur() {
             "Cutout…",
             "Dry Brush…",
             "Film Grain…",
+            "Fresco…",
             "Neon Glow…",
             "Paint Daubs…",
             "Palette Knife…",
@@ -107,7 +108,7 @@ fn effect_menu_lists_the_artistic_filters_before_blur() {
     );
     assert!(artistic.iter().all(|e| e.command.as_deref() == Some("effect.dialog")));
     assert_eq!(artistic[2].params, json!({"effect": "artistic.dryBrush"}));
-    assert_eq!(artistic[4].params, json!({"effect": "artistic.neonGlow"}));
+    assert_eq!(artistic[5].params, json!({"effect": "artistic.neonGlow"}));
     let at = |name: &str| entries.iter().position(|e| e.path == ["Effect", name]).unwrap();
     assert!(at("Artistic") < at("Blur"));
 }
