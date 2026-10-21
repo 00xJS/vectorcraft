@@ -769,6 +769,11 @@ pub fn menu(app: &mut VectorcraftApp, ui: &mut Ui) {
         if menu_item(ui, tl!("Proportional Metrics"), has, proportional) {
             format(app, json!({"proportionalMetrics": !proportional}));
         }
+        // Tate-chu-yoko: the selected characters stand side by side across one em of a vertical column.
+        let tcy = s.as_ref().is_some_and(|s| s.tate_chu_yoko);
+        if menu_item(ui, tl!("Tate-chu-yoko"), has, tcy) {
+            format(app, json!({"tateChuYoko": !tcy}));
+        }
         ui.separator();
     }
     // Digits: the numeral system the selected characters' digits are drawn in, with the Middle
@@ -814,9 +819,7 @@ pub fn menu(app: &mut VectorcraftApp, ui: &mut Ui) {
     if menu_item(ui, tl!("System Layout"), open, system) {
         app.run("type.systemLayout", json!({})).ok();
     }
-    for l in ["Standard Vertical Roman Alignment", "Tate-chu-yoko"] {
-        menu_item(ui, tl!(l), false, false);
-    }
+    menu_item(ui, tl!("Standard Vertical Roman Alignment"), false, false);
     ui.separator();
     // The installed fonts are always listed; this picks up fonts installed since the app started.
     #[cfg(not(target_arch = "wasm32"))]
@@ -844,7 +847,7 @@ fn fractional_widths_on(app: &VectorcraftApp) -> bool {
 /// Reset Panel: the characters the panel acts on ([`char_cmd`]) take tracking 0, Auto leading and
 /// kerning, no baseline shift, 100% scales, no rotation, no underline or strikethrough, All Caps
 /// and Small Caps off, the normal position (neither superscript nor subscript), Roman Baseline
-/// character alignment, Proportional Metrics and No Break off and the Default digits, whether
+/// character alignment, Proportional Metrics, Tate-chu-yoko and No Break off and the Default digits, whether
 /// or not Show East Asian Options and Show Indic Options are on.
 fn reset_panel(app: &mut VectorcraftApp) {
     let d = CharStyle::default();
@@ -854,7 +857,7 @@ fn reset_panel(app: &mut VectorcraftApp) {
         json!({
             "kerning": "auto", "baselineShift": 0, "hScale": 100, "vScale": 100, "rotation": 0, "underline": false, "strikethrough": false,
             "allCaps": false, "smallCaps": d.small_caps.is_some(), "position": d.position.id(), "charAlign": d.char_align,
-            "proportionalMetrics": d.proportional_metrics, "noBreak": d.no_break, "digits": d.digits
+            "proportionalMetrics": d.proportional_metrics, "tateChuYoko": d.tate_chu_yoko, "noBreak": d.no_break, "digits": d.digits
         }),
     );
 }
@@ -1247,6 +1250,34 @@ mod tests {
         assert_eq!(shown(&mut app), (true, true));
     }
 
+    /// Tate-chu-yoko is in the panel menu with the East Asian options, and choosing it marks the
+    /// selected characters.
+    #[test]
+    fn tate_chu_yoko_menu_item_shows_with_east_asian_options_and_toggles() {
+        let mut app = VectorcraftApp::new(Session::new(), Default::default());
+        app.run("file.new", json!({"width": 300, "height": 200})).unwrap();
+        let id = app.session.execute("text.create", &json!({"x": 20, "y": 50, "text": "2026"})).unwrap()["id"].as_u64().unwrap();
+        app.session.execute("select.set", &json!({"ids": [id]})).unwrap();
+        let ctx = egui::Context::default();
+        let painted = |app: &mut VectorcraftApp| crate::tests_labels::painted_text(app, menu);
+        assert!(!painted(&mut app).contains("Tate-chu-yoko"));
+        app.session.prefs.show_east_asian_options = true;
+        let on = |app: &VectorcraftApp| match &app.session.active().unwrap().doc.node(NodeId(id)).unwrap().kind {
+            NodeKind::Text(t) => t.runs.iter().all(|r| r.style.tate_chu_yoko),
+            _ => panic!("text"),
+        };
+        assert!(!on(&app));
+        let texts = super::super::tests_appearance::frame_events(&ctx, &mut app, vec![], menu);
+        let at = texts.iter().find(|(t, _)| t.trim_start_matches(['✓', ' ']) == "Tate-chu-yoko").unwrap_or_else(|| panic!("{texts:?}")).1;
+        super::super::tests_appearance::click(&ctx, &mut app, at.center(), menu);
+        assert!(on(&app));
+        assert!(painted(&mut app).contains("✓ Tate-chu-yoko"));
+        let texts = super::super::tests_appearance::frame_events(&ctx, &mut app, vec![], menu);
+        let at = texts.iter().find(|(t, _)| t.trim_start_matches(['✓', ' ']) == "Tate-chu-yoko").unwrap().1;
+        super::super::tests_appearance::click(&ctx, &mut app, at.center(), menu);
+        assert!(!on(&app));
+    }
+
     /// Digits is in the panel menu with the Middle Eastern (Indic) options only, as Paragraph
     /// Direction is in the Paragraph panel.
     #[test]
@@ -1290,8 +1321,8 @@ mod tests {
 
     /// Reset Panel sets every character attribute the panel shows, except the font family, style
     /// and size, back to its default (Small Caps, the position, Character Alignment, Proportional
-    /// Metrics, No Break and Digits included), in the selected type and in the text the Type tool
-    /// has selected while it edits.
+    /// Metrics, Tate-chu-yoko, No Break and Digits included), in the selected type and in the text
+    /// the Type tool has selected while it edits.
     #[test]
     fn reset_panel_resets_every_attribute_but_the_font() {
         let mut app = VectorcraftApp::new(Session::new(), Default::default());
@@ -1317,6 +1348,7 @@ mod tests {
                 s.position != d.position,
                 s.char_align != d.char_align,
                 s.proportional_metrics != d.proportional_metrics,
+                s.tate_chu_yoko != d.tate_chu_yoko,
                 s.no_break != d.no_break,
                 s.digits != d.digits,
             ]
@@ -1327,16 +1359,16 @@ mod tests {
                 json!({
                     "id": id, "tracking": 50, "leading": 30, "kerning": 20, "baselineShift": 3, "hScale": 120, "vScale": 90, "rotation": 15,
                     "underline": true, "strikethrough": true, "allCaps": true, "smallCaps": true, "position": "superscript",
-                    "charAlign": "emBoxCenter", "proportionalMetrics": true, "noBreak": true, "digits": "hindi"
+                    "charAlign": "emBoxCenter", "proportionalMetrics": true, "tateChuYoko": true, "noBreak": true, "digits": "hindi"
                 }),
             )
             .unwrap();
         };
         let plain = runs(&app)[0].1.clone();
-        assert_eq!(differs(&plain, &CharStyle::default()), [false; 16]);
+        assert_eq!(differs(&plain, &CharStyle::default()), [false; 17]);
         custom(&mut app);
         let styled = runs(&app)[0].1.clone();
-        assert_eq!(differs(&styled, &CharStyle::default()), [true; 16]);
+        assert_eq!(differs(&styled, &CharStyle::default()), [true; 17]);
         app.run("select.set", json!({"ids": [id]})).unwrap();
         reset_panel(&mut app);
         assert_eq!(runs(&app), [("One 12".to_string(), plain.clone())]);

@@ -1627,6 +1627,36 @@ mod area_tests {
         assert!(!serde_json::from_value::<vectorcraft_doc::CharStyle>(old).unwrap().proportional_metrics);
     }
 
+    /// Tate-chu-yoko (Character panel menu, East Asian options): a character attribute, saved only
+    /// when on. Documents written before it read as off.
+    #[test]
+    fn tate_chu_yoko_is_a_character_attribute_saved_only_when_on() {
+        let mut s = Session::new();
+        s.execute("file.new", &json!({"width": 400, "height": 400})).unwrap();
+        let id = s.execute("text.create", &json!({"x": 10, "y": 50, "text": "2026年"})).unwrap()["id"].as_u64().unwrap();
+        let runs = |s: &Session| match &s.doc().unwrap().doc.node(NodeId(id)).unwrap().kind {
+            NodeKind::Text(t) => t.runs.clone(),
+            _ => panic!("text"),
+        };
+        assert!(!runs(&s)[0].style.tate_chu_yoko);
+        assert!(serde_json::to_value(&runs(&s)[0].style).unwrap().get("tateChuYoko").is_none());
+        s.execute("select.set", &json!({"ids": [id]})).unwrap();
+        s.execute("text.setFormat", &json!({"tateChuYoko": true})).unwrap();
+        assert!(runs(&s).iter().all(|r| r.style.tate_chu_yoko));
+        assert_eq!(serde_json::to_value(&runs(&s)[0].style).unwrap()["tateChuYoko"], true);
+        s.execute("edit.undo", &json!({})).unwrap();
+        assert!(!runs(&s)[0].style.tate_chu_yoko);
+        // The year only (2026 is 4 bytes); 年 stays unmarked.
+        s.execute("text.setRangeStyle", &json!({"id": id, "start": 0, "end": 4, "tateChuYoko": true})).unwrap();
+        let on: Vec<_> = runs(&s).iter().map(|r| (r.text.clone(), r.style.tate_chu_yoko)).collect();
+        assert_eq!(on, [("2026".to_string(), true), ("年".to_string(), false)]);
+        let old = serde_json::to_value(&runs(&s)[1].style).unwrap();
+        assert!(old.get("tateChuYoko").is_none());
+        assert!(!serde_json::from_value::<vectorcraft_doc::CharStyle>(old).unwrap().tate_chu_yoko);
+        s.execute("text.setFormat", &json!({"tateChuYoko": false})).unwrap();
+        assert!(runs(&s).iter().all(|r| !r.style.tate_chu_yoko));
+    }
+
     /// No Break is a character attribute, saved only when on.
     #[test]
     fn no_break_is_a_character_attribute_saved_only_when_on() {

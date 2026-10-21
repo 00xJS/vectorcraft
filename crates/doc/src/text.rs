@@ -109,6 +109,12 @@ pub struct CharStyle {
     /// its proportional heights, `vpal`.
     #[serde(default, rename = "proportionalMetrics", skip_serializing_if = "crate::skip::is_default")]
     pub proportional_metrics: bool,
+    /// Tate-chu-yoko (Character panel menu, East Asian options): in vertical type these characters
+    /// stand side by side across one em of the column. Horizontal type keeps the mark and does not
+    /// move them. Two or three half-width digits do this without the mark.
+    /// <https://helpx.adobe.com/illustrator/using/formatting-asian-characters.html>
+    #[serde(default, rename = "tateChuYoko", skip_serializing_if = "crate::skip::is_default")]
+    pub tate_chu_yoko: bool,
     /// Digits (Character panel menu, Middle Eastern options): the numeral system the digits of
     /// these characters are drawn in, whatever digits were typed.
     #[serde(default, skip_serializing_if = "crate::skip::is_default")]
@@ -292,6 +298,7 @@ impl Default for CharStyle {
             position: CharPosition::Normal,
             char_align: CharAlign::RomanBaseline,
             proportional_metrics: false,
+            tate_chu_yoko: false,
             small_caps: None,
             digits: Digits::Default,
             no_break: false,
