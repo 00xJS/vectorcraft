@@ -3195,6 +3195,13 @@ lighting	Light	Luz
 	Tints and Shades	Matizes e sombras
 	Hue Shift	Deslocamento de matiz
 	Key Color:	Cor-chave:
+	Tips	Dicas
+	Colorization Tips	Dicas de colorização
+	The samples show this brush on a blue stroke.	As amostras mostram este pincel em um traçado azul.
+	The art keeps its own colors.	A arte mantém as próprias cores.
+	Black becomes the stroke color and white stays white. Other colors become tints of the stroke color by their lightness.	O preto passa a ser a cor do traçado e o branco continua branco. As outras cores passam a ser matizes da cor do traçado, e quanto mais clara é uma cor, mais claro é o seu matiz.
+	Black and white stay as they are. Dark colors become shades of the stroke color and light colors become tints of it.	O preto continua preto e o branco continua branco. As outras cores passam a ser sombras da cor do traçado quando são escuras e matizes dela quando são claras.
+	The key color becomes the stroke color. The other colors shift their hue by the same amount and keep their saturation and brightness.	A cor-chave passa a ser a cor do traçado. As outras cores giram na roda de cores tanto quanto a cor-chave e mantêm a saturação e o brilho.
 	Shape:	Forma:
 	New Artboard Options…	Opções de nova mesa de trabalho…
 	New Layer Options…	Opções de nova camada…

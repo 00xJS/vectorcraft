@@ -3642,6 +3642,13 @@ mark-style	Japanese	Kiểu Nhật
 	Tint	Tông màu
 	Tints	Sắc pha
 	Tints and Shades	Sắc pha và bóng
+	Tips	Mẹo
+	Colorization Tips	Mẹo tô màu
+	The samples show this brush on a blue stroke.	Các mẫu hiển thị cọ này trên một nét màu xanh lam.
+	The art keeps its own colors.	Hình vẽ giữ nguyên màu của nó.
+	Black becomes the stroke color and white stays white. Other colors become tints of the stroke color by their lightness.	Màu đen trở thành màu nét và màu trắng vẫn là màu trắng. Các màu khác trở thành sắc pha của màu nét, và màu càng sáng thì sắc pha càng sáng.
+	Black and white stay as they are. Dark colors become shades of the stroke color and light colors become tints of it.	Màu đen vẫn là màu đen và màu trắng vẫn là màu trắng. Các màu khác trở thành bóng của màu nét khi chúng tối và sắc pha của màu nét khi chúng sáng.
+	The key color becomes the stroke color. The other colors shift their hue by the same amount and keep their saturation and brightness.	Màu chủ trở thành màu nét. Các màu khác dịch chuyển trên bánh xe màu một khoảng bằng màu chủ và giữ nguyên độ bão hòa và độ sáng.
 	Tiny Lens	Thấu kính nhỏ
 	Tip extends past the end point	Đầu mũi tên vượt qua điểm cuối
 	Tip on the end point	Đầu mũi tên tại điểm cuối

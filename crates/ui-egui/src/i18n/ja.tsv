@@ -2074,6 +2074,13 @@
 	Tints and Shades	淡彩と陰影
 	Hue Shift	色相シフト
 	Key Color:	キーカラー:
+	Tips	ヒント
+	Colorization Tips	着色のヒント
+	The samples show this brush on a blue stroke.	サンプルは、このブラシを青い線に適用した状態を表示します。
+	The art keeps its own colors.	アートは元のカラーのままです。
+	Black becomes the stroke color and white stays white. Other colors become tints of the stroke color by their lightness.	黒は線のカラーになり、白は白のままです。その他のカラーは線のカラーの淡彩になり、明るいカラーほど明るい淡彩になります。
+	Black and white stay as they are. Dark colors become shades of the stroke color and light colors become tints of it.	黒は黒のまま、白は白のままです。その他のカラーは、暗い場合は線のカラーの陰影に、明るい場合は淡彩になります。
+	The key color becomes the stroke color. The other colors shift their hue by the same amount and keep their saturation and brightness.	キーカラーが線のカラーになります。その他のカラーはキーカラーと同じだけカラーホイール上を移動し、彩度と明るさは保たれます。
 	Roundness:	真円率:
 	Fixed	固定
 	Pressure	筆圧

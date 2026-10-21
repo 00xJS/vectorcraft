@@ -1957,6 +1957,13 @@ lighting	Light	Światło
 	Tints and Shades	Tinty i odcienie
 	Hue Shift	Przesunięcie barwy
 	Key Color:	Kolor kluczowy:
+	Tips	Wskazówki
+	Colorization Tips	Wskazówki dotyczące koloryzacji
+	The samples show this brush on a blue stroke.	Próbki pokazują ten pędzel na niebieskim obrysie.
+	The art keeps its own colors.	Kompozycja zachowuje własne kolory.
+	Black becomes the stroke color and white stays white. Other colors become tints of the stroke color by their lightness.	Czarny staje się kolorem obrysu, a biały pozostaje biały. Pozostałe kolory stają się tintami koloru obrysu, a im jaśniejszy jest kolor, tym jaśniejsza jest jego tinta.
+	Black and white stay as they are. Dark colors become shades of the stroke color and light colors become tints of it.	Czarny pozostaje czarny, a biały pozostaje biały. Pozostałe kolory stają się ciemnymi odcieniami koloru obrysu, gdy są ciemne, i jego tintami, gdy są jasne.
+	The key color becomes the stroke color. The other colors shift their hue by the same amount and keep their saturation and brightness.	Kolor kluczowy staje się kolorem obrysu. Pozostałe kolory przesuwają się po kole barw o tyle samo co kolor kluczowy i zachowują nasycenie oraz jasność.
 	Size:	Rozmiar:
 	Calligraphic Brush Options	Opcje pędzla kaligraficznego
 	Bristle Brush Options	Opcje pędzla włosiankowego

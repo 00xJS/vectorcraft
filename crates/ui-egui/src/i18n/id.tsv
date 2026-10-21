@@ -1856,6 +1856,13 @@ lighting	Light	Cahaya
 	Tints and Shades	Tint dan shade
 	Hue Shift	Pergeseran rona
 	Key Color:	Warna kunci:
+	Tips	Kiat
+	Colorization Tips	Kiat pewarnaan
+	The samples show this brush on a blue stroke.	Contoh menampilkan kuas ini pada stroke biru.
+	The art keeps its own colors.	Karya seni mempertahankan warnanya sendiri.
+	Black becomes the stroke color and white stays white. Other colors become tints of the stroke color by their lightness.	Hitam menjadi warna stroke dan putih tetap putih. Warna lain menjadi tint dari warna stroke, dan makin terang suatu warna, makin terang tint-nya.
+	Black and white stay as they are. Dark colors become shades of the stroke color and light colors become tints of it.	Hitam tetap hitam dan putih tetap putih. Warna lain menjadi shade dari warna stroke jika gelap dan tint darinya jika terang.
+	The key color becomes the stroke color. The other colors shift their hue by the same amount and keep their saturation and brightness.	Warna kunci menjadi warna stroke. Warna lain bergeser di roda warna sejauh warna kunci bergeser dan mempertahankan saturasi serta kecerahannya.
 	Size:	Ukuran:
 	Calligraphic Brush Options	Opsi kuas kaligrafi
 	Bristle Brush Options	Opsi kuas bristle

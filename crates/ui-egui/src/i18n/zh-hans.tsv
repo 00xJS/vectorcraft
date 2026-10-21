@@ -4560,6 +4560,13 @@ imageTrace	Outline	轮廓
 	Scale Tints	缩放淡色
 	Tints and Shades	淡色和阴影
 	Hue Shift	色相偏移
+	Tips	提示
+	Colorization Tips	着色提示
+	The samples show this brush on a blue stroke.	示例显示此画笔在蓝色描边上的效果。
+	The art keeps its own colors.	图稿保留自己的颜色。
+	Black becomes the stroke color and white stays white. Other colors become tints of the stroke color by their lightness.	黑色变为描边颜色，白色保持白色。其他颜色变为描边颜色的淡色，颜色越浅，淡色越浅。
+	Black and white stay as they are. Dark colors become shades of the stroke color and light colors become tints of it.	黑色保持黑色，白色保持白色。其他颜色较暗时变为描边颜色的阴影，较亮时变为描边颜色的淡色。
+	The key color becomes the stroke color. The other colors shift their hue by the same amount and keep their saturation and brightness.	主色变为描边颜色。其他颜色在色轮上移动与主色相同的距离，并保持其饱和度和亮度。
 	Harmony Rules	协调规则
 	Variation	变化
 	Drag art, colors and text styles here to reuse them across documents. Libraries are stored on this machine — no account required.	将图稿、颜色和文字样式拖到这里，即可在不同文档中复用。库保存在本机，无需账户。
