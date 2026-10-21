@@ -1,16 +1,20 @@
-//! Effect › Artistic (Cutout, Film Grain, Neon Glow, Plastic Wrap, Poster Edges). Original filters built from
+//! Effect › Artistic (Cutout, Dry Brush, Film Grain, Neon Glow, Plastic Wrap, Poster Edges, Smudge Stick, Sponge and
+//! Watercolor). Original filters built from
 //! public behaviour documentation:
 //! <https://helpx.adobe.com/illustrator/using/summary-effects.html> and
 //! <https://helpx.adobe.com/photoshop-elements/using/artistic-filters.html>.
 //! These are visual approximations, not reproductions of a proprietary algorithm.
 
+use super::brushstrokes::stroke_reach;
 use super::edges::sobel;
-use super::pixelate::{Place, cell, rand};
-
-const SALT_PLASTIC: u64 = 512;
+use super::pixelate::{Place, cell, rand, value_noise};
 use super::texture::{luma, premultiply, straight};
 use super::{PixelSpace, blur_plane};
-use vectorcraft_geom::Point;
+use vectorcraft_geom::{Point, Vec2};
+
+const SALT_DRY: u64 = 264;
+const MARGIN: f64 = 1.0;
+const SALT_PLASTIC: u64 = 512;
 
 const SALT_FILM: u64 = 256;
 
@@ -314,6 +318,21 @@ pub(super) fn plastic_wrap(px: &mut [[u8; 4]], w: usize, h: usize, space: &Pixel
     });
 }
 
+/// Stroke length (document units) for Dry Brush at Brush Size `size` (1..10).
+fn dry_brush_length(size: f64) -> f64 {
+    2.0 + 2.8 * (size.clamp(1.0, 10.0) - 1.0)
+}
+
+/// How much Dry Brush softens before smearing at Brush Detail `detail` (0..10; 10 keeps the most detail).
+fn dry_brush_sigma(detail: f64) -> f64 {
+    0.22 * (10.0 - detail.clamp(0.0, 10.0))
+}
+
+/// How far (document units) Dry Brush reads from a pixel.
+pub(super) fn dry_brush_reach(size: f64, detail: f64) -> f64 {
+    stroke_reach(dry_brush_length(size)) + 3.0 * dry_brush_sigma(detail) + MARGIN
+}
+
 /// How far (document units) Neon Glow's glow spreads at `size` (-24..24).
 pub(super) fn glow_spread(size: f64) -> f64 {
     0.25 * size.abs().min(24.0)
@@ -342,4 +361,118 @@ pub(super) fn neon_glow(px: &mut [[u8; 4]], w: usize, h: usize, space: &PixelSpa
         let c = colour.map(|v| 1.0 - (1.0 - base) * (1.0 - v.clamp(0.0, 1.0) * lit));
         *p = premultiply(c, f32::from(p[3]) / 255.0);
     }
+}
+
+/// The tone at `(x, y)` in `tone`, `w` × `h`, or 0 outside.
+fn tone_at(tone: &[f32], w: usize, h: usize, x: isize, y: isize) -> f32 {
+    if x < 0 || y < 0 {
+        return 0.0;
+    }
+    let (x, y) = (x as usize, y as usize);
+    if x >= w || y >= h {
+        return 0.0;
+    }
+    tone[y * w + x]
+}
+
+/// A unit vector along the image gradient's tangent at `(x, y)`, or horizontal when flat.
+fn dry_brush_dir(tone: &[f32], w: usize, h: usize, x: usize, y: usize) -> Vec2 {
+    let gx = 0.5 * (tone_at(tone, w, h, x as isize + 1, y as isize) - tone_at(tone, w, h, x as isize - 1, y as isize));
+    let gy = 0.5 * (tone_at(tone, w, h, x as isize, y as isize + 1) - tone_at(tone, w, h, x as isize, y as isize - 1));
+    let v = Vec2::new(-f64::from(gy), f64::from(gx));
+    let len = v.hypot();
+    if len > 1e-6 { v / len } else { Vec2::new(1.0, 0.0) }
+}
+
+/// Premultiplied RGBA (0..1) at document `q`, bilinearly from `src`.
+fn sample_pm(src: &[[f32; 4]], w: usize, h: usize, place: &Place, q: Point) -> [f32; 4] {
+    let p = place.to_px * q;
+    if !(p.x.is_finite() && p.y.is_finite()) {
+        return [0.0; 4];
+    }
+    let (x, y) = (p.x - 0.5, p.y - 0.5);
+    let (i, j) = (x.floor() as isize, y.floor() as isize);
+    let (fx, fy) = (x - i as f64, y - j as f64);
+    let mut acc = [0.0f32; 4];
+    for (row, wy) in [(j, 1.0 - fy), (j + 1, fy)] {
+        let Some(row) = usize::try_from(row).ok().filter(|r| *r < h) else { continue };
+        for (col, wx) in [(i, 1.0 - fx), (i + 1, fx)] {
+            let Some(col) = usize::try_from(col).ok().filter(|c| *c < w) else { continue };
+            let k = (wx * wy) as f32;
+            if let Some(p) = src.get(row * w + col) {
+                for (a, v) in acc.iter_mut().zip(p) {
+                    *a += *v * k;
+                }
+            }
+        }
+    }
+    acc
+}
+
+/// Dry Brush: the object repainted with short strokes along its form, edges darkened. `size`
+/// (1..10) sets the stroke length, `detail` (0..10) how much is softened first (10 keeps the most
+/// detail), and `texture` (1..3) how strongly edges and bristle grain contrast. Coverage is kept.
+pub(super) fn dry_brush(px: &mut [[u8; 4]], w: usize, h: usize, space: &PixelSpace, size: f64, detail: f64, texture: f64) {
+    if !([size, detail, texture].iter().all(|v| v.is_finite()) && space.px.is_finite() && space.px > 0.0) {
+        return;
+    }
+    let len = dry_brush_length(size);
+    let sigma = dry_brush_sigma(detail);
+    let texture = texture.clamp(1.0, 3.0);
+    let edge_gain = (0.25 + 0.2 * (texture - 1.0)) as f32;
+    let bristle = (0.04 + 0.05 * (texture - 1.0)) as f32;
+    let (mut colour, alpha) = planes(px);
+    if sigma > 0.0 {
+        soften(&mut colour, &alpha, w, h, sigma);
+    }
+    let at = |k: usize| [0, 1, 2].map(|i| colour[i].get(k).copied().unwrap_or(0.0));
+    let tone: Vec<f32> = (0..w * h)
+        .map(|k| {
+            let c = at(k);
+            let a = alpha.get(k).copied().unwrap_or(0.0);
+            (0.299 * c[0] + 0.587 * c[1] + 0.114 * c[2]) * a
+        })
+        .collect();
+    let edges = sobel(&tone, w, h);
+    let src: Vec<[f32; 4]> = (0..w * h)
+        .map(|k| {
+            let c = at(k);
+            let a = alpha.get(k).copied().unwrap_or(0.0);
+            [c[0] * a, c[1] * a, c[2] * a, a]
+        })
+        .collect();
+    let Some(place) = Place::new(space, w, h) else { return };
+    const SAMPLES: usize = 5;
+    let mut out = px.to_vec();
+    for (k, p) in out.iter_mut().enumerate() {
+        if p[3] == 0 {
+            continue;
+        }
+        let (x, y) = (k % w, k / w);
+        let q = place.at(x, y);
+        let dir = dry_brush_dir(&tone, w, h, x, y);
+        let mut acc = [0.0f32; 4];
+        for i in 0..SAMPLES {
+            let t = (i as f64 / (SAMPLES - 1) as f64 - 0.5) * len;
+            let s = sample_pm(&src, w, h, &place, q + dir * t);
+            for (a, v) in acc.iter_mut().zip(s) {
+                *a += v;
+            }
+        }
+        for a in &mut acc {
+            *a /= SAMPLES as f32;
+        }
+        let a = acc[3].clamp(0.0, 1.0);
+        let c = if a > 1e-6 {
+            [0, 1, 2].map(|i| (acc[i] / a).clamp(0.0, 1.0))
+        } else {
+            straight(*p)
+        };
+        let edge = edges[k].min(1.0);
+        let dark = (edge_gain * edge).clamp(0.0, 0.75);
+        let grain = bristle * (2.0 * value_noise(SALT_DRY, q.x / (5.0 * space.px), q.y / (5.0 * space.px)) - 1.0) as f32;
+        let c = c.map(|v| (v * (1.0 - dark) + grain).clamp(0.0, 1.0));
+        *p = premultiply(c, f32::from(p[3]) / 255.0);
+    }
+    px.copy_from_slice(&out);
 }
