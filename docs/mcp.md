@@ -2979,7 +2979,10 @@ left out. `file.place` answers `format: "rtf"`.
 
 A Word document (a ZIP package named `.docx`, or one that holds `word/document.xml`, except a `.txt` file) is placed
 the same way and keeps the same formatting, taken from the document defaults, the paragraph style and the character
-style (and the styles each is based on) and direct formatting; theme fonts are read from the theme part. Table cells
+style (and the styles each is based on) and direct formatting; theme fonts are read from the theme part. A paragraph
+justified with a low, medium or high kashida length (`w:jc` `lowKashida`, `mediumKashida` or `highKashida`) is
+justified with `kashida` `"short"`, `"medium"` or `"long"` (see [Insert Kashidas](#insert-kashidas)), and one
+justified with `both` has none. Table cells
 are separated by tabs and each row is a paragraph. Hidden and deleted text, field instructions, pictures, text boxes,
 headers, footers, notes and list numbers are left out. A package with more than 10,000 files, a part that unpacks to
 more than 16 MiB or nests elements more than 256 deep, and a document with more than 4 MiB of text or 100,000

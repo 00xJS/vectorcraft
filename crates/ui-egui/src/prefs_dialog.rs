@@ -349,7 +349,8 @@ fn category_fields(ui: &mut egui::Ui, d: &mut Dialog, cat: &str) {
                 labeled(ui, sp.label, |ui| {
                     let cur = v.as_str().unwrap_or("auto");
                     let codes: Vec<&str> = std::iter::once("auto").chain(crate::i18n::Lang::for_picker().into_iter().map(|l| l.code())).collect();
-                    let labels: Vec<&str> = std::iter::once(tl!("Auto")).chain(crate::i18n::Lang::for_picker().into_iter().map(|l| l.name())).collect();
+                    let labels: Vec<&str> =
+                        std::iter::once(tl!("Auto")).chain(crate::i18n::Lang::for_picker().into_iter().map(|l| l.name())).collect();
                     let cur_label = codes.iter().position(|c| c.eq_ignore_ascii_case(cur)).and_then(|i| labels.get(i).copied()).unwrap_or(cur);
                     if let Some(i) = widgets::dropdown(ui, sp.key, cur_label, &labels, 260.0)
                         && let Some(code) = codes.get(i)
