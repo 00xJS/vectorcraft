@@ -194,7 +194,7 @@ fn pattern_thumb(app: &VectorcraftApp, ui: &Ui, r: Rect, paint: &Paint) {
     );
     let tex = CACHE.with(|c| c.borrow().get(&key).cloned()).unwrap_or_else(|| {
         let tex = vectorcraft_render::render_pattern_swatch(&st.doc, pattern, px).map(|img| {
-            let color = egui::ColorImage::from_rgba_premultiplied([img.width as usize, img.height as usize], &img.pixels);
+            let color = crate::canvas::color_image(&img);
             ui.ctx().load_texture(format!("pattern-swatch-{pattern}-{px}"), color, egui::TextureOptions::LINEAR)
         });
         CACHE.with(|c| {

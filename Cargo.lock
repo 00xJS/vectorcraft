@@ -5022,6 +5022,7 @@ dependencies = [
 name = "vectorcraft-ui-egui"
 version = "0.14.0"
 dependencies = [
+ "bytemuck",
  "craft-ui",
  "egui",
  "egui_extras",

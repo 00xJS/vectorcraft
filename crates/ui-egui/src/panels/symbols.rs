@@ -38,7 +38,7 @@ fn thumb(ui: &Ui, doc: &Document, name: &str, size: f32) -> Option<egui::Texture
     let l = d.layers[0].id;
     d.insert(Some(l), 0, Node::new(id, NodeKind::SymbolInstance { symbol: name.into(), xf })).ok()?;
     let img = RENDERER.with(|r| r.borrow_mut().render_thumbnail(&d, id, px))?;
-    let color = egui::ColorImage::from_rgba_premultiplied([img.width as usize, img.height as usize], &img.pixels);
+    let color = crate::canvas::color_image(&img);
     let tex = ui.ctx().load_texture(format!("sym-{name}-{px}"), color, egui::TextureOptions::LINEAR);
     CACHE.with(|c| {
         let mut c = c.borrow_mut();

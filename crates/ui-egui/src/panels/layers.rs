@@ -1408,7 +1408,7 @@ fn small_node(n: &Node, limit: usize) -> bool {
 impl Thumbs {
     /// Keep `img` (None: nothing drawn) as the thumbnail of row `key` showing `node`.
     fn upload(&mut self, ctx: &egui::Context, key: (u64, NodeId), node: Weak<Node>, px: u32, img: Option<&vectorcraft_render::Rendered>, ms: f64) {
-        let color = img.map(|img| egui::ColorImage::from_rgba_premultiplied([img.width as usize, img.height as usize], &img.pixels));
+        let color = img.map(crate::canvas::color_image);
         let used = ctx.cumulative_pass_nr();
         let name = format!("layer-thumb-{}", key.1.0);
         match self.entries.get_mut(&key) {

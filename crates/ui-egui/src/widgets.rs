@@ -2242,7 +2242,7 @@ pub fn doc_preview(ui: &Ui, key: &str, size: Vec2, build: impl FnOnce(f64, f64) 
     }
     let doc = build(w, h)?;
     let img = RENDERER.with(|r| r.borrow_mut().render_region(&doc, vectorcraft_geom::Rect::new(0.0, 0.0, w, h), ppp, false));
-    let color = egui::ColorImage::from_rgba_premultiplied([img.width as usize, img.height as usize], &img.pixels);
+    let color = crate::canvas::color_image(&img);
     let tex = ui.ctx().load_texture(format!("preview-{key}"), color, egui::TextureOptions::LINEAR);
     CACHE.with(|c| {
         let mut c = c.borrow_mut();
@@ -2469,7 +2469,7 @@ pub fn region_texture(
 ) -> egui::TextureHandle {
     let scale = px / region.width().max(region.height()).max(1.0);
     let img = renderer.render_region(doc, region, scale, true);
-    let color = egui::ColorImage::from_rgba_premultiplied([img.width as usize, img.height as usize], &img.pixels);
+    let color = crate::canvas::color_image(&img);
     ctx.load_texture(name, color, egui::TextureOptions::LINEAR)
 }
 
