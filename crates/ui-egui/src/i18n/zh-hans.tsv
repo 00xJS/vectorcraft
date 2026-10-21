@@ -3624,7 +3624,7 @@ imageTrace	Outline	轮廓
 @msg	the scale is not a usable number	比例不是可用的数字
 @msg	the drawing is too large to open	图纸过大，无法打开
 @msg	scale must be a number from {_1} to {_2}, not {_3}	比例必须是 {_1} 到 {_2} 之间的数字，而不是 {_3}
-@msg	image '{key}' has no pixels and was left out	图像 '{key}' 没有像素，已略去
+@msg	an image has no pixels and was left out	已略去没有像素的图像
 @msg	Embedded {n} image(s)	已嵌入 {n} 张图像
 @msg	object {0} cannot have children	对象 {0} 不能包含子对象
 @msg	range `{s}` is empty	范围 `{s}` 为空

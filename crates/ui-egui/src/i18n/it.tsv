@@ -4029,7 +4029,7 @@ axis	Both	Entrambi
 @msg	give the path `id` and the width point `index`	specifica l'`id` del tracciato e l'`index` del punto di larghezza
 @msg	guides are locked	le guide sono bloccate
 @msg	handle must be in or out	handle deve essere in o out
-@msg	image '{key}' has no pixels and was left out	l'immagine '{key}' non ha pixel ed è stata omessa
+@msg	an image has no pixels and was left out	un'immagine senza pixel è stata omessa
 @msg	image data `{_1}` is missing	mancano i dati immagine `{_1}`
 @msg	image would be too large; lower the resolution	l'immagine sarebbe troppo grande; riduci la risoluzione
 @msg	index must be a number or first, previous, next or last	index deve essere un numero oppure first, previous, next o last

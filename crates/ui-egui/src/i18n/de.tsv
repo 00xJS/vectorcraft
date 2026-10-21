@@ -3913,7 +3913,7 @@ theme	Appearance	Erscheinungsbild
 @msg	give the path `id` and the width point `index`	geben Sie die `id` des Pfads und den `index` des Breitenpunkts an
 @msg	guides are locked	die Hilfslinien sind gesperrt
 @msg	handle must be in or out	handle muss in oder out sein
-@msg	image '{key}' has no pixels and was left out	das Bild '{key}' hat keine Pixel und wurde ausgelassen
+@msg	an image has no pixels and was left out	ein Bild ohne Pixel wurde ausgelassen
 @msg	image data `{_1}` is missing	die Bilddaten `{_1}` fehlen
 @msg	image would be too large; lower the resolution	das Bild wäre zu groß; verringern Sie die Auflösung
 @msg	index must be a number or first, previous, next or last	index muss eine Zahl oder first, previous, next oder last sein

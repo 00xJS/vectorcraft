@@ -4014,7 +4014,7 @@ imageTrace	Outline	Kontur
 @msg	give horizontal or vertical	berikan horizontal atau vertikal
 @msg	give the path `id` and the width point `index`	berikan jalur `id` dan titik lebar `index`
 @msg	guides are locked	panduan terkunci
-@msg	image '{key}' has no pixels and was left out	gambar '{key}' tidak memiliki piksel dan dilewati
+@msg	an image has no pixels and was left out	gambar tanpa piksel dilewati
 @msg	image data `{_1}` is missing	data gambar `{_1}` tidak ada
 @msg	image would be too large; lower the resolution	gambar akan menjadi terlalu besar; turunkan resolusinya
 @msg	index must be a number or first, previous, next or last	index harus berupa angka atau first, previous, next, atau last

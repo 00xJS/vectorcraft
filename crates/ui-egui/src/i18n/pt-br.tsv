@@ -3564,7 +3564,7 @@ axis	Both	Ambos
 @msg	give the path `id` and the width point `index`	informe o `id` do traçado e o `index` do ponto de largura
 @msg	guides are locked	as guias estão bloqueadas
 @msg	handle must be in or out	handle deve ser in ou out
-@msg	image '{key}' has no pixels and was left out	a imagem '{key}' não tem pixels e foi omitida
+@msg	an image has no pixels and was left out	uma imagem sem pixels foi omitida
 @msg	image data `{_1}` is missing	os dados da imagem `{_1}` estão ausentes
 @msg	image would be too large; lower the resolution	a imagem ficaria grande demais; reduza a resolução
 @msg	index must be a number or first, previous, next or last	index deve ser um número ou first, previous, next ou last

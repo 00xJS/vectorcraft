@@ -3774,7 +3774,7 @@ effect	Regular	ჩვეულებრივი
 @msg	give horizontal or vertical	მიუთითეთ horizontal ან vertical
 @msg	give the path `id` and the width point `index`	მიუთითეთ ტრაექტორიის `id` და სიგანის წერტილის `index`
 @msg	guides are locked	დამხმარე ხაზები ჩაკეტილია
-@msg	image '{key}' has no pixels and was left out	გამოსახულებას '{key}' პიქსელები არ აქვს და გამოტოვდა
+@msg	an image has no pixels and was left out	გამოსახულება, რომელსაც პიქსელები არ აქვს, გამოტოვდა
 @msg	image data `{_1}` is missing	გამოსახულების მონაცემები `{_1}` აკლია
 @msg	image would be too large; lower the resolution	გამოსახულება ზედმეტად დიდი იქნებოდა; შეამცირეთ გარჩევადობა
 @msg	index must be a number or first, previous, next or last	index უნდა იყოს რიცხვი ან first, previous, next ან last
