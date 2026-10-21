@@ -599,6 +599,83 @@ fn live_paint_merge_keeps_paint_and_adds_faces() {
     assert_eq!(layer_children(&s), 1);
 }
 
+/// Give Live Paint group `g` a lock, hidden state, appearance, knockout, opacity mask and
+/// graphic style link, and return it as it then is.
+fn dress_live_group(s: &mut Session, g: NodeId) -> Node {
+    use vectorcraft_doc::{Knockout, OpacityMask};
+    let mask = Node::path(NodeId(0), vectorcraft_geom::shapes::rectangle(Rect::new(0.0, 0.0, 50.0, 50.0)), Default::default());
+    s.edit("t", |d, _| {
+        let n = d.node_mut(g).unwrap();
+        n.locked = true;
+        n.visible = false;
+        n.isolate = true;
+        n.knockout = Knockout::On;
+        n.appearance.set_stroke(Paint::solid(Color::rgb(0.0, 0.5, 0.0)));
+        let mut e = n.extras_mut();
+        e.mask = Some(Box::new(OpacityMask::new(mask, true)));
+        e.graphic_style = Some(7);
+        Ok(())
+    })
+    .unwrap();
+    node(s, g)
+}
+
+/// Asserts that `after` is `before` with other children and Gap Options.
+fn same_group_but_children(before: &Node, after: &Node) {
+    assert_eq!((after.locked, after.visible, after.isolate), (true, false, true));
+    assert_eq!(after.appearance, before.appearance, "the group's own appearance");
+    assert_eq!(after.extras().mask, before.extras().mask, "the opacity mask");
+    assert_eq!(after.extras().graphic_style, Some(7), "the graphic style link");
+    let mut want = before.clone();
+    *want.children_mut().unwrap() = after.children().unwrap().clone();
+    want.extras_mut().live_paint_gaps = after.extras().live_paint_gaps.clone();
+    assert_eq!(after, &want);
+}
+
+#[test]
+fn live_paint_merge_keeps_the_groups_lock_visibility_mask_and_graphic_style() {
+    let mut s = session();
+    let g = live(&mut s);
+    let before = dress_live_group(&mut s, g);
+    let c = rect(&mut s, 120.0, 20.0, 100.0, 20.0);
+    let r = s.execute("livePaint.merge", &json!({"ids": [g.0, c.0]})).unwrap();
+    assert_eq!(NodeId(r["id"].as_u64().unwrap()), g);
+    let after = node(&s, g);
+    same_group_but_children(&before, &after);
+    assert_eq!(vectorcraft_tools::builder::sources(&after).unwrap().children().unwrap().len(), 3, "the rectangle joined the sources");
+    // One undo step brings back the group as it was, and the rectangle beside it.
+    s.execute("edit.undo", &json!({})).unwrap();
+    assert_eq!(node(&s, g), before);
+    assert_eq!(layer_children(&s), 2);
+}
+
+#[test]
+fn live_paint_make_and_fill_with_a_live_paint_group_selected_add_the_paths_to_it() {
+    let green = Paint::solid(Color::from_hex("#00ff00").unwrap());
+    let fill_at = |s: &Session, g: NodeId, x: f64, y: f64| {
+        vectorcraft_tools::builder::face_at(&node(s, g), vectorcraft_geom::Point::new(x, y)).map(|f| f.appearance.fill_paint())
+    };
+    // Make, and the Live Paint Bucket on a path beside the group, each keep the group, its
+    // properties and the paint of its faces.
+    for (cmd, params) in [("livePaint.make", json!({})), ("livePaint.fill", json!({"point": [170, 30], "color": "#0000ff"}))] {
+        let mut s = session();
+        let g = live(&mut s);
+        s.execute("livePaint.fill", &json!({"group": g.0, "point": [25, 50], "color": "#00ff00"})).unwrap();
+        let before = dress_live_group(&mut s, g);
+        let c = rect(&mut s, 120.0, 20.0, 100.0, 20.0);
+        let mut p = params;
+        p["ids"] = json!([g.0, c.0]);
+        let r = s.execute(cmd, &p).unwrap();
+        let id = r.get("id").or_else(|| r.get("group")).and_then(Value::as_u64);
+        assert_eq!(id, Some(g.0), "{cmd}");
+        same_group_but_children(&before, &node(&s, g));
+        assert_eq!(fill_at(&s, g, 25.0, 50.0), Some(green.clone()), "{cmd}");
+        assert_eq!(layer_children(&s), 1, "{cmd}");
+        s.execute("edit.undo", &json!({})).unwrap();
+        assert_eq!(node(&s, g), before, "{cmd}");
+    }
+}
+
 /// A Live Paint group of one open path round the square 0..100, its end 2 pt short of its start.
 fn live_square_with_a_gap(s: &mut Session) -> NodeId {
     let anchors = [(0, 0), (100, 0), (100, 100), (0, 100), (0, 2)].map(|(x, y)| json!({"x": x, "y": y}));

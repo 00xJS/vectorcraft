@@ -1283,6 +1283,9 @@ already walks Image Trace. Short agent entry points:
   pixels; 4). With `selectStrokes` off, Alt-click selects the face under the pointer as a click does; with
   `selectFills` off, a click selects the edge nearest the pointer as Alt-click does; with both off, a click selects
   no face or edge.
+  `livePaint.merge` keeps the bottom Live Paint group's id, name, lock, visibility, transparency, appearance, opacity
+  mask and graphic style link. With a Live Paint group among the objects, `livePaint.make` adds the others to it as
+  `livePaint.merge` does, and so does `livePaint.fill {ids}` when `point` is outside that group's faces.
 
 `dataset.select`, `dataset.next` and `dataset.prev` reply `{name, applied, skipped}`. They add `overflow: [id…]`
 when area type or type on a path whose text they rewrote doesn't fit, as `text.setText` does (see
