@@ -7,13 +7,14 @@ Per-language status of VectorCraft's interface. How the catalogs work and how to
 [target-app-parity.md](target-app-parity.md).
 
 **How it is measured:** rows with a translation in each `crates/ui-egui/src/i18n/<code>.tsv`, counted on
-origin/main `01e165af`, except the rows that give a count date, which were counted on `main` on that date.
+origin/main `01e165af`, except the rows that give a count date, which were counted on `main` at `cb0a7d9` (2026-10-21).
 The reference is the French catalog, which the tests hold complete: 3,416 interface
 strings (menus, command labels, `tl!` literals: panels, dialogs, tooltips, Preferences) plus 604 `@msg` status and
-error messages, 4,020 in all. A language's % is its rows over 4,020 (capped at 100% per part). The
-`complete_menus` flag and `COMPLETE_MESSAGES` list make `i18n::tests` fail if a complete language misses a
-string, so "full" here is enforced by tests. No language has help content: there is no translated (or English)
-in-app help, and the docs are English.
+error messages, 4,020 in all. A language's % is its rows over 4,020 (capped at 100% per part).
+`i18n::tests` fail if a language with the `complete_menus` flag misses a menu string or `tl!` literal, or if a
+language in the `COMPLETE_MESSAGES` list misses a status or error message. Every non-English language marked
+"full" has the flag, and all of them except Bulgarian are in the list. No language has help content: there is
+no translated (or English) in-app help, and the docs are English.
 
 **Native review:** every catalog was written clean-room from the English meaning, most of it by agents
 (`bflatastic`), with community contributors adding or correcting (German by `dwetscher`, Japanese and Traditional
