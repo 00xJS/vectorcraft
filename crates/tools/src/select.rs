@@ -17,9 +17,10 @@
 //! scaling its type: the text reflows at its size.
 //! E pressed during a marquee drag makes the marquee take only the objects entirely inside it, and
 //! E pressed again makes it take the objects it touches.
-//! A click on the red out port of selected area type whose text overflows loads the pointer with
-//! that text ([`Cursor::LoadedText`]): the next click threads it into the closed path or area type
-//! under the pointer, or into a new frame of the same shape and size at the click on empty canvas,
+//! A click on the red out port of selected area type or type on a path whose text overflows loads
+//! the pointer with that text ([`Cursor::LoadedText`]): the next click threads it into the closed
+//! path, area type or type on a path under the pointer, or into a new frame of the same kind, shape
+//! and size at the click on empty canvas,
 //! and a drag draws a rectangle for the new frame (`text.thread.add`). Escape drops the loaded text.
 
 use std::cell::RefCell;
@@ -83,8 +84,8 @@ enum State {
     Mirror(crate::mirror::MirrorDrag),
     /// Dragging a bracket of type on a path.
     Bracket(BracketDrag),
-    /// Loaded with the text of area type `from` by a click on its out port; `press`: where the
-    /// next press went down and where the pointer is now.
+    /// Loaded with the text of area type or type on a path `from` by a click on its out port;
+    /// `press`: where the next press went down and where the pointer is now.
     Loaded {
         from: NodeId,
         press: Option<(Point, Point)>,
@@ -430,13 +431,13 @@ impl SelectionTool {
         })
     }
 
-    /// The pointer loaded with the text of area type `from` ([`State::Loaded`]): a press starts
-    /// placing it, and its release threads it (`text.thread.add`). None when `from` is no longer
-    /// area type: the press is an ordinary one.
+    /// The pointer loaded with the text of area type or type on a path `from` ([`State::Loaded`]):
+    /// a press starts placing it, and its release threads it (`text.thread.add`). None when `from`
+    /// can no longer thread: the press is an ordinary one.
     fn loaded(&mut self, cx: &ToolContext, ev: &PointerEvent, from: NodeId, press: Option<(Point, Point)>) -> Option<Vec<Action>> {
         let p = ev.pos;
         match (ev.kind, press) {
-            (PointerKind::Down, _) if !cx.doc.node(from).is_some_and(is_area_type) => {
+            (PointerKind::Down, _) if !cx.doc.node(from).is_some_and(is_threadable) => {
                 self.state = State::Idle;
                 return None;
             }
@@ -453,14 +454,15 @@ impl SelectionTool {
 }
 
 /// Where the text of `from` goes for a press at `start` released at `end`: a dragged rectangle,
-/// else the closed path or area type pressed on, else a new frame with its top-left at `start`.
+/// else the closed path, area type or type on a path pressed on, else a new frame with its
+/// top-left at `start`.
 fn thread_params(cx: &ToolContext, from: NodeId, start: Point, end: Point) -> Value {
     let r = Rect::from_points(start, end);
     if r.width() > cx.tol(6.0) && r.height() > cx.tol(6.0) {
         return json!({ "from": from.0, "rect": [r.x0, r.y0, r.width(), r.height()] });
     }
     let frame = |n: &vectorcraft_doc::Node| {
-        is_area_type(n) || matches!(&n.kind, vectorcraft_doc::NodeKind::Path { path, .. } if path.subpaths.first().is_some_and(|s| s.closed))
+        is_threadable(n) || matches!(&n.kind, vectorcraft_doc::NodeKind::Path { path, .. } if path.subpaths.first().is_some_and(|s| s.closed))
     };
     // The art the text flows into: what is drawn, not a clipping path's outline.
     let to =
@@ -925,6 +927,11 @@ fn can_be_key(cx: &ToolContext, id: NodeId) -> bool {
 pub(crate) fn is_area_type(n: &vectorcraft_doc::Node) -> bool {
     n.extras().perspective.is_none()
         && matches!(&n.kind, vectorcraft_doc::NodeKind::Text(t) if matches!(t.kind, vectorcraft_doc::TextKind::Area { .. }))
+}
+
+/// Can `n` be a frame of a thread: area type or type on a path, outside perspective?
+pub(crate) fn is_threadable(n: &vectorcraft_doc::Node) -> bool {
+    n.extras().perspective.is_none() && matches!(&n.kind, vectorcraft_doc::NodeKind::Text(t) if !matches!(t.kind, vectorcraft_doc::TextKind::Point))
 }
 
 /// Does a double-click or the Control bar's Isolate Selected Object button isolate an object of
@@ -2185,6 +2192,37 @@ mod tests {
         // On the frame's right side, above its bottom-right corner (120 × 40 at 100%).
         let port = t.xf * Point::new(120.0, 40.0 - crate::text::PORT_RISE_PX);
         (d, id, rect, port)
+    }
+
+    /// Type on a path whose text overflows has its out port just past its end bracket, along the
+    /// path: a click there loads the pointer with its text, as area type's does.
+    #[test]
+    fn the_out_port_of_type_on_a_path_loads_its_text() {
+        let (mut d, id) = doc_with_area_type();
+        let Some(vectorcraft_doc::NodeKind::Text(t)) = d.node_mut(id).map(|n| &mut n.kind) else { panic!("not text") };
+        let line = vectorcraft_geom::kurbo::Line::new((0.0, 200.0), (100.0, 200.0));
+        t.kind = vectorcraft_doc::TextKind::OnPath {
+            path: vectorcraft_geom::PathData::from_bezpath(&vectorcraft_geom::kurbo::Shape::to_path(&line, 0.1)),
+            start: 0.0,
+            end: Some(0.8),
+        };
+        t.xf = vectorcraft_geom::Affine::IDENTITY;
+        t.runs = vec![vectorcraft_doc::TextRun::new("Words that run past the end of the path. ".repeat(5), vectorcraft_doc::CharStyle::default())];
+        let mut s = Selection::default();
+        s.set([id]);
+        let p = paint();
+        let cx = cx(&d, &s, &p);
+        let mut t = SelectionTool::default();
+        // The end bracket stands at 80, 200; the port past it, along the path.
+        let port = Point::new(80.0 + crate::text::PORT_RISE_PX, 200.0);
+        assert!(t.pointer(&cx, &ev(PointerKind::Down, port.x, port.y)).is_empty());
+        assert!(t.pointer(&cx, &ev(PointerKind::Up, port.x, port.y)).is_empty());
+        assert_eq!(t.cursor(&cx, Point::new(30.0, 420.0), Mods::default()), Cursor::LoadedText);
+        assert!(t.pointer(&cx, &ev(PointerKind::Down, 30.0, 420.0)).is_empty());
+        assert_eq!(
+            t.pointer(&cx, &ev(PointerKind::Up, 30.0, 420.0)),
+            vec![Action::Exec("text.thread.add".into(), json!({"from": id.0, "at": [30.0, 420.0]}))]
+        );
     }
 
     /// #2572: a click on the out port loads the pointer with the text; a click on empty canvas then

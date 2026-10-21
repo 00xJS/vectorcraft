@@ -2263,7 +2263,7 @@ fn on_path(cx: &mut Ctx<'_>, paras: &[Range<usize>], t: &TextObject, path: &Path
             descent: m.1,
             first_baseline: 0.0,
             start: 0,
-            end: text_len,
+            end: 0,
             glyph_start: 0,
             glyph_end: 0,
             avail: (0.0, 0.0),
@@ -2353,11 +2353,15 @@ fn on_path(cx: &mut Ctx<'_>, paras: &[Range<usize>], t: &TextObject, path: &Path
         PathAlign::Center => (m.0 - m.1) * 0.5,
     };
     let mut x = 0.0;
+    // Where the text that fits ends: before the first glyph that doesn't, which threaded text
+    // flows on from, as from the last line of area type.
+    let mut fits = text_len;
     for (k, (g, &step)) in sg.iter().zip(&steps).enumerate() {
         let s = s0 + x;
         let end = if k + hung_r >= sg.len() { room } else { room - hang_r };
         if s + step - lo > end + 1e-6 {
             cx.out.overflow = true;
+            fits = sg.get(k..).and_then(|rest| rest.iter().map(|g| g.byte).min()).unwrap_or(text_len);
             break;
         }
         let (p, dir) = ap.at(s + step * 0.5);
@@ -2406,7 +2410,7 @@ fn on_path(cx: &mut Ctx<'_>, paras: &[Range<usize>], t: &TextObject, path: &Path
         descent: m.1,
         first_baseline: 0.0,
         start: 0,
-        end: text_len,
+        end: fits,
         glyph_start: 0,
         glyph_end: cx.out.glyphs.len(),
         avail: (0.0, ap.len()),
