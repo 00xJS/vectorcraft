@@ -816,8 +816,9 @@ mod tests {
     }
 
     /// While the Type tool edits text, a character typed with AltGr (Ctrl+Alt in Firefox on
-    /// Windows) is typed and runs no command: not New Layer (Cmd+L), Reset Tracking (Cmd+Alt+Q),
-    /// Export for Screens (Cmd+Alt+E), Select All on Active Artboard (Cmd+Alt+A) or Undo (Cmd+Z).
+    /// Windows) is typed and runs no command: not New Layer Options… (Cmd+Alt+L), Reset Tracking
+    /// (Cmd+Alt+Q), Export for Screens (Cmd+Alt+E), Select All on Active Artboard (Cmd+Alt+A) or
+    /// Undo (Cmd+Z).
     #[test]
     fn altgr_characters_typed_in_text_run_no_command() {
         let mut wrong = vec![];
@@ -847,7 +848,8 @@ mod tests {
     }
 
     /// Ctrl and Ctrl+Alt chords that type no text still run their commands while the Type tool
-    /// edits, and with the Selection tool a Ctrl+Alt press runs its chord as before.
+    /// edits, and with the Selection tool a Ctrl+Alt press runs its chord as before. Ctrl+L is New
+    /// Layer, and Ctrl+Alt+L is New Layer Options…, which opens Layer Options for a new layer.
     #[test]
     fn ctrl_alt_chords_without_typed_text_still_run() {
         let mut app = VectorcraftApp::new(vectorcraft_engine::Session::new(), Default::default());
@@ -857,18 +859,24 @@ mod tests {
         app.session.apply_actions(vec![vectorcraft_tools::Action::Notify("text.editNew".into())]).unwrap();
         assert!(app.session.tool_wants_text());
         let layers = text_and_layers(&mut app, id).1;
+        let new_layer_options =
+            |app: &VectorcraftApp| app.ui.dialog.as_ref().is_some_and(|d| d.kind == "layerOptions" && d.fields.get("mode") == Some(&json!("new")));
         let m = Modifiers::COMMAND | Modifiers::CTRL;
         let ctrl_l = egui::Event::Key { key: Key::L, physical_key: Some(Key::L), pressed: true, repeat: false, modifiers: m };
         frame(&mut app, vec![egui::Event::ModifiersChanged(m), ctrl_l]);
         assert_eq!(text_and_layers(&mut app, id), ("Hi".into(), layers + 1), "Ctrl+L while editing: New Layer");
+        assert!(app.ui.dialog.is_none(), "Ctrl+L opens no dialog");
         app.select_tool("type");
         app.session.apply_actions(vec![vectorcraft_tools::Action::Notify("text.editNew".into())]).unwrap();
         assert!(app.session.tool_wants_text());
         frame(&mut app, ctrl_alt_press(Key::L, None));
-        assert_eq!(text_and_layers(&mut app, id), ("Hi".into(), layers + 2), "Ctrl+Alt+L with no text typed while editing: New Layer");
+        assert!(new_layer_options(&app), "Ctrl+Alt+L with no text typed while editing: New Layer Options…");
+        assert_eq!(text_and_layers(&mut app, id), ("Hi".into(), layers + 1), "no layer is added until OK");
+        crate::dialogs::cancel(&mut app);
         app.select_tool("selection");
         frame(&mut app, ctrl_alt_press(Key::L, Some("ł")));
-        assert_eq!(text_and_layers(&mut app, id), ("Hi".into(), layers + 3), "Selection tool: Ctrl+Alt+L runs New Layer as before");
+        assert!(new_layer_options(&app), "Selection tool: Ctrl+Alt+L runs New Layer Options… as before");
+        assert_eq!(text_and_layers(&mut app, id), ("Hi".into(), layers + 1), "no layer is added until OK");
     }
 
     /// #2094: Cmd+Shift+O is Type › Create Outlines (not File › Open's Cmd+O, not the Artboard
