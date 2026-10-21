@@ -803,7 +803,17 @@ pub fn effect_catalog() -> Vec<EffectInfo> {
         v.push(g(id, label, WARP, WARP_DOC, json!({"bend": 50.0, "horizontal": 0.0, "vertical": 0.0, "orientation": "horizontal"})));
     }
     for (id, label, _) in PATHFINDER_EFFECTS {
-        v.push(g(id, label, PATHFINDER, "{} (groups and layers: live Pathfinder over the members)", json!({})));
+        if id == "pathfinder.softMix" {
+            v.push(g(
+                id,
+                label,
+                PATHFINDER,
+                "{mixingRate?: 1..100 % (50)} blend overlapping fills in CMYK bottom to top (groups and layers: live Pathfinder over the members)",
+                json!({"mixingRate": 50.0}),
+            ));
+        } else {
+            v.push(g(id, label, PATHFINDER, "{} (groups and layers: live Pathfinder over the members)", json!({})));
+        }
     }
     v.push(g(
         CROP_MARKS,
