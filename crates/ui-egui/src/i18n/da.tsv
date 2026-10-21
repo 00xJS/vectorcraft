@@ -1378,6 +1378,7 @@ lighting	Light	Lys
 	{count} more rules: Export writes every one.	{count} flere regler: Eksport skriver hver enkelt.
 	{count} unnamed objects left out: name them, or turn on Unnamed Objects in the panel menu.	{count} unavngivne objekter udeladt: giv dem navne, eller aktivér Unavngivne objekter i panelmenuen.
 	All Categories	Alle kategorier
+	Repeat Objects	Gentagelsesobjekter
 	Save…	Gem…
 	Selection Only	Kun markering
 	{title} (selection)	{title} (markering)

@@ -1435,6 +1435,7 @@ lighting	Light	Valo
 	{count} more rules: Export writes every one.	{count} sääntöä lisää: vienti kirjoittaa ne kaikki.
 	{count} unnamed objects left out: name them, or turn on Unnamed Objects in the panel menu.	{count} nimetöntä objektia jätetty pois: nimeä ne tai ota Nimettömät objektit käyttöön paneelin valikosta.
 	All Categories	Kaikki luokat
+	Repeat Objects	Toisto-objektit
 	Save…	Tallenna…
 	Selection Only	Vain valinta
 	{title} (selection)	{title} (valinta)

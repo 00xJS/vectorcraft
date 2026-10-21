@@ -1375,6 +1375,7 @@ lighting	Light	Światło
 	{count} more rules: Export writes every one.	Więcej reguł: {count}. Eksport zapisze wszystkie.
 	{count} unnamed objects left out: name them, or turn on Unnamed Objects in the panel menu.	Pominięto obiekty bez nazwy: {count}. Nadaj im nazwy lub włącz Obiekty bez nazwy w menu panelu.
 	All Categories	Wszystkie kategorie
+	Repeat Objects	Obiekty powtórzenia
 	Save…	Zapisz…
 	Selection Only	Tylko zaznaczenie
 	{title} (selection)	{title} (zaznaczenie)

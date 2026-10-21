@@ -1392,6 +1392,7 @@ lighting	Light	Licht
 	{count} more rules: Export writes every one.	{count} regels meer: Export schrijft ze allemaal.
 	{count} unnamed objects left out: name them, or turn on Unnamed Objects in the panel menu.	{count} naamloze objecten weggelaten: geef ze een naam, of zet Naamloze objecten aan in het paneelmenu.
 	All Categories	Alle categorieën
+	Repeat Objects	Herhalingsobjecten
 	Save…	Opslaan…
 	Selection Only	Alleen selectie
 	{title} (selection)	{title} (selectie)
