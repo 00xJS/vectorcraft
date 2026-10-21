@@ -30,7 +30,7 @@
 
 pub(crate) mod adopt;
 pub(crate) mod document;
-mod docx;
+pub(crate) mod docx;
 mod rtf;
 mod text;
 

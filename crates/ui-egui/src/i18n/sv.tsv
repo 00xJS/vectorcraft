@@ -4207,6 +4207,7 @@ axis	Both	Båda
 @msg	unknown workspace (one of {_1})	okänd arbetsyta (en av {_1})
 @msg	unsupported: {0}	stöds inte: {0}
 @msg	variables are locked	variablerna är låsta
+@msg	variables that aren't text were left out: {kinds}	variabler som inte är text utelämnades: {kinds}
 @msg	version {0} files can't be compressed: only version {COMPRESSED_SINCE} and later open compressed files	filer i version {0} kan inte komprimeras: endast version {COMPRESSED_SINCE} och senare kan öppna komprimerade filer
 @msg	width and height are at least 1 pixel	bredd och höjd är minst 1 pixel
 @msg	workspace name can't be empty	arbetsytans namn får inte vara tomt
@@ -5099,6 +5100,7 @@ theme	Appearance	Utseende
 	Drawing : real size — 1:10 labels 1 unit on the page as 10.	Ritning : verklig storlek — 1:10 visar 1 enhet på sidan som 10.
 	Editable	Redigerbar
 	Export Data Sets…	Exportera datauppsättningar…
+	Load Variable Library…	Läs in variabelbibliotek…
 	Filter	Filter
 	Filter Layers Panel Rows	Filtrera rader i panelen Lager
 	Flatten	Platta till
