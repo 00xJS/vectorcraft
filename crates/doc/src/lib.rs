@@ -44,6 +44,7 @@ pub mod perspective;
 mod pixels;
 pub use pixels::MAX_RASTER_ALLOC;
 pub mod placed_document;
+pub mod plugin_data;
 pub mod profiles;
 pub mod puppet;
 pub mod range;

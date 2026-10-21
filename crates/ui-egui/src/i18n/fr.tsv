@@ -4322,6 +4322,7 @@ axis	Both	Les deux
 @msg	{_1} font families available	{_1} familles de polices disponibles
 @msg	{_1} is a live effect (Effect › Plug-ins)	{_1} est un effet dynamique (Effet › Plug-ins)
 @msg	{_1} is an exporter (File › Export › Export As…)	{_1} est un module externe d’exportation (Fichier › Exporter › Exporter sous…)
+@msg	`documentData` is {size} bytes (limit {MAX_DOCUMENT_DATA})	`documentData` fait {size} octets (limite {MAX_DOCUMENT_DATA})
 @msg	{_1} is already used by {_2}	{_1} est déjà utilisé par {_2}
 @msg	{_1} linked file(s) can't be read here: their previews show	{_1} fichier(s) lié(s) illisible(s) ici : leurs aperçus sont affichés
 @msg	{_1} linked image(s) changed on disk: Update Links shows the new versions	{_1} image(s) liée(s) modifiée(s) sur le disque : Mettre à jour les liens affiche les nouvelles versions

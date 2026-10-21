@@ -4452,6 +4452,7 @@ imageTrace	Outline	Kontur
 @msg	{_1} font families available	dostępne rodziny czcionek: {_1}
 @msg	{_1} is a live effect (Effect › Plug-ins)	{_1} to efekt na żywo (Efekt › Wtyczki)
 @msg	{_1} is an exporter (File › Export › Export As…)	{_1} to wtyczka eksportu (Plik › Eksportuj › Eksportuj jako…)
+@msg	`documentData` is {size} bytes (limit {MAX_DOCUMENT_DATA})	`documentData` ma {size} bajtów (limit {MAX_DOCUMENT_DATA})
 @msg	{_1} is already used by {_2}	{_1} jest już używany przez {_2}
 @msg	{_1} linked file(s) can't be read here: their previews show	połączonych plików nie można tu odczytać ({_1}): wyświetlane są ich podglądy
 @msg	{_1} linked image(s) changed on disk: Update Links shows the new versions	połączone obrazy zmienione na dysku: {_1} — Aktualizuj łącza pokaże nowe wersje

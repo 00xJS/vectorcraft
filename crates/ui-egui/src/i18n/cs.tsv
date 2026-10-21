@@ -4627,6 +4627,7 @@ imageTrace	Outline	Obrys
 @msg	{_1} font families available	Dostupné rodiny písem: {_1}
 @msg	{_1} is a live effect (Effect › Plug-ins)	{_1} je živý efekt (Efekt › Zásuvné moduly)
 @msg	{_1} is an exporter (File › Export › Export As…)	{_1} je exportní zásuvný modul (Soubor › Export › Exportovat jako…)
+@msg	`documentData` is {size} bytes (limit {MAX_DOCUMENT_DATA})	`documentData` má {size} bajtů (limit {MAX_DOCUMENT_DATA})
 @msg	{_1} is already used by {_2}	{_1} už používá {_2}
 @msg	{_1} linked file(s) can't be read here: their previews show	propojené soubory ({_1}) zde nelze přečíst: zobrazují se jejich náhledy
 @msg	{_1} linked image(s) changed on disk: Update Links shows the new versions	propojené obrázky ({_1}) se na disku změnily: nové verze zobrazí Aktualizovat propojení

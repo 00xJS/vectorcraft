@@ -4534,6 +4534,7 @@ imageTrace	Outline	Ääriviiva
 @msg	{_1} font families available	{_1} fonttiperhettä käytettävissä
 @msg	{_1} is a live effect (Effect › Plug-ins)	{_1} on live-tehoste (Tehoste › Laajennukset)
 @msg	{_1} is an exporter (File › Export › Export As…)	{_1} on vientilaajennus (Tiedosto › Vie › Vie muodossa…)
+@msg	`documentData` is {size} bytes (limit {MAX_DOCUMENT_DATA})	`documentData` on {size} tavua (raja {MAX_DOCUMENT_DATA})
 @msg	{_1} is already used by {_2}	{_1} on jo käytössä kohteella {_2}
 @msg	{_1} linked file(s) can't be read here: their previews show	{_1} linkitettyä tiedostoa ei voi lukea täällä: niiden esikatselut näytetään
 @msg	{_1} linked image(s) changed on disk: Update Links shows the new versions	{_1} linkitettyä kuvaa muuttui levyllä: Päivitä linkit näyttää uudet versiot

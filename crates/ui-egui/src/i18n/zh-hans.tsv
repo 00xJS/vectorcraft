@@ -4082,6 +4082,7 @@ imageTrace	Outline	轮廓
 @msg	no plug-in {id} is installed	未安装增效工具 {id}
 @msg	{_1} is a live effect (Effect › Plug-ins)	{_1} 是实时效果 (效果 › 增效工具)
 @msg	{_1} is an exporter (File › Export › Export As…)	{_1} 是导出增效工具 (文件 › 导出 › 导出为…)
+@msg	`documentData` is {size} bytes (limit {MAX_DOCUMENT_DATA})	`documentData` 为 {size} 字节（上限 {MAX_DOCUMENT_DATA}）
 @msg	a preset named `{_1}` exists	名为 `{_1}` 的预设已存在
 @msg	a swatch or color group named `{n}` exists	名为 `{n}` 的色板或颜色组已存在
 @msg	no print preset named `{base}`	没有名为 `{base}` 的打印预设

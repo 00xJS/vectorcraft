@@ -4349,6 +4349,7 @@ axis	Both	Обидві
 @msg	{_1} font families available	доступно сімейства шрифтів: {_1}
 @msg	{_1} is a live effect (Effect › Plug-ins)	{_1} - динамічний ефект (Ефект › Модулі)
 @msg	{_1} is an exporter (File › Export › Export As…)	{_1} - модуль експорту (Файл › Експорт › Експортувати як…)
+@msg	`documentData` is {size} bytes (limit {MAX_DOCUMENT_DATA})	`documentData` займає {size} байт (межа {MAX_DOCUMENT_DATA})
 @msg	{_1} is already used by {_2}	{_1} вже використовується {_2}
 @msg	{_1} linked file(s) can't be read here: their previews show	тут неможливо прочитати пов’язані файли: {_1}: відображаються їх попередні перегляди
 @msg	{_1} linked image(s) changed on disk: Update Links shows the new versions	пов’язаних зображень ({_1}) змінилися на диску: «Оновити зв’язки» покаже нові версії

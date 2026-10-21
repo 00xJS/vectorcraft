@@ -5083,6 +5083,7 @@ imageTrace	Outline	Körvonal
 @msg	{_1} has no {_2} style	ennek nincs ilyen stílusa: {_1} ({_2})
 @msg	{_1} is a live effect (Effect › Plug-ins)	élő effektus: {_1} (Effektus › Bővítmények)
 @msg	{_1} is an exporter (File › Export › Export As…)	exportáló bővítmény: {_1} (Fájl › Exportálás › Exportálás másként…)
+@msg	`documentData` is {size} bytes (limit {MAX_DOCUMENT_DATA})	a `documentData` mérete {size} bájt (korlát: {MAX_DOCUMENT_DATA})
 @msg	{_1} is already used by {_2}	már foglalt: {_1} (használja: {_2})
 @msg	{_1} linked file(s) can't be read here: their previews show	Itt nem olvasható csatolt fájlok: {_1}; az előnézetük látszik
 @msg	{_1} linked image(s) changed on disk: Update Links shows the new versions	A lemezen módosult csatolt képek: {_1}; a Csatolások frissítése az új változatokat mutatja

@@ -330,6 +330,53 @@ fn rough_frame_test_filter() {
     std::fs::write(std::path::Path::new(&dir).join("rough-frame-test-filter.wasm"), wat::parse_str(src).unwrap()).unwrap();
 }
 
+/// A filter keeps data with the document: it writes it with `documentData` in the same undo step as
+/// its objects (`null` removes it) and reads what it last wrote in `_context.documentData`, which
+/// no other filter is given. It is the document's foreign data, so the native file keeps it with
+/// no section of its own. More than the limit is refused.
+#[test]
+fn filters_keep_their_data_with_the_document() {
+    let mut s = session();
+    let id = rect(&mut s, 10.0, "#ff0000");
+    let pid = "test.engine.data";
+    let returning = |out: Value| tpl::returning(&tpl::manifest(pid, "filter", "{}"), &out.to_string());
+    let keep = |data: Value| json!({"objects": [{"id": id.0}], "documentData": data});
+    let data = |s: &Session| s.doc().unwrap().doc.plugin_data(pid).cloned();
+    let filter = |s: &mut Session, pid: &str| s.execute("plugin.run", &json!({"id": pid, "ids": [id.0]}));
+    install_wat(&mut s, &returning(keep(json!({"pen": 2}))));
+    filter(&mut s, pid).unwrap();
+    assert_eq!(data(&s), Some(json!({"pen": 2})));
+    run(&mut s, "edit.undo", json!({}));
+    assert_eq!(data(&s), None, "one undo step with the objects");
+    run(&mut s, "edit.redo", json!({}));
+    // Read back: these name the object only when they are given what they look for.
+    let named = |name: &str| json!({"objects": [{"id": id.0, "name": name}]}).to_string();
+    let when_given =
+        |pid: &str, needle: &str, name: &str| tpl::when_given(&tpl::manifest(pid, "filter", "{}"), tpl::Given::Params, needle, &named(name));
+    install_wat(&mut s, &when_given(pid, r#""documentData":{"pen":2}"#, "Pen 2"));
+    filter(&mut s, pid).unwrap();
+    assert_eq!(node(&s, id).name.as_deref(), Some("Pen 2"));
+    // Another filter is given nothing: what a filter keeps is its own.
+    let other = "test.engine.other";
+    install_wat(&mut s, &when_given(other, r#""documentData":null"#, "Nothing kept"));
+    filter(&mut s, other).unwrap();
+    assert_eq!(node(&s, id).name.as_deref(), Some("Nothing kept"));
+    // Saved with the document, among its foreign data.
+    let saved = vectorcraft_format::load(&vectorcraft_format::save(&s.doc().unwrap().doc, false)).unwrap();
+    assert_eq!(saved.plugin_data(pid), Some(&json!({"pen": 2})));
+    assert_eq!(saved.unknown.get(vectorcraft_doc::plugin_data::PLUGIN_DATA), Some(&json!({pid: {"pen": 2}})));
+    // Too much is refused, and the document stays as it was; null removes the data.
+    let before = s.doc().unwrap().doc.clone();
+    let big = "x".repeat(vectorcraft_plugins::objects::MAX_DOCUMENT_DATA);
+    install_wat(&mut s, &returning(keep(json!(big))));
+    let e = filter(&mut s, pid).unwrap_err().to_string();
+    assert!(e.contains("documentData"), "{e}");
+    assert_eq!(s.doc().unwrap().doc, before);
+    install_wat(&mut s, &returning(keep(Value::Null)));
+    filter(&mut s, pid).unwrap();
+    assert_eq!(data(&s), None);
+}
+
 #[test]
 fn plugin_management_commands() {
     let mut s = session();

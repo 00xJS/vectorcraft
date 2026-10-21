@@ -4742,6 +4742,7 @@ theme	Appearance	Giao diện
 @msg	{_1} has no {_2} style	{_1} không có kiểu {_2}
 @msg	{_1} is a live effect (Effect › Plug-ins)	{_1} là hiệu ứng trực tiếp (Hiệu ứng › Plug-ins)
 @msg	{_1} is an exporter (File › Export › Export As…)	{_1} là plug-in xuất (Tệp › Xuất › Xuất thành…)
+@msg	`documentData` is {size} bytes (limit {MAX_DOCUMENT_DATA})	`documentData` có {size} byte (giới hạn {MAX_DOCUMENT_DATA})
 @msg	{_1} is already used by {_2}	{_1} đã được dùng bởi {_2}
 @msg	{_1} linked file(s) can't be read here: their previews show	{_1} tệp liên kết không thể đọc ở đây: bản xem trước được hiển thị
 @msg	{_1} linked image(s) changed on disk: Update Links shows the new versions	{_1} ảnh liên kết đã thay đổi trên đĩa: Cập nhật liên kết hiển thị phiên bản mới

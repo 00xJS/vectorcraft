@@ -4250,6 +4250,7 @@ theme	Appearance	Erscheinungsbild
 @msg	{_1} font families available	{_1} Schriftfamilien verfügbar
 @msg	{_1} is a live effect (Effect › Plug-ins)	{_1} ist ein Live-Effekt (Effekt › Plug-ins)
 @msg	{_1} is an exporter (File › Export › Export As…)	{_1} ist ein Export-Plug-in (Datei › Exportieren › Exportieren als…)
+@msg	`documentData` is {size} bytes (limit {MAX_DOCUMENT_DATA})	`documentData` ist {size} Byte groß (Grenze {MAX_DOCUMENT_DATA})
 @msg	{_1} is already used by {_2}	{_1} wird bereits von {_2} verwendet
 @msg	{_1} linked file(s) can't be read here: their previews show	{_1} verknüpfte Datei(en) können hier nicht gelesen werden: Ihre Vorschauen werden angezeigt
 @msg	{_1} linked image(s) changed on disk: Update Links shows the new versions	{_1} verknüpfte(s) Bild(er) wurde(n) auf dem Datenträger geändert: „Verknüpfungen aktualisieren“ zeigt die neuen Versionen

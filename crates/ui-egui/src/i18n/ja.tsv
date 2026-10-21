@@ -4355,6 +4355,7 @@ swatch	Bright Violet	ビビッドバイオレット
 @msg	no plug-in {id} is installed	プラグイン {id} はインストールされていません
 @msg	{_1} is a live effect (Effect › Plug-ins)	{_1} はライブ効果です (「効果 › プラグイン」から使用してください)
 @msg	{_1} is an exporter (File › Export › Export As…)	{_1} は書き出しプラグインです (「ファイル › 書き出し › 形式を指定して書き出し…」から使用してください)
+@msg	`documentData` is {size} bytes (limit {MAX_DOCUMENT_DATA})	`documentData` は {size} バイトです (上限 {MAX_DOCUMENT_DATA})
 @msg	a preset named `{_1}` exists	`{_1}` という名前のプリセットはすでに存在します
 @msg	a swatch or color group named `{n}` exists	`{n}` という名前のスウォッチまたはカラーグループはすでに存在します
 @msg	no print preset named `{base}`	`{base}` という名前のプリントプリセットが見つかりません

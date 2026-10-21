@@ -4325,6 +4325,7 @@ axis	Both	Ambos
 @msg	{_1} font families available	{_1} familias de fuentes disponibles
 @msg	{_1} is a live effect (Effect › Plug-ins)	{_1} es un efecto interactivo (Efecto › Plugins)
 @msg	{_1} is an exporter (File › Export › Export As…)	{_1} es un plugin de exportación (Archivo › Exportar › Exportar como…)
+@msg	`documentData` is {size} bytes (limit {MAX_DOCUMENT_DATA})	`documentData` ocupa {size} bytes (límite {MAX_DOCUMENT_DATA})
 @msg	{_1} is already used by {_2}	{_1} ya lo usa {_2}
 @msg	{_1} linked file(s) can't be read here: their previews show	aquí no se pueden leer {_1} archivo(s) vinculado(s): se muestran sus previsualizaciones
 @msg	{_1} linked image(s) changed on disk: Update Links shows the new versions	{_1} imagen(es) vinculada(s) cambiaron en el disco: Actualizar vínculos muestra las versiones nuevas
