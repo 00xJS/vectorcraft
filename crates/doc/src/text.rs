@@ -1329,8 +1329,9 @@ pub struct TextObject {
     pub wrap: Vec<WrapShape>,
     /// Type › Optical Margin Alignment: in every paragraph, Latin punctuation and the slanted
     /// sides of letters such as A and W at a line's start or end hang outside the margin there
-    /// (point and area type of left-to-right paragraphs; see the layout's `optical_hangs`). Off
-    /// for new type and for documents from before it, and saved only when on.
+    /// (point and area type of left-to-right paragraphs, and left-to-right type on a path at its
+    /// brackets; see the layout's `optical_hangs`). Off for new type and for documents from before
+    /// it, and saved only when on.
     #[serde(default, rename = "opticalMarginAlignment", skip_serializing_if = "crate::skip::is_default")]
     pub optical_margin: bool,
     /// Cached layout bounds in text space, filled in by the layout engine (not serialized).

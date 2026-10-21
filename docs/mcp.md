@@ -3856,7 +3856,13 @@ Left-aligned lines hang at their left margin, right-aligned lines hang at their 
 justified lines hang at both. In vertical type the margins are the top and bottom of a column. The space that
 justification adds between glyphs leaves out the gaps next to a hanging punctuation mark. Lines break where they did
 without it, and a line of one glyph does not hang. East Asian commas and full stops hang only through burasagari, and
-a line that ends in one hangs only at its start. Type on a path and right-to-left paragraphs are laid out as before.
+a line that ends in one hangs only at its start. Type on a path hangs at its brackets, measured along the path:
+left-aligned, Auto, Justify All and Justify with Last Line Aligned Left type hangs at the start bracket, right-aligned
+and Justify with Last Line Aligned Right type hangs at the end bracket, and centered and Justify with Last Line Aligned
+Center type hangs at both. Glyphs that hang past the end bracket do not make the type overflow. On an open path a
+hang stops at the path's end, and on a closed path the two hangs together take at most the stretch between the end
+and start brackets. SVG export writes type on a path whose glyphs hang as outlines, with a warning. Type on a path
+whose first paragraph runs right to left, and right-to-left paragraphs of point and area type, are laid out as before.
 New type and documents from before it have it off, and it is saved only when on. One undo step.
 
 ```json
@@ -3871,9 +3877,11 @@ paragraphs the punctuation Optical Margin Alignment hangs hangs outside the marg
 hyphens, full stops and commas wholly; asterisks, tildes, ellipses, en and em dashes, colons and semicolons by half),
 on the same sides (left-aligned lines at their left, right-aligned at their right, centered and justified at both), and
 letters don't hang. With Optical Margin Alignment on as well, the letters hang too. East Asian punctuation hangs only
-through burasagari; type on a path and right-to-left paragraphs are laid out as before. Off by default, saved with the
-paragraph (`roman_hanging` in `para`) only when on, carried by paragraph styles, and turned off by Reset Panel. One undo
-step. The menu item is checked while the paragraph the Paragraph panel shows has it on.
+through burasagari. When the first paragraph of type on a path has Roman Hanging Punctuation on, the type hangs its
+punctuation at its brackets as Optical Margin Alignment does, and no letters. Type on a path whose first paragraph runs
+right to left, and right-to-left paragraphs of point and area type, are laid out as before. Off by default, saved with
+the paragraph (`roman_hanging` in `para`) only when on, carried by paragraph styles, and turned off by Reset Panel.
+One undo step. The menu item is checked while the paragraph the Paragraph panel shows has it on.
 
 ```json
 {"name":"run_command","arguments":{"command":"text.setFormat","params":{"romanHangingPunctuation":true}}}
