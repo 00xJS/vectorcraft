@@ -2329,6 +2329,7 @@ file-filter	Templates	範本
 @msg	Persistent libraries not found: {files}	找不到持久資料庫：{files}
 @msg	`{given}` isn't a library panel (see window.swatchLibrary)	`{given}` 不是資料庫面板 (請參閱 window.swatchLibrary)
 @msg	library panel `{given}` isn't open	資料庫面板 `{given}` 未開啟
+@msg	library panel `{given}` isn't missing its library	資料庫面板 `{given}` 的資料庫未遺失
 @msg	too many library panels were opened in this session	本次工作階段開啟的資料庫面板過多
 @msg	The image is {_1} × {_2} pixels, more than {LARGE_TRACE_SIDE} on a side: it is traced, but more slowly. A lower-fidelity preset or a smaller copy of the image traces faster.	影像為 {_1} × {_2} 像素，有一邊超過 {LARGE_TRACE_SIDE}：仍會描圖，但速度較慢。使用精確度較低的預設集或較小的影像拷貝，描圖會較快。
 @msg	The image was traced at {_1} × {_2} pixels, scaled down from {_3} × {_4} ({_5} megapixels at most).	影像已以 {_1} × {_2} 像素描圖，由 {_3} × {_4} 縮小而來 (最多 {_5} 百萬像素)。

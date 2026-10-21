@@ -1718,7 +1718,9 @@ under `ui.library_panels`.
 `ui.libraryPanel.locate {panel, path?}` is Locate Library…: it loads the library at `path` (without one, it
 asks for a file) as Other Library… does and shows it in the open panel `panel`, which keeps its view, find
 field and Persistent, and answers as `ui.libraryPanel` does. When the file's library already has a panel open,
-`panel` closes and is forgotten, and that panel is brought forward, made persistent when `panel` was.
+`panel` closes and is forgotten, and that panel is brought forward, made persistent when `panel` was. On a
+panel whose library isn't missing, it answers an error without asking for or loading a file, and the panel
+keeps its library.
 `window.swatchLibrary` and `window.graphicStyleLibrary` also take a missing library's id, so a closed missing
 panel opens again; they answer its file's name without the extension and `count: 0`.
 
