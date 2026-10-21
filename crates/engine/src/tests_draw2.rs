@@ -1609,6 +1609,36 @@ fn pen_with_cmd_borrows_direct_selection_and_goes_on_drawing() {
 }
 
 #[test]
+fn cmd_alt_lends_group_selection_while_direct_selection_is_active() {
+    let (cmd, cmd_alt) = (Mods { cmd: true, ..Mods::default() }, Mods { cmd: true, alt: true, ..Mods::default() });
+    let v = view();
+    let mut s = session();
+    // Cmd+Alt while the Pen borrows Direct Selection keeps Direct Selection (Alt is copy/subtract).
+    s.select_tool("directSelection", v).unwrap();
+    s.select_tool("pen", v).unwrap();
+    s.pointer(&PointerEvent::new(PointerKind::Down, 50.0, 50.0).with_mods(cmd_alt), v).unwrap();
+    assert_eq!(s.tool_id(), "directSelection");
+    s.pointer(&PointerEvent::new(PointerKind::Up, 50.0, 50.0).with_mods(cmd_alt), v).unwrap();
+    assert_eq!(s.tool_id(), "pen");
+    // Cmd alone still lends Direct Selection.
+    s.pointer(&PointerEvent::new(PointerKind::Down, 60.0, 60.0).with_mods(cmd), v).unwrap();
+    assert_eq!(s.tool_id(), "directSelection");
+    s.pointer(&PointerEvent::new(PointerKind::Up, 60.0, 60.0).with_mods(cmd), v).unwrap();
+    // While Direct Selection is active, Cmd+Alt lends Group Selection for the gesture.
+    s.select_tool("directSelection", v).unwrap();
+    s.pointer(&PointerEvent::new(PointerKind::Down, 70.0, 70.0).with_mods(cmd_alt), v).unwrap();
+    assert_eq!(s.tool_id(), "groupSelection");
+    s.pointer(&PointerEvent::new(PointerKind::Up, 70.0, 70.0).with_mods(cmd_alt), v).unwrap();
+    assert_eq!(s.tool_id(), "directSelection");
+    // Selection last: Cmd+Alt still lends Selection, not Group Selection.
+    s.select_tool("selection", v).unwrap();
+    s.select_tool("pen", v).unwrap();
+    s.pointer(&PointerEvent::new(PointerKind::Down, 80.0, 80.0).with_mods(cmd_alt), v).unwrap();
+    assert_eq!(s.tool_id(), "selection");
+    s.pointer(&PointerEvent::new(PointerKind::Up, 80.0, 80.0).with_mods(cmd_alt), v).unwrap();
+}
+
+#[test]
 fn the_pen_drops_the_new_path_asterisk_once_a_path_is_started() {
     // The Pen's asterisk means a click starts a new path: it shows until the first anchor is
     // placed, the pen has no badge while the path is drawn, and the asterisk comes back once the
