@@ -88,7 +88,18 @@ fn effect_menu_lists_the_artistic_filters_before_blur() {
     let labels: Vec<&str> = artistic.iter().map(|e| e.label.as_str()).collect();
     assert_eq!(
         labels,
-        ["Cutout…", "Dry Brush…", "Film Grain…", "Neon Glow…", "Plastic Wrap…", "Poster Edges…", "Smudge Stick…", "Sponge…", "Watercolor…"]
+        [
+            "Cutout…",
+            "Dry Brush…",
+            "Film Grain…",
+            "Neon Glow…",
+            "Palette Knife…",
+            "Plastic Wrap…",
+            "Poster Edges…",
+            "Smudge Stick…",
+            "Sponge…",
+            "Watercolor…"
+        ]
     );
     assert!(artistic.iter().all(|e| e.command.as_deref() == Some("effect.dialog")));
     assert_eq!(artistic[1].params, json!({"effect": "artistic.dryBrush"}));

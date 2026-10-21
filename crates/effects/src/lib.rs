@@ -148,6 +148,7 @@ fn lengths_of(id: &str) -> Lengths {
         "stylize.innerGlow" | "stylize.outerGlow" => always(&["blur"]),
         "stylize.glowingEdges" => always(&["edgeWidth", "smoothness"]),
         "brushStrokes.accentedEdges" => always(&["edgeWidth"]),
+        "artistic.paletteKnife" => always(&["strokeSize"]),
         "brushStrokes.angledStrokes" | "brushStrokes.crosshatch" | "brushStrokes.inkOutlines" => always(&["strokeLength"]),
         "brushStrokes.spatter" => always(&["sprayRadius"]),
         "brushStrokes.sprayedStrokes" => always(&["strokeLength", "sprayRadius"]),
@@ -376,6 +377,13 @@ pub fn effect_catalog() -> Vec<EffectInfo> {
             ARTISTIC,
             "{glowSize: -24..24 (5; above 0 the light areas glow, below 0 the dark ones; farther from 0 spreads the glow wider), glowBrightness: 0..50 (15; a stronger glow over dimmer greys), color: \"#rrggbb\" (\"#4da6ff\"; the glow's colour)} redraws the object in greys lit by a coloured glow, keeping its coverage. Original visual approximation; chosen VectorCraft defaults.",
             json!({"glowSize": 5.0, "glowBrightness": 15.0, "color": "#4da6ff"}),
+        ),
+        r(
+            "artistic.paletteKnife",
+            "Palette Knife…",
+            ARTISTIC,
+            "{strokeSize: 1..50 (10; length of the knife strokes in document units), strokeDetail: 1..3 (2; more detail keeps more of the original), softness: 0..10 (3; softens the strokes)} smears the object's colours with short angled knife strokes, keeping its coverage. Original visual approximation; chosen VectorCraft defaults.",
+            json!({"strokeSize": 10.0, "strokeDetail": 2.0, "softness": 3.0}),
         ),
         r(
             "artistic.plasticWrap",

@@ -1,11 +1,13 @@
-//! Effect › Artistic (Cutout, Dry Brush, Film Grain, Neon Glow, Plastic Wrap, Poster Edges, Smudge Stick, Sponge and
+//! Effect › Artistic (Cutout, Dry Brush, Film Grain, Neon Glow, Palette Knife, Plastic Wrap, Poster Edges, Smudge Stick, Sponge and
 //! Watercolor). Original filters built from
 //! public behaviour documentation:
 //! <https://helpx.adobe.com/illustrator/using/summary-effects.html> and
 //! <https://helpx.adobe.com/photoshop-elements/using/artistic-filters.html>.
 //! These are visual approximations, not reproductions of a proprietary algorithm.
 
-use super::brushstrokes::stroke_reach;
+use std::f64::consts::TAU;
+
+use super::brushstrokes::{Smear, mix, stroke_reach, unit, unpremultiply};
 use super::edges::sobel;
 use super::pixelate::{Place, cell, rand, value_noise};
 use super::texture::{luma, premultiply, straight};
@@ -471,4 +473,53 @@ pub(super) fn dry_brush(px: &mut [[u8; 4]], w: usize, h: usize, space: &PixelSpa
         *p = premultiply(c, f32::from(p[3]) / 255.0);
     }
     px.copy_from_slice(&out);
+}
+
+const SALT_KNIFE: u64 = 208;
+
+/// How far Palette Knife reaches with strokes `stroke_size` long and Softness `softness` (0..10).
+pub(super) fn palette_knife_reach(stroke_size: f64, softness: f64) -> f64 {
+    stroke_reach(stroke_size) + 3.0 * 0.35 * softness.clamp(0.0, 10.0) + 1.0
+}
+
+/// Artistic › Palette Knife: the object repainted with short, angled knife strokes that smear its
+/// colours; `stroke_size` (1..50) sets their length, `stroke_detail` (1..3) keeps more of the
+/// original where it's higher, and `softness` (0..10) softens the strokes. Coverage is kept.
+pub(super) fn palette_knife(px: &mut [[u8; 4]], w: usize, h: usize, space: &PixelSpace, stroke_size: f64, stroke_detail: f64, softness: f64) {
+    let Some(place) = Place::new(space, w, h) else { return };
+    if !(stroke_size.is_finite() && stroke_detail.is_finite() && softness.is_finite()) {
+        return;
+    }
+    let len = stroke_size.clamp(1.0, 50.0);
+    let keep = ((stroke_detail.clamp(1.0, 3.0) - 1.0) / 2.0) as f32;
+    let smear = Smear::new(px, w, h, &place, len);
+    let row = (0.25 * smear.len).max(1.0);
+    let cell = len * 0.35;
+    let src = px.to_vec();
+    place.each(px, |x, y, p| {
+        if p[3] == 0 {
+            return;
+        }
+        let q = place.at(x, y);
+        let angle = TAU * value_noise(SALT_KNIFE, q.x / cell, q.y / cell);
+        let dir = Vec2::new(angle.cos(), angle.sin());
+        let pm = smear.stroke(SALT_KNIFE + 1, q, dir, row);
+        let orig = unit(src.get(y * w + x).copied().unwrap_or([0; 4]));
+        let coverage = orig[3];
+        let (c, _) = unpremultiply(mix(orig, pm, 1.0 - keep));
+        *p = premultiply(c, coverage);
+    });
+    let sigma = 0.35 * softness.clamp(0.0, 10.0) / place.px;
+    if sigma > 0.0 {
+        let (mut colour, alpha) = planes(px);
+        let cover = alpha.clone();
+        soften(&mut colour, &alpha, w, h, sigma);
+        for (k, p) in px.iter_mut().enumerate() {
+            if cover[k] == 0.0 {
+                continue;
+            }
+            let c = [colour[0][k], colour[1][k], colour[2][k]];
+            *p = premultiply(c, cover[k]);
+        }
+    }
 }
