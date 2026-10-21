@@ -2077,8 +2077,12 @@ fn guide_path(s: &mut Session, x: f64) -> NodeId {
 fn exit_isolation_leaves_a_locked_guide_path_deselected() {
     let mut s = session();
     let g = guide_path(&mut s, 0.0);
+    // A locked guide path can't be isolated; one isolated before Lock Guides went on stays isolated.
     s.execute("view.guides.lock", &json!({"locked": true})).unwrap();
+    assert!(s.execute("object.isolate", &json!({"id": g.0})).is_err());
+    s.execute("view.guides.lock", &json!({"locked": false})).unwrap();
     s.execute("object.isolate", &json!({"id": g.0})).unwrap();
+    s.execute("view.guides.lock", &json!({"locked": true})).unwrap();
     s.execute("object.exitIsolation", &json!({})).unwrap();
     assert!(selected(&s).is_empty());
     let _ = s.execute("object.move", &json!({"dx": 10, "dy": 0}));
