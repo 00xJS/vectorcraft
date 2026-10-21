@@ -166,6 +166,12 @@ pub const UI_COMMANDS: &[(&str, &str, &str, &str)] = &[
     ),
     ("file.documentSetup", "Document Setup…", "Cmd+Alt+P", "{}"),
     ("file.newDialog", "New…", "Cmd+N", "{} opens the New Document dialog"),
+    (
+        "file.newWithoutDialog",
+        "New Without Dialog",
+        "Cmd+Alt+N",
+        "{} makes a document with the settings the New Document dialog opens on (the first Recent entry, else the Print category's Letter), named after the next untitled document, without opening the dialog → {index, previewMode}",
+    ),
     ("app.home", "Home", "", "{} shows the Home screen (new file presets, Open) over the open documents; choosing a document tab returns to it"),
     ("edit.preferences", "Preferences…", "Cmd+K", "{category?} open Preferences (engine: prefs.get / prefs.set / prefs.list)"),
     ("edit.keyboardShortcuts", "Keyboard Shortcuts…", "Cmd+Alt+Shift+K", "{}"),
@@ -1105,6 +1111,7 @@ pub fn run_ui_command(app: &mut VectorcraftApp, id: &str, p: &Value) -> Option<R
             crate::dialogs::open_new_document(app);
             Ok(Value::Null)
         }
+        "file.newWithoutDialog" => crate::dialogs::new_document_without_dialog(app),
         "app.home" => {
             app.ui.home = Some(home_key(app));
             Ok(Value::Null)
