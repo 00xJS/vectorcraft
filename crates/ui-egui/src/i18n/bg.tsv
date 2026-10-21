@@ -2736,6 +2736,7 @@
 	Scale Cursor Proportional to UI	Мащабиране на показалеца пропорционално на потребителския интерфейс
 	Scale Lineweights	Мащабиране на дебелината на линиите
 	Scale Strokes & Effects	Мащабиране на щрихи и ефекти
+	Scale Text Attributes	Мащабиране на текстови атрибути
 	Scale to Fit Artboard	Мащабиране за побиране в работната област
 	Scale Tool	Инструмент „Мащабиране“
 	Scale:	Мащаб:
@@ -5139,6 +5140,7 @@ theme	Appearance	Външен вид
 @msg	Measured anchor no longer exists	Измерената опорна точка вече не съществува
 @msg	Measured segment no longer exists	Измереният сегмент вече не съществува
 @msg	Non-finite dimension	Размерът не е крайно число
+@msg	Scale Text Attributes: selected type has no scale to bake	Мащабиране на текстови атрибути: избраният текст няма мащаб за прилагане
 @msg	Scale must be drawing:real, for example 1:10	Мащабът трябва да е чертеж:реалност, например 1:10
 @msg	Scale ratio must be between 1:1000000 and 1000000:1	Съотношението на мащаба трябва да е между 1:1000000 и 1000000:1
 @msg	Second measured segment no longer exists	Вторият измерен сегмент вече не съществува

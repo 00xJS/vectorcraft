@@ -2786,6 +2786,7 @@
 	Scale Cursor Proportional to UI	Mettre le curseur à l’échelle de l’interface
 	Scale Lineweights	Mettre à l’échelle les épaisseurs de trait
 	Scale Strokes & Effects	Mettre à l’échelle les contours et les effets
+	Scale Text Attributes	Mettre à l’échelle les attributs de texte
 	Scale to Fit Artboard	Mettre à l’échelle pour ajuster au plan de travail
 	Scale Tool	Outil Mise à l’échelle
 	Scale:	Échelle :
@@ -5206,6 +5207,7 @@ theme	Appearance	Apparence
 @msg	Measured anchor no longer exists	Le point d’ancrage mesuré n’existe plus
 @msg	Measured segment no longer exists	Le segment mesuré n’existe plus
 @msg	Non-finite dimension	Cote non finie
+@msg	Scale Text Attributes: selected type has no scale to bake	Mettre à l’échelle les attributs de texte : le texte sélectionné n’a pas d’échelle à intégrer
 @msg	Scale must be drawing:real, for example 1:10	L’échelle doit être dessin:réel, par exemple 1:10
 @msg	Scale ratio must be between 1:1000000 and 1000000:1	Le rapport d’échelle doit être compris entre 1:1000000 et 1000000:1
 @msg	Second measured segment no longer exists	Le second segment mesuré n’existe plus

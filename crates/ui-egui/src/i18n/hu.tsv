@@ -3364,6 +3364,7 @@ mark-style	Japanese	Japán
 	Scale Lineweights	Vonalvastagságok méretezése
 	Scale Proportionately	Arányos méretezés
 	Scale Strokes & Effects	Körvonalak és effektusok méretezése
+	Scale Text Attributes	Szövegattribútumok méretezése
 	Scale Tints	Tónusok skálázása
 	Scale to Fit Artboard	Méretezés a rajztáblához
 	Scale Tool	Méretezés
@@ -5192,6 +5193,7 @@ imageTrace	Outline	Körvonal
 @msg	Measured anchor no longer exists	A mért horgonypont már nem létezik
 @msg	Measured segment no longer exists	A mért szakasz már nem létezik
 @msg	Non-finite dimension	Nem véges méret
+@msg	Scale Text Attributes: selected type has no scale to bake	Szövegattribútumok méretezése: a kijelölt szövegnek nincs alkalmazható méretezése
 @msg	Scale must be drawing:real, for example 1:10	A léptéknek rajz:valós alakúnak kell lennie, például 1:10
 @msg	Scale ratio must be between 1:1000000 and 1000000:1	A lépték aránya 1:1000000 és 1000000:1 között lehet
 @msg	Second measured segment no longer exists	A második mért szakasz már nem létezik

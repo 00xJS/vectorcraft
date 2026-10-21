@@ -1402,6 +1402,36 @@ impl TextObject {
         Some(style)
     }
 
+    /// Bakes the object's scale ([`style_scale`]) into character attributes and removes that
+    /// scale from `xf`, so panels show document-point sizes without a separate transform factor.
+    /// Returns `false` when there is nothing to bake (identity scale or an unrepresentable
+    /// transform).
+    pub fn scale_text_attributes(&mut self) -> bool {
+        let Some(scale) = self.style_scale() else { return false };
+        if (scale.points - 1.0).abs() <= 1e-12 && (scale.horizontal - 1.0).abs() <= 1e-12 {
+            return false;
+        }
+        let [a, b, c, d, _, _] = self.xf.as_coeffs();
+        let (sx, sy) = (a.hypot(b), c.hypot(d));
+        if sx <= 1e-12 || sy <= 1e-12 {
+            return false;
+        }
+        let mut baked = Vec::with_capacity(self.runs.len());
+        for run in &self.runs {
+            let Some(eff) = self.effective_char_style(&run.style) else { return false };
+            baked.push(eff);
+        }
+        for (run, style) in self.runs.iter_mut().zip(baked) {
+            run.style = style;
+        }
+        // Character strokes are drawn in text space: widen them by the vertical scale we remove.
+        self.scale_char_strokes(1.0 / sy);
+        self.xf *= Affine::scale_non_uniform(1.0 / sx, 1.0 / sy);
+        self.cached_bounds = None;
+        self.cached_baselines.clear();
+        true
+    }
+
     pub fn point(origin: Point, text: &str, style: CharStyle) -> Self {
         Self {
             vertical: false,

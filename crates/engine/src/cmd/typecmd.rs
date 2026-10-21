@@ -35,6 +35,15 @@ pub fn specs() -> Vec<CommandSpec> {
             create_outlines
         ),
         cmd!(
+            "type.scaleTextAttributes",
+            "Scale Text Attributes",
+            ["Type"],
+            None,
+            "{ids?|id?} bake each selected type object's transform scale into its character sizes (leading, baseline shift and horizontal scale included), leaving rotation and position in the affine → {ids, changed}",
+            scale_text_attributes_enabled,
+            scale_text_attributes
+        ),
+        cmd!(
             "type.opticalMarginAlignment",
             "Optical Margin Alignment",
             ["Type"],
@@ -384,6 +393,42 @@ fn text_ids(d: &Document, ids: &[NodeId]) -> Vec<NodeId> {
         }
     }
     out
+}
+
+fn scale_text_attributes_enabled(s: &Session) -> std::result::Result<(), String> {
+    has_selection(s)?;
+    let st = s.active().ok_or("no document open")?;
+    let ids = text_ids(&st.doc, &st.selection.objects);
+    if ids.iter().any(|id| {
+        st.doc.node(*id).is_some_and(|n| {
+            let NodeKind::Text(t) = &n.kind else { return false };
+            t.style_scale().is_some_and(|sc| (sc.points - 1.0).abs() > 1e-12 || (sc.horizontal - 1.0).abs() > 1e-12)
+        })
+    }) {
+        Ok(())
+    } else {
+        Err("Scale Text Attributes: selected type has no scale to bake".into())
+    }
+}
+
+fn scale_text_attributes(s: &mut Session, p: &Value) -> Result<Value> {
+    const C: &str = "type.scaleTextAttributes";
+    let ids = text_targets(s, p, C)?;
+    let changed = s.edit("Scale Text Attributes", |d, _| {
+        let mut n = 0usize;
+        for id in &ids {
+            let Some(NodeKind::Text(t)) = d.node_mut(*id).map(|node| &mut node.kind) else { continue };
+            if t.scale_text_attributes() {
+                refresh_bounds(t);
+                n += 1;
+            }
+        }
+        if n == 0 {
+            return Err(EngineError::Other("Scale Text Attributes: selected type has no scale to bake".into()));
+        }
+        Ok(n)
+    })?;
+    Ok(json!({ "ids": ids.iter().map(|i| i.0).collect::<Vec<_>>(), "changed": changed }))
 }
 
 fn create_outlines(s: &mut Session, _: &Value) -> Result<Value> {

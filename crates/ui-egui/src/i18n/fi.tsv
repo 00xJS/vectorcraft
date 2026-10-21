@@ -3403,6 +3403,7 @@ theme	Appearance	Ulkoasu
 	Scale Corners	Skaalaa kulmat
 	Scale Cursor Proportional to UI	Skaalaa kohdistin suhteessa käyttöliittymään
 	Scale Strokes & Effects	Skaalaa viivat ja tehosteet
+	Scale Text Attributes	Skaalaa tekstin attribuutit
 	Scratch Disks	Työlevyt
 	Secondary	Toissijainen
 	Select Same Tint %	Valitse sama sävyprosentti
@@ -5170,6 +5171,7 @@ mark-style	Japanese	Japanilainen
 @msg	Measured anchor no longer exists	Mitattua ankkuripistettä ei ole enää
 @msg	Measured segment no longer exists	Mitattua segmenttiä ei ole enää
 @msg	Non-finite dimension	Mitta ei ole äärellinen luku
+@msg	Scale Text Attributes: selected type has no scale to bake	Skaalaa tekstin attribuutit: valitulla tekstillä ei ole sovellettavaa skaalausta
 @msg	Scale must be drawing:real, for example 1:10	Mittakaavan on oltava muotoa piirustus:todellinen, esimerkiksi 1:10
 @msg	Scale ratio must be between 1:1000000 and 1000000:1	Mittakaavan suhteen on oltava välillä 1:1000000–1000000:1
 @msg	Second measured segment no longer exists	Toista mitattua segmenttiä ei ole enää

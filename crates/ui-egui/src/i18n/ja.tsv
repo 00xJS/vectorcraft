@@ -2693,6 +2693,7 @@ mark-style	Japanese	日本式
 	Scale Cursor Proportional to UI	カーソルを UI の拡大率に合わせる
 	Scale Lineweights	線の太さを拡大・縮小
 	Scale Strokes & Effects	線幅と効果を拡大・縮小
+	Scale Text Attributes	テキスト属性を拡大・縮小
 	Scale Tool	拡大・縮小ツール
 	Scale to Fit Artboard	アートボードに合わせて拡大・縮小
 	Scale:	拡大・縮小:
@@ -4859,6 +4860,7 @@ lighting	Light	ライト
 @msg	Measured anchor no longer exists	測定したアンカーポイントはもう存在しません
 @msg	Measured segment no longer exists	測定したセグメントはもう存在しません
 @msg	Non-finite dimension	寸法が有限ではありません
+@msg	Scale Text Attributes: selected type has no scale to bake	テキスト属性を拡大・縮小: 選択したテキストに取り込むスケールがありません
 @msg	Scale must be drawing:real, for example 1:10	縮尺は 図面:実寸 の形式にしてください (例: 1:10)
 @msg	Scale ratio must be between 1:1000000 and 1000000:1	縮尺の比率は 1:1000000 から 1000000:1 の間にしてください
 @msg	Second measured segment no longer exists	2 番目の測定セグメントはもう存在しません
