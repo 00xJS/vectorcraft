@@ -770,6 +770,7 @@
 	Activate Panel	Aktywuj panel
 	Change Panel Layout	Zmień układ paneli
 	Close Panel	Zamknij panel
+	Collapse Panel Group	Zwiń grupę paneli
 	Move Panel	Przesuń panel
 	Group with	Grupuj z
 	Resize panels	Zmień rozmiar paneli
@@ -4580,6 +4581,9 @@ imageTrace	Outline	Kontur
 @msg	icon must be true or false	icon musi mieć wartość true lub false
 @msg	icon only docks a panel in the icon column, with no anchor	icon tylko dokuje panel w kolumnie ikon, bez anchor
 @msg	column docks a set as a dock column, with no anchor or icon	column dokuje zestaw jako kolumnę doku, bez anchor ani icon
+@msg	panel floats; collapse its group with window.panel.float {panel, collapsed}	panel jest pływający; zwiń jego grupę za pomocą window.panel.float {panel, collapsed}
+@msg	panel is not in a dock group	panel nie należy do żadnej grupy doku
+@msg	only a dock group above or below others collapses, not one beside another	zwinąć można tylko grupę doku nad lub pod innymi, a nie obok innej
 @msg	move requires a destination panel	przeniesienie wymaga panelu docelowego
 @msg	move requires an existing destination panel	przeniesienie wymaga istniejącego panelu docelowego
 @msg	onto must name a floating panel	onto musi wskazywać panel pływający

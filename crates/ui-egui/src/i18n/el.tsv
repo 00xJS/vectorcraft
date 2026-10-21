@@ -2229,6 +2229,7 @@ effect	Soft	Απαλό
 	Activate Panel	Ενεργοποίηση πάνελ
 	Change Panel Layout	Αλλαγή διάταξης πάνελ
 	Close Panel	Κλείσιμο πάνελ
+	Collapse Panel Group	Σύμπτυξη ομάδας πάνελ
 	Move Panel	Μετακίνηση πάνελ
 	Group with	Ομαδοποίηση με
 	Resize panels	Αλλαγή μεγέθους πάνελ
@@ -4469,6 +4470,9 @@ theme	Appearance	Εμφάνιση
 @msg	before must name a panel	το before πρέπει να ορίζει πίνακα
 @msg	docking action contains an unknown panel or an excessive split path	η ενέργεια σύνδεσης περιέχει άγνωστο πίνακα ή υπερβολικά βαθιά διαδρομή διαίρεσης
 @msg	group must be true or false	το group πρέπει να είναι true ή false
+@msg	panel floats; collapse its group with window.panel.float {panel, collapsed}	Το πάνελ αιωρείται· συμπτύξτε την ομάδα του με window.panel.float {panel, collapsed}
+@msg	panel is not in a dock group	Το πάνελ δεν βρίσκεται σε ομάδα αγκύρωσης
+@msg	only a dock group above or below others collapses, not one beside another	συμπτύσσεται μόνο ομάδα αγκύρωσης πάνω ή κάτω από άλλες, όχι δίπλα σε άλλη
 @msg	icon must be true or false	το icon πρέπει να είναι true ή false
 @msg	icon only docks a panel in the icon column, with no anchor	το icon αγκυρώνει πάνελ μόνο στη στήλη εικονιδίων, χωρίς anchor
 @msg	column docks a set as a dock column, with no anchor or icon	το column αγκυρώνει ένα σύνολο ως στήλη αγκύρωσης, χωρίς anchor ή icon

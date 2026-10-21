@@ -583,6 +583,7 @@ pub fn track(app: &mut VectorcraftApp, ctx: &egui::Context) {
         app.ui.docking = m.original.docking;
         app.ui.docking_hidden = m.original.docking_hidden;
         app.ui.docking_icons = m.original.docking_icons;
+        app.ui.docking_collapsed = m.original.docking_collapsed;
         app.ui.floating_panels = m.original.floating_panels;
         app.ui.open_panel = m.original.open_panel;
         app.ui.dock_tab = m.original.dock_tab;

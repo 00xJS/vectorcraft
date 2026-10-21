@@ -554,6 +554,7 @@
 	Close All	Đóng tất cả
 	Close Library	Đóng thư viện
 	Close Panel	Đóng bảng
+	Collapse Panel Group	Thu gọn nhóm bảng
 	Close Path	Đóng đường dẫn
 	Close paths when ends are within:	Đóng đường dẫn khi hai đầu cách nhau trong:
 	Clumped	Dạng cụm
@@ -4244,6 +4245,9 @@ theme	Appearance	Giao diện
 @msg	icon must be true or false	icon phải là true hoặc false
 @msg	icon only docks a panel in the icon column, with no anchor	icon chỉ neo bảng vào cột biểu tượng, không có anchor
 @msg	column docks a set as a dock column, with no anchor or icon	column neo một bộ thành cột neo, không có anchor hay icon
+@msg	panel floats; collapse its group with window.panel.float {panel, collapsed}	bảng đang nổi; hãy thu gọn nhóm của nó bằng window.panel.float {panel, collapsed}
+@msg	panel is not in a dock group	bảng không thuộc nhóm nào của dock
+@msg	only a dock group above or below others collapses, not one beside another	chỉ thu gọn được nhóm dock nằm trên hoặc dưới các nhóm khác, không phải nhóm nằm cạnh
 @msg	guides are locked	đường căn bị khóa
 @msg	handle must be in or out	handle phải là in hoặc out
 @msg	image '{key}' has no pixels and was left out	ảnh '{key}' không có pixel và bị bỏ qua

@@ -4474,6 +4474,7 @@ effect	Soft	Меко
 	Activate Panel	Активиране на панела
 	Change Panel Layout	Промяна на оформлението на панела
 	Close Panel	Затваряне на панела
+	Collapse Panel Group	Свиване на групата панели
 	Move Panel	Преместване на панела
 	Group with	Групиране с
 	Resize panels	Преоразмеряване на панели
@@ -4484,6 +4485,9 @@ effect	Soft	Меко
 @msg	before must name a panel	параметърът „преди“ трябва да указва панел
 @msg	docking action contains an unknown panel or an excessive split path	действието по закачане съдържа непознат панел или прекомерен път на разделяне
 @msg	group must be true or false	групата трябва да е истина или лъжа
+@msg	panel floats; collapse its group with window.panel.float {panel, collapsed}	панелът е плаващ; свийте групата му с window.panel.float {panel, collapsed}
+@msg	panel is not in a dock group	панелът не е в група на дока
+@msg	only a dock group above or below others collapses, not one beside another	свива се само група на дока над или под други, не и такава до друга
 @msg	icon must be true or false	icon трябва да е истина или лъжа
 @msg	icon only docks a panel in the icon column, with no anchor	icon закачва панел само в колоната с икони, без anchor
 @msg	column docks a set as a dock column, with no anchor or icon	column закачва набор като колона на дока, без anchor или icon

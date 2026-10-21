@@ -44,6 +44,9 @@ pub struct Workspace {
     /// Panels whose saved return destination is the iconic rail.
     #[serde(default, skip_serializing_if = "std::collections::BTreeSet::is_empty")]
     pub docking_icons: std::collections::BTreeSet<String>,
+    /// The panels shown by dock groups collapsed to their tabs.
+    #[serde(default, skip_serializing_if = "std::collections::BTreeSet::is_empty")]
+    pub docking_collapsed: std::collections::BTreeSet<String>,
     /// Where the Tools panel floats (built-in workspaces: docked).
     pub toolbar_pos: Option<[f32; 2]>,
     /// Main dock column width in screen points (#1753).
@@ -180,6 +183,7 @@ pub fn capture(ui: &UiState, name: &str) -> Workspace {
         docking: ui.docking.clone(),
         docking_hidden: ui.docking_hidden.clone(),
         docking_icons: ui.docking_icons.clone(),
+        docking_collapsed: ui.docking_collapsed.clone(),
         toolbar_pos: ui.toolbar_pos,
         dock_width: ui.dock_width,
     }
@@ -205,6 +209,7 @@ pub fn apply(ui: &mut UiState, w: &Workspace) {
     ui.docking = w.docking.clone().filter(crate::panel_docking::valid);
     ui.docking_hidden = w.docking_hidden.clone();
     ui.docking_icons = w.docking_icons.iter().filter(|id| crate::state::rail_panel(id).is_some()).take(64).cloned().collect();
+    ui.docking_collapsed = w.docking_collapsed.iter().filter(|id| crate::menus::normalize_panel(id) == Some(id.as_str())).take(64).cloned().collect();
     ui.toolbar_pos = w.toolbar_pos;
     ui.dock_width = w.dock_width;
     ui.dock_width_pending = true;
@@ -557,12 +562,14 @@ mod tests {
         // Changes made in it after saving (a panel moved, the control bar shown)…
         ui.control_bar = true;
         ui.dock_tab = DockTab::Layers;
-        ui.docking_icons.insert("color".into());
+        ui.docking_icons.insert("layers".into());
+        ui.docking_collapsed.insert("layers".into());
         // …are still there after switching away and back.
         switch(&mut ui, ESSENTIALS).unwrap();
-        assert!(!ui.control_bar && ui.docking_icons.is_empty(), "Essentials comes as saved");
+        assert!(!ui.control_bar && ui.docking_icons.is_empty() && ui.docking_collapsed.is_empty(), "Essentials comes as saved");
         switch(&mut ui, "Görkem").unwrap();
-        assert!(ui.control_bar && ui.dock_tab == DockTab::Layers && ui.docking_icons.contains("color"));
+        assert!(ui.control_bar && ui.dock_tab == DockTab::Layers && ui.docking_icons.contains("layers"));
+        assert!(ui.docking_collapsed.contains("layers"), "its collapsed group too");
         // Built-in workspaces remember theirs too.
         switch(&mut ui, ESSENTIALS).unwrap();
         ui.status_bar = false;

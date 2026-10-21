@@ -4595,6 +4595,7 @@ axis	Both	Оба
 	Activate Panel	Активировать панель
 	Change Panel Layout	Изменить расположение панелей
 	Close Panel	Закрыть панель
+	Collapse Panel Group	Свернуть группу панелей
 	Move Panel	Переместить панель
 	Group with	Сгруппировать с
 	Resize panels	Изменить размер панелей
@@ -4605,6 +4606,9 @@ axis	Both	Оба
 @msg	before must name a panel	before должен указывать панель
 @msg	docking action contains an unknown panel or an excessive split path	Действие прикрепления содержит неизвестную панель или слишком длинный путь разделений
 @msg	group must be true or false	group должен иметь значение true или false
+@msg	panel floats; collapse its group with window.panel.float {panel, collapsed}	панель плавающая; сверните её группу через window.panel.float {panel, collapsed}
+@msg	panel is not in a dock group	панель не находится в группе дока
+@msg	only a dock group above or below others collapses, not one beside another	свернуть можно только группу дока над или под другими, а не рядом с ними
 @msg	icon must be true or false	icon должен быть true или false
 @msg	icon only docks a panel in the icon column, with no anchor	icon только закрепляет панель в столбце значков, без anchor
 @msg	column docks a set as a dock column, with no anchor or icon	column закрепляет набор как столбец дока, без anchor и icon
