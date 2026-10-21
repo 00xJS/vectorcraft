@@ -99,10 +99,7 @@ impl Tool for EyedropperTool {
             let back = self.stop.clone().unwrap_or_else(|| "selection".to_string());
             self.brush_key_color = false;
             self.stop = None;
-            return vec![
-                Action::Dialog("brushKeyColor".into(), json!({ "color": color_json(&c) })),
-                Action::SwitchTool(back),
-            ];
+            return vec![Action::Dialog("brushKeyColor".into(), json!({ "color": color_json(&c) })), Action::SwitchTool(back)];
         }
         let stop = self.stop.as_ref().zip(cx.gradient_stop);
         // Reading a source is independent of its editability. Only Alt's reverse operation
@@ -228,10 +225,7 @@ mod tests {
         let a = t.pointer(&cx, &PointerEvent::new(PointerKind::Down, 150.0, 150.0));
         assert_eq!(
             a,
-            vec![
-                Action::Dialog("brushKeyColor".into(), json!({ "color": color_json(&Color::WHITE) })),
-                Action::SwitchTool("selection".into())
-            ]
+            vec![Action::Dialog("brushKeyColor".into(), json!({ "color": color_json(&Color::WHITE) })), Action::SwitchTool("selection".into())]
         );
         assert_eq!(t.options(), json!({ "stop": null, "brushKeyColor": false }));
     }

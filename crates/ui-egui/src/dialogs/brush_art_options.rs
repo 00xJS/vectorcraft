@@ -25,10 +25,10 @@ use vectorcraft_color::{Color, Paint};
 use vectorcraft_doc::{Appearance, Document, Node, NodeId};
 
 use super::brush_options::{clamped, mode_key, stroke_preview};
+use crate::VectorcraftApp;
 use crate::state::Dialog;
 use crate::theme::Tokens;
 use crate::widgets;
-use crate::VectorcraftApp;
 
 /// Scatter values: (field, suffix), in [`Scatter::RANGES`] order.
 const SCATTER: [(&str, &str); 4] = [("size", "%"), ("spacing", "%"), ("scatter", "%"), ("rotation", "°")];
