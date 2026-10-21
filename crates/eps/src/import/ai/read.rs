@@ -2326,6 +2326,7 @@ impl<'a> Reader<'a> {
                 id: i as u32 + 1,
                 name,
                 rect: to_doc.transform_rect_bbox(r),
+                locked: false,
                 show_center_mark: false,
                 show_cross_hairs: false,
                 color: None,
@@ -2333,7 +2334,15 @@ impl<'a> Reader<'a> {
             .collect();
         if doc.artboards.is_empty() {
             let rect = doc.art_bounds().filter(|r| sane(*r) && r.area() > 0.0).unwrap_or(Rect::new(0.0, 0.0, 612.0, 792.0));
-            doc.artboards = vec![Artboard { id: 1, name: "Artboard 1".into(), rect, show_center_mark: false, show_cross_hairs: false, color: None }];
+            doc.artboards = vec![Artboard {
+                id: 1,
+                name: "Artboard 1".into(),
+                rect,
+                locked: false,
+                show_center_mark: false,
+                show_cross_hairs: false,
+                color: None,
+            }];
         }
         if self.color_model.unwrap_or(self.cmyk_colors > self.rgb_colors) {
             doc.color_mode = ColorMode::Cmyk;

@@ -3857,6 +3857,7 @@ effect	Regular	ჩვეულებრივი
 @msg	no such action	ასეთი მოქმედება არ არის
 @msg	no such anchor	ასეთი საყრდენი წერტილი არ არის
 @msg	no such artboard	ასეთი სამუშაო დაფა არ არის
+@msg	the artboard is locked	სამუშაო დაფა ჩაკეტილია
 @msg	no such document	ასეთი დოკუმენტი არ არსებობს
 @msg	no such layer or object	ასეთი შრე ან ობიექტი არ არის
 @msg	no such object {0}	ასეთი ობიექტი {0} არ არის

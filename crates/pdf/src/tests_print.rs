@@ -27,6 +27,7 @@ fn artboard(id: u32, x: f64) -> Artboard {
         id,
         name: format!("Artboard {id}"),
         rect: Rect::new(x, 0.0, x + 100.0, 100.0),
+        locked: false,
         show_center_mark: false,
         show_cross_hairs: false,
         color: None,
