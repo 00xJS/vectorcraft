@@ -1250,9 +1250,18 @@ pub fn run_ui_command(app: &mut VectorcraftApp, id: &str, p: &Value) -> Option<R
         "view.boundingBox" => flag(&mut app.ui.view.bounding_box),
         "view.guides" => {
             let r = flag(&mut app.ui.view.guides);
-            // Hidden guides can't stay selected (selected, they are all that is).
-            if !app.ui.view.guides && app.session.active().is_some_and(|d| !d.selection.guides.is_empty()) {
-                // Deselecting a document that is open can't fail.
+            // Hidden ruler guides and guide paths cannot stay selected: their selection overlay
+            // would otherwise reveal geometry that Hide Guides just hid.
+            let hidden_selection = !app.ui.view.guides
+                && app.session.active().is_some_and(|d| {
+                    !d.selection.guides.is_empty()
+                        || d.selection
+                            .objects
+                            .iter()
+                            .any(|id| matches!(d.doc.node(*id).map(|n| &n.kind), Some(vectorcraft_doc::NodeKind::Path { guide: true, .. })))
+                });
+            if hidden_selection {
+                // Deselecting a document that is open cannot fail.
                 let _ = app.run("select.none", json!({}));
             }
             r
