@@ -41,7 +41,7 @@ pub struct GestureTool {
     /// or merges into (on for the Pencil and Paintbrush, off for the Blob Brush).
     pub keep_selected: bool,
     /// "Alt key toggles to Smooth Tool": holding Alt with the Pencil tool smooths selected paths
-    /// instead of closing the path (Pencil only, on by default).
+    /// instead of closing the path (Pencil only, off by default).
     pub alt_smooth: bool,
     /// Active drag is smoothing with the Pencil tool.
     smoothing: bool,
@@ -404,8 +404,14 @@ impl Tool for GestureTool {
         o
     }
     fn cursor(&self, _cx: &ToolContext, _p: Point, m: Mods) -> Cursor {
-        if self.id == "pencil" && self.alt_smooth && m.alt {
+        // A drag that smooths, or Alt before a Pencil stroke has begun to draw (a stroke that
+        // has begun keeps drawing with Alt).
+        if self.smoothing || (self.id == "pencil" && self.alt_smooth && m.alt && !self.began) {
             return Cursor::Smooth;
+        }
+        // Alt held at the release closes the path (`finish`).
+        if self.draws_path() && !self.alt_smooth && m.alt {
+            return if self.id == "paintbrush" { Cursor::PaintbrushClose } else { Cursor::PencilClose };
         }
         match self.id {
             "paintbrush" => Cursor::Paintbrush,
@@ -563,6 +569,52 @@ mod tests {
                 assert!(matches!(&acts.last().unwrap()[0], Action::Preview(_, v) if v["keepSelected"] == keep), "{id}");
             }
         }
+    }
+
+    /// Holding Alt shows the Pencil's and the Paintbrush's closing cursor, before the press and while
+    /// drawing; a release with Alt still held closes the path, and Alt let go before the release
+    /// leaves it open.
+    #[test]
+    fn alt_shows_the_closing_cursor_and_a_release_with_alt_closes() {
+        let (d, _) = doc_with_rect();
+        let s = Selection::default();
+        let p = paint();
+        let cx = cx(&d, &s, &p);
+        let alt = Mods { alt: true, ..Default::default() };
+        let at = Point::new(10.0, 5.0);
+        for (id, own, closing, style) in
+            [("pencil", Cursor::Pencil, Cursor::PencilClose, "pencil"), ("paintbrush", Cursor::Paintbrush, Cursor::PaintbrushClose, "brush")]
+        {
+            let mut t = GestureTool::new(id);
+            assert_eq!(t.cursor(&cx, at, Mods::default()), own, "{id}");
+            assert_eq!(t.cursor(&cx, at, alt), closing, "{id}");
+            for alt_at_release in [true, false] {
+                t.pointer(&cx, &PointerEvent::new(PointerKind::Down, 0.0, 0.0));
+                t.pointer(&cx, &PointerEvent::new(PointerKind::Drag, 10.0, 5.0).with_mods(alt));
+                assert_eq!(t.cursor(&cx, at, alt), closing, "{id} while drawing");
+                assert_eq!(t.cursor(&cx, at, Mods::default()), own, "{id} while drawing");
+                let up = Mods { alt: alt_at_release, ..Default::default() };
+                let acts = t.pointer(&cx, &PointerEvent::new(PointerKind::Up, 20.0, 0.0).with_mods(up));
+                assert!(
+                    matches!(&acts[0], Action::Preview(_, v) if v["closed"] == alt_at_release && v["style"] == style),
+                    "{id}, Alt at the release {alt_at_release}: {acts:?}"
+                );
+            }
+        }
+        // With Alt key toggles to Smooth Tool on, Alt lends the Pencil the Smooth tool instead, until
+        // a stroke has begun to draw: Alt then neither smooths nor closes, and the cursor stays the Pencil's.
+        let mut t = GestureTool::new("pencil");
+        t.set_option("altSmooth", &json!(true));
+        assert_eq!(t.cursor(&cx, at, alt), Cursor::Smooth);
+        t.pointer(&cx, &PointerEvent::new(PointerKind::Down, 0.0, 0.0));
+        t.pointer(&cx, &PointerEvent::new(PointerKind::Drag, 10.0, 5.0));
+        assert_eq!(t.cursor(&cx, at, alt), Cursor::Pencil, "a stroke that has begun");
+        let acts = t.pointer(&cx, &PointerEvent::new(PointerKind::Up, 20.0, 0.0).with_mods(alt));
+        assert!(matches!(&acts[0], Action::Preview(_, v) if v["closed"] == false), "{acts:?}");
+        // A smoothing drag keeps the Smooth cursor when Alt is let go.
+        t.pointer(&cx, &PointerEvent::new(PointerKind::Down, 0.0, 0.0).with_mods(alt));
+        t.pointer(&cx, &PointerEvent::new(PointerKind::Drag, 10.0, 5.0).with_mods(alt));
+        assert_eq!(t.cursor(&cx, at, Mods::default()), Cursor::Smooth, "a smoothing drag");
     }
 
     /// The Blob Brush has Keep selected and Merge only with selection, both off by default, and its
@@ -773,7 +825,7 @@ mod tests {
         // When altSmooth is disabled:
         t.set_option("altSmooth", &json!(false));
         assert_eq!(t.options()["altSmooth"], json!(false));
-        assert_eq!(t.cursor(&cx, Point::new(50.0, 50.0), alt_mod), Cursor::Pencil);
+        assert_eq!(t.cursor(&cx, Point::new(50.0, 50.0), alt_mod), Cursor::PencilClose);
 
         // Alt-drag draws a closed pencil path.
         let empty_sel = Selection::default();

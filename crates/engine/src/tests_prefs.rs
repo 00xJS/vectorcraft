@@ -461,6 +461,24 @@ fn use_precise_cursors_swaps_the_tools_own_pointers_for_a_crosshair() {
     }
 }
 
+/// With Alt held, the Pencil and the Paintbrush show their closing cursors, and Use Precise Cursors turns those into
+/// a crosshair too.
+#[test]
+fn alt_shows_the_pencil_and_paintbrush_closing_cursors() {
+    use vectorcraft_tools::{Cursor, Mods};
+    let mut s = Session::new();
+    s.execute("file.new", &json!({"width": 400, "height": 400})).unwrap();
+    let at = vectorcraft_geom::Point::new(300.0, 300.0);
+    let alt = Mods { alt: true, ..Default::default() };
+    for precise in [false, true] {
+        s.execute("prefs.set", &json!({"key": "usePreciseCursors", "value": precise})).unwrap();
+        for (tool, c) in [("pencil", Cursor::PencilClose), ("paintbrush", Cursor::PaintbrushClose)] {
+            s.select_tool(tool, ViewInfo::default()).unwrap();
+            assert_eq!(s.cursor(at, alt, ViewInfo::default()), if precise { Cursor::Crosshair } else { c }, "{tool}, precise {precise}");
+        }
+    }
+}
+
 /// Every state of the Pen's pointer, and the other drawing pointers, turn into a crosshair; the rest stay.
 #[test]
 fn precise_cursors_replace_every_pen_state() {

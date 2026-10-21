@@ -559,8 +559,14 @@ pub enum Cursor {
     MagicWand,
     /// The Pencil tool.
     Pencil,
+    /// The Pencil tool with Alt held while Alt key toggles to Smooth Tool is off: releasing the
+    /// mouse button with Alt still held closes the path. A crosshair with a ring.
+    PencilClose,
     /// The Paintbrush tool.
     Paintbrush,
+    /// The Paintbrush tool with Alt held: releasing the mouse button with Alt still held closes
+    /// the path. A crosshair with a ring.
+    PaintbrushClose,
     /// The Blob Brush tool.
     BlobBrush,
     /// The Eraser tool.
@@ -671,7 +677,9 @@ impl Cursor {
             | Cursor::Lasso
             | Cursor::MagicWand
             | Cursor::Pencil
+            | Cursor::PencilClose
             | Cursor::Paintbrush
+            | Cursor::PaintbrushClose
             | Cursor::BlobBrush
             | Cursor::Eraser
             | Cursor::Smooth
