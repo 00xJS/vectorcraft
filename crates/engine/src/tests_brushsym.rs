@@ -510,6 +510,69 @@ fn scatter_art_and_pattern_brush_options_update_strokes() {
     assert_eq!((&b["scale"], &b["spacing"]), (&json!(10000.0), &json!(0.0)));
 }
 
+/// Hue Shift given without a key color takes the color the art's fills and strokes use most, in
+/// New Brush and in Brush Options, and a Brush Options edit that gives only the method keeps the
+/// brush's key color.
+#[test]
+fn hue_shift_without_a_key_takes_the_most_used_art_color() {
+    let mut s = session();
+    let paint = |s: &mut Session, id: NodeId, fill: &str, stroke: Option<&str>| {
+        s.execute("paint.setFill", &json!({"color": fill, "ids": [id.0]})).unwrap();
+        match stroke {
+            Some(c) => s.execute("paint.setStroke", &json!({"color": c, "ids": [id.0]})).unwrap(),
+            None => s.execute("paint.setStroke", &json!({"none": true, "ids": [id.0]})).unwrap(),
+        };
+    };
+    // Blue comes first; red paints two fills and a stroke.
+    let a = rect(&mut s, 10.0, 200.0, 20.0, 8.0);
+    paint(&mut s, a, "#0000ff", None);
+    let b = rect(&mut s, 40.0, 200.0, 20.0, 8.0);
+    paint(&mut s, b, "#ff0000", Some("#ff0000"));
+    let c = rect(&mut s, 70.0, 200.0, 20.0, 8.0);
+    paint(&mut s, c, "#ff0000", None);
+    let color = |r: f32, g: f32, b: f32| serde_json::to_value(vectorcraft_color::Color::rgb(r, g, b)).unwrap();
+    let (red, green) = (color(1.0, 0.0, 0.0), color(0.0, 1.0, 0.0));
+    let hue_shift = json!({"colorization": {"method": "hueShift"}});
+    let r = s.execute("brush.new", &json!({"type": "scatter", "name": "Key", "ids": [a.0, b.0, c.0], "params": hue_shift})).unwrap();
+    assert_eq!(r["name"], "Key");
+    let colorization = |s: &mut Session| s.execute("brush.get", &json!({"name": "Key"})).unwrap()["colorization"].clone();
+    assert_eq!(colorization(&mut s), json!({"method": "hueShift", "key": red}));
+    let options = |s: &mut Session, params: Value| s.execute("brush.options", &json!({"name": "Key", "params": params})).unwrap();
+    // Brush Options switches from Tints to Hue Shift without a key.
+    options(&mut s, json!({"colorization": {"method": "tints"}}));
+    assert_eq!(colorization(&mut s), json!({"method": "tints"}));
+    options(&mut s, hue_shift.clone());
+    assert_eq!(colorization(&mut s), json!({"method": "hueShift", "key": red}));
+    // A key color that was set stays when an edit gives only the method.
+    options(&mut s, json!({"colorization": {"method": "hueShift", "key": green}}));
+    options(&mut s, hue_shift.clone());
+    assert_eq!(colorization(&mut s), json!({"method": "hueShift", "key": green}));
+    // Art with no solid color takes black.
+    let d = rect(&mut s, 100.0, 200.0, 20.0, 8.0);
+    s.execute("paint.setFill", &json!({"gradient": {"kind": "linear"}, "ids": [d.0]})).unwrap();
+    s.execute("paint.setStroke", &json!({"none": true, "ids": [d.0]})).unwrap();
+    let r = s.execute("brush.new", &json!({"type": "art", "name": "Plain", "ids": [d.0], "params": hue_shift})).unwrap();
+    assert_eq!(r["name"], "Plain");
+    let b = s.execute("brush.get", &json!({"name": "Plain"})).unwrap();
+    assert_eq!(b["colorization"], json!({"method": "hueShift", "key": color(0.0, 0.0, 0.0)}));
+}
+
+/// Brush Options merges an art brush's `scale` field by field: an edit that gives only the start
+/// guide keeps the end guide.
+#[test]
+fn art_brush_options_keep_the_scale_fields_an_edit_leaves_out() {
+    let mut s = session();
+    let r = rect(&mut s, 10.0, 200.0, 40.0, 8.0);
+    s.execute("brush.new", &json!({"type": "art", "name": "Bar", "ids": [r.0]})).unwrap();
+    s.execute("brush.options", &json!({"name": "Bar", "params": {"scale": {"mode": "betweenGuides", "start": 0.2, "end": 0.6}}})).unwrap();
+    s.execute("brush.options", &json!({"name": "Bar", "params": {"scale": {"mode": "betweenGuides", "start": 0.3}}})).unwrap();
+    let b = s.execute("brush.get", &json!({"name": "Bar"})).unwrap();
+    assert_eq!(b["scale"], json!({"mode": "betweenGuides", "start": 0.3, "end": 0.6}));
+    // A scale that becomes a plain mode drops the guides.
+    s.execute("brush.options", &json!({"name": "Bar", "params": {"scale": {"mode": "stretch"}}})).unwrap();
+    assert_eq!(s.execute("brush.get", &json!({"name": "Bar"})).unwrap()["scale"], json!({"mode": "stretch"}));
+}
+
 // ---------- symbols ----------
 
 fn make_symbol(s: &mut Session) -> (NodeId, String, Rect) {

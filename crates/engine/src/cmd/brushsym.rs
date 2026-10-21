@@ -99,7 +99,7 @@ pub fn specs() -> Vec<CommandSpec> {
             "Brush Options…",
             [],
             None,
-            "{name, params?: {…fields to change (brush.get shows them; values outside their ranges are clamped). calligraphic: angle −180..180°, roundness 0..100%, size 0..1296 pt, variation: [angle°, roundness%, size pt], modes: [fixed|random|pressure for angle, roundness, size] (pressure goes from value − variation at the lightest pen pressure to value + variation at the heaviest). scatter: size [a, b] 1..10000%, spacing [a, b] 1..10000%, scatter [a, b] −1000..1000%, rotation [a, b] −180..180°, modes: [fixed|random|pressure for size, spacing, scatter, rotation] (fixed: a; random: between a and b; pressure: a at the lightest pen pressure to b at the heaviest), rotation_relative_to_path. art: width 1..1000%, scale: {mode: proportional|stretch|betweenGuides, start, end: 0..1 of the art length}, direction: leftToRight|rightToLeft|topToBottom|bottomToTop, flip_along, flip_across, overlap. pattern: scale 1..10000%, spacing 0..10000%, fit: stretch|addSpace|approximate, flip_along, flip_across. scatter, art and pattern: colorization: {method: none|tints|tintsAndShades|hueShift, key: colour (hueShift: the art colour that becomes the stroke colour)}}, newName? (trimmed; blank: the name is kept)} edit a brush definition (strokes using it update) → {name}",
+            "{name, params?: {…fields to change (brush.get shows them; values outside their ranges are clamped). calligraphic: angle −180..180°, roundness 0..100%, size 0..1296 pt, variation: [angle°, roundness%, size pt], modes: [fixed|random|pressure for angle, roundness, size] (pressure goes from value − variation at the lightest pen pressure to value + variation at the heaviest). scatter: size [a, b] 1..10000%, spacing [a, b] 1..10000%, scatter [a, b] −1000..1000%, rotation [a, b] −180..180°, modes: [fixed|random|pressure for size, spacing, scatter, rotation] (fixed: a; random: between a and b; pressure: a at the lightest pen pressure to b at the heaviest), rotation_relative_to_path. art: width 1..1000%, scale: {mode: proportional|stretch|betweenGuides, start, end: 0..1 of the art length}, direction: leftToRight|rightToLeft|topToBottom|bottomToTop, flip_along, flip_across, overlap. pattern: scale 1..10000%, spacing 0..10000%, fit: stretch|addSpace|approximate, flip_along, flip_across. scatter, art and pattern: colorization: {method: none|tints|tintsAndShades|hueShift, key: colour (hueShift: the art colour that becomes the stroke colour; without a key: the solid color the art's fills and strokes use most, black when they use none)}; colorization and the art brush's scale change only the fields given}, newName? (trimmed; blank: the name is kept)} edit a brush definition (strokes using it update) → {name}",
             has_doc,
             brush_options
         ),
@@ -358,10 +358,24 @@ pub(crate) fn selection_art(s: &Session, p: &Value) -> Result<Option<Node>> {
     })
 }
 
+/// The definition fields that `params` change field by field when the brush has them as objects:
+/// `{colorization: {method: "hueShift"}}` keeps the key color, and an art brush's `scale` with only
+/// `start` keeps `end`.
+const MERGED_FIELDS: [&str; 2] = ["colorization", "scale"];
+
 fn merge(base: &mut Value, patch: &Value) {
     if let (Some(b), Some(pt)) = (base.as_object_mut(), patch.as_object()) {
         for (k, v) in pt {
-            b.insert(k.clone(), v.clone());
+            match (b.get_mut(k).and_then(Value::as_object_mut), v.as_object()) {
+                (Some(inner), Some(fields)) if MERGED_FIELDS.contains(&k.as_str()) => {
+                    for (f, fv) in fields {
+                        inner.insert(f.clone(), fv.clone());
+                    }
+                }
+                _ => {
+                    b.insert(k.clone(), v.clone());
+                }
+            }
         }
     }
 }
@@ -434,11 +448,9 @@ fn brush_new(s: &mut Session, p: &Value) -> Result<Value> {
     Ok(json!({ "name": name }))
 }
 
-/// A brush definition from command params, its values kept within their ranges.
+/// A brush definition from command params, its values kept within their ranges ([`Brush::from_json`]).
 fn parse_brush(cmd: &str, v: Value) -> Result<Brush> {
-    let mut b: Brush = serde_json::from_value(v).map_err(|e| bad(cmd, format!("invalid brush: {e}")))?;
-    b.sanitize();
-    Ok(b)
+    Brush::from_json(v).map_err(|e| bad(cmd, format!("invalid brush: {e}")))
 }
 
 fn brush_delete(s: &mut Session, p: &Value) -> Result<Value> {
