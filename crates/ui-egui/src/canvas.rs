@@ -7148,6 +7148,68 @@ mod tests {
         assert_eq!(plain(&app, id), "");
     }
 
+    /// Vietnamese Telex via the Windows IME (TSF): the preedit grows digit by digit, then an empty
+    /// preedit plus a single Commit lands the amount once, not duplicated.
+    #[test]
+    fn vietnamese_telex_digits_commit_once() {
+        let mut app = VectorcraftApp::new(Session::new(), Default::default());
+        app.session.prefs.placeholder_text = false;
+        app.session.execute("file.new", &json!({"width": 400, "height": 300})).unwrap();
+        let ctx = egui::Context::default();
+        typing_frame(&mut app, &ctx, vec![]);
+        app.select_tool("type");
+        let xf = Xf::new(app.canvas_rect.unwrap(), app.view().unwrap());
+        let at = xf.to_screen(Point::new(100.0, 100.0));
+        let click =
+            |p: Pos2, pressed| egui::Event::PointerButton { pos: p, button: egui::PointerButton::Primary, pressed, modifiers: Default::default() };
+        typing_frame(&mut app, &ctx, vec![egui::Event::PointerMoved(at), click(at, true)]);
+        typing_frame(&mut app, &ctx, vec![click(at, false)]);
+        let id = app.session.active().unwrap().selection.objects[0].0;
+        typing_frame(&mut app, &ctx, vec![]);
+        typing_frame(&mut app, &ctx, vec![preedit("3", 1)]);
+        typing_frame(&mut app, &ctx, vec![preedit("31", 2)]);
+        typing_frame(&mut app, &ctx, vec![preedit("316", 3)]);
+        typing_frame(&mut app, &ctx, vec![preedit("3160", 4)]);
+        typing_frame(&mut app, &ctx, vec![preedit("", 0), egui::Event::Ime(egui::ImeEvent::Commit("3160".into()))]);
+        assert_eq!(plain(&app, id), "3160");
+        assert!(!app.session.tool_composing());
+    }
+
+    /// Keyboard-hook IMEs (UniKey/OpenKey) type Vietnamese by injecting VK_PACKET characters and
+    /// Backspaces, which egui surfaces as interleaved Event::Text and Event::Key(Backspace). When a
+    /// tone key fires, the Backspaces and the re-injected characters arrive in one frame; the Type
+    /// tool must apply them in order to build "tiếng" (captured from a real UniKey session), not
+    /// insert every character first and delete afterwards.
+    #[test]
+    fn hook_ime_backspace_and_reinject_builds_vietnamese() {
+        let mut app = VectorcraftApp::new(Session::new(), Default::default());
+        app.session.prefs.placeholder_text = false;
+        app.session.execute("file.new", &json!({"width": 400, "height": 300})).unwrap();
+        let ctx = egui::Context::default();
+        typing_frame(&mut app, &ctx, vec![]);
+        app.select_tool("type");
+        let xf = Xf::new(app.canvas_rect.unwrap(), app.view().unwrap());
+        let at = xf.to_screen(Point::new(100.0, 100.0));
+        let click =
+            |p: Pos2, pressed| egui::Event::PointerButton { pos: p, button: egui::PointerButton::Primary, pressed, modifiers: Default::default() };
+        typing_frame(&mut app, &ctx, vec![egui::Event::PointerMoved(at), click(at, true)]);
+        typing_frame(&mut app, &ctx, vec![click(at, false)]);
+        let id = app.session.active().unwrap().selection.objects[0].0;
+        typing_frame(&mut app, &ctx, vec![]);
+        let txt = |s: &str| egui::Event::Text(s.into());
+        let bs = || egui::Event::Key { key: egui::Key::Backspace, physical_key: None, pressed: true, repeat: false, modifiers: Default::default() };
+        // When a tone key fires, the Backspaces and the re-injected VK_PACKET characters land
+        // together in one poll (one egui frame).
+        typing_frame(&mut app, &ctx, vec![txt("t")]);
+        typing_frame(&mut app, &ctx, vec![txt("i")]);
+        typing_frame(&mut app, &ctx, vec![txt("e")]);
+        typing_frame(&mut app, &ctx, vec![bs(), txt("ê")]); // 2nd "e" -> ê
+        typing_frame(&mut app, &ctx, vec![txt("n")]);
+        typing_frame(&mut app, &ctx, vec![txt("g")]);
+        typing_frame(&mut app, &ctx, vec![bs(), bs(), bs(), txt("ế"), txt("n"), txt("g")]); // "s" tone
+        assert_eq!(plain(&app, id), "tiếng");
+    }
+
     /// Clear History waits while an IME composes, as Undo does: the marked text and the steps stay.
     #[test]
     fn clear_history_waits_while_the_ime_composes() {

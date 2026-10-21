@@ -213,29 +213,74 @@ fn type_text(app: &mut VectorcraftApp, ctx: &egui::Context) {
     // Switching apps mid-composition needs nothing: the macOS IME keeps its marked text and goes
     // on with it when the window comes back (measured with Kotoeri), as the tool does.
     let shortcut_mods = ctx.input(|i| is_shortcut_chord(i.modifiers));
-    let events: Vec<egui::Event> =
-        ctx.input(|i| i.events.iter().filter(|e| matches!(e, egui::Event::Text(_) | egui::Event::Ime(_))).cloned().collect());
-    for e in events {
+    // A frame that began composing keeps its editing keys for the IME: a Backspace that empties the
+    // marked text must not then delete the committed character before it.
+    let was_composing = app.session.tool_composing();
+    // Text, IME events and plain Backspace/Delete are taken together, in the order they arrived, so
+    // a keyboard-hook IME (UniKey/OpenKey) whose tone key sends Backspace(s) and then re-injects
+    // characters in one frame interleaves correctly. Taken as two passes (all text, then the keys)
+    // the deletes land after the inserts and the diacritics are lost. Each handled event is removed
+    // so `route_type_input` below does not process the same Backspace/Delete again.
+    enum Seq {
+        Text(String),
+        Preedit(String, Option<std::ops::Range<usize>>),
+        Commit(String),
+        Erase(ToolKey, Mods),
+    }
+    let mut seq = vec![];
+    ctx.input_mut(|i| {
+        i.events.retain(|e| match e {
+            egui::Event::Text(t) => {
+                seq.push(Seq::Text(t.clone()));
+                false
+            }
+            egui::Event::Ime(egui::ImeEvent::Preedit { text, active_range_chars }) => {
+                seq.push(Seq::Preedit(text.clone(), active_range_chars.clone()));
+                false
+            }
+            egui::Event::Ime(egui::ImeEvent::Commit(t)) => {
+                seq.push(Seq::Commit(t.clone()));
+                false
+            }
+            // Only unmodified Backspace/Delete interleave with injected text; word-delete and other
+            // modified forms stay with `route_type_input`.
+            egui::Event::Key { key: key @ (Key::Backspace | Key::Delete), pressed: true, modifiers: m, .. } if !m.command && !m.alt && !m.ctrl => {
+                let tk = if *key == Key::Backspace { ToolKey::Backspace } else { ToolKey::Delete };
+                seq.push(Seq::Erase(tk, Mods { shift: m.shift, ..Mods::default() }));
+                false
+            }
+            _ => true,
+        })
+    });
+    for e in seq {
         // Errors are already reported by the engine's interaction (a failed preview keeps it).
         let _ = match e {
             // Keys the IME passed through come as text only when nothing is marked.
-            egui::Event::Text(t) if !app.session.tool_composing() && !shortcut_mods => app.session.tool_text(&t, view),
-            egui::Event::Ime(egui::ImeEvent::Preedit { text, active_range_chars }) => {
+            Seq::Text(t) if !app.session.tool_composing() && !shortcut_mods => app.session.tool_text(&t, view),
+            Seq::Text(_) => Ok(vec![]),
+            Seq::Preedit(text, active_range_chars) => {
                 app.ime_marked = Some(text.clone()).filter(|t| !t.is_empty());
                 app.session.tool_preedit(&text, active_range_chars, view)
             }
             // A bare line break confirms the composition (Enter): the marked text, not a newline.
-            egui::Event::Ime(egui::ImeEvent::Commit(t)) if t == "\n" || t == "\r" => {
+            Seq::Commit(t) if t == "\n" || t == "\r" => {
                 keep_marked_text(app);
                 Ok(vec![])
             }
-            egui::Event::Ime(egui::ImeEvent::Commit(t)) => {
+            Seq::Commit(t) => {
                 app.ime_marked = None;
                 app.session.tool_text(&t, view)
             }
-            // `DeleteSurrounding` isn't sent by egui-winit (desktop); the web host has no IME
-            // path to the canvas yet.
-            _ => Ok(vec![]),
+            // While composing (or in a frame that began composing), editing keys belong to the IME.
+            Seq::Erase(tk, m) if !was_composing && !app.session.tool_composing() => {
+                // Mirror `route_type_input`/`text_key`: surface an erase error in the status bar
+                // instead of discarding it.
+                if let Err(e) = app.session.tool_key(tk, m, view) {
+                    app.status(e.to_string());
+                }
+                Ok(vec![])
+            }
+            Seq::Erase(..) => Ok(vec![]),
         };
     }
 }
