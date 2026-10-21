@@ -316,10 +316,10 @@ fn pick_path(app: &mut VectorcraftApp, pick: &FilePick) -> Result<String, String
 
 /// The suggested name made into a path by `finish` on the web (a download), else the save panel's
 /// choice made into one, with the extension of the file type picked in the panel when it reports
-/// one ([`crate::picks::PickAnswer`]). When `finish` changed the choice (an extension added) and a
-/// file is there, which the panel did not ask about, a question asks before replacing it
-/// ([`crate::picks::ask_to_replace`]) and this answers "cancelled"; the question's OK runs what
-/// asked again.
+/// one ([`crate::picks::PickAnswer`]). When `finish` changed the choice (an extension added or
+/// replaced) and a file is there, which the panel did not ask about, a question asks before
+/// replacing it ([`crate::picks::ask_to_replace`]) and this answers "cancelled"; the question's OK
+/// runs what asked again.
 fn pick_finished(app: &mut VectorcraftApp, pick: &FilePick, finish: impl Fn(&str, Option<&str>) -> String) -> Result<String, String> {
     if is_web(app) {
         return Ok(finish(&pick.name, None));
@@ -397,10 +397,14 @@ pub fn remember_view(app: &mut VectorcraftApp) {
 }
 
 /// A path typed in a save panel: kept when its extension names one of the panel's file types (a
-/// save format, or a template format for Save as Template, `mode`); otherwise `f`'s extension is
-/// added.
+/// save format, or a template format for Save as Template, `mode`). An extension that names
+/// another format (`card.png`, or `card.ait` in Save As) is replaced with `f`'s, and `f`'s is
+/// added to any other path (`notes.v2` becomes `notes.v2.vectorcraft`).
 fn with_save_extension(path: &str, f: &Format, mode: SaveMode) -> String {
     let formats = if mode == SaveMode::Template { TEMPLATE_FORMATS } else { SAVE_FORMATS };
+    if fileio::format_for_name(path).is_some_and(|g| !formats.contains(&g.id)) {
+        return std::path::Path::new(path).with_extension(f.extensions[0]).to_string_lossy().into_owned();
+    }
     with_extension(path, f.extensions[0], |g| formats.contains(&g.id))
 }
 
