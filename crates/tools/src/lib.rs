@@ -275,6 +275,9 @@ pub struct ToolContext<'a> {
     pub raster_sample: u32,
     /// General → Use Preview Bounds: the bounding box measures visual bounds (strokes included).
     pub preview_bounds: bool,
+    /// The session's memo of the selection tools' measurements for the document as it is
+    /// ([`select::PreviewMemo`]); without one they measure on every call.
+    pub preview_memo: Option<&'a select::PreviewMemo>,
     /// Units ▸ General: the unit measurement labels show lengths in.
     pub unit: Unit,
     /// Units ▸ Stroke: the unit measurement labels show stroke widths in.
@@ -1010,6 +1013,7 @@ pub(crate) mod testutil {
             freeform_point: None,
             raster_sample: 1,
             preview_bounds: false,
+            preview_memo: None,
             unit: Unit::Points,
             stroke_unit: Unit::Points,
             paste_plain_text: false,

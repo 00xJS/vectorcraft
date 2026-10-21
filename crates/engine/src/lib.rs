@@ -1261,6 +1261,9 @@ pub struct Session {
     /// lends the other tools. None until one is chosen.
     pub(crate) last_selection_tool: Option<&'static str>,
     pub(crate) last_view: ViewInfo,
+    /// The selection tools' measurements for the active document as it is: a pointer move or a
+    /// cursor asked for again over an unchanged document and selection measures nothing again.
+    pub(crate) preview_memo: vectorcraft_tools::select::PreviewMemo,
     depth: u32,
     /// Set when the active tool panicked (see [`guard`]); reported by the next tool event.
     tool_panic: Option<EngineError>,
@@ -1383,6 +1386,7 @@ impl Session {
             lender: None,
             last_selection_tool: None,
             last_view: ViewInfo::default(),
+            preview_memo: Default::default(),
             depth: 0,
             tool_panic: None,
             draw_mode: DrawMode::Normal,
@@ -1898,7 +1902,7 @@ impl Session {
         }
         // The previous preview's paint is undone with it.
         self.pending_paint = None;
-        let rw = cmd::distortcmds::perspective_rewrite(self, cmd, params);
+        let rw = cmd::distortcmds::perspective_rewrite(self, cmd, params).or_else(|| cmd::bounds_rewrite(self, cmd, params));
         let (cmd, params) = rw.as_ref().map_or((cmd, params), |(c, p)| (c.as_str(), p));
         let outer = std::mem::replace(&mut self.previewing, true);
         let r = self.execute(cmd, params);
