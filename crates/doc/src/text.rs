@@ -255,6 +255,9 @@ fn regular() -> String {
 fn hundred() -> f64 {
     100.0
 }
+fn yes() -> bool {
+    true
+}
 
 impl Default for CharStyle {
     fn default() -> Self {
@@ -1340,6 +1343,13 @@ pub struct TextObject {
     /// Off for new type and for documents from before it, and saved only when on.
     #[serde(default, rename = "opticalMarginAlignment", skip_serializing_if = "crate::skip::is_default")]
     pub optical_margin: bool,
+    /// Character panel menu › Fractional Widths: spacing between characters uses fractions of a
+    /// point. On for new type and for documents from before it, and saved only when off. Off, each
+    /// character that takes any space advances by a whole number of points, at least one, so small
+    /// type does not run together. The setting is the whole type object, not a range of characters.
+    /// <https://helpx.adobe.com/illustrator/desktop/design-with-text/edit-format-text/turn-fractional-character-widths-off-or-on.html>
+    #[serde(default = "yes", rename = "fractionalWidths", skip_serializing_if = "crate::skip::is_true")]
+    pub fractional_widths: bool,
     /// Cached layout bounds in text space, filled in by the layout engine (not serialized).
     #[serde(skip)]
     pub cached_bounds: Option<Rect>,
@@ -1406,6 +1416,7 @@ impl TextObject {
             path_spacing: 0.0,
             wrap: Vec::new(),
             optical_margin: false,
+            fractional_widths: true,
             cached_bounds: None,
             cached_baselines: Vec::new(),
         }

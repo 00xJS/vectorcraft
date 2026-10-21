@@ -37,6 +37,8 @@ struct Ctx<'a> {
     /// a quarter turn back (see [`stands_upright`]); [`TextLayout::line_xf`] then stands the lines
     /// up as columns.
     vertical: bool,
+    /// Character panel menu › Fractional Widths. Off, positive advances are whole points.
+    fractional_widths: bool,
     out: TextLayout,
 }
 
@@ -70,6 +72,11 @@ impl Ctx<'_> {
                     g.proportional = a.proportional;
                 }
             }
+        }
+        // Fractional Widths off: whole-point advances, after tate-chu-yoko and the upright cell
+        // have set the widths the line breaker will use. A zero advance stays zero.
+        if !self.fractional_widths {
+            whole_character_widths(&mut v);
         }
         v
     }
@@ -371,8 +378,18 @@ fn layout_once(db: &FontDb, t: &TextObject, opts: &LayoutOptions) -> TextLayout 
     } else {
         opts
     };
-    let mut cx =
-        Ctx { on_path: is_on_path, db, text: &text, runs, inlines, default: CharStyle::default(), opts, vertical, out: TextLayout::default() };
+    let mut cx = Ctx {
+        on_path: is_on_path,
+        db,
+        text: &text,
+        runs,
+        inlines,
+        default: CharStyle::default(),
+        opts,
+        vertical,
+        fractional_widths: t.fractional_widths,
+        out: TextLayout::default(),
+    };
     // Vertical type: line space turned a quarter turn clockwise (lines become columns, each next
     // one to the left). Point type's anchor is on the first column's centre line. Vertical path
     // type stays on its path (each glyph turned across it in `emit`).
@@ -421,6 +438,17 @@ fn layout_once(db: &FontDb, t: &TextObject, opts: &LayoutOptions) -> TextLayout 
     }
     finish_bounds(&mut cx.out);
     cx.out
+}
+
+/// Fractional Widths off: each character that takes space advances by a whole number of points,
+/// at least one, so small type does not collapse onto itself. A zero advance (a tate-chu-yoko
+/// continuation, a zero-width mark) stays zero.
+fn whole_character_widths(glyphs: &mut [SGlyph]) {
+    for g in glyphs {
+        if g.adv.is_finite() && g.adv > 0.0 {
+            g.adv = g.adv.round().max(1.0);
+        }
+    }
 }
 
 /// Tate-chu-yoko: a run of two or three half-width digits (`10`月, `100`年) stands upright across
