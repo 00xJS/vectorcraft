@@ -189,9 +189,9 @@ fn write_stops(app: &mut VectorcraftApp, params: Value, select: Option<usize>, p
     }
 }
 
-/// Save the gradient as a swatch.
+/// Save the gradient as a swatch; its stops keep their color models.
 fn save_to_swatches(app: &mut VectorcraftApp, g: &GradientPaint) {
-    app.run("swatch.new", super::paint_params(&Paint::Gradient(Box::new(g.clone())))).ok();
+    app.run("swatch.new", super::swatch_paint_params(&Paint::Gradient(Box::new(g.clone())))).ok();
 }
 
 /// The document's gradient swatches (groups included): name and gradient.
@@ -789,6 +789,23 @@ mod tests {
         assert!(recolor_selected(&mut app, orange, &json!({"swatch": "Screen"})));
         let Paint::Gradient(g) = active_paint(&app) else { panic!("a gradient fill") };
         assert_eq!(g.freeform.map(|f| f.points[1].color), Some(orange));
+    }
+
+    /// In a CMYK document Add to Swatches and Save to Swatches keep the gradient's RGB stops RGB.
+    #[test]
+    fn a_gradient_saved_as_a_swatch_keeps_its_stops_models_in_a_cmyk_document() {
+        let mut app = app(json!({"color": "#000000"}));
+        app.run("file.documentColorMode", json!({"mode": "cmyk"})).unwrap();
+        let stops = json!([{"offset": 0, "color": "#ff8000"}, {"offset": 1, "color": {"c": 0, "m": 0, "y": 0, "k": 1}}]);
+        app.run("paint.setFill", json!({"gradient": {"stops": stops}, "keepModel": true})).unwrap();
+        let g = current(&app).expect("a gradient fill");
+        let colors = |g: &GradientPaint| g.gradient.stops.iter().map(|s| s.color).collect::<Vec<_>>();
+        assert_eq!(colors(&g), [Color::rgb8(255, 128, 0), Color::cmyk(0.0, 0.0, 0.0, 1.0)]);
+        save_to_swatches(&mut app, &g);
+        let Some(Paint::Gradient(saved)) = app.session.doc().unwrap().doc.swatches.last().map(|w| w.paint.clone()) else {
+            panic!("a gradient swatch")
+        };
+        assert_eq!(colors(&saved), colors(&g));
     }
 
     #[test]
