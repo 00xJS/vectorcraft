@@ -1153,9 +1153,11 @@ pub(crate) fn absolute_path(path: &str) -> String {
 /// path that is still relative (no document) is refused, as the working directory isn't the
 /// document's choice. On Windows, a document on a mapped drive is on the share behind the drive
 /// ([`share_path`]): a path refused as on another computer is checked again against the
-/// document's path on that share. Every stored path reaches the file system through this.
+/// document's path on that share. A path on a drive mapped to a network share other than the
+/// document's ([`drive_share_path`]) is refused as on another computer. Every stored path
+/// reaches the file system through this.
 pub(crate) fn document_path(stored: &str, document: Option<&str>) -> std::result::Result<String, craft_docpath::Refused> {
-    document_path_with(stored, document, share_path)
+    document_path_on(stored, document, share_path, drive_share_path)
 }
 
 /// [`document_path`], with `share` giving a document's path on the network share behind its drive.
@@ -1178,6 +1180,68 @@ pub(crate) fn document_path_with(
         return Err(Refused::Invalid);
     }
     path.into_os_string().into_string().map_err(|_| Refused::Invalid)
+}
+
+/// [`document_path_with`], also refusing a path on a drive that is mapped to a network share other
+/// than the document's (or, for a document on this computer or without a path, to any share) as
+/// [`craft_docpath::Refused::Network`]. `drive_share` gives a path's path on the share behind its
+/// drive (`Y:\art\x.png` on `\\server\other\art\x.png`), or `None` for a path on this computer. A
+/// path on the document's own drive is not looked up. A document written `\\?\Z:\…` is looked up
+/// on its share as `Z:\…` is.
+pub(crate) fn document_path_on(
+    stored: &str,
+    document: Option<&str>,
+    share: impl Fn(&str) -> Option<String>,
+    drive_share: impl FnOnce(&str) -> Option<String>,
+) -> std::result::Result<String, craft_docpath::Refused> {
+    let share = |d: &str| share(d.strip_prefix(r"\\?\").filter(|d| drive_letter(d).is_some()).unwrap_or(d));
+    let path = document_path_with(stored, document, share)?;
+    let document = document.map(absolute_path);
+    let Some(drive) = drive_letter(&path) else { return Ok(path) };
+    if document.as_deref().and_then(drive_letter).is_some_and(|d| d.eq_ignore_ascii_case(&drive)) {
+        return Ok(path);
+    }
+    let Some(on_share) = drive_share(&path) else { return Ok(path) };
+    let home = document.map(|d| share(&d).unwrap_or(d));
+    craft_docpath::resolve(&on_share, home.as_deref().map(std::path::Path::new))?;
+    Ok(path)
+}
+
+/// The drive letter of an absolute path on a drive (`C:\…`, `C:/…` or `\\?\C:\…`).
+fn drive_letter(path: &str) -> Option<char> {
+    let mut chars = path.strip_prefix(r"\\?\").unwrap_or(path).chars();
+    match (chars.next(), chars.next(), chars.next()) {
+        (Some(l), Some(':'), Some('\\' | '/')) if l.is_ascii_alphabetic() => Some(l),
+        _ => None,
+    }
+}
+
+/// The path of `path` (on a drive, `Y:\art\x.png`) on the network share the drive is mapped to
+/// (`\\server\other\art\x.png`), when the drive's root folder is on one and automation may read
+/// `path`. The root folder's final path ([`std::fs::canonicalize`]) names the share.
+#[cfg(windows)]
+pub(crate) fn drive_share_path(path: &str) -> Option<String> {
+    may_read(path).ok()?;
+    drive_share_of(path, |root| std::fs::canonicalize(root).ok())
+}
+
+#[cfg(not(windows))]
+pub(crate) fn drive_share_path(_: &str) -> Option<String> {
+    None
+}
+
+/// The path of `path` on the network share its drive is mapped to, given `final_path`, which
+/// returns the final path of the drive's root folder (`Y:\`): as [`share_of`] gives it for a
+/// document, also for a path written `\\?\Y:\…`.
+#[cfg(any(windows, test))]
+pub(crate) fn drive_share_of(path: &str, final_path: impl FnOnce(&str) -> Option<std::path::PathBuf>) -> Option<String> {
+    let path = path.strip_prefix(r"\\?\").unwrap_or(path);
+    share_of(path, |folder| {
+        let (root, rest) = (folder.get(..3)?, folder.get(3..)?);
+        let root = final_path(root)?;
+        let root = root.to_str()?.trim_end_matches('\\');
+        Some(if rest.is_empty() { root.into() } else { format!(r"{root}\{rest}").into() })
+    })
 }
 
 /// The path of `document` (on a drive, `Z:\jobs\doc.vectorcraft`) on the network share the drive is
