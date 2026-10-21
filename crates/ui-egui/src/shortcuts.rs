@@ -272,7 +272,14 @@ fn type_text(app: &mut VectorcraftApp, ctx: &egui::Context) {
                 app.session.tool_text(&t, view)
             }
             // While composing (or in a frame that began composing), editing keys belong to the IME.
-            Seq::Erase(tk, m) if !was_composing && !app.session.tool_composing() => app.session.tool_key(tk, m, view),
+            Seq::Erase(tk, m) if !was_composing && !app.session.tool_composing() => {
+                // Mirror `route_type_input`/`text_key`: surface an erase error in the status bar
+                // instead of discarding it.
+                if let Err(e) = app.session.tool_key(tk, m, view) {
+                    app.status(e.to_string());
+                }
+                Ok(vec![])
+            }
             Seq::Erase(..) => Ok(vec![]),
         };
     }
