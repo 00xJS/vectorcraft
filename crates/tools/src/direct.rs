@@ -2020,6 +2020,29 @@ mod tests {
         }
     }
 
+    /// #1816: Group Selection and Direct Selection move a whole path with Snap to Grid as the
+    /// Selection tool does, landing an edge on the grid; the center does not snap. A 45 pt square at
+    /// 90–135 on the 9 pt grid, dragged right by 22 to 112–157, lands its left edge on the gridline
+    /// 108 and moves by 18. Its center, at 134.5 after the drag, is nearer the gridline 135 and
+    /// does not snap.
+    #[test]
+    fn a_move_of_objects_lands_an_edge_on_the_grid() {
+        let mut d = vectorcraft_doc::Document::new(500.0, 500.0);
+        let l = d.layers[0].id;
+        let id = d.alloc_id();
+        let sq = vectorcraft_geom::shapes::rectangle(Rect::new(90.0, 90.0, 135.0, 135.0));
+        d.insert(Some(l), 0, vectorcraft_doc::Node::path(id, sq, vectorcraft_doc::Appearance::default_art())).unwrap();
+        let p = paint();
+        let mut s = Selection::default();
+        s.set([id]);
+        let c = ToolContext { snap_to_grid: true, ..cx(&d, &s, &p) };
+        for group in [true, false] {
+            let mut t = DirectSelectionTool::new(group);
+            let (v, _) = drag(&mut t, &c, (110.0, 110.0), (132.0, 110.0), Mods::default());
+            assert_eq!(v["matrix"], json!([1.0, 0.0, 0.0, 1.0, 18.0, 0.0]), "group: {group}");
+        }
+    }
+
     /// Group Selection and Direct Selection on a whole path keep a Shift-constrained move on its
     /// line when it snaps, as the Selection tool does: level by 13.04 with Snap to Grid on, B's
     /// right side (413.04) lands on the gridline 414, and its top stays at 300, between 297 and

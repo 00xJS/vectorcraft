@@ -104,7 +104,7 @@ pub struct SelectionTool {
 }
 
 /// Snapping for the selection moved as a whole, its targets gathered when the move begins: View →
-/// Snap to Grid lands its bounds on the grid (#740), taking over from the rest; otherwise Smart
+/// Snap to Grid lands its edges on the grid (#740), taking over from the rest; otherwise Smart
 /// Guides line its bounds up with the other art, and with them off, View → Snap to Point lands the
 /// point it was grabbed by (an anchor pressed near, else the pressed point) on an anchor or a ruler
 /// guide. Snap to Pixel puts its top-left on whole pixels. A copy (Alt, which can go down or up at
@@ -246,12 +246,12 @@ impl MoveSnap {
 }
 
 /// The shift that lands `r` on the grid (a gridline every `step`), on each axis by whichever of its
-/// two edges and its centre is nearest a gridline, however far that is.
+/// two edges is nearest a gridline, however far that is. The center does not snap (#1816).
 fn grid_pull(r: Rect, step: f64) -> Vec2 {
-    let pull = |vs: [f64; 3]| {
+    let pull = |vs: [f64; 2]| {
         vs.iter().map(|v| vectorcraft_geom::snap::snap_to_grid(*v, step, 0.0) - v).min_by(|a, b| a.abs().total_cmp(&b.abs())).unwrap_or(0.0)
     };
-    Vec2::new(pull([r.x0, r.center().x, r.x1]), pull([r.y0, r.center().y, r.y1]))
+    Vec2::new(pull([r.x0, r.x1]), pull([r.y0, r.y1]))
 }
 
 pub fn matrix_json(a: Affine) -> Value {
@@ -1232,10 +1232,10 @@ mod tests {
         assert_eq!(t.cursor(&c, Point::new(377.0, 371.0), alt), Cursor::SelectionCopy);
     }
 
-    /// #740: with Snap to Grid on, a moved object lands on the grid (every 9 pt by default) by
-    /// whichever of its edges or its centre is nearest a gridline, on each axis.
+    /// #740, #1816: with Snap to Grid on, a moved object lands on the grid (every 9 pt by default)
+    /// by whichever of its edges is nearest a gridline, on each axis.
     #[test]
-    fn a_move_lands_the_nearest_edge_or_centre_on_the_grid() {
+    fn a_move_lands_the_nearest_edge_on_the_grid() {
         let (d, id) = doc_with_rect();
         let mut s = Selection::default();
         s.add(id);
@@ -1250,9 +1250,10 @@ mod tests {
                 other => panic!("{other:?}"),
             }
         };
-        // Bounds 100–200 moved by (13, 4): the centres (163, 154) are nearest gridlines (162, 153).
+        // Bounds 100–200 moved by (13, 4): the right and bottom edges (213, 204) are nearest
+        // gridlines (216, 207).
         let (x, y) = moved((163.0, 154.0));
-        assert!((x - 12.0).abs() < 1e-9 && (y - 3.0).abs() < 1e-9, "{x} {y}");
+        assert!((x - 16.0).abs() < 1e-9 && (y - 7.0).abs() < 1e-9, "{x} {y}");
         // Moved by (7, 0): the right edge is on a gridline (207) and the top goes up to one (99).
         let (x, y) = moved((157.0, 150.0));
         assert!((x - 7.0).abs() < 1e-9 && (y + 1.0).abs() < 1e-9, "{x} {y}");
@@ -1277,7 +1278,7 @@ mod tests {
 
     /// A Shift-constrained move snapped to the grid stays on its line: a level or upright one lands
     /// on the grid along its own axis only, and a diagonal one slides along the diagonal until an
-    /// edge or the center is on a gridline on the axis that needs the shorter way there.
+    /// edge is on a gridline on the axis that needs the shorter way there.
     #[test]
     fn a_shift_move_snapped_to_the_grid_stays_on_its_line() {
         let (d, id) = doc_with_rect();
@@ -1285,16 +1286,47 @@ mod tests {
         s.add(id);
         let p = paint();
         let cx = ToolContext { snap_to_grid: true, ..cx(&d, &s, &p) };
-        // Level by 13.04: the center (163.04) lands on the gridline 162, and the top stays at 100,
-        // between the gridlines 99 and 108.
+        // Level by 13.04: the right edge (213.04) lands on the gridline 216, and the top stays at
+        // 100, between the gridlines 99 and 108.
         let (m, _) = shift_moved(&cx, (163.0, 151.0));
-        assert!(moved_by(m, (12.0, 0.0)), "{m:?}");
+        assert!(moved_by(m, (16.0, 0.0)), "{m:?}");
         let (m, _) = shift_moved(&cx, (151.0, 163.0));
-        assert!(moved_by(m, (0.0, 12.0)), "{m:?}");
-        // Up and to the right by 13 on each axis: the center (163, 137) is 1 from the gridline 162
-        // and 2 from 135, so the move goes back along the diagonal by 1 on each axis.
+        assert!(moved_by(m, (0.0, 16.0)), "{m:?}");
+        // Up and to the right by 13 on each axis: the bottom edge (187) is 2 from the gridline 189,
+        // and the right edge (213) is 3 from 216, so the move goes back along the diagonal by 2 on
+        // each axis.
         let (m, _) = shift_moved(&cx, (163.0, 137.0));
-        assert!(moved_by(m, (12.0, -12.0)), "{m:?}");
+        assert!(moved_by(m, (11.0, -11.0)), "{m:?}");
+    }
+
+    /// #1816: on a 20 pt grid (gridlines every 100, 5 subdivisions), the 100 pt square at 100–200
+    /// sits on the grid with its center half a step off. A move by (8, 8) brings the left and top
+    /// edges back onto the gridlines at 100, so the square stays where it was; a move by (31, 29)
+    /// lands its edges on the nearest gridlines (140, 120). The center does not snap.
+    #[test]
+    fn a_move_keeps_an_object_on_the_grid_when_its_center_is_off_it() {
+        let (mut d, id) = doc_with_rect();
+        d.grid = vectorcraft_doc::GridPrefs { spacing: 100.0, subdivisions: 5 };
+        let mut s = Selection::default();
+        s.add(id);
+        let p = paint();
+        let cx = ToolContext { snap_to_grid: true, ..cx(&d, &s, &p) };
+        let moved = |to: (f64, f64)| {
+            let mut t = SelectionTool::default();
+            t.pointer(&cx, &ev(PointerKind::Down, 150.0, 150.0));
+            let a = t.pointer(&cx, &ev(PointerKind::Drag, to.0, to.1));
+            let Some(Action::Preview(_, v)) = a.get(1) else { panic!("{a:?}") };
+            Vec2::new(v["matrix"][4].as_f64().unwrap(), v["matrix"][5].as_f64().unwrap())
+        };
+        let m = moved((158.0, 158.0));
+        assert!(moved_by(m, (0.0, 0.0)), "{m:?}");
+        let m = moved((181.0, 179.0));
+        assert!(moved_by(m, (40.0, 20.0)), "{m:?}");
+        // With Shift, level and diagonal moves by 8 come back to where they started too.
+        let (m, _) = shift_moved(&cx, (158.0, 150.0));
+        assert!(moved_by(m, (0.0, 0.0)), "{m:?}");
+        let (m, _) = shift_moved(&cx, (158.0, 158.0));
+        assert!(moved_by(m, (0.0, 0.0)), "{m:?}");
     }
 
     /// A Shift-constrained move with Snap to Pixel on puts the top-left on a whole pixel on the
