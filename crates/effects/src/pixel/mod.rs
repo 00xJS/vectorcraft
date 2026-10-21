@@ -1,4 +1,4 @@
-//! Photoshop-style raster effects (Effect › Artistic › Cutout, Dry Brush, Film Grain, Neon Glow, Paint Daubs, Plastic Wrap and
+//! Photoshop-style raster effects (Effect › Artistic › Colored Pencil, Cutout, Dry Brush, Film Grain, Neon Glow, Paint Daubs, Plastic Wrap and
 //! Poster Edges, Rough Pastels, Smudge Stick, Sponge and Watercolor, Blur › Radial Blur and Smart Blur, Brush Strokes › Accented Edges, Angled Strokes,
 //! Crosshatch, Dark Strokes, Ink Outlines, Spatter, Sprayed Strokes and Sumi-e, Distort › Diffuse
 //! Glow, Glass and Ocean Ripple, Pixelate › Color Halftone, Crystallize, Mezzotint and Pointillize,
@@ -44,7 +44,8 @@ pub use sketch::{HALFTONE_TYPES, HalftonePattern};
 pub use texture::{GRAIN_TYPES, Grain, LIGHT_DIRECTIONS, Light, TEXTURES, TEXTURES_LOADED, Texture};
 
 /// The Photoshop-style effect ids (all raster effects, see [`crate::is_raster`]).
-pub const PIXEL_EFFECTS: [&str; 52] = [
+pub const PIXEL_EFFECTS: [&str; 53] = [
+    "artistic.coloredPencil",
     "artistic.cutout",
     "artistic.dryBrush",
     "artistic.filmGrain",
@@ -103,6 +104,9 @@ pub const PIXEL_EFFECTS: [&str; 52] = [
 /// are in document units.
 #[derive(Clone, Debug, PartialEq)]
 pub enum PixelFx {
+    /// Artistic › Colored Pencil: coloured strokes `width` (1..24) apart, as heavy as `pressure`
+    /// (0..15), on paper lifted by `paper` (0..50).
+    ColoredPencil { width: f64, pressure: f64, paper: f64 },
     /// Artistic › Cutout: flat pieces of colour in `levels` (2..8) steps per channel, their
     /// edges as simple as `simplicity` (0..10) and as faithful as `fidelity` (1..3) say.
     Cutout { levels: f64, simplicity: f64, fidelity: f64 },
@@ -312,6 +316,11 @@ pub(crate) fn parse(id: &str, p: &Value) -> Option<PixelFx> {
         levels.iter().find(|(name, _)| name.eq_ignore_ascii_case(q)).map_or(default, |(_, v)| *v)
     };
     Some(match id {
+        "artistic.coloredPencil" => PixelFx::ColoredPencil {
+            width: num(p, "pencilWidth", 5.0).clamp(1.0, 24.0),
+            pressure: num(p, "strokePressure", 5.0).clamp(0.0, 15.0),
+            paper: num(p, "paperBrightness", 25.0).clamp(0.0, 50.0),
+        },
         "artistic.cutout" => PixelFx::Cutout {
             levels: num(p, "levels", 4.0).round().clamp(2.0, 8.0),
             simplicity: num(p, "edgeSimplicity", 4.0).clamp(0.0, 10.0),
@@ -600,6 +609,7 @@ impl PixelFx {
             // These three keep the object's coverage.
             PixelFx::SmudgeStick { .. } | PixelFx::Sponge { .. } | PixelFx::Watercolor { .. } => 0.0,
             PixelFx::FilmGrain { .. }
+            | PixelFx::ColoredPencil { .. }
             | PixelFx::Cutout { .. }
             | PixelFx::DryBrush { .. }
             | PixelFx::NeonGlow { .. }
@@ -658,6 +668,7 @@ impl PixelFx {
             // The cells around the pixel's, and the cells around theirs.
             PixelFx::ColorHalftone { max_radius, .. } => Some(3.0 * std::f64::consts::SQRT_2 * max_radius),
             PixelFx::Crystallize { cell } => Some(1.5 * cell),
+            PixelFx::ColoredPencil { width, .. } => Some(artistic::colored_pencil_reach(width)),
             PixelFx::ChalkCharcoal { .. } => Some(sketch::CHALK_CHARCOAL_REACH),
             PixelFx::Chrome { smoothness, .. } => Some(sketch::chrome_reach(smoothness)),
             PixelFx::FilmGrain { .. }
@@ -699,6 +710,7 @@ impl PixelFx {
         let Some(px) = pixels(data, w, h) else { return };
         let to_px = |len: f64| len / space.px.max(1e-9);
         match *self {
+            PixelFx::ColoredPencil { width, pressure, paper } => artistic::colored_pencil(px, w, h, space, width, pressure, paper),
             PixelFx::Cutout { levels, simplicity, fidelity } => artistic::cutout(px, w, h, space, levels, simplicity, fidelity),
             PixelFx::DryBrush { size, detail, texture } => artistic::dry_brush(px, w, h, space, size, detail, texture),
             PixelFx::FilmGrain { grain, highlight, intensity } => artistic::film_grain(px, w, h, space, grain, highlight, intensity),
