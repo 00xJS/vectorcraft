@@ -4409,8 +4409,12 @@ between them by length; on a closed path the gaps run all the way round. The att
 object is turned to the path's direction there. An object rotated by other than a multiple of 90° is first turned to
 the nearest multiple. `rotate` tilts every object by that many degrees counter-clockwise. Without `path`, the command
 chooses the Objects on Path tool (`objectsOnPath`), whose click on a path sends `{path}`. As the path, the command
-refuses a guide, a compound path, type, a path without length and a path already in an Objects on Path group. As
-objects, it refuses graphs, layers and objects already in an Objects on Path group.
+refuses a guide, a compound path, type, a path without length, a path already in an Objects on Path group, a
+clipping path, and a path inside a compound path, blend, envelope, repeat or Intertwine group. As objects, it skips
+layers and refuses graphs, objects already in an Objects on Path group, clipping paths, and objects inside a blend,
+envelope, repeat or Intertwine group; a member of a compound path attaches as its whole compound path. The tool
+does not highlight a clipping path or a path inside a blend, envelope, repeat or Intertwine group, and a click on one
+attaches nothing.
 
 The group stays live: after every edit its objects go back on its path. Editing the path moves them, an object moved
 on its own goes back to its place, an object moved into the group (`layer.move` with `place: "inside"`) joins the end

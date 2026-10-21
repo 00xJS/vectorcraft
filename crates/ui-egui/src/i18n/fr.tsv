@@ -4115,6 +4115,10 @@ axis	Both	Les deux
 @msg	select a repeat	sélectionnez une répétition
 @msg	select an Intertwine group	sélectionnez un groupe entrelacé
 @msg	select an Objects on Path group	sélectionnez un groupe d’objets sur tracé
+@msg	a path inside a compound path, blend, envelope, repeat or Intertwine group can't take objects	un tracé à l’intérieur d’un tracé transparent, d’un dégradé de formes, d’une enveloppe, d’une répétition ou d’un groupe entrelacé ne peut pas recevoir d’objets
+@msg	a clipping path can't take objects	un tracé d’écrêtage ne peut pas recevoir d’objets
+@msg	objects inside a blend, envelope, repeat or Intertwine group can't be attached to a path	les objets à l’intérieur d’un dégradé de formes, d’une enveloppe, d’une répétition ou d’un groupe entrelacé ne peuvent pas être attachés à un tracé
+@msg	a clipping path can't be attached to a path	un tracé d’écrêtage ne peut pas être attaché à un tracé
 @msg	select a stroke with a variable width	sélectionnez un contour de largeur variable
 @msg	select a symbol instance	sélectionnez une instance de symbole
 @msg	select an Image Trace object	sélectionnez un objet de vectorisation de l’image

@@ -5116,6 +5116,10 @@ effect	Points	Σημεία
 @msg	nothing in data set {name} was applied: no object is bound to a variable it has a value for	δεν εφαρμόστηκε τίποτα από το σύνολο δεδομένων {name}: κανένα αντικείμενο δεν είναι συνδεδεμένο με μεταβλητή για την οποία έχει τιμή
 @msg	select an Intertwine group	επιλέξτε μια ομάδα διαπλοκής
 @msg	select an Objects on Path group	επιλέξτε μια ομάδα αντικειμένων σε διαδρομή
+@msg	a path inside a compound path, blend, envelope, repeat or Intertwine group can't take objects	μια διαδρομή μέσα σε σύνθετη διαδρομή, ανάμειξη, περίβλημα, επανάληψη ή ομάδα διαπλοκής δεν μπορεί να δεχτεί αντικείμενα
+@msg	a clipping path can't take objects	μια διαδρομή αποκοπής δεν μπορεί να δεχτεί αντικείμενα
+@msg	objects inside a blend, envelope, repeat or Intertwine group can't be attached to a path	τα αντικείμενα μέσα σε ανάμειξη, περίβλημα, επανάληψη ή ομάδα διαπλοκής δεν μπορούν να προσαρτηθούν σε διαδρομή
+@msg	a clipping path can't be attached to a path	μια διαδρομή αποκοπής δεν μπορεί να προσαρτηθεί σε διαδρομή
 @msg	span must be "object" or "selection", got {v}	το span πρέπει να είναι "object" ή "selection", δόθηκε {v}
 @msg	span: "selection" places a `gradient`, not a swatch	span: το "selection" τοποθετεί ένα `gradient`, όχι δείγμα χρώματος
 @msg	span: "selection" places a gradient: give `gradient`	span: το "selection" τοποθετεί ντεγκραντέ: δώστε `gradient`

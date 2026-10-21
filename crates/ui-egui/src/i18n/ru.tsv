@@ -4153,6 +4153,10 @@ axis	Both	Оба
 @msg	select a repeat	выделите повтор
 @msg	select an Intertwine group	выделите группу переплетения
 @msg	select an Objects on Path group	выделите группу объектов на контуре
+@msg	a path inside a compound path, blend, envelope, repeat or Intertwine group can't take objects	к контуру внутри составного контура, перехода, оболочки, повтора или группы переплетения нельзя прикрепить объекты
+@msg	a clipping path can't take objects	к контуру обрезки нельзя прикрепить объекты
+@msg	objects inside a blend, envelope, repeat or Intertwine group can't be attached to a path	объекты внутри перехода, оболочки, повтора или группы переплетения нельзя прикрепить к контуру
+@msg	a clipping path can't be attached to a path	контур обрезки нельзя прикрепить к контуру
 @msg	select a stroke with a variable width	выделите обводку с переменной шириной
 @msg	select a symbol instance	выделите экземпляр символа
 @msg	select an Image Trace object	выделите объект трассировки изображения

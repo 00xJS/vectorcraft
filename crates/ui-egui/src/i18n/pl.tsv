@@ -4243,6 +4243,10 @@ imageTrace	Outline	Kontur
 @msg	select a repeat	zaznacz powtórzenie
 @msg	select an Intertwine group	zaznacz grupę przeplotu
 @msg	select an Objects on Path group	zaznacz grupę obiektów na ścieżce
+@msg	a path inside a compound path, blend, envelope, repeat or Intertwine group can't take objects	do ścieżki wewnątrz ścieżki złożonej, przejścia, koperty, powtórzenia lub grupy przeplotu nie można dołączyć obiektów
+@msg	a clipping path can't take objects	do ścieżki przycinającej nie można dołączyć obiektów
+@msg	objects inside a blend, envelope, repeat or Intertwine group can't be attached to a path	obiektów wewnątrz przejścia, koperty, powtórzenia lub grupy przeplotu nie można dołączyć do ścieżki
+@msg	a clipping path can't be attached to a path	ścieżki przycinającej nie można dołączyć do ścieżki
 @msg	select a stroke with a variable width	zaznacz obrys o zmiennej szerokości
 @msg	select a symbol instance	zaznacz wystąpienie symbolu
 @msg	select an Image Trace object	zaznacz obiekt obrysu obrazu

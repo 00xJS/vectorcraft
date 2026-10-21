@@ -4807,6 +4807,10 @@ imageTrace	Outline	Körvonal
 @msg	select a repeat	jelölj ki egy ismétlést
 @msg	select an Intertwine group	jelölj ki egy összefonási csoportot
 @msg	select an Objects on Path group	jelölj ki egy Objektumok útvonalon csoportot
+@msg	a path inside a compound path, blend, envelope, repeat or Intertwine group can't take objects	összetett útvonalban, összemosásban, burkolóban, ismétlésben vagy összefonási csoportban lévő útvonalhoz nem csatolhatók objektumok
+@msg	a clipping path can't take objects	vágóútvonalhoz nem csatolhatók objektumok
+@msg	objects inside a blend, envelope, repeat or Intertwine group can't be attached to a path	összemosásban, burkolóban, ismétlésben vagy összefonási csoportban lévő objektumok nem csatolhatók útvonalhoz
+@msg	a clipping path can't be attached to a path	vágóútvonal nem csatolható útvonalhoz
 @msg	select a stroke with a variable width	jelölj ki egy változó szélességű körvonalat
 @msg	select a symbol instance	jelölj ki egy szimbólumpéldányt
 @msg	select an envelope	jelölj ki egy burkolót
