@@ -579,7 +579,10 @@ pub fn transform_section(app: &mut VectorcraftApp, ui: &mut Ui) {
         match &**live {
             vectorcraft_doc::LiveShape::Rectangle { .. } => corner_radius_row(app, ui, &n, "radius"),
             vectorcraft_doc::LiveShape::Polygon { .. } => super::transform::polygon_rows(app, ui, &n, live, "props-polygon"),
-            vectorcraft_doc::LiveShape::Ellipse { pie, .. } => super::transform::pie_rows(app, ui, *pie, "props-pie"),
+            vectorcraft_doc::LiveShape::Ellipse { pie, .. } => {
+                widgets::subheader(ui, tl!("Ellipse Properties:"));
+                super::transform::pie_rows(app, ui, *pie, "props-pie");
+            }
             _ => {}
         }
     }
