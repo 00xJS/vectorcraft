@@ -1461,6 +1461,7 @@ lighting	Light	Světlo
 	{count} more rules: Export writes every one.	Další pravidla ({count}): Export zapíše všechna.
 	{count} unnamed objects left out: name them, or turn on Unnamed Objects in the panel menu.	Vynecháno nepojmenovaných objektů: {count}. Pojmenujte je, nebo v nabídce panelu zapněte Nepojmenované objekty.
 	All Categories	Všechny kategorie
+	Repeat Objects	Objekty opakování
 	Save…	Uložit…
 	Selection Only	Pouze výběr
 	{title} (selection)	{title} (výběr)

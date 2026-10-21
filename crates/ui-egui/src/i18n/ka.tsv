@@ -1293,6 +1293,7 @@ lighting	Light	სინათლე
 	{count} more rules: Export writes every one.	კიდევ წესები: {count}. ექსპორტი ყველას ჩაწერს.
 	{count} unnamed objects left out: name them, or turn on Unnamed Objects in the panel menu.	გამოტოვებულია უსახელო ობიექტები: {count}. დაარქვით მათ სახელი ან პანელის მენიუში ჩართეთ „უსახელო ობიექტები“.
 	All Categories	ყველა კატეგორია
+	Repeat Objects	გამეორების ობიექტები
 	Save…	შენახვა…
 	Selection Only	მხოლოდ მონიშნული
 	{title} (selection)	{title} (მონიშნული)

@@ -3511,6 +3511,7 @@ file-filter	Templates	テンプレート
 	Relinked {n} image(s)	{n} 個の画像を再リンクしました
 	Relinked {n} image(s); not in that folder: {}	{n} 個の画像を再リンクしました。そのフォルダーに無いもの：{}
 	Relinked {} image(s)	{} 個の画像を再リンクしました
+	Repeat Objects	リピートオブジェクト
 	Repeat Options	リピートオプション
 	Reset with Mesh	メッシュでリセット
 	Reset with Warp	ワープでリセット

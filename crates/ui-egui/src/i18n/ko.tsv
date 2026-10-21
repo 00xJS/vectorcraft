@@ -3504,6 +3504,7 @@ file-filter	Templates	템플릿
 	Relinked {n} image(s)	이미지 {n}개를 다시 연결했습니다
 	Relinked {n} image(s); not in that folder: {}	이미지 {n}개를 다시 연결했습니다. 해당 폴더에 없음: {}
 	Relinked {} image(s)	이미지 {}개를 다시 연결했습니다
+	Repeat Objects	반복 개체
 	Repeat Options	반복 옵션
 	Reset with Mesh	메시로 재설정
 	Reset with Warp	왜곡으로 재설정
