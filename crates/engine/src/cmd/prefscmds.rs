@@ -49,7 +49,7 @@ pub struct PrefSpec {
     pub kind: PrefKind,
 }
 
-/// Categories in Illustrator's order (Plug-ins & Scratch Disks is "Performance & Storage" here).
+/// Categories in Illustrator's order (Plug-ins & Scratch Disks is "Storage" here).
 pub const PREF_CATEGORIES: &[&str] = &[
     "General",
     "Selection & Anchor Display",
@@ -59,7 +59,7 @@ pub const PREF_CATEGORIES: &[&str] = &[
     "Smart Guides",
     "Slices",
     "Hyphenation",
-    "Performance & Storage",
+    "Storage",
     "User Interface",
     "Performance",
     "File Handling",
@@ -256,10 +256,10 @@ pub const PREF_SPECS: &[PrefSpec] = &[
         ])
     ),
     p!("hyphenationExceptions", "Hyphenation", "", "Exceptions (comma separated)", text),
-    // Performance & Storage
-    p!("pluginsFolder", "Performance & Storage", "Plug-ins", "Additional Plug-ins Folder", text),
-    p!("scratchPrimary", "Performance & Storage", "Scratch Disks", "Primary", text),
-    p!("scratchSecondary", "Performance & Storage", "Scratch Disks", "Secondary", text),
+    // Storage
+    p!("pluginsFolder", "Storage", "Plug-ins", "Additional Plug-ins Folder", text),
+    p!("scratchPrimary", "Storage", "Scratch Disks", "Primary", text),
+    p!("scratchSecondary", "Storage", "Scratch Disks", "Secondary", text),
     // User Interface
     p!(
         "uiBrightness",
