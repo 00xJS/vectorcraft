@@ -4698,6 +4698,8 @@ lighting	Light	Luce
 	Palette Knife	Spatola
 	Poster Edges…	Bordi poster…
 	Poster Edges	Bordi poster
+	Underpainting…	Sottopittura…
+	Underpainting	Sottopittura
 	Levels	Livelli
 	Edge Simplicity	Semplicità dei bordi
 	Edge Fidelity	Fedeltà dei bordi
@@ -4897,6 +4899,7 @@ lighting	Light	Luce
 	Watercolor…	Acquerello…
 	Watercolor	Acquerello
 	Brush Size	Dimensione pennello
+	Texture Coverage	Copertura texture
 	Definition	Definizione
 	Brush Detail	Dettaglio pennello
 	Shadow Intensity	Intensità ombre

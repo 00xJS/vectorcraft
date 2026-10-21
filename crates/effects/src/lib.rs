@@ -421,6 +421,21 @@ pub fn effect_catalog() -> Vec<EffectInfo> {
             json!({"brushSize": 2.0, "definition": 12.0, "smoothness": 5.0}),
         ),
         r(
+            "artistic.underpainting",
+            "Underpainting…",
+            ARTISTIC,
+            "{brushSize: 0..40 (6; wider, softer strokes), textureCoverage: 0..40 (16; more of the relief texture on the strokes), texture: \"brick\"|\"burlap\"|\"canvas\"|\"sandstone\" (\"canvas\"; surfaces made in code), scaling: % 50..200 (100), relief: 0..50 (4), lightDirection: \"bottom\"|\"bottomLeft\"|\"left\"|\"topLeft\"|\"top\"|\"topRight\"|\"right\"|\"bottomRight\" (\"top\"), invert: bool (false; turns the surface's heights over)} paints the object with broad strokes over a textured ground, keeping its coverage. Slider ranges follow the documented controls; numeric defaults are chosen for VectorCraft and are not verified against proprietary defaults. Original visual approximation.",
+            json!({
+                "brushSize": 6.0,
+                "textureCoverage": 16.0,
+                "texture": "canvas",
+                "scaling": 100.0,
+                "relief": 4.0,
+                "lightDirection": "top",
+                "invert": false
+            }),
+        ),
+        r(
             "artistic.watercolor",
             "Watercolor…",
             ARTISTIC,

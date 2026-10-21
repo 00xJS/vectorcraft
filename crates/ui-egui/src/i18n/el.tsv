@@ -2278,6 +2278,8 @@ lighting	Light	Φως
 	Palette Knife	Μαχαίρι παλέτας
 	Poster Edges…	Άκρες αφίσας…
 	Poster Edges	Άκρες αφίσας
+	Underpainting…	Υποζωγραφία…
+	Underpainting	Υποζωγραφία
 	Levels	Επίπεδα
 	Edge Simplicity	Απλότητα άκρων
 	Edge Fidelity	Πιστότητα άκρων
@@ -5235,6 +5237,7 @@ effect	Points	Σημεία
 	Watercolor…	Υδατογραφία…
 	Watercolor	Υδατογραφία
 	Brush Size	Μέγεθος πινέλου
+	Texture Coverage	Κάλυψη υφής
 	Definition	Ευκρίνεια
 	Brush Detail	Λεπτομέρεια πινέλου
 	Shadow Intensity	Ένταση σκιών

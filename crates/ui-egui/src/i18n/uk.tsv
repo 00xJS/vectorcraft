@@ -4678,6 +4678,8 @@ lighting	Light	Світло
 	Palette Knife	Ніж палітри
 	Poster Edges…	Плакатні краї…
 	Poster Edges	Плакатні краї
+	Underpainting…	Підмалювання…
+	Underpainting	Підмалювання
 	Levels	Рівні
 	Edge Simplicity	Простота країв
 	Edge Fidelity	Точність країв
@@ -4877,6 +4879,7 @@ lighting	Light	Світло
 	Watercolor…	Акварель…
 	Watercolor	Акварель
 	Brush Size	Розмір пензля
+	Texture Coverage	Покриття текстурою
 	Definition	Чіткість
 	Brush Detail	Деталізація пензля
 	Shadow Intensity	Інтенсивність тіней

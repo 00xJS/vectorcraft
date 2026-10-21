@@ -4569,6 +4569,8 @@ lighting	Light	Светлина
 	Palette Knife	Нож за палитра
 	Poster Edges…	Плакатни ръбове…
 	Poster Edges	Плакатни ръбове
+	Underpainting…	Подбоя…
+	Underpainting	Подбоя
 	Levels	Нива
 	Edge Simplicity	Простота на ръбовете
 	Edge Fidelity	Точност на ръбовете
@@ -5252,6 +5254,7 @@ theme	Appearance	Външен вид
 	Watercolor…	Акварел…
 	Watercolor	Акварел
 	Brush Size	Размер на четката
+	Texture Coverage	Покритие на текстура
 	Definition	Дефиниция
 	Brush Detail	Детайл на четката
 	Shadow Intensity	Интензивност на сенките

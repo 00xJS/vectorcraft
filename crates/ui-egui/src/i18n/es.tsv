@@ -4656,6 +4656,8 @@ lighting	Light	Luz
 	Palette Knife	Espátula
 	Poster Edges…	Bordes de póster…
 	Poster Edges	Bordes de póster
+	Underpainting…	Subpintura…
+	Underpainting	Subpintura
 	Levels	Niveles
 	Edge Simplicity	Simplicidad de bordes
 	Edge Fidelity	Fidelidad de bordes
@@ -5225,6 +5227,7 @@ mark-style	Japanese	Japonesas
 	Watercolor…	Acuarela…
 	Watercolor	Acuarela
 	Brush Size	Tamaño del pincel
+	Texture Coverage	Cobertura de textura
 	Definition	Definición
 	Brush Detail	Detalle del pincel
 	Shadow Intensity	Intensidad de sombras

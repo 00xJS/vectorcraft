@@ -44,7 +44,7 @@ pub use sketch::{HALFTONE_TYPES, HalftonePattern};
 pub use texture::{GRAIN_TYPES, Grain, LIGHT_DIRECTIONS, Light, TEXTURES, TEXTURES_LOADED, Texture};
 
 /// The Photoshop-style effect ids (all raster effects, see [`crate::is_raster`]).
-pub const PIXEL_EFFECTS: [&str; 50] = [
+pub const PIXEL_EFFECTS: [&str; 51] = [
     "artistic.cutout",
     "artistic.dryBrush",
     "artistic.filmGrain",
@@ -55,6 +55,7 @@ pub const PIXEL_EFFECTS: [&str; 50] = [
     "artistic.posterEdges",
     "artistic.smudgeStick",
     "artistic.sponge",
+    "artistic.underpainting",
     "artistic.watercolor",
     "blur.radial",
     "blur.smart",
@@ -138,6 +139,10 @@ pub enum PixelFx {
     /// Artistic › Poster Edges: colours posterized to `posterization` + 2 levels (0..6) with black
     /// lines on the edges, as thick as `thickness` (0..10) and as dark as `intensity` (0..10).
     PosterEdges { thickness: f64, intensity: f64, posterization: f64 },
+    /// Artistic › Underpainting: colours softened as widely as `brush_size` (0..40), then a
+    /// `texture` surface (`scaling`, `relief`, `light`, `invert`) blended in as strongly as
+    /// `texture_coverage` (0..40) says.
+    Underpainting { brush_size: f64, texture_coverage: f64, texture: Texture, scaling: f64, relief: f64, light: Light, invert: bool },
     /// Blur › Radial Blur around the object's centre: along arcs (spin, an arc of `amount`°) or
     /// along rays (zoom, the content scaled by up to about ±`amount`/2 %), averaging 2^`passes` samples.
     RadialBlur { amount: f64, zoom: bool, passes: u32 },
@@ -331,6 +336,15 @@ pub(crate) fn parse(id: &str, p: &Value) -> Option<PixelFx> {
             grain: num(p, "grain", 4.0).clamp(0.0, 20.0),
             highlight: num(p, "highlightArea", 0.0).clamp(0.0, 20.0),
             intensity: num(p, "intensity", 10.0).clamp(0.0, 10.0),
+        },
+        "artistic.underpainting" => PixelFx::Underpainting {
+            brush_size: num(p, "brushSize", 6.0).clamp(0.0, 40.0),
+            texture_coverage: num(p, "textureCoverage", 16.0).clamp(0.0, 40.0),
+            texture: Texture::parse(text(p, "texture", "canvas")),
+            scaling: num(p, "scaling", 100.0).clamp(50.0, 200.0) / 100.0,
+            relief: num(p, "relief", 4.0).clamp(0.0, 50.0),
+            light: Light::parse(text(p, "lightDirection", "top")),
+            invert: flag(p, "invert", false),
         },
         "artistic.smudgeStick" => PixelFx::SmudgeStick {
             stroke: num(p, "strokeLength", 2.0).clamp(0.0, 10.0),
@@ -576,6 +590,7 @@ impl PixelFx {
             | PixelFx::NeonGlow { .. }
             | PixelFx::PlasticWrap { .. }
             | PixelFx::PosterEdges { .. }
+            | PixelFx::Underpainting { .. }
             | PixelFx::ColorHalftone { .. }
             | PixelFx::Mezzotint { .. }
             | PixelFx::Craquelure { .. }
@@ -647,6 +662,7 @@ impl PixelFx {
             PixelFx::PlasticWrap { smoothness, .. } => Some(artistic::plastic_reach(smoothness)),
             // The edges' lines, spread round them.
             PixelFx::PosterEdges { thickness, .. } => Some(3.0 * (0.3 + 0.25 * thickness) + 1.0),
+            PixelFx::Underpainting { brush_size, .. } => Some(3.0 * (0.1 * brush_size.max(0.25)) + 1.0),
             // The dots' points, and the softened colour around them.
             PixelFx::Pointillize { cell } => Some(2.5 * cell),
             // The softened tones around the pixel.
@@ -681,6 +697,9 @@ impl PixelFx {
             }
             PixelFx::PosterEdges { thickness, intensity, posterization } => {
                 artistic::poster_edges(px, w, h, space, thickness, intensity, posterization)
+            }
+            PixelFx::Underpainting { brush_size, texture_coverage, ref texture, scaling, relief, light, invert } => {
+                artistic::underpainting(px, w, h, space, brush_size, texture_coverage, texture, scaling, relief, light, invert)
             }
             PixelFx::RadialBlur { amount, zoom, passes } => blur::radial(px, w, h, space, amount, zoom, passes),
             PixelFx::SmartBlur { radius, threshold, samples, mode: SmartBlurMode::Normal } => {

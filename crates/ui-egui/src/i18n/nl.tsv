@@ -5205,6 +5205,8 @@ swatch	Bright Violet	Felviolet
 	Paint Daubs	Verfstipjes
 	Palette Knife	Paletmes
 	Poster Edges	Posterranden
+	Underpainting…	Onderlaag…
+	Underpainting	Onderlaag
 	Apply Data Set	Gegevensset toepassen
 	Cancel Pattern Editing	Patroon bewerken annuleren
 	Copy Appearance	Uiterlijk kopiëren
@@ -5339,6 +5341,7 @@ swatch	Bright Violet	Felviolet
 	Watercolor…	Aquarel…
 	Watercolor	Aquarel
 	Brush Size	Penseelgrootte
+	Texture Coverage	Textuurdekking
 	Definition	Definitie
 	Brush Detail	Penseeldetail
 	Shadow Intensity	Schaduwintensiteit

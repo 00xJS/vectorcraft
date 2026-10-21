@@ -4901,6 +4901,8 @@ imageTrace	Outline	Kontur
 	Palette Knife	Szpachel
 	Poster Edges…	Krawędzie plakatu…
 	Poster Edges	Krawędzie plakatu
+	Underpainting…	Podmalówka…
+	Underpainting	Podmalówka
 	Levels	Poziomy
 	Edge Simplicity	Prostota krawędzi
 	Edge Fidelity	Wierność krawędzi
@@ -5135,6 +5137,7 @@ mark-style	Japanese	Japońskie
 	Watercolor…	Akwarela…
 	Watercolor	Akwarela
 	Brush Size	Rozmiar pędzla
+	Texture Coverage	Pokrycie teksturą
 	Definition	Wyrazistość
 	Brush Detail	Szczegółowość pędzla
 	Shadow Intensity	Intensywność cieni
