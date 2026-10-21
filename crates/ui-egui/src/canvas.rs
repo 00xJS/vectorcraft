@@ -1884,8 +1884,7 @@ fn too_many_anchors<'a>(nodes: impl IntoIterator<Item = &'a Node>) -> bool {
         if n.clips() {
             return n.children().and_then(|children| children.first()).is_some_and(|clip| over(clip, left));
         }
-        !matches!(n.kind, NodeKind::Envelope { .. })
-            && n.children().into_iter().flatten().skip(usize::from(n.extras().shaper.is_some())).any(|c| over(c, left))
+        !matches!(n.kind, NodeKind::Envelope { .. }) && n.editing_children().iter().any(|c| over(c, left))
     }
     let mut left = OVERLAY_MAX_ANCHORS;
     nodes.into_iter().any(|n| over(n, &mut left))
@@ -1929,7 +1928,7 @@ fn walk_drawn<'a>(n: &'a Node, f: &mut impl FnMut(&'a Node)) {
         }
         return;
     }
-    for c in n.children().into_iter().flatten().skip(usize::from(n.extras().shaper.is_some())) {
+    for c in n.editing_children().iter() {
         walk_drawn(c, f);
     }
 }
@@ -8244,5 +8243,41 @@ mod tests {
             let want = if k == 0 { before - vec2(30.0, 0.0) } else { before - vec2(0.0, 30.0) };
             assert!((after - want).length() < 0.5, "bar {k}: {before:?} -> {after:?}, want {want:?}");
         }
+    }
+    #[test]
+    fn live_trace_selection_highlight_excludes_the_retained_source_rectangle() {
+        use std::sync::Arc;
+        use vectorcraft_doc::{Appearance, ImageObject, NodeId, TraceView};
+        let mut source = Node::new(
+            NodeId(2),
+            NodeKind::Image(Box::new(ImageObject {
+                key: "synthetic".into(),
+                width: 200,
+                height: 200,
+                xf: Affine::IDENTITY,
+                link: None,
+                placement: Default::default(),
+            })),
+        );
+        source.visible = false;
+        let art =
+            Node::path(NodeId(3), vectorcraft_geom::shapes::rectangle(vectorcraft_geom::Rect::new(20.0, 30.0, 80.0, 90.0)), Appearance::default());
+        let mut group = Node::group(NodeId(1), vec![Arc::new(source), Arc::new(art)]);
+        let doc = vectorcraft_doc::Document::new(300.0, 300.0);
+        let symbols = doc.symbol_boxes();
+        for view in TraceView::ALL {
+            group.extras_mut().trace = Some(Box::new(json!({"view":view.id()})));
+            let mut visited = vec![];
+            walk_drawn(&group, &mut |n| visited.push(n.id));
+            assert_eq!(visited.contains(&NodeId(2)), view.shows_source());
+            let want = if view.shows_source() {
+                vectorcraft_geom::Rect::new(0.0, 0.0, 200.0, 200.0)
+            } else {
+                vectorcraft_geom::Rect::new(20.0, 30.0, 80.0, 90.0)
+            };
+            assert_eq!(node_outline(&group, &symbols).bounding_box(), want);
+        }
+        group.extras_mut().trace = None;
+        assert_eq!(node_outline(&group, &symbols).bounding_box(), vectorcraft_geom::Rect::new(0.0, 0.0, 200.0, 200.0));
     }
 }

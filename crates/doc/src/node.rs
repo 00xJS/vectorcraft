@@ -1159,6 +1159,17 @@ impl Node {
     pub fn geometric_bounds_with(&self, symbols: &SymbolBoxes) -> Option<Rect> {
         self.geometric(Some(symbols))
     }
+    /// Children that contribute to a container's editing bounds and selection highlights. A live trace retains a
+    /// hidden bitmap for re-tracing/release; only source-image views measure that bitmap.
+    pub fn editing_children(&self) -> &[Arc<Node>] {
+        let children = self.children().map(Vec::as_slice).unwrap_or_default();
+        let trace_source = self.extras().trace.is_some()
+            && !self.trace_view().shows_source()
+            && children.first().is_some_and(|n| !n.visible && matches!(n.kind, NodeKind::Image(_)));
+        let skip = usize::from(self.extras().shaper.is_some() || trace_source);
+        children.get(skip..).unwrap_or_default()
+    }
+
     /// The box of [`Node::geometric_bounds`], or of [`Node::geometric_bounds_with`] when `symbols`
     /// is given.
     pub(crate) fn geometric(&self, symbols: Option<&SymbolBoxes>) -> Option<Rect> {
@@ -1168,9 +1179,9 @@ impl Node {
             NodeKind::Group { children, clip: true } | NodeKind::Layer { children, clip: true, .. } => {
                 children.first().and_then(|c| c.geometric(symbols))
             }
-            NodeKind::Layer { children, .. } | NodeKind::Group { children, .. } | NodeKind::Compound { children, .. } => children
+            NodeKind::Layer { .. } | NodeKind::Group { .. } | NodeKind::Compound { .. } => self
+                .editing_children()
                 .iter()
-                .skip(usize::from(self.extras().shaper.is_some()))
                 .filter(|c| c.visible || !matches!(self.kind, NodeKind::Layer { .. }))
                 .fold(None, |acc, c| vectorcraft_geom::union_opt(acc, c.geometric(symbols))),
             NodeKind::Text(t) => self.projected(t.bounds()),
@@ -1223,14 +1234,10 @@ impl Node {
                 }
             }
             NodeKind::Intertwine { children } => children.iter().fold(None, |acc, c| vectorcraft_geom::union_opt(acc, c.visual(symbols))),
-            NodeKind::Layer { children, .. } | NodeKind::Group { children, .. } => {
+            NodeKind::Layer { .. } | NodeKind::Group { .. } => {
                 // The container's own strokes paint around its members.
                 let o = self.appearance.outset();
-                children
-                    .iter()
-                    .skip(usize::from(self.extras().shaper.is_some()))
-                    .fold(None, |acc, c| vectorcraft_geom::union_opt(acc, c.visual(symbols)))
-                    .map(|b| b.inflate(o, o))
+                self.editing_children().iter().fold(None, |acc, c| vectorcraft_geom::union_opt(acc, c.visual(symbols))).map(|b| b.inflate(o, o))
             }
             NodeKind::Blend { children, spec } => {
                 let b = children.iter().fold(None, |acc, c| vectorcraft_geom::union_opt(acc, c.visual(symbols)));
