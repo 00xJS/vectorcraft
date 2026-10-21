@@ -503,10 +503,18 @@ fn hit_leaf(n: &Node, p: Point, opt: HitOptions, symbols: &SymbolBoxes) -> Optio
             n.geometric_bounds().filter(|b| b.inflate(opt.tol, opt.tol).contains(p))?;
             on_type_path(n, t, p, opt.tol).then_some(HitKind::Outline)
         }
-        // An image is hit within its frame, and where its own fills and strokes paint
-        // ([`image_paint`]) except in outline mode.
-        NodeKind::Image(_) => {
-            if n.geometric_bounds_with(symbols).is_some_and(|b| b.inflate(opt.tol, opt.tol).contains(p)) {
+        // An image is hit within its frame (on the frame's edge only with Selection by Path Only,
+        // #3291), and where its own fills and strokes paint ([`image_paint`]) except in outline
+        // mode.
+        NodeKind::Image(im) => {
+            if opt.path_only {
+                use vectorcraft_geom::kurbo::Shape;
+                let mut frame = Rect::new(0.0, 0.0, f64::from(im.width), f64::from(im.height)).to_path(0.1);
+                frame.apply_affine(im.xf);
+                if stroke_contains(&frame, 0.0, opt.tol, p) {
+                    return Some(HitKind::Outline);
+                }
+            } else if n.geometric_bounds_with(symbols).is_some_and(|b| b.inflate(opt.tol, opt.tol).contains(p)) {
                 return Some(HitKind::Bounds);
             }
             if opt.outline {
@@ -1132,6 +1140,28 @@ mod tests {
             assert!(hit_test(&d, inside, path_only).is_none(), "path only: the fill of {id:?} doesn't hit");
             assert_eq!(hit_test(&d, edge, path_only).map(|h| h.leaf), Some(id), "path only: the outline does");
         }
+    }
+
+    /// #3291: with Object Selection by Path Only, a placed image is picked on its frame's edge, so
+    /// a path under it can be picked through it.
+    #[test]
+    fn path_only_picks_paths_through_images() {
+        let mut d = Document::new(200.0, 200.0);
+        let l = d.layers[0].id;
+        let (path, image) = (d.alloc_id(), d.alloc_id());
+        d.insert(Some(l), 0, Node::path(path, shapes::rectangle(Rect::new(20.0, 20.0, 60.0, 60.0)), Appearance::default_art())).unwrap();
+        // 100×50 pixels, scaled to 100×100 and moved to (10, 10): over the whole path.
+        let xf = vectorcraft_geom::Affine::translate((10.0, 10.0)) * vectorcraft_geom::Affine::scale_non_uniform(1.0, 2.0);
+        let im = crate::ImageObject { key: "k".into(), width: 100, height: 50, xf, link: None, placement: Default::default() };
+        d.insert(Some(l), 1, Node::new(image, NodeKind::Image(Box::new(im)))).unwrap();
+        let path_only = HitOptions { path_only: true, ..Default::default() };
+        let hit = |p: Point, opt| hit_test(&d, p, opt).map(|h| h.leaf);
+        let (path_edge, inside, image_edge) = (Point::new(20.5, 40.0), Point::new(80.0, 80.0), Point::new(80.0, 109.5));
+        assert_eq!(hit(path_edge, HitOptions::default()), Some(image), "the image covers the path");
+        assert_eq!(hit(inside, HitOptions::default()), Some(image));
+        assert_eq!(hit(path_edge, path_only), Some(path), "path only: the path through the image");
+        assert_eq!(hit(inside, path_only), None, "path only: not inside the image");
+        assert_eq!(hit(image_edge, path_only), Some(image), "path only: the image's frame");
     }
 
     /// Type Object Selection by Path Only: point type is picked on its baseline, area type on its
