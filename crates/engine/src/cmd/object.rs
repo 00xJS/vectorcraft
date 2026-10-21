@@ -1087,6 +1087,8 @@ fn isolate(s: &mut Session, p: &Value) -> Result<Value> {
     }
     st.isolation = Some(isolation);
     st.selection.clear();
+    // New art on a locked artboard, now deselected, is protected.
+    st.sync_new_art();
     st.revision += 1;
     ok()
 }
@@ -1102,6 +1104,8 @@ fn exit_isolation(s: &mut Session, _: &Value) -> Result<Value> {
         if guides_locked {
             crate::deselect_guides(&st.doc, &mut st.selection);
         }
+        // The art on a locked artboard can't be selected.
+        st.protect_locked_artboards(&[], &Default::default(), None);
     }
     st.revision += 1;
     ok()

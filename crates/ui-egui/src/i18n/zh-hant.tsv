@@ -1666,6 +1666,7 @@ file-filter	Templates	範本
 @msg	no saved selection recalled	未叫出任何已儲存的選取範圍
 @msg	no saved selections	沒有已儲存的選取範圍
 @msg	no such artboard	沒有這個工作區域
+@msg	the artboard is locked	工作區域已鎖定
 @msg	cannot split an open path at its end point	無法在開放路徑的端點處分割路徑
 @msg	closing needs three anchors	封閉需要三個錨點
 @msg	empty brush stroke	筆刷筆畫是空的

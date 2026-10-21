@@ -134,7 +134,7 @@ pub fn specs() -> Vec<CommandSpec> {
             "Delete Artboard",
             ["Window", "Artboards"],
             None,
-            "{index | indices: [index…]} delete artboards (with their guides) in one step; one is always left",
+            "{index | indices: [index…]} delete artboards (with their guides) in one step; one is always left, and a locked one is an error",
             has_doc,
             artboard_delete
         ),
@@ -143,7 +143,7 @@ pub fn specs() -> Vec<CommandSpec> {
             "Artboard Options…",
             ["Window", "Artboards"],
             None,
-            "{index | artboards: [{index, name?, color?, x?, y?, width?, height?}…] (several artboards in one undo step, each with its own fields; the art inside each before any of them changes goes with it, and an object inside several goes with the first listed that moves or scales its art), name?, color?: color (\"#rrggbb\", {c,m,y,k}, … as the paint commands take: the background color the canvas draws the artboard's paper in, multiplied with the Simulate Colored Paper color while that is on; exports and print leave it out) | null (no background color), x?, y?, width?, height?, moveArt?: bool (default false; a position-only change moves the contained art with its artboard), scaleArt?: bool (Scale Artwork with Artboard: resized, the artboard takes the art fully inside it (locked and hidden art only with lockedAndHidden?: bool, default prefs moveLockedWithArtboard) and its guides from its old rectangle onto the new one, each side by its own ratio; strokes/corners/patterns as object.scale), strokes?: bool, corners?: bool, patterns?: bool (the three as object.scale, for art that moves or scales with the artboard), lockedAndHidden?: bool (locked and hidden art moves along; default: the preference; recorded in the journal so a replay matches)} → null, or with scaleArt {scaled: the art scaled}",
+            "{index | artboards: [{index, name?, color?, locked?, x?, y?, width?, height?}…] (several artboards in one undo step, each with its own fields; the art inside each before any of them changes goes with it, and an object inside several goes with the first listed that moves or scales its art), name?, color?: color (\"#rrggbb\", {c,m,y,k}, … as the paint commands take: the background color the canvas draws the artboard's paper in, multiplied with the Simulate Colored Paper color while that is on; exports and print leave it out) | null (no background color), locked?: bool (the Artboards panel's lock column: a locked artboard keeps its rectangle (a new x, y, width or height is an error unless locked is false), can't be moved, deleted or cut, and Rearrange and Fit to Artwork Bounds leave it as it is; the art on it (each object of a layer or sublayer whose bounds with strokes overlap it, a group as one object) acts as locked art until it is unlocked: clicks, marquees, select.set, select.all and the tools pass over it (art drawn or pasted onto it stays selected and editable until a selection leaves it out or it is moved off the locked artboards), it is deselected, and when another artboard moves or scales it stays unless lockedAndHidden), x?, y?, width?, height?, moveArt?: bool (default false; a position-only change moves the contained art with its artboard), scaleArt?: bool (Scale Artwork with Artboard: resized, the artboard takes the art fully inside it (locked and hidden art only with lockedAndHidden?: bool, default prefs moveLockedWithArtboard) and its guides from its old rectangle onto the new one, each side by its own ratio; strokes/corners/patterns as object.scale), strokes?: bool, corners?: bool, patterns?: bool (the three as object.scale, for art that moves or scales with the artboard), lockedAndHidden?: bool (locked and hidden art moves along; default: the preference; recorded in the journal so a replay matches)} → null, or with scaleArt {scaled: the art scaled}",
             has_doc,
             artboard_set
         ),
@@ -152,7 +152,7 @@ pub fn specs() -> Vec<CommandSpec> {
             "Fit to Artwork Bounds",
             ["Object", "Artboards"],
             None,
-            "{index?: n | indices?: [n…] (0-based; the app passes the selected artboards: the Artboard tool's, else the active one; default: the first)} each artboard fits the art on it that shows (with its strokes and effects; hidden objects and layers, guides and template layers don't count), in one undo step: an object counts for every artboard its bounds overlap, and a group or clipping layer counts as one object; an artboard with no art stays as it is, and the command fails when no artboard it names has art",
+            "{index?: n | indices?: [n…] (0-based; the app passes the selected artboards: the Artboard tool's, else the active one; default: the first)} each artboard fits the art on it that shows (with its strokes and effects; hidden objects and layers, guides and template layers don't count), in one undo step: an object counts for every artboard its bounds overlap, and a group or clipping layer counts as one object; an artboard with no art, or a locked one, stays as it is, and the command fails when every artboard it names is locked or none has art",
             has_doc,
             artboard_fit_art
         ),
@@ -161,7 +161,7 @@ pub fn specs() -> Vec<CommandSpec> {
             "Fit to Selected Art",
             ["Object", "Artboards"],
             None,
-            "{index?: n (0-based; the app passes the active artboard; default: the first)} the artboard fits the selected art (with its strokes)",
+            "{index?: n (0-based; the app passes the active artboard; default: the first)} the artboard fits the selected art (with its strokes); a locked artboard stays as it is (an error when the fit would change it)",
             has_selection,
             artboard_fit_sel
         ),
@@ -823,7 +823,7 @@ fn artboard_new(s: &mut Session, p: &Value) -> Result<Value> {
         let id = d.next_artboard_id();
         let given = str_param(p, "name").map(str::trim).filter(|n| !n.is_empty());
         let name = given.map_or_else(|| format!("Artboard {}", d.artboards.len() + 1), str::to_string);
-        d.artboards.push(Artboard { id, name, rect: r, show_center_mark: false, show_cross_hairs: false, color });
+        d.artboards.push(Artboard { id, name, rect: r, locked: false, show_center_mark: false, show_cross_hairs: false, color });
         Ok(d.artboards.len() - 1)
     })?;
     Ok(json!({ "index": idx }))
@@ -831,6 +831,7 @@ fn artboard_new(s: &mut Session, p: &Value) -> Result<Value> {
 
 fn artboard_delete(s: &mut Session, p: &Value) -> Result<Value> {
     let indices = super::panelcmds::artboard_indices(&s.doc()?.doc, p, "artboard.delete")?;
+    super::panelcmds::refuse_locked(&s.doc()?.doc, &indices)?;
     s.edit("Delete Artboard", |d, sel| {
         if indices.len() >= d.artboards.len() {
             return Err(EngineError::Other("a document needs at least one artboard".into()));
@@ -845,14 +846,15 @@ fn artboard_delete(s: &mut Session, p: &Value) -> Result<Value> {
     ok()
 }
 
-/// One artboard's part of `artboard.setProps`: its index, new rectangle and name, how far it moved,
-/// whether it was resized, the map its art and guides take when they go with it (`fit` when it
-/// scales them), and that art.
+/// One artboard's part of `artboard.setProps`: its index, new rectangle, name, color and lock, how
+/// far it moved, whether it was resized, the map its art and guides take when they go with it (`fit` when
+/// it scales them), and that art.
 struct ArtboardEdit<'a> {
     index: usize,
     now: Rect,
     name: Option<&'a str>,
     color: Option<Option<vectorcraft_color::Color>>,
+    lock: Option<bool>,
     delta: vectorcraft_geom::Vec2,
     resized: bool,
     fit: Option<Affine>,
@@ -887,6 +889,16 @@ fn artboard_set(s: &mut Session, p: &Value) -> Result<Value> {
         // The background color: a color sets it, null clears it, absent leaves it as it is.
         let color = artboard_color(q, "artboard.setProps")?;
         let now = rect_from(q, was);
+        let lock = q.get("locked").and_then(Value::as_bool);
+        // A locked artboard keeps its rectangle unless this unlocks it; its name can change.
+        let reshaped = [now.x0 - was.x0, now.y0 - was.y0, now.x1 - was.x1, now.y1 - was.y1].iter().any(|d| d.abs() > 1e-6);
+        if reshaped && lock != Some(false) {
+            super::panelcmds::refuse_locked(d, &[index])?;
+        }
+        // Values within 1e-6 pt of a locked artboard's (as Artboard Options passes them) leave its
+        // rectangle exactly as it is.
+        let held = lock != Some(false) && d.artboards.get(index).is_some_and(|a| a.locked);
+        let now = if held { was } else { now };
         let resized = (now.width() - was.width()).abs() > 1e-6 || (now.height() - was.height()).abs() > 1e-6;
         let fit = if scale_art && resized { rect_map(was, now) } else { None };
         // Position fields honor Move Artwork independently of Scale Artwork. A resize still
@@ -894,8 +906,8 @@ fn artboard_set(s: &mut Session, p: &Value) -> Result<Value> {
         let delta = now.origin() - was.origin();
         let moving = !resized && bool_or(p, "moveArt", false) && delta != vectorcraft_geom::Vec2::ZERO;
         let transform = fit.or_else(|| moving.then(|| Affine::translate(delta)));
-        let art = if transform.is_some() { d.art_on_artboard(was, all).into_iter().filter(|id| taken.insert(*id)).collect() } else { vec![] };
-        edits.push(ArtboardEdit { index, now, name: str_param(q, "name").map(str::trim), color, delta, resized, fit, transform, art });
+        let art = if transform.is_some() { d.art_moving_with(index, all).into_iter().filter(|id| taken.insert(*id)).collect() } else { vec![] };
+        edits.push(ArtboardEdit { index, now, name: str_param(q, "name").map(str::trim), color, lock, delta, resized, fit, transform, art });
     }
     // Noted in the journal when art goes along, so a replay transforms the same objects whatever
     // the preference is then.
@@ -916,6 +928,9 @@ fn artboard_set(s: &mut Session, p: &Value) -> Result<Value> {
             }
             if let Some(c) = e.color {
                 a.color = c;
+            }
+            if let Some(l) = e.lock {
+                a.locked = l;
             }
             let id = a.id;
             if let Some(xf) = e.transform {
@@ -954,14 +969,19 @@ fn rect_map(from: Rect, to: Rect) -> Option<Affine> {
 
 /// Each artboard of `index` or `indices` (default: the first) fits the art on it that exports
 /// draw ([`vectorcraft_render::encode::art_bounds_on`]): hidden objects and layers, guides and
-/// template layers don't count. An artboard with no art on it stays as it is, and the command
-/// fails when none has art. The fits are one undo step named Artboard Options.
+/// template layers don't count. An artboard with no art on it, or a locked one, stays as it is,
+/// and the command fails when every one it names is locked or none has art. The fits are one undo
+/// step named Artboard Options.
 fn artboard_fit_art(s: &mut Session, p: &Value) -> Result<Value> {
     let d = &s.doc()?.doc;
     let indices =
         if p.get("index").is_none() && p.get("indices").is_none() { vec![0] } else { super::panelcmds::artboard_indices(d, p, "artboard.fitToArt")? };
+    let unlocked: Vec<usize> = indices.iter().copied().filter(|i| d.artboards.get(*i).is_some_and(|a| !a.locked)).collect();
+    if unlocked.is_empty() {
+        super::panelcmds::refuse_locked(d, &indices)?;
+    }
     let mut fits = vec![];
-    for i in indices {
+    for i in unlocked {
         let was = d.artboards.get(i).map(|a| a.rect).ok_or_else(|| EngineError::Other("no such artboard".into()))?;
         if let Some(b) = vectorcraft_render::encode::art_bounds_on(d, was) {
             // At least 1 pt a side, as `rect_from` makes Artboard Options' sizes.

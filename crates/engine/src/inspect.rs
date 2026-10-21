@@ -128,11 +128,15 @@ pub fn document(s: &Session) -> Value {
     document_opts(s, SummaryOpts::default())
 }
 
-/// An artboard's name and rectangle, and its background color (`#rrggbb`) when it has one.
+/// An artboard's name and rectangle, its background color (`#rrggbb`) when it has one, and
+/// `locked: true` when it is locked.
 fn artboard_summary(a: &vectorcraft_doc::Artboard) -> Value {
     let mut v = json!({"name": a.name, "x": a.rect.x0, "y": a.rect.y0, "width": a.rect.width(), "height": a.rect.height()});
     if let Some(c) = a.color {
         v["color"] = json!(c.to_hex());
+    }
+    if a.locked {
+        v["locked"] = json!(true);
     }
     v
 }
