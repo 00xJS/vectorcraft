@@ -2915,6 +2915,13 @@ lighting	Light	Světlo
 	Soft Light	Měkké světlo
 	Crosshatch	Křížové šrafování
 	Fine Dots	Jemné tečky
+
+	Simple	Jednoduchý
+	Light Rough	Světle hrubý
+	Dark Rough	Tmavě hrubý
+	Wide Sharp	Široce ostrý
+	Wide Blurry	Široce rozmazaný
+	Sparkle	Jiskra
 	Medium Dots	Střední tečky
 	Grainy Dots	Zrnité tečky
 	Coarse Dots	Hrubé tečky
@@ -5056,6 +5063,8 @@ imageTrace	Outline	Obrys
 	Neon Glow…	Neonová záře…
 	Palette Knife…	Špachtle…
 	Neon Glow	Neonová záře
+	Paint Daubs…	Malířské tahy…
+	Paint Daubs	Malířské tahy
 	Palette Knife	Špachtle
 	Poster Edges…	Plakátové okraje…
 	Poster Edges	Plakátové okraje

@@ -379,6 +379,13 @@ pub fn effect_catalog() -> Vec<EffectInfo> {
             json!({"glowSize": 5.0, "glowBrightness": 15.0, "color": "#4da6ff"}),
         ),
         r(
+            "artistic.paintDaubs",
+            "Paint Daubs…",
+            ARTISTIC,
+            "{brushSize: 1..50 (10; dab centres farther apart), sharpness: 0..40 (25; harder dab edges), brushType: \"simple\"|\"lightRough\"|\"darkRough\"|\"wideSharp\"|\"wideBlurry\"|\"sparkle\" (\"simple\")} repaints the object with thick round brush dabs in the local colours, keeping its coverage. Original visual approximation; chosen VectorCraft defaults.",
+            json!({"brushSize": 10.0, "sharpness": 25.0, "brushType": "simple"}),
+        ),
+        r(
             "artistic.paletteKnife",
             "Palette Knife…",
             ARTISTIC,

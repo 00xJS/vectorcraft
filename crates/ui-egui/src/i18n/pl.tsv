@@ -2793,6 +2793,13 @@ lighting	Light	Światło
 	Soft Light	Łagodne światło
 	Crosshatch	Kreskowanie krzyżowe
 	Fine Dots	Drobne kropki
+
+	Simple	Prosty
+	Light Rough	Jasny szorstki
+	Dark Rough	Ciemny szorstki
+	Wide Sharp	Szeroki ostry
+	Wide Blurry	Szeroki rozmyty
+	Sparkle	Iskra
 	Medium Dots	Średnie kropki
 	Grainy Dots	Ziarniste kropki
 	Coarse Dots	Grube kropki
@@ -4889,6 +4896,8 @@ imageTrace	Outline	Kontur
 	Neon Glow…	Neonowa poświata…
 	Palette Knife…	Szpachel…
 	Neon Glow	Neonowa poświata
+	Paint Daubs…	Plamy farby…
+	Paint Daubs	Plamy farby
 	Palette Knife	Szpachel
 	Poster Edges…	Krawędzie plakatu…
 	Poster Edges	Krawędzie plakatu

@@ -2861,6 +2861,13 @@ lighting	Light	Valo
 	Soft Light	Pehmeä valo
 	Crosshatch	Ristiviivoitus
 	Fine Dots	Hienot pisteet
+
+	Simple	Yksinkertainen
+	Light Rough	Vaalea karkea
+	Dark Rough	Tumma karkea
+	Wide Sharp	Leveä terävä
+	Wide Blurry	Leveä sumea
+	Sparkle	Kimallus
 	Medium Dots	Keskikokoiset pisteet
 	Grainy Dots	Rakeiset pisteet
 	Coarse Dots	Karkeat pisteet
@@ -4951,6 +4958,8 @@ imageTrace	Outline	Ääriviiva
 	Neon Glow…	Neonhehku…
 	Palette Knife…	Palettiveitsi…
 	Neon Glow	Neonhehku
+	Paint Daubs…	Maalitahrat…
+	Paint Daubs	Maalitahrat
 	Palette Knife	Palettiveitsi
 	Poster Edges…	Julisteen reunat…
 	Poster Edges	Julisteen reunat

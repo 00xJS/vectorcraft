@@ -2702,6 +2702,13 @@ lighting	Light	Licht
 	Soft Light	Zacht licht
 	Crosshatch	Kruisarcering
 	Fine Dots	Fijne stippen
+
+	Simple	Eenvoudig
+	Light Rough	Licht ruw
+	Dark Rough	Donker ruw
+	Wide Sharp	Breed scherp
+	Wide Blurry	Breed wazig
+	Sparkle	Fonkel
 	Medium Dots	Middelgrote stippen
 	Grainy Dots	Korrelige stippen
 	Coarse Dots	Grove stippen
@@ -5194,6 +5201,8 @@ swatch	Bright Violet	Felviolet
 	Cutout	Knipsel
 	Dry Brush	Droog penseel
 	Neon Glow	Neongloed
+	Paint Daubs…	Verfstipjes…
+	Paint Daubs	Verfstipjes
 	Palette Knife	Paletmes
 	Poster Edges	Posterranden
 	Apply Data Set	Gegevensset toepassen

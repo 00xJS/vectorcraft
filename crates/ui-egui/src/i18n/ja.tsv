@@ -3760,6 +3760,13 @@ theme	Appearance	外観
 	Channel 4	チャンネル 4
 	Cell Size	セルの大きさ
 	Fine Dots	細かい点
+
+	Simple	シンプル
+	Light Rough	ライトラフ
+	Dark Rough	ダークラフ
+	Wide Sharp	ワイドシャープ
+	Wide Blurry	ワイドブラー
+	Sparkle	スパークル
 	Medium Dots	中程度の点
 	Grainy Dots	粒状の点
 	Coarse Dots	粗い点
@@ -4725,6 +4732,8 @@ lighting	Light	ライト
 	Neon Glow…	ネオングロー…
 	Palette Knife…	パレットナイフ…
 	Neon Glow	ネオングロー
+	Paint Daubs…	ペイントダブ…
+	Paint Daubs	ペイントダブ
 	Palette Knife	パレットナイフ
 	Poster Edges…	ポスターエッジ…
 	Poster Edges	ポスターエッジ

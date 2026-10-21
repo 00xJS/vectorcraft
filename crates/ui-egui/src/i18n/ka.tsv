@@ -2500,6 +2500,13 @@ lighting	Light	სინათლე
 	Soft Light	რბილი სინათლე
 	Crosshatch	ჯვარედინი დაშტრიხვა
 	Fine Dots	წვრილი წერტილები
+
+	Simple	მარტივი
+	Light Rough	ღია ხასიათიანი
+	Dark Rough	მუქი ხასიათიანი
+	Wide Sharp	ფართო მკვეთრი
+	Wide Blurry	ფართო ბუნდოვანი
+	Sparkle	ციმციმი
 	Medium Dots	საშუალო წერტილები
 	Grainy Dots	მარცვლოვანი წერტილები
 	Coarse Dots	მსხვილი წერტილები
@@ -5077,6 +5084,8 @@ imageTrace	Outline	კონტური
 	Move Slice	ნაჭრის გადაადგილება
 	Move Type on a Path	ტრაექტორიაზე ტექსტის გადაადგილება
 	Neon Glow	ნეონის ნათება
+	Paint Daubs…	საღებავის კვეთები…
+	Paint Daubs	საღებავის კვეთები
 	Palette Knife	პალეტის დანა
 	Neon Glow…	ნეონის ნათება…
 	Palette Knife…	პალეტის დანა…

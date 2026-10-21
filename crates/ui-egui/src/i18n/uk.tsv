@@ -36,6 +36,13 @@
 	Channel 4	Канал 4
 	Cell Size	Розмір комірки
 	Fine Dots	Дрібні точки
+
+	Simple	Простий
+	Light Rough	Світла грубість
+	Dark Rough	Темна грубість
+	Wide Sharp	Широкий різкий
+	Wide Blurry	Широкий розмитий
+	Sparkle	Іскра
 	Medium Dots	Середні точки
 	Grainy Dots	Зернисті точки
 	Coarse Dots	Великі точки
@@ -4666,6 +4673,8 @@ lighting	Light	Світло
 	Neon Glow…	Неонове сяйво…
 	Palette Knife…	Ніж палітри…
 	Neon Glow	Неонове сяйво
+	Paint Daubs…	Мазки фарби…
+	Paint Daubs	Мазки фарби
 	Palette Knife	Ніж палітри
 	Poster Edges…	Плакатні краї…
 	Poster Edges	Плакатні краї

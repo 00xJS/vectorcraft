@@ -3745,6 +3745,13 @@ theme	Appearance	외관
 	Channel 4	채널 4
 	Cell Size	셀 크기
 	Fine Dots	고운 점
+
+	Simple	단순
+	Light Rough	밝은 거칠기
+	Dark Rough	어두운 거칠기
+	Wide Sharp	넓고 선명
+	Wide Blurry	넓고 흐림
+	Sparkle	반짝임
 	Medium Dots	중간 점
 	Grainy Dots	거친 입자 점
 	Coarse Dots	굵은 점
@@ -4649,6 +4656,8 @@ lighting	Light	광원
 	Neon Glow…	네온 글로…
 	Palette Knife…	팔레트 나이프…
 	Neon Glow	네온 글로
+	Paint Daubs…	페인트 다브…
+	Paint Daubs	페인트 다브
 	Palette Knife	팔레트 나이프
 	Poster Edges…	포스터 가장자리…
 	Poster Edges	포스터 가장자리

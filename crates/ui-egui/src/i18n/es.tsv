@@ -37,6 +37,13 @@
 	Channel 4	Canal 4
 	Cell Size	Tamaño de celda
 	Fine Dots	Puntos finos
+
+	Simple	Simple
+	Light Rough	Rugoso claro
+	Dark Rough	Rugoso oscuro
+	Wide Sharp	Ancho nítido
+	Wide Blurry	Ancho borroso
+	Sparkle	Destello
 	Medium Dots	Puntos medios
 	Grainy Dots	Puntos granulados
 	Coarse Dots	Puntos gruesos
@@ -4644,6 +4651,8 @@ lighting	Light	Luz
 	Neon Glow…	Resplandor de neón…
 	Palette Knife…	Espátula…
 	Neon Glow	Resplandor de neón
+	Paint Daubs…	Pinceladas…
+	Paint Daubs	Pinceladas
 	Palette Knife	Espátula
 	Poster Edges…	Bordes de póster…
 	Poster Edges	Bordes de póster

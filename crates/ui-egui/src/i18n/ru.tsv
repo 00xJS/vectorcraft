@@ -35,6 +35,13 @@
 	Channel 4	Канал 4
 	Cell Size	Размер ячейки
 	Fine Dots	Мелкие точки
+
+	Simple	Простой
+	Light Rough	Светлая грубость
+	Dark Rough	Тёмная грубость
+	Wide Sharp	Широкий резкий
+	Wide Blurry	Широкий размытый
+	Sparkle	Блеск
 	Medium Dots	Средние точки
 	Grainy Dots	Зернистые точки
 	Coarse Dots	Крупные точки
@@ -4682,6 +4689,8 @@ lighting	Light	Свет
 	Neon Glow…	Неоновое свечение…
 	Palette Knife…	Нож для палитры…
 	Neon Glow	Неоновое свечение
+	Paint Daubs…	Мазки кисти…
+	Paint Daubs	Мазки кисти
 	Palette Knife	Нож для палитры
 	Poster Edges…	Края плаката…
 	Poster Edges	Края плаката

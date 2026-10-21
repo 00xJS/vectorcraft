@@ -32,6 +32,13 @@
 	Channel 4	Канал 4
 	Cell Size	Размер на клетката
 	Fine Dots	Финни точки
+
+	Simple	Прост
+	Light Rough	Светъл груб
+	Dark Rough	Тъмен груб
+	Wide Sharp	Широк остър
+	Wide Blurry	Широк размазан
+	Sparkle	Блясък
 	Medium Dots	Средни точки
 	Grainy Dots	Зърнести точки
 	Coarse Dots	Едри точки
@@ -4557,6 +4564,8 @@ lighting	Light	Светлина
 	Neon Glow…	Неоново сияние…
 	Palette Knife…	Нож за палитра…
 	Neon Glow	Неоново сияние
+	Paint Daubs…	Мазки с боя…
+	Paint Daubs	Мазки с боя
 	Palette Knife	Нож за палитра
 	Poster Edges…	Плакатни ръбове…
 	Poster Edges	Плакатни ръбове

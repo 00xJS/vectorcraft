@@ -93,6 +93,7 @@ fn effect_menu_lists_the_artistic_filters_before_blur() {
             "Dry Brush…",
             "Film Grain…",
             "Neon Glow…",
+            "Paint Daubs…",
             "Palette Knife…",
             "Plastic Wrap…",
             "Poster Edges…",
@@ -106,6 +107,22 @@ fn effect_menu_lists_the_artistic_filters_before_blur() {
     assert_eq!(artistic[3].params, json!({"effect": "artistic.neonGlow"}));
     let at = |name: &str| entries.iter().position(|e| e.path == ["Effect", name]).unwrap();
     assert!(at("Artistic") < at("Blur"));
+}
+
+/// Paint Daubs' Brush Type menu matches Illustrator's list and uses the effect choice labels.
+#[test]
+fn paint_daubs_brush_type_menu_matches_illustrator() {
+    use crate::dialogs::PAINT_DAUB_BRUSH_TYPE_LABELS;
+    use serde_json::Map;
+    use vectorcraft_effects::pixel::PAINT_DAUB_BRUSH_TYPES;
+    let catalog: Vec<&str> = PAINT_DAUB_BRUSH_TYPES.iter().map(|(label, _)| *label).collect();
+    assert_eq!(PAINT_DAUB_BRUSH_TYPE_LABELS.as_slice(), catalog.as_slice());
+    let params = Map::new();
+    let shown = crate::dialogs::shown_choices("artistic.paintDaubs", "brushType", &params, false).unwrap();
+    assert_eq!(shown.len(), PAINT_DAUB_BRUSH_TYPES.len());
+    for ((label, value), (english, id)) in shown.iter().zip(PAINT_DAUB_BRUSH_TYPES.iter()) {
+        assert_eq!((label.as_str(), value.as_str()), (*english, *id));
+    }
 }
 
 #[test]

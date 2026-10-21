@@ -2688,6 +2688,13 @@ lighting	Light	Cahaya
 	Soft Light	Cahaya lembut
 	Crosshatch	Arsir silang
 	Fine Dots	Titik halus
+
+	Simple	Sederhana
+	Light Rough	Kasar terang
+	Dark Rough	Kasar gelap
+	Wide Sharp	Lebar tajam
+	Wide Blurry	Lebar buram
+	Sparkle	Kilau
 	Medium Dots	Titik sedang
 	Grainy Dots	Titik berbutir
 	Coarse Dots	Titik kasar
@@ -5183,6 +5190,8 @@ swatch	Bright Violet	Violet cerah
 	Cutout	Potongan
 	Dry Brush	Kuas kering
 	Neon Glow	Pendar neon
+	Paint Daubs…	Coretan cat…
+	Paint Daubs	Coretan cat
 	Palette Knife	Pisau palet
 	Poster Edges	Tepi poster
 	Apply Data Set	Terapkan set data

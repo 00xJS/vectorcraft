@@ -31,11 +31,13 @@ const BRUSH_STROKES: [(&str, &str); 8] = [
 ];
 
 /// Effect › Artistic, at their defaults.
-const ARTISTIC: [(&str, &str); 10] = [
+const ARTISTIC: [(&str, &str); 11] = [
     ("artistic.cutout", "{}"),
     ("artistic.dryBrush", "{}"),
     ("artistic.filmGrain", "{}"),
     ("artistic.neonGlow", "{}"),
+    // Wide Blurry softens dabs; Simple leaves uniform fills unchanged on the striped art.
+    ("artistic.paintDaubs", r#"{"brushType": "wideBlurry"}"#),
     ("artistic.paletteKnife", "{}"),
     ("artistic.plasticWrap", "{}"),
     ("artistic.posterEdges", "{}"),
