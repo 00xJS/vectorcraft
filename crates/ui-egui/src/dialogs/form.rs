@@ -648,8 +648,10 @@ pub(super) fn slider_field_named(
 }
 
 /// The rail of [`slider_field_named`] alone: dragging it sets the number `d.fields[key]` to a
-/// whole number in `range` (a value past the range shows at its end until the rail moves); screen
-/// readers call it `name` (already translated), with the number `d.fields[key]` as its value.
+/// whole number in `range`, and its keys step the number while it has the keyboard focus
+/// ([`crate::widgets::color_slider_stepped`]); a value past the range shows at its end until the
+/// rail moves. Screen readers call it `name` (already translated), with the number
+/// `d.fields[key]` as its value.
 pub(super) fn slider_rail_named(
     ui: &mut egui::Ui,
     d: &mut Dialog,
@@ -663,7 +665,9 @@ pub(super) fn slider_rail_named(
 }
 
 /// [`slider_rail_named`] that screen readers get `shown` from: the number and text of the field
-/// the row draws beside it (no value for `None`, as for a blank field).
+/// the row draws beside it (no value for `None`, as for a blank field). Its keys step `shown`'s
+/// number, which sets `d.fields[key]` to the number at the same place on `range` (`shown`'s range
+/// and `range` are the same span in two units, such as millimeters and points).
 pub(super) fn slider_rail_valued(
     ui: &mut egui::Ui,
     d: &mut Dialog,
@@ -674,10 +678,14 @@ pub(super) fn slider_rail_valued(
     track: &dyn Fn(f32) -> egui::Color32,
 ) {
     let (min, max) = (*range.start(), *range.end());
-    let v = d.f64(key, 0.0).clamp(min, max);
-    let (dragged, _) =
-        crate::widgets::color_slider_valued(ui, ("dlg-slider", key), name, shown, ((v - min) / (max - min)) as f32, SLIDER_WIDTH, track);
-    if let Some(n) = dragged.map(|x| (min + x as f64 * (max - min)).round()).filter(|n| *n != v) {
+    let held = d.f64(key, 0.0);
+    let v = held.clamp(min, max);
+    let units = shown.as_ref().map(|s| s.range.clone());
+    let (dragged, _, keyed) =
+        crate::widgets::color_slider_stepped(ui, ("dlg-slider", key), name, shown, ((v - min) / (max - min)) as f32, SLIDER_WIDTH, track);
+    let keyed =
+        keyed.zip(units).map(|(k, u)| if u == range { k } else { (min + (k - u.start()) / (u.end() - u.start()) * (max - min)).clamp(min, max) });
+    if let Some(n) = dragged.map(|x| (min + x as f64 * (max - min)).round()).or(keyed).filter(|n| *n != held) {
         d.fields.insert(key.into(), json!(n));
     }
 }
