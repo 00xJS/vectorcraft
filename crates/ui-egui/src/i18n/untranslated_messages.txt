@@ -329,6 +329,7 @@ bad edit
 bad fill colour
 bad fill {v}
 bad fit: {e}
+bad model {other} (keep, new or document)
 bad new colour {v}
 bad object
 bad object number

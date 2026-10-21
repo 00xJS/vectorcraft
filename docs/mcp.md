@@ -1535,7 +1535,13 @@ Recolor Artwork keys colours by identity, not hex: `recolor.colors` lists each c
 Lab and RGB colours that look alike stay apart, and every colour parameter also accepts a key.
 `recolor.reduce {colors?, method?, preserve?, limitTo?}` groups the selection's colours into rows of similar colours (k-means in Lab, weighted by use;
 tints of a global swatch share its row; White and Black are preserved by default) and returns a map of rows
-`[{from: [keys], to: key}]` to edit and pass to `recolor.apply {map, method?, limitTo?, group?, groupColors?, rename?}`.
+`[{from: [keys], to: key}]` to edit and pass to `recolor.apply {map, method?, model?, limitTo?, group?, groupColors?, rename?}`.
+For scripts and MCP, `model` selects the replacement color model: `keep` (default) retains each
+original color's model, `new` takes the replacement's model, and `document` converts replacements
+and edited color groups to the document's model. Invalid values fail before editing. This parameter
+is not a control in the Recolor Artwork dialog. A returned `note` reports a model conversion in
+`keep` mode.
+
 `method` says how a row's colours take its new colour: `exact`, `preserveTints` (tints of the row's darkest colour
 stay tints), `scaleTints` (every colour becomes a tint as light, relative to the darkest), `tintsShades` (lighter and
 darker than the row's average become tints and shades) or `hueShift` (the most saturated colour takes the new colour,
