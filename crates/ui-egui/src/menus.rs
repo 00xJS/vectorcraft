@@ -225,6 +225,96 @@ pub const UI_COMMANDS: &[(&str, &str, &str, &str)] = &[
     ("type.justifyLeft", "Justify with last line aligned left", "Cmd+Shift+J", "{} justify the selected type's paragraphs, last line aligned left"),
     ("type.justifyAll", "Justify all lines", "Cmd+Shift+F", "{} justify every line of the selected type's paragraphs"),
     (
+        "align.horizontalLeft",
+        "Horizontal Align Left",
+        "",
+        "{} the Align panel's Horizontal Align Left button: object.align {horizontal: \"left\"} with to: \"key\" while there is a key, else \"artboard\" for one selected object without selected anchor points, else the Align To choice",
+    ),
+    (
+        "align.horizontalCenter",
+        "Horizontal Align Center",
+        "",
+        "{} the Align panel's Horizontal Align Center button: object.align {horizontal: \"center\"} with to: \"key\" while there is a key, else \"artboard\" for one selected object without selected anchor points, else the Align To choice",
+    ),
+    (
+        "align.horizontalRight",
+        "Horizontal Align Right",
+        "",
+        "{} the Align panel's Horizontal Align Right button: object.align {horizontal: \"right\"} with to: \"key\" while there is a key, else \"artboard\" for one selected object without selected anchor points, else the Align To choice",
+    ),
+    (
+        "align.horizontalVerticalCenter",
+        "Horizontal & Vertical Align Center",
+        "",
+        "{} the Align panel's Horizontal & Vertical Align Center button: object.align {horizontal: \"center\", vertical: \"center\"} with to: \"key\" while there is a key, else \"artboard\" for one selected object without selected anchor points, else the Align To choice",
+    ),
+    (
+        "align.verticalTop",
+        "Vertical Align Top",
+        "",
+        "{} the Align panel's Vertical Align Top button: object.align {vertical: \"top\"} with to: \"key\" while there is a key, else \"artboard\" for one selected object without selected anchor points, else the Align To choice",
+    ),
+    (
+        "align.verticalCenter",
+        "Vertical Align Center",
+        "",
+        "{} the Align panel's Vertical Align Center button: object.align {vertical: \"center\"} with to: \"key\" while there is a key, else \"artboard\" for one selected object without selected anchor points, else the Align To choice",
+    ),
+    (
+        "align.verticalBottom",
+        "Vertical Align Bottom",
+        "",
+        "{} the Align panel's Vertical Align Bottom button: object.align {vertical: \"bottom\"} with to: \"key\" while there is a key, else \"artboard\" for one selected object without selected anchor points, else the Align To choice",
+    ),
+    (
+        "align.distributeVerticalTop",
+        "Vertical Distribute Top",
+        "",
+        "{} the Align panel's Vertical Distribute Top button: object.distribute {vertical: \"top\"} with to: \"key\" while there is a key, else the Align To choice, and spacing: the Distribute Spacing value while there is a key",
+    ),
+    (
+        "align.distributeVerticalCenter",
+        "Vertical Distribute Center",
+        "",
+        "{} the Align panel's Vertical Distribute Center button: object.distribute {vertical: \"center\"} with to: \"key\" while there is a key, else the Align To choice, and spacing: the Distribute Spacing value while there is a key",
+    ),
+    (
+        "align.distributeVerticalBottom",
+        "Vertical Distribute Bottom",
+        "",
+        "{} the Align panel's Vertical Distribute Bottom button: object.distribute {vertical: \"bottom\"} with to: \"key\" while there is a key, else the Align To choice, and spacing: the Distribute Spacing value while there is a key",
+    ),
+    (
+        "align.distributeHorizontalLeft",
+        "Horizontal Distribute Left",
+        "",
+        "{} the Align panel's Horizontal Distribute Left button: object.distribute {horizontal: \"left\"} with to: \"key\" while there is a key, else the Align To choice, and spacing: the Distribute Spacing value while there is a key",
+    ),
+    (
+        "align.distributeHorizontalCenter",
+        "Horizontal Distribute Center",
+        "",
+        "{} the Align panel's Horizontal Distribute Center button: object.distribute {horizontal: \"center\"} with to: \"key\" while there is a key, else the Align To choice, and spacing: the Distribute Spacing value while there is a key",
+    ),
+    (
+        "align.distributeHorizontalRight",
+        "Horizontal Distribute Right",
+        "",
+        "{} the Align panel's Horizontal Distribute Right button: object.distribute {horizontal: \"right\"} with to: \"key\" while there is a key, else the Align To choice, and spacing: the Distribute Spacing value while there is a key",
+    ),
+    (
+        "align.distributeVerticalSpace",
+        "Vertical Distribute Space",
+        "",
+        "{} the Align panel's Vertical Distribute Space button: object.distributeSpacing {axis: \"vertical\"} with to: \"key\" while there is a key, else the Align To choice, and spacing: the Distribute Spacing value while there is a key",
+    ),
+    (
+        "align.distributeHorizontalSpace",
+        "Horizontal Distribute Space",
+        "",
+        "{} the Align panel's Horizontal Distribute Space button: object.distributeSpacing {axis: \"horizontal\"} with to: \"key\" while there is a key, else the Align To choice, and spacing: the Distribute Spacing value while there is a key",
+    ),
+    (
         "type.bold",
         "Bold",
         "",
@@ -1248,6 +1338,7 @@ pub fn run_ui_command(app: &mut VectorcraftApp, id: &str, p: &Value) -> Option<R
         id if let Some((_, justify)) = crate::panels::paragraph::ALIGN_COMMANDS.iter().find(|c| c.0 == id) => {
             crate::panels::paragraph::align(app, justify)
         }
+        id if let Some(b) = crate::panels::align::button(id) => crate::panels::align::run_button(app, b),
         "view.gradientAnnotator" => flag(&mut app.ui.view.gradient_annotator),
         "view.livePaintGaps" => flag(&mut app.ui.view.live_paint_gaps),
         "effect.last" => match app.last_effect.clone() {
@@ -2304,6 +2395,7 @@ pub fn enabled(app: &VectorcraftApp, id: &str) -> bool {
         "file.save" => app.session.active().is_some_and(|d| d.path.is_none() || d.converted || d.is_dirty()),
         "type.bold" | "type.italic" => crate::panels::character::text_style(app).is_some(),
         id if crate::panels::paragraph::ALIGN_COMMANDS.iter().any(|c| c.0 == id) => crate::panels::character::text_style(app).is_some(),
+        id if let Some(b) = crate::panels::align::button(id) => enabled(app, b.command()),
         "file.reveal" => app.services.reveal.is_some() && app.session.active().is_some_and(|d| d.path.is_some()),
         "file.cancelExport" | "file.exportInBackground" => app.background.jobs.iter().any(|j| j.progress.is_some() && !j.cancelled()),
         "file.place"
