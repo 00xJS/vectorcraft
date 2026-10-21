@@ -236,6 +236,8 @@ from G14 and the budget run of G15: **~170–270 h** one agent, ~50–80 h wall 
 - **Done:** Effect › Texture › Texturizer › Load Texture… (stored grayscale `textureImage`, Loaded Texture in the Texture menu), matching Glass.
 - **Missing:** 8 of 57 filters (5 Artistic, 2 Sketch and 1 more), the Effect Gallery dialog. Measured in
   [effects-parity.md](effects-parity.md).
+- **Done:** the pixel-filter pipeline and 46 filters (Artistic: Cutout, Film Grain, Neon Glow, Plastic Wrap, Poster Edges, Smudge Stick, Sponge, Watercolor; Blur, Brush Strokes, Distort, Pixelate, Sharpen; Sketch:
+  Bas Relief, Chalk & Charcoal, Charcoal, Chrome, Graphic Pen, Halftone Pattern, Photocopy, Plaster, Reticulation, Stamp, Torn Edges; Stylize, Texture, Video), with live preview and editable native settings. Smart Blur supports Edge Only and Overlay Edge
 - **Done:** Effect › Artistic › Colored Pencil (`artistic.coloredPencil`, pencil width, stroke pressure, paper brightness; original visual approximation).
 - **Done:** the pixel-filter pipeline and 49 filters (Artistic: Colored Pencil, Cutout, Dry Brush, Film Grain, Neon Glow, Plastic Wrap, Poster Edges, Smudge Stick, Sponge, Watercolor; Blur, Brush Strokes, Distort, Pixelate, Sharpen; Sketch:
   Bas Relief, Chalk & Charcoal, Charcoal, Chrome, Graphic Pen, Halftone Pattern, Note Paper, Photocopy, Plaster, Reticulation, Stamp, Water Paper; Stylize, Texture, Video), with live preview and editable native settings. Smart Blur supports Edge Only and Overlay Edge
