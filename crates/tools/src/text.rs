@@ -826,7 +826,11 @@ impl Tool for TypeTool {
     fn overlays(&self, cx: &ToolContext) -> Vec<Overlay> {
         let mut o = self.snap.guides().to_vec();
         if let (Some((_, s)), Some(d)) = (self.press, self.drag) {
-            o.push(Overlay::Marquee(Rect::from_points(s, d)));
+            let r = Rect::from_points(s, d);
+            o.push(Overlay::Marquee(r));
+            if cx.measurement_labels {
+                o.push(Overlay::Measure { p: d, text: cx.size_label(r.width(), r.height()) });
+            }
         }
         // Overflow markers on selected text.
         for id in &cx.selection.objects {
