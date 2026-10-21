@@ -1710,6 +1710,12 @@ impl TextObject {
             TextKind::Point => Some(self.xf.transform_rect_bbox(self.cached_bounds.unwrap_or_else(|| self.estimate_bounds()))),
         }
     }
+    /// How far the characters' strokes paint past their glyphs, in document space: they scale
+    /// with the type.
+    pub fn char_stroke_outset(&self) -> f64 {
+        let k = crate::node::Scaling::factor(self.xf).unwrap_or(1.0);
+        self.runs.iter().map(|r| r.style.stroke_outset()).fold(0.0, f64::max) * k
+    }
     pub fn transform(&mut self, a: Affine) {
         self.xf = a * self.xf;
     }
