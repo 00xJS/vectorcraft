@@ -407,6 +407,21 @@ pub fn effect_catalog() -> Vec<EffectInfo> {
             json!({"edgeThickness": 2.0, "edgeIntensity": 1.0, "posterization": 2.0}),
         ),
         r(
+            "artistic.roughPastels",
+            "Rough Pastels…",
+            ARTISTIC,
+            "{strokeLength: 0..40 (6; longer pastel strokes), strokeDetail: 1..20 (10; bristle texture along the strokes), texture: \"brick\"|\"burlap\"|\"canvas\"|\"sandstone\" (\"canvas\"), scaling: % 50..200 (100), relief: 0..50 (4), lightDirection: \"bottom\"|\"bottomLeft\"|\"left\"|\"topLeft\"|\"top\"|\"topRight\"|\"right\"|\"bottomRight\" (\"top\"), invert: bool (false)} repaints the object in soft diagonal pastel strokes over a textured surface, keeping its coverage. Slider ranges follow the documented controls; numeric defaults are chosen for VectorCraft and are not verified against proprietary defaults.",
+            json!({
+                "strokeLength": 6.0,
+                "strokeDetail": 10.0,
+                "texture": "canvas",
+                "scaling": 100.0,
+                "relief": 4.0,
+                "lightDirection": "top",
+                "invert": false
+            }),
+        ),
+        r(
             "artistic.smudgeStick",
             "Smudge Stick…",
             ARTISTIC,

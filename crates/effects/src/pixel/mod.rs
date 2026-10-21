@@ -1,5 +1,5 @@
 //! Photoshop-style raster effects (Effect › Artistic › Cutout, Dry Brush, Film Grain, Neon Glow, Paint Daubs, Plastic Wrap and
-//! Poster Edges, Smudge Stick, Sponge and Watercolor, Blur › Radial Blur and Smart Blur, Brush Strokes › Accented Edges, Angled Strokes,
+//! Poster Edges, Rough Pastels, Smudge Stick, Sponge and Watercolor, Blur › Radial Blur and Smart Blur, Brush Strokes › Accented Edges, Angled Strokes,
 //! Crosshatch, Dark Strokes, Ink Outlines, Spatter, Sprayed Strokes and Sumi-e, Distort › Diffuse
 //! Glow, Glass and Ocean Ripple, Pixelate › Color Halftone, Crystallize, Mezzotint and Pointillize,
 //! Sharpen › Unsharp Mask, Sketch › Bas Relief, Chalk & Charcoal, Charcoal, Graphic Pen, Halftone Pattern, Note Paper, Photocopy, Plaster,
@@ -44,7 +44,7 @@ pub use sketch::{HALFTONE_TYPES, HalftonePattern};
 pub use texture::{GRAIN_TYPES, Grain, LIGHT_DIRECTIONS, Light, TEXTURES, TEXTURES_LOADED, Texture};
 
 /// The Photoshop-style effect ids (all raster effects, see [`crate::is_raster`]).
-pub const PIXEL_EFFECTS: [&str; 51] = [
+pub const PIXEL_EFFECTS: [&str; 52] = [
     "artistic.cutout",
     "artistic.dryBrush",
     "artistic.filmGrain",
@@ -53,6 +53,7 @@ pub const PIXEL_EFFECTS: [&str; 51] = [
     "artistic.paletteKnife",
     "artistic.plasticWrap",
     "artistic.posterEdges",
+    "artistic.roughPastels",
     "artistic.smudgeStick",
     "artistic.sponge",
     "artistic.underpainting",
@@ -143,6 +144,10 @@ pub enum PixelFx {
     /// `texture` surface (`scaling`, `relief`, `light`, `invert`) blended in as strongly as
     /// `texture_coverage` (0..40) says.
     Underpainting { brush_size: f64, texture_coverage: f64, texture: Texture, scaling: f64, relief: f64, light: Light, invert: bool },
+    /// Artistic › Rough Pastels: diagonal pastel strokes `length` (0..40) long, bristle detail
+    /// (1..20), then a [`Texture`] surface scaled by `scaling` (0.5..2), in relief as strong as
+    /// `relief` (0..50) and lit from `light`; `invert` turns the surface's heights over.
+    RoughPastels { length: f64, detail: f64, texture: Texture, scaling: f64, relief: f64, light: Light, invert: bool },
     /// Blur › Radial Blur around the object's centre: along arcs (spin, an arc of `amount`°) or
     /// along rays (zoom, the content scaled by up to about ±`amount`/2 %), averaging 2^`passes` samples.
     RadialBlur { amount: f64, zoom: bool, passes: u32 },
@@ -340,6 +345,15 @@ pub(crate) fn parse(id: &str, p: &Value) -> Option<PixelFx> {
         "artistic.underpainting" => PixelFx::Underpainting {
             brush_size: num(p, "brushSize", 6.0).clamp(0.0, 40.0),
             texture_coverage: num(p, "textureCoverage", 16.0).clamp(0.0, 40.0),
+            texture: Texture::parse(text(p, "texture", "canvas")),
+            scaling: num(p, "scaling", 100.0).clamp(50.0, 200.0) / 100.0,
+            relief: num(p, "relief", 4.0).clamp(0.0, 50.0),
+            light: Light::parse(text(p, "lightDirection", "top")),
+            invert: flag(p, "invert", false),
+        },
+        "artistic.roughPastels" => PixelFx::RoughPastels {
+            length: num(p, "strokeLength", 6.0).clamp(0.0, 40.0),
+            detail: num(p, "strokeDetail", 10.0).clamp(1.0, 20.0),
             texture: Texture::parse(text(p, "texture", "canvas")),
             scaling: num(p, "scaling", 100.0).clamp(50.0, 200.0) / 100.0,
             relief: num(p, "relief", 4.0).clamp(0.0, 50.0),
@@ -558,9 +572,10 @@ impl PixelFx {
             PixelFx::AccentedEdges { .. } => 0.0,
             // Strokes reach out of the object as far as they reach into it.
             PixelFx::PaletteKnife { stroke_size, softness, .. } => artistic::palette_knife_reach(stroke_size, softness),
-            PixelFx::AngledStrokes { length, .. } | PixelFx::GraphicPen { length, .. } | PixelFx::InkOutlines { length, .. } => {
-                brushstrokes::stroke_reach(length)
-            }
+            PixelFx::AngledStrokes { length, .. }
+            | PixelFx::GraphicPen { length, .. }
+            | PixelFx::InkOutlines { length, .. }
+            | PixelFx::RoughPastels { length, .. } => brushstrokes::stroke_reach(length),
             PixelFx::Crosshatch { length, .. } => brushstrokes::stroke_reach(length) + brushstrokes::rough(length),
             PixelFx::DarkStrokes { .. } => brushstrokes::stroke_reach(brushstrokes::LIGHT_LENGTH),
             PixelFx::Spatter { radius, .. } => brushstrokes::spatter_shift(radius),
@@ -622,6 +637,7 @@ impl PixelFx {
             PixelFx::AngledStrokes { length, .. } | PixelFx::GraphicPen { length, .. } => {
                 Some(brushstrokes::stroke_reach(length).max(brushstrokes::TONE_REACH))
             }
+            PixelFx::RoughPastels { length, .. } => Some(artistic::rough_pastels_reach(length)),
             PixelFx::Crosshatch { length, .. } => {
                 Some((brushstrokes::stroke_reach(length) + brushstrokes::rough(length)).max(brushstrokes::TONE_REACH))
             }
@@ -700,6 +716,9 @@ impl PixelFx {
             }
             PixelFx::Underpainting { brush_size, texture_coverage, ref texture, scaling, relief, light, invert } => {
                 artistic::underpainting(px, w, h, space, brush_size, texture_coverage, texture, scaling, relief, light, invert)
+            }
+            PixelFx::RoughPastels { length, detail, ref texture, scaling, relief, light, invert } => {
+                artistic::rough_pastels(px, w, h, space, length, detail, texture, scaling, relief, light, invert)
             }
             PixelFx::RadialBlur { amount, zoom, passes } => blur::radial(px, w, h, space, amount, zoom, passes),
             PixelFx::SmartBlur { radius, threshold, samples, mode: SmartBlurMode::Normal } => {

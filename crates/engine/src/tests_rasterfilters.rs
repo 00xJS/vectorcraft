@@ -31,7 +31,7 @@ const BRUSH_STROKES: [(&str, &str); 8] = [
 ];
 
 /// Effect › Artistic, at their defaults.
-const ARTISTIC: [(&str, &str); 12] = [
+const ARTISTIC: [(&str, &str); 13] = [
     ("artistic.cutout", "{}"),
     ("artistic.dryBrush", "{}"),
     ("artistic.filmGrain", "{}"),
@@ -42,6 +42,7 @@ const ARTISTIC: [(&str, &str); 12] = [
     ("artistic.plasticWrap", "{}"),
     ("artistic.posterEdges", "{}"),
     ("artistic.underpainting", "{}"),
+    ("artistic.roughPastels", "{}"),
     ("artistic.smudgeStick", "{}"),
     ("artistic.sponge", "{}"),
     ("artistic.watercolor", "{}"),
@@ -226,6 +227,19 @@ fn artistic_settings_survive_a_save_and_open() {
             "artistic.plasticWrap",
             json!({"highlightStrength": 18.0, "detail": 10.0, "smoothness": 8.0}),
             [json!({"highlightStrength": 5.0}), json!({"highlightStrength": 0.0})],
+        ),
+        (
+            "artistic.roughPastels",
+            json!({
+                "strokeLength": 8.0,
+                "strokeDetail": 12.0,
+                "texture": "sandstone",
+                "scaling": 100.0,
+                "relief": 8.0,
+                "lightDirection": "topLeft",
+                "invert": false
+            }),
+            [json!({"strokeLength": 20.0}), json!({"relief": 0.0})],
         ),
     ] {
         let (mut s, g) = striped();

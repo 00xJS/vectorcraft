@@ -1222,6 +1222,8 @@ fn texture_params_take_defaults_and_stay_in_range() {
         ("texture.grain", "grainType", GRAIN_TYPES.as_slice()),
         ("texture.texturizer", "texture", TEXTURES.as_slice()),
         ("texture.texturizer", "lightDirection", LIGHT_DIRECTIONS.as_slice()),
+        ("artistic.roughPastels", "texture", TEXTURES.as_slice()),
+        ("artistic.roughPastels", "lightDirection", LIGHT_DIRECTIONS.as_slice()),
     ] {
         let doc = crate::effect_info(id).unwrap().params;
         let parsed: Vec<PixelFx> = table.iter().map(|(_, v)| fx(id, json!({ key: v }))).collect();
@@ -2466,6 +2468,17 @@ fn artistic_params_take_defaults_and_stay_in_range() {
             invert: true,
         }
     );
+    assert_eq!(
+        fx("artistic.roughPastels", json!({})),
+        PixelFx::RoughPastels { length: 6.0, detail: 10.0, texture: Texture::Canvas, scaling: 1.0, relief: 4.0, light: Light::Top, invert: false }
+    );
+    assert_eq!(
+        fx(
+            "artistic.roughPastels",
+            json!({"strokeLength": 0, "strokeDetail": 99, "texture": -3, "scaling": 10, "relief": 60, "lightDirection": "up", "invert": true})
+        ),
+        PixelFx::RoughPastels { length: 0.0, detail: 20.0, texture: Texture::Canvas, scaling: 0.5, relief: 50.0, light: Light::Top, invert: true }
+    );
     assert_eq!(fx("artistic.plasticWrap", json!({})), PixelFx::PlasticWrap { highlight: 20.0, detail: 12.0, smoothness: 15.0 });
     assert_eq!(
         fx("artistic.plasticWrap", json!({"highlightStrength": -1, "detail": 99, "smoothness": 0})),
@@ -2493,6 +2506,7 @@ fn artistic_params_take_defaults_and_stay_in_range() {
             assert!(parsed.iter().skip(i + 1).all(|p| *p != parsed[i]), "{id} {v}");
         }
     }
+    assert!(fx("artistic.roughPastels", json!({})).outset(Rect::new(0.0, 0.0, 40.0, 30.0)) > 0.0);
 }
 
 #[test]
@@ -2520,6 +2534,7 @@ fn artistic_filters_leave_invalid_coordinate_spaces_alone() {
             light: Light::Top,
             invert: false,
         },
+        PixelFx::RoughPastels { length: 6.0, detail: 10.0, texture: Texture::Canvas, scaling: 1.0, relief: 4.0, light: Light::Top, invert: false },
     ];
     for f in &filters {
         assert_ne!(run(f, &space(w, h)), src, "{f:?} changes the art in a valid space");
@@ -2620,6 +2635,20 @@ fn cutout_paints_a_few_flat_colours_and_keeps_coverage() {
         assert!(opaque.len() < 64, "flat pieces, not a ramp: {levels} levels, {} colours", opaque.len());
         assert!(out.as_chunks::<4>().0.iter().zip(src.as_chunks::<4>().0).all(|(o, s)| o[3] == s[3]));
     }
+}
+
+#[test]
+fn rough_pastels_keeps_coverage_and_longer_strokes_smear_more() {
+    let (w, h) = (48, 48);
+    let src = ramp(w, h);
+    let mut short = src.clone();
+    let mut long = src.clone();
+    fx("artistic.roughPastels", json!({"strokeLength": 8, "strokeDetail": 18, "relief": 12})).apply(&mut short, w, h, &space(w, h));
+    fx("artistic.roughPastels", json!({"strokeLength": 32, "strokeDetail": 18, "relief": 12})).apply(&mut long, w, h, &space(w, h));
+    assert!(short.as_chunks::<4>().0.iter().zip(src.as_chunks::<4>().0).all(|(o, s)| o[3] == s[3]));
+    let changed = |a: &Vec<u8>, b: &Vec<u8>| a.as_chunks::<4>().0.iter().zip(b.as_chunks::<4>().0).filter(|(o, s)| o != s).count();
+    assert!(changed(&short, &src) > w * h / 8, "short strokes repaint many pixels");
+    assert!(changed(&long, &short) > w * h / 16, "longer strokes smear differently");
 }
 
 #[test]
@@ -2747,6 +2776,7 @@ fn artistic_filters_look_the_same_at_any_resolution() {
         ("artistic.neonGlow", json!({"glowSize": 12, "glowBrightness": 30})),
         ("artistic.posterEdges", json!({"edgeThickness": 6, "edgeIntensity": 6})),
         ("artistic.underpainting", json!({"brushSize": 12, "textureCoverage": 20, "relief": 10})),
+        ("artistic.roughPastels", json!({"strokeLength": 12, "strokeDetail": 15, "texture": "burlap", "relief": 10})),
     ] {
         let (mut a, mut b) = (coarse.clone(), fine.clone());
         fx(id, p.clone()).apply(&mut a, w, h, &space(w, h));
