@@ -37,6 +37,8 @@ struct Ctx<'a> {
     /// a quarter turn back (see [`stands_upright`]); [`TextLayout::line_xf`] then stands the lines
     /// up as columns.
     vertical: bool,
+    /// Character panel menu › System Layout. On: positive advances are whole points.
+    system_layout: bool,
     /// Character panel menu › Fractional Widths. Off, positive advances are whole points.
     fractional_widths: bool,
     out: TextLayout,
@@ -73,9 +75,9 @@ impl Ctx<'_> {
                 }
             }
         }
-        // Fractional Widths off: whole-point advances, after tate-chu-yoko and the upright cell
-        // have set the widths the line breaker will use. A zero advance stays zero.
-        if !self.fractional_widths {
+        // System Layout or Fractional Widths off: whole-point advances, after tate-chu-yoko and the
+        // upright cell have set the widths the line breaker will use. A zero advance stays zero.
+        if self.system_layout || !self.fractional_widths {
             whole_character_widths(&mut v);
         }
         v
@@ -387,6 +389,7 @@ fn layout_once(db: &FontDb, t: &TextObject, opts: &LayoutOptions) -> TextLayout 
         default: CharStyle::default(),
         opts,
         vertical,
+        system_layout: t.system_layout,
         fractional_widths: t.fractional_widths,
         out: TextLayout::default(),
     };
@@ -454,9 +457,9 @@ fn layout_once(db: &FontDb, t: &TextObject, opts: &LayoutOptions) -> TextLayout 
     cx.out
 }
 
-/// Fractional Widths off: each character that takes space advances by a whole number of points,
-/// at least one, so small type does not collapse onto itself. A zero advance (a tate-chu-yoko
-/// continuation, a zero-width mark) stays zero.
+/// System Layout on or Fractional Widths off: each character that takes space advances by a whole
+/// number of points, at least one, so small type does not collapse onto itself. A zero advance (a
+/// tate-chu-yoko continuation, a zero-width mark) stays zero.
 fn whole_character_widths(glyphs: &mut [SGlyph]) {
     for g in glyphs {
         if g.adv.is_finite() && g.adv > 0.0 {

@@ -205,7 +205,7 @@ pub(crate) fn with_threads(d: &Document, ids: &[NodeId]) -> Vec<NodeId> {
 }
 
 /// A closed path converted to an empty area-type frame with `style`.
-fn frame_from_path(n: &Node, style: vectorcraft_doc::CharStyle) -> Option<Node> {
+fn frame_from_path(n: &Node, style: vectorcraft_doc::CharStyle, system_layout: bool) -> Option<Node> {
     let NodeKind::Path { path, .. } = &n.kind else { return None };
     if !path.subpaths.first().is_some_and(|s| s.closed) {
         return None;
@@ -213,6 +213,7 @@ fn frame_from_path(n: &Node, style: vectorcraft_doc::CharStyle) -> Option<Node> 
     let mut t = TextObject::point(vectorcraft_geom::Point::ZERO, "", style);
     t.kind = TextKind::Area { frame: path.clone() };
     t.xf = vectorcraft_geom::Affine::IDENTITY;
+    t.system_layout = system_layout;
     refresh_bounds(&mut t);
     Some(Node::new(n.id, NodeKind::Text(Box::new(t))))
 }
@@ -222,7 +223,8 @@ fn create(s: &mut Session, _: &Value) -> Result<Value> {
     let ids = selected_roots(s)?;
     let d = &s.doc()?.doc;
     let style = ids.iter().find_map(|i| text_of(d, *i)).map(|t| t.first_style()).unwrap_or_default();
-    let ok = ids.iter().all(|i| text_of(d, *i).is_some() || d.node(*i).is_some_and(|n| frame_from_path(n, style.clone()).is_some()));
+    let system = d.setup.system_layout;
+    let ok = ids.iter().all(|i| text_of(d, *i).is_some() || d.node(*i).is_some_and(|n| frame_from_path(n, style.clone(), system).is_some()));
     if ids.len() < 2 || !ok || !ids.iter().any(|i| text_of(d, *i).is_some()) {
         return Err(bad(C, "select area type and closed paths (at least one area type object)"));
     }
@@ -231,7 +233,7 @@ fn create(s: &mut Session, _: &Value) -> Result<Value> {
         for id in &ids {
             if text_of(d, *id).is_none() {
                 let n = d.node(*id).cloned().ok_or(EngineError::NoNode(*id))?;
-                let f = frame_from_path(&n, style.clone()).ok_or_else(|| bad(C, "not a closed path"))?;
+                let f = frame_from_path(&n, style.clone(), d.setup.system_layout).ok_or_else(|| bad(C, "not a closed path"))?;
                 *d.node_mut(*id).ok_or(EngineError::NoNode(*id))? = f;
             }
         }
@@ -271,7 +273,8 @@ fn add(s: &mut Session, p: &Value) -> Result<Value> {
         (Some(v), None, None) => {
             let to = checked_id(s, v, C)?;
             let parent = d.parent_of(to).and_then(|i| d.node(i));
-            let frame = text_of(d, to).is_some() || d.node(to).is_some_and(|n| frame_from_path(n, style.clone()).is_some());
+            let system = d.setup.system_layout;
+            let frame = text_of(d, to).is_some() || d.node(to).is_some_and(|n| frame_from_path(n, style.clone(), system).is_some());
             if to == from || !frame || parent.is_some_and(|n| matches!(n.kind, NodeKind::Compound { .. })) {
                 return Err(bad(C, "`to` must be a closed path, area type or type on a path other than `from`"));
             }
@@ -316,7 +319,8 @@ fn add(s: &mut Session, p: &Value) -> Result<Value> {
             None => {
                 if text_of(d, to).is_none() {
                     let n = d.node(to).cloned().ok_or(EngineError::NoNode(to))?;
-                    *d.node_mut(to).ok_or(EngineError::NoNode(to))? = frame_from_path(&n, style).ok_or_else(|| bad(C, "not a closed path"))?;
+                    *d.node_mut(to).ok_or(EngineError::NoNode(to))? =
+                        frame_from_path(&n, style, d.setup.system_layout).ok_or_else(|| bad(C, "not a closed path"))?;
                 }
                 to
             }

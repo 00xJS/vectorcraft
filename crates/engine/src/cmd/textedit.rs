@@ -862,6 +862,7 @@ fn create_in_path(s: &mut Session, p: &Value) -> Result<Value> {
         path_spacing: 0.0,
         wrap: Vec::new(),
         optical_margin: false,
+        system_layout: false,
         fractional_widths: true,
         cached_bounds: None,
         cached_baselines: Vec::new(),
@@ -870,6 +871,7 @@ fn create_in_path(s: &mut Session, p: &Value) -> Result<Value> {
     if !on_path {
         t.area.fit = super::create::new_area_fit(s, p, C)?;
     }
+    t.system_layout = s.doc()?.doc.setup.system_layout;
     if bool_or(p, "placeholder", false) {
         super::typemenu::fill_with_placeholder(&mut t);
     } else {
@@ -1085,7 +1087,8 @@ fn headline_tracking(t: &TextObject, target: f64) -> Option<f64> {
             path_spacing: 0.0,
             wrap: Vec::new(),
             optical_margin: false,
-            fractional_widths: true,
+            system_layout: t.system_layout,
+            fractional_widths: t.fractional_widths,
             cached_bounds: None,
             cached_baselines: Vec::new(),
         };

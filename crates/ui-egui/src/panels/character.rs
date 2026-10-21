@@ -807,7 +807,14 @@ pub fn menu(app: &mut VectorcraftApp, ui: &mut Ui) {
         }
         app.run("type.fractionalWidths", p).ok();
     }
-    for l in ["Standard Vertical Roman Alignment", "Tate-chu-yoko", "System Layout"] {
+    // System Layout: whole-point spacing for every text object in the document. It does not need
+    // a type selection; a document is enough.
+    let open = app.session.active().is_some();
+    let system = app.session.active().is_some_and(|st| st.doc.setup.system_layout);
+    if menu_item(ui, tl!("System Layout"), open, system) {
+        app.run("type.systemLayout", json!({})).ok();
+    }
+    for l in ["Standard Vertical Roman Alignment", "Tate-chu-yoko"] {
         menu_item(ui, tl!(l), false, false);
     }
     ui.separator();
@@ -1161,6 +1168,38 @@ mod tests {
             assert_eq!(scripts(&app, &id), [runs], "{item}");
             assert_eq!(checked(&mut app), shown, "{item}");
         }
+    }
+
+    /// Character panel menu › System Layout is off for a new document, and a click turns whole-point
+    /// spacing on and back off for every text object.
+    #[test]
+    fn system_layout_menu_item_toggles_the_document() {
+        let mut app = VectorcraftApp::new(Session::new(), Default::default());
+        app.run("file.new", json!({"width": 300, "height": 200})).unwrap();
+        let id = app.run("text.create", json!({"x": 20, "y": 50, "text": "Hi", "size": 13})).unwrap()["id"].as_u64().unwrap();
+        let ctx = egui::Context::default();
+        let on = |app: &VectorcraftApp| {
+            let st = app.session.active().unwrap();
+            let object = match &st.doc.node(NodeId(id)).unwrap().kind {
+                NodeKind::Text(t) => t.system_layout,
+                _ => panic!("text"),
+            };
+            (st.doc.setup.system_layout, object)
+        };
+        let row = |app: &mut VectorcraftApp| {
+            let texts = super::super::tests_appearance::frame_events(&ctx, app, vec![], menu);
+            texts.into_iter().find(|(t, _)| t.trim_start_matches(['✓', ' ']) == "System Layout")
+        };
+        assert_eq!(on(&app), (false, false));
+        assert!(row(&mut app).is_some_and(|(t, _)| !t.starts_with('✓')));
+        let at = row(&mut app).unwrap().1;
+        super::super::tests_appearance::click(&ctx, &mut app, at.center(), menu);
+        assert_eq!(on(&app), (true, true));
+        assert!(row(&mut app).is_some_and(|(t, _)| t.starts_with('✓')));
+        let at = row(&mut app).unwrap().1;
+        super::super::tests_appearance::click(&ctx, &mut app, at.center(), menu);
+        assert_eq!(on(&app), (false, false));
+        assert!(row(&mut app).is_some_and(|(t, _)| !t.starts_with('✓')));
     }
 
     /// Character panel menu › Fractional Widths is on for new type, and a click turns it off and

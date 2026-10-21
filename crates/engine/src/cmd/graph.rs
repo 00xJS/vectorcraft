@@ -373,6 +373,7 @@ impl Gen<'_> {
         let style = label_style(self.styles, role);
         let mut t = TextObject::point(at, s, style);
         t.para.justify = justify;
+        t.system_layout = self.d.setup.system_layout;
         refresh_bounds(&mut t);
         Arc::new(Node::new(self.d.alloc_id(), NodeKind::Text(Box::new(t))))
     }

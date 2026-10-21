@@ -53,6 +53,15 @@ pub fn specs() -> Vec<CommandSpec> {
             optical_margin_alignment
         ),
         cmd!(
+            "type.systemLayout",
+            "System Layout",
+            [],
+            None,
+            "{on?: bool} turn System Layout on or off for the document (on omitted: the opposite of the document's setting) and every text object in it. On, each character that takes any space advances by a whole number of points, at least one, so small type does not run together; a character with no width stays at none. Off (the default, and what a document from before it reads as), spacing uses fractions of a point. New point, area and path type inherits the document's setting → {on}",
+            has_doc,
+            system_layout
+        ),
+        cmd!(
             "type.fractionalWidths",
             "Fractional Widths",
             [],
@@ -153,6 +162,31 @@ fn optical_margin_alignment(s: &mut Session, p: &Value) -> Result<Value> {
         Ok(())
     })?;
     Ok(json!({"on": on, "ids": ids.iter().map(|id| id.0).collect::<Vec<_>>()}))
+}
+
+/// Character panel menu › System Layout: set `on` (without it, the opposite of the document's
+/// setting) on the document and every text object, in one undo step. Off is the default.
+fn system_layout(s: &mut Session, p: &Value) -> Result<Value> {
+    let current = s.doc()?.doc.setup.system_layout;
+    let on = p.get("on").and_then(Value::as_bool).unwrap_or(!current);
+    s.edit("System Layout", |d, _| {
+        d.setup.system_layout = on;
+        let mut ids = vec![];
+        d.walk(|n| {
+            if matches!(n.kind, NodeKind::Text(_)) {
+                ids.push(n.id);
+            }
+        });
+        for id in ids {
+            let Some(NodeKind::Text(t)) = d.node_mut(id).map(|n| &mut n.kind) else {
+                continue;
+            };
+            t.system_layout = on;
+            refresh_bounds(t);
+        }
+        Ok(())
+    })?;
+    Ok(json!({ "on": on }))
 }
 
 /// Character panel menu › Fractional Widths: set `on` (without it, the opposite of the first
@@ -1165,6 +1199,55 @@ mod area_tests {
         let mut old = serde_json::to_value(text(&s)).unwrap();
         old.as_object_mut().unwrap().remove("opticalMarginAlignment");
         assert!(!serde_json::from_value::<TextObject>(old).unwrap().optical_margin);
+    }
+
+    /// Character panel menu › System Layout: `type.systemLayout` sets the document and every text
+    /// object in one undo step. New type inherits it. Off by default and in a document from before
+    /// the flag, and saved only when on. On, each positive advance is a whole number of points.
+    #[test]
+    fn system_layout_sets_the_document_and_every_text_object() {
+        let mut s = Session::new();
+        s.execute("file.new", &json!({"width": 400, "height": 400})).unwrap();
+        let id = s.execute("text.create", &json!({"x": 10, "y": 40, "size": 13, "text": "Hi"})).unwrap()["id"].as_u64().unwrap();
+        s.execute("text.setStyle", &json!({"id": id, "tracking": 50})).unwrap();
+        let other = s.execute("text.create", &json!({"x": 10, "y": 80, "text": "Yo"})).unwrap()["id"].as_u64().unwrap();
+        let text = |s: &Session, id: u64| match &s.doc().unwrap().doc.node(NodeId(id)).unwrap().kind {
+            NodeKind::Text(t) => (**t).clone(),
+            _ => panic!("text"),
+        };
+        let setup = |s: &Session| s.doc().unwrap().doc.setup.clone();
+        let advances = |s: &Session| {
+            vectorcraft_text::layout(vectorcraft_text::FontDb::global(), &text(s, id)).glyphs.iter().map(|g| g.advance).collect::<Vec<_>>()
+        };
+        assert!(!setup(&s).system_layout);
+        assert!(!text(&s, id).system_layout && !text(&s, other).system_layout);
+        assert!(serde_json::to_value(setup(&s)).unwrap().get("systemLayout").is_none());
+        assert!(serde_json::to_value(text(&s, id)).unwrap().get("systemLayout").is_none());
+        let fractional = advances(&s);
+        assert!(fractional.iter().any(|a| (a - a.round()).abs() > 1e-6), "{fractional:?}");
+        assert_eq!(s.execute("type.systemLayout", &json!({})).unwrap()["on"], true);
+        assert!(setup(&s).system_layout);
+        assert!(text(&s, id).system_layout && text(&s, other).system_layout);
+        let whole = advances(&s);
+        assert!(whole.iter().all(|a| *a >= 1.0 && (a - a.round()).abs() < 1e-9), "{whole:?}");
+        assert!(fractional.iter().zip(&whole).any(|(a, b)| (a - b).abs() > 0.05), "{fractional:?} {whole:?}");
+        assert_eq!(serde_json::to_value(setup(&s)).unwrap()["systemLayout"], true);
+        assert_eq!(serde_json::to_value(text(&s, id)).unwrap()["systemLayout"], true);
+        // New type inherits the document's setting.
+        let made = s.execute("text.create", &json!({"x": 10, "y": 120, "text": "Z"})).unwrap()["id"].as_u64().unwrap();
+        assert!(text(&s, made).system_layout);
+        // A boolean given as text is ignored, so the setting toggles off.
+        assert_eq!(s.execute("type.systemLayout", &json!({"on": "no"})).unwrap()["on"], false);
+        assert!(!setup(&s).system_layout && !text(&s, id).system_layout && !text(&s, made).system_layout);
+        s.execute("edit.undo", &json!({})).unwrap();
+        assert!(setup(&s).system_layout && text(&s, id).system_layout);
+        let back = vectorcraft_format::load(&vectorcraft_format::save(&s.doc().unwrap().doc, false)).unwrap();
+        assert!(back.setup.system_layout);
+        let NodeKind::Text(t) = &back.node(NodeId(id)).unwrap().kind else { panic!("text") };
+        assert!(t.system_layout);
+        let mut old = serde_json::to_value(setup(&s)).unwrap();
+        old.as_object_mut().unwrap().remove("systemLayout");
+        assert!(!serde_json::from_value::<vectorcraft_doc::DocSetup>(old).unwrap().system_layout);
     }
 
     /// Character panel menu › Fractional Widths: `type.fractionalWidths` sets or toggles the flag
