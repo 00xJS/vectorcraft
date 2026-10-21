@@ -56,7 +56,6 @@ against Illustrator's public documentation; **estimated** unless noted.
 | CJK: Proportional Metrics (`palt` in horizontal type, `vpal` in vertical type) | done | #966 |
 | CJK: ruby, manual tate-chu-yoko | partial | ruby (ふりがな) for live text (`type.ruby`): a reading over a byte range, above (right of the column in vertical type) or below, start/centre/end alignment, size, overhang or squeeze; saved natively, laid out with its line growing, drawn on the canvas, in SVG and PDF (as outlines where ruby is present); manual tate-chu-yoko missing | #633 |
 | No Break | done | Character panel menu (`text.setFormat` / `text.setRangeStyle {noBreak}`): the marked characters stay on one line, including across a space; a run that does not fit after earlier text moves together, and a run longer than the line stays together. Evidence: `layout::wrapping_tests::no_break_keeps_marked_characters_on_one_line`, `tests::no_break_keeps_marked_words_on_one_line`, `typecmd::no_break_is_a_character_attribute_saved_only_when_on` |
-| CJK: ruby, manual tate-chu-yoko | missing | #633 |
 | Inline symbols in text | beyond Illustrator | not scored |
 | Align Stroke (inside, outside) on live type's character stroke | beyond Illustrator | not scored; `stroke.set {align}` and `text.setRangeStyle {strokeOptions: {align}}`; saved natively, drawn around the glyphs on the canvas and in PDF, EPS and SVG (live text, stroke on the glyph outlines); visual bounds grow with it (#2294) |
 
