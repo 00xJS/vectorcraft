@@ -2619,6 +2619,9 @@ passed straight back to `file.new`. Print presets and sizes without `units` star
 (mobile, web, video, social) in Pixels. A saved or Recent preset whose size (up to 163,830 pt), `artboards` (1 to
 1,000), spacing (0 to 100,000 pt) or bleed (0 to 72 pt a side) lies outside those ranges is read with the nearer end of
 each range, and a size of 0 or less is read as 1 pt.
+The desktop app's `file.newDialog` (Cmd/Ctrl+N) opens the New Document dialog on the first Recent entry, or on the
+Print category's Letter while Recent is empty. `file.newWithoutDialog` (Cmd/Ctrl+Alt+N) runs `file.new` with those
+settings and the next untitled name, without opening the dialog, and returns what `file.new` returns.
 
 ```json
 {"name":"run_command","arguments":{"command":"file.new","params":{"preset":"A4","orientation":"landscape","artboards":4,"artboardLayout":{"columns":2},"bleed":9}}}
