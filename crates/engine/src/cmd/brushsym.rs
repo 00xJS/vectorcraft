@@ -6,6 +6,7 @@
 //! `Node::geometric_bounds` assumes for instances, and each instance's `xf` scales it back. The
 //! natural size is kept in `Document::unknown["symbolSizes"]` so new instances come out right.
 
+use std::collections::BTreeSet;
 use std::sync::Arc;
 
 use serde_json::{Value, json};
@@ -83,6 +84,15 @@ pub fn specs() -> Vec<CommandSpec> {
             "{name, newName? (trimmed; blank: <name> copy)} | {names: [name…]} → {name} | {names}",
             has_doc,
             brush_duplicate
+        ),
+        cmd!(
+            query "brush.unused",
+            "Select All Unused",
+            [],
+            None,
+            "{} → {names: [the brushes no stroke paints with, in library order]} (the Brushes panel selects them): strokes in the art (opacity masks included), symbols, graph designs, pattern tiles and graphic styles count, and so do strokes in the art of a brush that is used",
+            has_doc,
+            brush_unused
         ),
         cmd!(
             "brush.options",
@@ -462,6 +472,44 @@ fn brush_duplicate(s: &mut Session, p: &Value) -> Result<Value> {
     }
     save_library(s, "Duplicate Brush", lib, &[])?;
     Ok(if p.get("names").is_some() { json!({ "names": out }) } else { json!({ "name": out.first() }) })
+}
+
+/// Adds the names of the brushes the strokes of `items` paint with to `out`.
+fn stroke_brushes(items: &[AppearanceItem], out: &mut Vec<String>) {
+    for it in items {
+        if let AppearanceItem::Stroke(st) = it
+            && let Some(b) = &st.brush
+        {
+            out.push(b.clone());
+        }
+    }
+}
+
+/// Adds the names of the brushes the strokes in `n` (its opacity masks included) paint with to
+/// `out`.
+fn art_brushes(n: &Node, out: &mut Vec<String>) {
+    vectorcraft_doc::swatches::walk_with_masks(n, &mut |m| stroke_brushes(&m.appearance.items, out));
+}
+
+/// The brushes no stroke paints with. Strokes in the art (opacity masks included), symbols, graph
+/// designs, pattern tiles and graphic styles count, and so do the strokes in the art of every brush
+/// that a counted stroke paints with.
+fn brush_unused(s: &mut Session, _: &Value) -> Result<Value> {
+    let d = &s.doc()?.doc;
+    let lib = brush::library(d);
+    let mut todo = vec![];
+    let trees = d.layers.iter().chain(d.symbols.iter().map(|s| &s.art)).chain(d.graph_designs.iter().map(|g| &g.art));
+    trees.chain(d.patterns.iter().flat_map(|p| &p.art)).for_each(|n| art_brushes(n, &mut todo));
+    d.graphic_styles.iter().for_each(|g| stroke_brushes(&g.appearance.items, &mut todo));
+    let mut used = BTreeSet::new();
+    while let Some(name) = todo.pop() {
+        if !used.contains(&name) {
+            lib.iter().filter(|b| b.name == name).flat_map(Brush::art).for_each(|n| art_brushes(n, &mut todo));
+            used.insert(name);
+        }
+    }
+    let names: Vec<&str> = lib.iter().map(|b| b.name.as_str()).filter(|n| !used.contains(*n)).collect();
+    Ok(json!({ "names": names }))
 }
 
 fn brush_options(s: &mut Session, p: &Value) -> Result<Value> {
