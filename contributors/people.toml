@@ -144,3 +144,6 @@ sync_github_name = true
 [people.odysseexp]
 real_name = "Harley Paiva"
 sync_github_name = true
+
+[people.addibble]
+sync_github_name = true
