@@ -2071,6 +2071,13 @@ fn halftone(p: serde_json::Value, src: &[u8], w: usize, h: usize, s: &PixelSpace
     out
 }
 
+/// Torn Edges of `p` over `w` × `h` pixels of `src`, laid out by `s`.
+fn torn(p: serde_json::Value, src: &[u8], w: usize, h: usize, s: &PixelSpace) -> Vec<u8> {
+    let mut out = src.to_vec();
+    fx("sketch.tornEdges", p).apply(&mut out, w, h, s);
+    out
+}
+
 /// Water Paper of `p` over `w` × `h` pixels of `src`, laid out by `s`.
 fn water_paper(p: serde_json::Value, src: &[u8], w: usize, h: usize, s: &PixelSpace) -> Vec<u8> {
     let mut out = src.to_vec();
@@ -2402,6 +2409,63 @@ fn reticulation_density_changes_the_grain() {
     let low = reticulation(json!({"density": 5}), &src, w, h, &space(w, h));
     let high = reticulation(json!({"density": 45}), &src, w, h, &space(w, h));
     assert_ne!(low, high);
+}
+
+#[test]
+fn torn_edges_params_take_defaults_and_stay_in_range() {
+    assert_eq!(fx("sketch.tornEdges", json!({})), PixelFx::TornEdges { image_balance: 25.0, smoothness: 11.0, contrast: 17.0 });
+    assert_eq!(
+        fx("sketch.tornEdges", json!({"imageBalance": 0, "smoothness": 99, "contrast": -1})),
+        PixelFx::TornEdges { image_balance: 0.0, smoothness: 15.0, contrast: 0.0 }
+    );
+    assert_eq!(
+        fx("sketch.tornEdges", json!({"imageBalance": 1e9, "smoothness": -3, "contrast": 1e9})),
+        PixelFx::TornEdges { image_balance: 50.0, smoothness: 0.0, contrast: 20.0 }
+    );
+    for junk in [json!({"imageBalance": "x"}), json!({"smoothness": null})] {
+        assert_eq!(fx("sketch.tornEdges", junk), fx("sketch.tornEdges", json!({})));
+    }
+    assert_eq!(fx("sketch.tornEdges", json!({})).reach(), None);
+}
+
+#[test]
+fn torn_edges_draws_in_black_and_white_and_keeps_coverage() {
+    let (w, h) = (64, 48);
+    let src = ramp(w, h);
+    let out = torn(json!({"imageBalance": 12, "contrast": 20, "smoothness": 5}), &src, w, h, &space(w, h));
+    for (p, q) in out.as_chunks::<4>().0.iter().zip(src.as_chunks::<4>().0) {
+        assert_eq!(p[3], q[3], "coverage kept");
+        assert!(p[0] == p[1] && p[1] == p[2] && (p[0] == 0 || p[0] == p[3]), "black or white: {p:?}");
+    }
+    assert!(share(&out, |p| p[0] == 0) > 0.05 && share(&out, |p| p[0] == p[3]) > 0.05, "ink and paper");
+}
+
+#[test]
+fn torn_edges_image_balance_shifts_ink_on_a_grey_ramp() {
+    let (w, h) = (80, 16);
+    let src = image(w, h, |x, _| grey((x * 255 / (w - 1)) as u8));
+    let params = json!({"imageBalance": 25, "contrast": 20, "smoothness": 5});
+    let out = torn(params, &src, w, h, &space(w, h));
+    let mut dark_ink = 0usize;
+    let mut bright_ink = 0usize;
+    for y in 0..h {
+        for x in 0..w / 4 {
+            if at(&out, w, x, y)[0] == 0 {
+                dark_ink += 1;
+            }
+        }
+        for x in 3 * w / 4..w {
+            if at(&out, w, x, y)[0] == 0 {
+                bright_ink += 1;
+            }
+        }
+    }
+    let dark_n = (w / 4) * h;
+    let bright_n = (w - 3 * w / 4) * h;
+    assert!(dark_ink as f64 / dark_n as f64 > bright_ink as f64 / bright_n as f64 + 0.2, "dark end of ramp is inkier than bright end");
+    let dark = share(&torn(json!({"imageBalance": 0, "contrast": 20, "smoothness": 5}), &src, w, h, &space(w, h)), |p| p[0] == 0);
+    let light = share(&torn(json!({"imageBalance": 50, "contrast": 20, "smoothness": 5}), &src, w, h, &space(w, h)), |p| p[0] == 0);
+    assert!(dark > light + 0.15, "low balance leaves more ink: dark={dark} light={light}");
 }
 
 /// The distinct colours of the covered pixels.

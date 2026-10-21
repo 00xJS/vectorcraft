@@ -162,6 +162,7 @@ fn lengths_of(id: &str) -> Lengths {
         "sketch.graphicPen" => always(&["strokeLength"]),
         "sketch.halftonePattern" => always(&["size"]),
         "sketch.notePaper" => always(&["relief"]),
+        "sketch.tornEdges" => always(&["smoothness"]),
         "sketch.waterPaper" => always(&["fiberLength"]),
         RASTERIZE => always(&["addAround"]),
         _ => Lengths::default(),
@@ -638,6 +639,13 @@ pub fn effect_catalog() -> Vec<EffectInfo> {
             SKETCH,
             "{lightDarkBalance: 0..50 (25; the larger, the more of the object prints black), smoothness: 1..50 (5; rounds the shapes)} simplifies the object to solid black and white, as a rubber stamp would print it. Coverage is kept. Original visual approximation; chosen VectorCraft defaults.",
             json!({"lightDarkBalance": 25.0, "smoothness": 5.0}),
+        ),
+        r(
+            "sketch.tornEdges",
+            "Torn Edges…",
+            SKETCH,
+            "{imageBalance: 0..50 (25; lower leaves more midtones as ink, higher as paper), smoothness: 0..15 (11; softens tones and the ragged edges), contrast: 0..20 (17; 20 is pure black and white)} redraws the object in high-contrast black and white with torn, ragged edges along its tones, keeping its coverage. Original visual approximation; chosen VectorCraft defaults.",
+            json!({"imageBalance": 25.0, "smoothness": 11.0, "contrast": 17.0}),
         ),
         r(
             "sketch.waterPaper",
