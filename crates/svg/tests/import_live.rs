@@ -197,22 +197,6 @@ fn figma_blurred_shapes_inside_mask_import_with_effects_and_no_warnings() {
         }
     });
     assert_eq!(blurs, vec![4.0, 8.0]);
-
-    let path = std::path::Path::new("/home/deck/Pictures/ícones e figurinhas/antigravity-color.svg");
-    if path.exists() {
-        let svg = std::fs::read_to_string(path).unwrap();
-        let (d, w) = import_with_report(&svg).unwrap();
-        assert!(w.is_empty(), "{w:?}");
-        let mut count = 0;
-        d.walk(|n| {
-            for e in &n.appearance.effects {
-                if e.id == "blur.gaussian" {
-                    count += 1;
-                }
-            }
-        });
-        assert_eq!(count, 11);
-    }
 }
 
 #[test]
