@@ -180,6 +180,10 @@ pub struct TextLayout {
     /// turn clockwise for vertical type (point type also centres its first column on the anchor).
     pub line_xf: Affine,
     pub glyphs: Vec<PositionedGlyph>,
+    /// Ruby (furigana) glyphs, laid out over their base text: geometry like [`Self::glyphs`], but
+    /// they are not characters of the text (their `len` is 0 and their `run` is the base text's
+    /// run, for the fill and stroke). Empty when the type has no ruby.
+    pub ruby: Vec<PositionedGlyph>,
     pub lines: Vec<LineInfo>,
     /// Ink/advance bounds in text space.
     pub bounds: Rect,
@@ -203,6 +207,7 @@ impl Default for TextLayout {
             vertical: false,
             line_xf: Affine::IDENTITY,
             glyphs: Vec::new(),
+            ruby: Vec::new(),
             lines: Vec::new(),
             bounds: Rect::ZERO,
             overflow: false,
@@ -237,7 +242,7 @@ impl TextLayout {
     /// All glyph outlines combined (e.g. for Create Outlines).
     pub fn to_bezpath(&self) -> BezPath {
         let mut p = BezPath::new();
-        for g in &self.glyphs {
+        for g in self.glyphs.iter().chain(&self.ruby) {
             p.extend(g.outline.iter());
         }
         p
@@ -604,6 +609,8 @@ mod tests_inline;
 mod tests_joiners;
 #[cfg(test)]
 mod tests_justify;
+#[cfg(test)]
+mod tests_ruby;
 #[cfg(test)]
 mod tests_scripts;
 #[cfg(test)]

@@ -209,6 +209,8 @@ fn edit_range(s: &mut Session, p: &Value) -> Result<Value> {
             Some(r) => edit::replace_range_styled(&mut t.runs, a, b, r),
             None => edit::replace_range(&mut t.runs, a, b, &insert),
         };
+        // Ruby over the edited text moves with it (its ranges are plain-text bytes).
+        t.ruby_after_replace(a, b, inserted.len());
         refresh_bounds(t);
         Ok(caret)
     })?;
@@ -849,6 +851,7 @@ fn create_in_path(s: &mut Session, p: &Value) -> Result<Value> {
         kind,
         xf: Affine::IDENTITY,
         runs: vec![TextRun { text, style, inline: None }],
+        ruby: Vec::new(),
         para: super::create::new_type_para(),
         paras: Vec::new(),
         area: Default::default(),
@@ -1070,6 +1073,8 @@ fn headline_tracking(t: &TextObject, target: f64) -> Option<f64> {
             kind: TextKind::Point,
             xf: Affine::IDENTITY,
             runs: head.clone(),
+            // Ruby over the counted part; the layout clamps it to `head`.
+            ruby: t.ruby.clone(),
             para: Default::default(),
             paras: Vec::new(),
             area: Default::default(),

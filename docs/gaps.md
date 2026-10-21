@@ -207,8 +207,11 @@ from G14 and the budget run of G15: **~170–270 h** one agent, ~50–80 h wall 
 - **Done:** Paragraph panel menu › Roman Hanging Punctuation (#2756), per paragraph; estimate unchanged.
 - **Done:** Paragraph panel menu › Justification… (#2755): word and letter spacing, glyph scaling (Minimum, Desired,
   Maximum), Auto Leading and Single Word Justification per paragraph, used by both composers; estimate unchanged.
+- **Done:** Ruby (ふりがな) for live text (`type.ruby`): a reading over a byte range, above or below (right of the
+  column in vertical type), aligned, sized, overhanging or squeezed; saved natively, laid out with line growth, drawn
+  on the canvas and in SVG/PDF (outlines where ruby is present); estimate unchanged.
 - **Missing:** CJK vertical
-  composition (ruby, mojikumi sets and dialog, kinsoku settings #633, manual tate-chu-yoko), Middle Eastern
+  composition (mojikumi sets and dialog, kinsoku settings #633, manual tate-chu-yoko), Middle Eastern
   features beyond bidi and digit types (Character Direction, kashidas, composers), variable font axes, spell check with an open dictionary,
   Touch Type, Retype, Snap to Glyph; optional preservation of font sizes during group scaling (#1034 enhancement).
   Itemized in [type-parity.md](type-parity.md).

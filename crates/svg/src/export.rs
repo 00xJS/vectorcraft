@@ -1787,7 +1787,8 @@ impl Writer<'_> {
         let resolved = doc.inline_resolved(t);
         let t = &*resolved;
         let inline = t.runs.iter().any(|r| r.inline.is_some());
-        let outlined = self.opts.outline_text || t.vertical || (inline && matches!(t.kind, TextKind::OnPath { .. }));
+        // Ruby is written as outlines with its base text: a reader's <text> can't place it.
+        let outlined = self.opts.outline_text || t.vertical || !t.ruby.is_empty() || (inline && matches!(t.kind, TextKind::OnPath { .. }));
         let chars = |w: &mut Self, n: &Node| if outlined { w.text_outlines(n, t) } else { w.text(n, t) };
         let painted = n.appearance.items.iter().any(|i| i.visible() && !i.paint().is_none());
         // Live type with an inside or outside character stroke writes that stroke apart from the
@@ -1842,9 +1843,16 @@ impl Writer<'_> {
         let db = vectorcraft_text::FontDb::global();
         let lay = vectorcraft_text::layout(db, t);
         let mut runs: Vec<(usize, kurbo::BezPath)> = vec![];
-        // Underline and strikethrough bars join their run's outlines.
+        // Underline and strikethrough bars join their run's outlines; ruby glyphs are painted
+        // with the run of the text they annotate.
         let bars = vectorcraft_text::decorations(&lay, db, t);
-        for (run, outline) in lay.glyphs.iter().map(|g| (g.run, &g.outline)).chain(bars.iter().map(|(r, b)| (*r, b))) {
+        for (run, outline) in lay
+            .glyphs
+            .iter()
+            .map(|g| (g.run, &g.outline))
+            .chain(lay.ruby.iter().map(|g| (g.run, &g.outline)))
+            .chain(bars.iter().map(|(r, b)| (*r, b)))
+        {
             match runs.iter_mut().find(|(r, _)| *r == run) {
                 Some((_, bp)) => bp.extend(outline.iter()),
                 None => runs.push((run, outline.clone())),
