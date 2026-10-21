@@ -89,6 +89,7 @@ fn effect_menu_lists_the_artistic_filters_before_blur() {
     assert_eq!(
         labels,
         [
+            "Colored Pencil…",
             "Cutout…",
             "Dry Brush…",
             "Film Grain…",
@@ -105,8 +106,8 @@ fn effect_menu_lists_the_artistic_filters_before_blur() {
         ]
     );
     assert!(artistic.iter().all(|e| e.command.as_deref() == Some("effect.dialog")));
-    assert_eq!(artistic[1].params, json!({"effect": "artistic.dryBrush"}));
-    assert_eq!(artistic[3].params, json!({"effect": "artistic.neonGlow"}));
+    assert_eq!(artistic[2].params, json!({"effect": "artistic.dryBrush"}));
+    assert_eq!(artistic[4].params, json!({"effect": "artistic.neonGlow"}));
     let at = |name: &str| entries.iter().position(|e| e.path == ["Effect", name]).unwrap();
     assert!(at("Artistic") < at("Blur"));
 }

@@ -31,7 +31,8 @@ const BRUSH_STROKES: [(&str, &str); 8] = [
 ];
 
 /// Effect › Artistic, at their defaults.
-const ARTISTIC: [(&str, &str); 13] = [
+const ARTISTIC: [(&str, &str); 14] = [
+    ("artistic.coloredPencil", "{}"),
     ("artistic.cutout", "{}"),
     ("artistic.dryBrush", "{}"),
     ("artistic.filmGrain", "{}"),

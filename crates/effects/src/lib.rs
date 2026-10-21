@@ -351,6 +351,13 @@ pub fn effect_catalog() -> Vec<EffectInfo> {
         r("stylize.feather", "Feather…", STYLIZE, "{radius: pt (5)}", json!({"radius": 5.0})),
         r("blur.gaussian", "Gaussian Blur…", BLUR, "{radius: pt (5)}", json!({"radius": 5.0})),
         r(
+            "artistic.coloredPencil",
+            "Colored Pencil…",
+            ARTISTIC,
+            "{pencilWidth: 1..24 (5; stroke spacing in document units), strokePressure: 0..15 (5; how heavily the strokes darken), paperBrightness: 0..50 (25; lifts lighter areas toward the paper)} redraws the object in coloured pencil strokes along its edges, keeping its hues and coverage. Original visual approximation; chosen VectorCraft defaults.",
+            json!({"pencilWidth": 5.0, "strokePressure": 5.0, "paperBrightness": 25.0}),
+        ),
+        r(
             "artistic.cutout",
             "Cutout…",
             ARTISTIC,

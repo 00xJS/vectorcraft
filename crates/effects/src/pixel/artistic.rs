@@ -1,4 +1,4 @@
-//! Effect › Artistic (Cutout, Dry Brush, Film Grain, Neon Glow, Paint Daubs, Palette Knife, Plastic Wrap, Poster
+//! Effect › Artistic (Colored Pencil, Cutout, Dry Brush, Film Grain, Neon Glow, Paint Daubs, Palette Knife, Plastic Wrap, Poster
 //! Edges, Rough Pastels, Smudge Stick, Sponge, Underpainting and Watercolor). Original filters built from
 //! public behaviour documentation:
 //! <https://helpx.adobe.com/illustrator/using/summary-effects.html> and
@@ -71,6 +71,7 @@ impl PaintDaubBrush {
 pub(super) fn paint_daub_radius(size: f64) -> f64 {
     size.clamp(1.0, 50.0) * 0.48
 }
+const SALT_PENCIL: u64 = 304;
 
 /// Keep the last cell's four corner values: magnified adjacent pixels often share a cell.
 /// The cache changes only cost, never the field, and needs constant storage per raster.
@@ -217,6 +218,55 @@ fn soften(planes: &mut [Vec<f32>], alpha: &[f32], w: usize, h: usize, sigma: f64
 fn planes(px: &[[u8; 4]]) -> ([Vec<f32>; 3], Vec<f32>) {
     let colours = px.iter().map(|p| straight(*p)).collect::<Vec<_>>();
     (std::array::from_fn(|k| colours.iter().map(|c| c[k]).collect()), px.iter().map(|p| f32::from(p[3]) / 255.0).collect())
+}
+
+/// How far (document units) Colored Pencil reaches at pencil width `width`: soften at
+/// `0.12 * width` and the Sobel neighbourhood around it.
+pub(super) fn colored_pencil_reach(width: f64) -> f64 {
+    3.0 * 0.12 * width.clamp(1.0, 24.0) + 1.0
+}
+
+/// Colored Pencil: the object redrawn with coloured pencil strokes along local edges, keeping its
+/// hues. `width` (1..24) sets the stroke spacing in document units; `pressure` (0..15) darkens
+/// along the strokes; `paper` (0..50) lifts lighter areas toward the paper. Coverage is kept.
+pub(super) fn colored_pencil(px: &mut [[u8; 4]], w: usize, h: usize, space: &PixelSpace, width: f64, pressure: f64, paper: f64) {
+    if !([width, pressure, paper].iter().all(|v| v.is_finite()) && space.px.is_finite() && space.px > 0.0) {
+        return;
+    }
+    let width = width.clamp(1.0, 24.0);
+    let pressure = (pressure / 15.0).clamp(0.0, 1.0) as f32;
+    let paper_lift = (paper / 50.0).clamp(0.0, 1.0) as f32;
+    if pressure == 0.0 && paper_lift == 0.0 {
+        return;
+    }
+    let Some(place) = Place::new(space, w, h) else { return };
+    let (mut colour, alpha) = planes(px);
+    soften(&mut colour, &alpha, w, h, (0.12 * width) / space.px);
+    let tones: Vec<f32> = (0..px.len()).map(|k| luma([colour[0][k], colour[1][k], colour[2][k]])).collect();
+    let mut edges = vec![0.0f32; px.len()];
+    for (e, s) in edges.iter_mut().zip(sobel(&tones, w, h)) {
+        *e = (s / 4.0).min(1.0);
+    }
+    let spacing = (0.35 * width).max(1.0);
+    place.each(px, |x, y, p| {
+        if p[3] == 0 {
+            return;
+        }
+        let k = y * w + x;
+        let c = [colour[0][k], colour[1][k], colour[2][k]];
+        let gx = tone_at(&tones, w, h, x as isize + 1, y as isize) - tone_at(&tones, w, h, x as isize - 1, y as isize);
+        let gy = tone_at(&tones, w, h, x as isize, y as isize + 1) - tone_at(&tones, w, h, x as isize, y as isize - 1);
+        let angle = gy.atan2(gx) + std::f32::consts::FRAC_PI_2;
+        let (dx, dy) = (angle.cos() as f64, angle.sin() as f64);
+        let q = place.at(x, y);
+        let along = q.x * dx + q.y * dy;
+        let grain = value_noise(SALT_PENCIL, along / spacing, (q.x * 0.37 + q.y * 0.11) / spacing);
+        let stroke = (0.5 + 0.5 * (along / spacing * TAU + grain * 3.0).sin()) as f32;
+        let ink = pressure * (0.3 + 0.55 * stroke) * (0.55 + 0.45 * edges[k]);
+        let lift = paper_lift * (1.0 - luma(c)) * 0.35;
+        let c = c.map(|v| (v * (1.0 - ink * 0.45) + lift * (1.0 - v)).clamp(0.0, 1.0));
+        *p = premultiply(c, f32::from(p[3]) / 255.0);
+    });
 }
 
 /// Cutout: the object as flat pieces of coloured paper. Its colours, softened as `simplicity`

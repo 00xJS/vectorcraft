@@ -2421,6 +2421,12 @@ fn ramp(w: usize, h: usize) -> Vec<u8> {
 
 #[test]
 fn artistic_params_take_defaults_and_stay_in_range() {
+    assert_eq!(fx("artistic.coloredPencil", json!({})), PixelFx::ColoredPencil { width: 5.0, pressure: 5.0, paper: 25.0 });
+    assert_eq!(
+        fx("artistic.coloredPencil", json!({"pencilWidth": 0, "strokePressure": 200, "paperBrightness": -5})),
+        PixelFx::ColoredPencil { width: 1.0, pressure: 15.0, paper: 0.0 }
+    );
+    assert_eq!(fx("artistic.coloredPencil", json!({})).reach(), Some(artistic::colored_pencil_reach(5.0)));
     assert_eq!(fx("artistic.cutout", json!({})), PixelFx::Cutout { levels: 4.0, simplicity: 4.0, fidelity: 2.0 });
     assert_eq!(
         fx("artistic.cutout", json!({"levels": 1e308, "edgeSimplicity": -5, "edgeFidelity": "NaN"})),
@@ -2484,8 +2490,15 @@ fn artistic_params_take_defaults_and_stay_in_range() {
         fx("artistic.plasticWrap", json!({"highlightStrength": -1, "detail": 99, "smoothness": 0})),
         PixelFx::PlasticWrap { highlight: 0.0, detail: 15.0, smoothness: 1.0 }
     );
-    for id in ["artistic.cutout", "artistic.dryBrush", "artistic.neonGlow", "artistic.plasticWrap", "artistic.posterEdges", "artistic.underpainting"]
-    {
+    for id in [
+        "artistic.coloredPencil",
+        "artistic.cutout",
+        "artistic.dryBrush",
+        "artistic.neonGlow",
+        "artistic.plasticWrap",
+        "artistic.posterEdges",
+        "artistic.underpainting",
+    ] {
         assert_eq!(fx(id, json!({})).outset(Rect::new(0.0, 0.0, 40.0, 30.0)), 0.0, "{id} keeps the object's shape");
     }
     assert_eq!(fx("artistic.paintDaubs", json!({})), PixelFx::PaintDaubs { size: 10.0, sharpness: 25.0, kind: PaintDaubBrush::Simple });
@@ -2507,6 +2520,19 @@ fn artistic_params_take_defaults_and_stay_in_range() {
         }
     }
     assert!(fx("artistic.roughPastels", json!({})).outset(Rect::new(0.0, 0.0, 40.0, 30.0)) > 0.0);
+}
+
+#[test]
+fn colored_pencil_strokes_change_pixels_and_keep_coverage() {
+    let (w, h) = (48, 32);
+    let src = ramp(w, h);
+    let mut out = src.clone();
+    fx("artistic.coloredPencil", json!({"strokePressure": 12})).apply(&mut out, w, h, &space(w, h));
+    assert_ne!(out, src);
+    assert!(out.as_chunks::<4>().0.iter().zip(src.as_chunks::<4>().0).all(|(o, s)| o[3] == s[3]));
+    let mut mild = src.clone();
+    fx("artistic.coloredPencil", json!({"strokePressure": 0, "paperBrightness": 0})).apply(&mut mild, w, h, &space(w, h));
+    assert_eq!(mild, src, "zero pressure and paper leaves the art unchanged");
 }
 
 #[test]
