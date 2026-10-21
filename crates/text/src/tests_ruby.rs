@@ -108,14 +108,24 @@ fn a_reading_wider_than_its_base_overhangs_or_is_squeezed() {
 #[test]
 fn ruby_aligns_start_centre_and_end_over_its_base() {
     let mut t = ruby_text("漢字", 6, "かん", 20.0);
-    let base = union_rect(layout(db(), &TextObject::point(Point::ZERO, "漢字", style(20.0))).glyphs.iter()).expect("base ink");
+    // Alignment uses advances, not ink bearings, which differ between installed fallback fonts.
+    let base_lay = layout(db(), &TextObject::point(Point::ZERO, "漢字", style(20.0)));
+    let base_line = &base_lay.lines[0];
+    let base = Rect::new(base_line.x0, 0.0, base_line.x1, 0.0);
+    let reading = layout(db(), &TextObject::point(Point::ZERO, "かん", style(10.0)));
+    let reading_line = &reading.lines[0];
+    let width = reading_line.x1 - reading_line.x0;
     for (align, check) in [
-        (RubyAlign::Start, (|r: Rect, b: Rect| (r.x0 - b.x0).abs() < 0.5) as fn(Rect, Rect) -> bool),
-        (RubyAlign::Center, |r: Rect, b: Rect| (((r.x0 + r.x1) - (b.x0 + b.x1)) * 0.5).abs() < 0.5),
-        (RubyAlign::End, |r: Rect, b: Rect| (r.x1 - b.x1).abs() < 0.5),
+        (RubyAlign::Start, (|r: Rect, b: Rect| (r.x0 - b.x0).abs() < 1e-6) as fn(Rect, Rect) -> bool),
+        (RubyAlign::Center, |r: Rect, b: Rect| (((r.x0 + r.x1) - (b.x0 + b.x1)) * 0.5).abs() < 1e-6),
+        (RubyAlign::End, |r: Rect, b: Rect| (r.x1 - b.x1).abs() < 1e-6),
     ] {
         t.ruby[0].align = align;
-        let ruby = ruby_ink(&layout(db(), &t));
+        let lay = layout(db(), &t);
+        // Ruby glyphs are attachments with zero advance: use their pen origin and the reading's
+        // standalone advance width. A wrong Start/Center/End placement still fails this test.
+        let x0 = lay.ruby[0].origin.x - reading.glyphs[0].origin.x + reading_line.x0;
+        let ruby = Rect::new(x0, 0.0, x0 + width, 0.0);
         assert!(check(ruby, base), "{align:?}: {ruby:?} over {base:?}");
     }
 }
