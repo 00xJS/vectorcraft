@@ -39,7 +39,7 @@ pub fn specs() -> Vec<CommandSpec> {
             "Shape Builder",
             [],
             None,
-            "{ids?|id?: [id…] (default: selection), points: [[x,y]…] (drag path; one point = click), erase?: bool (erase mode, Alt: deletes the regions touched, and the pieces of open paths that cut regions and the edges (outline pieces between the points where paths meet; see shapeBuilder.regions) within tolerance; a deleted edge opens its path there, and edges bounding a deleted region go with it), tolerance?: pt (2, erase only), openFilledAsClosed?: true (Consider Open Filled Paths as Closed: a filled open path bounds a region as if an invisible edge closed it; false: it cuts the regions it crosses like an unfilled one), pickColorFrom?: \"artwork\" (default: the merged shape takes the fill of the front-most object over the first region the drag touches that an object covers; the current fill when only lines enclose every region touched) | \"swatches\" (the current fill), fill?: \"#rrggbb\" | {color|swatch|gradient|none} (overrides pickColorFrom)} → {ids, merged, regions, lines, edges} (counts deleted or merged)",
+            "{ids?|id?: [id…] (default: selection), points: [[x,y]…] (drag path; one point = click), erase?: bool (erase mode, Alt: deletes the regions touched, and the pieces of open paths that cut regions and the edges (outline pieces between the points where paths meet; see shapeBuilder.regions) within tolerance; a deleted edge opens its path there, and edges bounding a deleted region go with it), tolerance?: pt (2, erase only), gap?: pt (0–72; 0: Gap Detection off), openFilledAsClosed?: true (Consider Open Filled Paths as Closed: a filled open path bounds a region as if an invisible edge closed it; false: it cuts the regions it crosses like an unfilled one), pickColorFrom?: \"artwork\" (default: the merged shape takes the fill of the front-most object over the first region the drag touches that an object covers; the current fill when only lines enclose every region touched) | \"swatches\" (the current fill), fill?: \"#rrggbb\" | {color|swatch|gradient|none} (overrides pickColorFrom)} → {ids, merged, regions, lines, edges} (counts deleted or merged)",
             has_selection_or_ids,
             sb_merge
         ),
@@ -48,7 +48,7 @@ pub fn specs() -> Vec<CommandSpec> {
             "Shape Builder Regions",
             [],
             None,
-            "{ids?|id?, openFilledAsClosed?: true (as shapeBuilder.merge)} → {regions: [{bounds: [x0,y0,x1,y1], area, sources: [id…]}], lines: [{bounds, source: id}], edges: [{bounds, source: id}]} faces of the planar arrangement (unfilled open paths cut them, and filled ones too with openFilledAsClosed false; sources is empty for an area only they enclose), the pieces of those open paths and the edges (the other paths' outlines cut where paths meet; source: the front-most path along it), which erasing deletes",
+            "{ids?|id?, gap?: pt (0–72; 0: Gap Detection off), openFilledAsClosed?: true (as shapeBuilder.merge)} → {regions: [{bounds: [x0,y0,x1,y1], area, sources: [id…]}], lines: [{bounds, source: id}], edges: [{bounds, source: id}]} faces of the planar arrangement (unfilled open paths cut them, and filled ones too with openFilledAsClosed false; sources is empty for an area only they enclose), the pieces of those open paths and the edges (the other paths' outlines cut where paths meet; source: the front-most path along it), which erasing deletes",
             has_selection_or_ids,
             sb_regions
         ),
@@ -236,6 +236,12 @@ fn fill_param(s: &Session, p: &Value, cmd: &str) -> Result<Option<Paint>> {
     }
 }
 
+/// Gap Detection length in points, bounded like Live Paint's custom gap size.
+fn gap_param(p: &Value) -> f64 {
+    let gap = f64_or(p, "gap", 0.0);
+    if gap.is_finite() { gap.clamp(0.0, po::SHAPE_BUILDER_MAX_GAP) } else { 0.0 }
+}
+
 fn sb_merge(s: &mut Session, p: &Value) -> Result<Value> {
     const C: &str = "shapeBuilder.merge";
     let pts = points_param(p, "points").ok_or_else(|| bad(C, "missing points [[x,y]…]"))?;
@@ -262,7 +268,7 @@ fn sb_merge(s: &mut Session, p: &Value) -> Result<Value> {
     let roots = root_ids(s, p)?;
     let label = if erase { "Shape Builder Delete" } else { "Shape Builder" };
     let (ids, merged, touched) = s.edit(label, |d, sel| {
-        let (map, leaves) = BuilderMap::new(d, &roots, erase, open_filled_as_closed);
+        let (map, leaves) = BuilderMap::with_gap(d, &roots, erase, open_filled_as_closed, gap_param(p));
         let leaves: Vec<Node> = leaves.into_iter().cloned().collect();
         if map.shapes.is_empty() {
             return Err(EngineError::Other("Shape Builder: select paths or compound paths".into()));
@@ -280,7 +286,7 @@ fn sb_merge(s: &mut Session, p: &Value) -> Result<Value> {
         // Edges come back from the planar map within a few hundredths of the outlines they follow.
         let cut_tol = step * 0.2;
         let picked: Vec<&po::Region> = touched.regions.iter().filter_map(|&i| map.regions.get(i).map(|r| &r.0)).collect();
-        let faces = po::FaceMerger::new(&map.shapes);
+        let faces = po::FaceMerger::with_gap(&map.shapes, gap_param(p));
         let union = if picked.is_empty() { PathData::default() } else { faces.merge(&picked) };
         // The merged shape takes the look of the front-most object over the first region, or (for an
         // area only lines enclose) of the front-most object and the current fill.
@@ -378,7 +384,7 @@ fn replace_roots(d: &mut Document, roots: &[NodeId], nodes: Vec<Node>) -> Result
 fn sb_regions(s: &mut Session, p: &Value) -> Result<Value> {
     let roots = root_ids(s, p)?;
     let d = &s.doc()?.doc;
-    let (map, leaves) = BuilderMap::new(d, &roots, true, bool_or(p, "openFilledAsClosed", true));
+    let (map, leaves) = BuilderMap::with_gap(d, &roots, true, bool_or(p, "openFilledAsClosed", true), gap_param(p));
     let id_of = |i: usize| leaves.get(i).map(|n| n.id.0);
     let regions: Vec<Value> = map
         .regions

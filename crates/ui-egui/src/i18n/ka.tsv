@@ -5230,6 +5230,7 @@ imageTrace	Outline	კონტური
 # Select by Color (select.color)
 	Select by Color	მონიშვნა ფერის მიხედვით
 @msg	thumbnail: no page {n} (the file has 1)	thumbnail: გვერდი {n} არ არსებობს (ფაილს 1 გვერდი აქვს)
+	Gap Length:	ღრეჩოს სიგრძე:
 	Smudge Stick…	დასაზელი ჯოხი…
 	Smudge Stick	დასაზელი ჯოხი
 	Sponge…	ღრუბელი…
