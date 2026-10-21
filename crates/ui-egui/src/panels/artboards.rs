@@ -1,4 +1,6 @@
-//! Artboards panel: numbered list with inline rename (double-click the name), move up / down, new
+//! Artboards panel: numbered list with inline rename (double-click the name, or the panel menu's
+//! Rename; while several artboards are selected, the name typed goes to all of them, numbered),
+//! move up / down, new
 //! (Alt-click: Artboard Options for the new artboard first), delete; a row dragged onto New
 //! Artboard duplicates its artboard (as Duplicate Artboards does, with
 //! its art when the Artboard tool's Move/Copy Artwork with Artboard is on). The highlighted row is the active artboard, the one the status bar's navigator shows and
@@ -154,8 +156,8 @@ pub(crate) fn picked(app: &VectorcraftApp, n: usize) -> Vec<usize> {
     all
 }
 
-/// The artboards a new size for artboard `i` goes to: the selected artboards ([`picked`]) when
-/// `i` is one of them, else `i` alone.
+/// The artboards a new size for artboard `i`, or a name typed in its row's name field, goes to:
+/// the selected artboards ([`picked`]) when `i` is one of them, else `i` alone.
 pub(crate) fn resized_with(app: &VectorcraftApp, i: usize) -> Vec<usize> {
     let all = picked(app, app.session.active().map_or(0, |d| d.doc.artboards.len()));
     if all.contains(&i) { all } else { vec![i] }
@@ -199,6 +201,29 @@ pub(crate) fn set_props(
         Some(p) => app.run("artboard.setProps", p),
         None => Ok(Value::Null),
     }
+}
+
+/// Rename the artboards of `indices` in one undo step (`artboard.setProps`): one artboard takes
+/// `name` (trimmed), and several take it numbered in panel order, `name-1`, `name-2` and so on.
+fn rename(app: &mut VectorcraftApp, indices: &[usize], name: &str) -> Result<Value, String> {
+    let name = name.trim();
+    let mut all = indices.to_vec();
+    all.sort_unstable();
+    all.dedup();
+    let several = all.len() > 1;
+    let numbered = |k: usize| if several { format!("{name}-{}", k + 1) } else { name.to_string() };
+    let entries = all.iter().enumerate().map(|(k, i)| json!({"index": i, "name": numbered(k)})).collect();
+    match set_props_params(json!({}), entries) {
+        Some(p) => app.run("artboard.setProps", p),
+        None => Ok(Value::Null),
+    }
+}
+
+/// Open the name field on artboard `i`'s row. The name typed there goes to the artboards
+/// [`resized_with`] gives for `i` now, numbered when there are several ([`rename`]).
+fn start_rename(ctx: &egui::Context, app: &VectorcraftApp, i: usize) {
+    set_pstate(ctx, "ab-edit", Some(i));
+    set_pstate(ctx, "ab-edit-all", resized_with(app, i));
 }
 
 /// Delete the picked artboards and select a remaining one.
@@ -352,23 +377,31 @@ pub fn show(app: &mut VectorcraftApp, ui: &mut Ui) {
                 );
                 let name_rect = egui::Rect::from_min_max(pos2(r.left() + 32.0, r.top() + 2.0), pos2(r.right() - 28.0, r.bottom() - 2.0));
                 if editing == Some(i) {
+                    // The artboards the field renames: the artboards selected when it opened, when
+                    // there were several and this row's artboard is one of them, else this row's
+                    // artboard alone. With several, the field starts empty.
+                    let opened_on: Vec<usize> = pstate(ui.ctx(), "ab-edit-all");
+                    let targets = if opened_on.len() > 1 && opened_on.contains(&i) { opened_on } else { vec![i] };
+                    let shown = if targets.len() > 1 { "" } else { name.as_str() };
                     let id = ui.id().with(("ab-name", i));
-                    let mut buf: String = ui.data_mut(|d| d.get_temp::<String>(id)).unwrap_or_else(|| name.clone());
-                    let kept = widgets::own_field_shift_enter(ui, id, &mut buf, name);
+                    let mut buf: String = ui.data_mut(|d| d.get_temp::<String>(id)).unwrap_or_else(|| shown.to_string());
+                    let kept = widgets::own_field_shift_enter(ui, id, &mut buf, shown);
                     let te = ui.put(name_rect, egui::TextEdit::singleline(&mut buf).id(id).font(egui::FontId::proportional(12.0)));
                     if !te.has_focus() && !te.lost_focus() {
                         te.request_focus();
                     }
                     ui.data_mut(|d| d.insert_temp(id, buf.clone()));
+                    let renames = !buf.trim().is_empty() && buf != shown;
                     if te.lost_focus() {
                         set_pstate::<Option<usize>>(ui.ctx(), "ab-edit", None);
+                        set_pstate::<Vec<usize>>(ui.ctx(), "ab-edit-all", vec![]);
                         ui.data_mut(|d| d.remove::<String>(id));
-                        if !ui.input(|i| i.key_pressed(egui::Key::Escape)) && !buf.trim().is_empty() && buf != *name {
-                            app.run("artboard.setProps", json!({"index": i, "name": buf.trim()})).ok();
+                        if !ui.input(|i| i.key_pressed(egui::Key::Escape)) && renames {
+                            rename(app, &targets, &buf).ok();
                         }
-                    } else if kept && !buf.trim().is_empty() && buf != *name {
-                        // Shift+Enter renames it and keeps the field open.
-                        app.run("artboard.setProps", json!({"index": i, "name": buf.trim()})).ok();
+                    } else if kept && renames {
+                        // Shift+Enter renames them and keeps the field open.
+                        rename(app, &targets, &buf).ok();
                     }
                 } else {
                     ui.painter().text(name_rect.left_center(), egui::Align2::LEFT_CENTER, name, egui::FontId::proportional(12.5), t.text);
@@ -405,7 +438,7 @@ pub fn show(app: &mut VectorcraftApp, ui: &mut Ui) {
                 if resp.double_clicked() && on_number {
                     app.run("view.goToArtboard", json!({ "index": i })).ok();
                 } else if resp.double_clicked() {
-                    set_pstate(ui.ctx(), "ab-edit", Some(i));
+                    start_rename(ui.ctx(), app, i);
                 }
             }
         });
@@ -468,7 +501,7 @@ pub fn menu(app: &mut VectorcraftApp, ui: &mut Ui) {
         delete_selected(app);
     }
     if menu_item(ui, tl!("Rename"), n > 0, false) {
-        set_pstate(ui.ctx(), "ab-edit", Some(sel));
+        start_rename(ui.ctx(), app, sel);
     }
     menu_item(ui, tl!("Delete Empty Artboards"), false, false);
     ui.separator();
@@ -745,6 +778,116 @@ mod tests {
         frame(&mut app, vec![]);
         assert_eq!(name(&app), "Back", "typing replaced it, and Enter applies that");
         assert_eq!(pstate::<Option<usize>>(&ctx, "ab-edit"), None, "and closes the field");
+    }
+
+    /// With artboards 1, 3 and 4 selected with the Artboard tool, the panel menu's Rename opens an
+    /// empty name field on the active artboard's row, and the name typed there goes to all three,
+    /// numbered in panel order, in one undo step. With one artboard selected, Rename gives it the
+    /// name as typed.
+    #[test]
+    fn the_panel_menus_rename_numbers_several_selected_artboards() {
+        let mut app = VectorcraftApp::new(Session::new(), Default::default());
+        app.session.execute("file.new", &json!({"width": 200, "height": 150})).unwrap();
+        for x in [400, 800, 1200] {
+            app.session.execute("artboard.new", &json!({"x": x, "y": 0, "width": 200, "height": 150})).unwrap();
+        }
+        app.select_tool("artboard");
+        select(&mut app, 2);
+        app.session.set_tool_option("selected", &json!([2, 0, 3]));
+        let ctx = egui::Context::default();
+        let screen = Some(egui::Rect::from_min_size(egui::Pos2::ZERO, vec2(240.0, 400.0)));
+        let raw = |events| egui::RawInput { events, screen_rect: screen, ..Default::default() };
+        let rename = |app: &mut VectorcraftApp| {
+            let mut out = ctx.run_ui(raw(vec![]), |ui| menu(app, ui));
+            out.textures_delta.clear();
+            let item = out
+                .shapes
+                .iter()
+                .find_map(|c| match &c.shape {
+                    egui::Shape::Text(t) if t.galley.text().trim_start() == "Rename" => Some(t.visual_bounding_rect().center()),
+                    _ => None,
+                })
+                .unwrap();
+            let button =
+                |pressed| egui::Event::PointerButton { pos: item, button: egui::PointerButton::Primary, pressed, modifiers: Default::default() };
+            ctx.run_ui(raw(vec![egui::Event::PointerMoved(item), button(true), button(false)]), |ui| menu(app, ui)).textures_delta.clear();
+        };
+        let frame = |app: &mut VectorcraftApp, events| ctx.run_ui(raw(events), |ui| show(app, ui)).textures_delta.clear();
+        let enter = egui::Event::Key { key: egui::Key::Enter, physical_key: None, pressed: true, repeat: false, modifiers: Default::default() };
+        let names = |app: &VectorcraftApp| app.session.active().unwrap().doc.artboards.iter().map(|a| a.name.clone()).collect::<Vec<_>>();
+        rename(&mut app);
+        assert_eq!(pstate::<Option<usize>>(&ctx, "ab-edit"), Some(2), "the field opens on the active artboard's row");
+        frame(&mut app, vec![]);
+        frame(&mut app, vec![]);
+        frame(&mut app, vec![egui::Event::Text("abc".into())]);
+        frame(&mut app, vec![enter.clone()]);
+        frame(&mut app, vec![]);
+        assert_eq!(names(&app), ["abc-1", "Artboard 2", "abc-2", "abc-3"]);
+        app.run("edit.undo", json!({})).unwrap();
+        assert_eq!(names(&app), ["Artboard 1", "Artboard 2", "Artboard 3", "Artboard 4"], "one undo step");
+        // One artboard selected: the field shows its name, and the name typed replaces it.
+        select(&mut app, 1);
+        rename(&mut app);
+        frame(&mut app, vec![]);
+        frame(&mut app, vec![]);
+        let all = egui::Event::Key { key: egui::Key::A, physical_key: None, pressed: true, repeat: false, modifiers: egui::Modifiers::COMMAND };
+        frame(&mut app, vec![all, egui::Event::Text("Solo".into())]);
+        frame(&mut app, vec![enter]);
+        frame(&mut app, vec![]);
+        assert_eq!(names(&app), ["Artboard 1", "Solo", "Artboard 3", "Artboard 4"]);
+    }
+
+    /// With the Artboard tool, a double-click on a name with Shift or Ctrl/Cmd held that leaves
+    /// several artboards selected opens the name field for all of them. A plain double-click
+    /// selects the row's artboard alone and opens the field for it.
+    #[test]
+    fn a_shift_or_ctrl_double_click_on_a_name_renames_every_selected_artboard() {
+        let mut app = VectorcraftApp::new(Session::new(), Default::default());
+        app.session.execute("file.new", &json!({"width": 200, "height": 150})).unwrap();
+        for x in [400, 800, 1200] {
+            app.session.execute("artboard.new", &json!({"x": x, "y": 0, "width": 200, "height": 150})).unwrap();
+        }
+        app.select_tool("artboard");
+        select(&mut app, 0);
+        let ctx = egui::Context::default();
+        let screen = Some(egui::Rect::from_min_size(egui::Pos2::ZERO, vec2(240.0, 400.0)));
+        let frame = |app: &mut VectorcraftApp, time: f64, events: Vec<egui::Event>| {
+            let raw = egui::RawInput { events, time: Some(time), screen_rect: screen, ..Default::default() };
+            let mut out = ctx.run_ui(raw, |ui| show(app, ui));
+            out.textures_delta.clear();
+            out.shapes
+        };
+        let shapes = frame(&mut app, 0.0, vec![]);
+        // `row(k)` returns the point where row `k`'s name is painted.
+        let row = |k: usize| {
+            shapes
+                .iter()
+                .find_map(|c| match &c.shape {
+                    egui::Shape::Text(t) if t.galley.text() == format!("Artboard {k}") => Some(t.pos + vec2(4.0, 4.0)),
+                    _ => None,
+                })
+                .unwrap()
+        };
+        let click = |k: usize, modifiers: egui::Modifiers| {
+            let at = row(k);
+            let b = |pressed| egui::Event::PointerButton { pos: at, button: egui::PointerButton::Primary, pressed, modifiers };
+            vec![egui::Event::ModifiersChanged(modifiers), egui::Event::PointerMoved(at), b(true), b(false)]
+        };
+        // Two clicks on row `k`'s name in two frames 0.1 s apart, then the row and the artboards
+        // the name field opened for, and the field closed again.
+        let double_click = |app: &mut VectorcraftApp, time: f64, k: usize, modifiers: egui::Modifiers| {
+            frame(app, time, click(k, modifiers));
+            frame(app, time + 0.1, click(k, modifiers));
+            let opened = (pstate::<Option<usize>>(&ctx, "ab-edit"), pstate::<Vec<usize>>(&ctx, "ab-edit-all"));
+            set_pstate::<Option<usize>>(&ctx, "ab-edit", None);
+            set_pstate::<Vec<usize>>(&ctx, "ab-edit-all", vec![]);
+            frame(app, time + 0.5, vec![egui::Event::ModifiersChanged(egui::Modifiers::NONE)]);
+            opened
+        };
+        frame(&mut app, 1.0, click(1, egui::Modifiers::NONE));
+        assert_eq!(double_click(&mut app, 2.0, 3, egui::Modifiers::SHIFT), (Some(2), vec![0, 1, 2]), "Shift: Artboards 1 to 3");
+        assert_eq!(double_click(&mut app, 4.0, 2, egui::Modifiers::COMMAND), (Some(1), vec![0, 1, 2]), "Ctrl/Cmd on a selected one");
+        assert_eq!(double_click(&mut app, 6.0, 4, egui::Modifiers::NONE), (Some(3), vec![3]), "a plain double-click");
     }
 
     /// A row's options icon opens Artboard Options for that row's artboard and leaves the tool as
