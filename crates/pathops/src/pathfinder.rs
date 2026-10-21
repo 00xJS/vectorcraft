@@ -26,7 +26,7 @@ impl Shape {
     }
 }
 
-/// The ten Pathfinder panel operations.
+/// Pathfinder panel and effect operations.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub enum PathfinderOp {
     /// Shape mode: union of everything; result keeps the front-most key.
@@ -53,6 +53,9 @@ pub enum PathfinderOp {
     /// Effect only: split into faces like Divide; overlapping faces take the highest of each CMYK
     /// channel from every shape covering them (Illustrator Effect → Pathfinder → Hard Mix).
     HardMix,
+    /// Effect only: split into faces like Divide; overlapping faces blend fills in CMYK bottom to
+    /// top by a mixing rate (Illustrator Effect → Pathfinder → Soft Mix).
+    SoftMix,
 }
 
 /// One face of the planar arrangement of a set of shapes (Shape Builder / Live Paint face).
@@ -175,7 +178,7 @@ pub fn pathfinder(op: PathfinderOp, shapes: &[Shape]) -> Vec<Shape> {
                 .collect()
         }
         PathfinderOp::Outline => outline_edges(&arr, shapes),
-        PathfinderOp::HardMix => regions_of(&arr)
+        PathfinderOp::HardMix | PathfinderOp::SoftMix => regions_of(&arr)
             .into_iter()
             .filter_map(|r| {
                 let key = shapes.get(r.top()?)?.key;
