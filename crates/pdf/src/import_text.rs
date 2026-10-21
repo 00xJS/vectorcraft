@@ -385,13 +385,20 @@ impl TextLine {
         let mut t = TextObject::point(Point::ORIGIN, &first.text, first.style);
         t.runs.extend(runs);
         // A gap wider than a fifth of an em, past the spacing the line's letters share, reads as a
-        // space. Letter spacing is read only in text left in the file's order.
+        // space (one set at exactly a fifth still counts, whatever the rounding). Letter spacing is
+        // read only in text left in the file's order.
+        let space = |gap: &Gap, common: f64| gap.width / gap.em - common > 0.199;
         let directed = vectorcraft_text::logical_order(&t.plain_text()).is_some();
-        let common = if directed { 0.0 } else { common_gap(&self.gaps) };
+        let mut common = if directed { 0.0 } else { common_gap(&self.gaps) };
+        // Evenly spaced glyphs alone could be letters set apart or words of one letter each: the
+        // shared spacing is letter spacing only on a line that also shows where its words break,
+        // with spaces it draws or with gaps wider than the rest.
+        if self.drawn_spaces.is_empty() && !self.gaps.iter().any(|gap| space(gap, common)) {
+            common = 0.0;
+        }
         let mut spaces = vec![];
         for gap in &self.gaps {
-            // A word space set at exactly a fifth of an em still counts, whatever the rounding.
-            if gap.width / gap.em - common <= 0.199 {
+            if !space(gap, common) {
                 continue;
             }
             // After the earlier spaces, at the end of the run before it (the run it follows).

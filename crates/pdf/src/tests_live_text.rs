@@ -127,6 +127,26 @@ fn common_tracking_does_not_turn_gaps_into_spaces() {
     }
 }
 
+/// Words of one letter each, placed one by one with ordinary word spaces between them, are words:
+/// even gaps alone don't read as letter spacing.
+#[test]
+fn evenly_spaced_one_letter_words_keep_their_spaces() {
+    let font = vectorcraft_text::FontDb::global().find_postscript("SourceSans3-Regular").unwrap();
+    let size = 12.0_f32;
+    for gap in [0.25_f32, 0.3, 0.35] {
+        let mut x = 20.0;
+        let mut lines = vec![];
+        for text in ["A", "B", "C", "D"] {
+            lines.push((x, 60.0, size, text));
+            x += font.advance(font.glyph_for(text.chars().next().unwrap())) as f32 / font.units_per_em() as f32 * size + gap * size;
+        }
+        let d = import_with_report(&text_pdf(&lines, false), &ImportOptions::default()).unwrap().document;
+        let t = texts(&d);
+        assert_eq!(t.len(), 1, "gap {gap} em: {t:?}");
+        assert_eq!(t[0].plain_text(), "A B C D", "gap {gap} em");
+    }
+}
+
 /// Glyphs set more than half an em apart, each on its own, are words or columns: every gap stays a
 /// space, however evenly they are spaced.
 #[test]
