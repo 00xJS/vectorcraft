@@ -2278,28 +2278,36 @@ fn on_path(cx: &mut Ctx<'_>, paras: &[Range<usize>], t: &TextObject, path: &Path
     cx.out.on_path = true;
     // Type on a path is one line: the first paragraph's attributes align it.
     let para = t.para_at(0);
-    let mut sg = Vec::new();
     // The first paragraph's direction aligns the line (Auto) and sets the caret's.
     let mut rtl = None;
+    let mut shaped = Vec::new();
     for pr in paras {
         let text = cx.text;
         let bidi = para_bidi(text.get(pr.clone()).unwrap_or_default(), para.direction);
         rtl.get_or_insert(is_rtl(bidi.as_ref()) && !cx.vertical);
-        let shaped = cx.shape_para(pr.clone(), bidi.as_ref());
-        for i in visual_order(bidi.as_ref().filter(|_| !cx.vertical), pr.start, pr.clone(), &shaped) {
-            if let Some(g) = shaped.get(i) {
-                sg.push(g.clone());
-            }
-        }
+        let glyphs = cx.shape_para(pr.clone(), bidi.as_ref());
+        shaped.push((pr.clone(), bidi.filter(|b| b.has_rtl() && !cx.vertical), glyphs));
     }
     let rtl = rtl.unwrap_or(false);
+    // The text before byte `cut` in visual order, as area type reorders each line it breaks.
+    let visual = |cut: usize| {
+        let mut sg = Vec::new();
+        for (pr, bidi, glyphs) in &shaped {
+            let n = glyphs.iter().take_while(|g| g.byte < cut).count();
+            let line = glyphs.get(..n).unwrap_or_default();
+            let end = glyphs.get(n).map_or(pr.end, |g| g.byte);
+            sg.extend(visual_order(bidi.as_ref(), pr.start, pr.start..end, line).into_iter().filter_map(|i| line.get(i).cloned()));
+        }
+        sg
+    };
+    let text_len = cx.text.len();
+    let mut sg = visual(text_len);
     // A path out of range holds no text, as a path with no length holds none.
     let ap = if in_range(&path.to_bezpath()) { ArcPath::new(path) } else { ArcPath::default() };
     let m = Metrics::max(&sg).map(|m| (m.asc, m.desc)).unwrap_or_else(|| {
         let s = style_metrics(cx.db, cx.style_at(0));
         (s.0, s.1)
     });
-    let text_len = cx.text.len();
     if ap.is_empty() {
         cx.out.overflow = !sg.is_empty();
         cx.out.lines.push(LineInfo {
@@ -2324,8 +2332,6 @@ fn on_path(cx: &mut Ctx<'_>, paras: &[Range<usize>], t: &TextObject, path: &Path
     let s_start = from * ap.len();
     let avail = (to - from) * ap.len();
     let spacing = if t.path_spacing.is_finite() { t.path_spacing } else { 0.0 };
-    let mut steps = path_steps(&ap, &sg, s_start, spacing);
-    let w: f64 = steps.iter().sum();
     // Optical Margin Alignment and Roman Hanging Punctuation: the brackets are the margins, and the
     // glyphs at the line's ends hang outside them by `hang_l` and `hang_r`, measured along the path.
     // The line is aligned in a span that much longer at each end, and the glyphs that hang at the
@@ -2336,7 +2342,7 @@ fn on_path(cx: &mut Ctx<'_>, paras: &[Range<usize>], t: &TextObject, path: &Path
     // The hangs are measured on the steps the glyphs take where the line is placed. A right-to-left
     // line is read from right to left ([`optical_hangs_rtl`]); in vertical type `sg` is in text order.
     let hanging = t.optical_margin || para.roman_hanging;
-    let hangs = |steps: &[f64]| {
+    let hangs = |sg: &[SGlyph], steps: &[f64]| {
         if !hanging {
             return (0.0, 0.0, 0);
         }
@@ -2364,34 +2370,85 @@ fn on_path(cx: &mut Ctx<'_>, paras: &[Range<usize>], t: &TextObject, path: &Path
         };
         (l, r, hung_r)
     };
-    let place = |(l, r, _): (f64, f64, usize)| {
-        let (lo, room) = (s_start - l, avail + l + r);
-        match para.justify {
-            Justify::Auto if rtl => lo + (room - w).max(0.0),
-            Justify::Center | Justify::JustifyCenter => lo + ((room - w) * 0.5).max(0.0),
-            Justify::Right | Justify::JustifyRight => lo + (room - w).max(0.0),
-            _ => lo,
-        }
-    };
-    let mut hung = hangs(&steps);
-    let mut s0 = place(hung);
-    if spacing != 0.0 && s0 != s_start {
-        // Spaced from where the alignment puts them, the curve under them is another. That changes
-        // the hanging glyphs' steps, so the line is placed again from the new steps until it stays
-        // where it is (at most 8 times).
-        steps = path_steps(&ap, &sg, s0, spacing);
-        for _ in 0..8 {
-            hung = hangs(&steps);
-            let moved = place(hung);
-            if (moved - s0).abs() < 1e-9 {
-                break;
+    // The glyphs `sg` arranged on the path: their steps, where the first starts, and the hangs.
+    let arrange = |sg: &[SGlyph]| {
+        let mut steps = path_steps(&ap, sg, s_start, spacing);
+        let w: f64 = steps.iter().sum();
+        let place = |(l, r, _): (f64, f64, usize)| {
+            let (lo, room) = (s_start - l, avail + l + r);
+            match para.justify {
+                Justify::Auto if rtl => lo + (room - w).max(0.0),
+                Justify::Center | Justify::JustifyCenter => lo + ((room - w) * 0.5).max(0.0),
+                Justify::Right | Justify::JustifyRight => lo + (room - w).max(0.0),
+                _ => lo,
             }
-            s0 = moved;
-            steps = path_steps(&ap, &sg, s0, spacing);
+        };
+        let mut hung = hangs(sg, &steps);
+        let mut s0 = place(hung);
+        if spacing != 0.0 && s0 != s_start {
+            // Spaced from where the alignment puts them, the curve under them is another. That
+            // changes the hanging glyphs' steps, so the line is placed again from the new steps
+            // until it stays where it is (at most 8 times).
+            steps = path_steps(&ap, sg, s0, spacing);
+            for _ in 0..8 {
+                hung = hangs(sg, &steps);
+                let moved = place(hung);
+                if (moved - s0).abs() < 1e-9 {
+                    break;
+                }
+                s0 = moved;
+                steps = path_steps(&ap, sg, s0, spacing);
+            }
         }
+        (steps, s0, hung)
+    };
+    // How many of the arranged glyphs fit before one runs past the end bracket (with the hang).
+    let fitting = |steps: &[f64], s0: f64, (hang_l, hang_r, hung_r): (f64, f64, usize)| {
+        let (lo, room) = (s_start - hang_l, avail + hang_l + hang_r);
+        let mut x = 0.0;
+        steps
+            .iter()
+            .enumerate()
+            .take_while(|&(k, &step)| {
+                let end = if k + hung_r >= steps.len() { room } else { room - hang_r };
+                let fit = s0 + x + step - lo <= end + 1e-6;
+                x += step;
+                fit
+            })
+            .count()
+    };
+    let (mut steps, mut s0, mut hung) = arrange(&sg);
+    // Where the text that fits ends: before the first glyph that doesn't, which threaded text
+    // flows on from, as from the last line of area type.
+    let mut fits = text_len;
+    // Right-to-left text that overflows keeps the start of its text, not what comes first in visual
+    // order: the longest start, in reading order, whose glyphs fit in visual order is laid out.
+    if shaped.iter().any(|(_, bidi, _)| bidi.is_some()) && fitting(&steps, s0, hung) < sg.len() {
+        let mut starts: Vec<usize> = shaped.iter().flat_map(|(_, _, glyphs)| glyphs.iter().map(|g| g.byte)).collect();
+        starts.dedup();
+        // The text before `starts[fit]` fits; before `starts[over]` (the whole text at the end) it
+        // doesn't.
+        let (mut fit, mut over) = (0, starts.len());
+        while over - fit > 1 {
+            let mid = (fit + over) / 2;
+            let sg = visual(starts.get(mid).copied().unwrap_or(text_len));
+            let (steps, s0, hung) = arrange(&sg);
+            if fitting(&steps, s0, hung) == sg.len() {
+                fit = mid;
+            } else {
+                over = mid;
+            }
+        }
+        cx.out.overflow = true;
+        fits = starts.get(fit).copied().unwrap_or(text_len);
+        sg = visual(fits);
+        (steps, s0, hung) = arrange(&sg);
     }
-    let (hang_l, hang_r, hung_r) = hung;
-    let (lo, room) = (s_start - hang_l, avail + hang_l + hang_r);
+    let fit = fitting(&steps, s0, hung);
+    if fit < sg.len() {
+        cx.out.overflow = true;
+        fits = sg.get(fit..).and_then(|rest| rest.iter().map(|g| g.byte).min()).unwrap_or(text_len);
+    }
     // Align to Path: how far down (glyph space) the type moves to run its ascender, centre or
     // descender along the path instead of its baseline.
     let rise = match t.path_align {
@@ -2401,17 +2458,8 @@ fn on_path(cx: &mut Ctx<'_>, paras: &[Range<usize>], t: &TextObject, path: &Path
         PathAlign::Center => (m.0 - m.1) * 0.5,
     };
     let mut x = 0.0;
-    // Where the text that fits ends: before the first glyph that doesn't, which threaded text
-    // flows on from, as from the last line of area type.
-    let mut fits = text_len;
-    for (k, (g, &step)) in sg.iter().zip(&steps).enumerate() {
+    for (g, &step) in sg.iter().zip(&steps).take(fit) {
         let s = s0 + x;
-        let end = if k + hung_r >= sg.len() { room } else { room - hang_r };
-        if s + step - lo > end + 1e-6 {
-            cx.out.overflow = true;
-            fits = sg.get(k..).and_then(|rest| rest.iter().map(|g| g.byte).min()).unwrap_or(text_len);
-            break;
-        }
         let (p, dir) = ap.at(s + step * 0.5);
         let angle = dir.y.atan2(dir.x);
         let half = Affine::translate((-g.adv * 0.5, rise));
