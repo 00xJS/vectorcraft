@@ -2829,7 +2829,8 @@ the linked files again, looking for each at its path, then at its relative path 
 (so a folder moved with its links still opens). Only files on this computer, or on the network share the document is
 on, are looked at: a path to another computer, a device or a URL counts as missing. On Windows, a document opened from
 a mapped drive (`Z:\…`) is on the share the drive is mapped to, and links on that share (`\\server\share\…`) are
-looked at. The result lists `missingLinks`
+looked at. A link on a drive mapped to another share (`Y:\…`) counts as missing, from a document on this computer too.
+The result lists `missingLinks`
 (their images show the preview), `modifiedLinks` (left as they were; read again only with the preference
 `updateLinks: "automatically"`, then they are in `updatedLinks`), each as `{name, path, ids}`, with `refused` (why the
 path isn't followed) when it isn't. The desktop app also checks the active document's links when its window
