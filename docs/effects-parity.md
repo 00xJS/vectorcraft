@@ -12,7 +12,7 @@ Part of [target-app-parity.md](target-app-parity.md); open work is in [gaps.md](
 | Group | Illustrator | VectorCraft | % | Remaining (h) |
 |---|---:|---:|---:|---:|
 | Illustrator effects (vector and stylize) | 50 | 46 | 92% | 6–10 |
-| Photoshop effects (raster, Effect Gallery) | 57 | 47 | 82% | 8–14 |
+| Photoshop effects (raster, Effect Gallery) | 57 | 48 | 84% | 8–14 |
 | 3D and Materials | 4 (+3 Classic) | 4 (initial: Extrude & Bevel, Revolve, Inflate, Rotate) | ~25% | 25–45 |
 | Beyond Illustrator: Effect › Color Adjustments (6), effect plug-ins (WebAssembly) | — | 6 + plug-ins | — | — |
 
@@ -38,7 +38,7 @@ its resolution, PDF export warns once per object with the requested and the lowe
 
 | Submenu | Items | Ours | Missing |
 |---|---|---:|---|
-| Artistic | Colored Pencil, Cutout, Dry Brush, Film Grain, Fresco, Neon Glow, Paint Daubs, Palette Knife, Plastic Wrap, Poster Edges, Rough Pastels, Smudge Stick, Sponge, Underpainting, Watercolor | 8/15 (approximate Cutout, Film Grain, Neon Glow, Plastic Wrap, Poster Edges, Smudge Stick, Sponge, Watercolor) | Colored Pencil, Dry Brush, Fresco, Paint Daubs, Palette Knife, Rough Pastels, Underpainting |
+| Artistic | Colored Pencil, Cutout, Dry Brush, Film Grain, Fresco, Neon Glow, Paint Daubs, Palette Knife, Plastic Wrap, Poster Edges, Rough Pastels, Smudge Stick, Sponge, Underpainting, Watercolor | 9/15 (approximate Cutout, Film Grain, Neon Glow, Paint Daubs, Plastic Wrap, Poster Edges, Smudge Stick, Sponge, Watercolor) | Colored Pencil, Dry Brush, Fresco, Palette Knife, Rough Pastels, Underpainting |
 | Blur | Gaussian Blur, Radial Blur, Smart Blur | 3/3 | — |
 | Brush Strokes | Accented Edges, Angled Strokes, Crosshatch, Dark Strokes, Ink Outlines, Spatter, Sprayed Strokes, Sumi-e | 8/8 | — |
 | Distort | Diffuse Glow, Glass, Ocean Ripple | 3/3 | — |

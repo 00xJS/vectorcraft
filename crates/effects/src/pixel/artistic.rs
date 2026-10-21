@@ -1,5 +1,5 @@
-//! Effect › Artistic (Cutout, Dry Brush, Film Grain, Neon Glow, Palette Knife, Plastic Wrap, Poster Edges, Smudge Stick, Sponge and
-//! Watercolor). Original filters built from
+//! Effect › Artistic (Cutout, Dry Brush, Film Grain, Neon Glow, Paint Daubs, Palette Knife, Plastic Wrap, Poster
+//! Edges, Smudge Stick, Sponge and Watercolor). Original filters built from
 //! public behaviour documentation:
 //! <https://helpx.adobe.com/illustrator/using/summary-effects.html> and
 //! <https://helpx.adobe.com/photoshop-elements/using/artistic-filters.html>.
@@ -9,9 +9,9 @@ use std::f64::consts::TAU;
 
 use super::brushstrokes::{Smear, mix, stroke_reach, unit, unpremultiply};
 use super::edges::sobel;
-use super::pixelate::{Place, cell, rand, value_noise};
+use super::pixelate::{Around, Place, Soft, cell, point_in, rand, value_noise};
 use super::texture::{luma, premultiply, straight};
-use super::{PixelSpace, blur_plane};
+use super::{PixelSpace, blur_plane, pick};
 use vectorcraft_geom::{Point, Vec2};
 
 const SALT_DRY: u64 = 264;
@@ -19,6 +19,56 @@ const MARGIN: f64 = 1.0;
 const SALT_PLASTIC: u64 = 512;
 
 const SALT_FILM: u64 = 256;
+const SALT_DAUB: u64 = 272;
+
+/// Paint Daubs' brush types, in the Brush Type menu's order: (label, parameter value).
+/// Illustrator's list: <https://helpx.adobe.com/illustrator/using/filter-effects.html#paint_daubs>.
+pub const PAINT_DAUB_BRUSH_TYPES: [(&str, &str); 6] = [
+    ("Simple", "simple"),
+    ("Light Rough", "lightRough"),
+    ("Dark Rough", "darkRough"),
+    ("Wide Sharp", "wideSharp"),
+    ("Wide Blurry", "wideBlurry"),
+    ("Sparkle", "sparkle"),
+];
+
+/// A Paint Daubs brush ([`PAINT_DAUB_BRUSH_TYPES`]).
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum PaintDaubBrush {
+    Simple,
+    LightRough,
+    DarkRough,
+    WideSharp,
+    WideBlurry,
+    Sparkle,
+}
+
+impl PaintDaubBrush {
+    const ALL: [PaintDaubBrush; 6] = [
+        PaintDaubBrush::Simple,
+        PaintDaubBrush::LightRough,
+        PaintDaubBrush::DarkRough,
+        PaintDaubBrush::WideSharp,
+        PaintDaubBrush::WideBlurry,
+        PaintDaubBrush::Sparkle,
+    ];
+
+    /// The brush of Brush Type `value` (a [`PAINT_DAUB_BRUSH_TYPES`] value, any case); Simple otherwise.
+    pub fn parse(value: &str) -> Self {
+        if value.eq_ignore_ascii_case("wideRough") {
+            return PaintDaubBrush::WideSharp;
+        }
+        if value.eq_ignore_ascii_case("hue") {
+            return PaintDaubBrush::WideBlurry;
+        }
+        pick(&PAINT_DAUB_BRUSH_TYPES, &Self::ALL, value, PaintDaubBrush::Simple)
+    }
+}
+
+/// How far (document units) a dab reaches past its centre at `size` (1..50).
+pub(super) fn paint_daub_radius(size: f64) -> f64 {
+    size.clamp(1.0, 50.0) * 0.48
+}
 
 /// Keep the last cell's four corner values: magnified adjacent pixels often share a cell.
 /// The cache changes only cost, never the field, and needs constant storage per raster.
@@ -245,6 +295,83 @@ pub(super) fn poster_edges(px: &mut [[u8; 4]], w: usize, h: usize, space: &Pixel
         let c = straight(*p).map(|v| (v * steps).round() / steps * (1.0 - ink));
         *p = premultiply(c, f32::from(p[3]) / 255.0);
     }
+}
+
+/// Paint Daubs: thick round dabs on a grid `size` (1..50) points apart, each dab painted in the
+/// local colour around its centre, with edges as sharp as `sharpness` (0..40) and a profile from
+/// `kind`. Coverage is kept.
+pub(super) fn paint_daubs(px: &mut [[u8; 4]], w: usize, h: usize, space: &PixelSpace, size: f64, sharpness: f64, kind: PaintDaubBrush) {
+    if !([size, sharpness].iter().all(|v| v.is_finite()) && size > 0.0) {
+        return;
+    }
+    let Some(place) = Place::new(space, w, h) else { return };
+    let spacing = size.clamp(1.0, 50.0);
+    let brush_r = paint_daub_radius(size);
+    let edge = 1.0 + 2.5 * (sharpness.clamp(0.0, 40.0) / 40.0);
+    let soft = Soft::new(px, w, (spacing * 0.15) / place.px);
+    let dab = |i: i64, j: i64| {
+        let at = point_in(SALT_DAUB, i, j);
+        let center = Point::new(at.x * spacing, at.y * spacing);
+        (center, soft.at(place.index(center)))
+    };
+    let cover = |q: Point, center: Point, colour: [f32; 4]| -> f32 {
+        if colour[3] <= 0.0 {
+            return 0.0;
+        }
+        let (dx, dy) = (q.x - center.x, q.y - center.y);
+        let (dx, dy) = match kind {
+            PaintDaubBrush::WideSharp | PaintDaubBrush::WideBlurry => (dx * 0.65, dy * 1.35),
+            _ => (dx, dy),
+        };
+        let t = (dx.hypot(dy) / brush_r).clamp(0.0, 1.0);
+        let edge_k = match kind {
+            PaintDaubBrush::WideSharp => edge * 1.35,
+            PaintDaubBrush::WideBlurry => edge * 0.55,
+            _ => edge,
+        };
+        let mut c = (1.0 - t).powf(edge_k) as f32;
+        let tone = luma(unpremultiply(colour).0);
+        match kind {
+            PaintDaubBrush::LightRough => c *= 0.7 + 0.35 * rough_bristle(q, 0),
+            PaintDaubBrush::DarkRough => c *= 0.55 + 0.45 * (1.0 - rough_bristle(q, 1)),
+            PaintDaubBrush::Sparkle if rough_bristle(center, 2) > 0.92 && tone > 0.55 => c = c.max(0.85),
+            PaintDaubBrush::Simple | PaintDaubBrush::WideSharp | PaintDaubBrush::WideBlurry | PaintDaubBrush::Sparkle => {}
+        }
+        c
+    };
+    let mut around = Around::new();
+    place.each(px, |x, y, out| {
+        if out[3] == 0 {
+            return;
+        }
+        let q = place.at(x, y);
+        let (u, v) = (q.x / spacing, q.y / spacing);
+        let (Some(i), Some(j)) = (cell(u), cell(v)) else { return };
+        let mut sum = [0.0f32; 3];
+        let mut weight = 0.0f32;
+        for k in 0..9 {
+            let Some((center, colour)) = around.get((i, j), k, dab) else { continue };
+            let w = cover(q, center, colour);
+            if w <= 0.0 {
+                continue;
+            }
+            let c = unpremultiply(colour).0;
+            for (s, v) in sum.iter_mut().zip(c) {
+                *s += v * w;
+            }
+            weight += w;
+        }
+        if weight <= 1e-6 {
+            return;
+        }
+        let c = sum.map(|v| (v / weight).clamp(0.0, 1.0));
+        *out = premultiply(c, f32::from(out[3]) / 255.0);
+    });
+}
+
+fn rough_bristle(p: Point, k: u64) -> f32 {
+    let (Some(i), Some(j)) = (cell(p.x * 3.7), cell(p.y * 3.7)) else { return 0.5 };
+    rand(SALT_DAUB + 3, i, j, k) as f32
 }
 
 /// How far (document units) Plastic Wrap's softened relief is sampled at `smoothness` (1..15).

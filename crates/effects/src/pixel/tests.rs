@@ -2449,6 +2449,14 @@ fn artistic_params_take_defaults_and_stay_in_range() {
     for id in ["artistic.cutout", "artistic.dryBrush", "artistic.neonGlow", "artistic.plasticWrap", "artistic.posterEdges"] {
         assert_eq!(fx(id, json!({})).outset(Rect::new(0.0, 0.0, 40.0, 30.0)), 0.0, "{id} keeps the object's shape");
     }
+    assert_eq!(fx("artistic.paintDaubs", json!({})), PixelFx::PaintDaubs { size: 10.0, sharpness: 25.0, kind: PaintDaubBrush::Simple });
+    assert_eq!(
+        fx("artistic.paintDaubs", json!({"brushSize": 0, "sharpness": 99, "brushType": "wideBlurry"})),
+        PixelFx::PaintDaubs { size: 1.0, sharpness: 40.0, kind: PaintDaubBrush::WideBlurry }
+    );
+    let doc = crate::effect_info("artistic.paintDaubs").unwrap().params;
+    assert!(PAINT_DAUB_BRUSH_TYPES.iter().all(|(_, v)| doc.contains(&format!("\"{v}\""))), "{doc}");
+    assert!(fx("artistic.paintDaubs", json!({})).outset(Rect::new(0.0, 0.0, 40.0, 30.0)) > 0.0);
 }
 
 #[test]
@@ -2541,6 +2549,28 @@ fn cutout_simplicity_smooths_the_pieces_edges() {
         out.as_chunks::<4>().0.windows(2).filter(|p| p[0] != p[1]).count()
     };
     assert!(changes(10.0) * 4 < changes(0.0), "{} vs {}", changes(10.0), changes(0.0));
+}
+
+#[test]
+fn paint_daubs_coarsens_a_ramp_and_keeps_coverage() {
+    let (w, h) = (64, 32);
+    let src = ramp(w, h);
+    let mut out = src.clone();
+    fx("artistic.paintDaubs", json!({"brushSize": 28, "sharpness": 35})).apply(&mut out, w, h, &space(w, h));
+    assert_ne!(out, src, "dabbed art differs from the ramp");
+    assert!(out.as_chunks::<4>().0.iter().zip(src.as_chunks::<4>().0).all(|(o, s)| o[3] == s[3]));
+}
+
+#[test]
+fn paint_daubs_larger_brushes_flatten_more() {
+    let (w, h) = (80, 40);
+    let src = ramp(w, h);
+    let dab_colours = |size: f64| {
+        let mut out = src.clone();
+        fx("artistic.paintDaubs", json!({"brushSize": size, "sharpness": 20})).apply(&mut out, w, h, &space(w, h));
+        colours(&out).len()
+    };
+    assert!(dab_colours(35.0) < dab_colours(8.0), "{} vs {}", dab_colours(35.0), dab_colours(8.0));
 }
 
 #[test]

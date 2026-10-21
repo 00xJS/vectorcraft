@@ -1,4 +1,4 @@
-//! Photoshop-style raster effects (Effect › Artistic › Cutout, Dry Brush, Film Grain, Neon Glow, Plastic Wrap and
+//! Photoshop-style raster effects (Effect › Artistic › Cutout, Dry Brush, Film Grain, Neon Glow, Paint Daubs, Plastic Wrap and
 //! Poster Edges, Smudge Stick, Sponge and Watercolor, Blur › Radial Blur and Smart Blur, Brush Strokes › Accented Edges, Angled Strokes,
 //! Crosshatch, Dark Strokes, Ink Outlines, Spatter, Sprayed Strokes and Sumi-e, Distort › Diffuse
 //! Glow, Glass and Ocean Ripple, Pixelate › Color Halftone, Crystallize, Mezzotint and Pointillize,
@@ -34,6 +34,7 @@ use vectorcraft_geom::{Affine, Point, Rect};
 
 use crate::util::{flag, num, text};
 
+pub use artistic::{PAINT_DAUB_BRUSH_TYPES, PaintDaubBrush};
 pub use blur::{SMART_BLUR_MODES, SmartBlurMode};
 pub use brushstrokes::{STROKE_DIRECTIONS, StrokeDirection};
 pub use distort::{GLASS_TEXTURES, GLASS_TEXTURES_LOADED, GlassTexture};
@@ -43,11 +44,12 @@ pub use sketch::{HALFTONE_TYPES, HalftonePattern};
 pub use texture::{GRAIN_TYPES, Grain, LIGHT_DIRECTIONS, Light, TEXTURES, TEXTURES_LOADED, Texture};
 
 /// The Photoshop-style effect ids (all raster effects, see [`crate::is_raster`]).
-pub const PIXEL_EFFECTS: [&str; 49] = [
+pub const PIXEL_EFFECTS: [&str; 50] = [
     "artistic.cutout",
     "artistic.dryBrush",
     "artistic.filmGrain",
     "artistic.neonGlow",
+    "artistic.paintDaubs",
     "artistic.paletteKnife",
     "artistic.plasticWrap",
     "artistic.posterEdges",
@@ -123,6 +125,9 @@ pub enum PixelFx {
     /// light areas (`size` above 0) or the dark ones (below 0), spread by |`size`| (-24..24), as
     /// strong as `brightness` (0..50).
     NeonGlow { size: f64, brightness: f64, colour: [f32; 3] },
+    /// Artistic › Paint Daubs: dabs `size` (1..50) points apart, as sharp as `sharpness` (0..40),
+    /// with brush `kind`.
+    PaintDaubs { size: f64, sharpness: f64, kind: PaintDaubBrush },
     /// Artistic › Palette Knife: knife strokes `stroke_size` (1..50) long smear the colours;
     /// `stroke_detail` (1..3) keeps more original detail when higher; `softness` (0..10) softens
     /// the strokes.
@@ -342,6 +347,11 @@ pub(crate) fn parse(id: &str, p: &Value) -> Option<PixelFx> {
             shadow: num(p, "shadowIntensity", 1.0).clamp(0.0, 10.0),
             texture: num(p, "texture", 1.0).clamp(1.0, 3.0).round() as u32,
         },
+        "artistic.paintDaubs" => PixelFx::PaintDaubs {
+            size: num(p, "brushSize", 10.0).clamp(1.0, 50.0),
+            sharpness: num(p, "sharpness", 25.0).clamp(0.0, 40.0),
+            kind: PaintDaubBrush::parse(text(p, "brushType", "simple")),
+        },
         "artistic.plasticWrap" => PixelFx::PlasticWrap {
             highlight: num(p, "highlightStrength", 20.0).clamp(0.0, 20.0),
             detail: num(p, "detail", 12.0).clamp(0.0, 15.0),
@@ -557,6 +567,7 @@ impl PixelFx {
             PixelFx::BasRelief { .. } | PixelFx::Charcoal { .. } | PixelFx::Photocopy { .. } | PixelFx::Stamp { .. } => 0.0,
             PixelFx::WaterPaper { fiber_length, .. } => sketch::water_paper_shift(fiber_length),
             PixelFx::GlowingEdges { width, smoothness, .. } => width.max(smoothness * 3.0),
+            PixelFx::PaintDaubs { size, .. } => artistic::paint_daub_radius(size),
             // These three keep the object's coverage.
             PixelFx::SmudgeStick { .. } | PixelFx::Sponge { .. } | PixelFx::Watercolor { .. } => 0.0,
             PixelFx::FilmGrain { .. }
@@ -625,6 +636,7 @@ impl PixelFx {
             | PixelFx::Reticulation { .. } => Some(0.0),
             PixelFx::DryBrush { size, detail, .. } => Some(artistic::dry_brush_reach(size, detail)),
             PixelFx::Plaster { smoothness, .. } => Some(sketch::plaster_reach(smoothness)),
+            PixelFx::PaintDaubs { size, .. } => Some(artistic::paint_daub_radius(size) + size * 0.15),
             PixelFx::WaterPaper { fiber_length, .. } => {
                 Some(sketch::water_paper_shift(fiber_length) + 3.0 * (0.06 * fiber_length.clamp(3.0, 50.0)).max(0.35))
             }
@@ -661,6 +673,7 @@ impl PixelFx {
             PixelFx::SmudgeStick { stroke, highlight, intensity } => paint::smudge_stick(px, w, h, space, stroke, highlight, intensity),
             PixelFx::Sponge { brush, definition, smoothness } => paint::sponge(px, w, h, space, brush, definition, smoothness),
             PixelFx::Watercolor { detail, shadow, texture } => paint::watercolor(px, w, h, space, detail, shadow, texture),
+            PixelFx::PaintDaubs { size, sharpness, kind } => artistic::paint_daubs(px, w, h, space, size, sharpness, kind),
             PixelFx::PlasticWrap { highlight, detail, smoothness } => artistic::plastic_wrap(px, w, h, space, highlight, detail, smoothness),
             PixelFx::NeonGlow { size, brightness, colour } => artistic::neon_glow(px, w, h, space, size, brightness, colour),
             PixelFx::PaletteKnife { stroke_size, stroke_detail, softness } => {

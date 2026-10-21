@@ -34,6 +34,13 @@
 	Channel 4	Kanal 4
 	Cell Size	Cellstorlek
 	Fine Dots	Fina punkter
+
+	Simple	Enkel
+	Light Rough	Lätt grov
+	Dark Rough	Mörk grov
+	Wide Sharp	Bred skarp
+	Wide Blurry	Bred suddig
+	Sparkle	Glittra
 	Medium Dots	Medelstora punkter
 	Grainy Dots	Korniga punkter
 	Coarse Dots	Grova punkter
@@ -4563,6 +4570,8 @@ lighting	Light	Ljus
 	Neon Glow…	Neonsken…
 	Palette Knife…	Palettkniv…
 	Neon Glow	Neonsken
+	Paint Daubs…	Färgklickar…
+	Paint Daubs	Färgklickar
 	Palette Knife	Palettkniv
 	Poster Edges…	Affischkanter…
 	Poster Edges	Affischkanter

@@ -1275,6 +1275,8 @@
 	Neon Glow…	Ánh neon…
 	Palette Knife…	Dao palette…
 	Neon Glow	Ánh neon
+	Paint Daubs…	Vệt sơn…
+	Paint Daubs	Vệt sơn
 	Palette Knife	Dao palette
 	Poster Edges…	Viền áp phích…
 	Poster Edges	Viền áp phích
@@ -1299,6 +1301,13 @@
 	Find Next	Tìm tiếp
 	Find Objects	Tìm đối tượng
 	Fine Dots	Chấm mịn
+
+	Simple	Đơn giản
+	Light Rough	Thô sáng
+	Dark Rough	Thô tối
+	Wide Sharp	Rộng sắc
+	Wide Blurry	Rộng mờ
+	Sparkle	Lấp lánh
 	First	Đầu tiên
 	First commit	Commit đầu tiên
 	First Page	Trang đầu

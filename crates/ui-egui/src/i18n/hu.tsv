@@ -1401,6 +1401,13 @@
 	Find Next	Következő keresése
 	Find Objects	Objektumok keresése
 	Fine Dots	Finom pontok
+
+	Simple	Egyszerű
+	Light Rough	Világos durva
+	Dark Rough	Sötét durva
+	Wide Sharp	Széles éles
+	Wide Blurry	Széles elmosott
+	Sparkle	Csillogás
 	First	Első
 	First Baseline	Első alapvonal
 	First commit	Első commit
@@ -1587,6 +1594,8 @@ file-filter	Templates	Sablonok
 	Neon Glow…	Neonfény…
 	Palette Knife…	Palettakés…
 	Neon Glow	Neonfény
+	Paint Daubs…	Festékpaca…
+	Paint Daubs	Festékpaca
 	Palette Knife	Palettakés
 	Poster Edges…	Poszterszélek…
 	Poster Edges	Poszterszélek

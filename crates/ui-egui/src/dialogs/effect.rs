@@ -201,6 +201,10 @@ fn body(app: &mut VectorcraftApp, ui: &mut egui::Ui, d: &mut Dialog) -> bool {
 pub(crate) const FILM_GRAIN_FIELDS: [(&str, &str, f64); 3] =
     [("grain", "Grain", 20.0), ("highlightArea", "Highlight Area", 20.0), ("intensity", "Intensity", 10.0)];
 
+/// Paint Daubs › Brush Type labels ([`vectorcraft_effects::pixel::PAINT_DAUB_BRUSH_TYPES`]); extend
+/// [`crate::menus::menu_strings`] with these like [`FILM_GRAIN_FIELDS`].
+pub(crate) const PAINT_DAUB_BRUSH_TYPE_LABELS: [&str; 6] = ["Simple", "Light Rough", "Dark Rough", "Wide Sharp", "Wide Blurry", "Sparkle"];
+
 fn film_grain_fields(ui: &mut egui::Ui, d: &mut Dialog) -> bool {
     let before = d.fields.clone();
     // Use one column wide enough for this language's longest label, keeping every rail aligned.
@@ -292,6 +296,7 @@ fn choices(effect: &str, key: &str) -> Option<form::Choices> {
         ("brushStrokes.sprayedStrokes", "strokeDirection") => Some(&vectorcraft_effects::pixel::STROKE_DIRECTIONS),
         ("distort.glass", "texture") => Some(&vectorcraft_effects::pixel::GLASS_TEXTURES),
         ("pixelate.mezzotint", "type") => Some(&vectorcraft_effects::pixel::MEZZOTINT_TYPES),
+        ("artistic.paintDaubs", "brushType") => Some(&vectorcraft_effects::pixel::PAINT_DAUB_BRUSH_TYPES),
         ("sketch.graphicPen", "strokeDirection") => Some(&vectorcraft_effects::pixel::STROKE_DIRECTIONS),
         ("sketch.halftonePattern", "patternType") => Some(&vectorcraft_effects::pixel::HALFTONE_TYPES),
         ("sketch.plaster", "lightDirection") => Some(&vectorcraft_effects::pixel::LIGHT_DIRECTIONS),
@@ -714,6 +719,7 @@ mod tests {
             ("distort.roughen", "points"),
             ("stylize.innerGlow", "source"),
             (DROP_SHADOW, "shade"),
+            ("artistic.paintDaubs", "brushType"),
         ] {
             let doc = vectorcraft_effects::effect_info(effect).unwrap().params;
             let listed = doc.split(&format!("{key}: ")).nth(1).unwrap().split([',', '}', ' ']).next().unwrap().to_string();

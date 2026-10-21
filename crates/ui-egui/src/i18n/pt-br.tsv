@@ -4046,6 +4046,8 @@ axis	Both	Ambos
 	Neon Glow…	Brilho neon…
 	Palette Knife…	Espátula…
 	Neon Glow	Brilho neon
+	Paint Daubs…	Manchas de tinta…
+	Paint Daubs	Manchas de tinta
 	Palette Knife	Espátula
 	Poster Edges…	Bordas de pôster…
 	Poster Edges	Bordas de pôster
@@ -4111,6 +4113,13 @@ axis	Both	Ambos
 	Channel 4	Canal 4
 	Cell Size	Tamanho da Célula
 	Fine Dots	Pontos Finos
+
+	Simple	Simples
+	Light Rough	Áspero claro
+	Dark Rough	Áspero escuro
+	Wide Sharp	Largo nítido
+	Wide Blurry	Largo borrado
+	Sparkle	Brilho
 	Medium Dots	Pontos Médios
 	Grainy Dots	Pontos Granulados
 	Coarse Dots	Pontos Grossos

@@ -4567,6 +4567,13 @@ axis	Both	兩者
 	Channel 4	色版 4
 	Cell Size	單元大小
 	Fine Dots	細點
+
+	Simple	簡單
+	Light Rough	淺色粗糙
+	Dark Rough	深色粗糙
+	Wide Sharp	寬銳
+	Wide Blurry	寬模糊
+	Sparkle	閃光
 	Medium Dots	中等點
 	Grainy Dots	顆粒點
 	Coarse Dots	粗點
@@ -4756,6 +4763,8 @@ lighting	Light	光源
 	Neon Glow…	霓虹光…
 	Palette Knife…	調色刀…
 	Neon Glow	霓虹光
+	Paint Daubs…	繪畫塗抹…
+	Paint Daubs	繪畫塗抹
 	Palette Knife	調色刀
 	Poster Edges…	海報邊緣…
 	Poster Edges	海報邊緣
