@@ -2267,6 +2267,13 @@ lighting	Light	Světlo
 	Alt key toggles to Smooth Tool	Klávesa Alt přepíná na nástroj Vyhlazení
 	Keep selected	Ponechat vybrané
 	Merge only with selection	Sloučit jen s výběrem
+	Consider Open Filled Paths as Closed	Považovat otevřené vyplněné cesty za uzavřené
+	Pick Color From:	Brát barvu z:
+	Artwork	Kresba
+	Cursor Swatch Preview	Náhled vzorku u kurzoru
+	Selection:	Výběr:
+	Straight Line	Přímka
+	Highlight:	Zvýraznění:
 	The document has no colour swatches.	Dokument nemá ve vzorníku žádné barvy.
 	Style Name:	Název stylu:
 	Crop To	Oříznout na
