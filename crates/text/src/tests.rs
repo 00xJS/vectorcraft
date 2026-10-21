@@ -92,7 +92,7 @@ fn fractional_widths_off_rounds_positive_advances_to_whole_points() {
     tcy.vertical = true;
     tcy.fractional_widths = false;
     let adv: Vec<f64> = layout(db(), &tcy).glyphs.iter().map(|g| g.advance).collect();
-    assert!(adv.iter().any(|a| *a == 0.0), "a tate-chu-yoko continuation stays at zero: {adv:?}");
+    assert!(adv.contains(&0.0), "a tate-chu-yoko continuation stays at zero: {adv:?}");
     assert!(adv.iter().all(|a| *a == 0.0 || (a - a.round()).abs() < 1e-9), "{adv:?}");
 }
 
