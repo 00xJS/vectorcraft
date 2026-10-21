@@ -453,6 +453,11 @@ pub struct UiState {
     /// buttons follow ([`crate::panels::align::with_align_to`]).
     #[serde(default, deserialize_with = "crate::panels::align::deserialize_align_to")]
     pub align_to: crate::panels::align::AlignTo,
+    /// Align panel: the Distribute Spacing value in points, which the Distribute Objects and
+    /// Distribute Spacing buttons and their commands send while there is a key object or a key
+    /// guide ([`crate::panels::align::run_button`]). Not saved.
+    #[serde(skip)]
+    pub align_spacing: f64,
     /// Color panel: the mode picked last from its menu (`None`: never picked), in which the panel
     /// shows the defaults for new art ([`crate::panels::color::deserialize_mode`]).
     #[serde(default, deserialize_with = "crate::panels::color::deserialize_mode")]
@@ -825,6 +830,7 @@ impl Default for UiState {
             flattener_preview: Default::default(),
             color_guide_limit: String::new(),
             align_to: Default::default(),
+            align_spacing: 0.0,
             color_mode: None,
             color_hide_options: false,
             svg_options: Value::Null,

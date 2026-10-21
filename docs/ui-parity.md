@@ -201,7 +201,9 @@ selected objects, as the Appearance panel's Add New Fill and Add New Stroke butt
 against Illustrator's published default shortcut list; estimated ~70% of it. Remaining: the panel shortcuts,
 the type shortcuts (tracking/kerning/leading/baseline steps with Alt/Shift), and selection shortcuts in the
 Layers panel. The shortcut editor also lists the commands that are in no menu but run without parameters (Edit › Duplicate,
-panel-menu commands such as Break Link to Symbol), so they can be given shortcuts (#1539). The [ and ] keys reach the Blob Brush, the Eraser and the Symbolism tools in the app (#1734, part of #1661).
+panel-menu commands such as Break Link to Symbol), so they can be given shortcuts (#1539). It lists each button of the
+Align panel's Align Objects, Distribute Objects and Distribute Spacing rows under Align, with no default shortcut, and a
+shortcut set there runs what a click on the button runs, with the panel's Align To choice and Distribute Spacing value. The [ and ] keys reach the Blob Brush, the Eraser and the Symbolism tools in the app (#1734, part of #1661).
 
 Cmd/Ctrl+Alt+N (`file.newWithoutDialog`, New Without Dialog in the shortcut editor) makes a document with the
 settings the New Document dialog opens on (the first Recent entry, or the Print category's Letter while Recent is
