@@ -67,6 +67,35 @@ fn add_font_rejects_garbage_and_duplicates() {
     assert_eq!(db().add_font(bytes), 0, "already bundled");
 }
 
+/// Character panel menu › Fractional Widths, off: each character that takes space advances by a
+/// whole number of points, at least one. On (the default) keeps the font's fractional advances,
+/// including tracking. A tate-chu-yoko continuation stays at zero.
+/// <https://helpx.adobe.com/illustrator/desktop/design-with-text/edit-format-text/turn-fractional-character-widths-off-or-on.html>
+#[test]
+fn fractional_widths_off_rounds_positive_advances_to_whole_points() {
+    let mut on = point("Hi", style(13.0));
+    on.runs[0].style.tracking = 50.0;
+    assert!(on.fractional_widths);
+    let fractional: Vec<f64> = layout(db(), &on).glyphs.iter().map(|g| g.advance).collect();
+    assert!(fractional.iter().any(|a| (a - a.round()).abs() > 1e-6), "{fractional:?}");
+    let mut off = on.clone();
+    off.fractional_widths = false;
+    let whole: Vec<f64> = layout(db(), &off).glyphs.iter().map(|g| g.advance).collect();
+    assert!(whole.iter().all(|a| *a >= 1.0 && (a - a.round()).abs() < 1e-9), "{whole:?}");
+    assert!(fractional.iter().zip(&whole).any(|(a, b)| (a - b).abs() > 0.05), "{fractional:?} {whole:?}");
+    // Smaller than half a point: rounding alone would be 0, which would run the type together.
+    let mut tiny = point("i", style(0.4));
+    tiny.fractional_widths = false;
+    let laid = layout(db(), &tiny);
+    assert!(laid.glyphs.iter().any(|g| (g.advance - 1.0).abs() < 1e-9), "{:?}", laid.glyphs.iter().map(|g| g.advance).collect::<Vec<_>>());
+    let mut tcy = point("10", style(20.0));
+    tcy.vertical = true;
+    tcy.fractional_widths = false;
+    let adv: Vec<f64> = layout(db(), &tcy).glyphs.iter().map(|g| g.advance).collect();
+    assert!(adv.iter().any(|a| *a == 0.0), "a tate-chu-yoko continuation stays at zero: {adv:?}");
+    assert!(adv.iter().all(|a| *a == 0.0 || (a - a.round()).abs() < 1e-9), "{adv:?}");
+}
+
 #[test]
 fn glyph_count_and_advances() {
     let l = layout(db(), &point("Hello", style(24.0)));
