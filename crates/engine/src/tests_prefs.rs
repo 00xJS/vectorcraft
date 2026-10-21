@@ -1370,6 +1370,17 @@ fn show_font_names_in_english_preference_is_stored() {
     assert!(s.prefs.font_names_in_english);
 }
 
+/// Preferences › Devices › Enable Touch Workspace (#394): stored and restored through `prefs.set`.
+#[test]
+fn touch_workspace_preference_is_stored() {
+    let mut s = Session::new();
+    assert!(s.prefs.touch_workspace, "on by default");
+    set_pref(&mut s, "touchWorkspace", json!(false));
+    assert!(!s.prefs.touch_workspace);
+    set_pref(&mut s, "touchWorkspace", json!(true));
+    assert!(s.prefs.touch_workspace);
+}
+
 /// Preferences › Type › Highlight Alternate Glyphs (#394): off by default so OpenType
 /// substitutions are not pink on every canvas until the user turns the preference on.
 #[test]

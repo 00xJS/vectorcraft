@@ -885,6 +885,7 @@ const MENU_KEEP_AS_IS: &[&str] = &[
     "Painting",
     "Printing and Proofing",
     "Tracing",
+    "Touch",
     "Typography",
     "Web",
     "[1P-Normal View]",
