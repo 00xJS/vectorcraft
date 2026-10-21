@@ -309,6 +309,9 @@ pub struct UiState {
     pub legacy_language: Option<String>,
     pub brightness: Brightness,
     pub dock_tab: DockTab,
+    /// Tab order in the dock's tabbed group when it differs from [`DockTab::ALL`].
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub dock_tab_order: Vec<DockTab>,
     /// The dock's tabbed group (Properties | Layers | Libraries) is collapsed to icons at the top of
     /// the icon column (the dock's double arrow, `window.collapseDock`).
     #[serde(default)]
@@ -778,6 +781,7 @@ impl Default for UiState {
             legacy_language: None,
             brightness: Brightness::MediumDark,
             dock_tab: DockTab::Properties,
+            dock_tab_order: Vec::new(),
             dock_collapsed: false,
             open_panel: None,
             control_bar: false,

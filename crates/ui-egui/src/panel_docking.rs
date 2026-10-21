@@ -142,6 +142,79 @@ fn number(params: &Value, key: &str, default: f32) -> Result<f32, String> {
     }
 }
 
+const LEGACY_REORDER_BAD_DEST: &str = "move requires an existing destination panel";
+
+enum LegacyStripReorder {
+    DockStrip,
+    FloatingGroup(usize),
+}
+
+fn legacy_strip_reorder_target(
+    app: &VectorcraftApp,
+    before: &str,
+    dock_strip: bool,
+    panel_group: Option<usize>,
+) -> Result<LegacyStripReorder, String> {
+    if dock_strip {
+        return Ok(LegacyStripReorder::DockStrip);
+    }
+    let gi = panel_group.ok_or(LEGACY_REORDER_BAD_DEST)?;
+    if crate::floating::group_of(&app.ui, before) != Some(gi) {
+        return Err(LEGACY_REORDER_BAD_DEST.into());
+    }
+    Ok(LegacyStripReorder::FloatingGroup(gi))
+}
+
+/// Legacy workspaces (no saved `docking` layout): reorder tabs in the dock strip or a floating
+/// group without promoting to a shared layout.
+fn legacy_same_strip_reorder(
+    app: &mut VectorcraftApp,
+    panel: &str,
+    before: &str,
+    target: LegacyStripReorder,
+) -> Result<Value, String> {
+    use crate::state::DockTab;
+    match target {
+        LegacyStripReorder::DockStrip => {
+            let mut order: Vec<DockTab> = crate::floating::docked_tabs(&app.ui).collect();
+            let from = order.iter().position(|t| t.info().0 == panel).ok_or(LEGACY_REORDER_BAD_DEST)?;
+            let to = order.iter().position(|t| t.info().0 == before).ok_or(LEGACY_REORDER_BAD_DEST)?;
+            if from != to {
+                let item = order.remove(from);
+                order.insert(to, item);
+                crate::floating::set_dock_tab_order(&mut app.ui, order);
+            }
+        }
+        LegacyStripReorder::FloatingGroup(gi) => {
+            let g = app.ui.floating_panels.get_mut(gi).ok_or("invalid restored panel group")?;
+            let from = g.panels.iter().position(|id| id == panel).ok_or(LEGACY_REORDER_BAD_DEST)?;
+            let to = g.panels.iter().position(|id| id == before).ok_or(LEGACY_REORDER_BAD_DEST)?;
+            crate::floating::reorder_group_tab_indices(g, from, to);
+            if let Some(layout) = app.ui.docking.as_mut() {
+                let panels = g.panels.clone();
+                let active = g.active.min(panels.len().saturating_sub(1));
+                if let Some(group) = layout.floating.iter_mut().find(|group| group.panels.iter().any(|id| id == panel)) {
+                    group.panels = panels;
+                    group.active = active;
+                }
+            }
+        }
+    }
+    Ok(json!({ "panel": panel, "before": before }))
+}
+
+/// Same-strip tab reorder for `window.panel.move` and in-frame tab drags (`app.run` during egui deadlocks).
+pub(crate) fn strip_tab_reorder(app: &mut VectorcraftApp, panel: &str, before: &str) -> Result<Value, String> {
+    use crate::state::DockTab;
+    let panel_group = crate::floating::group_of(&app.ui, panel);
+    let dock_strip_reorder = DockTab::from_id(panel).is_some()
+        && DockTab::from_id(before).is_some()
+        && panel_group.is_none()
+        && crate::floating::group_of(&app.ui, before).is_none();
+    let target = legacy_strip_reorder_target(app, before, dock_strip_reorder, panel_group)?;
+    legacy_same_strip_reorder(app, panel, before, target)
+}
+
 fn placement(params: &Value) -> Result<Placement<String>, String> {
     if let Some(before) = params.get("before") {
         let id = before.as_str().and_then(normalize).ok_or("before must name a panel")?;
@@ -294,6 +367,18 @@ fn apply_action(app: &mut VectorcraftApp, action: Action<String>) -> Result<Valu
 
 fn change(app: &mut VectorcraftApp, operation: &str, params: &Value) -> Result<Value, String> {
     let panel = params.get("panel").and_then(Value::as_str).and_then(normalize).ok_or("panel must name a registered panel")?;
+    if operation == "move" && params.get("before").is_some() {
+        let before = params.get("before").and_then(Value::as_str).and_then(normalize).ok_or("before must name a panel")?;
+        use crate::state::DockTab;
+        let panel_group = crate::floating::group_of(&app.ui, panel);
+        let dock_strip_reorder = DockTab::from_id(panel).is_some()
+            && DockTab::from_id(before).is_some()
+            && panel_group.is_none()
+            && crate::floating::group_of(&app.ui, before).is_none();
+        if app.ui.docking.is_none() || panel_group.is_some() || dock_strip_reorder {
+            return strip_tab_reorder(app, panel, before);
+        }
+    }
     if app.ui.docking.as_ref().is_some_and(|layout| !valid(layout)) {
         return Err("saved panel layout is invalid; reset the workspace first".into());
     }
@@ -766,7 +851,9 @@ pub(crate) fn show(app: &mut VectorcraftApp, ui: &mut egui::Ui) -> bool {
         {
             return app.ui.docking.is_some();
         }
-        ui.ctx().data_mut(|data| data.remove::<LegacyDrag>(egui::Id::new("vectorcraft-panel-docking").with("legacy-origin")));
+        craft_ui::docking::cancel_drag::<String>(ui.ctx(), egui::Id::new("vectorcraft-panel-docking"));
+        ui.ctx()
+            .data_mut(|data| data.remove::<LegacyDrag>(egui::Id::new("vectorcraft-panel-docking").with("legacy-origin")));
     }
     for action in output.actions {
         if tab_drop
@@ -774,7 +861,7 @@ pub(crate) fn show(app: &mut VectorcraftApp, ui: &mut egui::Ui) -> bool {
         {
             continue;
         }
-        if let Err(error) = app.run("window.panel.layout", json!({"action": action})) {
+        if let Err(error) = apply_action(app, action) {
             app.ui.status = error;
         }
     }
@@ -857,6 +944,16 @@ fn icon_rail(app: &mut VectorcraftApp, ui: &mut egui::Ui) {
 }
 
 pub(crate) fn legacy_tab(app: &mut VectorcraftApp, ui: &mut egui::Ui, panel: &str, response: &egui::Response) {
+    legacy_tab_in_strip(app, ui, panel, response, None);
+}
+
+pub(crate) fn legacy_tab_in_strip(
+    app: &mut VectorcraftApp,
+    ui: &mut egui::Ui,
+    panel: &str,
+    response: &egui::Response,
+    strip: Option<egui::Rect>,
+) {
     let Some(panel) = normalize(panel) else { return };
     response.context_menu(|ui| {
         if ui.button(tl!("Float Panel")).clicked() {
@@ -880,7 +977,17 @@ pub(crate) fn legacy_tab(app: &mut VectorcraftApp, ui: &mut egui::Ui, panel: &st
             }
         });
     });
-    if response.drag_started()
+    let inside_strip = strip.is_some_and(|strip| {
+        ui.input(|i| i.pointer.interact_pos()).is_some_and(|p| strip.expand(4.0).contains(p))
+    });
+    let area = egui::Id::new("vectorcraft-panel-docking");
+    let begun = ui.ctx().data(|d| d.get_temp::<LegacyDrag>(area.with("legacy-origin")).is_some());
+    let begin = if strip.is_some() {
+        !begun && (response.drag_started() || (!inside_strip && response.dragged()))
+    } else {
+        response.drag_started()
+    };
+    if begin
         && let Some(id) = normalize(panel)
     {
         let mut layout = app.ui.docking.clone().unwrap_or_else(|| legacy(app));
@@ -1035,9 +1142,10 @@ mod tests;
 
 /// Commit a pointer drop after shared and native panel windows have finished rendering.
 pub(crate) fn finish_native_drop(app: &mut VectorcraftApp, ctx: &egui::Context) {
-    if let Some((command, params)) =
+    if let Some((id, params)) =
         ctx.data_mut(|data| data.remove_temp::<(&'static str, serde_json::Value)>(egui::Id::new("vectorcraft-native-panel-drop")))
-        && let Err(error) = app.run(command, params)
+        && let Some(result) = command(app, id, &params)
+        && let Err(error) = result
     {
         app.ui.status = error;
     }

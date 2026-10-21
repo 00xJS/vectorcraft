@@ -138,6 +138,16 @@ pub fn group_of(ui: &UiState, id: &str) -> Option<usize> {
     ui.floating_panels.iter().position(|g| g.panels.iter().any(|p| p == id))
 }
 
+/// Reorder tabs in a floating group by index, keeping the active tab on the same panel.
+pub(crate) fn reorder_group_tab_indices(g: &mut FloatingPanels, from: usize, to: usize) {
+    if from != to && from < g.panels.len() && to < g.panels.len() {
+        let active = g.panels.get(g.active).cloned();
+        let moved = g.panels.remove(from);
+        g.panels.insert(to, moved);
+        g.active = active.and_then(|id| g.panels.iter().position(|p| *p == id)).unwrap_or(0);
+    }
+}
+
 /// The floating groups drawn with group `gi`, top to bottom: the groups of its set, or it alone.
 pub fn set_of(ui: &UiState, gi: usize) -> Vec<usize> {
     match ui.floating_panels.get(gi).and_then(|g| g.column) {
@@ -209,9 +219,30 @@ fn ids_of(g: &FloatingPanels) -> Vec<&'static str> {
     g.panels.iter().filter_map(|p| panel(p)).map(|(id, _)| id).collect()
 }
 
+/// Saved dock tab order, appending any tabs missing from older preferences.
+pub(crate) fn resolved_dock_tab_order(ui: &UiState) -> Vec<DockTab> {
+    if ui.dock_tab_order.is_empty() {
+        DockTab::ALL.to_vec()
+    } else {
+        let mut order = ui.dock_tab_order.clone();
+        for tab in DockTab::ALL {
+            if !order.contains(&tab) {
+                order.push(tab);
+            }
+        }
+        order
+    }
+}
+
+/// Persist dock tab order when it differs from the default visible strip.
+pub(crate) fn set_dock_tab_order(ui: &mut UiState, visible: Vec<DockTab>) {
+    let default = DockTab::ALL.iter().copied().filter(|t| group_of(ui, t.info().0).is_none()).collect::<Vec<_>>();
+    ui.dock_tab_order = if visible == default { Vec::new() } else { visible };
+}
+
 /// The dock tabs left in the dock, in tab order.
 pub fn docked_tabs(ui: &UiState) -> impl Iterator<Item = DockTab> + '_ {
-    DockTab::ALL.into_iter().filter(|t| group_of(ui, t.info().0).is_none())
+    resolved_dock_tab_order(ui).into_iter().filter(|t| group_of(ui, t.info().0).is_none())
 }
 
 /// The dock tab the tabbed group shows: the chosen one, or the first left when it floats.
@@ -566,6 +597,8 @@ enum Action {
     Detach(usize, f32),
     /// Float this panel out of its group; its tab began this far right.
     Tear(&'static str, f32),
+    /// Reorder tabs in floating group `gi` from index `from` to `to`.
+    Reorder(usize, usize, usize),
     /// Float the docked column of this group, its top-left corner this far from the pointer.
     Undock(usize, Vec2),
 }
@@ -624,6 +657,7 @@ fn apply(app: &mut VectorcraftApp, ctx: &egui::Context, action: Option<Action>) 
         return;
     }
     let before = app.ui.clone();
+    let skip_reconcile = matches!(action, Some(Action::Reorder(_, _, _)));
     match action {
         Some(Action::Activate(gi, k)) => {
             if let Some(g) = app.ui.floating_panels.get_mut(gi)
@@ -654,6 +688,19 @@ fn apply(app: &mut VectorcraftApp, ctx: &egui::Context, action: Option<Action>) 
         }
         Some(Action::Detach(gi, left)) => detach(app, ctx, gi, left),
         Some(Action::Tear(id, left)) => tear(app, ctx, &[id], id, strip_grab(ctx, left)),
+        Some(Action::Reorder(gi, from, to)) => {
+            let ids = app.ui.floating_panels.get(gi).and_then(|g| {
+                let panel = g.panels.get(from)?;
+                let before = g.panels.get(to)?;
+                Some((panel.clone(), before.clone()))
+            });
+            if let Some((panel, before)) = ids
+                && let Err(error) = crate::panel_docking::strip_tab_reorder(app, &panel, &before)
+            {
+                app.ui.status = error;
+            }
+            return;
+        }
         Some(Action::Undock(gi, grab)) => {
             let Some(at) = ctx.input(|i| i.pointer.interact_pos()) else { return };
             let Some(id) = set_of(&app.ui, gi).first().and_then(|&i| shown(&app.ui, i)) else { return };
@@ -669,7 +716,7 @@ fn apply(app: &mut VectorcraftApp, ctx: &egui::Context, action: Option<Action>) 
         }
         None => {}
     }
-    if let Err(error) = crate::panel_docking::reconcile_native(app, before.clone()) {
+    if !skip_reconcile && let Err(error) = crate::panel_docking::reconcile_native(app, before.clone()) {
         app.ui.status = error;
     }
     ctx.data_mut(|data| {
@@ -889,12 +936,14 @@ fn draw_groups(
         let names: Vec<_> = g.ids.iter().zip(&labels).map(|(&id, label)| (id, label.as_str())).collect();
         let selected = g.ids.iter().position(|&id| id == g.active).unwrap_or(0);
         let out = dock::panel_tabs(ui, &format!("native-set-tabs-{}", g.gi), tab_area, &names, selected, theme::semibold(12.0), false);
-        for (j, resp) in out.responses {
-            let Some(&id) = g.ids.get(j) else { continue };
-            if resp.double_clicked() {
+        for (j, resp) in &out.responses {
+            let Some(&id) = g.ids.get(*j) else { continue };
+            if let Some((from, to)) = dock::tab_reorder_on_release(strip, pointer, resp, &out.responses) {
+                *action = Some(Action::Reorder(g.gi, from, to));
+            } else if resp.double_clicked() {
                 *action = Some(Action::Collapse(g.gi));
             } else if resp.clicked() {
-                *action = Some(Action::Activate(g.gi, j));
+                *action = Some(Action::Activate(g.gi, *j));
             } else if lone && resp.drag_started() {
                 *action = Some(match alone {
                     Some(pos) => Action::Move(id, pos),
@@ -1238,6 +1287,18 @@ mod tests {
         fn groups(&self) -> Vec<Vec<&str>> {
             self.app.ui.floating_panels.iter().map(|g| g.panels.iter().map(String::as_str).collect()).collect()
         }
+    }
+
+    #[test]
+    fn floating_group_tabs_reorder_horizontally_within_the_strip() {
+        let mut h = Harness::new();
+        h.drag(h.icons()[2].center(), pos2(500.0, 250.0));
+        h.drag(h.icons()[0].center(), h.shared_tab("swatches").center());
+        assert_eq!(h.groups(), [["swatches", "color"]]);
+        h.app
+            .run("window.panel.move", json!({ "panel": "color", "anchor": "swatches", "before": "swatches" }))
+            .unwrap();
+        assert_eq!(h.groups(), [["color", "swatches"]]);
     }
 
     #[test]
