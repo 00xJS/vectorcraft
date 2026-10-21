@@ -4740,6 +4740,9 @@ imageTrace	Outline	კონტური
 	In the File	ფაილში
 	Keys	კლავიშები
 	Light behind the object	სინათლე ობიექტის უკან
+	3D Lighting Preset	3D განათების წინასწარი პარამეტრი
+	Standard	სტანდარტული
+	Diffuse	დიფუზური
 	Line {line}	სტრიქონი {line}
 	Line {line}: {name}: {status}	სტრიქონი {line}: {name}: {status}
 	Needs Attention Only	მხოლოდ საყურადღებო

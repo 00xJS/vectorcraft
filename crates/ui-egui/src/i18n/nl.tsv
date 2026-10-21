@@ -4840,6 +4840,9 @@ mark-style	Japanese	Japans
 	Softness	Zachtheid
 	Ambient Light	Omgevingslicht
 	Light behind the object	Licht achter het object
+	3D Lighting Preset	Voorinstelling 3D-belichting
+	Standard	Standaard
+	Diffuse	Diffuus
 # 3D light management.
 	Lights	Lichtbronnen
 	Add Light	Lichtbron toevoegen

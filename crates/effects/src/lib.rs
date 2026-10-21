@@ -40,6 +40,7 @@ mod clip;
 mod distort;
 mod group;
 mod lighting;
+mod lighting_presets;
 mod live;
 mod marks;
 pub mod pixel;
@@ -72,6 +73,7 @@ pub use group::{
     OutlineHook, PATHFINDER_EFFECTS, evaluate_container, has_container_appearance, has_pathfinder, is_pathfinder, member_shapes, paints,
     pathfinder_children,
 };
+pub use lighting_presets::{LIGHTING_PRESETS, LightingPreset, lighting_preset_params, matching_lighting_preset};
 pub use live::{expand_live, expand_live_deep, expanded_live_group, text_outliner};
 pub use marks::{CROP_MARKS, crop_marks_art, has_crop_marks};
 pub use pixel::{PIXEL_EFFECTS, PixelFx, PixelSpace};
