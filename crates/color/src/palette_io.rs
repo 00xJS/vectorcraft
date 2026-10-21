@@ -371,7 +371,9 @@ fn read_gpl(text: &str, fallback: &str) -> SwatchLibrary {
             continue;
         }
         if let Some(n) = line.strip_prefix("Name:") {
-            lib.name = n.trim().to_string();
+            if !n.trim().is_empty() {
+                lib.name = n.trim().to_string();
+            }
             continue;
         }
         // Comments, headers (`Columns: 4`) and anything else that isn't a colour are skipped.
@@ -647,6 +649,14 @@ mod tests {
     use super::*;
     use crate::{Gradient, GradientPaint, GradientStop};
     use proptest::prelude::*;
+
+    #[test]
+    fn gpl_blank_name_keeps_fallback() {
+        let blank = "GIMP Palette\nName: \nColumns: 0\n#\n  1   2   3\tx\n";
+        assert_eq!(read(blank, "fallback").unwrap().name, "fallback");
+        let named = "GIMP Palette\nName: Warm\n  1   2   3\tx\n";
+        assert_eq!(read(named, "fallback").unwrap().name, "Warm");
+    }
 
     /// A color book's string: a `u32` count of UTF-16 code units, then the units.
     fn acb_str(out: &mut Vec<u8>, s: &str) {
