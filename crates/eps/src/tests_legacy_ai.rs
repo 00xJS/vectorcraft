@@ -462,11 +462,10 @@ fn radials() -> Document {
 }
 
 /// Every radial gradient instance has its highlight `Bh` (§3.5.5): `0 0 0 0 Bh` when it is at the
-/// center (#2687: without it the reference app drew the circle in its outer color), on fills,
-/// strokes, in groups, compound paths and clipping groups, and an off-center one within the
-/// gradient's circle. Linear instances have none. VectorCraft reads back one linear and at least
-/// seven radial gradients, each with its stops, and the circle, the square and the off-center
-/// square in their place.
+/// center (§3.5.6), on fills, strokes, in groups, compound paths and clipping groups, and an
+/// off-center one within the gradient's circle. Linear instances have none. VectorCraft reads
+/// back one linear and at least seven radial gradients, each with its stops, and the circle, the
+/// square and the off-center square in their place.
 #[test]
 fn radial_gradients_have_their_highlight() {
     let out = write(&radials());
@@ -538,6 +537,66 @@ fn radial_gradients_have_their_highlight() {
     assert!(near(square.end, 380.0, 100.0), "{square:?}");
     let Some((GradientKind::Radial, off)) = placed(300.0, 240.0) else { panic!("{found:#?}") };
     assert!(near(off.end, 320.0, 240.0) && off.focal.is_some_and(|f| near(f, 300.0, 220.0)), "{off:?}");
+}
+
+/// A radial gradient's stops are listed from the first to the last, as §3.5.2's radial definition
+/// lists them (10, then 100), and a linear gradient's stops are listed from the last to the first
+/// (§1.4.3). Each stop keeps its color and its midpoint to the next stop. The reference app read a
+/// radial gradient's stops listed from the last as one color (two stops) or inverted (three
+/// stops), reported on #2807. Both gradients read back with their stops.
+#[test]
+fn radial_gradient_stops_are_listed_from_the_first() {
+    let white = Color::rgb(1.0, 1.0, 1.0);
+    let red = Color::rgb(1.0, 0.0, 0.0);
+    let navy = Color::rgb(27.0 / 255.0, 42.0 / 255.0, 107.0 / 255.0);
+    let stop = |offset: f32, color: Color, midpoint: f32| GradientStop { midpoint, ..GradientStop::new(offset, color) };
+    let stops = vec![stop(0.0, white, 0.3), stop(0.3, red, 0.7), stop(1.0, navy, 0.5)];
+    let mut doc = Document::new(200.0, 100.0);
+    let layer = doc.layers[0].id;
+    for (kind, x) in [(GradientKind::Radial, 10.0), (GradientKind::Linear, 110.0)] {
+        let paint = Paint::Gradient(Box::new(GradientPaint::new(Gradient { kind, stops: stops.clone() })));
+        let n = shape(&mut doc, shapes::rectangle(Rect::new(x, 10.0, x + 80.0, 90.0)), paint, Paint::None);
+        doc.insert(Some(layer), usize::MAX, n).unwrap();
+    }
+    let out = write(&doc);
+    let text = String::from_utf8(out.bytes.clone()).unwrap();
+    // Each `%_Bs` line of a definition: its RGB color (`c m y k r g b 2`), midpoint and ramp point.
+    let listed = |head: &str| -> Vec<([f64; 3], f64, f64)> {
+        let def = text.split(head).nth(1).and_then(|t| t.split("BD\n").next()).unwrap_or_else(|| panic!("no {head:?} in\n{text}"));
+        def.lines()
+            .map(|l| {
+                let n: Vec<f64> = l.trim_end_matches(" %_Bs").split_whitespace().map(|v| v.parse().unwrap()).collect();
+                let [_, _, _, _, r, g, b, style, mid, ramp] = n.as_slice() else { panic!("{l}") };
+                assert_eq!(*style, 2.0, "{l}");
+                ([*r, *g, *b], *mid, *ramp)
+            })
+            .collect()
+    };
+    let rgb = |c: Color| c.to_rgb().map(f64::from);
+    let first_first = [(rgb(white), 30.0, 0.0), (rgb(red), 70.0, 30.0), (rgb(navy), 50.0, 100.0)];
+    let mut last_first = first_first;
+    last_first.reverse();
+    let same = |got: &[([f64; 3], f64, f64)], want: &[([f64; 3], f64, f64)]| {
+        got.len() == want.len()
+            && got.iter().zip(want).all(|((c, m, r), (wc, wm, wr))| {
+                c.iter().zip(wc).all(|(a, b)| (a - b).abs() < 1e-3) && (m - wm).abs() < 1e-3 && (r - wr).abs() < 1e-3
+            })
+    };
+    let radial = listed("(Gradient) 1 3 Bd\n[\n");
+    assert!(same(&radial, &first_first), "{radial:?}\n{text}");
+    let linear = listed("(Gradient 2) 0 3 Bd\n[\n");
+    assert!(same(&linear, &last_first), "{linear:?}\n{text}");
+    // Read back: both gradients, each stop at its offset with its color and midpoint.
+    let doc = crate::import(&out.bytes).unwrap().document;
+    let read: Vec<_> = children(&doc.layers[0])
+        .iter()
+        .filter_map(|n| if let Paint::Gradient(g) = n.appearance.fill_paint() { Some(g.gradient.clone()) } else { None })
+        .collect();
+    assert_eq!(read.iter().map(|g| g.kind).collect::<Vec<_>>(), [GradientKind::Radial, GradientKind::Linear], "{read:#?}");
+    for g in &read {
+        let got: Vec<_> = g.stops.iter().map(|s| (rgb(s.color), f64::from(s.midpoint) * 100.0, f64::from(s.offset) * 100.0)).collect();
+        assert!(same(&got, &first_first), "{g:#?}");
+    }
 }
 
 #[test]
