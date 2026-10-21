@@ -43,11 +43,12 @@ pub use sketch::{HALFTONE_TYPES, HalftonePattern};
 pub use texture::{GRAIN_TYPES, Grain, LIGHT_DIRECTIONS, Light, TEXTURES, TEXTURES_LOADED, Texture};
 
 /// The Photoshop-style effect ids (all raster effects, see [`crate::is_raster`]).
-pub const PIXEL_EFFECTS: [&str; 48] = [
+pub const PIXEL_EFFECTS: [&str; 49] = [
     "artistic.cutout",
     "artistic.dryBrush",
     "artistic.filmGrain",
     "artistic.neonGlow",
+    "artistic.paletteKnife",
     "artistic.plasticWrap",
     "artistic.posterEdges",
     "artistic.smudgeStick",
@@ -122,6 +123,10 @@ pub enum PixelFx {
     /// light areas (`size` above 0) or the dark ones (below 0), spread by |`size`| (-24..24), as
     /// strong as `brightness` (0..50).
     NeonGlow { size: f64, brightness: f64, colour: [f32; 3] },
+    /// Artistic › Palette Knife: knife strokes `stroke_size` (1..50) long smear the colours;
+    /// `stroke_detail` (1..3) keeps more original detail when higher; `softness` (0..10) softens
+    /// the strokes.
+    PaletteKnife { stroke_size: f64, stroke_detail: f64, softness: f64 },
     /// Artistic › Plastic Wrap: specular highlights as strong as `highlight` (0..20) on a relief
     /// wrinkled by `detail` (0..15) and softened by `smoothness` (1..15).
     PlasticWrap { highlight: f64, detail: f64, smoothness: f64 },
@@ -306,6 +311,11 @@ pub(crate) fn parse(id: &str, p: &Value) -> Option<PixelFx> {
             size: num(p, "glowSize", 5.0).clamp(-24.0, 24.0),
             brightness: num(p, "glowBrightness", 15.0).clamp(0.0, 50.0),
             colour: crate::raster::color_param(p, vectorcraft_doc::color::Color::rgb(0.3, 0.65, 1.0)).to_rgb(),
+        },
+        "artistic.paletteKnife" => PixelFx::PaletteKnife {
+            stroke_size: num(p, "strokeSize", 10.0).clamp(1.0, 50.0),
+            stroke_detail: num(p, "strokeDetail", 2.0).clamp(1.0, 3.0),
+            softness: num(p, "softness", 3.0).clamp(0.0, 10.0),
         },
         "artistic.posterEdges" => PixelFx::PosterEdges {
             thickness: num(p, "edgeThickness", 2.0).clamp(0.0, 10.0),
@@ -523,6 +533,7 @@ impl PixelFx {
             PixelFx::SmartBlur { radius, .. } => radius,
             PixelFx::AccentedEdges { .. } => 0.0,
             // Strokes reach out of the object as far as they reach into it.
+            PixelFx::PaletteKnife { stroke_size, softness, .. } => artistic::palette_knife_reach(stroke_size, softness),
             PixelFx::AngledStrokes { length, .. } | PixelFx::GraphicPen { length, .. } | PixelFx::InkOutlines { length, .. } => {
                 brushstrokes::stroke_reach(length)
             }
@@ -581,6 +592,7 @@ impl PixelFx {
             PixelFx::Watercolor { detail, .. } => Some(paint::watercolor_reach(detail)),
             PixelFx::AccentedEdges { width, smoothness, .. } => Some(brushstrokes::accent_reach(width, smoothness)),
             // The strokes, and the softened tones that choose them.
+            PixelFx::PaletteKnife { stroke_size, softness, .. } => Some(artistic::palette_knife_reach(stroke_size, softness)),
             PixelFx::AngledStrokes { length, .. } | PixelFx::GraphicPen { length, .. } => {
                 Some(brushstrokes::stroke_reach(length).max(brushstrokes::TONE_REACH))
             }
@@ -651,6 +663,9 @@ impl PixelFx {
             PixelFx::Watercolor { detail, shadow, texture } => paint::watercolor(px, w, h, space, detail, shadow, texture),
             PixelFx::PlasticWrap { highlight, detail, smoothness } => artistic::plastic_wrap(px, w, h, space, highlight, detail, smoothness),
             PixelFx::NeonGlow { size, brightness, colour } => artistic::neon_glow(px, w, h, space, size, brightness, colour),
+            PixelFx::PaletteKnife { stroke_size, stroke_detail, softness } => {
+                artistic::palette_knife(px, w, h, space, stroke_size, stroke_detail, softness)
+            }
             PixelFx::PosterEdges { thickness, intensity, posterization } => {
                 artistic::poster_edges(px, w, h, space, thickness, intensity, posterization)
             }

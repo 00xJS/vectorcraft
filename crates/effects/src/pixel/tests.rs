@@ -2647,3 +2647,30 @@ fn artistic_filters_look_the_same_at_any_resolution() {
         assert!(diff < 12.0, "{id}: mean difference {diff}");
     }
 }
+
+#[test]
+fn palette_knife_params_take_defaults_and_stay_in_range() {
+    assert_eq!(fx("artistic.paletteKnife", json!({})), PixelFx::PaletteKnife { stroke_size: 10.0, stroke_detail: 2.0, softness: 3.0 });
+    assert_eq!(
+        fx("artistic.paletteKnife", json!({"strokeSize": 0, "strokeDetail": 0, "softness": 99})),
+        PixelFx::PaletteKnife { stroke_size: 1.0, stroke_detail: 1.0, softness: 10.0 }
+    );
+    assert!(fx("artistic.paletteKnife", json!({})).outset(Rect::new(0.0, 0.0, 40.0, 30.0)) > 0.0);
+}
+
+#[test]
+fn palette_knife_smears_a_ramp_and_keeps_coverage() {
+    let (w, h) = (48, 24);
+    let src = ramp(w, h);
+    let mut out = src.clone();
+    fx("artistic.paletteKnife", json!({"strokeSize": 20, "strokeDetail": 1, "softness": 0})).apply(&mut out, w, h, &space(w, h));
+    assert_ne!(out, src);
+    assert!(out.as_chunks::<4>().0.iter().zip(src.as_chunks::<4>().0).all(|(o, s)| o[3] == s[3]));
+    let mut gentle = src.clone();
+    fx("artistic.paletteKnife", json!({"strokeSize": 20, "strokeDetail": 3, "softness": 0})).apply(&mut gentle, w, h, &space(w, h));
+    let mean = |buf: &Vec<u8>| {
+        let n = buf.len() / 4;
+        buf.as_chunks::<4>().0.iter().map(|p| f64::from(p[0])).sum::<f64>() / n as f64
+    };
+    assert!((mean(&gentle) - mean(&src)).abs() < (mean(&out) - mean(&src)).abs());
+}
