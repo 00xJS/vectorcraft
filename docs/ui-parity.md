@@ -111,7 +111,7 @@ tools, never checked side by side) isn't captured row by row.
 | Spacing guides (equal distances) | partial | for moves and bounding-box resizes (#394); not while drawing |
 | Snapping tolerance preference | done | |
 | Snap to Point, Snap to Grid, Snap to Pixel; Pixel Preview | done | #1840: with Snap to Grid on, anchors and objects snap to the grid even when Snap to Pixel is also ticked (#1816 waits for the reporter) |
-| Snap to Glyph | missing | menu stub |
+| Snap to Glyph | done | View › Snap to Glyph (`view.snapToGlyph`); new type and drawing snap to live-text baselines and glyph bounds when Smart Guides are on (#3124) |
 | Tangent and perpendicular snapping for line endpoints (new in 30.0) | missing | |
 | Snapping panel/popover consolidating the snap options (30.0) | missing | |
 | Customisable rotation snap angle (#973) | missing | Illustrator: Constrain Angle and construction angles only |
@@ -274,6 +274,7 @@ re-measure of the panels added since. Slider rails show on Medium Dark (#1808, #
 | 2026-10-21 | minor | 3D: original Standard, Diffuse, Top Left and Right lighting presets; command access, effective-setting recognition and preview/history; scores and estimates unchanged |
 | 2026-10-21 | minor | G1: one selected clip group's Properties panel has Edit Clipping Path and Edit Contents at its top (public doc cited in target-app-parity.md). Scores unchanged. |
 | 2026-10-19 | minor | Distribute Objects and Distribute Spacing space the selected ruler guides across the axis with the objects, as items with no size, and two or more guides selected alone (#1597 in part); with a key guide and a spacing, the guide stays put and the other items are spaced from it (key guide from #3165); the Distribute Spacing value is enabled for a key guide; scores unchanged |
+| 2026-10-21 | minor | Snap to Glyph marked done (#3124); scores unchanged |
 | 2026-10-20 | minor | The selection tools (Selection, Direct Selection, Group Selection) take a clipping path on its outline, within the selection tolerance, before the art it clips, so its segments can be dragged where the art covers the mask's edge; Select Behind lists the same, and the eyedropper and the tools that act on what is drawn are unchanged. Doc and tool regression tests. Scores unchanged. |
 | 2026-10-20 | minor | Polygon and Star exact-size placement remembers the chosen count for later drags and dialog openings; Cancel preserves the previous count; existing opening gestures retained; scores and hours unchanged. |
 | 2026-10-20 | minor | Live trace result bounds and selection highlights exclude the retained bitmap except in source-image views; scores and hours unchanged. |

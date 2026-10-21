@@ -39,10 +39,10 @@ tests and the CI gate. See [Calibration](#calibration).
   nothing here is a menu dump or a side-by-side measurement: the numbers come from our own code against
   Illustrator's public documentation.
 - **From the code (measured, origin/main `01e165af`):**
-  - Menu tree (`crates/ui-egui/src/menus.rs`, laid out in Illustrator's menu order): 347 items bound to
-    commands, 27 stubs (`todo(…)`/`todos(…)`), so 92.8% of menu items do something (348 and 27 after the
+  - Menu tree (`crates/ui-egui/src/menus.rs`, laid out in Illustrator's menu order): 348 items bound to
+    commands, 26 stubs (`todo(…)`/`todos(…)`), so 93.0% of menu items do something (348 and 26 after Snap to Glyph shipped in #3124; 348 and 27 after the
     Revolve merge; 350 and 25, 93.3%, after Graph › Design and Marker; 353 and 22, 94.1%, after Extrude & Bevel, Inflate and Rotate). The stubs: Effect › 3D and Materials › Materials, Effect › SVG Filters, Edit › Spelling (3), Graph › Column, Live Paint
-    Gap Options, Optical Margin Alignment, Start Global Edit, global and video rulers (2), Snap to Glyph,
+    Gap Options, Optical Margin Alignment, Start Global Edit, global and video rulers (2),
     Window › Arrange (4), SVG Interactivity, the library placeholders (3), Other Script…, Help.
   - Engine commands: ~710 ids registered with `cmd!` across `crates/engine/src/cmd` (plus macro-generated
     families), and 85 UI-only commands (`UI_COMMANDS`).
@@ -85,10 +85,10 @@ dominate; 3D, graphs and automation are specialist). They sum to 105. Feature de
 | Symbols, blends, envelopes, Repeat, perspective | 5 | 87% | 30.7's Blend panel with ease in/out, dynamic symbols, symbol libraries, Start Global Edit, envelope Anti-Alias/Preserve Shape; Symbol Options › Registration and Export Type (Graphic / Movie Clip) are done | 5–9 | estimated |
 | Image Trace, graphs, image tools | 3 | 75% | graph Column designs, Image Trace Create Strokes depth (Create Object Mosaic is done; junction-returning piece survival has source-generated regressions in `image-trace-quality.md`; large images trace with a warning; Auto Color keeps rare distinct colours) | 5–8 | estimated (raised from 72%); quick presets reveal adjustment controls, Properties reopens them |
 | Layers, artboards, document setup | 5 | 78% | Selected-artboard deletion is consistent across panel actions (all-selected retains artboard 1); history prunes removed indices while preserving valid multiselection; remaining:  30.0's artboard locking and colours and managing artboards from the canvas, Layers panel row context menus and Collect for Export (click-to-fit objects is done, #1227) | 5–8 | estimated (lowered from 82%: target moved); Artboard deletion keys keep artwork and the first of an all-selected set |
-| View & navigation | 3 | 70% | New View/Edit Views, multiple windows and Arrange, Snap to Glyph | 9–14 | estimated; cached canvas reprojection preserves scale during resize, rotation and DPI changes (regression and contributor original-file evidence below; scores/hours unchanged); cached canvas dimensions match the renderer limit before cache-key creation, view construction and worker submission (regression evidence below) |
+| View & navigation | 3 | 70% | New View/Edit Views, multiple windows and Arrange | 9–14 | estimated; cached canvas reprojection preserves scale during resize, rotation and DPI changes (regression and contributor original-file evidence below; scores/hours unchanged); cached canvas dimensions match the renderer limit before cache-key creation, view construction and worker submission (regression evidence below) |
 | File formats | 6 | 75% | `.ai` files open with a flattened or wrong layer structure in real cases (#951), guides lost (#779), no writing of Illustrator's editing data (#868), FreeHand/CorelDRAW/DWG/HEIC/JPEG 2000 import, 3D export; see [file-format-parity.md](file-format-parity.md); EPS legacy mesh/opacity-mask and raster comparison follow-up verified | 10–20 | estimated (lowered from 85%: open issues); DXF control-point SPLINE import closure regression-tested (#1299 follow-up after #1320); PDF writer metadata, reader streaming and immutable backend checks in `crates/pdf/src/tests.rs`, `crates/pdf/src/tests_reader_streaming.rs` and `xtask/src/pdf_deps.rs`; PDF Place and clipboard paste retain live text (synthetic regressions) |
-| View & navigation | 3 | 70% | New View/Edit Views, multiple windows and Arrange, Snap to Glyph | 9–14 | estimated; cached canvas reprojection preserves scale during resize, rotation and DPI changes (regression and contributor original-file evidence below; scores/hours unchanged) |
-| View & navigation | 3 | 70% | New View/Edit Views, multiple windows and Arrange, Snap to Glyph | 9–14 | estimated |
+| View & navigation | 3 | 70% | New View/Edit Views, multiple windows and Arrange | 9–14 | estimated; cached canvas reprojection preserves scale during resize, rotation and DPI changes (regression and contributor original-file evidence below; scores/hours unchanged) |
+| View & navigation | 3 | 70% | New View/Edit Views, multiple windows and Arrange | 9–14 | estimated |
 | Guides, grids, smart guides, snapping, rulers | 3 | 80% | 30.0's tangent and perpendicular snapping and its snapping panel, "intersect" smart guides for a moved selection's anchors (drawn points and dragged anchors snap to intersections, #1658), video rulers, distance readouts while drawing | 4–7 | estimated (lowered from 85%: target moved); new ruler-guide Alt orientation implemented |
 | Guides, grids, smart guides, snapping, rulers | 3 | 80% | 30.0's tangent and perpendicular snapping and its snapping panel, "intersect" smart guides for a moved selection's anchors (drawn points and dragged anchors snap to intersections, #1658), global/artboard ruler mode switch and video rulers, distance readouts while drawing | 4–7 | estimated (lowered from 85%: target moved); new ruler-guide Alt orientation implemented |
 | Export for Screens, Asset Export, slices, Save for Web | 3 | 85% | anti-aliasing ghost borders (#983); TIFF choices and settings are implemented | 2–4 | estimated |
@@ -923,6 +923,7 @@ Evidence for the shared light Color: geometry tests in `tests_lighting`, effect 
 
 | Date | Change | Summary |
 |---|---|---|
+| 2026-10-21 | minor | Snap to Glyph (#3124) removed from View navigation missing lists and menu stubs; scores and hours unchanged at this rounding |
 | 2026-10-21 | minor | Type core: System Layout (Character panel menu, whole document, off by default) is done; scores and hours unchanged |
 | 2026-10-22 | minor | Ruby (ふりがな) for live text: `type.ruby` sets/removes a reading over a byte range, above or below (right of the column in vertical type), aligned, sized and overhanging or squeezed; saved natively, laid out with line growth, drawn on the canvas and in SVG/PDF (outlines where ruby is present); scores and hours unchanged |
 | 2026-10-21 | minor | 3D: original Standard, Diffuse, Top Left and Right lighting presets; command access, effective-setting recognition and preview/history; scores and estimates unchanged |
