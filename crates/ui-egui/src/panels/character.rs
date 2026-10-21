@@ -68,7 +68,7 @@ fn shared_effective(app: &VectorcraftApp, f: impl Fn(&CharStyle) -> f64) -> Opti
     shared_styles(app, |t, style| t.effective_char_style(style).map(|s| Metric(f(&s)))).map(|v| v.0)
 }
 
-struct Metric(f64);
+pub(crate) struct Metric(pub(crate) f64);
 
 impl PartialEq for Metric {
     fn eq(&self, other: &Self) -> bool {
@@ -109,21 +109,21 @@ fn shared_styles<T: PartialEq>(app: &VectorcraftApp, f: impl Fn(&vectorcraft_doc
 }
 
 /// The value a run of styles share so far ([`shared`]).
-enum Shared<T> {
+pub(crate) enum Shared<T> {
     None,
     Same(T),
     Differ,
 }
 
 impl<T: PartialEq> Shared<T> {
-    fn add(&mut self, v: T) {
+    pub(crate) fn add(&mut self, v: T) {
         match self {
             Shared::None => *self = Shared::Same(v),
             Shared::Same(x) if *x != v => *self = Shared::Differ,
             _ => {}
         }
     }
-    fn value(self) -> Option<T> {
+    pub(crate) fn value(self) -> Option<T> {
         match self {
             Shared::Same(v) => Some(v),
             _ => None,
