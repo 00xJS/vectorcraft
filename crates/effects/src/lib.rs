@@ -355,6 +355,13 @@ pub fn effect_catalog() -> Vec<EffectInfo> {
             json!({"levels": 4.0, "edgeSimplicity": 4.0, "edgeFidelity": 2.0}),
         ),
         r(
+            "artistic.dryBrush",
+            "Dry Brush…",
+            ARTISTIC,
+            "{brushSize: 1..10 (2; length of the brush strokes), brushDetail: 0..10 (10; more detail keeps finer structure), texture: 1..3 (1; stronger edges and bristle grain at 3)} repaints the object with short strokes along its form and darkens its edges, keeping its coverage. Original visual approximation; chosen VectorCraft defaults.",
+            json!({"brushSize": 2.0, "brushDetail": 10.0, "texture": 1.0}),
+        ),
+        r(
             "artistic.filmGrain",
             "Film Grain…",
             ARTISTIC,

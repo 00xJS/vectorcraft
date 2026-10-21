@@ -2401,6 +2401,11 @@ fn artistic_params_take_defaults_and_stay_in_range() {
         fx("artistic.cutout", json!({"levels": 1e308, "edgeSimplicity": -5, "edgeFidelity": "NaN"})),
         PixelFx::Cutout { levels: 8.0, simplicity: 0.0, fidelity: 2.0 }
     );
+    assert_eq!(fx("artistic.dryBrush", json!({})), PixelFx::DryBrush { size: 2.0, detail: 10.0, texture: 1.0 });
+    assert_eq!(
+        fx("artistic.dryBrush", json!({"brushSize": 1e308, "brushDetail": 0, "texture": -2})),
+        PixelFx::DryBrush { size: 10.0, detail: 0.0, texture: 1.0 }
+    );
     assert_eq!(fx("artistic.posterEdges", json!({})), PixelFx::PosterEdges { thickness: 2.0, intensity: 1.0, posterization: 2.0 });
     assert_eq!(
         fx("artistic.posterEdges", json!({"edgeThickness": 99, "edgeIntensity": -1, "posterization": 6.4})),
@@ -2418,7 +2423,7 @@ fn artistic_params_take_defaults_and_stay_in_range() {
         fx("artistic.plasticWrap", json!({"highlightStrength": -1, "detail": 99, "smoothness": 0})),
         PixelFx::PlasticWrap { highlight: 0.0, detail: 15.0, smoothness: 1.0 }
     );
-    for id in ["artistic.cutout", "artistic.neonGlow", "artistic.plasticWrap", "artistic.posterEdges"] {
+    for id in ["artistic.cutout", "artistic.dryBrush", "artistic.neonGlow", "artistic.plasticWrap", "artistic.posterEdges"] {
         assert_eq!(fx(id, json!({})).outset(Rect::new(0.0, 0.0, 40.0, 30.0)), 0.0, "{id} keeps the object's shape");
     }
 }
@@ -2435,6 +2440,7 @@ fn artistic_filters_leave_invalid_coordinate_spaces_alone() {
     let colour = [0.3, 0.65, 1.0];
     let filters = [
         PixelFx::Cutout { levels: 4.0, simplicity: 4.0, fidelity: 2.0 },
+        PixelFx::DryBrush { size: 2.0, detail: 10.0, texture: 1.0 },
         PixelFx::NeonGlow { size: 5.0, brightness: 15.0, colour },
         PixelFx::PlasticWrap { highlight: 20.0, detail: 12.0, smoothness: 15.0 },
         PixelFx::PosterEdges { thickness: 2.0, intensity: 1.0, posterization: 2.0 },
@@ -2546,6 +2552,24 @@ fn poster_edges_thickness_widens_the_lines() {
         (0..w).filter(|x| at(&out, w, *x, h / 2)[0] < 20 && (*x >= w / 2 || at(&src, w, *x, h / 2)[0] > 20)).count()
     };
     assert!(dark(10.0) > dark(0.0), "{} vs {}", dark(10.0), dark(0.0));
+}
+
+#[test]
+fn dry_brush_repaints_and_preserves_coverage() {
+    let (w, h) = (48, 24);
+    let src = ramp(w, h);
+    let mut out = src.clone();
+    fx("artistic.dryBrush", json!({})).apply(&mut out, w, h, &space(w, h));
+    assert_ne!(out, src);
+    for (a, b) in src.as_chunks::<4>().0.iter().zip(out.as_chunks::<4>().0) {
+        assert_eq!(a[3], b[3], "coverage preserved");
+    }
+    let mut clear = vec![0u8; w * h * 4];
+    let before = clear.clone();
+    fx("artistic.dryBrush", json!({})).apply(&mut clear, w, h, &space(w, h));
+    assert_eq!(clear, before);
+    let reach = fx("artistic.dryBrush", json!({"brushSize": 10, "brushDetail": 1})).reach();
+    assert!(reach.is_some_and(|r| r > 0.0));
 }
 
 #[test]

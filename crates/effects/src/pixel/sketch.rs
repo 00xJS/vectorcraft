@@ -1,4 +1,5 @@
-//! Effect › Sketch (Chalk & Charcoal, Chrome, Halftone Pattern, Note Paper, Plaster, Reticulation and Water Paper; Graphic Pen lives in
+//! Effect › Sketch (Bas Relief, Chalk & Charcoal, Charcoal, Chrome, Halftone Pattern, Note Paper, Photocopy, Plaster,
+//! Reticulation, Stamp and Water Paper; Graphic Pen lives in
 //! [`super::brushstrokes`]). Original filters built from public behaviour documentation:
 //! <https://helpx.adobe.com/illustrator/using/summary-effects.html> (Sketch effects redraw in
 //! black and white; Water Paper flows colours on damp fibrous paper) and the public Photoshop Elements Artistic filters guide. Visual
