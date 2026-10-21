@@ -37,7 +37,7 @@ pub fn specs() -> Vec<CommandSpec> {
             "appearance.addFill",
             "Add New Fill",
             ["Window", "Appearance"],
-            None,
+            Some("Cmd+/"),
             "{ids?|id?, target?: \"object\"|\"contents\"} add a fill on top of each selected object's own stack, on an image right below its Contents row (a copy of its top fill; type without one: its characters' fill; else the default fill)",
             has_doc,
             |s, p| add_item(s, p, true)
@@ -46,7 +46,7 @@ pub fn specs() -> Vec<CommandSpec> {
             "appearance.addStroke",
             "Add New Stroke",
             ["Window", "Appearance"],
-            None,
+            Some("Cmd+Alt+/"),
             "{ids?|id?, target?} add a stroke on top of each selected object's own stack, on an image right below its Contents row (a copy of its top stroke, else the default stroke)",
             has_doc,
             |s, p| add_item(s, p, false)
