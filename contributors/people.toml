@@ -140,3 +140,7 @@ sync_github_name = false
 
 [people.KaboomFox]
 sync_github_name = true
+
+[people.odysseexp]
+real_name = "Harley Paiva"
+sync_github_name = true
