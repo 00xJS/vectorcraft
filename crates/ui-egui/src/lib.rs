@@ -509,6 +509,8 @@ pub struct VectorcraftApp {
     /// A numeric field is being scrubbed: the document's edits meanwhile are one undo step
     /// ([`scrub::begin_frame`]).
     scrub_group: bool,
+    /// The undo step of the scrub in progress ([`vectorcraft_engine::Session::begin_undo_scope`]).
+    scrub_scope: Option<vectorcraft_engine::UndoScope>,
     /// The folders control requests, and the input they inject, may read and write
     /// (`--automation-read-root`, `--automation-write-root`); `None`: anywhere. See
     /// [`Self::with_automation_roots`].
@@ -610,6 +612,7 @@ impl VectorcraftApp {
             ime_discard: false,
             prefs_changed: false,
             scrub_group: false,
+            scrub_scope: None,
             automation_roots: None,
             synthetic_frame: false,
         }
