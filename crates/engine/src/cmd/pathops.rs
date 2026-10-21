@@ -381,6 +381,7 @@ fn pf_label(op: PathfinderOp) -> &'static str {
         PathfinderOp::Crop => "Crop",
         PathfinderOp::Outline => "Outline",
         PathfinderOp::MinusBack => "Minus Back",
+        PathfinderOp::HardMix => "Hard Mix",
     }
 }
 

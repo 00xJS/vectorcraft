@@ -13,12 +13,13 @@
 
 use std::sync::Arc;
 
+use vectorcraft_doc::color::{Color, Paint};
 use vectorcraft_doc::{Appearance, AppearanceItem, Node, NodeId, NodeKind, StrokeLayer};
 use vectorcraft_geom::{FillRule, PathData, Rect};
 use vectorcraft_pathops::{self as po, PathfinderOp};
 
 /// Effect ids of the Pathfinder submenu with their operation, in Illustrator's menu order.
-pub const PATHFINDER_EFFECTS: [(&str, &str, PathfinderOp); 10] = [
+pub const PATHFINDER_EFFECTS: [(&str, &str, PathfinderOp); 11] = [
     ("pathfinder.add", "Add", PathfinderOp::Unite),
     ("pathfinder.intersect", "Intersect", PathfinderOp::Intersect),
     ("pathfinder.exclude", "Exclude", PathfinderOp::Exclude),
@@ -29,6 +30,7 @@ pub const PATHFINDER_EFFECTS: [(&str, &str, PathfinderOp); 10] = [
     ("pathfinder.merge", "Merge", PathfinderOp::Merge),
     ("pathfinder.crop", "Crop", PathfinderOp::Crop),
     ("pathfinder.outline", "Outline", PathfinderOp::Outline),
+    ("pathfinder.hardMix", "Hard Mix", PathfinderOp::HardMix),
 ];
 
 /// Is `id` an Effect → Pathfinder effect?
@@ -138,13 +140,54 @@ pub fn pathfinder_children(group: &Node, hook: Option<OutlineHook>) -> Option<Ve
         if shapes.is_empty() {
             return Some(vec![]);
         }
-        stack = po::pathfinder(op, &shapes)
-            .into_iter()
-            .filter(|r| !r.path.is_empty())
-            .map(|r| Arc::new(styled(&sources[r.key as usize], r.path, op == PathfinderOp::Outline)))
-            .collect();
+        stack = if op == PathfinderOp::HardMix {
+            po::regions(&shapes)
+                .into_iter()
+                .filter(|r| !r.path.is_empty())
+                .map(|r| Arc::new(hard_mix_face(r.path, &r.sources, &shapes, &sources)))
+                .collect()
+        } else {
+            po::pathfinder(op, &shapes)
+                .into_iter()
+                .filter(|r| !r.path.is_empty())
+                .map(|r| Arc::new(styled(&sources[r.key as usize], r.path, op == PathfinderOp::Outline)))
+                .collect()
+        };
     }
     Some(stack)
+}
+
+/// One face of a Hard Mix: the max of each CMYK channel over every covering shape's fill; no stroke.
+fn hard_mix_face(path: PathData, covering: &[usize], shapes: &[po::Shape], sources: &[Node]) -> Node {
+    let mut cmyk = [0.0f32; 4];
+    let mut painted = false;
+    for &si in covering {
+        let src = &sources[shapes[si].key as usize];
+        let paint = src.appearance.fill_paint();
+        if let Some(color) = paint.color() {
+            let tinted = match paint {
+                Paint::Solid { tint, .. } => color.tinted(tint),
+                _ => color,
+            };
+            let [c, m, y, k] = tinted.to_cmyk();
+            for (out, v) in cmyk.iter_mut().zip([c, m, y, k]) {
+                *out = out.max(v);
+            }
+            painted = true;
+        }
+    }
+    let fill = if painted {
+        Paint::solid(Color::cmyk(cmyk[0], cmyk[1], cmyk[2], cmyk[3]))
+    } else {
+        Paint::None
+    };
+    let top = covering.last().and_then(|&si| sources.get(shapes[si].key as usize));
+    let mut n = Node::path(top.map_or(NodeId(0), |s| s.id), path, Appearance::basic(fill, Paint::None, 0.0));
+    if let Some(src) = top {
+        n.opacity = src.opacity;
+        n.blend = src.blend;
+    }
+    n
 }
 
 fn is_container(n: &Node) -> bool {
@@ -318,6 +361,32 @@ mod tests {
 
     fn area(n: &Node) -> f64 {
         po::area(n.path_data().unwrap(), FillRule::NonZero).abs()
+    }
+
+    #[test]
+    fn hard_mix_takes_the_highest_of_each_cmyk_channel_and_drops_strokes() {
+        let a = Appearance::basic(Paint::solid(Color::cmyk(0.2, 0.66, 0.4, 0.0)), Paint::solid(Color::BLACK), 2.0);
+        let b = Appearance::basic(Paint::solid(Color::cmyk(0.4, 0.2, 0.3, 0.1)), Paint::solid(Color::BLACK), 2.0);
+        let mut g = Node::group(
+            NodeId(10),
+            vec![
+                Arc::new(Node::path(NodeId(1), shapes::rectangle(Rect::new(0.0, 0.0, 10.0, 10.0)), a)),
+                Arc::new(Node::path(NodeId(2), shapes::rectangle(Rect::new(5.0, 0.0, 15.0, 10.0)), b)),
+            ],
+        );
+        g.appearance.effects.push(Effect { id: "pathfinder.hardMix".into(), params: serde_json::json!({}), visible: true });
+        let faces = pathfinder_children(&g, None).unwrap();
+        assert_eq!(faces.len(), 3);
+        let overlap = faces
+            .iter()
+            .find(|n| {
+                let b = n.geometric_bounds().unwrap();
+                b.x0 >= 4.9 && b.x1 <= 10.1 && b.y0 <= 0.1 && b.y1 >= 9.9
+            })
+            .expect("overlap face");
+        assert!(overlap.appearance.stroke_paint().is_none());
+        let [c, m, y, k] = overlap.appearance.fill_paint().color().unwrap().to_cmyk();
+        assert!((c - 0.4).abs() < 0.02 && (m - 0.66).abs() < 0.02 && (y - 0.4).abs() < 0.02 && (k - 0.1).abs() < 0.02, "{c} {m} {y} {k}");
     }
 
     #[test]
