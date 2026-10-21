@@ -1873,6 +1873,7 @@
 	Move Slices	Déplacer les tranches
 	Move Spine Point	Déplacer le point de la dorsale
 	Reshape Spine Segment	Modeler le segment de la dorsale
+	Move Brush	Déplacer la forme
 	Move Swatch	Déplacer la nuance
 	Move Up	Monter
 	Move…	Déplacer…
@@ -4003,6 +4004,7 @@ axis	Both	Les deux
 @msg	no bounds	aucune limite
 @msg	no brush named `{name}`	aucune forme nommée `{name}`
 @msg	no brush selected	aucune forme sélectionnée
+@msg	brushes move only within their type	les formes ne se déplacent qu’à l’intérieur de leur type
 @msg	no catalog	aucun catalogue
 @msg	no changes since the last save	aucune modification depuis le dernier enregistrement
 @msg	no clock to keep a heartbeat by	aucune horloge pour entretenir le signal d’activité

@@ -3113,6 +3113,7 @@ theme	Appearance	იერსახე
 	Delete Swatch	ფერის ნიმუშის წაშლა
 	Duplicate Swatch	ფერის ნიმუშის დუბლირება
 	Merge Swatches	ფერის ნიმუშების შერწყმა
+	Move Brush	ფუნჯის გადატანა
 	Move Swatch	ფერის ნიმუშის გადატანა
 	New Color Group	ფერების ახალი ჯგუფი
 	New Swatch	ფერის ახალი ნიმუში
@@ -3787,6 +3788,7 @@ effect	Regular	ჩვეულებრივი
 @msg	no bounds	საზღვრები არ არის
 @msg	no brush named `{name}`	ფუნჯი სახელით `{name}` არ არის
 @msg	no brush selected	ფუნჯი მონიშნული არ არის
+@msg	brushes move only within their type	ფუნჯების გადატანა მხოლოდ საკუთარი ტიპის ფარგლებში შეიძლება
 @msg	no catalog	კატალოგი არ არის
 @msg	no changes since the last save	ბოლო შენახვის შემდეგ ცვლილებები არ არის
 @msg	no clock to keep a heartbeat by	პულსის შესანარჩუნებელი საათი არ არის

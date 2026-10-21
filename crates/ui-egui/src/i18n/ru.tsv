@@ -1899,6 +1899,7 @@ file-filter	Templates	Шаблоны
 	Move Slices	Переместить фрагменты
 	Move Spine Point	Переместить точку остова
 	Reshape Spine Segment	Изменить форму сегмента остова
+	Move Brush	Переместить кисть
 	Move Swatch	Переместить образец
 	Move Up	Переместить вверх
 	Move…	Переместить…
@@ -4042,6 +4043,7 @@ axis	Both	Оба
 @msg	no bounds	нет границ
 @msg	no brush named `{name}`	нет кисти с именем `{name}`
 @msg	no brush selected	кисть не выбрана
+@msg	brushes move only within their type	кисти можно перемещать только в пределах их типа
 @msg	no catalog	нет каталога
 @msg	no changes since the last save	нет изменений с момента последнего сохранения
 @msg	no clock to keep a heartbeat by	нет часов для поддержания сигнала

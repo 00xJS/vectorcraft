@@ -3416,6 +3416,7 @@ theme	Appearance	Wygląd
 	Delete Swatch	Usuń próbkę
 	Duplicate Swatch	Powiel próbkę
 	Merge Swatches	Scal próbki
+	Move Brush	Przesuń pędzel
 	Move Swatch	Przesuń próbkę
 	New Color Group	Nowa grupa kolorów
 	New Swatch	Nowa próbka
@@ -4130,6 +4131,7 @@ imageTrace	Outline	Kontur
 @msg	no bounds	brak granic
 @msg	no brush named `{name}`	brak pędzla o nazwie `{name}`
 @msg	no brush selected	nie zaznaczono pędzla
+@msg	brushes move only within their type	pędzle można przesuwać tylko w obrębie ich typu
 @msg	no catalog	brak katalogu
 @msg	no changes since the last save	brak zmian od ostatniego zapisu
 @msg	no clock to keep a heartbeat by	brak zegara do podtrzymywania sygnału aktywności

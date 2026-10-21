@@ -1696,6 +1696,22 @@ fn align_reflect_and_shear_param_errors_are_translated() {
     }
 }
 
+/// The error of `brush.move` for a brush dragged onto a brush of another type in the Brushes panel,
+/// whose text the scan above doesn't read, is translated whole in each language of
+/// [`COMPLETE_MESSAGES`] and in Bulgarian, Danish, Indonesian and Dutch.
+#[test]
+fn brush_move_param_error_is_translated() {
+    use serde_json::json;
+    let mut s = vectorcraft_engine::Session::new();
+    s.execute("file.new", &json!({})).unwrap();
+    let e = s.execute("brush.move", &json!({"name": "3 pt. Round", "type": "scatter"})).unwrap_err();
+    let vectorcraft_engine::EngineError::BadParams { msg, .. } = &e else { panic!("{e}") };
+    for code in COMPLETE_MESSAGES.iter().chain(&["bg", "da", "id", "nl"]) {
+        let shown = message(Lang::from_code(code).unwrap(), &e.to_string());
+        assert!(!shown.contains(msg.as_str()) && !shown.contains("invalid parameters") && shown.contains("`brush.move`"), "{code}: {shown}");
+    }
+}
+
 /// The warning that a data set with no value for a bound variable gives, which the status bar
 /// shows and the scan above doesn't read, is translated in each language of [`COMPLETE_MESSAGES`],
 /// with the data set's name kept.

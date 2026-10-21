@@ -2176,6 +2176,7 @@ file-filter	Templates	Mẫu
 	Move Rows	Di chuyển hàng
 	Move Slices	Di chuyển lát cắt
 	Move Spine Point	Di chuyển điểm trục
+	Move Brush	Di chuyển cọ
 	Move Swatch	Di chuyển mẫu màu
 	Move to Group	Di chuyển vào nhóm
 	Move Up	Di chuyển lên
@@ -4290,6 +4291,7 @@ theme	Appearance	Giao diện
 @msg	no bounds	không có giới hạn
 @msg	no brush named `{name}`	không có cọ tên `{name}`
 @msg	no brush selected	chưa chọn cọ
+@msg	brushes move only within their type	chỉ có thể di chuyển cọ trong cùng loại của nó
 @msg	no catalog	không có danh mục
 @msg	no changes since the last save	không có thay đổi nào kể từ lần lưu cuối
 @msg	no clock to keep a heartbeat by	không có đồng hồ để duy trì nhịp tim

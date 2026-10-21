@@ -1622,6 +1622,7 @@ file-filter	Templates	範本
 @msg	Expand: no brush strokes selected	展開：未選取筆刷筆畫
 @msg	no brush named `{name}`	沒有名為 `{name}` 的筆刷
 @msg	no brush selected	未選取筆刷
+@msg	brushes move only within their type	筆刷只能在同一類型內移動
 @msg	no symbol instances selected	未選取符號實體
 @msg	select a symbol instance	請選取符號實體
 @msg	the art has no bounds	圖稿沒有邊界
@@ -2641,6 +2642,7 @@ file-filter	Templates	範本
 @msg	x and y must be finite	x 和 y 必須是有限值
 @msg	t, dx and dy must be finite	t、dx 和 dy 必須是有限值
 @msg	handle must be in or out	handle 必須是 in 或 out
+	Move Brush	移動筆刷
 	Move Swatch	移動色票
 	Move Up	上移
 	Move…	移動…

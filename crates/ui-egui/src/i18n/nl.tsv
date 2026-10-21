@@ -3323,6 +3323,7 @@ theme	Appearance	Vormgeving
 	Delete Swatch	Kleurstaal verwijderen
 	Duplicate Swatch	Kleurstaal dupliceren
 	Merge Swatches	Kleurstalen samenvoegen
+	Move Brush	Kwast verplaatsen
 	Move Swatch	Kleurstaal verplaatsen
 	New Color Group	Nieuwe kleurgroep
 	New Swatch	Nieuw kleurstaal
@@ -4041,6 +4042,7 @@ imageTrace	Outline	Contour
 @msg	no bounds	geen grenzen
 @msg	no brush named `{name}`	geen penseel met de naam `{name}`
 @msg	no brush selected	geen penseel geselecteerd
+@msg	brushes move only within their type	penselen kunnen alleen binnen hun eigen type worden verplaatst
 @msg	no catalog	geen catalogus
 @msg	no changes since the last save	geen wijzigingen sinds de laatste keer opslaan
 @msg	no clock to keep a heartbeat by	geen klok om een hartslag bij te houden

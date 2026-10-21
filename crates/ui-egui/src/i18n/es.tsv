@@ -1874,6 +1874,7 @@
 	Move Slices	Mover sectores
 	Move Spine Point	Mover punto del eje
 	Reshape Spine Segment	Remodelar segmento del eje
+	Move Brush	Mover pincel
 	Move Swatch	Mover muestra
 	Move Up	Subir
 	Move…	Mover…
@@ -4006,6 +4007,7 @@ axis	Both	Ambos
 @msg	no bounds	sin límites
 @msg	no brush named `{name}`	no hay ningún pincel llamado `{name}`
 @msg	no brush selected	no hay ningún pincel seleccionado
+@msg	brushes move only within their type	los pinceles solo se pueden mover dentro de su tipo
 @msg	no catalog	no hay catálogo
 @msg	no changes since the last save	no hay cambios desde la última vez que se guardó
 @msg	no clock to keep a heartbeat by	no hay reloj para mantener la señal de actividad

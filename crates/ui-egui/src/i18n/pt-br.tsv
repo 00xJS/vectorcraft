@@ -1572,6 +1572,7 @@
 	Move Slices	Mover Fatias
 	Move Spine Point	Mover Ponto de Coluna
 	Reshape Spine Segment	Remodelar Segmento da Coluna
+	Move Brush	Mover Pincel
 	Move Swatch	Mover Amostra
 	Move Up	Mover para Cima
 	Move in Perspective	Mover em Perspectiva
@@ -3586,6 +3587,7 @@ axis	Both	Ambos
 @msg	no bounds	sem limites
 @msg	no brush named `{name}`	nenhum pincel chamado `{name}`
 @msg	no brush selected	nenhum pincel selecionado
+@msg	brushes move only within their type	os pincéis só podem ser movidos dentro do seu tipo
 @msg	no catalog	sem catálogo
 @msg	no changes since the last save	nenhuma alteração desde o último salvamento
 @msg	no clock to keep a heartbeat by	sem relógio para manter o sinal de atividade
