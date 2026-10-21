@@ -515,7 +515,7 @@ fn number(ui: &mut egui::Ui, d: &mut Dialog, key: &str, name: &str, range: (f64,
         let places = ((f64::from(ui.input(|i| i.aim_radius())) / speed).log10().ceil().clamp(0.0, 15.0) as usize).min(decimals);
         let number = ui.style().number_formatter.format(value, places..=decimals);
         let shown = widgets::SliderValue::text(number.parse().unwrap_or(value), rail_min..=rail_max, format!("{number}{suffix}"));
-        let slider = widgets::color_slider_valued(
+        let slider = widgets::color_slider_stepped(
             ui,
             ("revolve-slider", key),
             name,
@@ -524,8 +524,8 @@ fn number(ui: &mut egui::Ui, d: &mut Dialog, key: &str, name: &str, range: (f64,
             rail,
             &|_| t.input_border,
         );
-        if let (Some(n), _) = slider {
-            next = Some(rail_min + f64::from(n) * (rail_max - rail_min));
+        if let Some(n) = slider.0.map(|n| rail_min + f64::from(n) * (rail_max - rail_min)).or(slider.2) {
+            next = Some(n);
         }
         if reset_dot(ui, key, (to(value) - default).abs() > 1e-6, &format!("{}{}", from(default), suffix)) {
             next = Some(from(default));
