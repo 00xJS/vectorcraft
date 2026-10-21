@@ -755,6 +755,22 @@ mod tests {
         assert_eq!(selected(&app), std::slice::from_ref(&mask), "Edit Clipping Path selects the clipping path");
     }
 
+    /// #3451: the Properties panel Transform section shows ellipse pie angles and Invert Pie.
+    #[test]
+    fn transform_section_shows_ellipse_pie_properties() {
+        let mut app = VectorcraftApp::new(Session::new(), Default::default());
+        app.run("file.new", json!({"width": 300, "height": 300})).unwrap();
+        app.run("shape.ellipse", json!({"x": 50, "y": 50, "width": 120, "height": 80})).unwrap();
+        let ctx = egui::Context::default();
+        let labels: Vec<String> = panel_frame(&mut app, &ctx, vec![], transform_section).into_iter().map(|(t, _)| t).collect();
+        for t in ["Ellipse Properties:", "Pie Start Angle:", "0°", "Pie End Angle:", "360°", "Invert Pie"] {
+            assert!(labels.iter().any(|s| s == t), "{t} in {labels:?}");
+        }
+        app.run("object.setLiveShape", json!({"pieStart": 30, "pieEnd": 120})).unwrap();
+        let labels: Vec<String> = panel_frame(&mut app, &ctx, vec![], transform_section).into_iter().map(|(t, _)| t).collect();
+        assert!(labels.iter().any(|s| s == "30°") && labels.iter().any(|s| s == "120°"), "{labels:?}");
+    }
+
     /// The Snap Options and Scale Strokes & Effects checkboxes keep a visible box at rest in every
     /// theme, as the Preferences ones do (#1080), and toggle when clicked.
     #[test]
