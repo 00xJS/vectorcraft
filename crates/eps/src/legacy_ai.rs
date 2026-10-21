@@ -1305,7 +1305,12 @@ impl<'a> Writer<'a> {
         if !invertible(m) {
             return;
         }
-        let Some(img) = self.doc.images.get(&im.key).and_then(|b| image::load_from_memory(&b.bytes).ok()) else {
+        let blob = self.doc.images.get(&im.key);
+        if blob.is_some_and(|b| b.bytes.is_empty()) {
+            self.warn(LARGE_IMAGE);
+            return;
+        }
+        let Some(img) = blob.and_then(|b| image::load_from_memory(&b.bytes).ok()) else {
             self.warn(UNDECODED);
             return;
         };

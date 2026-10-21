@@ -3207,8 +3207,9 @@ width profiles, arrowheads) as filled outlines; `"editability"` keeps type as te
 `alterPaths` writes every stroke as its filled outline, `outlineText` outlines type, `selectedOnly` writes only the
 selected objects in their layers (every export takes it), and `useArtboards: true` writes one drawing per chosen
 artboard holding the art over it. What DXF can't hold (gradients and patterns as one colour, blending, opacity masks,
-raster effects, clipping) comes back in `warnings`. An image that can't be decoded is left out with no linked file,
-and `warnings` carries "an image couldn't be decoded and is missing from the picture" once for all such images.
+raster effects, clipping) comes back in `warnings`. In R13 and later, an image that can't be decoded is left out with
+no linked file, and `warnings` carries "an image couldn't be decoded and is missing from the picture" once for all such
+images.
 
 DWG can't be written (no openly licensed writer exists): `document.formats` lists it under `unsupported` with that
 hint, and exporting to it answers with the hint to export DXF. PICT files are not supported either and say so when
