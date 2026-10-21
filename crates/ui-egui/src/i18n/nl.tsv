@@ -775,6 +775,7 @@
 	Activate Panel	Paneel activeren
 	Change Panel Layout	Paneelindeling wijzigen
 	Close Panel	Paneel sluiten
+	Collapse Panel Group	Paneelgroep samenvouwen
 	Move Panel	Paneel verplaatsen
 	Group with	Groeperen met
 	Resize panels	Panelen van formaat wijzigen
@@ -4462,6 +4463,9 @@ imageTrace	Outline	Contour
 @msg	before must name a panel	before moet een paneel benoemen
 @msg	docking action contains an unknown panel or an excessive split path	dokactie bevat een onbekend paneel of een overmatig splitspad
 @msg	group must be true or false	group moet true of false zijn
+@msg	panel floats; collapse its group with window.panel.float {panel, collapsed}	paneel zweeft; vouw de groep samen met window.panel.float {panel, collapsed}
+@msg	panel is not in a dock group	paneel staat niet in een dockgroep
+@msg	only a dock group above or below others collapses, not one beside another	alleen een dockgroep boven of onder andere vouwt samen, niet een ernaast
 @msg	icon must be true or false	icon moet true of false zijn
 @msg	icon only docks a panel in the icon column, with no anchor	icon dockt een paneel alleen in de pictogramkolom, zonder anchor
 @msg	column docks a set as a dock column, with no anchor or icon	column dockt een set als dockkolom, zonder anchor of icon
