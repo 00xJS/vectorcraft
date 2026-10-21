@@ -196,7 +196,7 @@ Depth here is "does the basic use work", not the area's full score.
 | Shape tools (rectangle, ellipse, polygon, star, line) | 9 | 95% | all shape tools, Live Corners |
 | Selection, move, scale, rotate | 9 | 92% | bounding box, smart guides, transform tools |
 | Pen and Pencil, basic use | 7 | 88% | [ui-parity.md](ui-parity.md); a few Pencil and Curvature options missing |
-| Fill, stroke, colour, swatches | 9 | 95% | M3 done |
+| Fill, stroke, colour, swatches | 9 | 95% | M3 done; highlighted-text Eyedropper font/paint and source/target transparency refusal regression-tested; scores and hours unchanged |
 | Gradients, basic | 4 | 90% | Gradient panel and on-canvas annotator |
 | Type: point and area text, font, size | 8 | 88% | font menu with previews; hyphenation options missing (rarely touched) |
 | Align, group, arrange | 6 | 95% | |
@@ -919,10 +919,19 @@ Moved from the ROADMAP's "Shipped so far" on 2026-10-10. Update it when a featur
 
 Evidence for the shared light Color: geometry tests in `tests_lighting`, effect paint tests, command/save/undo/expand and SVG/PDF checks in `three_d_light_color`, and headless picker/reset/preview tests in `tests_revolve`. Revolve keeps smooth colored vector ramps and continuous flat-lit caps. Inflate geometry tests check spherical lighting, shared vertex/edge continuity, concave cell coverage, puffed backs at perspective and legacy single-light/list equivalence; rendered command/export regressions cover smooth shading and editable expansion. Four legacy white-light PNGs match main byte for byte; [release measurements](3d-lighting-performance.md) record the colored solid-fill batch and the remaining source-gradient cost.
 
+## Highlighted-text Eyedropper (2026-10-21)
+
+Type/Eyedropper switches preserve highlighted characters; sampling changes only their enabled
+font/paint attributes. Enabled non-neutral source or target object transparency is refused
+atomically; disable Transparency to preserve object transparency while sampling the range.
+`tests_eyedropper.rs` covers ranges, Unicode, history and transparency; tool tests cover brush-key
+sampling coexistence. Scores and estimates unchanged. See [development.md](development.md#highlighted-text-eyedropper-2026-10-21).
+
 ## Revision history
 
 | Date | Change | Summary |
 |---|---|---|
+| 2026-10-21 | minor | M3: highlighted-text Eyedropper sampling preserves ranges and rejects unsupported source/target transparency atomically; regression-tested; scores and estimates unchanged. |
 | 2026-10-21 | minor | Shape Builder Gap Detection shares Live Paint’s spatial gap finder and temporary merge bridges (#2526); Custom is capped at 72 pt in the existing options dialog. Scores and estimates unchanged. |
 | 2026-10-21 | minor | Recolor model selection is available through the engine and MCP only (#2520); the dialog retains its existing controls. Scores and estimates unchanged. |
 | 2026-10-21 | minor | Snap to Glyph (#3124) removed from View navigation missing lists and menu stubs; scores and hours unchanged at this rounding |

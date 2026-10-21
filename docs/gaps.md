@@ -380,10 +380,19 @@ from G14 and the budget run of G15: **~170–270 h** one agent, ~50–80 h wall 
   contrast. Illustrator's own accessibility is limited, so this is mostly beyond parity.
 - **Estimate:** 15–25 h.
 
+## Highlighted-text Eyedropper (2026-10-21)
+
+Type/Eyedropper switches preserve highlighted characters; sampling changes only their enabled
+font/paint attributes. Enabled non-neutral source or target object transparency is refused
+atomically; disable Transparency to preserve object transparency while sampling the range.
+`tests_eyedropper.rs` covers ranges, Unicode, history and transparency; tool tests cover brush-key
+sampling coexistence. Scores and estimates unchanged. See [development.md](development.md#highlighted-text-eyedropper-2026-10-21).
+
 ## Revision history
 
 | Date | Change | Summary |
 |---|---|---|
+| 2026-10-21 | minor | M3: highlighted-text Eyedropper sampling preserves ranges and rejects unsupported source/target transparency atomically; regression-tested; scores and estimates unchanged. |
 | 2026-10-21 | minor | Shape Builder Gap Detection shares Live Paint’s spatial gap finder and temporary merge bridges (#2526); Custom is capped at 72 pt in the existing options dialog. Scores and estimates unchanged. |
 | 2026-10-21 | minor | 3D: original Standard, Diffuse, Top Left and Right lighting presets; command access, effective-setting recognition and preview/history; scores and estimates unchanged |
 | 2026-10-21 | minor | G1: one selected clip group's Properties panel has Edit Clipping Path and Edit Contents at its top. No entry closed, estimates unchanged. |

@@ -390,10 +390,24 @@ The original site's plain HTTP archive is no longer fetched or extracted. To ref
 review the mirror commit, original-file list, redistribution license, sizes and hashes together;
 do not replace expected hashes automatically in response to a download mismatch.
 
+## Highlighted-text Eyedropper (2026-10-21)
+
+Switching from Type to Eyedropper preserves the highlighted character range and its overlay.
+Sampling applies enabled font and paint attributes to that range; Shift samples color only.
+Returning to Type retains the range; deselection and document changes clear stale ranges.
+Character styles cannot represent object opacity or blend modes. With Transparency enabled,
+sampling refuses a non-neutral source or target object before changing art, paint defaults,
+selection or history. Disable Transparency in Eyedropper Options to sample supported attributes
+while preserving the target object's transparency. Whole-object sampling remains unchanged.
+Regression evidence: `tests_eyedropper.rs` covers Unicode, font/paint, Undo/Redo, tool switches,
+and atomic rejection of source and target opacity/blend modes; `text_range_and_brush_sampling_options_coexist`
+covers upstream brush-key sampling. Scores and estimates unchanged.
+
 ## Revision history
 
 | Date | Change | Summary |
 |---|---|---|
+| 2026-10-21 | minor | M3: highlighted-text Eyedropper sampling preserves ranges and rejects unsupported source/target transparency atomically; regression-tested; scores and estimates unchanged. |
 | 2026-10-21 | minor | Fonts › Leaving out the bundled fonts: vectorcraft-ui-egui's and vectorcraft-mcp's `bundled-fonts` features, and the engine declared without default features. |
 | 2026-10-14 | minor | Document the `bundled-fonts` feature of vectorcraft-text and vectorcraft-engine (Fonts › Leaving out the bundled fonts). |
 | 2026-10-14 | minor | Document registration of every explicitly supplied craft-fonts face after the existing script-specific prefix; empty input and web selection remain unchanged. |

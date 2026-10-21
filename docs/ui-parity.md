@@ -169,6 +169,7 @@ tools, never checked side by side) isn't captured row by row.
 | Space: Hand; Cmd+Space / Cmd+Alt+Space: zoom in/out; middle button pans | done | |
 | Document window scroll bars along the right and bottom edges (Normal and Full Screen Mode with Menu Bar; none in Full Screen and Presentation Mode): a thumb as long as the view against the art and the artboards; dragging it scrolls, a click on the track pages, the wheel over a bar scrolls along it; in a rotated view they follow the screen's axes | partial | #2322. The span is the art and the artboards with half a window around them, not Illustrator's 227 in canvas: VectorCraft has no bounded drawing area (#2284). A track click pages rather than jumping to the click; the page size and the rotated-view behaviour are our own choice (the public documentation gives neither) |
 | Cmd/Ctrl: last-used selection tool; Cmd+Alt: Group Selection inside Direct Selection | done | Cmd+Alt lends Group Selection only while Direct Selection is active (Cmd borrow from the Pen keeps Direct Selection so Alt stays copy/subtract); engine pointer regressions |
+| Eyedropper styles highlighted characters only and preserves ranges across Type switches | done | Font/paint, Shift color-only, Unicode, Undo/Redo and stale-range regression tests; enabled non-neutral source or target object transparency is refused atomically; disable Transparency to sample supported attributes |
 | Eyedropper reads visible sources while their layer/object is locked or outside isolation | done | Ordinary/Shift/Shift+Alt and gradient-stop reads preserve the source and selection; Alt reverse remains editable-only; hidden art stays excluded (`eyedropper_sources.rs`, #1251) |
 | Add a visible stroke after drawing with inherited None/zero-width paint | done | Paint and Swap Fill/Stroke restore the existing 1 pt default; positive widths and painted zero widths stay as set; Undo/Redo and targeted appearance items tested (`stroke_visibility.rs`, #1253) |
 | Double-click a stroked segment to create a width point in Width Point Edit | done | Finite-arithmetic follow-up: engine regressions and full CI passed; [Validation evidence](target-app-parity.md#evidence-what-ships-today-by-area). Command and pointer regressions cover opening, sampled widths, adjoining adjustment on/off through checkbox/OK, compound paths, Cancel/Delete and Undo/Redo; dialog layout reviewed. [Validation evidence](target-app-parity.md#evidence-what-ships-today-by-area) |
@@ -267,10 +268,19 @@ re-measure of the panels added since. Slider rails show on Medium Dark (#1808, #
 
 - [x] Compact Color Picker with a distinct header, stacked actions and aligned input groups. #2008; translated action widths, visible warnings, stable mode switching and vertical scrolling in narrow windows; real egui events and two UI scales covered; German and enlarged English renders reviewed locally. Scores unchanged
 
+## Highlighted-text Eyedropper (2026-10-21)
+
+Type/Eyedropper switches preserve highlighted characters; sampling changes only their enabled
+font/paint attributes. Enabled non-neutral source or target object transparency is refused
+atomically; disable Transparency to preserve object transparency while sampling the range.
+`tests_eyedropper.rs` covers ranges, Unicode, history and transparency; tool tests cover brush-key
+sampling coexistence. Scores and estimates unchanged. See [development.md](development.md#highlighted-text-eyedropper-2026-10-21).
+
 ## Revision history
 
 | Date | Change | Summary |
 |---|---|---|
+| 2026-10-21 | minor | M3: highlighted-text Eyedropper sampling preserves ranges and rejects unsupported source/target transparency atomically; regression-tested; scores and estimates unchanged. |
 | 2026-10-21 | minor | Shape Builder Gap Detection shares Live Paint’s spatial gap finder and temporary merge bridges (#2526); Custom is capped at 72 pt in the existing options dialog. Scores and estimates unchanged. |
 | 2026-10-21 | minor | 3D: original Standard, Diffuse, Top Left and Right lighting presets; command access, effective-setting recognition and preview/history; scores and estimates unchanged |
 | 2026-10-21 | minor | G1: one selected clip group's Properties panel has Edit Clipping Path and Edit Contents at its top (public doc cited in target-app-parity.md). Scores unchanged. |
