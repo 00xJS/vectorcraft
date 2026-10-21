@@ -4956,6 +4956,7 @@ lighting	Light	光源
 	Persistent	持久
 	Locate Library…	尋找資料庫…
 	Library Panel Options	資料庫面板選項
+	Gap Length:	間隙長度：
 	Artboard {n} of {total}	工作區域 {n} / {total}
 	Encoding and writing the file…	正在編碼並寫入檔案…
 @plural	{n} more export waiting|{n} more exports waiting	另有 {n} 個匯出等待中

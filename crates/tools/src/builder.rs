@@ -253,11 +253,16 @@ impl BuilderMap {
     /// `open_filled_as_closed` (Consider Open Filled Paths as Closed), a filled open path bounds a
     /// region as if an invisible edge closed it; without it, the path cuts like a line.
     pub fn new<'a>(doc: &'a Document, roots: &[NodeId], with_edges: bool, open_filled_as_closed: bool) -> (Self, Vec<&'a Node>) {
+        Self::with_gap(doc, roots, with_edges, open_filled_as_closed, 0.0)
+    }
+
+    /// The same arrangement with Gap Detection, using the shared Live Paint gap finder.
+    pub fn with_gap<'a>(doc: &'a Document, roots: &[NodeId], with_edges: bool, open_filled_as_closed: bool, gap: f64) -> (Self, Vec<&'a Node>) {
         let (shapes, leaves) = shape_builder_shapes(doc, roots, open_filled_as_closed);
         if shapes.is_empty() {
             return (Self::default(), leaves);
         }
-        let arr = po::shape_builder(&shapes, with_edges);
+        let arr = po::shape_builder_with_gap(&shapes, with_edges, gap);
         let bounded = |pieces: Vec<po::Shape>| {
             pieces
                 .into_iter()
@@ -442,6 +447,8 @@ struct RegionCache {
     live: bool,
     /// The map has the Shape Builder's outline edges.
     edges: bool,
+    /// Gap Detection distance; changing tool options invalidates the cache.
+    gap: f64,
 }
 
 impl RegionCache {
@@ -459,7 +466,7 @@ impl RegionCache {
                 let regions = if shapes.is_empty() { vec![] } else { faces_of(po::live_paint(&shapes).0) };
                 BuilderMap { regions, ..Default::default() }
             } else {
-                BuilderMap::new(cx.doc, &roots, edges, open_filled_as_closed).0
+                BuilderMap::with_gap(cx.doc, &roots, edges, open_filled_as_closed, self.gap).0
             };
             self.key = Some(key);
             self.edges = edges;
@@ -472,6 +479,10 @@ impl RegionCache {
 }
 
 // ---------- Shape Builder ----------
+
+pub use po::SHAPE_BUILDER_MAX_GAP;
+/// Small, Medium and Large gap lengths in points.
+pub const GAP_LENGTHS: [f64; 3] = [3.0, 6.0, 12.0];
 
 /// Shape Builder Tool Options (double-click the tool; `tool.setOption`), kept across tool switches
 /// and saved with the preferences.
@@ -496,11 +507,23 @@ pub struct ShapeBuilderOptions {
     /// Highlight Fill (`highlightFill`, on): in merge mode, the regions under the pointer or
     /// touched by the drag are shaded with a gray mesh. When it is off, they are not highlighted.
     pub highlight_fill: bool,
+    /// Close gaps up to `gap_length` while finding regions.
+    pub gap_detection: bool,
+    /// Gap Length in points (at most [`SHAPE_BUILDER_MAX_GAP`]).
+    pub gap_length: f64,
 }
 
 impl Default for ShapeBuilderOptions {
     fn default() -> Self {
-        Self { open_filled_as_closed: true, swatches: false, cursor_swatch_preview: false, straight_line: false, highlight_fill: true }
+        Self {
+            open_filled_as_closed: true,
+            swatches: false,
+            cursor_swatch_preview: false,
+            straight_line: false,
+            highlight_fill: true,
+            gap_detection: false,
+            gap_length: GAP_LENGTHS[0],
+        }
     }
 }
 
@@ -560,6 +583,10 @@ pub struct ShapeBuilderTool {
 const LINE_TOL_PX: f64 = 4.0;
 
 impl ShapeBuilderTool {
+    fn gap(&self) -> f64 {
+        if self.opts.gap_detection { self.opts.gap_length } else { 0.0 }
+    }
+
     fn line_tol(cx: &ToolContext, alt: bool) -> Option<f64> {
         alt.then(|| cx.tol(LINE_TOL_PX))
     }
@@ -665,7 +692,7 @@ impl Tool for ShapeBuilderTool {
                 let pts: Vec<Value> = points.iter().map(|q| json!([q.x, q.y])).collect();
                 // The mode the drag started in, which its highlight showed.
                 let erase = self.alt;
-                let mut params = json!({ "ids": json_ids(&roots), "points": pts, "erase": erase });
+                let mut params = json!({ "ids": json_ids(&roots), "points": pts, "erase": erase, "gap": self.gap() });
                 if let Some(t) = Self::line_tol(cx, erase) {
                     params["tolerance"] = json!(t);
                 }
@@ -761,6 +788,8 @@ impl Tool for ShapeBuilderTool {
             "cursorSwatchPreview": o.cursor_swatch_preview,
             "selection": if o.straight_line { "straightLine" } else { "freeform" },
             "highlightFill": o.highlight_fill,
+            "gapDetection": o.gap_detection,
+            "gapLength": o.gap_length,
         })
     }
 
@@ -772,8 +801,16 @@ impl Tool for ShapeBuilderTool {
             "cursorSwatchPreview" => o.cursor_swatch_preview = v.as_bool().unwrap_or(o.cursor_swatch_preview),
             "selection" => o.straight_line = v.as_str().map_or(o.straight_line, |s| s == "straightLine"),
             "highlightFill" => o.highlight_fill = v.as_bool().unwrap_or(o.highlight_fill),
+            "gapDetection" => o.gap_detection = v.as_bool().unwrap_or(o.gap_detection),
+            "gapLength" => {
+                if let Some(n) = v.as_f64().filter(|n| n.is_finite()) {
+                    o.gap_length = n.clamp(0.0, SHAPE_BUILDER_MAX_GAP);
+                }
+            }
             _ => {}
         }
+        self.cache.key = None;
+        self.cache.gap = self.gap();
     }
 }
 

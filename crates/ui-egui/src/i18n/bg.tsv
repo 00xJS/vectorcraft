@@ -5285,6 +5285,7 @@ theme	Appearance	Външен вид
 	Persistent	Постоянна
 	Locate Library…	Намиране на библиотека…
 	Library Panel Options	Опции на панела с библиотека
+	Gap Length:	Дължина на пропуска:
 	Artboard {n} of {total}	Работна област {n} от {total}
 	Encoding and writing the file…	Кодиране и записване на файла…
 @plural	{n} more export waiting|{n} more exports waiting	Още {n} експортиране в изчакване|Още {n} експортирания в изчакване
