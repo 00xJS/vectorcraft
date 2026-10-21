@@ -691,6 +691,7 @@ fn set_style(s: &mut Session, p: &Value) -> Result<Value> {
         Some(j) => Some(justify_param(j).ok_or_else(|| bad(C, "justify must be auto|left|center|right|justifyAll"))?),
         None => None,
     };
+    super::paint::check_keep_model(p, C)?;
     let fill = match p.get("fill") {
         None | Some(Value::Null) => None,
         Some(Value::String(n)) if n.eq_ignore_ascii_case("none") => Some(vectorcraft_color::Paint::None),

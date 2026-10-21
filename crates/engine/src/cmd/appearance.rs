@@ -548,6 +548,7 @@ fn reduce_basic(s: &mut Session, p: &Value) -> Result<Value> {
 
 fn set_item(s: &mut Session, p: &Value) -> Result<Value> {
     let idx = index_param(p, "index", "appearance.setItem")?;
+    super::paint::check_keep_model(p, "appearance.setItem")?;
     let paint = paint_from(s, p)?;
     let ids = appearance_targets(s, p)?;
     if ids.is_empty() {

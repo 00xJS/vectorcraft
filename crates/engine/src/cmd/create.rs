@@ -494,6 +494,7 @@ fn path_create(s: &mut Session, p: &Value) -> Result<Value> {
 fn text_create(s: &mut Session, p: &Value) -> Result<Value> {
     let x = f64_req(p, "x", "text.create")?;
     let y = f64_req(p, "y", "text.create")?;
+    super::paint::check_keep_model(p, "text.create")?;
     let text = str_param(p, "text").unwrap_or("");
     let mut t = TextObject::point(Point::new(x, y), text, new_type_style(s, p));
     t.vertical = p.get("vertical").and_then(Value::as_bool).unwrap_or(false);

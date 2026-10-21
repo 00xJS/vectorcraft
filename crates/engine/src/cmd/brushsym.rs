@@ -1301,6 +1301,7 @@ fn symbol_adjust(s: &mut Session, p: &Value) -> Result<Value> {
     if !["shift", "scrunch", "size", "spin", "stain", "screen", "style"].contains(&tool.as_str()) {
         return Err(bad(C, format!("unknown tool `{tool}`")));
     }
+    super::paint::check_keep_model(p, C)?;
     let pts = points(p, C)?;
     let radius = f64_or(p, "radius", 40.0).clamp(1.0, 2000.0);
     let intensity = f64_or(p, "intensity", 5.0).clamp(1.0, 10.0) / 10.0;

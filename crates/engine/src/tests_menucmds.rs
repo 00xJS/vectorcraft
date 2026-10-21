@@ -90,6 +90,13 @@ fn refuses_non_number(s: &mut Session, cmd: &str, p: &Value, key: &str) {
     assert!(matches!(&r, Err(EngineError::BadParams { msg, .. }) if *msg == want), "{cmd} {p}: {r:?}");
 }
 
+/// `cmd` with `p` fails with the error for `key`, which `p` gives as something other than true or false.
+fn refuses_non_boolean(s: &mut Session, cmd: &str, p: &Value, key: &str) {
+    let r = s.execute(cmd, p);
+    let want = format!("`{key}` must be true or false");
+    assert!(matches!(&r, Err(EngineError::BadParams { msg, .. }) if *msg == want), "{cmd} {p}: {r:?}");
+}
+
 // ---------- Object → Lock / Hide ----------
 
 #[test]
@@ -429,6 +436,30 @@ fn transform_each_refuses_a_number_given_as_text() {
     assert_eq!(bounds(&s, a), Rect::new(35.0, 25.0, 85.0, 75.0));
 }
 
+/// Transform Each refuses Reflect X, Reflect Y, Random or Copy given as text or as another value
+/// that is not true or false, and the object stays as it was and is not copied; true, false and null
+/// still work.
+#[test]
+fn transform_each_refuses_a_boolean_given_as_text() {
+    let mut s = session();
+    let a = rect(&mut s, 0.0, 0.0, 100.0, 100.0);
+    sel(&mut s, &[a]);
+    let count = |s: &Session| s.doc().unwrap().doc.layers[0].children().unwrap().len();
+    let before = (undo_len(&s), bounds(&s, a), count(&s));
+    for (key, p) in [
+        ("reflectX", json!({"reflectX": "true"})),
+        ("reflectY", json!({"moveH": 10, "reflectY": 1})),
+        ("random", json!({"moveH": 10, "random": "false"})),
+        ("copy", json!({"copy": "true"})),
+        ("copy", json!({"moveH": 10, "copy": [true]})),
+    ] {
+        refuses_non_boolean(&mut s, "object.transformEach", &p, key);
+        assert_eq!((undo_len(&s), bounds(&s, a), count(&s)), before, "{p}");
+    }
+    s.execute("object.transformEach", &json!({"moveH": 10, "reflectX": true, "random": false, "copy": null})).unwrap();
+    assert_eq!((bounds(&s, a), count(&s)), (Rect::new(10.0, 0.0, 110.0, 100.0), before.2));
+}
+
 /// #1910: Transform Each's Reflect X flips left-right; Reflect Y flips top-bottom (same as
 /// Effect › Distort › Transform and Illustrator's Transform Each checkboxes).
 #[test]
@@ -673,6 +704,24 @@ fn crop_image_refuses_a_rect_given_as_text() {
     assert!(close(b.x0, 0.0) && close(b.y0, 0.0), "{b:?}");
 }
 
+/// Crop Image refuses a `trim` given as text or as another value that is not true or false, and the
+/// image stays as it was; a null `trim` crops to `rect` as a missing one does.
+#[test]
+fn crop_image_refuses_a_trim_given_as_text() {
+    let mut s = session();
+    let a = rect(&mut s, -20.0, -20.0, 100.0, 100.0);
+    sel(&mut s, &[a]);
+    let img = id_of(&s.execute("object.rasterize", &json!({"ppi": 72})).unwrap());
+    let before = (undo_len(&s), node(&s, img));
+    for p in [json!({"trim": "true"}), json!({"trim": "false", "rect": [10, 10, 50, 40]}), json!({"trim": 1})] {
+        refuses_non_boolean(&mut s, "object.cropImage", &p, "trim");
+        assert_eq!((undo_len(&s), node(&s, img)), before, "{p}");
+    }
+    s.execute("object.cropImage", &json!({"trim": null, "rect": [10, 10, 50, 40]})).unwrap();
+    let b = bounds(&s, img);
+    assert!(close(b.x0, 10.0) && close(b.y0, 10.0) && close(b.width(), 50.0) && close(b.height(), 40.0), "{b:?}");
+}
+
 #[test]
 fn crop_image_disabled_without_image() {
     let mut s = session();
@@ -743,6 +792,32 @@ fn trim_marks_refuse_a_number_given_as_text() {
         }
     }
     s.execute("object.createTrimMarks", &json!({"offset": 10, "length": 20, "bleed": null})).unwrap();
+}
+
+/// Create Trim Marks refuses an `allArtboards` that is not true or false and a `style` that is not
+/// text, around the selection and around the artboards, and makes no marks; null takes the default.
+#[test]
+fn trim_marks_refuse_a_boolean_or_style_of_the_wrong_kind() {
+    let mut s = session();
+    let a = rect(&mut s, 100.0, 100.0, 200.0, 100.0);
+    let style = "`style` must be roman or japanese";
+    let calls = [
+        (json!({"allArtboards": "true"}), "`allArtboards` must be true or false"),
+        (json!({"allArtboards": 0}), "`allArtboards` must be true or false"),
+        (json!({"style": 5}), style),
+        (json!({"allArtboards": true, "style": true}), style),
+        (json!({"style": ["roman"]}), style),
+    ];
+    for ids in [vec![a], vec![]] {
+        sel(&mut s, &ids);
+        let before = (undo_len(&s), s.doc().unwrap().doc.layers[0].children().unwrap().len());
+        for (p, msg) in &calls {
+            let r = s.execute("object.createTrimMarks", p);
+            assert!(matches!(&r, Err(EngineError::BadParams { msg: m, .. }) if m == msg), "{p}: {r:?}");
+            assert_eq!((undo_len(&s), s.doc().unwrap().doc.layers[0].children().unwrap().len()), before, "{p}");
+        }
+    }
+    s.execute("object.createTrimMarks", &json!({"allArtboards": null, "style": null})).unwrap();
 }
 
 // ---------- Convert to Shape ----------
@@ -894,6 +969,29 @@ fn rearrange_refuses_a_spacing_given_as_text() {
     }
     s.execute("artboard.rearrange", &json!({"columns": 1, "spacing": 50})).unwrap();
     assert_eq!(boards(&s)[1], Rect::new(0.0, 650.0, 400.0, 950.0));
+}
+
+/// Rearrange All Artboards refuses `byColumn` or `moveArtwork` given as text or as another value
+/// that is not true or false, and the artboards and the art stay where they were; `moveArtwork:
+/// false` leaves the art in place.
+#[test]
+fn rearrange_refuses_a_boolean_given_as_text() {
+    let mut s = session();
+    s.execute("artboard.new", &json!({"x": 1000, "y": 0, "width": 400, "height": 300})).unwrap();
+    let b = rect(&mut s, 1050.0, 25.0, 10.0, 10.0);
+    let boards = |s: &Session| s.doc().unwrap().doc.artboards.iter().map(|a| a.rect).collect::<Vec<_>>();
+    let before = (boards(&s), undo_len(&s), bounds(&s, b));
+    for (key, p) in [
+        ("byColumn", json!({"byColumn": "true"})),
+        ("byColumn", json!({"layout": "row", "byColumn": 1})),
+        ("moveArtwork", json!({"moveArtwork": "false"})),
+        ("moveArtwork", json!({"columns": 1, "moveArtwork": 0})),
+    ] {
+        refuses_non_boolean(&mut s, "artboard.rearrange", &p, key);
+        assert_eq!((boards(&s), undo_len(&s), bounds(&s, b)), before, "{p}");
+    }
+    s.execute("artboard.rearrange", &json!({"columns": 1, "spacing": 50, "byColumn": null, "moveArtwork": false})).unwrap();
+    assert_eq!((boards(&s)[1], bounds(&s, b)), (Rect::new(0.0, 650.0, 400.0, 950.0), before.2));
 }
 
 /// Fit to Artwork Bounds fits each artboard it is given to the art on it, in one undo step: an
