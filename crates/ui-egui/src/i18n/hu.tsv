@@ -1599,6 +1599,8 @@ file-filter	Templates	Sablonok
 	Palette Knife	Palettakés
 	Poster Edges…	Poszterszélek…
 	Poster Edges	Poszterszélek
+	Underpainting…	Alapozás…
+	Underpainting	Alapozás
 	Levels	Szintek
 	Edge Simplicity	Élek egyszerűsége
 	Edge Fidelity	Élek hűsége
@@ -5269,6 +5271,7 @@ imageTrace	Outline	Körvonal
 	Watercolor…	Akvarell…
 	Watercolor	Akvarell
 	Brush Size	Ecsetméret
+	Texture Coverage	Textúra fedettség
 	Definition	Kidolgozottság
 	Brush Detail	Ecsetrészletesség
 	Shadow Intensity	Árnyék intenzitása

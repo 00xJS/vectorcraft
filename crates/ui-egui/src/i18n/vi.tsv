@@ -1280,6 +1280,8 @@
 	Palette Knife	Dao palette
 	Poster Edges…	Viền áp phích…
 	Poster Edges	Viền áp phích
+	Underpainting…	Lớp sơn nền…
+	Underpainting	Lớp sơn nền
 	Levels	Số mức
 	Edge Simplicity	Độ đơn giản của cạnh
 	Edge Fidelity	Độ trung thực của cạnh
@@ -4877,6 +4879,7 @@ theme	Appearance	Giao diện
 	Watercolor…	Màu nước…
 	Watercolor	Màu nước
 	Brush Size	Kích thước cọ
+	Texture Coverage	Độ phủ kết cấu
 	Definition	Độ nét
 	Brush Detail	Chi tiết cọ
 	Shadow Intensity	Cường độ bóng

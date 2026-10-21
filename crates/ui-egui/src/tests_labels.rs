@@ -99,6 +99,7 @@ fn effect_menu_lists_the_artistic_filters_before_blur() {
             "Poster Edges…",
             "Smudge Stick…",
             "Sponge…",
+            "Underpainting…",
             "Watercolor…"
         ]
     );

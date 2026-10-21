@@ -4694,6 +4694,8 @@ lighting	Light	Свет
 	Palette Knife	Нож для палитры
 	Poster Edges…	Края плаката…
 	Poster Edges	Края плаката
+	Underpainting…	Подмалёвка…
+	Underpainting	Подмалёвка
 	Levels	Уровни
 	Edge Simplicity	Простота краёв
 	Edge Fidelity	Точность краёв
@@ -4893,6 +4895,7 @@ lighting	Light	Свет
 	Watercolor…	Акварель…
 	Watercolor	Акварель
 	Brush Size	Размер кисти
+	Texture Coverage	Покрытие текстурой
 	Definition	Чёткость
 	Brush Detail	Детализация кисти
 	Shadow Intensity	Интенсивность теней

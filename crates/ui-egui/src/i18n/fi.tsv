@@ -4963,6 +4963,8 @@ imageTrace	Outline	Ääriviiva
 	Palette Knife	Palettiveitsi
 	Poster Edges…	Julisteen reunat…
 	Poster Edges	Julisteen reunat
+	Underpainting…	Alapinta…
+	Underpainting	Alapinta
 	Levels	Tasot
 	Edge Simplicity	Reunojen yksinkertaisuus
 	Edge Fidelity	Reunojen tarkkuus
@@ -5247,6 +5249,7 @@ mark-style	Japanese	Japanilainen
 	Watercolor…	Vesiväri…
 	Watercolor	Vesiväri
 	Brush Size	Siveltimen koko
+	Texture Coverage	Tekstuurin peitto
 	Definition	Terävyys
 	Brush Detail	Siveltimen yksityiskohta
 	Shadow Intensity	Varjojen voimakkuus

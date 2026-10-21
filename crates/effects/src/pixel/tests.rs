@@ -2441,12 +2441,38 @@ fn artistic_params_take_defaults_and_stay_in_range() {
         fx("artistic.neonGlow", json!({"glowSize": -1e308, "glowBrightness": 80, "color": "#ff0000"})),
         PixelFx::NeonGlow { size: -24.0, brightness: 50.0, colour: [1.0, 0.0, 0.0] }
     );
+    let under = PixelFx::Underpainting {
+        brush_size: 6.0,
+        texture_coverage: 16.0,
+        texture: Texture::Canvas,
+        scaling: 1.0,
+        relief: 4.0,
+        light: Light::Top,
+        invert: false,
+    };
+    assert_eq!(fx("artistic.underpainting", json!({})), under);
+    assert_eq!(
+        fx(
+            "artistic.underpainting",
+            json!({"brushSize": 99, "textureCoverage": -1, "texture": "brick", "scaling": 10, "relief": 60, "lightDirection": "bottomRight", "invert": true})
+        ),
+        PixelFx::Underpainting {
+            brush_size: 40.0,
+            texture_coverage: 0.0,
+            texture: Texture::Brick,
+            scaling: 0.5,
+            relief: 50.0,
+            light: Light::BottomRight,
+            invert: true,
+        }
+    );
     assert_eq!(fx("artistic.plasticWrap", json!({})), PixelFx::PlasticWrap { highlight: 20.0, detail: 12.0, smoothness: 15.0 });
     assert_eq!(
         fx("artistic.plasticWrap", json!({"highlightStrength": -1, "detail": 99, "smoothness": 0})),
         PixelFx::PlasticWrap { highlight: 0.0, detail: 15.0, smoothness: 1.0 }
     );
-    for id in ["artistic.cutout", "artistic.dryBrush", "artistic.neonGlow", "artistic.plasticWrap", "artistic.posterEdges"] {
+    for id in ["artistic.cutout", "artistic.dryBrush", "artistic.neonGlow", "artistic.plasticWrap", "artistic.posterEdges", "artistic.underpainting"]
+    {
         assert_eq!(fx(id, json!({})).outset(Rect::new(0.0, 0.0, 40.0, 30.0)), 0.0, "{id} keeps the object's shape");
     }
     assert_eq!(fx("artistic.paintDaubs", json!({})), PixelFx::PaintDaubs { size: 10.0, sharpness: 25.0, kind: PaintDaubBrush::Simple });
@@ -2457,6 +2483,16 @@ fn artistic_params_take_defaults_and_stay_in_range() {
     let doc = crate::effect_info("artistic.paintDaubs").unwrap().params;
     assert!(PAINT_DAUB_BRUSH_TYPES.iter().all(|(_, v)| doc.contains(&format!("\"{v}\""))), "{doc}");
     assert!(fx("artistic.paintDaubs", json!({})).outset(Rect::new(0.0, 0.0, 40.0, 30.0)) > 0.0);
+    for (id, key, table) in
+        [("artistic.underpainting", "texture", TEXTURES.as_slice()), ("artistic.underpainting", "lightDirection", LIGHT_DIRECTIONS.as_slice())]
+    {
+        let doc = crate::effect_info(id).unwrap().params;
+        let parsed: Vec<PixelFx> = table.iter().map(|(_, v)| fx(id, json!({ key: v }))).collect();
+        for (i, (_, v)) in table.iter().enumerate() {
+            assert!(doc.contains(&format!("\"{v}\"")), "{id} {v}");
+            assert!(parsed.iter().skip(i + 1).all(|p| *p != parsed[i]), "{id} {v}");
+        }
+    }
 }
 
 #[test]
@@ -2475,6 +2511,15 @@ fn artistic_filters_leave_invalid_coordinate_spaces_alone() {
         PixelFx::NeonGlow { size: 5.0, brightness: 15.0, colour },
         PixelFx::PlasticWrap { highlight: 20.0, detail: 12.0, smoothness: 15.0 },
         PixelFx::PosterEdges { thickness: 2.0, intensity: 1.0, posterization: 2.0 },
+        PixelFx::Underpainting {
+            brush_size: 6.0,
+            texture_coverage: 16.0,
+            texture: Texture::Canvas,
+            scaling: 1.0,
+            relief: 4.0,
+            light: Light::Top,
+            invert: false,
+        },
     ];
     for f in &filters {
         assert_ne!(run(f, &space(w, h)), src, "{f:?} changes the art in a valid space");
@@ -2496,12 +2541,51 @@ fn artistic_filters_leave_invalid_coordinate_spaces_alone() {
         PixelFx::PosterEdges { thickness: f64::NAN, intensity: 1.0, posterization: 2.0 },
         PixelFx::PosterEdges { thickness: 2.0, intensity: f64::INFINITY, posterization: 2.0 },
         PixelFx::PosterEdges { thickness: 2.0, intensity: 1.0, posterization: f64::NEG_INFINITY },
+        PixelFx::Underpainting {
+            brush_size: f64::NAN,
+            texture_coverage: 16.0,
+            texture: Texture::Canvas,
+            scaling: 1.0,
+            relief: 4.0,
+            light: Light::Top,
+            invert: false,
+        },
+        PixelFx::Underpainting {
+            brush_size: 6.0,
+            texture_coverage: f64::INFINITY,
+            texture: Texture::Canvas,
+            scaling: 1.0,
+            relief: 4.0,
+            light: Light::Top,
+            invert: false,
+        },
     ] {
         if run(&f, &space(w, h)) != src {
             changed.push(format!("{f:?}"));
         }
     }
     assert!(changed.is_empty(), "directly constructed non-finite parameters and invalid spaces are harmless: {changed:?}");
+}
+
+#[test]
+fn underpainting_softens_more_with_a_larger_brush_and_keeps_coverage() {
+    let (w, h) = (48, 32);
+    let src = ramp(w, h);
+    let diff = |brush: f64| {
+        let mut out = src.clone();
+        fx("artistic.underpainting", json!({"brushSize": brush, "textureCoverage": 0})).apply(&mut out, w, h, &space(w, h));
+        out.as_chunks::<4>()
+            .0
+            .iter()
+            .zip(src.as_chunks::<4>().0)
+            .filter(|(_, s)| s[3] == 255)
+            .map(|(o, s)| (0..3).map(|k| u32::from(o[k].abs_diff(s[k]))).sum::<u32>())
+            .sum::<u32>()
+    };
+    assert!(diff(40.0) > diff(2.0) * 2, "large brush {} vs small {}", diff(40.0), diff(2.0));
+    let mut out = src.clone();
+    fx("artistic.underpainting", json!({})).apply(&mut out, w, h, &space(w, h));
+    assert!(out.as_chunks::<4>().0.iter().zip(src.as_chunks::<4>().0).all(|(o, s)| o[3] == s[3]));
 }
 
 #[test]
@@ -2662,6 +2746,7 @@ fn artistic_filters_look_the_same_at_any_resolution() {
         ("artistic.cutout", json!({"edgeSimplicity": 6})),
         ("artistic.neonGlow", json!({"glowSize": 12, "glowBrightness": 30})),
         ("artistic.posterEdges", json!({"edgeThickness": 6, "edgeIntensity": 6})),
+        ("artistic.underpainting", json!({"brushSize": 12, "textureCoverage": 20, "relief": 10})),
     ] {
         let (mut a, mut b) = (coarse.clone(), fine.clone());
         fx(id, p.clone()).apply(&mut a, w, h, &space(w, h));

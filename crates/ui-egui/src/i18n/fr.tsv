@@ -4666,6 +4666,8 @@ lighting	Light	Lumière
 	Palette Knife	Couteau à palette
 	Poster Edges…	Bords d’affiche…
 	Poster Edges	Bords d’affiche
+	Underpainting…	Sous-peinture…
+	Underpainting	Sous-peinture
 	Levels	Niveaux
 	Edge Simplicity	Simplicité des contours
 	Edge Fidelity	Fidélité des contours
@@ -5282,6 +5284,7 @@ theme	Appearance	Apparence
 	Watercolor…	Aquarelle…
 	Watercolor	Aquarelle
 	Brush Size	Taille du pinceau
+	Texture Coverage	Couverture de texture
 	Definition	Définition
 	Brush Detail	Détail du pinceau
 	Shadow Intensity	Intensité des ombres

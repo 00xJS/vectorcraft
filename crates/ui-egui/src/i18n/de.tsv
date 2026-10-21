@@ -4655,6 +4655,8 @@ lighting	Light	Licht
 	Palette Knife	Palettenmesser
 	Poster Edges…	Posterkanten…
 	Poster Edges	Posterkanten
+	Underpainting…	Untermalung…
+	Underpainting	Untermalung
 	Levels	Stufen
 	Edge Simplicity	Kantenvereinfachung
 	Edge Fidelity	Kantentreue
@@ -4862,6 +4864,7 @@ effect	Soft	Weich
 	Watercolor…	Aquarell…
 	Watercolor	Aquarell
 	Brush Size	Pinselgröße
+	Texture Coverage	Texturabdeckung
 	Definition	Definition
 	Brush Detail	Pinseldetail
 	Shadow Intensity	Schattenintensität

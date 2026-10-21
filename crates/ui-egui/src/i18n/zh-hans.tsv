@@ -4962,6 +4962,8 @@ lighting	Light	光源
 	Palette Knife	调色刀
 	Poster Edges…	海报边缘…
 	Poster Edges	海报边缘
+	Underpainting…	底纹效果…
+	Underpainting	底纹效果
 	Levels	色阶数
 	Edge Simplicity	边缘简化度
 	Edge Fidelity	边缘逼真度
@@ -5118,6 +5120,7 @@ lighting	Light	光源
 	Watercolor…	水彩…
 	Watercolor	水彩
 	Brush Size	画笔大小
+	Texture Coverage	纹理覆盖
 	Definition	清晰度
 	Brush Detail	画笔细节
 	Shadow Intensity	阴影强度

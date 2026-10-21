@@ -4737,6 +4737,8 @@ lighting	Light	ライト
 	Palette Knife	パレットナイフ
 	Poster Edges…	ポスターエッジ…
 	Poster Edges	ポスターエッジ
+	Underpainting…	アンダーペインティング…
+	Underpainting	アンダーペインティング
 	Levels	レベル数
 	Edge Simplicity	エッジの単純さ
 	Edge Fidelity	エッジの正確さ
@@ -4937,6 +4939,7 @@ lighting	Light	ライト
 	Watercolor…	水彩…
 	Watercolor	水彩
 	Brush Size	ブラシサイズ
+	Texture Coverage	テクスチャのかかり具合
 	Definition	精細度
 	Brush Detail	ブラシの細かさ
 	Shadow Intensity	シャドウの強さ

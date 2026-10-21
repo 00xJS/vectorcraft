@@ -5096,6 +5096,8 @@ imageTrace	Outline	კონტური
 	Persistent	მუდმივი
 	Place from Library	ბიბლიოთეკიდან განთავსება
 	Poster Edges	პოსტერის კიდეები
+	Underpainting…	ქვეფენის მხატვრობა…
+	Underpainting	ქვეფენის მხატვრობა
 	Poster Edges…	პოსტერის კიდეები…
 	Posterization	პოსტერიზაცია
 	Previous Artboard	წინა სამუშაო დაფა
@@ -5228,6 +5230,7 @@ imageTrace	Outline	კონტური
 	Watercolor…	აკვარელი…
 	Watercolor	აკვარელი
 	Brush Size	ფუნჯის ზომა
+	Texture Coverage	ტექსტურის დაფარვა
 	Definition	განსაზღვრულობა
 	Brush Detail	ფუნჯის დეტალი
 	Shadow Intensity	ჩრდილის ინტენსივობა

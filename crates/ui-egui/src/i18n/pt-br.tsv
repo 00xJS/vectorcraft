@@ -4051,6 +4051,8 @@ axis	Both	Ambos
 	Palette Knife	Espátula
 	Poster Edges…	Bordas de pôster…
 	Poster Edges	Bordas de pôster
+	Underpainting…	Subpintura…
+	Underpainting	Subpintura
 	Levels	Níveis
 	Edge Simplicity	Simplicidade das bordas
 	Edge Fidelity	Fidelidade das bordas
@@ -5200,6 +5202,7 @@ mark-style	Japanese	Japonesas
 	Watercolor…	Aquarela…
 	Watercolor	Aquarela
 	Brush Size	Tamanho do pincel
+	Texture Coverage	Cobertura da textura
 	Definition	Definição
 	Brush Detail	Detalhe do pincel
 	Shadow Intensity	Intensidade da sombra

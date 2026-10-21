@@ -4575,6 +4575,8 @@ lighting	Light	Ljus
 	Palette Knife	Palettkniv
 	Poster Edges…	Affischkanter…
 	Poster Edges	Affischkanter
+	Underpainting…	Undermålning…
+	Underpainting	Undermålning
 	Levels	Nivåer
 	Edge Simplicity	Kantförenkling
 	Edge Fidelity	Kanttrohet
@@ -5239,6 +5241,7 @@ theme	Appearance	Utseende
 	Watercolor…	Akvarell…
 	Watercolor	Akvarell
 	Brush Size	Penselstorlek
+	Texture Coverage	Texturtäckning
 	Definition	Skärpa
 	Brush Detail	Penseldetalj
 	Shadow Intensity	Skuggintensitet

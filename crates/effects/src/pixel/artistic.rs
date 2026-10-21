@@ -1,5 +1,5 @@
 //! Effect › Artistic (Cutout, Dry Brush, Film Grain, Neon Glow, Paint Daubs, Palette Knife, Plastic Wrap, Poster
-//! Edges, Smudge Stick, Sponge and Watercolor). Original filters built from
+//! Edges, Smudge Stick, Sponge, Underpainting and Watercolor). Original filters built from
 //! public behaviour documentation:
 //! <https://helpx.adobe.com/illustrator/using/summary-effects.html> and
 //! <https://helpx.adobe.com/photoshop-elements/using/artistic-filters.html>.
@@ -10,7 +10,7 @@ use std::f64::consts::TAU;
 use super::brushstrokes::{Smear, mix, stroke_reach, unit, unpremultiply};
 use super::edges::sobel;
 use super::pixelate::{Around, Place, Soft, cell, point_in, rand, value_noise};
-use super::texture::{luma, premultiply, straight};
+use super::texture::{self, Light, Texture, luma, premultiply, straight};
 use super::{PixelSpace, blur_plane, pick};
 use vectorcraft_geom::{Point, Vec2};
 
@@ -465,6 +465,65 @@ pub(super) fn dry_brush_reach(size: f64, detail: f64) -> f64 {
 /// How far (document units) Neon Glow's glow spreads at `size` (-24..24).
 pub(super) fn glow_spread(size: f64) -> f64 {
     0.25 * size.abs().min(24.0)
+}
+
+/// Underpainting: broad brush strokes (`brush_size`, 0..40) over a relief `texture` surface
+/// (`scaling`, `relief`, `light`, `invert`, as Texturizer uses), blended in as strongly as
+/// `texture_coverage` (0..40) says. Coverage is kept.
+#[allow(clippy::too_many_arguments)]
+pub(super) fn underpainting(
+    px: &mut [[u8; 4]],
+    w: usize,
+    h: usize,
+    space: &PixelSpace,
+    brush_size: f64,
+    texture_coverage: f64,
+    texture: &Texture,
+    scaling: f64,
+    relief: f64,
+    light: Light,
+    invert: bool,
+) {
+    if !(brush_size.is_finite() && texture_coverage.is_finite() && space.px.is_finite() && space.px > 0.0) {
+        return;
+    }
+    let brush_size = brush_size.clamp(0.0, 40.0);
+    let coverage = (texture_coverage / 40.0).clamp(0.0, 1.0) as f32;
+    let (mut colour, alpha) = planes(px);
+    let sigma = (0.1 * brush_size.max(0.25)) / space.px;
+    if sigma > 0.0 {
+        soften(&mut colour, &alpha, w, h, sigma);
+    }
+    for (k, p) in px.iter_mut().enumerate() {
+        if p[3] == 0 {
+            continue;
+        }
+        let c = [colour[0][k], colour[1][k], colour[2][k]];
+        *p = premultiply(c, f32::from(p[3]) / 255.0);
+    }
+    if coverage <= 0.0 {
+        return;
+    }
+    let softened = px.to_vec();
+    texture::texturizer(px, w, h, space, texture, scaling, relief, light, invert);
+    if coverage >= 1.0 {
+        return;
+    }
+    let mix = 1.0 - coverage;
+    for (k, p) in px.iter_mut().enumerate() {
+        if p[3] == 0 {
+            continue;
+        }
+        let a = f32::from(p[3]) / 255.0;
+        let tex = straight(*p);
+        let soft = straight(softened[k]);
+        let c = [
+            (soft[0] * mix + tex[0] * coverage).clamp(0.0, 1.0),
+            (soft[1] * mix + tex[1] * coverage).clamp(0.0, 1.0),
+            (soft[2] * mix + tex[2] * coverage).clamp(0.0, 1.0),
+        ];
+        *p = premultiply(c, a);
+    }
 }
 
 /// Neon Glow: the object in dimmed greys, lit by `colour` glowing from its light areas (`size`

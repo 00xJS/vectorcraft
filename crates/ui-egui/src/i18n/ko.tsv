@@ -4661,6 +4661,8 @@ lighting	Light	광원
 	Palette Knife	팔레트 나이프
 	Poster Edges…	포스터 가장자리…
 	Poster Edges	포스터 가장자리
+	Underpainting…	언더페인팅…
+	Underpainting	언더페인팅
 	Levels	레벨 수
 	Edge Simplicity	가장자리 단순화
 	Edge Fidelity	가장자리 충실도
@@ -4860,6 +4862,7 @@ lighting	Light	광원
 	Watercolor…	수채화…
 	Watercolor	수채화
 	Brush Size	브러시 크기
+	Texture Coverage	텍스처 적용 범위
 	Definition	선명도
 	Brush Detail	브러시 세부 묘사
 	Shadow Intensity	그림자 강도
