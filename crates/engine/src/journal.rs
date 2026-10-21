@@ -105,15 +105,32 @@ impl Journal {
             !gone(i - 1)
         });
         self.bytes = self.sizes.iter().sum();
-        // Each entry that was let go already counts once.
-        let mut last = None;
-        let let_go = numbers.iter().take_while(|&&n| n < dropped).filter(|&&n| last.replace(n) != Some(n)).count();
-        self.dropped = dropped.saturating_sub(let_go);
+        // How many of the numbers are below `n`, each counted once.
+        let below = |n: usize| {
+            let mut last = None;
+            numbers.iter().take_while(|&&m| m < n).filter(|&&m| last.replace(m) != Some(m)).count()
+        };
+        self.held = self.held.map(|h| h.saturating_sub(below(h)));
+        self.dropped = dropped.saturating_sub(below(dropped));
+    }
+    /// Put `e` in place of entry number `i`, if kept.
+    pub fn replace(&mut self, i: usize, e: JournalEntry) {
+        let Some(k) = i.checked_sub(self.dropped) else { return };
+        if let (Some(old), Some(size)) = (self.entries.get_mut(k), self.sizes.get_mut(k)) {
+            *size = entry_bytes(&e);
+            *old = e;
+            self.bytes = self.sizes.iter().sum();
+        }
     }
     /// Keep every entry from number `from` on (a recording in progress), or stop (`None`).
     pub fn hold(&mut self, from: Option<usize>) {
         self.held = from;
         self.trim();
+    }
+    /// The number the entries are kept from ([`Journal::hold`]). [`Journal::remove`] moves it down
+    /// with the entries it numbers down.
+    pub fn held(&self) -> Option<usize> {
+        self.held
     }
 
     /// Let the oldest entries go while over the bounds (in batches: a quarter of the entry bound
@@ -223,12 +240,17 @@ mod tests {
             j.push(("object.move".into(), json!({"dx": i})));
         }
         let first = j.first_kept();
+        // A recording from entry 29,500 on: the entries removed before it move its start down.
+        j.hold(Some(29_500));
         // One entry that was let go already and two kept ones, two of them given twice.
         j.remove(&[first - 1, first - 1, 29_000, 29_000, 29_998]);
-        assert_eq!((j.len(), j.first_kept()), (29_997, first - 1));
+        assert_eq!((j.len(), j.first_kept(), j.held()), (29_997, first - 1, Some(29_498)));
         let dx = |j: &Journal, i: usize| j.get(i).map(|e| e.1["dx"].clone());
         assert_eq!((dx(&j, 28_998), dx(&j, 28_999)), (Some(json!(28_999)), Some(json!(29_001))));
         assert_eq!(j.last().map(|e| e.1["dx"].clone()), Some(json!(29_999)));
         assert_eq!(j.bytes, j.sizes.iter().sum::<usize>());
+        // A replaced entry is counted at its new size.
+        j.replace(29_000, big(0));
+        assert_eq!(j.bytes, j.iter().map(entry_bytes).sum::<usize>());
     }
 }

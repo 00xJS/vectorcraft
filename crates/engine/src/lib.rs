@@ -2046,10 +2046,8 @@ impl Session {
         // An entry that changed the active document becomes that change, so the entries after it run
         // in the same document when the journal is replayed.
         for &(n, index) in &journal {
-            if let Some(index) = index
-                && let Some(e) = self.journal.get_mut(n)
-            {
-                *e = ("document.activate".to_string(), serde_json::json!({ "index": index }));
+            if let Some(index) = index {
+                self.journal.replace(n, ("document.activate".to_string(), serde_json::json!({ "index": index })));
             }
         }
         let gone: Vec<usize> = journal.into_iter().filter(|(_, index)| index.is_none()).map(|(n, _)| n).collect();
