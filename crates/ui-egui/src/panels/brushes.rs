@@ -1,7 +1,8 @@
 //! Brushes panel: the document's brush library with rendered stroke previews. Clicking a brush
 //! applies it to the selected paths (and makes it the Paintbrush's current brush); double-clicking
-//! one opens its Brush Options. Shift-click selects a range of brushes and Cmd/Ctrl-click adds or
-//! removes one, for Delete Brush and Duplicate Brush.
+//! one opens its Brush Options. Shift-click selects a range of brushes, Cmd/Ctrl-click adds or
+//! removes one, and the panel menu's Select All Unused selects the brushes no stroke paints with,
+//! for Delete Brush and Duplicate Brush.
 
 use std::collections::HashMap;
 
@@ -80,10 +81,11 @@ fn same_click(app: &VectorcraftApp, ctx: &egui::Context, current: Option<&str>) 
     key.is_some() && key == click_key(app, current)
 }
 
-/// The brushes that Shift-clicks and Cmd/Ctrl-clicks selected, of those in `list`. It is `None`
-/// after a plain click, once none of its brushes is left, and once another document, other
-/// objects or another current brush is active, which also clears it and the key of the last
-/// click; `Some` of an empty list after Cmd/Ctrl-clicks deselected every brush.
+/// The brushes that Shift-clicks, Cmd/Ctrl-clicks and Select All Unused selected, of those in
+/// `list`. It is `None` after a plain click, once none of its brushes is left, and once another
+/// document, other objects or another current brush is active, which also clears it and the key
+/// of the last click; `Some` of an empty list after Cmd/Ctrl-clicks deselected every brush or
+/// Select All Unused found none.
 fn multi(app: &VectorcraftApp, ctx: &egui::Context, list: &[(String, String)], current: Option<&str>) -> Option<Vec<String>> {
     if !same_click(app, ctx, current) {
         set_pstate(ctx, "br-selected", (None::<Vec<String>>, None::<ClickKey>));
@@ -302,6 +304,14 @@ pub fn menu(app: &mut VectorcraftApp, ui: &mut Ui) {
         && let Err(e) = app.run("ui.brushOptions", json!({}))
     {
         app.status(e);
+    }
+    ui.separator();
+    // Selects the brushes no stroke paints with, for Delete Brush and Duplicate Brush.
+    if menu_item(ui, tl!("Select All Unused"), app.session.active().is_some(), false)
+        && let Ok(r) = app.run("brush.unused", json!({}))
+    {
+        let names: Vec<String> = serde_json::from_value(r["names"].clone()).unwrap_or_default();
+        set_pstate(ui.ctx(), "br-selected", (Some(names), click_key(app, current.as_deref())));
     }
     ui.separator();
     let mut hidden: Vec<String> = pstate(ui.ctx(), "br-hidden");
@@ -577,6 +587,28 @@ mod tests {
             let item = nodes.iter().find(|(_, n)| n.label().map(str::trim) == Some(label)).unwrap_or_else(|| panic!("no `{label}`"));
             assert!(item.1.is_disabled(), "{label}");
         }
+    }
+
+    /// Select All Unused in the panel menu highlights every brush but the one the rectangle is
+    /// painted with, and Delete Brush then deletes all of them.
+    #[test]
+    fn select_all_unused_selects_the_brushes_no_stroke_paints_with() {
+        let mut app = VectorcraftApp::new(Session::new(), Default::default());
+        app.run("file.new", json!({"width": 200, "height": 100})).unwrap();
+        let (list, _) = brushes(&mut app);
+        let a = NodeId(app.run("shape.rectangle", json!({"x": 10, "y": 10, "width": 50, "height": 40})).unwrap()["id"].as_u64().unwrap());
+        app.run("brush.apply", json!({"name": list[1].0})).unwrap();
+        let ctx = egui::Context::default();
+        ctx.enable_accesskit();
+        menu_click(&ctx, &mut app, "Select All Unused", 1.0);
+        let out = frame_with(&ctx, &mut app, vec![], egui::Modifiers::NONE, 2.0, show);
+        let tiles: Vec<Rect> = clickable(&out).into_iter().map(|c| c.1).filter(|r| r.width() == 64.0).collect();
+        assert_eq!(tiles.len(), list.len());
+        let on: Vec<usize> = (0..tiles.len()).filter(|i| lit(&ctx, &out).contains(&tiles[*i])).collect();
+        assert_eq!(on, (0..tiles.len()).filter(|i| *i != 1).collect::<Vec<_>>());
+        menu_click(&ctx, &mut app, "Delete Brush", 3.0);
+        assert_eq!(names(&mut app), [list[1].0.clone()]);
+        assert_eq!(brush_of(&app, a), Some(list[1].0.clone()));
     }
 
     #[test]
