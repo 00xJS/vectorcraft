@@ -500,6 +500,37 @@ fn align_without_a_direction_is_refused() {
     assert_eq!(s.doc().unwrap().doc.node(b).unwrap().geometric_bounds().unwrap().x0, 50.0, "nothing moved");
 }
 
+/// Align, Distribute and Distribute Spacing refuse a `patterns` given as text or as another value
+/// that is not true or false, naming the key: nothing moves and no undo step is recorded. True,
+/// false and null still work.
+#[test]
+fn align_and_distribute_refuse_a_boolean_given_as_text() {
+    let mut s = session();
+    let a = rect(&mut s, 0.0, 0.0, 10.0, 10.0);
+    let b = rect(&mut s, 50.0, 30.0, 10.0, 10.0);
+    let c = rect(&mut s, 70.0, 60.0, 10.0, 10.0);
+    s.execute("select.set", &json!({"ids": [a.0, b.0, c.0]})).unwrap();
+    let state = |s: &Session| {
+        let d = &s.doc().unwrap().doc;
+        (history(s), [b, c].map(|id| d.node(id).unwrap().geometric_bounds().unwrap().x0))
+    };
+    let before = state(&s);
+    let calls = [
+        ("object.align", json!({"horizontal": "left", "patterns": "true"})),
+        ("object.distribute", json!({"horizontal": "left", "patterns": "false"})),
+        ("object.distributeSpacing", json!({"axis": "horizontal", "spacing": 5, "patterns": 1})),
+    ];
+    for (cmd, p) in calls {
+        let r = s.execute(cmd, &p);
+        assert!(matches!(&r, Err(EngineError::BadParams { msg, .. }) if msg == "`patterns` must be true or false"), "{cmd} {p}: {r:?}");
+        assert_eq!(state(&s), before, "{cmd} {p}");
+    }
+    s.execute("object.align", &json!({"horizontal": "left", "patterns": null})).unwrap();
+    s.execute("object.distribute", &json!({"vertical": "top", "patterns": false})).unwrap();
+    s.execute("object.distributeSpacing", &json!({"axis": "vertical", "patterns": true})).unwrap();
+    assert_eq!(state(&s).1, [0.0, 0.0]);
+}
+
 /// Align, Distribute and Distribute Spacing return an error that lists the choices of a param
 /// given a value outside them: nothing moves and no undo step is recorded. A null value counts as
 /// not given, and Distribute Spacing without an `axis` spaces the objects horizontally.
@@ -1058,6 +1089,49 @@ fn a_string_for_an_optional_transform_number_is_an_error() {
     assert!((bounds(&s).width() - 60.0).abs() < 1e-9);
 }
 
+/// A transform option given as text or as another value that is not true or false (`"false"`, 1)
+/// is an error naming the key, with Scale Strokes & Effects on. The object, its stroke and its undo
+/// history stay as they were, and no copy is made. False and null still work: `object.scale` with
+/// `strokes: false` scales the object and leaves its stroke width as it is.
+#[test]
+fn a_boolean_given_as_text_for_a_transform_is_an_error() {
+    let mut s = session();
+    s.execute("prefs.set", &json!({"key": "scaleStrokes", "value": true})).unwrap();
+    let a = rect(&mut s, 10.0, 10.0, 50.0, 40.0);
+    s.execute("select.set", &json!({"ids": [a.0]})).unwrap();
+    s.execute("object.move", &json!({"dx": 5})).unwrap();
+    let bounds = |s: &Session| s.doc().unwrap().doc.bounds_of(&[a], false).unwrap();
+    let state = |s: &Session| {
+        let d = &s.doc().unwrap().doc;
+        (history(s), bounds(s), d.node(a).unwrap().appearance.stroke_width(), d.layers[0].children().unwrap().len())
+    };
+    let before = state(&s);
+    let calls = [
+        ("object.transform", json!({"matrix": [2, 0, 0, 2, 0, 0], "strokes": "false"}), "strokes"),
+        ("object.transform", json!({"matrix": [1, 0, 0, 1, 5, 0], "anchors": "true"}), "anchors"),
+        ("object.move", json!({"dx": 5, "copy": "true"}), "copy"),
+        ("object.move", json!({"dx": 5, "objects": 0}), "objects"),
+        ("object.nudge", json!({"dx": 1, "big": "true"}), "big"),
+        ("object.rotate", json!({"angle": 45, "absolute": "true"}), "absolute"),
+        ("object.scale", json!({"sx": 200, "strokes": "false"}), "strokes"),
+        ("object.scale", json!({"sx": 200, "corners": [true]}), "corners"),
+        ("object.reflect", json!({"patterns": "true"}), "patterns"),
+        ("object.shear", json!({"angle": 10, "typeAreas": 1}), "typeAreas"),
+        ("object.transformAgain", json!({"copy": "true"}), "copy"),
+        ("object.setBounds", json!({"width": 100, "proportional": "true"}), "proportional"),
+        ("object.setBounds", json!({"width": 100, "copy": "false"}), "copy"),
+    ];
+    for (cmd, p, key) in calls {
+        let r = s.execute(cmd, &p);
+        let want = format!("`{key}` must be true or false");
+        assert!(matches!(&r, Err(EngineError::BadParams { cmd: c, msg }) if c == cmd && *msg == want), "{cmd} {p}: {r:?}");
+        assert_eq!(state(&s), before, "{cmd} {p}");
+    }
+    s.execute("object.scale", &json!({"sx": 200, "strokes": false, "corners": null, "copy": false})).unwrap();
+    let (b, w) = (bounds(&s), s.doc().unwrap().doc.node(a).unwrap().appearance.stroke_width());
+    assert_eq!((b.width(), w), (100.0, before.2));
+}
+
 /// #1824: with anchors selected with Direct Selection, the Transform panel's X/Y/W/H
 /// (`object.setBounds`) are the box around those anchors, and only they move or scale.
 #[test]
@@ -1286,6 +1360,33 @@ fn object_properties_already_set_record_no_undo_step() {
     s.execute("object.setProps", &json!({"opacity": 50})).unwrap();
     assert_eq!(history(&s), (before.0 + 1, 0, true));
     assert!(s.execute("object.setProps", &json!({"ids": [999999], "visible": true})).is_err());
+}
+
+/// Object Properties refuses `visible`, `locked`, `isolate` or `knockoutShape` given as text or as
+/// another value that is not true or false, naming the key, and leaves the object and the undo
+/// history as they were. True and false still set the value, and null leaves it as it is.
+#[test]
+fn object_properties_refuse_a_boolean_given_as_text() {
+    let mut s = session();
+    let a = rect(&mut s, 0.0, 0.0, 20.0, 20.0);
+    let props = |s: &Session| {
+        let n = s.doc().unwrap().doc.node(a).unwrap().clone();
+        (n.visible, n.locked, n.isolate, n.knockout_shape)
+    };
+    let before = (history(&s), props(&s));
+    for (key, p) in [
+        ("visible", json!({"id": a.0, "visible": "false"})),
+        ("locked", json!({"id": a.0, "locked": "true"})),
+        ("isolate", json!({"id": a.0, "opacity": 50, "isolate": 1})),
+        ("knockoutShape", json!({"id": a.0, "knockoutShape": [true]})),
+    ] {
+        let r = s.execute("object.setProps", &p);
+        let want = format!("`{key}` must be true or false");
+        assert!(matches!(&r, Err(EngineError::BadParams { msg, .. }) if *msg == want), "{p}: {r:?}");
+        assert_eq!((history(&s), props(&s)), before, "{p}");
+    }
+    s.execute("object.setProps", &json!({"id": a.0, "visible": false, "locked": null, "isolate": true, "knockoutShape": null})).unwrap();
+    assert_eq!(props(&s), (false, false, true, false));
 }
 
 /// Live Shape Properties that a shape already has record no undo step: a polygon's sides, angle,
@@ -2594,6 +2695,32 @@ fn object_mosaic_refuses_a_size_or_spacing_given_as_text() {
     }
     let r = s.execute("object.createObjectMosaic", &json!({"columns": 2, "rows": 1, "width": 200, "spacingX": null})).unwrap();
     assert_eq!(r["tiles"], json!(2));
+}
+
+/// Gray or Delete Raster given as text or as another value that is not true or false is an error naming the key. No
+/// mosaic is made and the image stays. True and null still work.
+#[test]
+fn object_mosaic_refuses_a_boolean_given_as_text() {
+    let mut s = session();
+    rect(&mut s, 0.0, 0.0, 100.0, 50.0);
+    s.execute("object.rasterize", &json!({"ppi": 72})).unwrap();
+    let undo = |s: &Session| s.doc().unwrap().history.undo.len();
+    let images = |s: &Session| {
+        s.doc().unwrap().doc.layers[0].children().unwrap().iter().filter(|n| matches!(n.kind, vectorcraft_doc::NodeKind::Image(_))).count()
+    };
+    let before = (undo(&s), images(&s));
+    for (p, msg) in [
+        (json!({"gray": "true"}), "`gray` must be true or false"),
+        (json!({"columns": 2, "gray": 1}), "`gray` must be true or false"),
+        (json!({"deleteRaster": "false"}), "`deleteRaster` must be true or false"),
+        (json!({"deleteRaster": [true]}), "`deleteRaster` must be true or false"),
+    ] {
+        let r = s.execute("object.createObjectMosaic", &p);
+        assert!(matches!(&r, Err(EngineError::BadParams { msg: m, .. }) if m == msg), "{p}: {r:?}");
+        assert_eq!((undo(&s), images(&s)), before, "{p}");
+    }
+    let r = s.execute("object.createObjectMosaic", &json!({"columns": 2, "rows": 1, "gray": true, "deleteRaster": null})).unwrap();
+    assert_eq!((r["tiles"].clone(), images(&s)), (json!(2), 1));
 }
 
 #[test]

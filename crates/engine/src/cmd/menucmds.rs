@@ -348,11 +348,11 @@ fn transform_each_as(s: &mut Session, p: &Value, label: &str) -> Result<Value> {
     let mh = f64_or(p, "moveH", 0.0).clamp(-1.0e7, 1.0e7);
     let mv = f64_or(p, "moveV", 0.0).clamp(-1.0e7, 1.0e7);
     let rot = f64_or(p, "rotate", 0.0);
-    let rx = bool_or(p, "reflectX", false);
-    let ry = bool_or(p, "reflectY", false);
-    let random = bool_or(p, "random", false);
+    let rx = switch_or(p, "reflectX", false, "object.transformEach")?;
+    let ry = switch_or(p, "reflectY", false, "object.transformEach")?;
+    let random = switch_or(p, "random", false, "object.transformEach")?;
     let refi = whole_or(p, "reference", 4, "object.transformEach")?.min(8) as usize;
-    let copy = bool_or(p, "copy", false);
+    let copy = switch_or(p, "copy", false, "object.transformEach")?;
     let objects = super::object::transforms_objects(p);
     if sh == 0.0 || sv == 0.0 {
         return Err(bad("object.transformEach", "scale must be non-zero"));
@@ -598,7 +598,7 @@ fn object_mosaic(s: &mut Session, p: &Value) -> Result<Value> {
     let raster = vectorcraft_trace::Raster::decode(&blob.bytes).map_err(|e| bad(C, e.to_string()))?;
     let cols = whole_or(p, "columns", 10, C)?.clamp(1, 1000) as u32;
     let rows = whole_or(p, "rows", 10, C)?.clamp(1, 1000) as u32;
-    let gray = bool_or(p, "gray", false);
+    let gray = switch_or(p, "gray", false, C)?;
     let colors = vectorcraft_trace::mosaic(&raster, cols, rows);
     // Tiles in image space, placed by the image transform (scaled to a new size if asked).
     let b = node.geometric_bounds().ok_or_else(|| bad(C, "image has no bounds"))?;
@@ -613,7 +613,7 @@ fn object_mosaic(s: &mut Session, p: &Value) -> Result<Value> {
     let ppx = (xf * Point::new(1.0, 0.0) - xf * Point::ZERO).hypot().max(1e-9);
     let ppy = (xf * Point::new(0.0, 1.0) - xf * Point::ZERO).hypot().max(1e-9);
     let (gx, gy) = ((f64_or(p, "spacingX", 0.0).max(0.0) / ppx).min(tw * 0.9), (f64_or(p, "spacingY", 0.0).max(0.0) / ppy).min(th * 0.9));
-    let delete = bool_or(p, "deleteRaster", false);
+    let delete = switch_or(p, "deleteRaster", false, C)?;
     let (gid, n) = s.edit("Create Object Mosaic", |d, sel| {
         let mut tiles = vec![];
         for r in 0..rows {
@@ -670,7 +670,7 @@ fn crop_image(s: &mut Session, p: &Value) -> Result<Value> {
         .ok_or_else(|| bad(C, "select an image"))?;
     let node = st.doc.node(id).cloned().ok_or(EngineError::NoNode(id))?;
     let NodeKind::Image(im) = &node.kind else { return Err(bad(C, "select an image")) };
-    if p.get("trim").and_then(Value::as_bool) == Some(true) {
+    if switch_or(p, "trim", false, C)? {
         return trim_image(s, id, (**im).clone());
     }
     let ib = node.geometric_bounds().ok_or_else(|| bad(C, "image has no bounds"))?;
@@ -836,9 +836,9 @@ impl Session {
 fn trim_marks(s: &mut Session, p: &Value) -> Result<Value> {
     const C: &str = "object.createTrimMarks";
     check_numbers(p, &["offset", "length", "bleed", "weight"], C)?;
-    let style = match str_param(p, "style") {
-        Some(v) => MarkStyle::parse(v).ok_or_else(|| bad(C, "`style` must be roman or japanese"))?,
-        None => s.crop_mark_style(),
+    let style = match p.get("style") {
+        None | Some(Value::Null) => s.crop_mark_style(),
+        Some(v) => v.as_str().and_then(MarkStyle::parse).ok_or_else(|| bad(C, "`style` must be roman or japanese"))?,
     };
     let d = TrimMarks::default();
     let marks = TrimMarks {
@@ -849,7 +849,7 @@ fn trim_marks(s: &mut Session, p: &Value) -> Result<Value> {
         weight: f64_or(p, "weight", d.weight).max(0.01),
     };
     let st = s.doc()?;
-    let rects: Vec<Rect> = if bool_or(p, "allArtboards", st.selection.is_empty()) {
+    let rects: Vec<Rect> = if switch_or(p, "allArtboards", st.selection.is_empty(), C)? {
         st.doc.artboards.iter().map(|a| a.rect).collect()
     } else {
         st.doc.bounds_of(&selected_roots(s)?, true).into_iter().collect()
@@ -993,9 +993,10 @@ fn rearrange_artboards(s: &mut Session, p: &Value) -> Result<Value> {
     use super::newdoc::ArtboardLayout as L;
     // A value given (not null) must be one of the names.
     let named = |key: &str| p.get(key).filter(|v| !v.is_null()).map(|v| v.as_str().unwrap_or_default());
+    let by_column = switch_or(p, "byColumn", false, CMD)?;
     let layout = match named("layout") {
         Some(l) => L::parse(l).ok_or_else(|| bad(CMD, "layout must be gridByRow, gridByColumn, row or column"))?,
-        None if bool_or(p, "byColumn", false) => L::GridByColumn,
+        None if by_column => L::GridByColumn,
         None => L::GridByRow,
     };
     let rtl = match named("order") {
@@ -1016,7 +1017,7 @@ fn rearrange_artboards(s: &mut Session, p: &Value) -> Result<Value> {
     };
     check_numbers(p, &["spacing"], CMD)?;
     let spacing = f64_or(p, "spacing", 20.0).clamp(-1.0e5, 1.0e5);
-    let move_art = bool_or(p, "moveArtwork", true);
+    let move_art = switch_or(p, "moveArtwork", true, CMD)?;
     let locked_and_hidden = s.prefs.move_locked_with_artboard;
     let d = &s.doc()?.doc;
     let rects: Vec<Rect> = d.artboards.iter().map(|a| a.rect).collect();

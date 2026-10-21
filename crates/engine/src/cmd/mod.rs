@@ -318,19 +318,41 @@ pub(crate) fn f64_or(p: &Value, key: &str, default: f64) -> f64 {
 pub(crate) fn f64_req(p: &Value, key: &str, cmd: &str) -> Result<f64> {
     p.get(key).and_then(Value::as_f64).ok_or_else(|| bad(cmd, format!("missing number `{key}`")))
 }
-/// Error unless each of `keys` that `p` gives is a number (or null): an optional number read with
-/// [`f64_or`] would otherwise fall back to its default for a string such as `"60 mm"` (#1952).
+/// The number `p` gives for `key`, or `default` when `p` leaves it out or gives null. Any other
+/// value, such as `"40"`, is an error: "`{key}` must be a number, not {v}".
+pub(crate) fn number_or(p: &Value, key: &str, default: f64, cmd: &str) -> Result<f64> {
+    match p.get(key) {
+        None | Some(Value::Null) => Ok(default),
+        Some(v) => v.as_f64().ok_or_else(|| bad(cmd, format!("`{key}` must be a number, not {v}"))),
+    }
+}
+/// Error unless each of `keys` that `p` gives is a number (or null), as [`number_or`] reads them: an
+/// optional number read with [`f64_or`] would otherwise fall back to its default for a string such as
+/// `"60 mm"` (#1952).
 pub(crate) fn check_numbers(p: &Value, keys: &[&str], cmd: &str) -> Result<()> {
     for key in keys {
-        match p.get(*key) {
-            None | Some(Value::Null) | Some(Value::Number(_)) => {}
-            Some(v) => return Err(bad(cmd, format!("`{key}` must be a number, not {v}"))),
-        }
+        number_or(p, key, 0.0, cmd)?;
     }
     Ok(())
 }
 pub(crate) fn bool_or(p: &Value, key: &str, default: bool) -> bool {
     p.get(key).and_then(Value::as_bool).unwrap_or(default)
+}
+/// The true or false `p` gives for `key`, or `default` when `p` leaves it out or gives null. Any
+/// other value, such as `"false"`, is an error: "`{key}` must be true or false".
+pub(crate) fn switch_or(p: &Value, key: &str, default: bool, cmd: &str) -> Result<bool> {
+    match p.get(key) {
+        None | Some(Value::Null) => Ok(default),
+        Some(v) => v.as_bool().ok_or_else(|| bad(cmd, format!("`{key}` must be true or false"))),
+    }
+}
+/// Error unless each of `keys` that `p` gives is true or false (or null), as [`switch_or`] reads
+/// them.
+pub(crate) fn check_switches(p: &Value, keys: &[&str], cmd: &str) -> Result<()> {
+    for key in keys {
+        switch_or(p, key, false, cmd)?;
+    }
+    Ok(())
 }
 pub(crate) fn str_param<'a>(p: &'a Value, key: &str) -> Option<&'a str> {
     p.get(key).and_then(Value::as_str)

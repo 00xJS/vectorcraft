@@ -331,6 +331,49 @@ fn an_ellipse_takes_pie_angles_and_inverts() {
     assert!(s.execute("object.setLiveShape", &json!({"pieStart": "half"})).is_err());
 }
 
+/// Invert Pie and Make Sides Equal given as text or as another value that is not true or false are
+/// an error naming the key: the ellipse's pie, the polygon and the undo history stay as they were.
+/// True makes the change, and false and null leave the shape as it is.
+#[test]
+fn invert_pie_and_make_sides_equal_refuse_a_boolean_given_as_text() {
+    let mut s = Session::new();
+    s.execute("file.new", &json!({"width": 300, "height": 300})).unwrap();
+    let id = |v: Value| NodeId(v["id"].as_u64().unwrap());
+    let ellipse = id(s.execute("shape.ellipse", &json!({"x": 0, "y": 0, "width": 200, "height": 100})).unwrap());
+    run(&mut s, json!({"id": ellipse.0, "pieStart": 0, "pieEnd": 90}));
+    let polygon = id(s.execute("shape.polygon", &json!({"cx": 200, "cy": 200, "radius": 50, "sides": 6})).unwrap());
+    s.execute("object.scale", &json!({"sx": 200, "sy": 100})).unwrap();
+    let shapes = |s: &Session| {
+        let d = &s.doc().unwrap().doc;
+        [ellipse, polygon].map(|i| match &d.node(i).unwrap().kind {
+            NodeKind::Path { live: Some(l), .. } => (**l).clone(),
+            k => panic!("{k:?}"),
+        })
+    };
+    let undo = |s: &Session| s.doc().unwrap().history.undo.len();
+    let before = (undo(&s), shapes(&s));
+    for (key, p) in [
+        ("invertPie", json!({"id": ellipse.0, "invertPie": "true"})),
+        ("invertPie", json!({"id": ellipse.0, "pieEnd": 180, "invertPie": 1})),
+        ("makeSidesEqual", json!({"id": polygon.0, "makeSidesEqual": "true"})),
+        ("makeSidesEqual", json!({"id": polygon.0, "sides": 5, "makeSidesEqual": [true]})),
+    ] {
+        let r = s.execute("object.setLiveShape", &p);
+        let want = format!("`{key}` must be true or false");
+        assert!(matches!(&r, Err(EngineError::BadParams { msg, .. }) if *msg == want), "{p}: {r:?}");
+        assert_eq!((undo(&s), shapes(&s)), before, "{p}");
+    }
+    for p in [json!({"id": ellipse.0, "invertPie": false}), json!({"id": polygon.0, "makeSidesEqual": null})] {
+        run(&mut s, p);
+    }
+    assert_eq!((undo(&s), shapes(&s)), before);
+    run(&mut s, json!({"id": ellipse.0, "invertPie": true}));
+    run(&mut s, json!({"id": polygon.0, "makeSidesEqual": true}));
+    let [LiveShape::Ellipse { pie, .. }, l] = shapes(&s) else { panic!("an ellipse and a polygon") };
+    assert_eq!(pie, (90.0, 360.0));
+    assert!(l.polygon_sides_equal());
+}
+
 /// The Selection tool's pie widgets: dragging the End widget from 0° to straight up sets Pie End
 /// Angle to 90 in one undo step; on an inverted pie a drag moves only the dragged angle; a
 /// double-click on a widget makes the ellipse whole again in one step.

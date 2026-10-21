@@ -1046,6 +1046,29 @@ fn symbol_stainer_rgb_color_in_a_cmyk_document_separates_through_the_color_setti
     assert_eq!(node(&s, inst).appearance.fill().map(|f| f.paint.clone()), Some(Paint::solid(red)));
 }
 
+/// In a CMYK document the Symbol Stainer refuses a `keepModel` given as text or as another value that
+/// is not true or false, and the instance and the undo history stay as they were. Null is read as
+/// `keepModel` left out.
+#[test]
+fn symbol_stainer_refuses_a_keep_model_given_as_text() {
+    use vectorcraft_color::{Color, Paint, cms};
+    let mut s = Session::new();
+    s.execute("file.new", &json!({"width": 400, "height": 300, "colorMode": "cmyk"})).unwrap();
+    let (inst, _, b) = make_symbol(&mut s);
+    let at = json!([[b.center().x, b.center().y]]);
+    let state = |s: &Session| (node(s, inst), s.doc().unwrap().history.undo.len());
+    let before = state(&s);
+    for keep in [json!("true"), json!(1), json!("false"), json!([true])] {
+        let p = json!({"tool": "stain", "points": at, "color": "#ff0000", "intensity": 10, "keepModel": keep});
+        let r = s.execute("symbol.adjust", &p);
+        assert!(matches!(&r, Err(EngineError::BadParams { msg, .. }) if msg == "`keepModel` must be true or false"), "{p}: {r:?}");
+        assert_eq!(state(&s), before, "{p}");
+    }
+    s.execute("symbol.adjust", &json!({"tool": "stain", "points": at, "color": "#ff0000", "intensity": 10, "keepModel": null})).unwrap();
+    let red = cms::active().convert(&Color::rgb(1.0, 0.0, 0.0), cms::Model::Cmyk, cms::active().settings().intent);
+    assert_eq!(node(&s, inst).appearance.fill().map(|f| f.paint.clone()), Some(Paint::solid(red)));
+}
+
 #[test]
 fn symbol_sprayer_tool_gesture_is_one_undo_step() {
     let mut s = session();

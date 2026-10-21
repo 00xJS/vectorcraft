@@ -752,6 +752,7 @@ fn lp_gap_options(s: &mut Session, p: &Value) -> Result<Value> {
 fn lp_fill(s: &mut Session, p: &Value) -> Result<Value> {
     const C: &str = "livePaint.fill";
     let pt = point_param(p, "point").filter(|q| finite(*q)).ok_or_else(|| bad(C, "missing point [x,y]"))?;
+    super::paint::check_keep_model(p, C)?;
     let paint = paint_from(s, p)?.unwrap_or_else(|| s.paint.fill.clone());
     let group = id_param(p, "group");
     let roots = if group.is_none() { root_ids(s, p)? } else { vec![] };
@@ -781,6 +782,7 @@ fn lp_stroke_edge(s: &mut Session, p: &Value) -> Result<Value> {
     const C: &str = "livePaint.strokeEdge";
     let pt = point_param(p, "point").filter(|q| finite(*q)).ok_or_else(|| bad(C, "missing point [x,y]"))?;
     let g = id_param(p, "group").ok_or_else(|| bad(C, "missing group"))?;
+    super::paint::check_keep_model(p, C)?;
     let paint = paint_from(s, p)?.unwrap_or_else(|| s.paint.stroke.clone());
     let width = p.get("width").and_then(Value::as_f64).unwrap_or(s.paint.stroke_width.max(0.0));
     if !(0.0..=1000.0).contains(&width) {

@@ -356,6 +356,11 @@ pub(crate) fn transforms_objects(p: &Value) -> bool {
     bool_or(p, "objects", true)
 }
 
+/// The on/off params of the transform commands that [`apply_transform`], [`scaling`],
+/// [`transform_patterns`] and [`transforms_objects`] read. The transform commands in this file
+/// check them with [`check_switches`] before they change anything.
+const TRANSFORM_SWITCHES: [&str; 6] = ["copy", "strokes", "corners", "patterns", "objects", "typeAreas"];
+
 /// `xf` on `n` with Transform Objects (`objects`, see [`transforms_objects`]) on or off.
 pub(crate) fn transform_node(n: &mut Node, xf: Affine, sc: Scaling, objects: bool) {
     if objects {
@@ -505,6 +510,8 @@ fn resize_type_area(n: &mut Node, xf: Affine) -> bool {
 }
 
 fn transform(s: &mut Session, p: &Value) -> Result<Value> {
+    check_switches(p, &TRANSFORM_SWITCHES, "object.transform")?;
+    check_switches(p, &["anchors"], "object.transform")?;
     let m = matrix_param(p, "matrix").ok_or_else(|| bad("object.transform", "missing matrix [a,b,c,d,e,f]"))?;
     let (ids, anchors) = match ids_param(p, "ids") {
         Some(v) => (outermost(&s.doc()?.doc, v), false),
@@ -515,12 +522,15 @@ fn transform(s: &mut Session, p: &Value) -> Result<Value> {
 
 fn move_cmd(s: &mut Session, p: &Value) -> Result<Value> {
     check_numbers(p, &["dx", "dy"], "object.move")?;
+    check_switches(p, &TRANSFORM_SWITCHES, "object.move")?;
     let ids = selected_roots_to_transform(s)?;
     apply_transform(s, "Move", ids, Affine::translate((f64_or(p, "dx", 0.0), f64_or(p, "dy", 0.0))), p, true)
 }
 
 fn nudge(s: &mut Session, p: &Value) -> Result<Value> {
     check_numbers(p, &["dx", "dy"], "object.nudge")?;
+    check_switches(p, &TRANSFORM_SWITCHES, "object.nudge")?;
+    check_switches(p, &["big"], "object.nudge")?;
     let k = s.prefs.keyboard_increment * if bool_or(p, "big", false) { 10.0 } else { 1.0 };
     let dx = f64_or(p, "dx", 0.0) * k;
     let dy = f64_or(p, "dy", 0.0) * k;
@@ -549,6 +559,8 @@ fn about(o: Point, a: Affine) -> Affine {
 
 fn rotate(s: &mut Session, p: &Value) -> Result<Value> {
     check_numbers(p, &["angle"], "object.rotate")?;
+    check_switches(p, &TRANSFORM_SWITCHES, "object.rotate")?;
+    check_switches(p, &["absolute"], "object.rotate")?;
     let ids = selected_roots_to_transform(s)?;
     let o = origin_of(s, p, &ids)?;
     let mut angle = f64_or(p, "angle", 0.0);
@@ -562,6 +574,7 @@ fn rotate(s: &mut Session, p: &Value) -> Result<Value> {
 
 fn scale(s: &mut Session, p: &Value) -> Result<Value> {
     check_numbers(p, &["sy"], "object.scale")?;
+    check_switches(p, &TRANSFORM_SWITCHES, "object.scale")?;
     let ids = selected_roots_to_transform(s)?;
     let o = origin_of(s, p, &ids)?;
     let sx = f64_req(p, "sx", "object.scale")? / 100.0;
@@ -573,6 +586,7 @@ fn scale(s: &mut Session, p: &Value) -> Result<Value> {
 }
 
 fn reflect(s: &mut Session, p: &Value) -> Result<Value> {
+    check_switches(p, &TRANSFORM_SWITCHES, "object.reflect")?;
     let ids = selected_roots_to_transform(s)?;
     let o = origin_of(s, p, &ids)?;
     let m = match p.get("axis") {
@@ -593,6 +607,7 @@ fn reflect(s: &mut Session, p: &Value) -> Result<Value> {
 
 fn shear(s: &mut Session, p: &Value) -> Result<Value> {
     check_numbers(p, &["angle"], "object.shear")?;
+    check_switches(p, &TRANSFORM_SWITCHES, "object.shear")?;
     let ids = selected_roots_to_transform(s)?;
     let o = origin_of(s, p, &ids)?;
     let t = f64_or(p, "angle", 0.0).clamp(-89.0, 89.0).to_radians().tan();
@@ -605,6 +620,7 @@ fn shear(s: &mut Session, p: &Value) -> Result<Value> {
 /// that `p` sets to true or false (a recorded Transform Again's) takes precedence. A Transform
 /// Each is repeated by running it again (its transform is per object, about each one's bounds).
 fn transform_again(s: &mut Session, p: &Value) -> Result<Value> {
+    check_switches(p, &TRANSFORM_SWITCHES, "object.transformAgain")?;
     if let Some(again) = s.doc()?.last_perspective.clone() {
         return super::distortcmds::transform_again(s, &again);
     }
@@ -1138,6 +1154,7 @@ fn data_param(m: &serde_json::Map<String, Value>) -> Result<Vec<(String, Option<
 }
 
 fn set_props(s: &mut Session, p: &Value) -> Result<Value> {
+    check_switches(p, &["visible", "locked", "isolate", "knockoutShape"], "object.setProps")?;
     let ids = targets(s, p)?;
     let opacity = p.get("opacity").and_then(Value::as_f64).map(percent);
     let blend = match str_param(p, "blend") {
@@ -1389,6 +1406,7 @@ fn align(s: &mut Session, p: &Value) -> Result<Value> {
     let preview = preview_bounds(s, p, "object.align")?;
     let (h, v) = direction(p, "object.align")?;
     choice(p, "object.align", "to", &["selection", "artboard", "key"])?;
+    check_switches(p, &["patterns"], "object.align")?;
     if h.is_none() && v.is_none() {
         return Err(bad("object.align", "give horizontal or vertical"));
     }
@@ -1607,6 +1625,7 @@ fn distribute_anchors(s: &mut Session, label: &str, horiz: bool, gap: Option<f64
 }
 
 fn distribute(s: &mut Session, p: &Value) -> Result<Value> {
+    check_switches(p, &["patterns"], "object.distribute")?;
     let ids = selected_roots(s)?;
     let preview = preview_bounds(s, p, "object.distribute")?;
     let board = distribute_to(s, p, &ids, preview, "object.distribute")?;
@@ -1680,6 +1699,7 @@ fn distribute(s: &mut Session, p: &Value) -> Result<Value> {
 }
 
 fn distribute_spacing(s: &mut Session, p: &Value) -> Result<Value> {
+    check_switches(p, &["patterns"], "object.distributeSpacing")?;
     let ids = selected_roots(s)?;
     let horiz = choice(p, "object.distributeSpacing", "axis", &["horizontal", "vertical"])? != Some("vertical");
     let preview = preview_bounds(s, p, "object.distributeSpacing")?;
@@ -1768,6 +1788,8 @@ pub(crate) fn bounds_rewrite(s: &Session, cmd: &str, params: &Value) -> Option<(
 fn bounds_transform(s: &Session, p: &Value, ids: Vec<NodeId>, least: f64) -> Result<Bounds> {
     check_numbers(p, &["x", "y", "width", "height"], "object.setBounds")?;
     let st = s.doc()?;
+    check_switches(p, &TRANSFORM_SWITCHES, "object.setBounds")?;
+    check_switches(p, &["proportional"], "object.setBounds")?;
     if transforms_objects(p)
         && !bool_or(p, "copy", false)
         && let Some(b) = effects::preview::anchor_bounds(&st.selection, &st.doc, s.prefs.use_preview_bounds)
@@ -2299,6 +2321,7 @@ fn corners_param(p: &Value) -> Result<Option<BTreeSet<usize>>> {
 }
 
 fn set_live_shape(s: &mut Session, p: &Value) -> Result<Value> {
+    check_switches(p, &["invertPie", "makeSidesEqual"], "object.setLiveShape")?;
     // `items`: objects each with its own `corners`; else `ids` (or the selection) sharing them.
     let items = match p.get("items").filter(|v| !v.is_null()) {
         None => None,

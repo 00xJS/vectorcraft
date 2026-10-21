@@ -244,6 +244,7 @@ fn add_point(s: &mut Session, p: &Value) -> Result<Value> {
         Some(Value::Bool(true)) => s.selected_freeform_point(),
         Some(_) => return Err(bad(C, "`line` must be true or false")),
     };
+    super::paint::check_keep_model(p, C)?;
     let given = given_color(s, p);
     let index = edit(s, p, C, |f, sp| {
         let q = sp.to_paint * at;
@@ -266,6 +267,7 @@ fn add_point(s: &mut Session, p: &Value) -> Result<Value> {
 fn set_point(s: &mut Session, p: &Value) -> Result<Value> {
     const C: &str = "paint.freeform.setPoint";
     let i = point_index(s, p, C)?;
+    super::paint::check_keep_model(p, C)?;
     let given = given_color(s, p);
     edit(s, p, C, |f, sp| {
         check_index(f, i)?;
