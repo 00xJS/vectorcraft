@@ -6001,6 +6001,18 @@ mod tests {
         assert!(outlines(&mut app) > 0, "Pixel Preview off again");
     }
 
+    /// View › Snap to Glyph toggles through the View menu command (#3124).
+    #[test]
+    fn snap_to_glyph_menu_command_toggles_the_view_flag() {
+        let mut app = VectorcraftApp::new(vectorcraft_engine::Session::new(), Default::default());
+        app.run("file.new", json!({"width": 200, "height": 200})).unwrap();
+        assert!(!app.ui.view.snap_to_glyph);
+        app.run("view.snapToGlyph", json!({})).unwrap();
+        assert!(app.ui.view.snap_to_glyph);
+        app.run("view.snapToGlyph", json!({})).unwrap();
+        assert!(!app.ui.view.snap_to_glyph);
+    }
+
     /// Smart Guides › Object Highlighting (#394): the outline of the object under the pointer
     /// shows with Smart Guides on and the option on, and not otherwise.
     #[test]

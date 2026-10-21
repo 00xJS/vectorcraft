@@ -47,7 +47,7 @@ against Illustrator's public documentation; **estimated** unless noted.
 | Caret: the arrows and Delete step over whole clusters (Thai consonant with its marks, combining accents, emoji); Backspace removes one character | done | in text with right-to-left characters the arrows move in visual order and stop on both sides of a character drawn with no width, such as a zero width non-joiner |
 | Touch Type tool | done | moves, scales and rotates one character through its kerning, baseline shift, scales and rotation (`text.touchType`); the first character of a line and right-to-left characters move only up and down |
 | Retype (identify fonts in outlines/images) | missing | Illustrator's uses a cloud model |
-| Snap to Glyph | missing | menu stub |
+| Snap to Glyph | done | View › Snap to Glyph (`view.snapToGlyph`): with Smart Guides on, new point type and drawing tools snap to live-text baselines and glyph bounds (`Targets::for_drawing`, `tools::text_tests::snap_to_glyph_lines_up_new_point_type_with_a_baseline`) |
 | Thai, Lao, Khmer, Myanmar: shaping (marks, reordering), lines broken between words, word-by-word caret and double-click | done | words found by ICU4X's line segmenter: dictionaries on the desktop, LSTM models on the web |
 | Middle Eastern: bidirectional layout, Paragraph Direction | done | |
 | Middle Eastern: digit types (Character panel menu › Digits: Default, Arabic, Hindi, Farsi) | done | `text.setFormat` / `text.setRangeStyle {digits}`; the text keeps the typed digits, the glyphs and SVG export follow the style |
@@ -68,6 +68,7 @@ Character Styles menu New/Redefine and footer New capture the first selected cha
 
 | Date | Change | Summary |
 |---|---|---|
+| 2026-10-21 | minor | Snap to Glyph marked done in the checklist (#3124); scores unchanged at this rounding |
 | 2026-10-21 | minor | Manual Tate-chu-yoko: Character panel menu marks characters that stand across one em of a vertical column; ruby and the up/down settings remain; scores unchanged |
 | 2026-10-21 | minor | System Layout: Character panel menu sets whole-point advances for every text object in the document (off by default); scores and hours unchanged |
 | 2026-10-22 | minor | Ruby (ふりがな) for live text: `type.ruby` sets/removes a reading over a byte range, above or below (right/left of the column in vertical type), aligned, sized and overhanging or squeezed; saved natively, laid out with line growth, drawn on the canvas and in SVG/PDF (outlines where ruby is present); scores unchanged |
