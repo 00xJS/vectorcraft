@@ -931,6 +931,7 @@ fn toggled_labels() -> Vec<String> {
         "view.textThreads",
         "type.hiddenCharacters",
         "view.gradientAnnotator",
+        "view.livePaintGaps",
         "view.artboards",
         "view.template",
         "view.rulers",

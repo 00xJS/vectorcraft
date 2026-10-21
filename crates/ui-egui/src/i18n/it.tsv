@@ -1209,6 +1209,8 @@ file-filter	Templates	Modelli
 	Large Gaps	Spazi vuoti grandi
 	Gap Preview Color:	Colore anteprima spazi vuoti:
 	Close Gaps With Paths	Chiudi spazi vuoti con tracciati
+	Show Live Paint Gaps	Mostra spazi vuoti pittura dinamica
+	Hide Live Paint Gaps	Nascondi spazi vuoti pittura dinamica
 	Select Fills	Seleziona riempimenti
 	Select Strokes	Seleziona tracce
 	Gaussian Blur…	Sfocatura gaussiana…

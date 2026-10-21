@@ -1505,6 +1505,8 @@ file-filter	Templates	Sablonok
 	Large Gaps	Nagy hézagok
 	Gap Preview Color:	Hézagok előnézeti színe:
 	Close Gaps With Paths	Hézagok lezárása útvonalakkal
+	Show Live Paint Gaps	Élő festés hézagainak megjelenítése
+	Hide Live Paint Gaps	Élő festés hézagainak elrejtése
 	Select Fills	Kitöltések kijelölése
 	Select Strokes	Körvonalak kijelölése
 	Gaussian Blur	Gauss-elmosás

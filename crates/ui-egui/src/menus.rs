@@ -207,6 +207,12 @@ pub const UI_COMMANDS: &[(&str, &str, &str, &str)] = &[
     ),
     ("view.textThreads", "Hide Text Threads", "Cmd+Shift+Y", "{} toggle the thread lines between threaded text frames"),
     ("view.gradientAnnotator", "Hide Gradient Annotator", "Cmd+Alt+G", "{} toggle the Gradient tool's annotator"),
+    (
+        "view.livePaintGaps",
+        "Show Live Paint Gaps",
+        "",
+        "{} toggle drawing the gaps of the selected Live Paint groups (those livePaint.info lists) in each group's Gap Preview Color while edges show → true when on",
+    ),
     ("type.hiddenCharacters", "Show Hidden Characters", "Cmd+Alt+I", "{} toggle markers for spaces, paragraph ends and story ends"),
     ("type.alignLeft", "Align left", "Cmd+Shift+L", "{} align the selected type's paragraphs (or those the Type tool's selection touches) left"),
     (
@@ -1231,6 +1237,7 @@ pub fn run_ui_command(app: &mut VectorcraftApp, id: &str, p: &Value) -> Option<R
             crate::panels::paragraph::align(app, justify)
         }
         "view.gradientAnnotator" => flag(&mut app.ui.view.gradient_annotator),
+        "view.livePaintGaps" => flag(&mut app.ui.view.live_paint_gaps),
         "effect.last" => match app.last_effect.clone() {
             Some((e, params)) => {
                 let label = vectorcraft_effects::effect_info(&e).map(|i| i.label.trim_end_matches('…').to_string()).unwrap_or_else(|| e.clone());
@@ -1872,6 +1879,7 @@ pub fn dynamic_label(app: &VectorcraftApp, id: &str, label: &str) -> String {
         "view.textThreads" => if v.text_threads { "Hide Text Threads" } else { "Show Text Threads" }.into(),
         "type.hiddenCharacters" => if v.hidden_chars { "Hide Hidden Characters" } else { "Show Hidden Characters" }.into(),
         "view.gradientAnnotator" => if v.gradient_annotator { "Hide Gradient Annotator" } else { "Show Gradient Annotator" }.into(),
+        "view.livePaintGaps" => if v.live_paint_gaps { "Hide Live Paint Gaps" } else { "Show Live Paint Gaps" }.into(),
         "effect.last" => match &app.last_effect {
             Some((e, _)) => format!("Last Effect: {}", vectorcraft_effects::effect_info(e).map(|i| i.label).unwrap_or(e.as_str())),
             None => label.into(),
@@ -2900,6 +2908,7 @@ pub fn menu_tree_named(english_names: bool) -> Vec<(&'static str, Vec<Item>)> {
                 c("Hide Text Threads", "view.textThreads"),
                 c("Hide Gradient Annotator", "view.gradientAnnotator"),
                 c("Hide Corner Widget", "view.cornerWidget"),
+                c("Show Live Paint Gaps", "view.livePaintGaps"),
                 Sep,
                 sub(
                     "Guides",
@@ -3970,6 +3979,8 @@ pub const DYNAMIC_LABELS: &[&str] = &[
     "Show Hidden Characters",
     "Hide Gradient Annotator",
     "Show Gradient Annotator",
+    "Hide Live Paint Gaps",
+    "Show Live Paint Gaps",
     "Hide Artboards",
     "Show Artboards",
     "Hide Rulers",
@@ -4243,6 +4254,7 @@ mod tests {
         for (id, on, off) in [
             ("view.textThreads", "Hide Text Threads", "Show Text Threads"),
             ("view.gradientAnnotator", "Hide Gradient Annotator", "Show Gradient Annotator"),
+            ("view.livePaintGaps", "Show Live Paint Gaps", "Hide Live Paint Gaps"),
             ("type.hiddenCharacters", "Show Hidden Characters", "Hide Hidden Characters"),
             ("view.template", "Hide Template", "Show Template"),
         ] {

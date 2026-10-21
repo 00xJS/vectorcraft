@@ -321,6 +321,8 @@ pub struct CanvasCache {
     pub slices: Option<SliceCache>,
     /// The print tiling's pages for (document uid, revision) (View → Show Print Tiling).
     pub print_tiling: Option<PrintTilingCache>,
+    /// The gap lines View → Show Live Paint Gaps draws for (document uid, revision).
+    pub live_paint_gaps: Option<LivePaintGapsCache>,
     /// The marks Type → Show Hidden Characters drew on each text object in the last frame. A frame
     /// that does not draw them drops them ([`canvas::show`]).
     pub hidden_chars: canvas::HiddenChars,
@@ -336,6 +338,10 @@ pub struct CanvasCache {
 
 /// [`CanvasCache::slices`]: the layout of the slices of (document uid, revision).
 pub type SliceCache = ((u64, u64), std::sync::Arc<Vec<vectorcraft_doc::SliceArea>>);
+
+/// [`CanvasCache::live_paint_gaps`]: the gap lines of the selected Live Paint groups of (document
+/// uid, revision).
+pub type LivePaintGapsCache = ((u64, u64), std::sync::Arc<Vec<vectorcraft_tools::Overlay>>);
 
 /// [`CanvasCache::print_tiling`]: the print tiling of (document uid, revision).
 pub type PrintTilingCache = ((u64, u64), std::sync::Arc<Vec<vectorcraft_pdf::TilingPage>>);
@@ -539,6 +545,7 @@ impl VectorcraftApp {
                 worker_started: false,
                 slices: None,
                 print_tiling: None,
+                live_paint_gaps: None,
                 hidden_chars: Default::default(),
                 selection_box: None,
                 selection_bounds: None,

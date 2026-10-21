@@ -1193,6 +1193,8 @@ file-filter	Templates	Vorlagen
 	Large Gaps	Große Lücken
 	Gap Preview Color:	Vorschaufarbe für Lücken:
 	Close Gaps With Paths	Lücken mit Pfaden schließen
+	Show Live Paint Gaps	Lücken beim interaktiven Malen einblenden
+	Hide Live Paint Gaps	Lücken beim interaktiven Malen ausblenden
 	Select Fills	Flächen auswählen
 	Select Strokes	Konturen auswählen
 	Gaussian Blur…	Gaußscher Weichzeichner…
