@@ -72,6 +72,7 @@ fn artboard_reorder(s: &mut Session, p: &Value) -> Result<Value> {
 /// copy commands: by default the artboards the Artboard tool has selected (its active one when none
 /// of them is in the document) and its Move/Copy Artwork with Artboard option.
 fn boards_and_art(s: &Session, p: &Value, cmd: &str) -> Result<(Vec<usize>, bool)> {
+    check_switches(p, &["art"], cmd)?;
     let t = s.tool_options_of("artboard");
     let d = &s.doc()?.doc;
     let indices = if p.get("index").is_some() || p.get("indices").is_some() {
@@ -159,6 +160,7 @@ pub(crate) fn beside_artboards(d: &vectorcraft_doc::Document, rect: Rect) -> Vec
 /// Duplicate Artboards: a copy of each artboard with its art, in one undo step. The copies keep
 /// their places relative to each other, together right of the last artboard.
 fn artboard_duplicate(s: &mut Session, p: &Value) -> Result<Value> {
+    check_switches(p, &["patterns"], "artboard.duplicate")?;
     let (indices, art) = boards_and_art(s, p, "artboard.duplicate")?;
     let arts = artboards_art(s, &indices, art, false)?;
     let all: Vec<NodeId> = arts.iter().flat_map(|(_, a)| a.iter().copied()).collect();
