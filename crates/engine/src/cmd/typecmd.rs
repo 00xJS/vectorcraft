@@ -532,9 +532,7 @@ impl TextRange {
         let get = |k: &str| -> Result<Option<usize>> {
             match p.get(k) {
                 None | Some(Value::Null) => Ok(None),
-                Some(v) => {
-                    v.as_u64().map(|n| Some(usize::try_from(n).unwrap_or(usize::MAX))).ok_or_else(|| bad(cmd, format!("`{k}` must be a byte offset")))
-                }
+                Some(v) => v.as_u64().map(|n| Some(index(n))).ok_or_else(|| bad(cmd, format!("`{k}` must be a byte offset"))),
             }
         };
         let (start, end) = (get("start")?, get("end")?);

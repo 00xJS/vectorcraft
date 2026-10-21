@@ -156,11 +156,11 @@ fn reduce(s: &mut Session, p: &Value) -> Result<Value> {
         }
     }
     let unit_colors = |g: &[&Used]| g.iter().map(|u| u.color).collect::<Vec<_>>();
-    let rows: Vec<Vec<&Used>> = match p.get("colors").and_then(Value::as_u64) {
-        Some(n) if (n as usize) < units.len() => {
+    let rows: Vec<Vec<&Used>> = match p.get("colors").and_then(Value::as_u64).map(index) {
+        Some(n) if n < units.len() => {
             let keys: Vec<Color> = units.iter().map(|g| method.key_color(&unit_colors(g)).unwrap_or_default()).collect();
             let weights: Vec<f32> = units.iter().map(|g| g.iter().map(|u| u.count as f32).sum()).collect();
-            cluster(&keys, &weights, n as usize).into_iter().map(|ix| ix.into_iter().flat_map(|i| units[i].iter().copied()).collect()).collect()
+            cluster(&keys, &weights, n).into_iter().map(|ix| ix.into_iter().flat_map(|i| units[i].iter().copied()).collect()).collect()
         }
         _ => units,
     };

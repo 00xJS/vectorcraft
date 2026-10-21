@@ -142,12 +142,7 @@ pub fn sync_touch_workspace(app: &mut VectorcraftApp, touch_screen: bool) {
             }
         }
     } else if app.ui.touch_workspace_restore.is_some() && app.ui.workspace == TOUCH {
-        let back = app
-            .ui
-            .touch_workspace_restore
-            .take()
-            .filter(|n| find(&app.ui, n).is_some())
-            .unwrap_or_else(|| ESSENTIALS.to_string());
+        let back = app.ui.touch_workspace_restore.take().filter(|n| find(&app.ui, n).is_some()).unwrap_or_else(|| ESSENTIALS.to_string());
         if let Some(w) = find(&app.ui, &back) {
             apply(&mut app.ui, &w);
         }

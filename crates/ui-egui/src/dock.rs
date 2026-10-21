@@ -725,7 +725,6 @@ mod tests {
         fn arrow(&self) -> egui::Pos2 {
             egui::pos2(SCREEN.x - 10.0, HEADER / 2.0)
         }
-
     }
 
     fn icon_panel_count() -> usize {
@@ -842,11 +841,7 @@ mod tests {
         let mut app = VectorcraftApp::new(Session::new(), Default::default());
         app.run("file.new", json!({"width": 300, "height": 300})).unwrap();
         assert!(app.ui.docking.is_none());
-        app.run(
-            "window.panel.move",
-            json!({ "panel": "libraries", "anchor": "properties", "before": "properties" }),
-        )
-        .unwrap();
+        app.run("window.panel.move", json!({ "panel": "libraries", "anchor": "properties", "before": "properties" })).unwrap();
         let order: Vec<_> = floating::docked_tabs(&app.ui).map(|t| t.info().0).collect();
         assert_eq!(order, ["libraries", "properties", "layers"]);
         let saved: crate::state::UiState = serde_json::from_slice(&serde_json::to_vec(&app.ui).unwrap()).unwrap();
@@ -855,11 +850,8 @@ mod tests {
 
     #[test]
     fn partial_dock_tab_order_appends_tabs_missing_from_preferences() {
-        let ui = crate::state::UiState {
-            dock_tab: DockTab::Layers,
-            dock_tab_order: vec![DockTab::Layers, DockTab::Properties],
-            ..Default::default()
-        };
+        let ui =
+            crate::state::UiState { dock_tab: DockTab::Layers, dock_tab_order: vec![DockTab::Layers, DockTab::Properties], ..Default::default() };
         let order = floating::resolved_dock_tab_order(&ui);
         assert_eq!(order.len(), DockTab::ALL.len());
         assert_eq!(order[..2], [DockTab::Layers, DockTab::Properties]);

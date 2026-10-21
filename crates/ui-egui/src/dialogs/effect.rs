@@ -231,11 +231,7 @@ fn glass_fields(app: &mut VectorcraftApp, ui: &mut egui::Ui, d: &mut Dialog, id:
     // The stored texture is shown as its size, not as a text field.
     let stored = d.fields.remove(TEXTURE_IMAGE);
     let size = stored.as_ref().and_then(Value::as_str).and_then(texture).map(|t| t.size());
-    let menu = if id == TEXTURIZER {
-        texturizer_textures(size.is_some())
-    } else {
-        glass_textures(size.is_some())
-    };
+    let menu = if id == TEXTURIZER { texturizer_textures(size.is_some()) } else { glass_textures(size.is_some()) };
     let doc = vectorcraft_effects::effect_info(id).map(|e| e.params).unwrap_or_default();
     let unit = app.session.general_unit();
     let pick = |k: &str| if k == "texture" { Some(menu) } else { choices(id, k) };

@@ -167,12 +167,7 @@ fn legacy_strip_reorder_target(
 
 /// Legacy workspaces (no saved `docking` layout): reorder tabs in the dock strip or a floating
 /// group without promoting to a shared layout.
-fn legacy_same_strip_reorder(
-    app: &mut VectorcraftApp,
-    panel: &str,
-    before: &str,
-    target: LegacyStripReorder,
-) -> Result<Value, String> {
+fn legacy_same_strip_reorder(app: &mut VectorcraftApp, panel: &str, before: &str, target: LegacyStripReorder) -> Result<Value, String> {
     use crate::state::DockTab;
     match target {
         LegacyStripReorder::DockStrip => {
@@ -852,8 +847,7 @@ pub(crate) fn show(app: &mut VectorcraftApp, ui: &mut egui::Ui) -> bool {
             return app.ui.docking.is_some();
         }
         craft_ui::docking::cancel_drag::<String>(ui.ctx(), egui::Id::new("vectorcraft-panel-docking"));
-        ui.ctx()
-            .data_mut(|data| data.remove::<LegacyDrag>(egui::Id::new("vectorcraft-panel-docking").with("legacy-origin")));
+        ui.ctx().data_mut(|data| data.remove::<LegacyDrag>(egui::Id::new("vectorcraft-panel-docking").with("legacy-origin")));
     }
     for action in output.actions {
         if tab_drop
@@ -947,13 +941,7 @@ pub(crate) fn legacy_tab(app: &mut VectorcraftApp, ui: &mut egui::Ui, panel: &st
     legacy_tab_in_strip(app, ui, panel, response, None);
 }
 
-pub(crate) fn legacy_tab_in_strip(
-    app: &mut VectorcraftApp,
-    ui: &mut egui::Ui,
-    panel: &str,
-    response: &egui::Response,
-    strip: Option<egui::Rect>,
-) {
+pub(crate) fn legacy_tab_in_strip(app: &mut VectorcraftApp, ui: &mut egui::Ui, panel: &str, response: &egui::Response, strip: Option<egui::Rect>) {
     let Some(panel) = normalize(panel) else { return };
     response.context_menu(|ui| {
         if ui.button(tl!("Float Panel")).clicked() {
@@ -977,19 +965,11 @@ pub(crate) fn legacy_tab_in_strip(
             }
         });
     });
-    let inside_strip = strip.is_some_and(|strip| {
-        ui.input(|i| i.pointer.interact_pos()).is_some_and(|p| strip.expand(4.0).contains(p))
-    });
+    let inside_strip = strip.is_some_and(|strip| ui.input(|i| i.pointer.interact_pos()).is_some_and(|p| strip.expand(4.0).contains(p)));
     let area = egui::Id::new("vectorcraft-panel-docking");
     let begun = ui.ctx().data(|d| d.get_temp::<LegacyDrag>(area.with("legacy-origin")).is_some());
-    let begin = if strip.is_some() {
-        !begun && (response.drag_started() || (!inside_strip && response.dragged()))
-    } else {
-        response.drag_started()
-    };
-    if begin
-        && let Some(id) = normalize(panel)
-    {
+    let begin = if strip.is_some() { !begun && (response.drag_started() || (!inside_strip && response.dragged())) } else { response.drag_started() };
+    if begin && let Some(id) = normalize(panel) {
         let mut layout = app.ui.docking.clone().unwrap_or_else(|| legacy(app));
         let bounds = ui.max_rect();
         let source = egui::Rect::from_min_size(

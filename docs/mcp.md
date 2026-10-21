@@ -942,6 +942,16 @@ missing one does.
 `` `columns` must be a number, not "4" ``. Each message names the key that was given, and the command then changes
 nothing.
 
+A whole number that is larger than the build's `usize` can hold (4294967295 on a 32-bit build, such as the
+`wasm32-unknown-unknown` web build) counts as larger than any index, place, byte offset or count. An index, such as
+a `subpath`, `anchor`, `segment`, document `index`, `artboard`, appearance `item` or `index`, gradient `stop` or
+freeform point `index`, names nothing, and the command does what it does for any other index past the end: most
+commands fail and change nothing, and `appearance.removeItem` removes nothing. A place (`to` in `swatch.move`,
+`artboard.reorder`, `graphicStyle.move`, `appearance.moveItem`, `appearance.duplicateItem` and `effect.move`) puts
+the item last. A text `start` or `end` is past the end of the text. `object.slice.divide` refuses such a `rows` or
+`columns`, `recolor.reduce` keeps each color in its own row for such a `colors`, and `layer.setProps` refuses such a
+`color`. `object.setBounds` reads a `reference` past 8 as 8, as `object.transformEach` does.
+
 The blend, envelope and gradient mesh commands refuse a string or another value that is not a number with the same
 message, as in `` `steps` must be a number, not "8" ``, and change nothing: `steps`, `distance` and `value` in
 `object.blend.make` and `object.blend.options`; `bend`, `h`, `v`, `horizontalDistortion` and `verticalDistortion` in

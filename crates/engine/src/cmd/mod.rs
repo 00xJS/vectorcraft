@@ -341,6 +341,10 @@ pub(crate) fn id_param(p: &Value, key: &str) -> Option<NodeId> {
 pub(crate) fn ids_param(p: &Value, key: &str) -> Option<Vec<NodeId>> {
     p.get(key).and_then(Value::as_array).map(|a| a.iter().filter_map(Value::as_u64).map(NodeId).collect())
 }
+/// `v` as an index, a count or a byte offset: past `usize::MAX` reads as `usize::MAX`, past the end of any list.
+pub(crate) fn index(v: u64) -> usize {
+    usize::try_from(v).unwrap_or(usize::MAX)
+}
 /// Validate all explicit targets before a command changes the document or selection.
 pub(crate) fn checked_ids_param(s: &Session, p: &Value, key: &str, command: &str) -> Result<Vec<NodeId>> {
     let values =

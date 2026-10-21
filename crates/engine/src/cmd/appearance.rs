@@ -218,7 +218,7 @@ pub(crate) fn item_target_at(s: &Session, p: &Value, key: &str, cmd: &str) -> Re
         Some(Value::Null) => Ok(ItemTarget::Top),
         Some(v) => v
             .as_u64()
-            .map(|i| ItemTarget::Item { index: i as usize, explicit: true })
+            .map(|i| ItemTarget::Item { index: index(i), explicit: true })
             .ok_or_else(|| bad(cmd, format!("`{key}` must be an appearance item index (paint order) or null"))),
         // The active item is a row of the first selected object's own stack.
         None if p.get("ids").is_some() || p.get("id").is_some() || targets_contents(p)? => Ok(ItemTarget::Top),
@@ -383,8 +383,9 @@ pub(crate) fn edits_stroke(s: &Session, p: &Value, item: ItemTarget, default: bo
     Ok(ids.first().and_then(|id| d.node(*id)?.appearance.items.get(index)).map_or(default, |it| !it.is_fill()))
 }
 
+/// The whole number of 0 or more that `key` holds, read with [`index`].
 pub(crate) fn index_param(p: &Value, key: &str, cmd: &str) -> Result<usize> {
-    p.get(key).and_then(Value::as_u64).map(|i| i as usize).ok_or_else(|| bad(cmd, format!("missing integer `{key}`")))
+    p.get(key).and_then(Value::as_u64).map(index).ok_or_else(|| bad(cmd, format!("missing integer `{key}`")))
 }
 
 fn set_active_item(s: &mut Session, p: &Value) -> Result<Value> {
@@ -603,7 +604,7 @@ fn item_indices(p: &Value, cmd: &str) -> Result<Vec<usize>> {
     let mut v = match p.get("indices") {
         Some(a) => a
             .as_array()
-            .and_then(|a| a.iter().map(|x| x.as_u64().map(|i| i as usize)).collect::<Option<Vec<_>>>())
+            .and_then(|a| a.iter().map(|x| x.as_u64().map(index)).collect::<Option<Vec<_>>>())
             .filter(|v| !v.is_empty())
             .ok_or_else(|| bad(cmd, "`indices` must be a non-empty array of item indices"))?,
         None => vec![index_param(p, "index", cmd)?],

@@ -974,6 +974,50 @@ fn split_refuses_a_subpath_anchor_or_segment_that_is_not_a_whole_number() {
     }
 }
 
+/// A subpath, anchor or segment of 2^32 + k fails, where k names one that exists, and the document
+/// and the undo history stay as they were. A 32-bit build read the number as k.
+#[test]
+fn path_commands_refuse_a_subpath_anchor_or_segment_past_u32() {
+    let mut s = session();
+    let id = two_subpaths(&mut s);
+    let at_anchor = json!({"id": id.0, "anchor": 1});
+    let at_segment = json!({"id": id.0, "segment": 0, "t": 0.5});
+    let curvature_move = json!({"id": id.0, "op": "move", "anchor": 1, "x": 200, "y": 150});
+    let curvature_insert = json!({"id": id.0, "op": "insert", "segment": 0, "t": 0.5});
+    let convert = json!({"id": id.0, "anchor": 1, "to": "corner"});
+    let reshape = json!({"id": id.0, "segment": 0, "t": 0.5, "dx": 0, "dy": 20});
+    let handle = json!({"id": id.0, "anchor": 0, "which": "out", "x": 140, "y": 250});
+    let moved = json!({"id": id.0, "anchor": 0, "x": 140, "y": 250});
+    for (cmd, p, key) in [
+        ("path.curvatureEdit", &curvature_move, "subpath"),
+        ("path.curvatureEdit", &curvature_move, "anchor"),
+        ("path.curvatureEdit", &curvature_insert, "segment"),
+        ("path.removeAnchor", &at_anchor, "subpath"),
+        ("path.removeAnchor", &at_anchor, "anchor"),
+        ("path.convertAnchor", &convert, "subpath"),
+        ("path.convertAnchor", &convert, "anchor"),
+        ("path.reshapeSegment", &reshape, "subpath"),
+        ("path.reshapeSegment", &reshape, "segment"),
+        ("path.split", &at_anchor, "anchor"),
+        ("path.split", &at_segment, "segment"),
+        ("path.setHandle", &handle, "subpath"),
+        ("path.setHandle", &handle, "anchor"),
+        ("path.moveAnchor", &moved, "subpath"),
+        ("path.moveAnchor", &moved, "anchor"),
+        ("path.insertAnchor", &at_segment, "subpath"),
+        ("path.insertAnchor", &at_segment, "segment"),
+    ] {
+        let mut p = p.clone();
+        let k = if key == "subpath" { 1 } else { p[key].as_u64().unwrap() };
+        p[key] = json!((1u64 << 32) + k);
+        let before = s.doc().unwrap().doc.clone();
+        let undo = undo_steps(&s);
+        assert!(s.execute(cmd, &p).is_err(), "{cmd} {p} succeeded");
+        assert!(s.doc().unwrap().doc == before, "{cmd} {p} changed the document");
+        assert_eq!(undo_steps(&s), undo, "{cmd} {p} left an undo step");
+    }
+}
+
 #[test]
 fn set_handle_refuses_a_subpath_that_is_not_a_whole_number() {
     let mut s = session();

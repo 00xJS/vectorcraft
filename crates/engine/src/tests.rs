@@ -1084,6 +1084,45 @@ fn set_bounds_acts_on_direct_selected_anchors() {
     assert_eq!(points(&s), [(10.0, 0.0), (140.0, 20.0), (60.0, 100.0), (10.0, 100.0)]);
 }
 
+/// `object.setBounds` reads a `reference` past 8 as 8, the bottom-right point, as
+/// `object.transformEach` does, for a path selected whole and for direct-selected anchors. Before,
+/// 9 read as the bottom-left point, 2^32 as the bottom center, and a 32-bit build read 2^32 as the
+/// top-left point.
+#[test]
+fn set_bounds_reads_a_reference_past_8_as_8() {
+    for reference in [9, 1u64 << 32] {
+        for anchors in [false, true] {
+            let mut s = session();
+            let square = json!({"anchors": [{"x": 0, "y": 0}, {"x": 100, "y": 0}, {"x": 100, "y": 100}, {"x": 0, "y": 100}], "closed": true});
+            let id = NodeId(s.execute("path.create", &square).unwrap()["id"].as_u64().unwrap());
+            if anchors {
+                s.execute("select.anchors", &json!({"id": id.0, "anchors": [[0, 0], [0, 1], [0, 2], [0, 3]]})).unwrap();
+            } else {
+                s.execute("select.set", &json!({"ids": [id.0]})).unwrap();
+            }
+            s.execute("object.setBounds", &json!({"width": 50, "height": 50, "reference": reference})).unwrap();
+            let NodeKind::Path { path, .. } = &s.doc().unwrap().doc.node(id).unwrap().kind else { panic!("a path") };
+            let points: Vec<(f64, f64)> = path.subpaths[0].anchors.iter().map(|a| (a.p.x.round(), a.p.y.round())).collect();
+            assert_eq!(points, [(50.0, 50.0), (100.0, 50.0), (100.0, 100.0), (50.0, 100.0)], "reference {reference}, anchors {anchors}");
+        }
+    }
+}
+
+/// `cmd::index` keeps a number that fits in a `usize` and reads a larger one (2^32 or more on a
+/// 32-bit build) as `usize::MAX`.
+#[test]
+fn index_reads_a_number_past_usize_max_as_usize_max() {
+    let past_u32 = u64::from(u32::MAX) + 1;
+    #[cfg(target_pointer_width = "64")]
+    let expected = 1usize << 32;
+    #[cfg(not(target_pointer_width = "64"))]
+    let expected = usize::MAX;
+    assert_eq!(cmd::index(0), 0);
+    assert_eq!(cmd::index(7), 7);
+    assert_eq!(cmd::index(past_u32), expected);
+    assert_eq!(cmd::index(u64::MAX), usize::MAX);
+}
+
 /// Arrange commands that leave the stacking order as it is record no undo step: Bring to Front and
 /// Bring Forward on the front objects, Send to Back and Send Backward on the back ones, and Send to
 /// Current Layer on objects already on top of the current layer.

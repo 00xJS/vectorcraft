@@ -60,7 +60,9 @@ pub fn convert_radii_relative(live: &mut LiveShape, relative: bool) {
         }
     }
     match live {
-        LiveShape::Rectangle { radii_relative: rel, .. } | LiveShape::Polygon { radii_relative: rel, .. } | LiveShape::Path { radii_relative: rel, .. } => {
+        LiveShape::Rectangle { radii_relative: rel, .. }
+        | LiveShape::Polygon { radii_relative: rel, .. }
+        | LiveShape::Path { radii_relative: rel, .. } => {
             *rel = relative;
         }
         LiveShape::Ellipse { .. } | LiveShape::Line { .. } => {}
@@ -290,7 +292,14 @@ mod tests {
 
     #[test]
     fn rectangle_corners_map_to_their_anchors() {
-        let l = LiveShape::Rectangle { w: 100.0, h: 50.0, radii: [0.0, 10.0, 0.0, 0.0], kinds: Default::default(), radii_relative: false, xf: Affine::IDENTITY };
+        let l = LiveShape::Rectangle {
+            w: 100.0,
+            h: 50.0,
+            radii: [0.0, 10.0, 0.0, 0.0],
+            kinds: Default::default(),
+            radii_relative: false,
+            xf: Affine::IDENTITY,
+        };
         let path = l.to_path();
         let c = LiveCorners::new(&path, Some(&l)).unwrap();
         // Anchors: top-left, the top-right corner's two, bottom-right, bottom-left.
@@ -333,7 +342,8 @@ mod tests {
     /// A polygon's corners are cut in the document and survive a change of sides when shared.
     #[test]
     fn polygon_corners_follow_their_sides() {
-        let mut l = LiveShape::Polygon { radius: 50.0, sides: 6, xf: Affine::translate((100.0, 100.0)), radii: vec![], kinds: vec![], radii_relative: false };
+        let mut l =
+            LiveShape::Polygon { radius: 50.0, sides: 6, xf: Affine::translate((100.0, 100.0)), radii: vec![], kinds: vec![], radii_relative: false };
         let (mut path, mut live) = (l.to_path(), Some(Box::new(l.clone())));
         set_corners(&mut path, &mut live, &set(&[0, 1, 2, 3, 4, 5]), Some(8.0), None);
         assert_eq!(path.anchor_count(), 12);
@@ -355,11 +365,25 @@ mod tests {
 
     #[test]
     fn relative_radii_scale_with_rectangle_size() {
-        let l = LiveShape::Rectangle { w: 100.0, h: 100.0, radii: [0.25, 0.25, 0.25, 0.25], kinds: Default::default(), radii_relative: true, xf: Affine::IDENTITY };
+        let l = LiveShape::Rectangle {
+            w: 100.0,
+            h: 100.0,
+            radii: [0.25, 0.25, 0.25, 0.25],
+            kinds: Default::default(),
+            radii_relative: true,
+            xf: Affine::IDENTITY,
+        };
         let path = l.to_path();
         let c = LiveCorners::new(&path, Some(&l)).unwrap();
         let r0 = c.drawn_radius(0);
-        let l2 = LiveShape::Rectangle { w: 200.0, h: 200.0, radii: [0.25, 0.25, 0.25, 0.25], kinds: Default::default(), radii_relative: true, xf: Affine::IDENTITY };
+        let l2 = LiveShape::Rectangle {
+            w: 200.0,
+            h: 200.0,
+            radii: [0.25, 0.25, 0.25, 0.25],
+            kinds: Default::default(),
+            radii_relative: true,
+            xf: Affine::IDENTITY,
+        };
         let path2 = l2.to_path();
         let c2 = LiveCorners::new(&path2, Some(&l2)).unwrap();
         assert!((c2.drawn_radius(0) / r0 - 2.0).abs() < 0.05, "{r0} → {}", c2.drawn_radius(0));
@@ -367,7 +391,14 @@ mod tests {
 
     #[test]
     fn convert_between_relative_and_absolute_radii() {
-        let mut l = LiveShape::Rectangle { w: 100.0, h: 50.0, radii: [10.0, 0.0, 0.0, 0.0], kinds: Default::default(), radii_relative: false, xf: Affine::IDENTITY };
+        let mut l = LiveShape::Rectangle {
+            w: 100.0,
+            h: 50.0,
+            radii: [10.0, 0.0, 0.0, 0.0],
+            kinds: Default::default(),
+            radii_relative: false,
+            xf: Affine::IDENTITY,
+        };
         let before = LiveCorners::new(&l.to_path(), Some(&l)).unwrap().drawn_radius(0);
         convert_radii_relative(&mut l, true);
         assert!(l.radii_relative());

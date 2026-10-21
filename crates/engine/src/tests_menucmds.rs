@@ -1515,6 +1515,17 @@ fn select_all_on_artboard_takes_lines_on_its_right_and_bottom_edges() {
     assert_eq!(on(1), vec![right, shared]);
 }
 
+/// All on Active Artboard refuses artboard 2^32 and selects nothing. A 32-bit build read it as
+/// artboard 0.
+#[test]
+fn select_all_on_artboard_refuses_an_artboard_past_u32() {
+    let mut s = session();
+    rect(&mut s, 10.0, 10.0, 20.0, 20.0);
+    s.execute("select.none", &json!({})).unwrap();
+    assert!(s.execute("select.allOnArtboard", &json!({"artboard": 1u64 << 32})).is_err());
+    assert!(selected(&s).is_empty());
+}
+
 #[test]
 fn save_and_recall_selection() {
     let mut s = session();
@@ -2697,6 +2708,18 @@ fn close_all_documents() {
     assert_eq!(s.execute("file.closeAll", &json!({})).unwrap()["closed"], 2);
     assert!(s.active().is_none());
     assert!(s.execute("file.closeAll", &json!({})).is_err());
+}
+
+/// Close and Activate refuse a document index of 2^32, and both documents stay open with the second
+/// one active. A 32-bit build read the index as 0.
+#[test]
+fn close_and_activate_refuse_a_document_index_past_u32() {
+    let mut s = session();
+    s.execute("file.new", &json!({})).unwrap();
+    for cmd in ["document.activate", "file.close"] {
+        assert!(s.execute(cmd, &json!({"index": 1u64 << 32})).is_err(), "{cmd}");
+        assert_eq!((s.documents().len(), s.active_index()), (2, Some(1)), "{cmd}");
+    }
 }
 
 #[test]

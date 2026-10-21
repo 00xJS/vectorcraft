@@ -1295,9 +1295,7 @@ mod tests {
         h.drag(h.icons()[2].center(), pos2(500.0, 250.0));
         h.drag(h.icons()[0].center(), h.shared_tab("swatches").center());
         assert_eq!(h.groups(), [["swatches", "color"]]);
-        h.app
-            .run("window.panel.move", json!({ "panel": "color", "anchor": "swatches", "before": "swatches" }))
-            .unwrap();
+        h.app.run("window.panel.move", json!({ "panel": "color", "anchor": "swatches", "before": "swatches" })).unwrap();
         assert_eq!(h.groups(), [["color", "swatches"]]);
     }
 

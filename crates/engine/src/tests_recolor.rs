@@ -72,6 +72,8 @@ fn five_colours_reduce_to_two() {
     assert_eq!(run(&mut s, "recolor.colors", json!({}))["colors"].as_array().unwrap().len(), 5);
     // Without a count every colour is its own row.
     assert_eq!(run(&mut s, "recolor.reduce", json!({}))["map"].as_array().unwrap().len(), 5);
+    // A count larger than the number of colors also keeps every color in its own row. A 32-bit build read 2^32 + 2 as 2.
+    assert_eq!(run(&mut s, "recolor.reduce", json!({"colors": (1u64 << 32) + 2}))["map"].as_array().unwrap().len(), 5);
 }
 
 #[test]

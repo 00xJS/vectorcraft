@@ -463,11 +463,7 @@ pub(super) fn dry_brush(px: &mut [[u8; 4]], w: usize, h: usize, space: &PixelSpa
             *a /= SAMPLES as f32;
         }
         let a = acc[3].clamp(0.0, 1.0);
-        let c = if a > 1e-6 {
-            [0, 1, 2].map(|i| (acc[i] / a).clamp(0.0, 1.0))
-        } else {
-            straight(*p)
-        };
+        let c = if a > 1e-6 { [0, 1, 2].map(|i| (acc[i] / a).clamp(0.0, 1.0)) } else { straight(*p) };
         let edge = edges[k].min(1.0);
         let dark = (edge_gain * edge).clamp(0.0, 0.75);
         let grain = bristle * (2.0 * value_noise(SALT_DRY, q.x / (5.0 * space.px), q.y / (5.0 * space.px)) - 1.0) as f32;

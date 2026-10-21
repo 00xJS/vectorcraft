@@ -364,7 +364,7 @@ fn insert_before<T>(list: &mut Vec<T>, items: Vec<T>, anchor: Option<&str>, name
 fn swatch_move(s: &mut Session, p: &Value) -> Result<Value> {
     const C: &str = "swatch.move";
     let names = names_param(p, C)?;
-    let to = p.get("to").and_then(Value::as_u64).map(|v| v as usize);
+    let to = p.get("to").and_then(Value::as_u64).map(index);
     let group = str_param(p, "group").map(str::to_string);
     let moved = names.len();
     s.edit("Move Swatch", |d, _| {

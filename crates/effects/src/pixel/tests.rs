@@ -1446,10 +1446,7 @@ fn texturizer_draws_a_loaded_texture_as_relief() {
         assert_ne!(relief, run(json!({"texture": builtin, "relief": 20})), "{builtin}");
     }
     assert_eq!(run(json!({"texture": "loaded", "textureImage": rings, "relief": 0})), flat(w, mid));
-    assert_eq!(
-        fx("texture.texturizer", json!({"texture": "LOADED", "textureImage": "not a texture"})),
-        fx("texture.texturizer", json!({}))
-    );
+    assert_eq!(fx("texture.texturizer", json!({"texture": "LOADED", "textureImage": "not a texture"})), fx("texture.texturizer", json!({})));
 }
 
 /// The Texture filters' patterns lie in document space around the object's centre: the same at

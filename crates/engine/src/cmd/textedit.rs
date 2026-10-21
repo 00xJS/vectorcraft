@@ -174,8 +174,9 @@ pub(crate) fn set_plain_text(d: &mut vectorcraft_doc::Document, id: NodeId, text
     Ok(())
 }
 
+/// The byte offset that `k` holds, read with [`index`].
 fn byte_param(p: &Value, k: &str) -> Option<usize> {
-    p.get(k).and_then(Value::as_u64).map(|v| v as usize)
+    p.get(k).and_then(Value::as_u64).map(index)
 }
 
 fn range_of(p: &Value, len: usize) -> (usize, usize) {

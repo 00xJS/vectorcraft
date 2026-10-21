@@ -81,6 +81,31 @@ fn appearance_duplicate_and_move() {
     assert!(s.execute("appearance.duplicateItem", &json!({"index": 99})).is_err());
 }
 
+/// The appearance and effect commands given an item index of 2^32 + k, where k names one of the
+/// object's items, leave the object's appearance and the undo history as they were, as for any index
+/// past the last item: `appearance.removeItem` removes nothing, and the others fail. A 32-bit build
+/// read the index as k.
+#[test]
+fn appearance_commands_leave_an_item_past_u32_alone() {
+    let mut s = session();
+    let id = rect(&mut s);
+    s.execute("select.set", &json!({"ids": [id.0]})).unwrap();
+    let before = node(&s, id).appearance;
+    let undo = s.doc().unwrap().history.undo.len();
+    let past = |k: u64| (1u64 << 32) + k;
+    for (cmd, p, fails) in [
+        ("appearance.removeItem", json!({"index": past(0)}), false),
+        ("appearance.removeItem", json!({"indices": [past(0)]}), false),
+        ("appearance.duplicateItem", json!({"index": past(0)}), true),
+        ("appearance.moveItem", json!({"from": past(1), "to": 0}), true),
+        ("effect.apply", json!({"effect": "distort.roughen", "item": past(1)}), true),
+    ] {
+        assert_eq!(s.execute(cmd, &p).is_err(), fails, "{cmd} {p}");
+        assert_eq!(node(&s, id).appearance, before, "{cmd} {p}");
+        assert_eq!(s.doc().unwrap().history.undo.len(), undo, "{cmd} {p}");
+    }
+}
+
 #[test]
 fn artboards_reorder_and_duplicate() {
     let mut s = session();
@@ -153,6 +178,17 @@ fn artboard_color_round_trips_through_the_native_format() {
     assert_eq!(back.artboards[0].color, None);
     assert_eq!(back.artboards[1].color, Some(Color::cmyk(0.1, 0.2, 0.3, 0.4)));
     assert_eq!(back.artboards, s.doc().unwrap().doc.artboards);
+}
+
+/// An artboard moved to place 2^32 goes last. A 32-bit build read the place as 0 and moved it to the
+/// front.
+#[test]
+fn artboard_reorder_past_u32_goes_last() {
+    let mut s = session();
+    s.execute("artboard.new", &json!({"name": "Second"})).unwrap();
+    s.execute("artboard.new", &json!({"name": "Third"})).unwrap();
+    s.execute("artboard.reorder", &json!({"index": 1, "to": 1u64 << 32})).unwrap();
+    assert_eq!(s.doc().unwrap().doc.artboards.last().map(|a| a.name.as_str()), Some("Second"));
 }
 
 /// The artboards' left edges and names.
