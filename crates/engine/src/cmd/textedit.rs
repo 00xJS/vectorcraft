@@ -83,7 +83,7 @@ pub fn specs() -> Vec<CommandSpec> {
             Some("Cmd+Shift+."),
             "{by?: steps (1)} type.step {attribute: size}",
             has_selection,
-            |s, p| type_step(s, &json!({"attribute": "size", "by": f64_or(p, "by", 1.0)}))
+            |s, p| type_step(s, &json!({"attribute": "size", "by": number_or(p, "by", 1.0, "type.size.increase")?}))
         ),
         cmd!(
             "type.size.decrease",
@@ -92,7 +92,7 @@ pub fn specs() -> Vec<CommandSpec> {
             Some("Cmd+Shift+,"),
             "{by?: steps (1)} type.step {attribute: size, by: -by}",
             has_selection,
-            |s, p| type_step(s, &json!({"attribute": "size", "by": -f64_or(p, "by", 1.0)}))
+            |s, p| type_step(s, &json!({"attribute": "size", "by": -number_or(p, "by", 1.0, "type.size.decrease")?}))
         ),
         cmd!(
             "type.size.increaseByFive",
@@ -179,10 +179,13 @@ fn byte_param(p: &Value, k: &str) -> Option<usize> {
     p.get(k).and_then(Value::as_u64).map(index)
 }
 
-fn range_of(p: &Value, len: usize) -> (usize, usize) {
+/// The bytes `start..end` of `p` in text of `len` bytes, clamped and ordered (without them, all of
+/// it). A `start` or `end` that is not a number or null, such as `"2"`, is an error.
+fn range_of(p: &Value, len: usize, cmd: &str) -> Result<(usize, usize)> {
+    check_numbers(p, &["start", "end"], cmd)?;
     let a = byte_param(p, "start").unwrap_or(0).min(len);
     let b = byte_param(p, "end").unwrap_or(len).min(len);
-    (a.min(b), a.max(b))
+    Ok((a.min(b), a.max(b)))
 }
 
 fn edit_range(s: &mut Session, p: &Value) -> Result<Value> {
@@ -190,7 +193,7 @@ fn edit_range(s: &mut Session, p: &Value) -> Result<Value> {
     let id = id_param(p, "id").ok_or_else(|| bad(C, "missing `id`"))?;
     let t = text_ref(s, id)?;
     let len = edit::runs_len(&t.runs);
-    let (a, b) = range_of(p, len);
+    let (a, b) = range_of(p, len, C)?;
     let styled: Option<Vec<TextRun>> = match p.get("runs") {
         None | Some(Value::Null) => None,
         Some(v) => Some(serde_json::from_value(v.clone()).map_err(|e| bad(C, format!("bad `runs`: {e}")))?),
@@ -221,9 +224,9 @@ fn get_range(s: &mut Session, p: &Value) -> Result<Value> {
     let id = id_param(p, "id").ok_or_else(|| bad("text.getRange", "missing `id`"))?;
     let t = text_ref(s, id)?;
     let len = edit::runs_len(&t.runs);
-    let (a, b) = range_of(p, len);
+    let (a, b) = range_of(p, len, "text.getRange")?;
     let mut runs = edit::slice_runs(&t.runs, a, b);
-    if p.get("effective").and_then(Value::as_bool).unwrap_or(false) {
+    if switch_or(p, "effective", false, "text.getRange")? {
         for run in &mut runs {
             run.style = t.effective_char_style(&run.style).ok_or_else(|| bad("text.getRange", "text transform is collapsed or unrepresentable"))?;
         }
@@ -398,6 +401,8 @@ fn auto_or_num(p: &Value, k: &str, cmd: &str) -> Result<Option<Option<f64>>> {
 impl CharChange {
     /// `setup` gives the superscript, subscript and small caps proportions.
     pub(crate) fn parse(p: &Value, cmd: &str, setup: &vectorcraft_doc::DocSetup) -> Result<Self> {
+        check_numbers(p, &["size", "tracking", "baselineShift", "hScale", "vScale", "rotation", "strokeWidth"], cmd)?;
+        check_switches(p, &["underline", "strikethrough", "allCaps", "proportionalMetrics", "tateChuYoko", "noBreak"], cmd)?;
         let num = |k: &str| p.get(k).and_then(Value::as_f64);
         let (position, small_caps) = super::docsetup::script_params(p, setup, cmd)?;
         let flag = |k: &str| p.get(k).and_then(Value::as_bool);
@@ -652,7 +657,7 @@ fn set_range_style(s: &mut Session, p: &Value) -> Result<Value> {
     let protect = s.prefs.missing_glyph_protection && (change.font.is_some() || change.style.is_some());
     let t = text_ref(s, id)?;
     change.localize(&t, C)?;
-    let (a, b) = range_of(p, edit::runs_len(&t.runs));
+    let (a, b) = range_of(p, edit::runs_len(&t.runs), C)?;
     let n = s.edit("Character", |d, _| {
         let t = text_mut(d, id).ok_or(EngineError::NoNode(id))?;
         if a == b && !t.plain_text().is_empty() {
@@ -682,6 +687,7 @@ fn glyph_em(t: &TextObject, g: &vectorcraft_text::PositionedGlyph) -> Option<f64
 fn touch_type(s: &mut Session, p: &Value) -> Result<Value> {
     const C: &str = "text.touchType";
     let id = id_param(p, "id").ok_or_else(|| bad(C, "missing `id`"))?;
+    check_numbers(p, &["start"], C)?;
     let start = byte_param(p, "start").ok_or_else(|| bad(C, "missing `start` (the byte offset of a character)"))?;
     if !["dx", "dy", "hScale", "vScale", "rotation"].iter().any(|k| p.get(*k).is_some_and(|v| !v.is_null())) {
         return Err(bad(C, "nothing to change: give dx, dy, hScale, vScale or rotation"));
@@ -866,6 +872,8 @@ fn create_in_path(s: &mut Session, p: &Value) -> Result<Value> {
         return Err(bad(C, "area type needs a path that encloses an area"));
     }
     super::paint::check_keep_model(p, C)?;
+    check_numbers(p, &["size"], C)?;
+    check_switches(p, &["vertical", "placeholder"], C)?;
     let style = super::create::new_type_style(s, p);
     let text = str_param(p, "text").unwrap_or("").to_string();
     let start = match point_param(p, "at") {
@@ -952,7 +960,7 @@ fn type_ranges(
 ) -> Result<Vec<(NodeId, usize, usize, bool)>> {
     // (text, its range; None: all of it).
     let targets: Vec<(NodeId, Option<(usize, usize)>)> = match id_param(p, "id") {
-        Some(id) => vec![(id, Some(range_of(p, edit::runs_len(&text_ref(s, id)?.runs))))],
+        Some(id) => vec![(id, Some(range_of(p, edit::runs_len(&text_ref(s, id)?.runs), c)?))],
         None => {
             let editing = editing_range(s)?.filter(|_| p.get("ids").filter(|v| !v.is_null()).is_none());
             match editing {
@@ -990,7 +998,7 @@ fn type_step(s: &mut Session, p: &Value) -> Result<Value> {
         Some("baselineShift") => Step::BaselineShift,
         _ => return Err(bad(C, "attribute must be size|leading|tracking|kerning|baselineShift")),
     };
-    let by = f64_or(p, "by", 1.0);
+    let by = number_or(p, "by", 1.0, C)?;
     if !by.is_finite() {
         return Err(bad(C, "by must be a number"));
     }

@@ -248,10 +248,11 @@ fn sb_merge(s: &mut Session, p: &Value) -> Result<Value> {
     if pts.is_empty() || !pts.iter().all(|q| finite(*q)) {
         return Err(bad(C, "points must be a non-empty list of finite [x,y]"));
     }
-    let erase = bool_or(p, "erase", false);
+    let erase = switch_or(p, "erase", false, C)?;
+    check_numbers(p, &["tolerance", "gap"], C)?;
     // Line pieces and edges are only deleted (erase mode), never merged.
     let piece_tol = erase.then(|| f64_or(p, "tolerance", 2.0).clamp(0.0, 1000.0));
-    let open_filled_as_closed = bool_or(p, "openFilledAsClosed", true);
+    let open_filled_as_closed = switch_or(p, "openFilledAsClosed", true, C)?;
     let swatches = match p.get("pickColorFrom") {
         None | Some(Value::Null) => false,
         Some(v) => match v.as_str() {
@@ -382,9 +383,11 @@ fn replace_roots(d: &mut Document, roots: &[NodeId], nodes: Vec<Node>) -> Result
 }
 
 fn sb_regions(s: &mut Session, p: &Value) -> Result<Value> {
+    let open_filled_as_closed = switch_or(p, "openFilledAsClosed", true, "shapeBuilder.regions")?;
+    check_numbers(p, &["gap"], "shapeBuilder.regions")?;
     let roots = root_ids(s, p)?;
     let d = &s.doc()?.doc;
-    let (map, leaves) = BuilderMap::with_gap(d, &roots, true, bool_or(p, "openFilledAsClosed", true), gap_param(p));
+    let (map, leaves) = BuilderMap::with_gap(d, &roots, true, open_filled_as_closed, gap_param(p));
     let id_of = |i: usize| leaves.get(i).map(|n| n.id.0);
     let regions: Vec<Value> = map
         .regions
@@ -714,7 +717,7 @@ fn lp_gap_options(s: &mut Session, p: &Value) -> Result<Value> {
         Some(v) => Some(super::layer::layer_color_param(v).map_err(|e| bad(C, e))?.rgb()),
         None => None,
     };
-    let close = bool_or(p, "closeGaps", false);
+    let close = switch_or(p, "closeGaps", false, C)?;
     let targets = live_targets(s, p)?;
     let (faces, gaps, closed) = s.edit("Gap Options", |d, sel| {
         let (mut faces, mut gaps, mut closed) = (0, vec![], 0);
@@ -801,11 +804,11 @@ fn lp_stroke_edge(s: &mut Session, p: &Value) -> Result<Value> {
     let g = id_param(p, "group").ok_or_else(|| bad(C, "missing group"))?;
     super::paint::check_keep_model(p, C)?;
     let paint = paint_from(s, p)?.unwrap_or_else(|| s.paint.stroke.clone());
-    let width = p.get("width").and_then(Value::as_f64).unwrap_or(s.paint.stroke_width.max(0.0));
+    let width = number_or(p, "width", s.paint.stroke_width.max(0.0), C)?;
     if !(0.0..=1000.0).contains(&width) {
         return Err(bad(C, "width out of range"));
     }
-    let tol = f64_or(p, "tolerance", 4.0).clamp(0.0, 1000.0);
+    let tol = number_or(p, "tolerance", 4.0, C)?.clamp(0.0, 1000.0);
     let edge = s.edit("Live Paint Bucket", |d, _| {
         let n = d.node(g).filter(|n| is_live_paint(n)).ok_or_else(|| bad(C, format!("{g} is not a Live Paint group")))?;
         let eid = b::visible_edge_near(n, pt, tol).map(|e| e.id).ok_or_else(|| EngineError::Other("no Live Paint edge near that point".into()))?;
@@ -863,7 +866,7 @@ fn view_param(cmd: &str, p: &Value) -> Result<Option<TraceView>> {
 
 fn trace_params(p: &Value) -> Result<tr::TraceParams> {
     let name = str_param(p, "preset").unwrap_or("Default");
-    let enhanced = p.get("enhanced").and_then(Value::as_bool).unwrap_or(false);
+    let enhanced = switch_or(p, "enhanced", false, "imageTrace.make")?;
     // (A preset without an enhanced version is traced as it is.)
     let base = enhanced.then(|| tr::enhanced_preset(name)).flatten().or_else(|| tr::preset(name));
     let base = base.ok_or_else(|| bad("imageTrace.make", format!("unknown preset `{name}` (see imageTrace.presets)")))?;
