@@ -146,7 +146,9 @@ fn is_false(b: &bool) -> bool {
 impl LiveShape {
     pub fn radii_relative(&self) -> bool {
         match self {
-            LiveShape::Rectangle { radii_relative, .. } | LiveShape::Polygon { radii_relative, .. } | LiveShape::Path { radii_relative, .. } => *radii_relative,
+            LiveShape::Rectangle { radii_relative, .. } | LiveShape::Polygon { radii_relative, .. } | LiveShape::Path { radii_relative, .. } => {
+                *radii_relative
+            }
             LiveShape::Ellipse { .. } | LiveShape::Line { .. } => false,
         }
     }
@@ -2205,14 +2207,28 @@ mod tests {
 
     #[test]
     fn rect_live_shape_roundtrip() {
-        let l = LiveShape::Rectangle { w: 10.0, h: 20.0, radii: [0.0; 4], kinds: Default::default(), radii_relative: false, xf: Affine::translate((5.0, 5.0)) };
+        let l = LiveShape::Rectangle {
+            w: 10.0,
+            h: 20.0,
+            radii: [0.0; 4],
+            kinds: Default::default(),
+            radii_relative: false,
+            xf: Affine::translate((5.0, 5.0)),
+        };
         assert_eq!(l.to_path().bounds(), Some(Rect::new(5.0, 5.0, 15.0, 25.0)));
         assert_eq!(l.label(), "Rectangle");
     }
 
     #[test]
     fn corner_kinds_save_only_when_some_corner_isnt_round() {
-        let mut l = LiveShape::Rectangle { w: 100.0, h: 50.0, radii: [0.0, 10.0, 0.0, 0.0], kinds: Default::default(), radii_relative: false, xf: Affine::IDENTITY };
+        let mut l = LiveShape::Rectangle {
+            w: 100.0,
+            h: 50.0,
+            radii: [0.0, 10.0, 0.0, 0.0],
+            kinds: Default::default(),
+            radii_relative: false,
+            xf: Affine::IDENTITY,
+        };
         // Older files read as round.
         let json = serde_json::to_value(&l).unwrap();
         assert!(json.get("kinds").is_none(), "{json}");

@@ -485,7 +485,14 @@ mod tests {
     #[test]
     fn widgets_of_several_selected_paths_drag_together() {
         let (mut d, a) = live_rect(0.0, Affine::translate((100.0, 100.0)));
-        let live = LiveShape::Rectangle { w: 100.0, h: 100.0, radii: [0.0; 4], kinds: Default::default(), radii_relative: false, xf: Affine::translate((300.0, 100.0)) };
+        let live = LiveShape::Rectangle {
+            w: 100.0,
+            h: 100.0,
+            radii: [0.0; 4],
+            kinds: Default::default(),
+            radii_relative: false,
+            xf: Affine::translate((300.0, 100.0)),
+        };
         let b = d.alloc_id();
         let mut n = Node::path(b, live.to_path(), Appearance::default_art());
         if let NodeKind::Path { live: slot, .. } = &mut n.kind {
@@ -792,7 +799,8 @@ mod tests {
     /// cuts outline in red.
     #[test]
     fn a_live_polygon_rounds_with_either_tool() {
-        let live = LiveShape::Polygon { radius: 80.0, sides: 6, xf: Affine::translate((200.0, 200.0)), radii: vec![], kinds: vec![], radii_relative: false };
+        let live =
+            LiveShape::Polygon { radius: 80.0, sides: 6, xf: Affine::translate((200.0, 200.0)), radii: vec![], kinds: vec![], radii_relative: false };
         let (d, id) = doc_with(live.to_path(), Some(live));
         let s = selected(id);
         let p = paint();

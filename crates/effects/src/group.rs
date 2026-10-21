@@ -176,11 +176,7 @@ fn hard_mix_face(path: PathData, covering: &[usize], shapes: &[po::Shape], sourc
             painted = true;
         }
     }
-    let fill = if painted {
-        Paint::solid(Color::cmyk(cmyk[0], cmyk[1], cmyk[2], cmyk[3]))
-    } else {
-        Paint::None
-    };
+    let fill = if painted { Paint::solid(Color::cmyk(cmyk[0], cmyk[1], cmyk[2], cmyk[3])) } else { Paint::None };
     let top = covering.last().and_then(|&si| sources.get(shapes[si].key as usize));
     let mut n = Node::path(top.map_or(NodeId(0), |s| s.id), path, Appearance::basic(fill, Paint::None, 0.0));
     if let Some(src) = top {
