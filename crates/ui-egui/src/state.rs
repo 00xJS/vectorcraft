@@ -775,10 +775,16 @@ impl UiState {
         crate::edit_toolbar::sanitize(&mut self.toolbar_edits);
         self.docking = self.docking.filter(crate::panel_docking::valid);
         self.docking_icons.retain(|id| ICON_PANELS.iter().any(|entry| entry.0 == id));
-        // Changes kept for workspaces that still exist, one per workspace (a hand-edited file).
+        // Changes kept for workspaces that still exist, under their saved spelling and one per
+        // workspace whatever the case (a hand-edited file).
         let mut seen = std::collections::BTreeSet::new();
-        let custom: Vec<String> = self.custom_workspaces.iter().map(|w| w.name.clone()).collect();
-        self.workspace_changes.retain(|w| (crate::workspaces::is_builtin(&w.name) || custom.contains(&w.name)) && seen.insert(w.name.clone()));
+        let saved: Vec<String> =
+            self.custom_workspaces.iter().map(|w| w.name.clone()).chain(crate::workspaces::builtins().into_iter().map(|w| w.name)).collect();
+        self.workspace_changes.retain_mut(|w| {
+            let Some(name) = saved.iter().find(|n| n.eq_ignore_ascii_case(&w.name)) else { return false };
+            w.name = name.clone();
+            seen.insert(name.to_ascii_lowercase())
+        });
         self.workspace_changes.truncate(64);
         // Overrides that can't fire (modifier-only chords recorded by older versions, #487) give
         // the default back.

@@ -216,12 +216,10 @@ pub fn apply(ui: &mut UiState, w: &Workspace) {
 
 /// Keep the layout of the current workspace as it is now, so switching back brings it back.
 fn remember(ui: &mut UiState) {
-    let current = ui.workspace.clone();
-    if find_saved(ui, &current).is_none() {
-        return;
-    }
-    let w = capture(ui, &current);
-    ui.workspace_changes.retain(|x| x.name != current);
+    // Kept under the saved workspace's spelling, which `find_saved` matches whatever the case.
+    let Some(saved) = find_saved(ui, &ui.workspace.clone()) else { return };
+    let w = capture(ui, &saved.name);
+    ui.workspace_changes.retain(|x| !x.name.eq_ignore_ascii_case(&saved.name));
     ui.workspace_changes.push(w);
     // Over the cap, the oldest go: the layout just kept is the newest.
     let over = ui.workspace_changes.len().saturating_sub(64);
@@ -232,7 +230,7 @@ fn remember(ui: &mut UiState) {
 pub fn switch(ui: &mut UiState, name: &str) -> Result<String, String> {
     let saved = find_saved(ui, name).ok_or_else(|| format!("unknown workspace (one of {})", names(ui).join(", ")))?;
     remember(ui);
-    let w = ui.workspace_changes.iter().find(|w| w.name == saved.name).cloned().unwrap_or(saved);
+    let w = ui.workspace_changes.iter().find(|w| w.name.eq_ignore_ascii_case(&saved.name)).cloned().unwrap_or(saved);
     apply(ui, &w);
     Ok(w.name)
 }
@@ -240,7 +238,7 @@ pub fn switch(ui: &mut UiState, name: &str) -> Result<String, String> {
 /// Reset the current workspace to the way it was saved, dropping its changes.
 pub fn reset(ui: &mut UiState) -> String {
     let w = find_saved(ui, &ui.workspace.clone()).unwrap_or_default();
-    ui.workspace_changes.retain(|x| x.name != w.name);
+    ui.workspace_changes.retain(|x| !x.name.eq_ignore_ascii_case(&w.name));
     apply(ui, &w);
     w.name
 }
@@ -275,12 +273,13 @@ pub fn save_as(ui: &mut UiState, name: &str) -> Result<(), String> {
     }
     // The changes go into the workspace saved, which starts with none; the one left keeps the
     // changes it had (none of these).
+    // A user workspace of that name in another case is replaced, as `find_saved` would find it.
     let w = capture(ui, name);
-    match ui.custom_workspaces.iter_mut().find(|x| x.name == name) {
+    match ui.custom_workspaces.iter_mut().find(|x| x.name.eq_ignore_ascii_case(name)) {
         Some(x) => *x = w,
         None => ui.custom_workspaces.push(w),
     }
-    ui.workspace_changes.retain(|x| x.name != name);
+    ui.workspace_changes.retain(|x| !x.name.eq_ignore_ascii_case(name));
     ui.workspace = name.into();
     Ok(())
 }
@@ -624,6 +623,31 @@ mod tests {
         assert!(ui.workspace_changes.iter().all(|w| w.name != "W0"), "the oldest went");
         switch(&mut ui, "W69").unwrap();
         assert!(ui.control_bar, "the layout just left is kept");
+    }
+
+    /// Workspace names match whatever their case, as `find` does: "Mine" saved over "mine" replaces
+    /// it, and changes made under one spelling come back under the other.
+    #[test]
+    fn workspace_names_match_whatever_their_case() {
+        let mut ui = UiState::default();
+        save_as(&mut ui, "mine").unwrap();
+        save_as(&mut ui, "Mine").unwrap();
+        assert_eq!(ui.custom_workspaces.len(), 1, "one workspace, not two spellings");
+        ui.control_bar = true;
+        switch(&mut ui, ESSENTIALS).unwrap();
+        assert_eq!(switch(&mut ui, "MINE").unwrap(), "Mine");
+        assert!(ui.control_bar, "its changes came back");
+        // A preferences file with a remembered layout under another spelling, twice: it maps to the
+        // saved one, once.
+        ui.control_bar = false;
+        switch(&mut ui, ESSENTIALS).unwrap();
+        let mut odd = capture(&ui, "MINE");
+        odd.control_bar = true;
+        ui.workspace_changes = vec![odd.clone(), Workspace { name: "mine".into(), ..odd }];
+        let mut ui = ui.sanitized();
+        assert_eq!(ui.workspace_changes.iter().map(|w| w.name.as_str()).collect::<Vec<_>>(), ["Mine"]);
+        switch(&mut ui, "Mine").unwrap();
+        assert!(ui.control_bar);
     }
 
     /// Saving a workspace takes the current layout into it, which then starts with no changes.
