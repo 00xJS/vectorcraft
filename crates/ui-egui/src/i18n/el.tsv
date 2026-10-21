@@ -3989,6 +3989,7 @@ theme	Appearance	Εμφάνιση
 @msg	no blend options	δεν υπάρχουν επιλογές ανάμειξης
 @msg	no bounds	δεν υπάρχουν όρια
 @msg	no brush named `{name}`	δεν υπάρχει πινέλο με όνομα `{name}`
+@msg	a bristle brush name can have at most {max} characters: `{name}` has {count}	το όνομα ενός πινέλου με τρίχες μπορεί να έχει έως {max} χαρακτήρες: το `{name}` έχει {count}
 @msg	no brush selected	δεν έχει επιλεγεί πινέλο
 @msg	brushes move only within their type	τα πινέλα μετακινούνται μόνο μέσα στον τύπο τους
 @msg	no catalog	δεν υπάρχει κατάλογος

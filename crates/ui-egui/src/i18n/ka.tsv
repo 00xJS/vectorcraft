@@ -3802,6 +3802,7 @@ effect	Regular	ჩვეულებრივი
 @msg	no blend options	გადასვლის პარამეტრები არ არის
 @msg	no bounds	საზღვრები არ არის
 @msg	no brush named `{name}`	ფუნჯი სახელით `{name}` არ არის
+@msg	a bristle brush name can have at most {max} characters: `{name}` has {count}	ჯაგრის ფუნჯის სახელი შეიძლება შეიცავდეს არაუმეტეს {max} სიმბოლოს: `{name}` შეიცავს {count} სიმბოლოს
 @msg	no brush selected	ფუნჯი მონიშნული არ არის
 @msg	brushes move only within their type	ფუნჯების გადატანა მხოლოდ საკუთარი ტიპის ფარგლებში შეიძლება
 @msg	no catalog	კატალოგი არ არის

@@ -352,6 +352,54 @@ fn new_duplicate_and_renamed_brushes_trim_their_names() {
     assert_eq!(names[names.len() - 6..], ["Nib", " Old ", "New Calligraphic Brush", "Quill", "Nib copy", "Old copy"]);
 }
 
+/// New Brush and Bristle Brush Options take a bristle brush name of at most 31 characters, counted
+/// in Unicode characters (31 é's fit). A longer name that a document already holds is kept, and the
+/// other brush types take a name of any length.
+#[test]
+fn bristle_brush_names_have_at_most_31_characters() {
+    let mut s = session();
+    let library = |s: &Session| vectorcraft_brush::library(&s.doc().unwrap().doc);
+    let refused = |s: &mut Session, cmd: &str, p: Value| s.execute(cmd, &p).unwrap_err().to_string();
+    let (long, fits) = ("b".repeat(32), "é".repeat(31));
+    let e = refused(&mut s, "brush.new", json!({"type": "bristle", "name": long}));
+    assert!(e.contains("a bristle brush name can have at most 31 characters: `bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb` has 32"), "{e}");
+    assert!(!library(&s).iter().any(|b| b.name == long));
+    assert_eq!(s.execute("brush.new", &json!({"type": "bristle", "name": fits})).unwrap()["name"], fits.as_str());
+    // A taken name is numbered, and the numbered name is the one counted.
+    let e = refused(&mut s, "brush.new", json!({"type": "bristle", "name": fits}));
+    assert!(e.contains(&format!("`{fits} 2` has 33")), "{e}");
+    let e = refused(&mut s, "brush.options", json!({"name": "Bristle Round", "newName": long}));
+    assert!(e.contains("at most 31 characters"), "{e}");
+    let short = "c".repeat(31);
+    assert_eq!(s.execute("brush.options", &json!({"name": "Bristle Round", "newName": short})).unwrap()["name"], short.as_str());
+    // Calligraphic brushes take a longer name.
+    assert_eq!(s.execute("brush.new", &json!({"type": "calligraphic", "name": long})).unwrap()["name"], long.as_str());
+    let longer = format!("{long}x");
+    assert_eq!(s.execute("brush.options", &json!({"name": long, "newName": longer})).unwrap()["name"], longer.as_str());
+    // Bristle brushes that already have longer names, one of them with white space around it, as a
+    // saved file can hold.
+    let (old, spaced) = ("d".repeat(40), format!(" {} ", "e".repeat(40)));
+    let mut lib = library(&s);
+    lib.iter_mut().filter(|b| b.name == short).for_each(|b| b.name = old.clone());
+    lib.iter_mut().filter(|b| b.name == fits).for_each(|b| b.name = spaced.clone());
+    vectorcraft_brush::store(std::sync::Arc::make_mut(&mut s.doc_mut().unwrap().doc), &lib);
+    let l = line(&mut s);
+    s.execute("brush.apply", &json!({"name": old, "ids": [l.0]})).unwrap();
+    // Brush Options without a new name, with the same name, or with the name only trimmed keep them.
+    s.execute("brush.options", &json!({"name": old, "params": {"size": 9}})).unwrap();
+    assert_eq!(s.execute("brush.options", &json!({"name": old, "newName": old, "params": {"density": 20}})).unwrap()["name"], old.as_str());
+    assert_eq!(s.execute("brush.options", &json!({"name": spaced, "newName": spaced})).unwrap()["name"], spaced.trim());
+    assert_eq!(s.execute("brush.get", &json!({"name": old})).unwrap()["size"], json!(9.0));
+    assert_eq!(s.execute("brush.duplicate", &json!({"name": old})).unwrap()["name"], format!("{old} copy"));
+    // Saved and opened again, the brush and the stroke painted with it keep the name.
+    let back = vectorcraft_format::load(&vectorcraft_format::save(&s.doc().unwrap().doc, false)).unwrap();
+    assert!(vectorcraft_brush::find(&back, &old).is_some_and(|b| b.kind.type_id() == "bristle"));
+    assert_eq!(back.node(l).unwrap().appearance.stroke().unwrap().brush.as_deref(), Some(old.as_str()));
+    let mut s2 = Session::new();
+    s2.add_document(back, None);
+    assert_eq!(s2.execute("brush.options", &json!({"name": old, "params": {"size": 4}})).unwrap()["name"], old.as_str());
+}
+
 /// The Brushes panel's multi-selection: `names` deletes or duplicates several brushes in one undo
 /// step, and an unknown name changes nothing.
 #[test]

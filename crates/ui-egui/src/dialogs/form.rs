@@ -134,6 +134,13 @@ pub(super) fn text(ui: &mut egui::Ui, d: &mut Dialog, key: &str, width: f32) -> 
 
 /// [`text`] returning the field's response (focus, Enter).
 pub(super) fn text_edit(ui: &mut egui::Ui, d: &mut Dialog, key: &str, width: f32) -> egui::Response {
+    text_edit_limited(ui, d, key, width, usize::MAX)
+}
+
+/// [`text_edit`] that takes at most `max_chars` characters: typing and pasting stop at the limit,
+/// and a longer value already in the field is kept, with nothing added to it until it has fewer
+/// than `max_chars` characters.
+pub(super) fn text_edit_limited(ui: &mut egui::Ui, d: &mut Dialog, key: &str, width: f32, max_chars: usize) -> egui::Response {
     let t = Tokens::get(ui.ctx());
     let mut s = d.str(key);
     let id = ui.id().with(("dlg-text", key));
@@ -145,7 +152,7 @@ pub(super) fn text_edit(ui: &mut egui::Ui, d: &mut Dialog, key: &str, width: f32
         .inner_margin(egui::Margin::symmetric(6, 3))
         .show(ui, |ui| {
             crate::theme::strong_selected_text(ui);
-            ui.add(egui::TextEdit::singleline(&mut s).id(id).frame(egui::Frame::NONE).desired_width(width))
+            ui.add(egui::TextEdit::singleline(&mut s).id(id).frame(egui::Frame::NONE).desired_width(width).char_limit(max_chars))
         });
     if r.inner.changed() {
         d.fields.insert(key.into(), Value::String(s));

@@ -4045,6 +4045,7 @@ axis	Both	Обидві
 @msg	no blend options	немає параметрів переходу
 @msg	no bounds	немає кордонів
 @msg	no brush named `{name}`	немає пензля з ім’ям `{name}`
+@msg	a bristle brush name can have at most {max} characters: `{name}` has {count}	найбільша довжина імені щетинного пензля (символів): {max}; у `{name}` символів: {count}
 @msg	no brush selected	пензель не вибрано
 @msg	brushes move only within their type	пензлі можна переміщувати лише в межах їхнього типу
 @msg	no catalog	немає каталогу

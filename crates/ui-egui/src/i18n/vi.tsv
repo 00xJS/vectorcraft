@@ -4305,6 +4305,7 @@ theme	Appearance	Giao diện
 @msg	no blend options	không có tùy chọn hòa trộn
 @msg	no bounds	không có giới hạn
 @msg	no brush named `{name}`	không có cọ tên `{name}`
+@msg	a bristle brush name can have at most {max} characters: `{name}` has {count}	tên cọ lông có tối đa {max} ký tự: `{name}` có {count} ký tự
 @msg	no brush selected	chưa chọn cọ
 @msg	brushes move only within their type	chỉ có thể di chuyển cọ trong cùng loại của nó
 @msg	no catalog	không có danh mục

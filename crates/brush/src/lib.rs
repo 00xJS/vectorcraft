@@ -413,6 +413,8 @@ impl Bristle {
     pub const SIZE_RANGE: (f64, f64) = (0.1, 1296.0);
     pub const LENGTH_RANGE: (f64, f64) = (25.0, 300.0);
     pub const PERCENT_RANGE: (f64, f64) = (1.0, 100.0);
+    /// The most characters `brush.new` and `brush.options` take for a new bristle brush name.
+    pub const MAX_NAME_CHARS: usize = 31;
 }
 
 impl Default for Bristle {

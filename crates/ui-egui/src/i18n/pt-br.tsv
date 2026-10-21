@@ -3601,6 +3601,7 @@ axis	Both	Ambos
 @msg	no blend options	sem opções de mesclagem
 @msg	no bounds	sem limites
 @msg	no brush named `{name}`	nenhum pincel chamado `{name}`
+@msg	a bristle brush name can have at most {max} characters: `{name}` has {count}	o nome de um pincel de cerdas pode ter no máximo {max} caracteres: `{name}` tem {count}
 @msg	no brush selected	nenhum pincel selecionado
 @msg	brushes move only within their type	os pincéis só podem ser movidos dentro do seu tipo
 @msg	no catalog	sem catálogo

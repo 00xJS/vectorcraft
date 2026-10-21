@@ -4323,6 +4323,7 @@ imageTrace	Outline	Obrys
 @msg	no blend options	žádné možnosti prolnutí
 @msg	no bounds	žádné hranice
 @msg	no brush named `{name}`	štětec s názvem `{name}` neexistuje
+@msg	a bristle brush name can have at most {max} characters: `{name}` has {count}	název štětinového štětce může mít nejvýše {max} znaků: `{name}` jich má {count}
 @msg	no brush selected	není vybrán žádný štětec
 @msg	brushes move only within their type	štětce lze přesouvat jen v rámci jejich typu
 @msg	no catalog	chybí katalog

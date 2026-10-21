@@ -1844,6 +1844,24 @@ fn legacy_ait_param_error_is_translated() {
     }
 }
 
+/// The error of New Brush and Bristle Brush Options for a bristle brush name of more than 31
+/// characters, whose text the scan above doesn't read, is translated whole in each language of
+/// [`COMPLETE_MESSAGES`] and in Bulgarian, with the name and both counts kept.
+#[test]
+fn bristle_brush_name_limit_error_is_translated() {
+    use serde_json::json;
+    let mut s = vectorcraft_engine::Session::new();
+    s.execute("file.new", &json!({})).unwrap();
+    let name = "b".repeat(32);
+    let e = s.execute("brush.new", &json!({"type": "bristle", "name": name})).unwrap_err();
+    let vectorcraft_engine::EngineError::BadParams { msg, .. } = &e else { panic!("{e}") };
+    for code in COMPLETE_MESSAGES.iter().chain(&["bg"]) {
+        let shown = message(Lang::from_code(code).unwrap(), &e.to_string());
+        let kept = shown.contains(&format!("`{name}`")) && shown.contains("31") && shown.contains("32");
+        assert!(!shown.contains(msg.as_str()) && kept, "{code}: {shown}");
+    }
+}
+
 /// The errors for a parameter key a command doesn't take (#1442), whose text the scan above
 /// doesn't read, are translated whole in each language of [`COMPLETE_MESSAGES`].
 #[test]
