@@ -602,24 +602,35 @@ enum LpHover {
     Region(usize),
 }
 
-fn lp_hover(cx: &ToolContext, cache: &mut RegionCache, p: Point, edge: bool) -> LpHover {
-    if let Some(g) = live_paint_at(cx.doc, p).and_then(|id| cx.doc.node(id)) {
-        let part = if edge { edge_near(g, p, cx.tol(4.0)) } else { face_at(g, p) };
-        return part.and_then(|n| n.path_data()).map(|pd| LpHover::Part(pd.to_bezpath())).unwrap_or_default();
+/// The Live Paint group and part the Live Paint tools hover and click at `p`. Inside a face of a
+/// visible Live Paint group ([`live_paint_at`]) it is that group with its face under `p`, or with
+/// `edge` its edge nearest `p` within `tol` (None when there is none). Outside every face, with
+/// `edge`, it is the edge nearest `p` within `tol` among the visible Live Paint groups (the
+/// front-most group's on a tie). None when no group is found.
+fn lp_part_at(doc: &Document, p: Point, tol: f64, edge: bool) -> Option<(NodeId, Option<&Arc<Node>>)> {
+    if let Some(g) = live_paint_at(doc, p).and_then(|id| doc.node(id)) {
+        return Some((g.id, if edge { edge_near(g, p, tol) } else { face_at(g, p) }));
     }
-    if edge {
-        // Edges of every Live Paint group near the pointer.
-        let mut found = None;
-        cx.doc.walk(|n| {
-            if is_live_paint(n)
-                && let Some(e) = edge_near(n, p, cx.tol(4.0))
-            {
-                found = e.path_data().map(|pd| pd.to_bezpath());
-            }
-        });
-        if let Some(bp) = found {
-            return LpHover::Part(bp);
+    if !edge {
+        return None;
+    }
+    let mut best: Option<(f64, NodeId, &Arc<Node>)> = None;
+    doc.walk(|n| {
+        if is_live_paint(n)
+            && let Some(e) = edge_near(n, p, tol)
+            && let Some((.., d)) = e.path_data().and_then(|pd| pd.nearest(p))
+            && best.is_none_or(|b| d <= b.0)
+            && doc.is_visible(n.id)
+        {
+            best = Some((d, n.id, e));
         }
+    });
+    best.map(|(_, g, e)| (g, Some(e)))
+}
+
+fn lp_hover(cx: &ToolContext, cache: &mut RegionCache, p: Point, edge: bool) -> LpHover {
+    if let Some((_, part)) = lp_part_at(cx.doc, p, cx.tol(4.0), edge) {
+        return part.and_then(|n| n.path_data()).map(|pd| LpHover::Part(pd.to_bezpath())).unwrap_or_default();
     }
     let sel_is_live = cx.selection.objects.iter().any(|id| cx.doc.node(*id).is_some_and(is_live_paint));
     if !sel_is_live && let Some(i) = cache.at(cx, p) {
@@ -669,16 +680,8 @@ impl Tool for LivePaintBucketTool {
                 self.hover = LpHover::None;
                 let point = json!([p.x, p.y]);
                 if ev.mods.shift {
-                    let mut group = live_paint_at(cx.doc, p);
-                    if group.is_none() {
-                        cx.doc.walk(|n| {
-                            if is_live_paint(n) && edge_near(n, p, cx.tol(4.0)).is_some() {
-                                group = Some(n.id);
-                            }
-                        });
-                    }
-                    return match group {
-                        Some(g) => {
+                    return match lp_part_at(cx.doc, p, cx.tol(4.0), true) {
+                        Some((g, _)) => {
                             vec![Action::Exec("livePaint.strokeEdge".into(), json!({ "group": g.0, "point": point, "tolerance": cx.tol(4.0) }))]
                         }
                         None => vec![],
@@ -774,13 +777,7 @@ impl Tool for LivePaintSelectionTool {
                 vec![]
             }
             PointerKind::Down => {
-                let mut hit = None;
-                if let Some(edge) = edge
-                    && let Some(g) = live_paint_at(cx.doc, p).and_then(|id| cx.doc.node(id))
-                {
-                    let part = if edge { edge_near(g, p, cx.tol(4.0)) } else { face_at(g, p) };
-                    hit = part.map(|n| n.id);
-                }
+                let hit = edge.and_then(|e| lp_part_at(cx.doc, p, cx.tol(4.0), e)).and_then(|(_, part)| part).map(|n| n.id);
                 match (hit, ev.mods.shift) {
                     (Some(id), true) => vec![Action::Exec("select.toggle".into(), json!({ "id": id.0 }))],
                     (Some(id), false) => vec![Action::Exec("select.set".into(), json!({ "ids": [id.0] }))],
@@ -1023,6 +1020,29 @@ mod tests {
         (d, gid, f2, e)
     }
 
+    /// Adds a Live Paint group of one face `r` with its four sides as edges (left, top, right,
+    /// bottom) in front of the layer's art; returns the group and the edges.
+    fn live_square(d: &mut Document, r: Rect) -> (NodeId, [NodeId; 4]) {
+        let l = d.layers[0].id;
+        let mut face = Node::path(d.alloc_id(), shapes::rectangle(r), Appearance::default());
+        face.name = Some(FACE_NAME.into());
+        let (a, b, c, e) = (Point::new(r.x0, r.y0), Point::new(r.x1, r.y0), Point::new(r.x1, r.y1), Point::new(r.x0, r.y1));
+        let mut kids = vec![Arc::new(face)];
+        let mut ids = [NodeId(0); 4];
+        for (k, (from, to)) in [(e, a), (a, b), (b, c), (c, e)].into_iter().enumerate() {
+            ids[k] = d.alloc_id();
+            let mut edge = Node::path(ids[k], shapes::line(from, to), Appearance::default());
+            edge.name = Some(EDGE_NAME.into());
+            kids.push(Arc::new(edge));
+        }
+        let gid = d.alloc_id();
+        let mut g = Node::group(gid, kids);
+        g.name = Some(LIVE_PAINT_NAME.into());
+        let at = d.layers[0].children().map_or(0, |c| c.len());
+        d.insert(Some(l), at, g).unwrap();
+        (gid, ids)
+    }
+
     #[test]
     fn bucket_click_fills_face_and_shift_click_strokes_edge() {
         let (d, gid, f2, _e) = live_group_doc();
@@ -1110,6 +1130,75 @@ mod tests {
         }
         let shift = Mods { shift: true, ..Default::default() };
         assert!(t.pointer(&cx, &ev(PointerKind::Down, 75.0, 25.0).with_mods(shift)).is_empty());
+    }
+
+    #[test]
+    fn live_paint_selection_click_outside_the_faces_selects_the_edge_it_highlights() {
+        let mut d = Document::new(500.0, 500.0);
+        let (_, [_, _, right, _]) = live_square(&mut d, Rect::new(0.0, 0.0, 100.0, 100.0));
+        let s = Selection::default();
+        let p = paint();
+        let cx = cx(&d, &s, &p);
+        let alt = Mods { alt: true, ..Default::default() };
+        let mut t = LivePaintSelectionTool::default();
+        // Alt held, and Select Fills off without Alt: 2 pt right of the square, the pointer
+        // highlights the square's right side, and a click selects that side (Shift-click adds it).
+        for (fills, m) in [(true, alt), (false, Mods::default())] {
+            t.set_option("selectFills", &json!(fills));
+            t.pointer(&cx, &ev(PointerKind::Move, 102.0, 50.0).with_mods(m));
+            let ov = t.overlays(&cx);
+            let [Overlay::Path { path, .. }] = ov.as_slice() else { panic!("{ov:?}") };
+            assert_eq!(path.bounding_box(), Rect::new(100.0, 0.0, 100.0, 100.0));
+            let acts = t.pointer(&cx, &ev(PointerKind::Down, 102.0, 50.0).with_mods(m));
+            assert_eq!(acts, vec![Action::Exec("select.set".into(), json!({ "ids": [right.0] }))]);
+            let acts = t.pointer(&cx, &ev(PointerKind::Down, 102.0, 50.0).with_mods(Mods { shift: true, ..m }));
+            assert_eq!(acts, vec![Action::Exec("select.toggle".into(), json!({ "id": right.0 }))]);
+        }
+        // Farther than 4 pixels from every edge: no highlight, and a click selects nothing.
+        t.pointer(&cx, &ev(PointerKind::Move, 106.0, 50.0));
+        assert!(t.overlays(&cx).is_empty());
+        assert_eq!(t.pointer(&cx, &ev(PointerKind::Down, 106.0, 50.0)), vec![Action::Exec("select.none".into(), json!({}))]);
+    }
+
+    #[test]
+    fn live_paint_edges_outside_the_faces_come_from_the_nearest_visible_group() {
+        let mut d = Document::new(500.0, 500.0);
+        let (back, [_, _, back_right, _]) = live_square(&mut d, Rect::new(0.0, 0.0, 100.0, 100.0));
+        let (front, [front_left, ..]) = live_square(&mut d, Rect::new(104.0, 0.0, 204.0, 100.0));
+        let s = Selection::default();
+        let p = paint();
+        let alt = Mods { alt: true, ..Default::default() };
+        let shift = Mods { shift: true, ..Default::default() };
+        // 1.5 pt from the back group's right side and 2.5 pt from the front group's left side.
+        let (x, y) = (101.5, 50.0);
+        let edge_x = |ov: &[Overlay]| match ov {
+            [] => None,
+            [Overlay::Path { path, .. }] => Some(path.bounding_box().x0),
+            _ => panic!("{ov:?}"),
+        };
+        // Live Paint Selection (Alt) and Live Paint Bucket (Shift) highlight and pick the same edge.
+        let check = |d: &Document, want: Option<(NodeId, NodeId, f64)>| {
+            let cx = cx(d, &s, &p);
+            let mut sel = LivePaintSelectionTool::default();
+            sel.pointer(&cx, &ev(PointerKind::Move, x, y).with_mods(alt));
+            assert_eq!(edge_x(&sel.overlays(&cx)), want.map(|w| w.2));
+            let picked = match want {
+                Some((_, e, _)) => Action::Exec("select.set".into(), json!({ "ids": [e.0] })),
+                None => Action::Exec("select.none".into(), json!({})),
+            };
+            assert_eq!(sel.pointer(&cx, &ev(PointerKind::Down, x, y).with_mods(alt)), vec![picked]);
+            let mut bucket = LivePaintBucketTool::default();
+            bucket.pointer(&cx, &ev(PointerKind::Move, x, y).with_mods(shift));
+            assert_eq!(edge_x(&bucket.overlays(&cx)), want.map(|w| w.2));
+            let stroked = want.map(|(g, ..)| Action::Exec("livePaint.strokeEdge".into(), json!({ "group": g.0, "point": [x, y], "tolerance": 4.0 })));
+            assert_eq!(bucket.pointer(&cx, &ev(PointerKind::Down, x, y).with_mods(shift)), stroked.into_iter().collect::<Vec<_>>());
+        };
+        check(&d, Some((back, back_right, 100.0)));
+        // A hidden group's edges are not highlighted or picked.
+        d.node_mut(back).unwrap().visible = false;
+        check(&d, Some((front, front_left, 104.0)));
+        d.node_mut(front).unwrap().visible = false;
+        check(&d, None);
     }
 
     #[test]
