@@ -543,7 +543,7 @@ mod tests {
         assert_eq!((r["pending"].as_str(), r["path"].as_str()), (Some("svgOptions"), Some("art.svg")));
         // The save panel offers every save format, the document's own first.
         let pick = &picks.borrow()[0];
-        let labels: Vec<&str> = pick.filters.iter().map(|f| f.0).collect();
+        let labels: Vec<&str> = pick.filters.iter().map(|f| f.0.as_str()).collect();
         assert_eq!(labels, ["VectorCraft", "VectorCraft Template", "PDF", "SVG", "SVG Compressed", "PDF-compatible .ai"]);
         assert_eq!(pick.name, "Untitled-1.vectorcraft");
         let d = dialog(&app);
@@ -698,7 +698,10 @@ mod tests {
         let pick = &picks.borrow()[1];
         assert_eq!(pick.name, "Untitled-1 template.vctemplate");
         assert_eq!(pick.folder.as_deref().map(std::path::Path::new), Some(folder.as_path()));
-        assert_eq!(pick.filters, [("VectorCraft Template", &["vctemplate"][..]), ("PDF-compatible .ait template", &["ait"][..])]);
+        assert_eq!(
+            pick.filters,
+            crate::FilePick::filters([("VectorCraft Template", &["vctemplate"][..]), ("PDF-compatible .ait template", &["ait"][..])])
+        );
         assert_eq!(written.borrow()[1].0, "copy.vectorcraft.vctemplate", "the picked name, with the template's extension");
     }
 

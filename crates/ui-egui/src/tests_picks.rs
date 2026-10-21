@@ -213,7 +213,7 @@ fn load_profile_asks_off_the_ui_thread() {
     let (mut app, shown, _) = app();
     app.run("file.new", json!({"width": 100, "height": 80})).unwrap();
     click(&mut app, "Load Profile…", crate::panels::separations::show);
-    assert!(matches!(shown.requests().as_slice(), [PickRequest::Open(p)] if p.filters.iter().any(|(_, e)| e.contains(&"icc"))));
+    assert!(matches!(shown.requests().as_slice(), [PickRequest::Open(p)] if p.filters.iter().any(|(_, e)| e.iter().any(|e| e == "icc"))));
     poll(&mut app);
     assert!(app.ui.status.is_empty(), "{}", app.ui.status);
     shown.answer(&["/no/such/profile.icc"]);
@@ -897,7 +897,7 @@ fn only_picks_shows_the_hosts_dialogs() {
                 .services
                 .pick_open
                 .as_mut()
-                .and_then(|f| f(&crate::FilePick { filters: vec![("ICC Profiles", &["icc", "icm"])], ..Default::default() }))
+                .and_then(|f| f(&crate::FilePick { filters: vec![FilePick::filter("ICC Profiles", &["icc", "icm"])], ..Default::default() }))
         {"#;
     assert_eq!(in_line_dialogs(&code_only(before)).len(), 1);
     assert_eq!(in_line_dialogs(&code_only("let s = &mut app.services; let p = (s.pick_save.as_mut()?)(&pick);")).len(), 1);

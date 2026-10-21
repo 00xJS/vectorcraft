@@ -334,7 +334,7 @@ pub fn menu(app: &mut VectorcraftApp, ui: &mut Ui) {
 
 /// Variables panel: Import Data Sets… opens a file dialog for a comma- or tab-separated file and runs `dataset.import` on the chosen file.
 fn import_datasets(app: &mut VectorcraftApp) {
-    let pick = crate::FilePick { filters: vec![("CSV", &["csv", "tsv", "txt"])], ..Default::default() };
+    let pick = crate::FilePick { filters: vec![crate::FilePick::filter("CSV", &["csv", "tsv", "txt"])], ..Default::default() };
     let Some(path) = crate::picks::open(app, &pick) else { return };
     if let Err(e) = app.run("dataset.import", json!({"path": path})) {
         app.status(e);
@@ -343,7 +343,7 @@ fn import_datasets(app: &mut VectorcraftApp) {
 
 /// Variables panel: Export Data Sets… — pick a path and run `dataset.export`.
 fn export_datasets(app: &mut VectorcraftApp) {
-    let pick = crate::FilePick { name: "datasets.csv".into(), filters: vec![("CSV", &["csv"])], ..Default::default() };
+    let pick = crate::FilePick { name: "datasets.csv".into(), filters: vec![crate::FilePick::filter("CSV", &["csv"])], ..Default::default() };
     let Some(path) = crate::picks::save(app, &pick) else { return };
     if let Err(e) = app.run("dataset.export", json!({"path": path})) {
         app.status(e);
