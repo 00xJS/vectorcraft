@@ -1907,6 +1907,7 @@ lighting	Light	Světlo
 	Select art and click New Symbol to make one.	Vyberte kresbu a symbol vytvořte tlačítkem Nový symbol.
 	Symbol Libraries (on the roadmap)	Knihovny symbolů (v plánu)
 	Align On:	Zarovnat na:
+	Bottom-Justified Tab	Tabulátor zarovnaný dolů
 	Center-Justified Tab	Tabulátor zarovnaný na střed
 	Above Text	Nad textem
 	Position Panel Above Text	Umístit panel nad text
@@ -1918,6 +1919,7 @@ lighting	Light	Světlo
 	No text selected	Není vybrán žádný text
 	Repeat Tab	Opakovat tabulátor
 	Right-Justified Tab	Tabulátor zarovnaný doprava
+	Top-Justified Tab	Tabulátor zarovnaný nahoru
 	Select a text object to set its tab stops.	Vyberte textový objekt, abyste mohli nastavit jeho zarážky tabulátoru.
 	Select text	Vyberte text
 	Snap to Unit	Přichytávat k jednotkám

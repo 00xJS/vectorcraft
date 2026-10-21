@@ -1826,6 +1826,7 @@ lighting	Light	Światło
 	Select art and click New Symbol to make one.	Zaznacz kompozycję i kliknij Nowy symbol, aby go utworzyć.
 	Symbol Libraries (on the roadmap)	Biblioteki symboli (w planach)
 	Align On:	Wyrównaj do:
+	Bottom-Justified Tab	Tabulator dolny
 	Center-Justified Tab	Tabulator środkowy
 	Above Text	Nad tekstem
 	Position Panel Above Text	Umieść panel nad tekstem
@@ -1837,6 +1838,7 @@ lighting	Light	Światło
 	No text selected	Nie zaznaczono tekstu
 	Repeat Tab	Powtórz tabulator
 	Right-Justified Tab	Tabulator prawy
+	Top-Justified Tab	Tabulator górny
 	Select a text object to set its tab stops.	Zaznacz obiekt tekstowy, aby ustawić jego tabulatory.
 	Select text	Zaznacz tekst
 	Snap to Unit	Przyciągaj do jednostek

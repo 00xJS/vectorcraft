@@ -262,6 +262,7 @@
 	Blur	模糊
 	Bottom	下
 	Bottom in Front	下方置前
+	Bottom-Justified Tab	底对齐制表位
 	Bottom-to-Bottom Leading	基线至基线行距
 	Burasagari	标点悬挂
 	Force	强制
@@ -3155,6 +3156,7 @@ font-script	Japanese	汉字
 	Tools	工具
 	Top	上
 	Top in Front	上方在前
+	Top-Justified Tab	顶对齐制表位
 	Top-to-Top Leading	上缘至上缘行距
 	Top:	上：
 	Total Width:	总宽度：

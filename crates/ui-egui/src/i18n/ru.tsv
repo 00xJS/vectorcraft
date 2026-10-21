@@ -305,6 +305,7 @@
 	Blur	Размытие
 	Bottom	Внизу
 	Bottom in Front	Нижний спереди
+	Bottom-Justified Tab	Табуляция с выравниванием по нижнему краю
 	Bottom:	Внизу:
 	Bounds	Границы
 	Bounds (Fill Proportionally)	Границы (заполнять пропорционально)
@@ -3301,6 +3302,7 @@ mark-style	Japanese	Японский
 	Tools	Инструменты
 	Top	Вверху
 	Top in Front	Верхний спереди
+	Top-Justified Tab	Табуляция с выравниванием по верхнему краю
 	Top:	Вверху:
 	Total Width:	Общая ширина:
 	Touch Type	Настройка текста

@@ -1738,6 +1738,7 @@ lighting	Light	Licht
 	Select art and click New Symbol to make one.	Selecteer artwork en klik op Nieuw symbool om er een te maken.
 	Symbol Libraries (on the roadmap)	Symboolbibliotheken (op de roadmap)
 	Align On:	Uitlijnen op:
+	Bottom-Justified Tab	Onder uitgelijnde tabstop
 	Center-Justified Tab	Midden uitgelijnde tabstop
 	Above Text	Boven tekst
 	Position Panel Above Text	Paneel boven tekst plaatsen
@@ -1749,6 +1750,7 @@ lighting	Light	Licht
 	No text selected	Geen tekst geselecteerd
 	Repeat Tab	Tabstop herhalen
 	Right-Justified Tab	Rechts uitgelijnde tabstop
+	Top-Justified Tab	Boven uitgelijnde tabstop
 	Select a text object to set its tab stops.	Selecteer een tekstobject om de tabstops in te stellen.
 	Select text	Selecteer tekst
 	Snap to Unit	Uitlijnen op eenheid

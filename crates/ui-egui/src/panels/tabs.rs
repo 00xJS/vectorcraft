@@ -1,7 +1,7 @@
-//! Tabs panel: tab-stop alignment, X position, leader and "align on", and a ruler numbered in the
-//! General unit on which a click adds a stop, dragging moves one and dragging it off the ruler
-//! deletes it. With Snap to Unit on, or Shift held, a stop placed or dragged on the ruler lands on
-//! the ruler's nearest tick.
+//! Tabs panel: tab-stop alignment, X position (Y in vertical type), leader and "align on", and a
+//! ruler numbered in the General unit on which a click adds a stop, dragging moves one and dragging
+//! it off the ruler deletes it. With Snap to Unit on, or Shift held, a stop placed or dragged on the
+//! ruler lands on the ruler's nearest tick.
 
 use egui::{Sense, Stroke, Ui, vec2};
 use serde_json::{Value, json};
@@ -12,12 +12,21 @@ use crate::VectorcraftApp;
 use crate::theme::Tokens;
 use crate::widgets::{self, menu_item};
 
-const ALIGNS: [(TabAlign, &str, &str); 4] = [
-    (TabAlign::Left, "⇥", "Left-Justified Tab"),
-    (TabAlign::Center, "⇹", "Center-Justified Tab"),
-    (TabAlign::Right, "⇤", "Right-Justified Tab"),
-    (TabAlign::Decimal, ".⇥", "Decimal-Justified Tab"),
-];
+const ALIGNS: [(TabAlign, &str); 4] = [(TabAlign::Left, "⇥"), (TabAlign::Center, "⇹"), (TabAlign::Right, "⇤"), (TabAlign::Decimal, ".⇥")];
+
+/// The name of alignment `a`'s button: its tool tip and what screen readers call it. A line of
+/// vertical type runs from top to bottom, so in vertical type a Left stop is named Top-Justified
+/// and a Right stop is named Bottom-Justified.
+fn align_name(a: TabAlign, vertical: bool) -> &'static str {
+    match (a, vertical) {
+        (TabAlign::Left, false) => tl!("Left-Justified Tab"),
+        (TabAlign::Left, true) => tl!("Top-Justified Tab"),
+        (TabAlign::Center, _) => tl!("Center-Justified Tab"),
+        (TabAlign::Right, false) => tl!("Right-Justified Tab"),
+        (TabAlign::Right, true) => tl!("Bottom-Justified Tab"),
+        (TabAlign::Decimal, _) => tl!("Decimal-Justified Tab"),
+    }
+}
 
 fn align_id(a: TabAlign) -> &'static str {
     match a {
@@ -129,15 +138,15 @@ pub fn show(app: &mut VectorcraftApp, ui: &mut Ui) {
         sel = stops.len().saturating_sub(1);
     }
     let mut align_idx: usize = pstate(ui.ctx(), "tabs-align");
+    let vertical = matches!(&node.kind, NodeKind::Text(text) if text.vertical);
     ui.horizontal(|ui| {
         ui.spacing_mut().item_spacing.x = 3.0;
-        for (i, (a, label, tip)) in ALIGNS.iter().enumerate() {
+        for (i, (a, label)) in ALIGNS.iter().enumerate() {
             let on = stops.get(sel).map_or(align_idx == i, |s| s.align == *a);
-            if ui
-                .add(egui::Button::new(egui::RichText::new(*label).size(13.0)).selected(on).min_size(vec2(28.0, 24.0)))
-                .on_hover_text(tl!(*tip))
-                .clicked()
-            {
+            let tip = align_name(*a, vertical);
+            let resp = ui.add(egui::Button::new(egui::RichText::new(*label).size(13.0)).selected(on).min_size(vec2(28.0, 24.0)));
+            resp.widget_info(|| egui::WidgetInfo::selected(egui::WidgetType::Button, ui.is_enabled(), on, tip));
+            if resp.on_hover_text(tip).clicked() {
                 align_idx = i;
                 set_pstate(ui.ctx(), "tabs-align", i);
                 if let Some(s) = stops.get_mut(sel) {
@@ -154,7 +163,7 @@ pub fn show(app: &mut VectorcraftApp, ui: &mut Ui) {
     });
     ui.add_space(4.0);
     egui::Grid::new("tabs-grid").num_columns(2).spacing([6.0, 4.0]).show(ui, |ui| {
-        ui.label(egui::RichText::new("X:").color(t.text));
+        ui.label(egui::RichText::new(if vertical { "Y:" } else { "X:" }).color(t.text));
         let x = stops.get(sel).map(|s| s.position);
         if let Some(v) = widgets::spin_field(ui, "tabs-x", x, app.session.general_unit(), 90.0, 1.0, 0.0, &[])
             && let Some(i) = apply_moved(app, ui.ctx(), &mut stops, sel, v.max(0.0))
@@ -366,6 +375,60 @@ mod tests {
         // The stops survive a JSON round trip through the panel's encoding.
         let back: Vec<serde_json::Value> = stops_json(&stops).as_array().unwrap().clone();
         assert_eq!(back[1]["align"], json!("decimal"));
+    }
+
+    /// In vertical type the Left and Right alignment buttons are named Top-Justified Tab and
+    /// Bottom-Justified Tab, in their tool tips and for screen readers, and the position field is
+    /// labeled Y. Horizontal type keeps Left-Justified Tab, Right-Justified Tab and X.
+    #[test]
+    fn vertical_type_names_the_alignments_top_and_bottom_and_the_position_y() {
+        use crate::widgets::accessibility_tests::{role_and_state, tree};
+        let mut app = VectorcraftApp::new(Session::new(), Default::default());
+        app.session.execute("file.new", &json!({})).unwrap();
+        app.session.execute("text.create", &json!({"x": 10, "y": 20, "text": "a	b", "area": {"width": 300, "height": 100}})).unwrap();
+        app.session.execute("text.tabs.set", &json!({"stops": [{"position": 50}]})).unwrap();
+        let horizontal = ["Left-Justified Tab", "Center-Justified Tab", "Right-Justified Tab", "Decimal-Justified Tab"];
+        let vertical = ["Top-Justified Tab", "Center-Justified Tab", "Bottom-Justified Tab", "Decimal-Justified Tab"];
+        for (names, other, axis, other_axis) in [(horizontal, vertical, "X:", "Y:"), (vertical, horizontal, "Y:", "X:")] {
+            if axis == "Y:" {
+                app.session.execute("type.orientation.vertical", &json!({})).unwrap();
+            }
+            // Screen readers find the four buttons by name, and the selected stop's alignment is pressed.
+            let nodes = tree(|ui| show(&mut app, ui));
+            for (i, name) in names.iter().enumerate() {
+                let pressed = if i == 0 { egui::accesskit::Toggled::True } else { egui::accesskit::Toggled::False };
+                assert_eq!(role_and_state(&nodes, name), (egui::accesskit::Role::Button, Some(pressed)), "{name}");
+            }
+            for name in other.iter().filter(|n| !names.contains(n)) {
+                assert!(!nodes.iter().any(|n| n.label() == Some(name)), "{name} with {axis}");
+            }
+            // Hovering each button shows its tool tip, and the panel shows the position field's label.
+            let ctx = egui::Context::default();
+            ctx.global_style_mut(|s| s.interaction.tooltip_delay = 0.0);
+            let screen = egui::Rect::from_min_size(egui::Pos2::ZERO, vec2(400.0, 400.0));
+            let mut time = 0.0;
+            let mut frame = |app: &mut VectorcraftApp, events: Vec<egui::Event>| {
+                time += 0.5;
+                let input = egui::RawInput { time: Some(time), screen_rect: Some(screen), events, ..Default::default() };
+                let mut out = ctx.run_ui(input, |ui| show(app, ui));
+                out.textures_delta.clear();
+                out.shapes
+                    .iter()
+                    .filter_map(|c| match &c.shape {
+                        egui::Shape::Text(t) => Some((t.galley.text().to_string(), t.visual_bounding_rect())),
+                        _ => None,
+                    })
+                    .collect::<Vec<_>>()
+            };
+            let texts = frame(&mut app, vec![]);
+            assert!(texts.iter().any(|(t, _)| t == axis) && !texts.iter().any(|(t, _)| t == other_axis), "{axis} in {texts:?}");
+            for ((_, glyph), name) in ALIGNS.iter().zip(names) {
+                let at = texts.iter().find(|(t, _)| t == glyph).unwrap_or_else(|| panic!("{glyph} in {texts:?}")).1.center();
+                frame(&mut app, vec![egui::Event::PointerMoved(at)]);
+                let tips = (0..3).flat_map(|_| frame(&mut app, vec![])).collect::<Vec<_>>();
+                assert!(tips.iter().any(|(t, _)| t == name), "the tip {name} in {tips:?}");
+            }
+        }
     }
 
     /// #924: Leader and Align On keep what is typed, frame after frame, until Enter applies it

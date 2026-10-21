@@ -1724,6 +1724,7 @@ lighting	Light	Cahaya
 	Select art and click New Symbol to make one.	Pilih karya seni dan klik Simbol Baru untuk membuatnya.
 	Symbol Libraries (on the roadmap)	Pustaka simbol (ada di peta jalan)
 	Align On:	Ratakan pada:
+	Bottom-Justified Tab	Tab rata bawah
 	Center-Justified Tab	Tab rata tengah
 	Above Text	Di atas teks
 	Position Panel Above Text	Posisikan panel di atas teks
@@ -1735,6 +1736,7 @@ lighting	Light	Cahaya
 	No text selected	Tidak ada teks yang dipilih
 	Repeat Tab	Ulangi tab
 	Right-Justified Tab	Tab rata kanan
+	Top-Justified Tab	Tab rata atas
 	Select a text object to set its tab stops.	Pilih objek teks untuk mengatur tab stop-nya.
 	Select text	Pilih teks
 	Snap to Unit	Snap ke satuan

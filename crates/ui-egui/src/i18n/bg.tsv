@@ -294,6 +294,7 @@
 	Blur	Размазване
 	Bottom	Долу
 	Bottom in Front	Най-долу отпред
+	Bottom-Justified Tab	Табулация с долно подравняване
 	Bottom:	Долу:
 	Bounds	Ограничителна рамка
 	Bounds (Fill Proportionally)	Граници (пропорционално запълване)
@@ -3213,6 +3214,7 @@
 	Tools	Инструменти
 	Top	Горно
 	Top in Front	Най-горе отпред
+	Top-Justified Tab	Табулация с горно подравняване
 	Top:	Горно:
 	Total Width:	Обща ширина:
 	Touch Type Tool	Инструмент „Сензорен текст“

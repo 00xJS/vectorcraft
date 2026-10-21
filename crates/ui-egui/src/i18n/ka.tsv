@@ -1625,6 +1625,7 @@ lighting	Light	სინათლე
 	Select art and click New Symbol to make one.	მონიშნეთ ნახატი და შესაქმნელად დაწკაპეთ „ახალ სიმბოლოზე“.
 	Symbol Libraries (on the roadmap)	სიმბოლოების ბიბლიოთეკები (სამომავლო გეგმაშია)
 	Align On:	სწორება მიმართ:
+	Bottom-Justified Tab	ქვემოთ სწორებული ტაბულაცია
 	Center-Justified Tab	ცენტრით სწორებული ტაბულაცია
 	Above Text	ტექსტის ზემოთ
 	Position Panel Above Text	პანელის ტექსტის ზემოთ განთავსება
@@ -1636,6 +1637,7 @@ lighting	Light	სინათლე
 	No text selected	ტექსტი მონიშნული არ არის
 	Repeat Tab	ტაბულაციის გამეორება
 	Right-Justified Tab	მარჯვნივ სწორებული ტაბულაცია
+	Top-Justified Tab	ზემოთ სწორებული ტაბულაცია
 	Select a text object to set its tab stops.	ტაბულაციის გაჩერებების დასაყენებლად მონიშნეთ ტექსტური ობიექტი.
 	Select text	მონიშნეთ ტექსტი
 	Snap to Unit	ერთეულზე მიბმა

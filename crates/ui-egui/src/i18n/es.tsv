@@ -307,6 +307,7 @@
 	Blur	Desenfocar
 	Bottom	Abajo
 	Bottom in Front	Inferior delante
+	Bottom-Justified Tab	Tabulación inferior
 	Bottom:	Abajo:
 	Bounds	Límites
 	Bounds (Fill Proportionally)	Límites (rellenar proporcionalmente)
@@ -3272,6 +3273,7 @@
 	Tools	Herramientas
 	Top	Arriba
 	Top in Front	Superior delante
+	Top-Justified Tab	Tabulación superior
 	Top:	Arriba:
 	Total Width:	Anchura total:
 	Touch Type Tool	Herramienta Retocar texto
