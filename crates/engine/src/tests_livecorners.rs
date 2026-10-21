@@ -158,7 +158,7 @@ fn corners_of_a_non_square_rectangle_are_alike_circles() {
         let d = std::sync::Arc::make_mut(&mut s.doc_mut().unwrap().doc);
         let NodeKind::Path { path, live: Some(live), .. } = &mut d.node_mut(id).unwrap().kind else { panic!("not live") };
         let xf = Affine::translate((10.0, 10.0)) * Affine::scale_non_uniform(2.0, 1.0);
-        **live = LiveShape::Rectangle { w: 50.0, h: 60.0, radii: [10.0; 4], kinds: Default::default(), xf };
+        **live = LiveShape::Rectangle { w: 50.0, h: 60.0, radii: [10.0; 4], kinds: Default::default(), radii_relative: false, xf };
         *path = live.to_path();
     }
     assert_eq!(spans(&s, id)[0], (20.0, 10.0));
@@ -418,4 +418,27 @@ fn a_polygon_takes_its_angle_radius_side_length_and_equal_sides() {
     for bad in [json!({"polygonRadius": 0}), json!({"sideLength": -3}), json!({"polygonRadius": "big"}), json!({"polygonAngle": "left"})] {
         assert!(s.execute("object.setLiveShape", &bad).is_err(), "{bad}");
     }
+}
+
+#[test]
+fn relative_corner_rounding_keeps_fraction_on_resize() {
+    let (mut s, id) = session();
+    run(&mut s, json!({"relativeRadii": true}));
+    let n = s.doc().unwrap().doc.node(id).unwrap();
+    let c = LiveCorners::of(n).unwrap();
+    let max = c.corner(0).unwrap().max_radius();
+    let want = 0.25;
+    run(&mut s, json!({"radius": want * max}));
+    let n = s.doc().unwrap().doc.node(id).unwrap();
+    let LiveShape::Rectangle { radii, radii_relative, .. } = n.live_shape().unwrap() else { panic!() };
+    assert!(radii_relative);
+    assert!((radii[0] - want).abs() < 0.02, "stored fraction: {}", radii[0]);
+    let drawn = LiveCorners::of(n).unwrap().drawn_radius(0);
+    s.execute("object.scale", &json!({"sx": 200, "sy": 200, "corners": true})).unwrap();
+    let n = s.doc().unwrap().doc.node(id).unwrap();
+    let LiveShape::Rectangle { radii, radii_relative, .. } = n.live_shape().unwrap() else { panic!() };
+    assert!(radii_relative);
+    assert!((radii[0] - want).abs() < 0.02, "fraction unchanged after scale: {}", radii[0]);
+    let c = LiveCorners::of(n).unwrap();
+    assert!((c.drawn_radius(0) / drawn - 2.0).abs() < 0.05, "drawn radius doubled with the shape");
 }

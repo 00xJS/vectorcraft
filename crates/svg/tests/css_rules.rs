@@ -30,7 +30,7 @@ fn rect(d: &mut Document, (x, y, w, h): (f64, f64, f64, f64), radius: f64) -> No
         Appearance::basic(fill, Paint::solid(Color::rgb8(0, 0, 255)), 2.0),
     );
     if let NodeKind::Path { live, .. } = &mut n.kind {
-        *live = Some(Box::new(LiveShape::Rectangle { w, h, radii: [radius; 4], kinds: Default::default(), xf: Affine::translate((x, y)) }));
+        *live = Some(Box::new(LiveShape::Rectangle { w, h, radii: [radius; 4], kinds: Default::default(), radii_relative: false, xf: Affine::translate((x, y)) }));
     }
     n
 }

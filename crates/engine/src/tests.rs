@@ -1301,7 +1301,7 @@ fn live_shape_properties_already_set_record_no_undo_step() {
         let d = std::sync::Arc::make_mut(&mut s.doc_mut().unwrap().doc);
         let NodeKind::Path { path, live: Some(live), .. } = &mut d.node_mut(r).unwrap().kind else { panic!("not a live rectangle") };
         let xf = Affine::scale_non_uniform(2.0, 1.0);
-        **live = vectorcraft_doc::LiveShape::Rectangle { w: 50.0, h: 60.0, radii: [10.0; 4], kinds: Default::default(), xf };
+        **live = vectorcraft_doc::LiveShape::Rectangle { w: 50.0, h: 60.0, radii: [10.0; 4], kinds: Default::default(), radii_relative: false, xf };
         *path = live.to_path();
     }
     let shown = vectorcraft_doc::LiveCorners::of(s.doc().unwrap().doc.node(r).unwrap()).unwrap().radius(0);

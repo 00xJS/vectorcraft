@@ -1031,6 +1031,7 @@ mod tests {
             h: 100.0,
             radii: [0.0; 4],
             kinds: Default::default(),
+            radii_relative: false,
             xf: vectorcraft_geom::Affine::translate((100.0, 100.0)),
         };
         let mut d = vectorcraft_doc::Document::new(500.0, 500.0);
