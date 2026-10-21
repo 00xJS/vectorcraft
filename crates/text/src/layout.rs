@@ -2150,11 +2150,14 @@ fn on_path(cx: &mut Ctx<'_>, paras: &[Range<usize>], t: &TextObject, path: &Path
     // Type on a path is one line: the first paragraph's attributes align it.
     let para = t.para_at(0);
     let mut sg = Vec::new();
-    // The first paragraph's direction aligns the line (Auto) and sets the caret's.
+    // The first paragraph's direction aligns the line (Auto) and sets the caret's. `rtl_para` is that
+    // direction in vertical type too: a right-to-left first paragraph does not hang.
     let mut rtl = None;
+    let mut rtl_para = None;
     for pr in paras {
         let text = cx.text;
         let bidi = para_bidi(text.get(pr.clone()).unwrap_or_default(), para.direction);
+        rtl_para.get_or_insert(is_rtl(bidi.as_ref()));
         rtl.get_or_insert(is_rtl(bidi.as_ref()) && !cx.vertical);
         let shaped = cx.shape_para(pr.clone(), bidi.as_ref());
         for i in visual_order(bidi.as_ref().filter(|_| !cx.vertical), pr.start, pr.clone(), &shaped) {
@@ -2197,16 +2200,71 @@ fn on_path(cx: &mut Ctx<'_>, paras: &[Range<usize>], t: &TextObject, path: &Path
     let spacing = if t.path_spacing.is_finite() { t.path_spacing } else { 0.0 };
     let mut steps = path_steps(&ap, &sg, s_start, spacing);
     let w: f64 = steps.iter().sum();
-    let s0 = match para.justify {
-        Justify::Auto if rtl => s_start + (avail - w).max(0.0),
-        Justify::Center | Justify::JustifyCenter => s_start + ((avail - w) * 0.5).max(0.0),
-        Justify::Right | Justify::JustifyRight => s_start + (avail - w).max(0.0),
-        _ => s_start,
+    // Optical Margin Alignment and Roman Hanging Punctuation: the brackets are the margins, and the
+    // glyphs at the line's ends hang outside them by `hang_l` and `hang_r`, measured along the path.
+    // The line is aligned in a span that much longer at each end, and the glyphs that hang at the
+    // end (`hung_r` of them) do not make it overflow past the end bracket. On an open path a hang
+    // stops at the path's end. On a closed path the two hangs together take at most the stretch
+    // between the end and start brackets: the end where the line is placed takes its share first.
+    // A centered line's ends each get up to half of it, and either end takes what the other leaves.
+    // The hangs are measured on the steps the glyphs take where the line is placed.
+    let hanging = (t.optical_margin || para.roman_hanging) && rtl_para == Some(false);
+    let hangs = |steps: &[f64]| {
+        if !hanging {
+            return (0.0, 0.0, 0);
+        }
+        let share: fn(&SGlyph) -> f64 = if t.optical_margin { optical_share } else { roman_share };
+        let line: Vec<(&SGlyph, f64)> = sg.iter().zip(steps).map(|(g, &step)| (g, step)).collect();
+        let (l, r, _, hung_r) = optical_hangs(&line, share);
+        let (l, r) = if ap.is_closed() {
+            let gap = (ap.len() - avail).max(0.0);
+            match para.justify {
+                Justify::Right | Justify::JustifyRight => {
+                    let r = r.min(gap);
+                    (l.min(gap - r), r)
+                }
+                Justify::Center | Justify::JustifyCenter => {
+                    let l = l.min(gap - r.min(gap * 0.5));
+                    (l, r.min(gap - l))
+                }
+                _ => {
+                    let l = l.min(gap);
+                    (l, r.min(gap - l))
+                }
+            }
+        } else {
+            (l.min(s_start), r.min((ap.len() - s_start - avail).max(0.0)))
+        };
+        (l, r, hung_r)
     };
+    let place = |(l, r, _): (f64, f64, usize)| {
+        let (lo, room) = (s_start - l, avail + l + r);
+        match para.justify {
+            Justify::Auto if rtl => lo + (room - w).max(0.0),
+            Justify::Center | Justify::JustifyCenter => lo + ((room - w) * 0.5).max(0.0),
+            Justify::Right | Justify::JustifyRight => lo + (room - w).max(0.0),
+            _ => lo,
+        }
+    };
+    let mut hung = hangs(&steps);
+    let mut s0 = place(hung);
     if spacing != 0.0 && s0 != s_start {
-        // Spaced from where the alignment puts them, the curve under them is another.
+        // Spaced from where the alignment puts them, the curve under them is another. That changes
+        // the hanging glyphs' steps, so the line is placed again from the new steps until it stays
+        // where it is (at most 8 times).
         steps = path_steps(&ap, &sg, s0, spacing);
+        for _ in 0..8 {
+            hung = hangs(&steps);
+            let moved = place(hung);
+            if (moved - s0).abs() < 1e-9 {
+                break;
+            }
+            s0 = moved;
+            steps = path_steps(&ap, &sg, s0, spacing);
+        }
     }
+    let (hang_l, hang_r, hung_r) = hung;
+    let (lo, room) = (s_start - hang_l, avail + hang_l + hang_r);
     // Align to Path: how far down (glyph space) the type moves to run its ascender, centre or
     // descender along the path instead of its baseline.
     let rise = match t.path_align {
@@ -2216,9 +2274,10 @@ fn on_path(cx: &mut Ctx<'_>, paras: &[Range<usize>], t: &TextObject, path: &Path
         PathAlign::Center => (m.0 - m.1) * 0.5,
     };
     let mut x = 0.0;
-    for (g, &step) in sg.iter().zip(&steps) {
+    for (k, (g, &step)) in sg.iter().zip(&steps).enumerate() {
         let s = s0 + x;
-        if s + step - s_start > avail + 1e-6 {
+        let end = if k + hung_r >= sg.len() { room } else { room - hang_r };
+        if s + step - lo > end + 1e-6 {
             cx.out.overflow = true;
             break;
         }

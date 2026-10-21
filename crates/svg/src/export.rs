@@ -1890,6 +1890,11 @@ impl Writer<'_> {
                 self.warn("type on a path with an end bracket, Align to Path or Spacing is outlined to keep its look");
                 return self.text_outlines(n, t);
             }
+            // It cannot hang glyphs outside the start bracket either.
+            if hangs_on_path(t, &lay) {
+                self.warn("type on a path with glyphs hanging outside its brackets is outlined to keep its look");
+                return self.text_outlines(n, t);
+            }
             return self.text_on_path(n, t, path, *start);
         }
         self.note_fonts(t, &lay);
@@ -2162,6 +2167,24 @@ impl Writer<'_> {
 /// Does a character style stroke inside or outside its glyphs (not centred)?
 fn aligned(st: &CharStyle) -> bool {
     st.has_stroke() && st.stroke_align != StrokeAlign::Center
+}
+
+/// Does type on a path `t`, laid out as `lay`, hang glyphs outside its brackets? It does when
+/// Optical Margin Alignment or its first paragraph's Roman Hanging Punctuation is on and its
+/// glyphs sit elsewhere with both off.
+fn hangs_on_path(t: &TextObject, lay: &vectorcraft_text::TextLayout) -> bool {
+    if !t.optical_margin && !t.para_at(0).roman_hanging {
+        return false;
+    }
+    let mut flush = t.clone();
+    flush.optical_margin = false;
+    let mut styles = flush.paragraph_styles();
+    for p in &mut styles {
+        p.roman_hanging = false;
+    }
+    flush.set_paragraph_styles(styles);
+    let flush = vectorcraft_text::layout(FontDb::global(), &flush);
+    lay.glyphs.len() != flush.glyphs.len() || lay.glyphs.iter().zip(&flush.glyphs).any(|(a, b)| a.origin != b.origin)
 }
 
 /// What the `<tspan>` of a run whose properties are `run` sets over its `<text>`'s `base`: the
