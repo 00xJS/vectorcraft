@@ -553,7 +553,7 @@ pub const UI_COMMANDS: &[(&str, &str, &str, &str)] = &[
     (
         "ui.newLayer",
         "New Layer Options…",
-        "",
+        "Cmd+Alt+L",
         "{sublayer?: bool} open Layer Options for a new layer (or a sublayer of the current layer), named and coloured as it would be: dialog `layerOptions` with mode new|newSublayer; OK runs layer.new or layer.newSublayer with the fields",
     ),
     (

@@ -197,7 +197,7 @@ Cmd/Ctrl+/ (`appearance.addFill`) and Cmd/Ctrl+Alt+/ (`appearance.addStroke`) ad
 selected objects, as the Appearance panel's Add New Fill and Add New Stroke buttons do.
 
 ~110 distinct modified shortcuts on menu commands plus single-key tool shortcuts for the default toolbar
-(`crates/tools/src/catalog.rs`), a shortcut editor with chords, and saved sets. Not yet diffed item by item
+(`crates/tools/src/catalog.rs`), a shortcut editor with chords, and saved sets. Cmd/Ctrl+Alt+L (`ui.newLayer`) opens Layer Options for a new layer, as an Alt-click on the Layers panel's New Layer button does, and Cmd/Ctrl+L still adds a layer without the dialog. Not yet diffed item by item
 against Illustrator's published default shortcut list; estimated ~70% of it. Remaining: the panel shortcuts,
 the type shortcuts (tracking/kerning/leading/baseline steps with Alt/Shift), and selection shortcuts in the
 Layers panel. The shortcut editor also lists the commands that are in no menu but run without parameters (Edit › Duplicate,
