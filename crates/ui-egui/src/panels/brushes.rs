@@ -246,10 +246,11 @@ pub fn show(app: &mut VectorcraftApp, ui: &mut Ui) {
         }
         ui.min_rect()
     });
-    // Art dragged off the canvas and dropped on the list becomes an Art brush, as New Brush makes.
+    // Art dragged off the canvas and dropped on the list opens New Brush for that art, as the New
+    // Brush button opens it for the selection.
     let zone = ui.interact(list_rect, ui.id().with("brushes-drop"), Sense::hover());
     if let Some(ids) = widgets::art_drop(ui, &zone)
-        && let Err(e) = app.run("brush.new", json!({ "type": "art", "ids": ids }))
+        && let Err(e) = app.run("ui.newBrush", json!({ "ids": ids }))
     {
         app.status(e);
     }
@@ -297,7 +298,7 @@ pub fn show(app: &mut VectorcraftApp, ui: &mut Ui) {
     }
     let has_brush = sel_brush.is_some();
     let targets = multi.unwrap_or_else(|| highlighted.into_iter().collect());
-    let has_sel = app.session.active().is_some_and(|d| !d.selection.is_empty());
+    let has_doc = app.session.active().is_some();
     widgets::bottom_bar(ui, |ui| {
         widgets::icon_button_enabled(ui, "library", tl!("Brush Libraries (on the roadmap)"), false, false, 24.0);
         if widgets::icon_button_enabled(ui, "dc-remove-brush", tl!("Remove Brush Stroke"), false, has_brush, 24.0).clicked() {
@@ -307,8 +308,11 @@ pub fn show(app: &mut VectorcraftApp, ui: &mut Ui) {
             app.run("object.expandBrush", json!({})).ok();
         }
         ui.add_space((ui.available_width() - 2.0 * 28.0).max(0.0));
-        if widgets::icon_button_enabled(ui, "dc-new-item", tl!("New Art Brush from Selection"), false, has_sel, 24.0).clicked() {
-            app.run("brush.new", json!({"type": "art"})).ok();
+        // New Brush asks for the type, then opens that type's Brush Options.
+        if widgets::icon_button_enabled(ui, "dc-new-item", tl!("New Brush"), false, has_doc, 24.0).clicked()
+            && let Err(e) = app.run("ui.newBrush", json!({}))
+        {
+            app.status(e);
         }
         if widgets::icon_button_enabled(ui, "trash-2", tl!("Delete Brush"), false, !targets.is_empty(), 24.0).clicked() {
             run_on(app, "brush.delete", &targets);
@@ -321,6 +325,12 @@ pub fn menu(app: &mut VectorcraftApp, ui: &mut Ui) {
     let (list, current) = brushes(app);
     let targets = targets(app, ui.ctx(), &list, current.as_deref());
     let has_sel = app.session.active().is_some_and(|d| !d.selection.is_empty());
+    if menu_item(ui, tl!("New Brush…"), app.session.active().is_some(), false)
+        && let Err(e) = app.run("ui.newBrush", json!({}))
+    {
+        app.status(e);
+    }
+    // The types' own items make a brush at once, without its Brush Options.
     for (label, ty) in [(tl!("New Calligraphic Brush"), "calligraphic"), (tl!("New Bristle Brush"), "bristle")] {
         if menu_item(ui, label, true, false) {
             app.run("brush.new", json!({"type": ty})).ok();
@@ -482,6 +492,26 @@ mod tests {
         let def = app.run("brush.get", json!({"name": "Pressure Round"})).unwrap();
         assert_eq!((def["modes"].clone(), def["variation"][2].clone()), (json!(["fixed", "fixed", "pressure"]), json!(2.0)));
         assert_eq!(brushes(&mut app).1.as_deref(), Some("Pressure Round"), "renamed, still current");
+    }
+
+    /// The New Brush button and the panel menu's New Brush… open New Brush, with nothing selected
+    /// too, and make no brush.
+    #[test]
+    fn the_new_brush_button_and_menu_item_open_new_brush() {
+        let mut app = VectorcraftApp::new(Session::new(), Default::default());
+        app.run("file.new", json!({"width": 200, "height": 100})).unwrap();
+        let ctx = egui::Context::default();
+        ctx.enable_accesskit();
+        let before = names(&mut app);
+        let out = frame_with(&ctx, &mut app, vec![], egui::Modifiers::NONE, 0.0, show);
+        let new = clickable(&out).into_iter().find(|(l, _)| l.as_deref() == Some("New Brush")).expect("a New Brush button").1.center();
+        click(&ctx, &mut app, new, egui::Modifiers::NONE, 1.0, show);
+        let kind = |app: &VectorcraftApp| app.ui.dialog.as_ref().map(|d| d.kind.clone());
+        assert_eq!(kind(&app).as_deref(), Some(crate::dialogs::new_brush::KIND));
+        app.ui.dialog = None;
+        menu_click(&ctx, &mut app, "New Brush…", 2.0);
+        assert_eq!(kind(&app).as_deref(), Some(crate::dialogs::new_brush::KIND));
+        assert_eq!(names(&mut app), before);
     }
 
     /// The rectangles `out` fills with the selected-row color.
@@ -671,6 +701,12 @@ mod tests {
         let over = pos2(100.0, 60.0);
         egui::DragAndDrop::set_payload(&ctx, PanelDrag::Art(vec![NodeId(id)]));
         frame(&ctx, &mut app, vec![egui::Event::PointerMoved(over), button(over, false)]);
+        // New Brush opens on Art for the dropped art, and OK twice makes the brush.
+        let d = app.ui.dialog.as_ref().expect("New Brush opened");
+        assert_eq!((d.kind.as_str(), d.str("type"), d.fields.get("__ids")), (crate::dialogs::new_brush::KIND, "art".into(), Some(&json!([id]))));
+        assert_eq!(brushes(&mut app).0, before);
+        crate::dialogs::confirm(&mut app).unwrap();
+        crate::dialogs::confirm(&mut app).unwrap();
         let (after, _) = brushes(&mut app);
         assert_eq!(after.len(), before.len() + 1);
         let new: Vec<_> = after.iter().filter(|b| !before.contains(b)).collect();

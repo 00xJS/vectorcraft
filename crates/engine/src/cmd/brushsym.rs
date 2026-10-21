@@ -32,6 +32,15 @@ pub fn specs() -> Vec<CommandSpec> {
         cmd!(query "brush.list", "Brushes", [], None, "{} → {brushes: [{name, type}], current}", has_doc, brush_list),
         cmd!(query "brush.get", "Brush Definition", [], None, "{name} → the brush definition (JSON)", has_doc, brush_get),
         cmd!(
+            query "brush.selectionArt",
+            "Brush Art",
+            [],
+            None,
+            "{ids?|id?} → {art: the object brush.new takes as a new scatter or art brush's art and as a new pattern brush's side tile (several objects become one group), or null when nothing is selected or ids name no object}",
+            has_doc,
+            brush_selection_art
+        ),
+        cmd!(
             "brush.apply",
             "Apply Brush",
             [],
@@ -285,6 +294,12 @@ fn brush_get(s: &mut Session, p: &Value) -> Result<Value> {
     let name = name_param(p, "brush.get")?;
     let b = brush::find(&s.doc()?.doc, name).ok_or_else(|| EngineError::Other(format!("no brush named `{name}`")))?;
     Ok(serde_json::to_value(b).unwrap_or_default())
+}
+
+/// The art `brush.new` takes from `ids` or `id`, else from the selection ([`selection_art`]).
+fn brush_selection_art(s: &mut Session, p: &Value) -> Result<Value> {
+    let art = selection_art(s, p)?;
+    Ok(json!({ "art": art.map(|n| serde_json::to_value(&n).unwrap_or_default()) }))
 }
 
 fn brush_apply(s: &mut Session, p: &Value) -> Result<Value> {
