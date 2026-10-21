@@ -83,13 +83,18 @@ pub fn specs() -> Vec<CommandSpec> {
             "Bristle Brush Strokes",
             ["Select", "Object"],
             None,
-            "{} objects whose brush name contains \"bristle\" → {count}",
+            "{} objects whose topmost stroke has a bristle brush (type bristle in brush.list), whatever the brush is named → {count}",
             has_doc,
-            |s, _| by_kind(s, |n| n
-                .appearance
-                .stroke()
-                .and_then(|st| st.brush.as_deref())
-                .is_some_and(|b| b.to_ascii_lowercase().contains("bristle")))
+            |s, _| {
+                let brushes = vectorcraft_brush::library(&s.doc()?.doc);
+                by_kind(s, |n| {
+                    n.appearance
+                        .stroke()
+                        .and_then(|st| st.brush.as_deref())
+                        .and_then(|name| brushes.iter().find(|b| b.name == name))
+                        .is_some_and(|b| matches!(b.kind, vectorcraft_brush::BrushKind::Bristle(_)))
+                })
+            }
         ),
         cmd!(
             "select.save",
@@ -305,7 +310,7 @@ fn same_text(s: &mut Session, cmd: &str, eq: fn(&CharStyle, &CharStyle) -> bool)
     finish_same(s, cmd, ids)
 }
 
-fn by_kind(s: &mut Session, f: fn(&Node) -> bool) -> Result<Value> {
+fn by_kind(s: &mut Session, f: impl Fn(&Node) -> bool) -> Result<Value> {
     let ids = candidates(s, f)?;
     let n = ids.len();
     s.select(|_, sel| sel.set(ids))?;
