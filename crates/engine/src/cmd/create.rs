@@ -506,6 +506,7 @@ fn text_create(s: &mut Session, p: &Value) -> Result<Value> {
         t.kind = vectorcraft_doc::TextKind::Area { frame: shapes::rectangle(Rect::new(0.0, 0.0, w, h)) };
         t.area.fit = new_area_fit(s, a, "text.create")?;
     }
+    t.system_layout = s.doc()?.doc.setup.system_layout;
     if bool_or(p, "placeholder", false) {
         super::typemenu::fill_with_placeholder(&mut t);
     } else {
