@@ -1,4 +1,4 @@
-//! Photoshop-style raster effects (Effect › Artistic › Colored Pencil, Cutout, Dry Brush, Film Grain, Neon Glow, Paint Daubs, Plastic Wrap and
+//! Photoshop-style raster effects (Effect › Artistic › Colored Pencil, Cutout, Dry Brush, Film Grain, Fresco, Neon Glow, Paint Daubs, Plastic Wrap and
 //! Poster Edges, Rough Pastels, Smudge Stick, Sponge and Watercolor, Blur › Radial Blur and Smart Blur, Brush Strokes › Accented Edges, Angled Strokes,
 //! Crosshatch, Dark Strokes, Ink Outlines, Spatter, Sprayed Strokes and Sumi-e, Distort › Diffuse
 //! Glow, Glass and Ocean Ripple, Pixelate › Color Halftone, Crystallize, Mezzotint and Pointillize,
@@ -44,11 +44,12 @@ pub use sketch::{HALFTONE_TYPES, HalftonePattern};
 pub use texture::{GRAIN_TYPES, Grain, LIGHT_DIRECTIONS, Light, TEXTURES, TEXTURES_LOADED, Texture};
 
 /// The Photoshop-style effect ids (all raster effects, see [`crate::is_raster`]).
-pub const PIXEL_EFFECTS: [&str; 54] = [
+pub const PIXEL_EFFECTS: [&str; 55] = [
     "artistic.coloredPencil",
     "artistic.cutout",
     "artistic.dryBrush",
     "artistic.filmGrain",
+    "artistic.fresco",
     "artistic.neonGlow",
     "artistic.paintDaubs",
     "artistic.paletteKnife",
@@ -118,6 +119,9 @@ pub enum PixelFx {
     /// Artistic › Film Grain: monochrome grain in shadows and midtones, a wider bright
     /// highlight area (0..20), and tonal intensity (0..10), preserving coverage.
     FilmGrain { grain: f64, highlight: f64, intensity: f64 },
+    /// Artistic › Fresco: coarse brush dabs on plaster; `brush_size` (1..10), `brush_detail`
+    /// (0..10) and `texture` (1..3).
+    Fresco { brush_size: f64, brush_detail: f64, texture: f64 },
     /// Artistic › Smudge Stick: the dark areas smudged along short diagonal strokes `stroke`
     /// (0..10) long, the light areas (widened by `highlight`, 0..20) smudged longer and lightened
     /// by up to `intensity` (0..10).
@@ -374,6 +378,11 @@ pub(crate) fn parse(id: &str, p: &Value) -> Option<PixelFx> {
             light: Light::parse(text(p, "lightDirection", "top")),
             invert: flag(p, "invert", false),
         },
+        "artistic.fresco" => PixelFx::Fresco {
+            brush_size: num(p, "brushSize", 2.0).clamp(1.0, 10.0),
+            brush_detail: num(p, "brushDetail", 10.0).clamp(0.0, 10.0),
+            texture: num(p, "texture", 1.0).round().clamp(1.0, 3.0),
+        },
         "artistic.smudgeStick" => PixelFx::SmudgeStick {
             stroke: num(p, "strokeLength", 2.0).clamp(0.0, 10.0),
             highlight: num(p, "highlightArea", 12.0).clamp(0.0, 20.0),
@@ -621,6 +630,7 @@ impl PixelFx {
             PixelFx::SmudgeStick { .. } | PixelFx::Sponge { .. } | PixelFx::Watercolor { .. } => 0.0,
             PixelFx::FilmGrain { .. }
             | PixelFx::ColoredPencil { .. }
+            | PixelFx::Fresco { .. }
             | PixelFx::Cutout { .. }
             | PixelFx::DryBrush { .. }
             | PixelFx::NeonGlow { .. }
@@ -687,6 +697,7 @@ impl PixelFx {
             | PixelFx::HalftonePattern { .. }
             | PixelFx::NotePaper { .. }
             | PixelFx::Reticulation { .. } => Some(0.0),
+            PixelFx::Fresco { brush_size, brush_detail, .. } => Some(artistic::fresco_reach(brush_size, brush_detail)),
             PixelFx::DryBrush { size, detail, .. } => Some(artistic::dry_brush_reach(size, detail)),
             PixelFx::Plaster { smoothness, .. } => Some(sketch::plaster_reach(smoothness)),
             PixelFx::PaintDaubs { size, .. } => Some(artistic::paint_daub_radius(size) + size * 0.15),
@@ -725,6 +736,7 @@ impl PixelFx {
             PixelFx::Cutout { levels, simplicity, fidelity } => artistic::cutout(px, w, h, space, levels, simplicity, fidelity),
             PixelFx::DryBrush { size, detail, texture } => artistic::dry_brush(px, w, h, space, size, detail, texture),
             PixelFx::FilmGrain { grain, highlight, intensity } => artistic::film_grain(px, w, h, space, grain, highlight, intensity),
+            PixelFx::Fresco { brush_size, brush_detail, texture } => artistic::fresco(px, w, h, space, brush_size, brush_detail, texture),
             PixelFx::SmudgeStick { stroke, highlight, intensity } => paint::smudge_stick(px, w, h, space, stroke, highlight, intensity),
             PixelFx::Sponge { brush, definition, smoothness } => paint::sponge(px, w, h, space, brush, definition, smoothness),
             PixelFx::Watercolor { detail, shadow, texture } => paint::watercolor(px, w, h, space, detail, shadow, texture),

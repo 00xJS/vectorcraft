@@ -2549,6 +2549,11 @@ fn artistic_params_take_defaults_and_stay_in_range() {
         ),
         PixelFx::RoughPastels { length: 0.0, detail: 20.0, texture: Texture::Canvas, scaling: 0.5, relief: 50.0, light: Light::Top, invert: true }
     );
+    assert_eq!(fx("artistic.fresco", json!({})), PixelFx::Fresco { brush_size: 2.0, brush_detail: 10.0, texture: 1.0 });
+    assert_eq!(
+        fx("artistic.fresco", json!({"brushSize": 0, "brushDetail": 99, "texture": 4.7})),
+        PixelFx::Fresco { brush_size: 1.0, brush_detail: 10.0, texture: 3.0 }
+    );
     assert_eq!(fx("artistic.plasticWrap", json!({})), PixelFx::PlasticWrap { highlight: 20.0, detail: 12.0, smoothness: 15.0 });
     assert_eq!(
         fx("artistic.plasticWrap", json!({"highlightStrength": -1, "detail": 99, "smoothness": 0})),
@@ -2558,6 +2563,7 @@ fn artistic_params_take_defaults_and_stay_in_range() {
         "artistic.coloredPencil",
         "artistic.cutout",
         "artistic.dryBrush",
+        "artistic.fresco",
         "artistic.neonGlow",
         "artistic.plasticWrap",
         "artistic.posterEdges",
@@ -2612,6 +2618,7 @@ fn artistic_filters_leave_invalid_coordinate_spaces_alone() {
     let filters = [
         PixelFx::Cutout { levels: 4.0, simplicity: 4.0, fidelity: 2.0 },
         PixelFx::DryBrush { size: 2.0, detail: 10.0, texture: 1.0 },
+        PixelFx::Fresco { brush_size: 2.0, brush_detail: 10.0, texture: 1.0 },
         PixelFx::NeonGlow { size: 5.0, brightness: 15.0, colour },
         PixelFx::PlasticWrap { highlight: 20.0, detail: 12.0, smoothness: 15.0 },
         PixelFx::PosterEdges { thickness: 2.0, intensity: 1.0, posterization: 2.0 },
@@ -2664,6 +2671,9 @@ fn artistic_filters_leave_invalid_coordinate_spaces_alone() {
             light: Light::Top,
             invert: false,
         },
+        PixelFx::Fresco { brush_size: f64::NAN, brush_detail: 10.0, texture: 1.0 },
+        PixelFx::Fresco { brush_size: 2.0, brush_detail: f64::INFINITY, texture: 1.0 },
+        PixelFx::Fresco { brush_size: 2.0, brush_detail: 10.0, texture: f64::NEG_INFINITY },
     ] {
         if run(&f, &space(w, h)) != src {
             changed.push(format!("{f:?}"));
@@ -2691,6 +2701,22 @@ fn underpainting_softens_more_with_a_larger_brush_and_keeps_coverage() {
     let mut out = src.clone();
     fx("artistic.underpainting", json!({})).apply(&mut out, w, h, &space(w, h));
     assert!(out.as_chunks::<4>().0.iter().zip(src.as_chunks::<4>().0).all(|(o, s)| o[3] == s[3]));
+}
+
+#[test]
+fn fresco_keeps_coverage_and_responds_to_texture() {
+    let (w, h) = (48, 32);
+    let src = ramp(w, h);
+    let mut low = src.clone();
+    let mut high = src.clone();
+    fx("artistic.fresco", json!({"texture": 1})).apply(&mut low, w, h, &space(w, h));
+    fx("artistic.fresco", json!({"texture": 3})).apply(&mut high, w, h, &space(w, h));
+    assert_ne!(low, src);
+    assert_ne!(high, src);
+    assert_ne!(low, high, "deeper texture changes the relief");
+    for (a, b) in low.as_chunks::<4>().0.iter().zip(src.as_chunks::<4>().0) {
+        assert_eq!(a[3], b[3], "alpha is preserved");
+    }
 }
 
 #[test]
