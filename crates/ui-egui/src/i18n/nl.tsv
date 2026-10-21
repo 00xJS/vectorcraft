@@ -3902,6 +3902,25 @@ imageTrace	Outline	Contour
 @msg	a PostScript error ({name} in `{op}`: {at})	een PostScript-fout ({name} in `{op}`: {at})
 @msg	a PostScript error ({name} in `{op}`: {at}), in {procs}	een PostScript-fout ({name} in `{op}`: {at}), in {procs}
 @msg	a PostScript error ({name})	een PostScript-fout ({name})
+@msg	a PostScript error ({name} in `{op}`; {meaning})	een PostScript-fout ({name} in `{op}`; {meaning})
+@msg	a PostScript error ({name} in `{op}`; {meaning}), in {procs}	een PostScript-fout ({name} in `{op}`; {meaning}), in {procs}
+@msg	a PostScript error ({name} in `{op}`: {at}; {meaning})	een PostScript-fout ({name} in `{op}`: {at}; {meaning})
+@msg	a PostScript error ({name} in `{op}`: {at}; {meaning}), in {procs}	een PostScript-fout ({name} in `{op}`: {at}; {meaning}), in {procs}
+@msg	a PostScript error ({name}; {meaning})	een PostScript-fout ({name}; {meaning})
+@msg	the program ends a dictionary it didn't begin	het programma beëindigt een woordenboek dat het niet heeft begonnen
+@msg	the program opens a file, which the reader can't do	het programma opent een bestand, wat de PostScript-lezer niet kan
+@msg	the program restores a saved state that was already restored	het programma herstelt een opgeslagen toestand die al is hersteld
+@msg	data the program reads is damaged or cut short, or the program asks for a position in a file that has none	gegevens die het programma leest zijn beschadigd of afgebroken, of het programma vraagt een positie in een bestand dat er geen heeft
+@msg	the program goes past one of the reader's limits	het programma overschrijdt een van de limieten van de PostScript-lezer
+@msg	the path has no point to continue from	het pad heeft geen punt om vanaf verder te gaan
+@msg	a value is outside the range the operator takes	een waarde ligt buiten het bereik dat de operator aanneemt
+@msg	the operator needs more values than the stack holds	de operator heeft meer waarden nodig dan de stapel bevat
+@msg	part of the program isn't valid PostScript text	een deel van het programma is geen geldige PostScript-tekst
+@msg	a value has the wrong type for the operator	een waarde heeft het verkeerde type voor de operator
+@msg	the program runs, deletes or renames a file, which the reader can't do	het programma voert een bestand uit, verwijdert het of wijzigt de naam ervan, wat de PostScript-lezer niet kan
+@msg	the program asks for a resource that isn't defined	het programma vraagt om een resource die niet is gedefinieerd
+@msg	a calculation has no result, as in a division by zero	een berekening heeft geen uitkomst, zoals bij een deling door nul
+@msg	the operator looks for a mark on the stack and finds none	de operator zoekt een markering op de stapel en vindt er geen
 @msg	a bitmap is empty	een bitmap is leeg
 @msg	a bitmap is too large to read	een bitmap is te groot om te lezen
 @msg	a colour index is 0 to {_1}, not {n}	een kleurindex is 0 tot {_1}, niet {n}

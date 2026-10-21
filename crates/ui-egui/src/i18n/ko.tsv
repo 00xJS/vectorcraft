@@ -4073,6 +4073,25 @@ theme	Appearance	외관
 @msg	a PostScript error ({name} in `{op}`: {at})	PostScript 오류({name}, `{op}`: {at})
 @msg	a PostScript error ({name} in `{op}`: {at}), in {procs}	PostScript 오류({name}, `{op}`: {at}), 위치: {procs}
 @msg	a PostScript error ({name})	PostScript 오류({name})
+@msg	a PostScript error ({name} in `{op}`; {meaning})	PostScript 오류({name}, `{op}`; {meaning})
+@msg	a PostScript error ({name} in `{op}`; {meaning}), in {procs}	PostScript 오류({name}, `{op}`; {meaning}), 위치: {procs}
+@msg	a PostScript error ({name} in `{op}`: {at}; {meaning})	PostScript 오류({name}, `{op}`: {at}; {meaning})
+@msg	a PostScript error ({name} in `{op}`: {at}; {meaning}), in {procs}	PostScript 오류({name}, `{op}`: {at}; {meaning}), 위치: {procs}
+@msg	a PostScript error ({name}; {meaning})	PostScript 오류({name}; {meaning})
+@msg	the program ends a dictionary it didn't begin	프로그램이 시작하지 않은 딕셔너리를 끝내려고 합니다
+@msg	the program opens a file, which the reader can't do	프로그램이 파일을 열려고 하지만 PostScript 판독기는 파일을 열 수 없습니다
+@msg	the program restores a saved state that was already restored	프로그램이 이미 복원된 저장 상태를 다시 복원하려고 합니다
+@msg	data the program reads is damaged or cut short, or the program asks for a position in a file that has none	프로그램이 읽는 데이터가 손상되었거나 중간에 잘렸거나, 프로그램이 위치가 없는 파일에서 위치를 요청합니다
+@msg	the program goes past one of the reader's limits	프로그램이 PostScript 판독기의 한도를 넘었습니다
+@msg	the path has no point to continue from	패스에 이어서 그릴 기준점이 없습니다
+@msg	a value is outside the range the operator takes	값이 연산자가 받는 범위를 벗어났습니다
+@msg	the operator needs more values than the stack holds	연산자에 필요한 값이 스택에 부족합니다
+@msg	part of the program isn't valid PostScript text	프로그램 일부가 올바른 PostScript 텍스트가 아닙니다
+@msg	a value has the wrong type for the operator	값의 유형이 연산자에 맞지 않습니다
+@msg	the program runs, deletes or renames a file, which the reader can't do	프로그램이 파일을 실행, 삭제 또는 이름 변경하려고 하지만 PostScript 판독기는 이를 할 수 없습니다
+@msg	the program asks for a resource that isn't defined	프로그램이 정의되지 않은 리소스를 요청합니다
+@msg	a calculation has no result, as in a division by zero	0으로 나누기처럼 계산 결과가 없습니다
+@msg	the operator looks for a mark on the stack and finds none	연산자가 스택에서 마크를 찾지 못했습니다
 @msg	it uses `{at}`, which VectorCraft's PostScript reader doesn't know	`{at}`을(를) 사용하며, VectorCraft의 PostScript 판독기는 이를 알지 못합니다
 @msg	the file was read up to an error ({why}): what follows it was left out	오류({why})까지 파일을 읽었으며, 그 뒤의 내용은 제외했습니다
 @msg	this file's PostScript couldn't be read ({why}): {what}	이 파일의 PostScript를 읽을 수 없습니다({why}): {what}

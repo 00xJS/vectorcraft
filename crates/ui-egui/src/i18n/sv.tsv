@@ -3776,6 +3776,25 @@ axis	Both	Båda
 @msg	a PostScript error ({name} in `{op}`: {at})	ett PostScript-fel ({name} i `{op}`: {at})
 @msg	a PostScript error ({name} in `{op}`: {at}), in {procs}	ett PostScript-fel ({name} i `{op}`: {at}), i {procs}
 @msg	a PostScript error ({name})	ett PostScript-fel ({name})
+@msg	a PostScript error ({name} in `{op}`; {meaning})	ett PostScript-fel ({name} i `{op}`; {meaning})
+@msg	a PostScript error ({name} in `{op}`; {meaning}), in {procs}	ett PostScript-fel ({name} i `{op}`; {meaning}), i {procs}
+@msg	a PostScript error ({name} in `{op}`: {at}; {meaning})	ett PostScript-fel ({name} i `{op}`: {at}; {meaning})
+@msg	a PostScript error ({name} in `{op}`: {at}; {meaning}), in {procs}	ett PostScript-fel ({name} i `{op}`: {at}; {meaning}), i {procs}
+@msg	a PostScript error ({name}; {meaning})	ett PostScript-fel ({name}; {meaning})
+@msg	the program ends a dictionary it didn't begin	programmet avslutar en ordlista som det inte har påbörjat
+@msg	the program opens a file, which the reader can't do	programmet öppnar en fil, vilket PostScript-läsaren inte kan
+@msg	the program restores a saved state that was already restored	programmet återställer ett sparat läge som redan har återställts
+@msg	data the program reads is damaged or cut short, or the program asks for a position in a file that has none	data som programmet läser är skadade eller avkortade, eller så frågar programmet efter en position i en fil som inte har någon
+@msg	the program goes past one of the reader's limits	programmet överskrider en av PostScript-läsarens gränser
+@msg	the path has no point to continue from	banan har ingen punkt att fortsätta från
+@msg	a value is outside the range the operator takes	ett värde ligger utanför intervallet som operatorn tar emot
+@msg	the operator needs more values than the stack holds	operatorn behöver fler värden än stacken innehåller
+@msg	part of the program isn't valid PostScript text	en del av programmet är inte giltig PostScript-text
+@msg	a value has the wrong type for the operator	ett värde har fel typ för operatorn
+@msg	the program runs, deletes or renames a file, which the reader can't do	programmet kör, tar bort eller byter namn på en fil, vilket PostScript-läsaren inte kan
+@msg	the program asks for a resource that isn't defined	programmet begär en resurs som inte är definierad
+@msg	a calculation has no result, as in a division by zero	en beräkning har inget resultat, som vid division med noll
+@msg	the operator looks for a mark on the stack and finds none	operatorn letar efter en markering på stacken och hittar ingen
 @msg	a bitmap is empty	en bitmapp är tom
 @msg	a bitmap is too large to read	en bitmapp är för stor för att läsas
 @msg	a colour index is 0 to {_1}, not {n}	ett färgindex är 0 till {_1}, inte {n}

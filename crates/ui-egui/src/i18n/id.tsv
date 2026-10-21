@@ -3888,6 +3888,25 @@ imageTrace	Outline	Kontur
 @msg	a PostScript error ({name} in `{op}`: {at})	kesalahan PostScript ({name} dalam `{op}`: {at})
 @msg	a PostScript error ({name} in `{op}`: {at}), in {procs}	kesalahan PostScript ({name} dalam `{op}`: {at}), dalam {procs}
 @msg	a PostScript error ({name})	kesalahan PostScript ({name})
+@msg	a PostScript error ({name} in `{op}`; {meaning})	kesalahan PostScript ({name} dalam `{op}`; {meaning})
+@msg	a PostScript error ({name} in `{op}`; {meaning}), in {procs}	kesalahan PostScript ({name} dalam `{op}`; {meaning}), dalam {procs}
+@msg	a PostScript error ({name} in `{op}`: {at}; {meaning})	kesalahan PostScript ({name} dalam `{op}`: {at}; {meaning})
+@msg	a PostScript error ({name} in `{op}`: {at}; {meaning}), in {procs}	kesalahan PostScript ({name} dalam `{op}`: {at}; {meaning}), dalam {procs}
+@msg	a PostScript error ({name}; {meaning})	kesalahan PostScript ({name}; {meaning})
+@msg	the program ends a dictionary it didn't begin	program mengakhiri kamus yang tidak dimulainya
+@msg	the program opens a file, which the reader can't do	program membuka berkas, yang tidak dapat dilakukan pembaca PostScript
+@msg	the program restores a saved state that was already restored	program memulihkan keadaan tersimpan yang sudah dipulihkan
+@msg	data the program reads is damaged or cut short, or the program asks for a position in a file that has none	data yang dibaca program rusak atau terpotong, atau program meminta posisi dalam berkas yang tidak memiliki posisi
+@msg	the program goes past one of the reader's limits	program melewati salah satu batas pembaca PostScript
+@msg	the path has no point to continue from	jalur tidak memiliki titik untuk dilanjutkan
+@msg	a value is outside the range the operator takes	sebuah nilai berada di luar rentang yang diterima operator
+@msg	the operator needs more values than the stack holds	operator memerlukan lebih banyak nilai daripada yang ada di tumpukan
+@msg	part of the program isn't valid PostScript text	sebagian program bukan teks PostScript yang valid
+@msg	a value has the wrong type for the operator	sebuah nilai memiliki tipe yang salah untuk operator
+@msg	the program runs, deletes or renames a file, which the reader can't do	program menjalankan, menghapus, atau mengganti nama berkas, yang tidak dapat dilakukan pembaca PostScript
+@msg	the program asks for a resource that isn't defined	program meminta sumber daya yang tidak didefinisikan
+@msg	a calculation has no result, as in a division by zero	sebuah perhitungan tidak memiliki hasil, seperti pada pembagian dengan nol
+@msg	the operator looks for a mark on the stack and finds none	operator mencari penanda di tumpukan dan tidak menemukannya
 @msg	a bitmap is empty	bitmap kosong
 @msg	a bitmap is too large to read	bitmap terlalu besar untuk dibaca
 @msg	a colour index is 0 to {_1}, not {n}	indeks warna 0 hingga {_1}, bukan {n}

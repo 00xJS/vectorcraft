@@ -3888,6 +3888,25 @@ imageTrace	Outline	Kontur
 @msg	a PostScript error ({name} in `{op}`: {at})	en PostScript-fejl ({name} i `{op}`: {at})
 @msg	a PostScript error ({name} in `{op}`: {at}), in {procs}	en PostScript-fejl ({name} i `{op}`: {at}), i {procs}
 @msg	a PostScript error ({name})	en PostScript-fejl ({name})
+@msg	a PostScript error ({name} in `{op}`; {meaning})	en PostScript-fejl ({name} i `{op}`; {meaning})
+@msg	a PostScript error ({name} in `{op}`; {meaning}), in {procs}	en PostScript-fejl ({name} i `{op}`; {meaning}), i {procs}
+@msg	a PostScript error ({name} in `{op}`: {at}; {meaning})	en PostScript-fejl ({name} i `{op}`: {at}; {meaning})
+@msg	a PostScript error ({name} in `{op}`: {at}; {meaning}), in {procs}	en PostScript-fejl ({name} i `{op}`: {at}; {meaning}), i {procs}
+@msg	a PostScript error ({name}; {meaning})	en PostScript-fejl ({name}; {meaning})
+@msg	the program ends a dictionary it didn't begin	programmet afslutter en ordbog, det ikke har startet
+@msg	the program opens a file, which the reader can't do	programmet åbner en fil, hvilket læseren ikke kan
+@msg	the program restores a saved state that was already restored	programmet gendanner en gemt tilstand, der allerede er gendannet
+@msg	data the program reads is damaged or cut short, or the program asks for a position in a file that has none	data, som programmet læser, er beskadigede eller afkortede, eller programmet beder om en position i en fil, der ikke har nogen
+@msg	the program goes past one of the reader's limits	programmet overskrider en af læserens grænser
+@msg	the path has no point to continue from	kurven har intet punkt at fortsætte fra
+@msg	a value is outside the range the operator takes	en værdi ligger uden for det område, operatoren tager imod
+@msg	the operator needs more values than the stack holds	operatoren skal bruge flere værdier, end stakken indeholder
+@msg	part of the program isn't valid PostScript text	en del af programmet er ikke gyldig PostScript-tekst
+@msg	a value has the wrong type for the operator	en værdi har den forkerte type til operatoren
+@msg	the program runs, deletes or renames a file, which the reader can't do	programmet kører, sletter eller omdøber en fil, hvilket læseren ikke kan
+@msg	the program asks for a resource that isn't defined	programmet beder om en ressource, der ikke er defineret
+@msg	a calculation has no result, as in a division by zero	en beregning har intet resultat, som ved division med nul
+@msg	the operator looks for a mark on the stack and finds none	operatoren leder efter et mærke på stakken og finder intet
 @msg	a bitmap is empty	en bitmap er tom
 @msg	a bitmap is too large to read	en bitmap er for stor til at læse
 @msg	a colour index is 0 to {_1}, not {n}	et farveindeks er fra 0 til {_1}, ikke {n}

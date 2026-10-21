@@ -3972,6 +3972,25 @@ imageTrace	Outline	Kontur
 @msg	a PostScript error ({name} in `{op}`: {at})	błąd PostScript ({name} w `{op}`: {at})
 @msg	a PostScript error ({name} in `{op}`: {at}), in {procs}	błąd PostScript ({name} w `{op}`: {at}), w {procs}
 @msg	a PostScript error ({name})	błąd PostScript ({name})
+@msg	a PostScript error ({name} in `{op}`; {meaning})	błąd PostScript ({name} w `{op}`; {meaning})
+@msg	a PostScript error ({name} in `{op}`; {meaning}), in {procs}	błąd PostScript ({name} w `{op}`; {meaning}), w {procs}
+@msg	a PostScript error ({name} in `{op}`: {at}; {meaning})	błąd PostScript ({name} w `{op}`: {at}; {meaning})
+@msg	a PostScript error ({name} in `{op}`: {at}; {meaning}), in {procs}	błąd PostScript ({name} w `{op}`: {at}; {meaning}), w {procs}
+@msg	a PostScript error ({name}; {meaning})	błąd PostScript ({name}; {meaning})
+@msg	the program ends a dictionary it didn't begin	program kończy słownik, którego nie rozpoczął
+@msg	the program opens a file, which the reader can't do	program otwiera plik, czego czytnik PostScript nie potrafi
+@msg	the program restores a saved state that was already restored	program przywraca zapisany stan, który został już przywrócony
+@msg	data the program reads is damaged or cut short, or the program asks for a position in a file that has none	dane czytane przez program są uszkodzone lub urwane albo program pyta o pozycję w pliku, który jej nie ma
+@msg	the program goes past one of the reader's limits	program przekracza jeden z limitów czytnika PostScript
+@msg	the path has no point to continue from	ścieżka nie ma punktu, od którego można kontynuować
+@msg	a value is outside the range the operator takes	wartość jest poza zakresem przyjmowanym przez operator
+@msg	the operator needs more values than the stack holds	operator potrzebuje więcej wartości, niż jest na stosie
+@msg	part of the program isn't valid PostScript text	część programu nie jest poprawnym tekstem PostScript
+@msg	a value has the wrong type for the operator	wartość ma niewłaściwy typ dla operatora
+@msg	the program runs, deletes or renames a file, which the reader can't do	program uruchamia, usuwa lub zmienia nazwę pliku, czego czytnik PostScript nie potrafi
+@msg	the program asks for a resource that isn't defined	program żąda zasobu, który nie jest zdefiniowany
+@msg	a calculation has no result, as in a division by zero	obliczenie nie ma wyniku, jak przy dzieleniu przez zero
+@msg	the operator looks for a mark on the stack and finds none	operator szuka znacznika na stosie i go nie znajduje
 @msg	a bitmap is empty	bitmapa jest pusta
 @msg	a bitmap is too large to read	bitmapa jest zbyt duża, aby ją odczytać
 @msg	a colour index is 0 to {_1}, not {n}	indeks koloru musi mieścić się w zakresie od 0 do {_1}, nie {n}

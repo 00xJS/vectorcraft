@@ -4039,6 +4039,25 @@ theme	Appearance	Giao diện
 @msg	a PostScript error ({name} in `{op}`: {at})	lỗi PostScript ({name} trong `{op}`: {at})
 @msg	a PostScript error ({name} in `{op}`: {at}), in {procs}	lỗi PostScript ({name} trong `{op}`: {at}), trong {procs}
 @msg	a PostScript error ({name})	lỗi PostScript ({name})
+@msg	a PostScript error ({name} in `{op}`; {meaning})	lỗi PostScript ({name} trong `{op}`; {meaning})
+@msg	a PostScript error ({name} in `{op}`; {meaning}), in {procs}	lỗi PostScript ({name} trong `{op}`; {meaning}), trong {procs}
+@msg	a PostScript error ({name} in `{op}`: {at}; {meaning})	lỗi PostScript ({name} trong `{op}`: {at}; {meaning})
+@msg	a PostScript error ({name} in `{op}`: {at}; {meaning}), in {procs}	lỗi PostScript ({name} trong `{op}`: {at}; {meaning}), trong {procs}
+@msg	a PostScript error ({name}; {meaning})	lỗi PostScript ({name}; {meaning})
+@msg	the program ends a dictionary it didn't begin	chương trình kết thúc một từ điển mà nó chưa bắt đầu
+@msg	the program opens a file, which the reader can't do	chương trình mở một tệp, việc mà trình đọc PostScript không làm được
+@msg	the program restores a saved state that was already restored	chương trình khôi phục một trạng thái đã lưu vốn đã được khôi phục
+@msg	data the program reads is damaged or cut short, or the program asks for a position in a file that has none	dữ liệu chương trình đọc bị hỏng hoặc bị cắt cụt, hoặc chương trình yêu cầu vị trí trong một tệp không có vị trí
+@msg	the program goes past one of the reader's limits	chương trình vượt quá một giới hạn của trình đọc PostScript
+@msg	the path has no point to continue from	đường dẫn không có điểm để tiếp tục
+@msg	a value is outside the range the operator takes	một giá trị nằm ngoài phạm vi mà toán tử chấp nhận
+@msg	the operator needs more values than the stack holds	toán tử cần nhiều giá trị hơn số có trong ngăn xếp
+@msg	part of the program isn't valid PostScript text	một phần chương trình không phải là văn bản PostScript hợp lệ
+@msg	a value has the wrong type for the operator	một giá trị có kiểu không phù hợp với toán tử
+@msg	the program runs, deletes or renames a file, which the reader can't do	chương trình chạy, xóa hoặc đổi tên một tệp, việc mà trình đọc PostScript không làm được
+@msg	the program asks for a resource that isn't defined	chương trình yêu cầu một tài nguyên chưa được định nghĩa
+@msg	a calculation has no result, as in a division by zero	một phép tính không có kết quả, như khi chia cho không
+@msg	the operator looks for a mark on the stack and finds none	toán tử tìm một dấu mốc trên ngăn xếp nhưng không thấy
 @msg	a preset named `{_1}` exists	đã có thiết lập sẵn tên `{_1}`
 @msg	a swatch or color group named `{n}` exists	đã có mẫu màu hoặc nhóm màu tên `{n}`
 @msg	a slice size must be a positive number of points	kích thước lát cắt phải là số điểm dương

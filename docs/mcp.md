@@ -3519,7 +3519,9 @@ point type in the font the file names (embedded font programs are skipped). In a
 (else `%%BoundingBox`; a letter page without one). A program the interpreter can't run (an operator it doesn't know,
 an error, a runaway loop) or that draws nothing comes in as its TIFF preview (palette previews with an alpha channel
 too) with a warning; without a preview, the art drawn up to the error is kept with a warning, and a file with none is
-refused with a message saying why.
+refused with a message saying why. A PostScript error is named as PostScript spells it, followed by what it means:
+``a PostScript error (typecheck in `add`; a value has the wrong type for the operator)``. The status bar shows
+the meaning in the interface language, and the name stays as it is.
 
 ```json
 {"name":"run_command","arguments":{"command":"document.open","params":{"path":"/tmp/logo.eps"}}}

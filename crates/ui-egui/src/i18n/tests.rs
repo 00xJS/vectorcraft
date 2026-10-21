@@ -1824,6 +1824,38 @@ fn effect_channel_param_error_is_translated() {
     }
 }
 
+/// The status bar's line for an EPS file whose PostScript stops on an error, opened partly or
+/// refused, and the refusal's dialog keep the error's name as PostScript spells it and show what
+/// it means in each language of [`COMPLETE_MESSAGES`] and in Bulgarian; each meaning in
+/// [`vectorcraft_eps::POSTSCRIPT_ERRORS`] has a row in those catalogs.
+#[test]
+fn postscript_error_meanings_are_translated() {
+    let languages = || COMPLETE_MESSAGES.iter().chain(&["bg"]).map(|code| (*code, Lang::from_code(code).unwrap()));
+    let meaning = "a value has the wrong type for the operator";
+    for (body, opens) in [("0 0 10 10 rectfill 1 (a) add", true), ("1 (a) add", false)] {
+        let bytes = format!("%!PS-Adobe-3.0 EPSF-3.0\n%%BoundingBox: 0 0 100 100\n%%EndComments\n{body}\n%%EOF\n").into_bytes();
+        let mut app = crate::VectorcraftApp::new(vectorcraft_engine::Session::new(), crate::Services::default());
+        app.services.read = Some(Box::new(move |_: &str| Ok(bytes.clone())));
+        assert_eq!(crate::io::open_reporting(&mut app, "/in/a.eps").is_ok(), opens, "{}", app.ui.status);
+        let mut shown_texts = vec![app.ui.status.clone()];
+        if !opens {
+            shown_texts.push(app.ui.dialog.take().expect("a dialog says why").str("detail"));
+        }
+        for text in shown_texts {
+            assert!(text.contains(&format!("(typecheck in `add`; {meaning})")), "{text}");
+            for (code, lang) in languages() {
+                let shown = message(lang, &text);
+                let ok = shown.contains("typecheck") && shown.contains("`add`") && shown.contains(&message(lang, meaning));
+                assert!(ok && !shown.contains(meaning) && !shown.contains("PostScript error"), "{code}: {shown}");
+            }
+        }
+    }
+    for (code, lang) in languages() {
+        let missing: Vec<_> = vectorcraft_eps::POSTSCRIPT_ERRORS.iter().filter(|(_, m)| message(lang, m) == *m).collect();
+        assert!(missing.is_empty(), "{code}: {missing:?}");
+    }
+}
+
 /// The notes of an EPS or `.ai` whose layers weren't read, which the importer pushes as warnings
 /// (the scan above doesn't read them), are translated whole, reason included, as the status bar
 /// shows them after opening (#2035).

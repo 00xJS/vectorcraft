@@ -4150,6 +4150,25 @@ imageTrace	Outline	Obrys
 @msg	a PostScript error ({name} in `{op}`: {at})	chyba PostScriptu ({name} v `{op}`: {at})
 @msg	a PostScript error ({name} in `{op}`: {at}), in {procs}	chyba PostScriptu ({name} v `{op}`: {at}), v {procs}
 @msg	a PostScript error ({name})	chyba PostScriptu ({name})
+@msg	a PostScript error ({name} in `{op}`; {meaning})	chyba PostScriptu ({name} v `{op}`; {meaning})
+@msg	a PostScript error ({name} in `{op}`; {meaning}), in {procs}	chyba PostScriptu ({name} v `{op}`; {meaning}), v {procs}
+@msg	a PostScript error ({name} in `{op}`: {at}; {meaning})	chyba PostScriptu ({name} v `{op}`: {at}; {meaning})
+@msg	a PostScript error ({name} in `{op}`: {at}; {meaning}), in {procs}	chyba PostScriptu ({name} v `{op}`: {at}; {meaning}), v {procs}
+@msg	a PostScript error ({name}; {meaning})	chyba PostScriptu ({name}; {meaning})
+@msg	the program ends a dictionary it didn't begin	program ukončuje slovník, který nezačal
+@msg	the program opens a file, which the reader can't do	program otevírá soubor, což čtečka neumí
+@msg	the program restores a saved state that was already restored	program obnovuje uložený stav, který už byl obnoven
+@msg	data the program reads is damaged or cut short, or the program asks for a position in a file that has none	data, která program čte, jsou poškozená nebo zkrácená, nebo program žádá pozici v souboru, který žádnou nemá
+@msg	the program goes past one of the reader's limits	program překračuje jeden z limitů čtečky
+@msg	the path has no point to continue from	cesta nemá bod, ze kterého by mohla pokračovat
+@msg	a value is outside the range the operator takes	hodnota je mimo rozsah, který operátor přijímá
+@msg	the operator needs more values than the stack holds	operátor potřebuje více hodnot, než obsahuje zásobník
+@msg	part of the program isn't valid PostScript text	část programu není platný text PostScriptu
+@msg	a value has the wrong type for the operator	hodnota má pro operátor nesprávný typ
+@msg	the program runs, deletes or renames a file, which the reader can't do	program spouští, maže nebo přejmenovává soubor, což čtečka neumí
+@msg	the program asks for a resource that isn't defined	program požaduje prostředek, který není definován
+@msg	a calculation has no result, as in a division by zero	výpočet nemá výsledek, například při dělení nulou
+@msg	the operator looks for a mark on the stack and finds none	operátor hledá na zásobníku značku a žádnou nenachází
 @msg	a bitmap is empty	bitmapa je prázdná
 @msg	a bitmap is too large to read	bitmapa je příliš velká na načtení
 @msg	a colour index is 0 to {_1}, not {n}	index barvy je 0 až {_1}, ne {n}
