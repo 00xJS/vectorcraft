@@ -30,6 +30,8 @@ Chinese by `imachus`). Only Georgian is recorded as reviewed by a native speaker
 | Hindi | `hi` | 0 | none | Devanagari: the document's text shapes (HarfRust), with tests of conjuncts, reph, pre-base matras, nukta forms and caret stops that run when an OpenType Devanagari font is installed, but the egui interface does no complex shaping | no | none | 20–30 |
 | Arabic | `ar` | 0 | none | document text: bidi layout and Paragraph Direction; interface: no right-to-left layout, no Arabic shaping in egui | no | none | 25–40 |
 | French | `fr` | 4,020 / 4,020 (100%) | all | Latin | no | full | — (review) |
+| Portuguese | `pt-br` | 4,707 catalog entries: menus, `tl!` literals and messages complete (tests); one|other plurals | all | Latin | contributor is a Brazilian Portuguese speaker; further native review welcome | full | — (review) |
+| Indonesian | `id` | 5,279 rows, 750 of them `@msg` (counted 2026-10-21): menus and `tl!` literals complete (tests); the tests do not hold its messages complete; one plural form | dialogs and tooltips all; 750 message rows (French has 796) | Latin | no | full | — (review) |
 | Portuguese | `pt-br` | 5,194 catalog entries (counted 2026-10-21): menus, `tl!` literals and messages complete (tests); one/other plurals | all | Latin | contributor is a Brazilian Portuguese speaker; further native review welcome | full | — (review) |
 | Indonesian | `id` | 0 | none | Latin | no | none | 5–8 |
 | Japanese | `ja` | 4,004 / 4,020 (99.6%) | all | CJK UI font as above; Japanese IME; vertical type partial; Japanese crop marks and composition settings | no | full | — (review) |
@@ -37,7 +39,7 @@ Chinese by `imachus`). Only Georgian is recorded as reviewed by a native speaker
 | Korean | `ko` | 4,870 rows (counted 2026-10-21): menus, `tl!` literals and messages complete (tests); one plural form | all | Hangul from an installed system font on the desktop (Apple SD Gothic Neo, Malgun Gothic, Noto Sans CJK KR…); the web build has no Korean UI font yet (craft-fonts); IME path exists | no (AI-drafted) | full | — (review; web font) |
 | Vietnamese | `vi` | 4,886 rows (counted 2026-10-21): menus, `tl!` literals and messages complete (tests); one plural form; 4,046 plain + 18 `@plural` + 28 contextual + 794 `@msg` | all | Latin with Vietnamese diacritics (precomposed forms; glyph tests pass) | contributor is a Vietnamese speaker; AI-assisted draft, further native review welcome | full | — (review) |
 
-**12-language score: ~74%** (equal weights: 100 + 85 + 100 + 0 + 0 + 100 + 100 + 0 + 100 + 98 + 100 + 100, over 12).
+**12-language score: ~82%** (equal weights: 100 + 85 + 100 + 0 + 0 + 100 + 100 + 100 + 100 + 98 + 100 + 100, over 12).
 **To `full` for all twelve: ~50–85 h**, most of it Arabic (right-to-left interface) and Hindi (interface
 shaping). Each new Latin-script catalog is ~4,000 rows; the existing ones were written in a few agent hours each
 plus review. Native-speaker review is human work and isn't in the hours.
@@ -48,6 +50,8 @@ plus review. Native-speaker review is human work and isn't in the hours.
 |---|---|---|---|
 | Traditional Chinese (Taiwan) | `zh-hant` | 4,892 rows, 790 of them `@msg` (counted 2026-10-21): menus, `tl!` literals and messages complete under the tests (80% overall) | partial |
 | Italian | `it` | 4,011 / 4,020 | full |
+| Dutch | `nl` | 5,317 rows, 777 of them `@msg` (counted 2026-10-21): menus and `tl!` literals complete (tests); the tests do not hold its messages complete; one/other plurals | full |
+| Danish | `da` | 5,279 rows, 750 of them `@msg` (counted 2026-10-21): menus and `tl!` literals complete (tests); the tests do not hold its messages complete; one/other plurals | full |
 | Russian | `ru` | 4,009 / 4,020 | full |
 | Ukrainian | `uk` | 4,009 / 4,020 (one/few/many plurals) | full |
 | Hungarian | `hu` | 5,253 rows (counted 2026-10-21): menus, `tl!` literals and messages complete (tests); one plural form | full |
@@ -59,7 +63,7 @@ plus review. Native-speaker review is human work and isn't in the hours.
 | Greek | `el` | 5,251 rows, 795 of them `@msg` (counted 2026-10-21): menus, `tl!` literals and messages complete (tests) | full; native review welcome |
 | Georgian | `ka` | 5,200 rows (counted 2026-10-21): menus, panels, dialogs, plurals (one count-neutral form) and messages, tested complete; reviewed by a native speaker | full |
 
-Nineteen non-English catalogs in all. Illustrator, as its public documentation lists, ships around two dozen
+Twenty-three non-English catalogs in all. Illustrator, as its public documentation lists, ships around two dozen
 interface languages (including Polish, Dutch, Turkish, the Nordic languages, Hungarian, and Middle East
 editions with Arabic and Hebrew); it doesn't ship Hindi, Indonesian or Vietnamese.
 
