@@ -1288,9 +1288,10 @@ already walks Image Trace. Short agent entry points:
   `variable.unbind`, `variable.rename`, `variable.delete`, `variable.highlight` (image values are file paths, graph
   values CSV as `graph.setData`). `variable.lock {locked?}` (Lock Variables) locks or unlocks the variables;
   without `locked` it toggles, and the lock is saved with the document. While the variables are locked,
-  `variable.define`, `variable.delete`, `variable.rename` and the four `variable.make…Dynamic` commands fail with
-  "variables are locked"; `variable.bind`, `variable.unbind` and the `dataset.*` commands still run (except a
-  `dataset.import` whose header would define a variable, below), and `variable.list` reports `locked`.
+  `variable.define`, `variable.delete`, `variable.rename`, the four `variable.make…Dynamic` commands and a
+  `variable.loadLibrary` that would delete or define a variable (below) fail with "variables are locked";
+  `variable.bind`, `variable.unbind` and the `dataset.*` commands still run (except a `dataset.import` whose header
+  would define a variable, below), and `variable.list` reports `locked`.
 - Data sets: `dataset.list`, `dataset.new {name, values?}`, `dataset.set {name, values?}`, `dataset.rename`,
   `dataset.delete`, `dataset.capture`, `dataset.update`, `dataset.select {name}`, `dataset.next` /
   `dataset.prev` (each `dataset.select` / next / prev is one undo step over every bound object), `dataset.import {path|data|dataBase64|csv}` /
@@ -1303,6 +1304,22 @@ already walks Image Trace. Short agent entry points:
   one whose name is a variable of another kind fails the import. A `%` cell that isn't a variable's exact name (graph
   data files) is refused. The reply's `defined` lists the variables the import defined. While the variables are
   locked, an import whose header would define a variable fails with "variables are locked".
+- Variable libraries: `variable.loadLibrary {path|xml|dataBase64}` (the Variables panel menu's Load Variable
+  Library…) replaces the document's variables and data sets with a variable library's in one undo step. The library
+  is XML whose `variableSets` element holds `variableSet` elements, each with a `variables` element of `variable`
+  elements (`varName`, `trait`) and a `sampleDataSets` element of `sampleDataSet` elements (`dataSetName`). Every
+  variable of the document is deleted with its bindings and values, and every data set is deleted. Then the library's
+  variables whose `trait` is `textcontent` are defined as text variables, unbound. In each data set, the element named
+  after a text variable gives its value: the text of its `p` elements, one paragraph each. An element without a `p`
+  element gives no value. Variables of other kinds are left out with their values: the reply lists them in `skipped`
+  (`name`, `trait`), and its `warning` names each `trait` with its count. The reply's `deleted` and `deletedDataSets`
+  list the variables and data sets the load deleted. While the variables are locked, a library that would delete or
+  define a variable fails with "variables are locked". The reply is `{variables, deleted, deletedDataSets, names,
+  skipped, warning?}`. A library larger than 8 MiB, one whose elements nest more than 256 deep, and one with more
+  than 256 variables or 1,000 data sets are refused. Its document type declaration may hold an external identifier,
+  comments, processing instructions and up to 64 entity declarations whose values are plain text (no `<`, `&` or
+  `%`). A declaration that holds anything else, and entity references that expand the library past 8 MiB, are
+  refused. So are a variable or data set declared twice and a value for a variable the library doesn't declare.
 - Batch: `action.batch {commands, source?: folder|datasets, folder?, destination?: none|saveAndClose|folder,
   destinationFolder?, overrideOpen?, overrideSave?, overrideExport?, includeSubdirs?, stopOnError?}` plays an
   action on every file in a folder or every data set (the Actions panel menu's Batch…). Override Save and Override

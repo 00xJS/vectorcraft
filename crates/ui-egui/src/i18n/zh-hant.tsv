@@ -4249,6 +4249,7 @@ font-script	Japanese	漢字
 	Lock Variables	鎖定變數
 	Unlock Variables	解除鎖定變數
 @msg	variables are locked	變數已鎖定
+@msg	variables that aren't text were left out: {kinds}	已略過非文字變數：{kinds}
 	List Variables	列出變數
 	Bind Variable	綁定變數
 	Unbind Variable	解除變數綁定
@@ -4879,6 +4880,7 @@ lighting	Light	光源
 	Make Image Dynamic	使影像動態化
 	Import Data Sets…	匯入資料集…
 	Export Data Sets…	匯出資料集…
+	Load Variable Library…	載入變數資料庫…
 	Make Graph Dynamic	使圖表動態化
 	Batch…	批次處理…
 	Source Folder:	來源資料夾：

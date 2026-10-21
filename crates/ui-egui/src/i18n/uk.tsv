@@ -4320,6 +4320,7 @@ axis	Both	Обидві
 @msg	unknown workspace (one of {_1})	невідоме робоче середовище (одна з: {_1})
 @msg	unsupported: {0}	не підтримується: {0}
 @msg	variables are locked	змінні заблоковані
+@msg	variables that aren't text were left out: {kinds}	змінні, що не є текстовими, пропущено: {kinds}
 @msg	version {0} files can't be compressed: only version {COMPRESSED_SINCE} and later open compressed files	файли версії {0} не можуть бути стиснуті: тільки версія {COMPRESSED_SINCE} і новіші відкривають стислі файли
 @msg	width and height are at least 1 pixel	ширина та висота повинні бути не менше 1 пікселя
 @msg	workspace name can't be empty	ім’я робочого середовища не може бути порожнім
@@ -4823,6 +4824,7 @@ lighting	Light	Світло
 	Make Image Dynamic	Зробити зображення динамічним
 	Import Data Sets…	Імпортувати набори даних…
 	Export Data Sets…	Експортувати набори даних…
+	Load Variable Library…	Завантажити бібліотеку змінних…
 	Make Graph Dynamic	Зробити діаграму динамічною
 	Batch…	Пакетна обробка…
 	Source Folder:	Вихідна папка:

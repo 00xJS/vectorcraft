@@ -3340,6 +3340,7 @@ font-script	Japanese	汉字
 	Lock Variables	锁定变量
 	Unlock Variables	解锁变量
 @msg	variables are locked	变量已锁定
+@msg	variables that aren't text were left out: {kinds}	已省略非文本变量：{kinds}
 	List Variables	列出变量
 	Bind Variable	绑定变量
 	Unbind Variable	解除变量绑定
@@ -5070,6 +5071,7 @@ lighting	Light	光源
 	Make Image Dynamic	使图像动态化
 	Import Data Sets…	导入数据集…
 	Export Data Sets…	导出数据集…
+	Load Variable Library…	载入变量库…
 	Make Graph Dynamic	使图表动态化
 	Batch…	批处理…
 	Source Folder:	源文件夹：

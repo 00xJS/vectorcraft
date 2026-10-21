@@ -290,6 +290,29 @@ fn other_graphic_style_library_asks_off_the_ui_thread() {
     let _ = std::fs::remove_dir_all(dir);
 }
 
+/// The Variables panel menu's Load Variable Library… asks off the UI thread: the library picked
+/// loads when the dialog answers.
+#[test]
+fn load_variable_library_asks_off_the_ui_thread() {
+    let (mut app, shown, _) = app();
+    app.run("file.new", json!({"width": 100, "height": 80})).unwrap();
+    let dir = std::env::temp_dir().join(format!("vc-picks-variables-{}", std::process::id()));
+    std::fs::create_dir_all(&dir).unwrap();
+    let library = dir.join("library.xml");
+    let xml = r#"<variableSets><variableSet><variables><variable varName="Name" trait="textcontent"/></variables>
+        <sampleDataSets><sampleDataSet dataSetName="A"><Name><p>x</p></Name></sampleDataSet></sampleDataSets></variableSet></variableSets>"#;
+    std::fs::write(&library, xml).unwrap();
+    let sets = |app: &VectorcraftApp| app.session.doc().unwrap().doc.variables.datasets.iter().map(|d| d.name.clone()).collect::<Vec<_>>();
+
+    click(&mut app, "Load Variable Library…", crate::panels::variables::menu);
+    assert!(matches!(shown.requests().as_slice(), [PickRequest::Open(_)]));
+    assert!(sets(&app).is_empty(), "nothing loads before the dialog answers");
+    shown.answer(&[&library.to_string_lossy()]);
+    poll(&mut app);
+    assert_eq!(sets(&app), ["A"], "{}", app.ui.status);
+    let _ = std::fs::remove_dir_all(dir);
+}
+
 /// The Keyboard Shortcuts dialog's Import… and Export… ask off the UI thread: the set imported
 /// replaces the dialog's working set (kept on OK), Export… writes it where the dialog answers, and
 /// an answer once the dialog is closed does nothing.

@@ -4506,6 +4506,7 @@ imageTrace	Outline	Ääriviiva
 @msg	unknown workspace (one of {_1})	tuntematon työtila (jokin seuraavista: {_1})
 @msg	unsupported: {0}	ei tuettu: {0}
 @msg	variables are locked	muuttujat on lukittu
+@msg	variables that aren't text were left out: {kinds}	muut kuin tekstimuuttujat jätettiin pois: {kinds}
 @msg	version {0} files can't be compressed: only version {COMPRESSED_SINCE} and later open compressed files	version {0} tiedostoja ei voi pakata: pakattuja tiedostoja voi avata vain versiosta {COMPRESSED_SINCE} alkaen
 @msg	width and height are at least 1 pixel	leveys ja korkeus ovat vähintään 1 pikseli
 @msg	workspace name can't be empty	työtilan nimi ei voi olla tyhjä
@@ -5107,6 +5108,7 @@ mark-style	Japanese	Japanilainen
 	Drawing : real size — 1:10 labels 1 unit on the page as 10.	Piirustus : todellinen koko — 1:10 merkitsee sivun 1 yksikön arvoksi 10.
 	Editable	Muokattava
 	Export Data Sets…	Vie tietojoukot…
+	Load Variable Library…	Lataa muuttujakirjasto…
 	Filter	Suodata
 	Filter Layers Panel Rows	Suodata Tasot-paneelin rivit
 	Flatten	Litistä

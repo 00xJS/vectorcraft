@@ -4202,6 +4202,7 @@ axis	Both	И двете
 @msg	unknown workspace (one of {_1})	непознато работно пространство (едно от {_1})
 @msg	unsupported: {0}	не се поддържа: {0}
 @msg	variables are locked	променливите са заключени
+@msg	variables that aren't text were left out: {kinds}	променливите, които не са текстови, бяха пропуснати: {kinds}
 @msg	version {0} files can't be compressed: only version {COMPRESSED_SINCE} and later open compressed files	файловете от версия {0} не могат да бъдат компресирани: само версия {COMPRESSED_SINCE} и по-нови отварят компресирани файлове
 @msg	width and height are at least 1 pixel	ширината и височината са най-малко 1 пиксел
 @msg	workspace name can't be empty	името на работното пространство не може да бъде празно
@@ -5184,6 +5185,7 @@ theme	Appearance	Външен вид
 	Make Image Dynamic	Динамично изображение
 	Import Data Sets…	Импортиране на набори от данни…
 	Export Data Sets…	Експортиране на набори от данни…
+	Load Variable Library…	Зареждане на библиотека с променливи…
 	Make Graph Dynamic	Динамична диаграма
 	Batch…	Пакет…
 	Source Folder:	Изходна папка:

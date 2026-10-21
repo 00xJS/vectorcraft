@@ -165,7 +165,7 @@ fn parse<'a>(xml: &'a str, name: &str, cmd: &str) -> Result<roxmltree::Document<
 
 /// How deep the elements of `xml` nest: start tags less end tags, at most, outside comments,
 /// CDATA sections, processing instructions, declarations and quoted attribute values.
-fn nesting(xml: &str) -> usize {
+pub(crate) fn nesting(xml: &str) -> usize {
     let b = xml.as_bytes();
     let (mut depth, mut most, mut i) = (0usize, 0usize, 0usize);
     // The index just past the first `end` at or after `from` (the end of the text if none).
