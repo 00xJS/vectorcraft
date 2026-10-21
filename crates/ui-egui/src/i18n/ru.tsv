@@ -4025,7 +4025,7 @@ axis	Both	Оба
 @msg	give the path `id` and the width point `index`	укажите `id` контура и `index` точки ширины
 @msg	guides are locked	направляющие заблокированы
 @msg	handle must be in or out	handle должен быть in или out
-@msg	image '{key}' has no pixels and was left out	изображение '{key}' не имеет пикселей и было пропущено
+@msg	an image has no pixels and was left out	изображение без пикселей пропущено
 @msg	image data `{_1}` is missing	данные изображения `{_1}` отсутствуют
 @msg	image would be too large; lower the resolution	изображение было бы слишком большим; уменьшите разрешение
 @msg	index must be a number or first, previous, next or last	index должен быть числом или first, previous, next, last

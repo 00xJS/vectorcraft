@@ -4207,7 +4207,7 @@ imageTrace	Outline	Ääriviiva
 @msg	give the path `id` and the width point `index`	anna polun `id` ja leveyspisteen `index`
 @msg	guides are locked	apuviivat on lukittu
 @msg	handle must be in or out	handle-arvon on oltava in tai out
-@msg	image '{key}' has no pixels and was left out	kuvassa '{key}' ei ole pikseleitä, joten se jätettiin pois
+@msg	an image has no pixels and was left out	kuva, jossa ei ole pikseleitä, jätettiin pois
 @msg	image data `{_1}` is missing	kuvan data `{_1}` puuttuu
 @msg	image would be too large; lower the resolution	kuvasta tulisi liian suuri; pienennä tarkkuutta
 @msg	index must be a number or first, previous, next or last	indeksin on oltava luku tai first, previous, next tai last

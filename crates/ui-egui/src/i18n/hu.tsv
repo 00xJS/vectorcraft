@@ -4605,7 +4605,7 @@ imageTrace	Outline	Körvonal
 @msg	column docks a set as a dock column, with no anchor or icon	a column egy készletet dokkoszlopként dokkol, anchor és icon nélkül
 @msg	guides are locked	a segédvonalak zárolva vannak
 @msg	handle must be in or out	handle: in vagy out kell
-@msg	image '{key}' has no pixels and was left out	a kép kimaradt, mert nincsenek pixelei: '{key}'
+@msg	an image has no pixels and was left out	kimaradt egy kép, mert nincsenek pixelei
 @msg	image data `{_1}` is missing	hiányoznak a képadatok: `{_1}`
 @msg	image is empty	a kép üres
 @msg	Image Trace: the traced image is missing	Képvektorizálás: a vektorizált kép hiányzik

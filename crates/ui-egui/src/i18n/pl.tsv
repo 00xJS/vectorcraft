@@ -4114,7 +4114,7 @@ imageTrace	Outline	Kontur
 @msg	give the path `id` and the width point `index`	podaj `id` ścieżki i `index` punktu szerokości
 @msg	guides are locked	linie pomocnicze są zablokowane
 @msg	handle must be in or out	handle musi mieć wartość in lub out
-@msg	image '{key}' has no pixels and was left out	obraz '{key}' nie ma pikseli i został pominięty
+@msg	an image has no pixels and was left out	pominięto obraz bez pikseli
 @msg	image data `{_1}` is missing	brak danych obrazu `{_1}`
 @msg	image would be too large; lower the resolution	obraz byłby zbyt duży; zmniejsz rozdzielczość
 @msg	index must be a number or first, previous, next or last	indeks musi być liczbą lub first, previous, next albo last

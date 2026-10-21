@@ -734,9 +734,9 @@ PostScript form, which keeps layers, groups, compound paths and clipping groups 
 of `range` (default all; `{name}-{artboard}.ai` when several, listed in the result's `files`), with
 `transparentImages: "flatten"` (default) or `"omit"` for images with see-through pixels, opacity or a blending mode,
 `hiddenObjects: "layer"` (default: a hidden layer of each layer's hidden objects), `"omit"` or `"visible"`, and
-`outlineText: true` to write type as outlines instead of text objects. When an image in art that is flattened or whose
-raster effects are expanded can't be decoded, the result does not show it, and `warnings` carries "an image couldn't
-be decoded and is missing from the picture" once. From the CLI: `vectorcraft-cli convert in.svg
+`outlineText: true` to write type as outlines instead of text objects. An image that can't be decoded is left out of
+the file and does not show in art that is flattened or whose raster effects are expanded; `warnings` carries "an image
+couldn't be decoded and is missing from the picture" once for all such images. From the CLI: `vectorcraft-cli convert in.svg
 out.ai --ai-version 7 [--hidden-objects layer|omit|visible] [--transparent-images flatten|omit] [--outline-text]
 [--range R]`. `document.export`, `serialize`, `exportSelection` and `exportForScreens` refuse a `.ait` path or
 `format: "ait"` with an error that names `file.saveAsTemplate`, which writes it. The CLI's `run --export x.ait` and
@@ -3207,7 +3207,9 @@ width profiles, arrowheads) as filled outlines; `"editability"` keeps type as te
 `alterPaths` writes every stroke as its filled outline, `outlineText` outlines type, `selectedOnly` writes only the
 selected objects in their layers (every export takes it), and `useArtboards: true` writes one drawing per chosen
 artboard holding the art over it. What DXF can't hold (gradients and patterns as one colour, blending, opacity masks,
-raster effects, clipping) comes back in `warnings`.
+raster effects, clipping) comes back in `warnings`. In R13 and later, an image that can't be decoded is left out with
+no linked file, and `warnings` carries "an image couldn't be decoded and is missing from the picture" once for all such
+images.
 
 DWG can't be written (no openly licensed writer exists): `document.formats` lists it under `unsupported` with that
 hint, and exporting to it answers with the hint to export DXF. PICT files are not supported either and say so when
@@ -3380,7 +3382,9 @@ per artboard, `{stem}_{artboard}.eps`, each bounded by its artboard. `level: 3` 
 shadings and masks transparent image pixels out; `level: 2` writes gradients as bands of colour (as does
 `compatibleGradients`) and transparent pixels white. Type is always glyph outlines, so no fonts are needed (`embedFonts`
 is accepted); spot colours are Separation colour spaces, and overprinting fills and strokes overprint unless
-`overprints: "discard"`. RGB documents are written in CMYK unless `cmykPostScript: false`.
+`overprints: "discard"`. RGB documents are written in CMYK unless `cmykPostScript: false`. When the file would hold an
+image that can't be decoded, the image is left out, and `warnings` carries "an image couldn't be decoded and is missing
+from the picture" once for all such images.
 
 PostScript has no transparency: it is flattened first with `flattenerPreset` (`high`, `medium` (default), `low` or a
 saved preset, see `flattener.presets.list`) and `flattener: {…}` options over it (those of
@@ -3513,7 +3517,9 @@ outlines; gradients become images clipped to their shape, pattern fills their ti
 effects images rendered at the document's raster effects resolution. The header's frame is the artboard in 0.01 mm.
 WMF flattens curves into polygons in 16-bit units behind a placeable header (1440 units an inch, fewer for pictures
 over about 22 inches); it has no clipping, transparency or gradients, so clipped art is written whole, images over
-white and gradients and patterns as one colour. What a format leaves out comes back in `warnings`.
+white and gradients and patterns as one colour. What a format leaves out comes back in `warnings`. When the picture
+would hold an image that can't be decoded, the image is left out, and `warnings` carries "an image couldn't be decoded
+and is missing from the picture" once for all such images.
 
 `document.open` and `file.place` read `.emf` and `.wmf` (placeable or not) into one artboard, the picture's frame, and
 one layer: paths with their fills and strokes (pens become strokes with caps, joins and dashes), clipping groups,

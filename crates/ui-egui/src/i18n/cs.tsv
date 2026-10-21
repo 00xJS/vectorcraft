@@ -4292,7 +4292,7 @@ imageTrace	Outline	Obrys
 @msg	give the path `id` and the width point `index`	zadejte `id` cesty a `index` bodu šířky
 @msg	guides are locked	vodítka jsou zamčená
 @msg	handle must be in or out	handle musí být in nebo out
-@msg	image '{key}' has no pixels and was left out	obrázek '{key}' nemá žádné obrazové body a byl vynechán
+@msg	an image has no pixels and was left out	obrázek bez obrazových bodů byl vynechán
 @msg	image data `{_1}` is missing	chybí obrazová data `{_1}`
 @msg	image would be too large; lower the resolution	obraz by byl příliš velký; snižte rozlišení
 @msg	index must be a number or first, previous, next or last	index musí být číslo nebo first, previous, next či last

@@ -3811,7 +3811,7 @@ theme	Appearance	외관
 @msg	the scale is not a usable number	배율이 사용할 수 없는 숫자입니다
 @msg	the drawing is too large to open	도면이 너무 커서 열 수 없습니다
 @msg	scale must be a number from {_1} to {_2}, not {_3}	배율은 {_1}에서 {_2} 사이의 숫자여야 합니다: {_3}
-@msg	image '{key}' has no pixels and was left out	이미지 '{key}'에 픽셀이 없어 제외했습니다
+@msg	an image has no pixels and was left out	픽셀이 없는 이미지를 제외했습니다
 @msg	Embedded {n} image(s)	이미지 {n}개를 포함했습니다
 @msg	object {0} cannot have children	개체 {0}에는 하위 항목을 둘 수 없습니다
 @msg	range `{s}` is empty	범위 `{s}`이(가) 비어 있습니다

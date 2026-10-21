@@ -3879,7 +3879,7 @@ swatch	Bright Violet	ビビッドバイオレット
 @msg	the scale is not a usable number	縮尺が有効な数値ではありません
 @msg	the drawing is too large to open	図面が大きすぎて開けません
 @msg	scale must be a number from {_1} to {_2}, not {_3}	縮尺は {_1} から {_2} までの数値にしてください ({_3} は指定できません)
-@msg	image '{key}' has no pixels and was left out	画像「{key}」はピクセルがないため省略しました
+@msg	an image has no pixels and was left out	ピクセルがない画像を省略しました
 @msg	Embedded {n} image(s)	画像を {n} 枚埋め込みました
 @msg	object {0} cannot have children	オブジェクト {0} には子オブジェクトを含められません
 @msg	range `{s}` is empty	範囲 `{s}` が空です

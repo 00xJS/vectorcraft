@@ -41,8 +41,14 @@ fn sel(s: &mut Session, ids: &[NodeId]) {
 /// A placed 64 × 32 px PNG whose header reads (so it places at its size) but whose pixel data is
 /// cut short: the renderer can't decode it and draws nothing.
 pub(crate) fn place_undecodable_png(s: &mut Session) -> NodeId {
+    place_undecodable_png_sized(s, 64, 32)
+}
+
+/// Places a PNG like [`place_undecodable_png`] does, at `w` × `h` px. PNGs of different sizes are
+/// different images, each stored under its own key.
+pub(crate) fn place_undecodable_png_sized(s: &mut Session, w: u32, h: u32) -> NodeId {
     let mut png = Vec::new();
-    image::RgbaImage::from_pixel(64, 32, image::Rgba([200, 30, 30, 255]))
+    image::RgbaImage::from_pixel(w, h, image::Rgba([200, 30, 30, 255]))
         .write_to(&mut std::io::Cursor::new(&mut png), image::ImageFormat::Png)
         .unwrap();
     let idat = png.windows(4).position(|w| w == b"IDAT").unwrap();

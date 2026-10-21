@@ -1612,7 +1612,7 @@ file-filter	Templates	範本
 @msg	the scale is not a usable number	比例不是可用的數字
 @msg	the drawing is too large to open	圖面過大，無法開啟
 @msg	scale must be a number from {_1} to {_2}, not {_3}	比例必須是 {_1} 到 {_2} 之間的數字，而非 {_3}
-@msg	image '{key}' has no pixels and was left out	影像 '{key}' 沒有像素，已略過
+@msg	an image has no pixels and was left out	已略過沒有像素的影像
 @msg	Embedded {n} image(s)	已內嵌 {n} 個影像
 @msg	object {0} cannot have children	物件 {0} 不能有子物件
 @msg	range `{s}` is empty	範圍 `{s}` 是空的
