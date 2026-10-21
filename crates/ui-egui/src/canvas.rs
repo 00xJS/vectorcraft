@@ -1410,10 +1410,13 @@ fn touch_gestures(app: &mut VectorcraftApp, ui: &Ui, rect: egui::Rect, view: vec
 /// does nothing ([`Drag::Gesture`]).
 fn drop_press(app: &mut VectorcraftApp, ui: &Ui, view: vectorcraft_engine::ViewInfo) {
     match ui.data(|d| d.get_temp::<Drag>(drag_id())) {
-        Some(Drag::Tool) => {
-            // The tool's mouse-up returns it to rest.
+        Some(Drag::Tool | Drag::Art) => {
+            // The tool's mouse-up returns it to rest. A move waiting over a panel is still live
+            // and would otherwise outlive the drag that owns it (#2826).
+            // Nothing to roll back without a document; the tool still gets its mouse-up.
             let _ = app.session.cancel_interaction();
             dispatch(app, &PointerEvent { kind: PointerKind::Up, pos: Point::ZERO, mods: Mods::default(), pressure: 1.0 }, view);
+            egui::DragAndDrop::clear_payload(ui.ctx());
         }
         Some(_) => {}
         None => return,
@@ -7651,6 +7654,46 @@ mod tests {
         assert!(app.session.active().unwrap().interaction.is_none());
         tick(&mut app, 1.6, pen(egui::TouchPhase::End, pos, 0.5));
         assert!(app.session.active().unwrap().doc.art_bounds().is_none(), "releasing cannot commit the cancelled press");
+    }
+
+    /// #2826: a second finger drops a move waiting over a panel, so its interaction doesn't
+    /// outlive the drag that began it.
+    #[test]
+    fn a_second_finger_drops_a_move_waiting_over_a_panel() {
+        let mut app = VectorcraftApp::new(Session::new(), Default::default());
+        app.session.prefs.touch_gestures = true;
+        app.session.execute("file.new", &json!({"width": 400, "height": 300})).unwrap();
+        app.session.execute("shape.rectangle", &json!({"x": 50, "y": 50, "width": 100, "height": 100})).unwrap();
+        app.select_tool("selection");
+        let ctx = egui::Context::default();
+        frame(&mut app, &ctx, vec![]);
+        let xf = Xf::new(app.canvas_rect.unwrap(), app.view().unwrap());
+        let before = app.session.active().unwrap().doc.clone();
+        let start = xf.to_screen(Point::new(100.0, 100.0));
+        // One finger presses on the art, moves it, and leaves the canvas for a panel.
+        frame(&mut app, &ctx, pen(egui::TouchPhase::Start, start, 0.5));
+        frame(&mut app, &ctx, pen(egui::TouchPhase::Move, start + vec2(40.0, 0.0), 0.5));
+        frame(&mut app, &ctx, vec![egui::Event::PointerMoved(pos2(850.0, 100.0))]);
+        assert!(matches!(ctx.data(|d| d.get_temp::<Drag>(drag_id())), Some(Drag::Art)));
+        assert!(app.session.active().unwrap().interaction.is_some());
+        assert!(egui::DragAndDrop::payload::<widgets::PanelDrag>(&ctx).is_some());
+        // A second finger lands: the move is dropped, not left live without its pointer.
+        let second = egui::Event::Touch {
+            device_id: egui::TouchDeviceId(1),
+            id: egui::TouchId(2),
+            phase: egui::TouchPhase::Start,
+            pos: pos2(400.0, 300.0),
+            force: Some(0.5),
+        };
+        frame(&mut app, &ctx, vec![second]);
+        assert!(matches!(ctx.data(|d| d.get_temp::<Drag>(drag_id())), Some(Drag::Gesture)));
+        let st = app.session.active().unwrap();
+        assert!(st.interaction.is_none(), "the move is dropped");
+        assert_eq!(*st.doc, *before, "the art is back where it was");
+        assert!(egui::DragAndDrop::payload::<widgets::PanelDrag>(&ctx).is_none(), "no panel drag is left");
+        // Lifting the first finger commits nothing.
+        frame(&mut app, &ctx, pen(egui::TouchPhase::End, start + vec2(40.0, 0.0), 0.5));
+        assert_eq!(*app.session.active().unwrap().doc, *before);
     }
 
     /// The events eframe's winit integration sends for a pen (Windows Ink) or a finger: a touch
