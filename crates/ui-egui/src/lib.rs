@@ -807,6 +807,11 @@ impl VectorcraftApp {
                         self.ui.view.pixel_preview = true;
                     }
                 }
+                // Choosing a data set, or stepping to one, clears the status bar. The reply's `warning`
+                // below then shows when no object is bound to a variable the data set has a value for.
+                if matches!(id, "dataset.select" | "dataset.next" | "dataset.prev") {
+                    self.ui.status.clear();
+                }
                 if id == "text.setStyle"
                     && let Some(font) = params.get("font").and_then(Value::as_str)
                 {
