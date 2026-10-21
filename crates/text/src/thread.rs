@@ -178,6 +178,23 @@ mod tests {
         assert!(at_space > 0, "some lengths end at a space");
     }
 
+    /// A right-to-left story flows on from where its text stops fitting a path, in reading order.
+    #[test]
+    fn right_to_left_story_flows_on_from_a_path() {
+        let db = FontDb::global();
+        let text = "שלום עולם ".repeat(8);
+        let story = vec![TextRun { text: text.clone(), style: CharStyle::default(), inline: None }];
+        let (a, b) = (path_frame(100.0), frame(400.0));
+        let parts: Vec<Vec<TextRun>> = distribute(db, &[&a, &b], &story, &[]).into_iter().map(|s| s.runs).collect();
+        let lens: Vec<usize> = parts.iter().map(|p| runs_len(p)).collect();
+        assert!(lens.iter().all(|l| *l > 0), "each frame takes a share: {lens:?}");
+        let joined: String = parts.iter().flatten().map(|r| r.text.as_str()).collect();
+        assert_eq!(joined, text, "no character lost or duplicated");
+        let mut on_path = a.clone();
+        on_path.runs = parts[0].clone();
+        assert!(!layout(db, &on_path).overflow, "the path's share fits it");
+    }
+
     /// A path with no length holds no text, so the story flows past it.
     #[test]
     fn story_flows_past_a_path_with_no_length() {
