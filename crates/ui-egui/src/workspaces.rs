@@ -551,6 +551,7 @@ mod tests {
         assert_eq!(back.workspace, "Mine");
     }
 
+    /// Changes made in a workspace come back after switching away and back, and after a restart, until Reset.
     #[test]
     fn a_workspace_keeps_its_changes_across_switches_until_reset() {
         let mut ui = UiState::default();
@@ -592,6 +593,7 @@ mod tests {
         assert!(ui.workspace_changes.iter().all(|w| w.name != "G"));
     }
 
+    /// Deleting the current workspace shows Essentials as it was left, not the deleted one's layout.
     #[test]
     fn deleting_the_current_workspace_switches_to_essentials_without_leaking_its_layout() {
         let mut ui = UiState::default();
@@ -605,6 +607,7 @@ mod tests {
         assert!(!ui.control_bar, "Essentials didn't remember the deleted workspace's layout");
     }
 
+    /// With 64 layouts remembered, the oldest goes and the one just left is kept.
     #[test]
     fn a_full_list_of_remembered_layouts_drops_the_oldest_not_the_newest() {
         let mut ui = UiState::default();
@@ -623,6 +626,7 @@ mod tests {
         assert!(ui.control_bar, "the layout just left is kept");
     }
 
+    /// Saving a workspace takes the current layout into it, which then starts with no changes.
     #[test]
     fn saving_a_workspace_moves_the_changes_into_it() {
         let mut ui = UiState { control_bar: true, ..Default::default() };
