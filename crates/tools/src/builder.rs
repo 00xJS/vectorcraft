@@ -76,8 +76,18 @@ pub fn face_at(group: &Node, p: Point) -> Option<&Arc<Node>> {
 
 /// The edge of `group` nearest to `p` within `tol`.
 pub fn edge_near(group: &Node, p: Point, tol: f64) -> Option<&Arc<Node>> {
+    nearest_edge(edges(group), p, tol)
+}
+
+/// The edge of `group` nearest to `p` within `tol` among its edges that are not hidden.
+pub fn visible_edge_near(group: &Node, p: Point, tol: f64) -> Option<&Arc<Node>> {
+    nearest_edge(edges(group).into_iter().filter(|e| e.visible), p, tol)
+}
+
+/// The edge of `edges` nearest to `p` within `tol`.
+fn nearest_edge<'a>(edges: impl IntoIterator<Item = &'a Arc<Node>>, p: Point, tol: f64) -> Option<&'a Arc<Node>> {
     let mut best: Option<(f64, &Arc<Node>)> = None;
-    for e in edges(group) {
+    for e in edges {
         if let Some((.., d)) = e.path_data().and_then(|pd| pd.nearest(p))
             && d <= tol
             && best.is_none_or(|b| d < b.0)
@@ -604,12 +614,12 @@ enum LpHover {
 
 /// The Live Paint group and part the Live Paint tools hover and click at `p`. Inside a face of a
 /// visible Live Paint group ([`live_paint_at`]) it is that group with its face under `p`, or with
-/// `edge` its edge nearest `p` within `tol` (None when there is none). Outside every face, with
-/// `edge`, it is the edge nearest `p` within `tol` among the visible Live Paint groups (the
-/// front-most group's on a tie). None when no group is found.
+/// `edge` its visible edge nearest `p` within `tol` (None when there is none). Outside every face,
+/// with `edge`, it is the visible edge nearest `p` within `tol` among the visible Live Paint groups
+/// (the front-most group's on a tie). None when no group is found.
 fn lp_part_at(doc: &Document, p: Point, tol: f64, edge: bool) -> Option<(NodeId, Option<&Arc<Node>>)> {
     if let Some(g) = live_paint_at(doc, p).and_then(|id| doc.node(id)) {
-        return Some((g.id, if edge { edge_near(g, p, tol) } else { face_at(g, p) }));
+        return Some((g.id, if edge { visible_edge_near(g, p, tol) } else { face_at(g, p) }));
     }
     if !edge {
         return None;
@@ -617,7 +627,7 @@ fn lp_part_at(doc: &Document, p: Point, tol: f64, edge: bool) -> Option<(NodeId,
     let mut best: Option<(f64, NodeId, &Arc<Node>)> = None;
     doc.walk(|n| {
         if is_live_paint(n)
-            && let Some(e) = edge_near(n, p, tol)
+            && let Some(e) = visible_edge_near(n, p, tol)
             && let Some((.., d)) = e.path_data().and_then(|pd| pd.nearest(p))
             && best.is_none_or(|b| d <= b.0)
             && doc.is_visible(n.id)
@@ -681,10 +691,10 @@ impl Tool for LivePaintBucketTool {
                 let point = json!([p.x, p.y]);
                 if ev.mods.shift {
                     return match lp_part_at(cx.doc, p, cx.tol(4.0), true) {
-                        Some((g, _)) => {
+                        Some((g, Some(_))) => {
                             vec![Action::Exec("livePaint.strokeEdge".into(), json!({ "group": g.0, "point": point, "tolerance": cx.tol(4.0) }))]
                         }
-                        None => vec![],
+                        _ => vec![],
                     };
                 }
                 if let Some(g) = live_paint_at(cx.doc, p) {
@@ -1199,6 +1209,44 @@ mod tests {
         check(&d, Some((front, front_left, 104.0)));
         d.node_mut(front).unwrap().visible = false;
         check(&d, None);
+    }
+
+    #[test]
+    fn live_paint_tools_skip_hidden_edges() {
+        let mut d = Document::new(500.0, 500.0);
+        let (_, [_, _, back_right, _]) = live_square(&mut d, Rect::new(0.0, 0.0, 100.0, 100.0));
+        let (front, [front_left, ..]) = live_square(&mut d, Rect::new(104.0, 0.0, 204.0, 100.0));
+        // The back group's right side is hidden on its own; both groups stay visible.
+        d.node_mut(back_right).unwrap().visible = false;
+        let s = Selection::default();
+        let p = paint();
+        let cx = cx(&d, &s, &p);
+        let alt = Mods { alt: true, ..Default::default() };
+        let shift = Mods { shift: true, ..Default::default() };
+        let edge_x = |ov: &[Overlay]| match ov {
+            [] => None,
+            [Overlay::Path { path, .. }] => Some(path.bounding_box().x0),
+            _ => panic!("{ov:?}"),
+        };
+        // Outside the faces, 1.5 pt from the hidden side and 2.5 pt from the front group's left
+        // side, both tools highlight and pick the visible side. Inside the back face, 1.5 pt from
+        // the hidden side, no edge is in reach, so neither tool highlights or picks one.
+        for (x, want) in [(101.5, Some((front, front_left, 104.0))), (98.5, None)] {
+            let mut sel = LivePaintSelectionTool::default();
+            sel.pointer(&cx, &ev(PointerKind::Move, x, 50.0).with_mods(alt));
+            assert_eq!(edge_x(&sel.overlays(&cx)), want.map(|w| w.2), "x {x}");
+            let picked = match want {
+                Some((_, e, _)) => Action::Exec("select.set".into(), json!({ "ids": [e.0] })),
+                None => Action::Exec("select.none".into(), json!({})),
+            };
+            assert_eq!(sel.pointer(&cx, &ev(PointerKind::Down, x, 50.0).with_mods(alt)), vec![picked], "x {x}");
+            let mut bucket = LivePaintBucketTool::default();
+            bucket.pointer(&cx, &ev(PointerKind::Move, x, 50.0).with_mods(shift));
+            assert_eq!(edge_x(&bucket.overlays(&cx)), want.map(|w| w.2), "x {x}");
+            let stroked =
+                want.map(|(g, ..)| Action::Exec("livePaint.strokeEdge".into(), json!({ "group": g.0, "point": [x, 50.0], "tolerance": 4.0 })));
+            assert_eq!(bucket.pointer(&cx, &ev(PointerKind::Down, x, 50.0).with_mods(shift)), stroked.into_iter().collect::<Vec<_>>(), "x {x}");
+        }
     }
 
     #[test]

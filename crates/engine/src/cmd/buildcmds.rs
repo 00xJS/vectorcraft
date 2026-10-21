@@ -766,7 +766,7 @@ fn lp_stroke_edge(s: &mut Session, p: &Value) -> Result<Value> {
     let tol = f64_or(p, "tolerance", 4.0).clamp(0.0, 1000.0);
     let edge = s.edit("Live Paint Bucket", |d, _| {
         let n = d.node(g).filter(|n| is_live_paint(n)).ok_or_else(|| bad(C, format!("{g} is not a Live Paint group")))?;
-        let eid = edge_near(n, pt, tol).map(|e| e.id).ok_or_else(|| EngineError::Other("no Live Paint edge near that point".into()))?;
+        let eid = b::visible_edge_near(n, pt, tol).map(|e| e.id).ok_or_else(|| EngineError::Other("no Live Paint edge near that point".into()))?;
         let e = d.node_mut(eid).ok_or(EngineError::NoNode(eid))?;
         e.appearance.set_stroke(paint.clone());
         if let Some(st) = e.appearance.stroke_mut() {

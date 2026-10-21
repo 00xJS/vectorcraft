@@ -532,6 +532,28 @@ fn live_paint_stroke_edge() {
 }
 
 #[test]
+fn live_paint_stroke_edge_skips_hidden_edges() {
+    let mut s = session();
+    let g = live(&mut s);
+    // The vertical edge at x=100 is hidden on its own; the group stays visible.
+    let vertical_at = |s: &Session, x: f64| -> Vec<u64> {
+        vectorcraft_tools::builder::edges(&node(s, g))
+            .iter()
+            .filter(|e| e.geometric_bounds().is_some_and(|bb| (bb.x0 - x).abs() < 1e-6 && (bb.x1 - x).abs() < 1e-6))
+            .map(|e| e.id.0)
+            .collect()
+    };
+    let hidden = vertical_at(&s, 100.0);
+    assert!(!hidden.is_empty());
+    s.execute("object.setProps", &json!({"ids": hidden, "visible": false})).unwrap();
+    // 1 pt from the hidden edge, the nearest visible edge within the tolerance is the one at x=50.
+    let r = s.execute("livePaint.strokeEdge", &json!({"group": g.0, "point": [99, 50], "tolerance": 60})).unwrap();
+    assert!(vertical_at(&s, 50.0).contains(&r["edge"].as_u64().unwrap()), "{r}");
+    // With only the hidden edge within the tolerance, no edge is stroked.
+    assert!(s.execute("livePaint.strokeEdge", &json!({"group": g.0, "point": [99, 50]})).is_err());
+}
+
+#[test]
 fn live_paint_release_and_expand() {
     let mut s = session();
     let g = live(&mut s);
