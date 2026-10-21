@@ -807,6 +807,7 @@ nothing to mark
 nothing to print: every artboard picked is blank
 nothing to print: the document has no art that prints
 object is not a path
+object transparency cannot be sampled onto highlighted characters; disable Transparency in Eyedropper Options or select the whole object
 object {_1} has lost its file's contents: relink it
 object {_1} has no size
 object {_1} is not a placed document

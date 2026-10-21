@@ -123,7 +123,7 @@ fn admit_effects(fx: &[Effect], n: &Node) -> std::result::Result<Vec<Effect>, St
         }
         if super::effectcmd::texture_load_effect(&e.id)
             && let Some(t) = params.get(effects::pixel::TEXTURE_IMAGE)
-            && !t.as_str().is_some_and(|t| effects::pixel::texture(t).is_some())
+            && t.as_str().is_none_or(|t| effects::pixel::texture(t).is_none())
         {
             return Err(refuse("`textureImage` must be a texture as effect.list gives it".into()));
         }
