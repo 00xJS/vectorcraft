@@ -139,6 +139,8 @@ fn export_with_report_inner(doc: &Document, opts: &PdfOptions, left_out: &mut Ha
         Some(modified) => crate::post::modification_date(bytes, modified)?,
         None => bytes,
     };
+    // The writer's metadata has no copyright: it is added to the XMP packet.
+    let bytes = crate::post::rights(bytes, &doc.metadata)?;
     warnings.extend(more);
     let bytes = crate::post::user_units(bytes, &units)?;
     let bytes = crate::post::finish(bytes, opts, native.is_some(), &mut warnings)?;

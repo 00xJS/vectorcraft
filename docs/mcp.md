@@ -2825,6 +2825,9 @@ author, description and keywords to the document info and XMP, PNG export writes
 creation date) as text chunks, and SVG export writes the description as `<desc>` and, with the `metadata` option,
 all of it as Dublin Core. PDF export and PDF-compatible `.ai` and `.ait` saves write the `created` date (the time of
 writing when the document has none) as the file's creation date and the time of writing as its modification date.
+They also write the `copyrightNotice` as `dc:rights`, the `copyrightUrl` as `xmpRights:WebStatement` and the
+`copyrightStatus` as `xmpRights:Marked` (`True` for copyrighted, `False` for public domain, none for unknown) to the
+XMP packet.
 A PDF, `.ai` or `.ait` opened from its pages or its editing copy (`document.open`,
 `file.newFromTemplate`, `file.revert`; not one restored from the document it carries) opens with the `author`,
 `description`, `keywords`, `copyrightStatus`, `copyrightNotice`, `copyrightUrl`, `created` and `modified` that its XMP
