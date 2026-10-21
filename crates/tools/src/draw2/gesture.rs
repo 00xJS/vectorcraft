@@ -8,7 +8,8 @@
 //! between follow the hand. The Paintbrush records the pen pressure of each point (a stroke a pen
 //! pressed less than fully on sends `[x, y, pressure]` points) for pressure-sensitive brushes. The
 //! other tools collect the drag polyline (shown as an overlay) and run
-//! one command on release.
+//! one command on release. With Shift held, the Blob Brush's points stay on the horizontal or
+//! vertical line through the press point.
 
 use serde_json::{Value, json};
 use vectorcraft_doc::NodeId;
@@ -44,6 +45,11 @@ pub struct GestureTool {
     pub alt_smooth: bool,
     /// Active drag is smoothing with the Pencil tool.
     smoothing: bool,
+    /// Where the pointer was for each Blob Brush point dragged since Shift went down: the last
+    /// `shift_raw.len()` of `points`.
+    shift_raw: Vec<Point>,
+    /// Where the pointer was for the Shift-constrained point the next [`Self::push`] adds.
+    shift_next: Option<Point>,
     /// "Merge only with selection": a Blob Brush stroke merges only with selected paths.
     pub merge_only_selection: bool,
     /// "Edit selected paths within N pixels".
@@ -82,6 +88,8 @@ impl GestureTool {
             // Off, as Pencil Tool Options ships it: Alt keeps drawing a closed path until it is on.
             alt_smooth: false,
             smoothing: false,
+            shift_raw: vec![],
+            shift_next: None,
             merge_only_selection: false,
             edit_within: 12.0,
             close_within: 15.0,
@@ -100,10 +108,43 @@ impl GestureTool {
 
     /// Add a stroke sample.
     fn push(&mut self, p: Point, pressure: f32) {
+        let raw = self.shift_next.take();
+        if self.points.is_empty() {
+            self.shift_raw.clear();
+        } else if let Some(raw) = raw {
+            self.shift_raw.push(raw);
+        }
         self.points.push(p);
         if self.id == "paintbrush" {
             self.pressures.push(pressure);
         }
+    }
+
+    /// Where the stroke takes a pointer at `p`. For the Blob Brush with Shift held, that is the
+    /// horizontal or vertical line through the press point that is nearer in angle to `p` (90°
+    /// steps from the Constrain Angle), at `p`'s distance from the press point. The points dragged
+    /// since Shift went down move to that line too, each at its pointer position's distance and on
+    /// that position's side of the press point; a pointer at the press point leaves them on their
+    /// line. Without Shift the stroke takes `p`.
+    fn constrained(&mut self, cx: &ToolContext, p: Point, m: Mods) -> Point {
+        self.shift_next = None;
+        let Some(&start) = self.points.first().filter(|_| self.id == "blobBrush" && m.shift) else {
+            self.shift_raw.clear();
+            return p;
+        };
+        self.shift_next = Some(p);
+        // The press point is on both lines: the points dragged before stay on theirs.
+        if (p - start).hypot() < vectorcraft_geom::EPS {
+            return start;
+        }
+        let d = vectorcraft_geom::constrain_angle_from(p - start, 90.0, cx.constrain_angle);
+        // `line` is the line's angle, measured counterclockwise on screen as the Constrain Angle is measured.
+        let line = (-d.y).atan2(d.x).to_degrees();
+        let on_line = |q: Point| start + vectorcraft_geom::constrain_angle_from(q - start, 180.0, line);
+        for (q, raw) in self.points.iter_mut().skip(1).rev().zip(self.shift_raw.iter().rev()) {
+            *q = on_line(*raw);
+        }
+        on_line(p)
     }
 
     /// Forget the stroke.
@@ -263,6 +304,7 @@ impl Tool for GestureTool {
                 if !self.active {
                     return vec![];
                 }
+                let p = self.constrained(cx, p, ev.mods);
                 if !self.began && self.id == "pencil" && self.alt_smooth && ev.mods.alt {
                     self.smoothing = true;
                 }
@@ -289,6 +331,7 @@ impl Tool for GestureTool {
                 if !self.active {
                     return vec![];
                 }
+                let p = self.constrained(cx, p, ev.mods);
                 let end = if self.snaps() && !self.smoothing { self.snap.drag(cx, p, None) } else { p };
                 self.snap.clear();
                 if self.points.last().is_some_and(|l| l.distance(p) >= cx.tol(1.0)) {
@@ -543,6 +586,59 @@ mod tests {
         }
         // The Eraser keeps Size only.
         assert_eq!(GestureTool::new("eraser").options(), json!({"size": 10.0}));
+    }
+
+    /// Shift keeps a Blob Brush stroke on the horizontal or vertical line through the press point,
+    /// whichever is nearer to the pointer, at 90° steps from the Constrain Angle; the points
+    /// dragged with Shift held move to the other line together, and each point follows the Shift
+    /// state of its own event.
+    #[test]
+    fn blob_brush_shift_keeps_the_stroke_horizontal_or_vertical() {
+        let (d, _) = doc_with_rect();
+        let s = Selection::default();
+        let p = paint();
+        let mut cx = cx(&d, &s, &p);
+        let shift = Mods { shift: true, ..Default::default() };
+        let blob = |acts: &[Vec<Action>]| -> Vec<(f64, f64)> {
+            let Some(Action::Exec(c, v)) = acts.last().and_then(|a| a.first()) else { panic!("{acts:?}") };
+            assert_eq!(c, "path.blob");
+            v["points"].as_array().unwrap().iter().map(|q| (q[0].as_f64().unwrap(), q[1].as_f64().unwrap())).collect()
+        };
+        let mut t = GestureTool::new("blobBrush");
+        let pts = blob(&drag_held(&mut t, &cx, &[(0.0, 0.0), (30.0, 5.0), (50.0, 8.0)], shift));
+        assert_eq!(pts.len(), 3);
+        assert!(pts.iter().all(|q| q.1 == 0.0 && q.0 >= 0.0), "{pts:?}");
+        let pts = blob(&drag_held(&mut t, &cx, &[(0.0, 0.0), (5.0, 30.0), (8.0, 50.0)], shift));
+        assert!(pts.iter().all(|q| q.0.abs() < 1e-9 && q.1 >= 0.0), "{pts:?}");
+        // A pointer that crosses to the vertical line takes the points before it along, each on
+        // its own side of the press point and at its own distance.
+        let pts = blob(&drag_held(&mut t, &cx, &[(0.0, 0.0), (-40.0, -2.0), (100.0, 99.0), (90.0, 120.0)], shift));
+        assert_eq!(pts.len(), 4, "{pts:?}");
+        assert!(pts.iter().all(|q| q.0.abs() < 1e-9), "{pts:?}");
+        assert!((pts[1].1 + 1604f64.sqrt()).abs() < 1e-9 && (pts[2].1 - 19801f64.sqrt()).abs() < 1e-9 && (pts[3].1 - 150.0).abs() < 1e-9, "{pts:?}");
+        // Without Shift the stroke follows the pointer.
+        let pts = blob(&drag_held(&mut t, &cx, &[(0.0, 0.0), (30.0, 5.0), (50.0, 8.0)], Mods::default()));
+        assert_eq!(pts, vec![(0.0, 0.0), (30.0, 5.0), (50.0, 8.0)]);
+        // Shift pressed and let go mid-stroke constrains only the points dragged while it is down,
+        // and a later press of Shift leaves the points of the earlier one where they are.
+        let ev = |k, x, y, m| PointerEvent::new(k, x, y).with_mods(m);
+        t.pointer(&cx, &ev(PointerKind::Down, 0.0, 0.0, Mods::default()));
+        t.pointer(&cx, &ev(PointerKind::Drag, 20.0, 10.0, Mods::default()));
+        t.pointer(&cx, &ev(PointerKind::Drag, 40.0, 10.0, shift));
+        t.pointer(&cx, &ev(PointerKind::Drag, 60.0, 10.0, Mods::default()));
+        let pts = blob(&[t.pointer(&cx, &ev(PointerKind::Up, 10.0, 80.0, shift))]);
+        assert_eq!((pts.len(), pts[1], pts[3]), (5, (20.0, 10.0), (60.0, 10.0)), "{pts:?}");
+        assert!(pts[2].1 == 0.0 && (pts[2].0 - 1700f64.sqrt()).abs() < 1e-9, "{pts:?}");
+        assert!(pts[4].0.abs() < 1e-9 && (pts[4].1 - 6500f64.sqrt()).abs() < 1e-9, "{pts:?}");
+        // The axes turn with the Constrain Angle.
+        cx.constrain_angle = 30.0;
+        let pts = blob(&drag_held(&mut t, &cx, &[(0.0, 0.0), (40.0, -20.0)], shift));
+        let a = (-pts[1].1).atan2(pts[1].0).to_degrees();
+        assert!((a - 30.0).abs() < 1e-9, "{pts:?}");
+        // A pointer back at the press point leaves the stroke on its line.
+        let pts = blob(&drag_held(&mut t, &cx, &[(0.0, 0.0), (40.0, -20.0), (0.0, 0.0)], shift));
+        let a = (-pts[1].1).atan2(pts[1].0).to_degrees();
+        assert!(pts.len() == 3 && pts[2] == (0.0, 0.0) && (a - 30.0).abs() < 1e-9, "{pts:?}");
     }
 
     #[test]
