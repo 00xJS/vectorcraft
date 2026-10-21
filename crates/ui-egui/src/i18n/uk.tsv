@@ -3457,6 +3457,7 @@ effect	Points	Точки
 	Use Even-Odd Fill Rule	Використовувати правило заливки «парне–непарне»
 	Use Japanese Crop Marks	Використовувати японські мітки обрізання
 	Use Low Resolution Proxy for Linked EPS	Використовувати попередній перегляд низької роздільної здатності для пов’язаних EPS
+	Link Placed PDF and .ai Files	Пов’язувати розміщені файли PDF і .ai
 	Use Non-Zero Winding Fill Rule	Використовувати правило заливки «ненульове заповнення»
 	Use Precise Cursors	Використовувати точні курсори
 	Use Pressure Pen	Використовувати перо з натиском
@@ -4084,6 +4085,7 @@ axis	Both	Обидві
 @msg	no file system here	тут немає файлової системи
 @msg	no file writer	немає засобу запису файлів
 @msg	no files to place	немає файлів для розміщення
+@msg	`{file}` isn't a VectorCraft document, a PDF or a PDF-compatible .ai file	`{file}` не є документом VectorCraft, PDF або файлом .ai, сумісним із PDF
 @msg	no format to export to	немає формату для експорту
 @msg	no free recovery area	немає вільної області відновлення
 @msg	no gradient stop or freeform point is selected	не виділено ні точку переходу градієнта, ні довільну точку

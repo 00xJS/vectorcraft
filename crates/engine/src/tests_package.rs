@@ -403,6 +403,34 @@ fn zipped_package_recursively_relinks_without_absolute_creator_paths() {
 }
 
 #[test]
+fn package_copies_a_linked_pdf_page_as_it_is() {
+    let dir = Folder::new("package-placed-pdf");
+    let mut d = vectorcraft_doc::Document::new(100.0, 50.0);
+    let (layer, id) = (d.layers[0].id, d.alloc_id());
+    let red = vectorcraft_color::Paint::solid(vectorcraft_color::Color::rgb8(RED[0], RED[1], RED[2]));
+    let look = vectorcraft_doc::Appearance::basic(red, vectorcraft_color::Paint::None, 0.0);
+    let page = vectorcraft_geom::shapes::rectangle(vectorcraft_geom::Rect::new(0.0, 0.0, 100.0, 50.0));
+    d.insert(Some(layer), 0, vectorcraft_doc::Node::path(id, page, look)).unwrap();
+    let pdf = cmd::fileio::encode_all(&d, "pdf", &json!({"preserveEditing": false})).unwrap().files.remove(0).1;
+    let src = dir.file("art/flyer.pdf");
+    write(&src, &pdf);
+    let mut s = session();
+    run(&mut s, "prefs.set", json!({"key": "linkPlacedPdf", "value": true}));
+    let placed = run(&mut s, "file.place", json!({"path": src}));
+    assert_eq!(placed["linked"], true, "{placed}");
+    save(&mut s, &dir.file("poster.vectorcraft"));
+    let r = run(&mut s, "file.package", json!({"folder": dir.file("out")}));
+    assert_eq!((r["links"].as_u64(), r["missingLinks"].clone(), r["warnings"].clone()), (Some(1), json!([]), json!([])), "{r}");
+    let root = dir.0.join("out/poster Folder");
+    assert_eq!(std::fs::read(root.join("Links/flyer.pdf")).unwrap(), pdf, "copied as it is");
+    // The packaged document shows the copy.
+    std::fs::remove_dir_all(dir.0.join("art")).unwrap();
+    let opened = open(&mut s, &root.join("poster.vectorcraft").to_string_lossy());
+    assert_eq!(opened["missingLinks"], json!([]), "{opened}");
+    assert!(s.doc().unwrap().doc.has_placed());
+}
+
+#[test]
 fn package_keeps_distinct_linked_documents_with_colliding_file_names() {
     let dir = Folder::new("package-collisions");
     let mut poster = session();

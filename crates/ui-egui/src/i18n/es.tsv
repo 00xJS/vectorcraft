@@ -3429,6 +3429,7 @@
 	Use Even-Odd Fill Rule	Usar regla de relleno par-impar
 	Use Japanese Crop Marks	Usar marcas de corte japonesas
 	Use Low Resolution Proxy for Linked EPS	Usar proxy de baja resolución para EPS vinculados
+	Link Placed PDF and .ai Files	Vincular archivos PDF y .ai colocados
 	Use Non-Zero Winding Fill Rule	Usar regla de relleno distinto de cero
 	Use Precise Cursors	Usar cursores precisos
 	Use Pressure Pen	Usar lápiz de presión
@@ -4060,6 +4061,7 @@ axis	Both	Ambos
 @msg	no file system here	aquí no hay sistema de archivos
 @msg	no file writer	no hay escritor de archivos
 @msg	no files to place	no hay archivos para colocar
+@msg	`{file}` isn't a VectorCraft document, a PDF or a PDF-compatible .ai file	`{file}` no es un documento de VectorCraft, un PDF ni un archivo .ai compatible con PDF
 @msg	no format to export to	no hay formato al que exportar
 @msg	no free recovery area	no hay ningún área de recuperación libre
 @msg	no gradient stop or freeform point is selected	no hay ninguna parada de degradado ni punto de forma libre seleccionado

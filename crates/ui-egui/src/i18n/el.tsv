@@ -3720,6 +3720,7 @@ theme	Appearance	Εμφάνιση
 	Use Even-Odd Fill Rule	Χρήση κανόνα γεμίσματος άρτιου-περιττού
 	Use Japanese Crop Marks	Χρήση ιαπωνικών σημαδιών περικοπής
 	Use Low Resolution Proxy for Linked EPS	Χρήση αντιπροσώπου χαμηλής ανάλυσης για συνδεδεμένο EPS
+	Link Placed PDF and .ai Files	Σύνδεση τοποθετημένων αρχείων PDF και .ai
 	Use Non-Zero Winding Fill Rule	Χρήση κανόνα γεμίσματος μη μηδενικής περιέλιξης
 	Use Precise Cursors	Χρήση δεικτών ακριβείας
 	Use Pressure Pen	Χρήση πένας πίεσης
@@ -4041,6 +4042,7 @@ theme	Appearance	Εμφάνιση
 @msg	no file system here	δεν υπάρχει σύστημα αρχείων εδώ
 @msg	no file writer	δεν υπάρχει μηχανισμός εγγραφής αρχείων
 @msg	no files to place	δεν υπάρχουν αρχεία για τοποθέτηση
+@msg	`{file}` isn't a VectorCraft document, a PDF or a PDF-compatible .ai file	Το `{file}` δεν είναι έγγραφο VectorCraft, PDF ή αρχείο .ai συμβατό με PDF
 @msg	no format to export to	δεν υπάρχει μορφή εξαγωγής
 @msg	no free recovery area	δεν υπάρχει ελεύθερη περιοχή ανάκτησης
 @msg	no gradient stop or freeform point is selected	δεν έχει επιλεγεί σημείο χρώματος ντεγκραντέ ή σημείο ελεύθερης μορφής

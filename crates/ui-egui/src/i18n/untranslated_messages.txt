@@ -166,7 +166,6 @@ Text options: {e}
 `{_1}` would be overwritten by the package: choose a different folder or name
 `{file}` has no art to place
 `{file}` is over {_1} MB
-`{file}` isn't a VectorCraft document
 `{f}` belongs to a VectorCraft that is running
 `{f}` is the copy of a document open now
 `{id}` is no writable format (see document.formats)

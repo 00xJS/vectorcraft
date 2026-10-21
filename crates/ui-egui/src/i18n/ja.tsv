@@ -3112,6 +3112,7 @@ mark-style	Japanese	日本式
 	Use Even-Odd Fill Rule	奇偶規則を使用
 	Use Japanese Crop Marks	日本式トンボを使用
 	Use Low Resolution Proxy for Linked EPS	リンク EPS に低解像度プロキシを使用
+	Link Placed PDF and .ai Files	配置した PDF と .ai ファイルをリンク
 	Use Non-Zero Winding Fill Rule	ノンゼロワインディング規則を使用
 	Use Precise Cursors	精密カーソルを使用
 	Use Pressure Pen	筆圧を使用
@@ -4463,6 +4464,7 @@ swatch	Bright Violet	ビビッドバイオレット
 @msg	no user library folder here	この環境にはユーザーライブラリフォルダーがありません
 @msg	Couldn't place {name}: the document it was dropped on was closed	{name} を配置できませんでした: ドロップ先のドキュメントは閉じられています
 @msg	no files to place	配置するファイルがありません
+@msg	`{file}` isn't a VectorCraft document, a PDF or a PDF-compatible .ai file	`{file}` は VectorCraft ドキュメント、PDF、PDF 互換の .ai ファイルのいずれでもありません
 @msg	paths: give at least one file	paths: ファイルを 1 つ以上指定してください
 @msg	Couldn't place {name}: {e}	{name} を配置できませんでした: {e}
 @msg	no print service	プリントサービスがありません

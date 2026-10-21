@@ -1034,6 +1034,10 @@ pub struct Prefs {
     pub recovery_off_for_complex: bool,
     pub recent_files_count: u32,
     pub low_res_proxy_eps: bool,
+    /// Link Placed PDF and .ai Files (off by default): File › Place with Link places a page of a
+    /// PDF or `.ai` file as a linked placed document, as it places a VectorCraft document; off,
+    /// the page's art is embedded as one group.
+    pub link_placed_pdf: bool,
     pub anti_aliased_bitmaps: bool,
     pub update_links: String,
     // Clipboard Handling
@@ -1253,6 +1257,7 @@ impl Default for Prefs {
             recovery_off_for_complex: false,
             recent_files_count: 20,
             low_res_proxy_eps: false,
+            link_placed_pdf: false,
             anti_aliased_bitmaps: false,
             update_links: s("askWhenModified"),
             copy_as_svg: true,

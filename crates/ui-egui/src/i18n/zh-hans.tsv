@@ -3303,6 +3303,7 @@ font-script	Japanese	汉字
 	Use Even-Odd Fill Rule	使用奇偶填色规则
 	Use Japanese Crop Marks	使用日式裁切标记
 	Use Low Resolution Proxy for Linked EPS	链接 EPS 使用低分辨率代理
+	Link Placed PDF and .ai Files	链接置入的 PDF 和 .ai 文件
 	Use Non-Zero Winding Fill Rule	使用非零缠绕填色规则
 	Use Precise Cursors	使用精确光标
 	Use Pressure Pen	使用压感笔
@@ -4187,6 +4188,7 @@ imageTrace	Outline	轮廓
 @msg	no user library folder here	此处没有用户库文件夹
 @msg	Couldn't place {name}: the document it was dropped on was closed	无法置入 {name}：将它拖放到的文档已关闭
 @msg	no files to place	没有要置入的文件
+@msg	`{file}` isn't a VectorCraft document, a PDF or a PDF-compatible .ai file	`{file}` 不是 VectorCraft 文档、PDF 或 PDF 兼容的 .ai 文件
 @msg	paths: give at least one file	paths：请至少给出一个文件
 @msg	Couldn't place {name}: {e}	无法置入 {name}：{e}
 @msg	no print service	没有打印服务

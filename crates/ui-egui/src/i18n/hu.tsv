@@ -4143,6 +4143,7 @@ mark-style	Japanese	Japán
 	Use Japanese Crop Marks	Japán vágójelek használata
 	Use Library Item	Könyvtárelem használata
 	Use Low Resolution Proxy for Linked EPS	Kis felbontású helyettesítő kép csatolt EPS-hez
+	Link Placed PDF and .ai Files	Elhelyezett PDF- és .ai-fájlok csatolása
 	Use Non-Zero Winding Fill Rule	Nem nulla körüljárási kitöltési szabály
 	Use Precise Cursors	Pontos kurzorok használata
 	Use Pressure Pen	Nyomásérzékeny toll használata
@@ -4720,6 +4721,7 @@ imageTrace	Outline	Körvonal
 @msg	no file system here	itt nincs fájlrendszer
 @msg	no file writer	nincs fájlíró
 @msg	no files to place	nincs elhelyezendő fájl
+@msg	`{file}` isn't a VectorCraft document, a PDF or a PDF-compatible .ai file	nem VectorCraft-dokumentum, PDF- vagy PDF-kompatibilis .ai-fájl: `{file}`
 @msg	No fonts are missing in this document	Ebből a dokumentumból nem hiányzik betűtípus
 @msg	no format to export to	nincs exportálási formátum
 @msg	no free recovery area	nincs szabad helyreállítási terület

@@ -199,7 +199,8 @@ impl<'a> Collector<'a> {
                 let name = safe_asset_name(&file.name);
                 let unique = free_name(&name, if self.opts.links_folder { &mut self.link_names } else { &mut self.taken });
                 let destination_file = format!("{dir}{unique}");
-                if placed.contains(&file.path) {
+                // A placed PDF or .ai file is copied as it is, as an image is.
+                if placed.contains(&file.path) && super::place::document::is_native(&file.name, &bytes) {
                     if depth >= vectorcraft_doc::placed_document::MAX_DEPTH {
                         self.warn(&mut lines, format!("{}: nesting limit reached; copied unchanged without collecting its own links", file.path));
                     } else {
