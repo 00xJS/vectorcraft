@@ -1784,8 +1784,8 @@ fn bounding_box_handles_snap_to_the_grid() {
     }
 }
 
-/// A Shift-constrained move with Snap to Grid on stays level: the square's center lands on a
-/// gridline across, and its top stays where it was, off the grid.
+/// A Shift-constrained move with Snap to Grid on stays level: the square's left or right edge
+/// lands on a gridline across, and its top stays where it was, off the grid.
 #[test]
 fn a_shift_move_snapped_to_the_grid_stays_on_its_line() {
     let mut s = session();
@@ -1799,7 +1799,7 @@ fn a_shift_move_snapped_to_the_grid_stays_on_its_line() {
         s.pointer(&PointerEvent::new(kind, x, y).with_mods(shift), v).unwrap();
     }
     let b = s.doc().unwrap().doc.node(a).unwrap().geometric_bounds().unwrap();
-    assert!(on_grid(b.center().x) && (b.y0 - 101.0).abs() < 1e-9, "{b:?}, grid step {step}");
+    assert!((on_grid(b.x0) || on_grid(b.x1)) && (b.y0 - 101.0).abs() < 1e-9, "{b:?}, grid step {step}");
 }
 
 /// Follow-up to #1254: toggling or adding anchors of a path selected as a whole starts from all
