@@ -11,6 +11,8 @@ use crate::theme::Tokens;
 use crate::widgets::{self, dim_label, divider, section_header};
 use crate::{VectorcraftApp, icons};
 
+/// The panel for what is selected: the selection's kind as its heading, then its sections (Edit
+/// Artboards' with the Artboard tool, the document's with nothing selected).
 pub fn show(app: &mut VectorcraftApp, ui: &mut Ui) {
     let t = Tokens::get(ui.ctx());
     let Some(st) = app.session.active() else {
@@ -669,6 +671,7 @@ mod tests {
         panel_frame(app, ctx, events, show)
     }
 
+    /// One frame of `draw` with `events` → the texts painted, with their rects.
     fn panel_frame(app: &mut VectorcraftApp, ctx: &egui::Context, events: Vec<Event>, draw: fn(&mut VectorcraftApp, &mut Ui)) -> Vec<(String, Rect)> {
         let raw = egui::RawInput { screen_rect: Some(Rect::from_min_size(Pos2::ZERO, vec2(300.0, 700.0))), events, ..Default::default() };
         let mut out = ctx.run_ui(raw, |ui| draw(app, ui));
@@ -685,6 +688,7 @@ mod tests {
             .collect()
     }
 
+    /// Clicks the text `label` where the last frame painted it, over two frames (press, release).
     fn click(app: &mut VectorcraftApp, ctx: &egui::Context, texts: &[(String, Rect)], label: &str) {
         let at = texts.iter().find(|(t, _)| t == label).map(|(_, r)| r.center()).unwrap_or_else(|| panic!("no {label:?} in {texts:?}"));
         let b = |pressed| Event::PointerButton { pos: at, button: PointerButton::Primary, pressed, modifiers: Default::default() };
