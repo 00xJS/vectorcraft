@@ -387,6 +387,33 @@ fn composer_x_mixed_line_metrics() {
     assert!(wrong.is_empty(), "{wrong:?}");
 }
 
+#[test]
+fn composer_x_lines_start_after_the_spaces() {
+    // A line may end after a dash or between two spaces, but the every-line composer breaks after
+    // the spaces that follow, as the single-line composer does: no line starts with a space, in
+    // uniform 12 pt text and with a 24 pt word in it.
+    let st = sans(12.0);
+    let runs = |x: CharStyle| {
+        vec![run("Destroy all creatures \u{2014} with toughness  ", st.clone()), run("X", x), run(" or less \u{2014} then draw a card.", st.clone())]
+    };
+    let mut wrong = vec![];
+    for x in [sans(12.0), sans(24.0)] {
+        for justify in [Justify::Left, Justify::JustifyLeft] {
+            for w in (40..400).step_by(4) {
+                let mut t = area(runs(x.clone()), Rect::new(0.0, 0.0, f64::from(w), 2000.0));
+                t.para.composer = Composer::EveryLine;
+                t.para.justify = justify;
+                let text = t.plain_text();
+                let l = layout(db(), &t);
+                if l.lines.iter().any(|li| text[li.start..].starts_with(' ')) {
+                    wrong.push((x.size, justify, w, line_texts(&t, &l)));
+                }
+            }
+        }
+    }
+    assert!(wrong.is_empty(), "{wrong:?}");
+}
+
 const INLINE: char = vectorcraft_doc::text::INLINE_CHAR;
 
 // ---------- vertical alignment × … ----------
