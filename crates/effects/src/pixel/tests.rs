@@ -1426,6 +1426,32 @@ fn texturizer_lights_each_surface_from_its_side() {
     assert_eq!(big, run(json!({"texture": "brick", "relief": 20})));
 }
 
+#[test]
+fn texturizer_draws_a_loaded_texture_as_relief() {
+    let w = 64;
+    let mid = grey(150);
+    let rings = stored(12, 10, |x, y| {
+        let v = ((x as f64 - 5.5).hypot(y as f64 - 4.5) * 0.9).sin().abs();
+        let g = (v * 255.0).round() as u8;
+        [g, g, g, 255]
+    });
+    let run = |p: serde_json::Value| {
+        let mut d = flat(w, mid);
+        fx("texture.texturizer", p).apply(&mut d, w, w, &space(w, w));
+        d
+    };
+    let relief = run(json!({"texture": "loaded", "textureImage": rings, "relief": 20}));
+    assert_ne!(relief, flat(w, mid));
+    for (_, builtin) in TEXTURES {
+        assert_ne!(relief, run(json!({"texture": builtin, "relief": 20})), "{builtin}");
+    }
+    assert_eq!(run(json!({"texture": "loaded", "textureImage": rings, "relief": 0})), flat(w, mid));
+    assert_eq!(
+        fx("texture.texturizer", json!({"texture": "LOADED", "textureImage": "not a texture"})),
+        fx("texture.texturizer", json!({}))
+    );
+}
+
 /// The Texture filters' patterns lie in document space around the object's centre: the same at
 /// twice the resolution, and moving with the object.
 #[test]

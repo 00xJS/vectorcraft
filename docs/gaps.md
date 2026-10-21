@@ -228,6 +228,8 @@ from G14 and the budget run of G15: **~170–270 h** one agent, ~50–80 h wall 
 
 ## G2 Photoshop-style raster effects and the Effect Gallery
 
+- **Done:** Effect › Texture › Texturizer › Load Texture… (stored grayscale `textureImage`, Loaded Texture in the Texture menu), matching Glass.
+- **Missing:** 24 of 57 filters (the remaining 11 Artistic filters and 13 of Sketch's 14), the Effect Gallery dialog. Measured in
 - **Missing:** 10 of 57 filters (7 Artistic, 2 Sketch and 1 more), the Effect Gallery dialog, Load
   Texture for Texturizer. Measured in
   [effects-parity.md](effects-parity.md).

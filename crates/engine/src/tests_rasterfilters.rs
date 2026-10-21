@@ -336,6 +336,29 @@ fn glass_refuses_a_texture_that_is_not_an_image() {
     assert_eq!(glass_params(&s, g), before);
 }
 
+/// Effect › Texture › Texturizer › Load Texture: an image is stored with the effect and drawn in relief.
+#[test]
+fn texturizer_loads_a_texture_and_draws_it() {
+    let png = rings_png();
+    let data = vectorcraft_format::base64_encode(&png);
+    let (mut s, g) = striped();
+    let file = json!({"name": "rings.png", "dataBase64": data});
+    s.execute("effect.apply", &json!({"effect": "texture.texturizer", "ids": [g], "params": {"relief": 20, "textureImage": file}})).unwrap();
+    let p = glass_params(&s, g);
+    assert_eq!(p["texture"], json!("loaded"));
+    let loaded = render(&s);
+    assert!(glass_params(&s, g)["textureImage"].as_str().is_some());
+    for (_, builtin) in vectorcraft_render::effects::pixel::TEXTURES {
+        s.execute("effect.setParams", &json!({"index": 0, "ids": [g], "params": {"texture": builtin}})).unwrap();
+        assert!(mean_diff(&loaded, &render(&s)) > 0.001, "{builtin}");
+    }
+    s.execute("effect.setParams", &json!({"index": 0, "ids": [g], "params": {"texture": "loaded"}})).unwrap();
+    assert_eq!(render(&s).pixels, loaded.pixels);
+    let doc = vectorcraft_format::load(&vectorcraft_format::save(&s.doc().unwrap().doc, false)).unwrap();
+    assert_eq!(doc.node(NodeId(g)).unwrap().appearance.effects[0].params, glass_params(&s, g));
+    assert_eq!(Renderer::new().render_region(&doc, Rect::new(0.0, 0.0, 200.0, 200.0), 1.0, true).pixels, loaded.pixels);
+}
+
 #[test]
 fn spin_blur_reaches_past_the_corners() {
     let (mut s, g) = striped();

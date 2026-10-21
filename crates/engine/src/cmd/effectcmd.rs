@@ -145,7 +145,7 @@ pub(crate) fn apply(s: &mut Session, p: &Value) -> Result<Value> {
     if id == effects::CROP_MARKS && params.get("style").is_none() {
         params["style"] = json!(s.crop_mark_style().id());
     }
-    if id == GLASS {
+    if texture_load_effect(id) {
         load_texture(&mut params, C)?;
     }
     let effect = effects::new_effect(id, &params).ok_or_else(|| bad(C, format!("unknown effect `{id}`")))?;
@@ -321,7 +321,7 @@ fn set_params(s: &mut Session, p: &Value) -> Result<Value> {
         super::params::check_effect_color(C, effect, &params)?;
         super::params::check_effect_channel(C, effect, &params)?;
     }
-    if edited.iter().any(|e| e == GLASS) {
+    if edited.iter().any(|e| texture_load_effect(e)) {
         load_texture(&mut params, C)?;
     }
     for id in appearance_targets(s, p)? {
@@ -374,6 +374,12 @@ fn set_params(s: &mut Session, p: &Value) -> Result<Value> {
 
 /// Effect › Distort › Glass.
 const GLASS: &str = "distort.glass";
+/// Effect › Texture › Texturizer.
+const TEXTURIZER: &str = "texture.texturizer";
+
+fn texture_load_effect(id: &str) -> bool {
+    id == GLASS || id == TEXTURIZER
+}
 
 /// Glass's `textureImage` in `params` as Glass stores it: an image file (`{path}`, or `{name?,
 /// dataBase64}`) is read with [`fileio::texture_image`] and picked (`texture: "loaded"`) unless
