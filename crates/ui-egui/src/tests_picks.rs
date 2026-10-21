@@ -222,13 +222,14 @@ fn load_profile_asks_off_the_ui_thread() {
 }
 
 /// The Variables panel menu's Import Data Sets… and Export Data Sets… ask off the UI thread: the
-/// data sets in the file picked are loaded, and the data sets are written to the path the dialog
-/// answers.
+/// data sets in the file picked are loaded, and the header and data set `B` are written to the
+/// path the dialog answers.
 #[test]
 fn variables_panel_data_sets_ask_off_the_ui_thread() {
     let (mut app, shown, _) = app();
     app.run("file.new", json!({"width": 100, "height": 80})).unwrap();
-    let dir = std::env::temp_dir().join(format!("vc-picks-data-sets-{}", std::process::id()));
+    let dir = vectorcraft_testkit::temp_dir("picks-data-sets");
+    let _ = std::fs::remove_dir_all(&dir);
     std::fs::create_dir_all(&dir).unwrap();
     let (csv, out) = (dir.join("sets.csv"), dir.join("out.csv"));
     std::fs::write(&csv, "name,Name\nB,y\n").unwrap();
@@ -244,7 +245,7 @@ fn variables_panel_data_sets_ask_off_the_ui_thread() {
     assert!(matches!(shown.requests().as_slice(), [PickRequest::Save(_)]));
     shown.answer(&[&out.to_string_lossy()]);
     poll(&mut app);
-    assert!(std::fs::read_to_string(&out).is_ok_and(|text| text.starts_with("name,Name\n")), "{}", app.ui.status);
+    assert_eq!(std::fs::read_to_string(&out).ok().as_deref(), Some("name,Name\nB,y\n"), "{}", app.ui.status);
     let _ = std::fs::remove_dir_all(dir);
 }
 
