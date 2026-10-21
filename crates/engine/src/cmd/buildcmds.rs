@@ -57,7 +57,7 @@ pub fn specs() -> Vec<CommandSpec> {
             "Make",
             ["Object", "Live Paint"],
             Some("Cmd+Alt+X"),
-            "{ids?|id?} build a Live Paint group from the selected paths → {id, faces, edges}",
+            "{ids?|id?} build a Live Paint group from the selected paths; with a Live Paint group among them, add the others to it as livePaint.merge does → {id, faces, edges}",
             has_selection_or_ids,
             lp_make
         ),
@@ -66,7 +66,7 @@ pub fn specs() -> Vec<CommandSpec> {
             "Merge",
             ["Object", "Live Paint"],
             None,
-            "{ids?|id?} add the other selected paths (and Live Paint groups) to the first Live Paint group, keeping its paint → {id, faces, edges}",
+            "{ids?|id?} add the other selected paths (and Live Paint groups) to the bottom-most Live Paint group, keeping its id, its paint and its own properties (name, lock, visibility, transparency, appearance, opacity mask, graphic style link) → {id, faces, edges}",
             has_multi_or_ids,
             lp_merge
         ),
@@ -102,7 +102,7 @@ pub fn specs() -> Vec<CommandSpec> {
             "Live Paint Bucket",
             [],
             None,
-            "{group?: id | ids?|id?: [id…] (paths to make live first), point: [x,y], color?|swatch?|gradient?|none? (default: current fill), tint?: 0..100, keepModel?: bool (both as paint.setFill)} fill the face containing point → {group, face}",
+            "{group?: id | ids?|id?: [id…] (paths to make live first, as livePaint.make does), point: [x,y], color?|swatch?|gradient?|none? (default: current fill), tint?: 0..100, keepModel?: bool (both as paint.setFill)} fill the face containing point → {group, face}",
             has_doc,
             lp_fill
         ),
@@ -501,8 +501,12 @@ fn merged_gap_options(groups: &[GapOptions]) -> GapOptions {
     if !bottom.detect && groups.iter().any(|g| g.detect) { GapOptions { detect: true, size: GapSize::Small, ..bottom } } else { bottom }
 }
 
-/// Make a Live Paint group from `roots`; returns (group, faces, edges).
+/// Make a Live Paint group from `roots`, or add them to the first Live Paint group among them
+/// as Merge does; returns (group, faces, edges).
 fn make_live(d: &mut Document, sel: &mut Selection, roots: &[NodeId]) -> Result<(NodeId, usize, usize)> {
+    if roots.iter().any(|r| d.node(*r).is_some_and(is_live_paint)) {
+        return merge_live(d, sel, roots);
+    }
     let mut sources = vec![];
     for r in roots {
         let n = d.node(*r).ok_or(EngineError::NoNode(*r))?;
@@ -523,71 +527,78 @@ fn lp_make(s: &mut Session, p: &Value) -> Result<Value> {
     Ok(json!({ "id": id.0, "faces": faces, "edges": edges }))
 }
 
+/// Add the other `roots` (back → front) to the first Live Paint group among them, which keeps its
+/// id, the paint of its faces and edges, and its own properties apart from the Gap Options, which
+/// are merged; returns (group, faces, edges).
+fn merge_live(d: &mut Document, sel: &mut Selection, roots: &[NodeId]) -> Result<(NodeId, usize, usize)> {
+    let target = roots
+        .iter()
+        .copied()
+        .find(|r| d.node(*r).is_some_and(is_live_paint))
+        .ok_or_else(|| EngineError::Other("Live Paint Merge: select a Live Paint group and the paths to add".into()))?;
+    let old = d.node(target).cloned().ok_or(EngineError::NoNode(target))?;
+    // Paint to carry over: (point inside face, fill) and (point on edge, stroke).
+    let keep_faces: Vec<(Point, Paint)> = b::faces(&old)
+        .iter()
+        .filter(|f| !f.appearance.fill_paint().is_none())
+        .filter_map(|f| Some((po::interior_point(f.path_data()?)?, f.appearance.fill_paint())))
+        .collect();
+    let keep_edges: Vec<(Point, Appearance)> = b::edges(&old)
+        .iter()
+        .filter_map(|e| {
+            let pd = e.path_data()?;
+            let sp = pd.subpaths.first().filter(|sp| sp.segment_count() > 0)?;
+            Some((kurbo::ParamCurve::eval(&sp.segment(0), 0.5), (*e.appearance).clone()))
+        })
+        .collect();
+    let mut sources = source_nodes(&old);
+    for r in roots {
+        if *r != target {
+            sources.extend(source_nodes(d.node(*r).ok_or(EngineError::NoNode(*r))?));
+        }
+    }
+    // Merge applies the Gap Options' merge rules to the groups' options, bottom-most first.
+    let groups: Vec<GapOptions> = roots.iter().filter_map(|r| d.node(*r)).filter(|n| is_live_paint(n)).map(Node::gap_options).collect();
+    let options = merged_gap_options(&groups);
+    let (children, nf, ne) = build_children(d, sources, options.max_gap())?;
+    // The group keeps its name, lock, visibility, transparency, appearance, opacity mask, graphic
+    // style link and the rest; its children are made again and its Gap Options set to the merged ones.
+    let mut g = old;
+    if let Some(ch) = g.children_mut() {
+        *ch = children;
+    }
+    g.extras_mut().live_paint_gaps = stored_gap_options(options);
+    for (pt, paint) in keep_faces {
+        if let Some(fid) = face_at(&g, pt).map(|f| f.id)
+            && let Some(ch) = g.children_mut()
+            && let Some(f) = ch.iter_mut().find(|c| c.id == fid)
+        {
+            Arc::make_mut(f).appearance.set_fill(paint);
+        }
+    }
+    for (pt, app) in keep_edges {
+        if let Some(eid) = edge_near(&g, pt, 0.5).map(|e| e.id)
+            && let Some(ch) = g.children_mut()
+            && let Some(e) = ch.iter_mut().find(|c| c.id == eid)
+        {
+            Arc::make_mut(e).appearance = app.into();
+        }
+    }
+    let mut merged = Beside::replacing(d, roots);
+    for r in roots.iter().filter(|r| **r != target) {
+        if d.node(*r).is_some() {
+            merged.put(d, *r, vec![])?;
+        }
+    }
+    merged.put(d, target, vec![g])?;
+    merged.finish(d)?;
+    sel.set([target]);
+    Ok((target, nf, ne))
+}
+
 fn lp_merge(s: &mut Session, p: &Value) -> Result<Value> {
     let roots = root_ids(s, p)?;
-    let (id, faces, edges) = s.edit("Merge Live Paint", |d, sel| {
-        let target = roots
-            .iter()
-            .copied()
-            .find(|r| d.node(*r).is_some_and(is_live_paint))
-            .ok_or_else(|| EngineError::Other("Live Paint Merge: select a Live Paint group and the paths to add".into()))?;
-        let old = d.node(target).cloned().ok_or(EngineError::NoNode(target))?;
-        // Paint to carry over: (point inside face, fill) and (point on edge, stroke).
-        let keep_faces: Vec<(Point, Paint)> = b::faces(&old)
-            .iter()
-            .filter(|f| !f.appearance.fill_paint().is_none())
-            .filter_map(|f| Some((po::interior_point(f.path_data()?)?, f.appearance.fill_paint())))
-            .collect();
-        let keep_edges: Vec<(Point, Appearance)> = b::edges(&old)
-            .iter()
-            .filter_map(|e| {
-                let pd = e.path_data()?;
-                let sp = pd.subpaths.first().filter(|sp| sp.segment_count() > 0)?;
-                Some((kurbo::ParamCurve::eval(&sp.segment(0), 0.5), (*e.appearance).clone()))
-            })
-            .collect();
-        let mut sources = source_nodes(&old);
-        for r in &roots {
-            if *r != target {
-                sources.extend(source_nodes(d.node(*r).ok_or(EngineError::NoNode(*r))?));
-            }
-        }
-        // Merge applies the Gap Options' merge rules to the groups' options, bottom-most first.
-        let groups: Vec<GapOptions> = roots.iter().filter_map(|r| d.node(*r)).filter(|n| is_live_paint(n)).map(Node::gap_options).collect();
-        let options = merged_gap_options(&groups);
-        let (children, nf, ne) = build_children(d, sources, options.max_gap())?;
-        let mut g = Node::group(target, children);
-        g.name = old.name.clone();
-        g.opacity = old.opacity;
-        g.blend = old.blend;
-        g.extras_mut().live_paint_gaps = stored_gap_options(options);
-        for (pt, paint) in keep_faces {
-            if let Some(fid) = face_at(&g, pt).map(|f| f.id)
-                && let Some(ch) = g.children_mut()
-                && let Some(f) = ch.iter_mut().find(|c| c.id == fid)
-            {
-                Arc::make_mut(f).appearance.set_fill(paint);
-            }
-        }
-        for (pt, app) in keep_edges {
-            if let Some(eid) = edge_near(&g, pt, 0.5).map(|e| e.id)
-                && let Some(ch) = g.children_mut()
-                && let Some(e) = ch.iter_mut().find(|c| c.id == eid)
-            {
-                Arc::make_mut(e).appearance = app.into();
-            }
-        }
-        let mut merged = Beside::replacing(d, &roots);
-        for r in roots.iter().filter(|r| **r != target) {
-            if d.node(*r).is_some() {
-                merged.put(d, *r, vec![])?;
-            }
-        }
-        merged.put(d, target, vec![g])?;
-        merged.finish(d)?;
-        sel.set([target]);
-        Ok((target, nf, ne))
-    })?;
+    let (id, faces, edges) = s.edit("Merge Live Paint", |d, sel| merge_live(d, sel, &roots))?;
     Ok(json!({ "id": id.0, "faces": faces, "edges": edges }))
 }
 
