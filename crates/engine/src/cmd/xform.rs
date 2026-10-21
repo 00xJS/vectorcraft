@@ -345,7 +345,7 @@ fn sample_color(s: &mut Session, p: &Value) -> Result<Value> {
     let (id, mut q) = match p.get("stop") {
         None | Some(Value::Null) => (if stroke { "paint.setStroke" } else { "paint.setFill" }, json!({ "color": c })),
         Some(v) => {
-            let i = v.as_u64().ok_or_else(|| bad(C, "`stop` must be a stop index"))? as usize;
+            let i = v.as_u64().map(index).ok_or_else(|| bad(C, "`stop` must be a stop index"))?;
             let color = super::paint::new_color(s, p, color_value(c).ok_or_else(|| bad(C, format!("bad color {c}")))?);
             let (fill, stroke_paint) = s.proxy_paints();
             let Paint::Gradient(g) = (if stroke { stroke_paint } else { fill }) else {

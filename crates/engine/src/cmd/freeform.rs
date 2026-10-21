@@ -227,7 +227,7 @@ fn edit<R>(s: &mut Session, p: &Value, cmd: &str, mut f: impl FnMut(&mut Freefor
 /// The `index` param, else the selected point.
 fn point_index(s: &Session, p: &Value, cmd: &str) -> Result<usize> {
     match p.get("index") {
-        Some(v) => v.as_u64().map(|i| i as usize).ok_or_else(|| bad(cmd, "`index` must be a point index")),
+        Some(v) => v.as_u64().map(index).ok_or_else(|| bad(cmd, "`index` must be a point index")),
         None => s.selected_freeform_point().ok_or_else(|| bad(cmd, "no point selected (give `index`)")),
     }
 }
@@ -318,7 +318,7 @@ fn select_point(s: &mut Session, p: &Value) -> Result<Value> {
         None => return Err(bad(C, "missing `index` (a point index, or null to clear)")),
         Some(Value::Null) => None,
         Some(v) => {
-            let i = v.as_u64().ok_or_else(|| bad(C, "`index` must be a whole number or null"))? as usize;
+            let i = v.as_u64().map(index).ok_or_else(|| bad(C, "`index` must be a whole number or null"))?;
             let (f, _) = s.proxy_freeform(!s.fill_active).ok_or_else(|| bad(C, NOT_FREEFORM))?;
             check_index(&f, i).map_err(|e| bad(C, e))?;
             Some(i)

@@ -289,7 +289,7 @@ pub(crate) fn make_layer(d: &mut Document, name: Option<&str>) -> Node {
 pub(super) fn layer_color_param(v: &Value) -> std::result::Result<LayerColor, String> {
     match v {
         Value::Number(n) => match n.as_u64() {
-            Some(i) if (i as usize) < LAYER_COLORS.len() => Ok(LayerColor::Preset(i as u8)),
+            Some(i) if index(i) < LAYER_COLORS.len() => Ok(LayerColor::Preset(i as u8)),
             _ => Err(format!("a colour index is 0 to {}, not {n}", LAYER_COLORS.len() - 1)),
         },
         Value::String(s) => {
@@ -781,7 +781,7 @@ fn move_node(s: &mut Session, p: &Value) -> Result<Value> {
     const C: &str = "node.move";
     let id = id_param(p, "id").ok_or_else(|| bad(C, "missing id"))?;
     let parent = id_param(p, "parent");
-    let index = p.get("index").and_then(Value::as_u64).unwrap_or(u64::MAX).min(usize::MAX as u64) as usize;
+    let index = p.get("index").and_then(Value::as_u64).map_or(usize::MAX, index);
     let d = &s.doc()?.doc;
     let n = d.node(id).ok_or(EngineError::NoNode(id))?;
     if !accepts(d, parent, n) {
