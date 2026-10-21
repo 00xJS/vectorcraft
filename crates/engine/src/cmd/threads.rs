@@ -381,6 +381,16 @@ fn release(s: &mut Session, _: &Value) -> Result<Value> {
                     refresh_bounds(t);
                 }
             }
+            // The first frame that stays holds the whole story, and the others none, for the
+            // re-flow to share it out among them once.
+            let end_style = story.last().map_or_else(|| style.clone(), |r| r.style.clone());
+            let last_para = paras.last().cloned().unwrap_or_default();
+            for id in keep.iter().skip(1) {
+                if let Some(NodeKind::Text(t)) = d.node_mut(*id).map(|n| &mut n.kind) {
+                    t.runs = vec![TextRun { text: String::new(), style: end_style.clone(), inline: None }];
+                    t.set_all_paras(last_para.clone());
+                }
+            }
             if let Some(first) = keep.first()
                 && let Some(NodeKind::Text(t)) = d.node_mut(*first).map(|n| &mut n.kind)
             {
@@ -682,6 +692,22 @@ mod tests {
         s.execute("text.thread.add", &json!({"from": a, "to": b})).unwrap();
         let c = new_id(s.execute("text.create", &json!({"x": 10, "y": 200, "text": "x", "area": {"width": 50, "height": 20}})).unwrap());
         assert!(s.execute("text.thread.add", &json!({"from": c, "to": b})).is_err(), "a frame already threaded");
+    }
+
+    /// A frame released from a thread that keeps two or more frames gives its text back to them:
+    /// the story flows through them once.
+    #[test]
+    fn release_from_a_longer_thread_keeps_the_story_once() {
+        let (mut s, a, b) = setup();
+        let c = new_id(s.execute("text.create", &json!({"x": 10, "y": 100, "text": "", "area": {"width": 150, "height": 40}})).unwrap());
+        s.execute("text.thread.add", &json!({"from": a, "to": c})).unwrap();
+        s.execute("text.thread.add", &json!({"from": c, "to": b})).unwrap();
+        assert_eq!(threads(&s), [[a, c, b]]);
+        s.execute("select.set", &json!({"ids": [c]})).unwrap();
+        s.execute("text.thread.releaseSelection", &json!({})).unwrap();
+        assert_eq!(threads(&s), [[a, b]]);
+        assert!(text(&s, c).is_empty());
+        assert_eq!(format!("{}{}", text(&s, a), text(&s, b)), TEXT.repeat(4));
     }
 
     #[test]
