@@ -2583,6 +2583,9 @@ file-filter	Templates	範本
 	Modified since it was read: {path}	讀取後已被修改：{path}
 	Modified:	修改時間：
 	Modify	修改
+	Insert Kashidas	插入卡希達
+	Long	長
+	Stylistic	風格化
 	Mojikumi Set	標點間距
 	Kinsoku Set	Kinsoku 集
 	Hard	強

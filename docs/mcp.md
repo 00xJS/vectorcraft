@@ -3792,6 +3792,27 @@ values the Paragraph panel shows, with Preview; OK sends the values that changed
 ```json
 {"name":"run_command","arguments":{"command":"text.setFormat","params":{"wordSpacing":[80,100,150],"letterSpacing":{"max":5},"singleWordJustification":"alignLeft"}}}
 ```
+
+## Insert Kashidas
+
+`text.setFormat {kashida}` (Paragraph panel › Insert Kashidas, shown with the Indic options) sets how the justified
+lines of the paragraphs of the selected type (or `ids`, or the paragraphs a `start` / `end` range touches) lengthen
+their Arabic words: `"none"` (the default), `"short"`, `"medium"`, `"long"` or `"stylistic"`. On a justified line of
+horizontal area type that is shorter than its measure, each Arabic word with joined letters gets one kashida between its
+last pair of them: a tatweel (U+0640) in the font of the letter after it. Words end at spaces, inline graphics and
+characters other than letters and marks, such as punctuation, digits and symbols. The kashidas share the line's room
+equally, each at most a quarter of an em (short), half an em (medium) or an em (long) of that letter's size at its
+horizontal scale; a stylistic kashida is a row of the font's own tatweels, as many whole ones as fit in its share and in
+an em. The word spaces and the rest of justification take the room the kashidas leave, so the line keeps its width.
+Line breaks are the same as with none. Lines that are not justified, words without joined letters and fonts without a
+tatweel get no kashidas. Each tatweel is a glyph of the layout that stands for no character and does not advance; the
+letter after the kashida advances over it, so the caret before that letter, a selection of it and a click on it take
+the kashida in. The setting is saved with the paragraph (`kashida` in `para`) only when it is not none, paragraph
+styles carry it, and Reset Panel sets it back to none. The change is one undo step.
+
+```json
+{"name":"run_command","arguments":{"command":"text.setFormat","params":{"kashida":"medium"}}}
+```
 ## Kinsoku Set
 
 `text.setFormat {kinsoku: "hard"|"soft"|"none"}` sets the Paragraph panel's Kinsoku Set of the selected type (or `ids`):

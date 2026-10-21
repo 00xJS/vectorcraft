@@ -598,6 +598,35 @@ impl Default for JustificationOptions {
     }
 }
 
+/// Insert Kashidas (Paragraph panel): how long the kashidas are that lengthen the Arabic words of
+/// a justified paragraph's lines. A kashida is a tatweel (U+0640) drawn between a word's last pair
+/// of joined letters, at most one in each word. Short, Medium and Long kashidas are at most a quarter
+/// of an em, half an em and an em long; a Stylistic kashida is a row of whole tatweels as the font
+/// draws them, at most an em long.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub enum Kashida {
+    /// No kashidas: justified lines widen their word spaces.
+    #[default]
+    None,
+    Short,
+    Medium,
+    Long,
+    Stylistic,
+}
+
+impl Kashida {
+    /// The longest kashida, in ems of the letter that follows it in the text; 0 for None.
+    pub fn max_em(self) -> f64 {
+        match self {
+            Kashida::None => 0.0,
+            Kashida::Short => 0.25,
+            Kashida::Medium => 0.5,
+            Kashida::Long | Kashida::Stylistic => 1.0,
+        }
+    }
+}
+
 /// Paragraph attributes (the Paragraph panel).
 ///
 /// Saved through [`ParaStyleFile`], which keeps files with text openable by builds from before
@@ -645,6 +674,9 @@ pub struct ParaStyle {
     /// commas starting or ending a line hang outside the margin, and asterisks, tildes, ellipses,
     /// dashes, colons and semicolons hang by half. East Asian punctuation hangs by burasagari.
     pub roman_hanging: bool,
+    /// Insert Kashidas (Paragraph panel): justified lines lengthen their Arabic words with
+    /// kashidas before they widen their word spaces.
+    pub kashida: Kashida,
 }
 
 impl ParaStyle {
@@ -706,6 +738,8 @@ struct ParaStyleFile {
     kinsoku: Kinsoku,
     #[serde(default, skip_serializing_if = "crate::skip::is_default")]
     roman_hanging: bool,
+    #[serde(default, skip_serializing_if = "crate::skip::is_default")]
+    kashida: Kashida,
 }
 
 impl From<ParaStyle> for ParaStyleFile {
@@ -734,6 +768,7 @@ impl From<ParaStyle> for ParaStyleFile {
             burasagari,
             kinsoku,
             roman_hanging,
+            kashida,
             ..
         } = p;
         Self {
@@ -756,6 +791,7 @@ impl From<ParaStyle> for ParaStyleFile {
             burasagari,
             kinsoku,
             roman_hanging,
+            kashida,
         }
     }
 }
@@ -782,6 +818,7 @@ impl From<ParaStyleFile> for ParaStyle {
             burasagari,
             kinsoku,
             roman_hanging,
+            kashida,
             ..
         } = f;
         Self {
@@ -803,6 +840,7 @@ impl From<ParaStyleFile> for ParaStyle {
             burasagari,
             kinsoku,
             roman_hanging,
+            kashida,
         }
     }
 }
