@@ -127,15 +127,21 @@ fn common_tracking_does_not_turn_gaps_into_spaces() {
     }
 }
 
-/// Glyphs set an em or more apart, each on its own, are words or columns: every gap stays a space,
-/// however evenly they are spaced.
+/// Glyphs set more than half an em apart, each on its own, are words or columns: every gap stays a
+/// space, however evenly they are spaced.
 #[test]
 fn evenly_wide_gaps_stay_spaces() {
-    let lines: Vec<_> = ["1", "2", "3", "4"].iter().enumerate().map(|(i, text)| (20.0 + i as f32 * 18.0, 60.0, 12.0, *text)).collect();
-    let d = import_with_report(&text_pdf(&lines, false), &ImportOptions::default()).unwrap().document;
-    let t = texts(&d);
-    assert_eq!(t.len(), 1, "{t:?}");
-    assert_eq!(t[0].plain_text(), "1 2 3 4");
+    let font = vectorcraft_text::FontDb::global().find_postscript("SourceSans3-Regular").unwrap();
+    let size = 12.0_f32;
+    let one = font.advance(font.glyph_for('1')) as f32 / font.units_per_em() as f32 * size;
+    for gap in [0.55_f32, 0.75, 1.0] {
+        let lines: Vec<_> =
+            ["1", "2", "3", "4"].iter().enumerate().map(|(i, text)| (20.0 + i as f32 * (one + gap * size), 60.0, size, *text)).collect();
+        let d = import_with_report(&text_pdf(&lines, false), &ImportOptions::default()).unwrap().document;
+        let t = texts(&d);
+        assert_eq!(t.len(), 1, "gap {gap} em: {t:?}");
+        assert_eq!(t[0].plain_text(), "1 2 3 4", "gap {gap} em");
+    }
 }
 
 /// Embedded font data is untrusted: anything that isn't a CID-keyed CFF is no table, never a panic.
