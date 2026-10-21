@@ -8,6 +8,13 @@ description = "VectorCraft egui frontend (menus, panels, tools and canvas); swap
 [lints]
 workspace = true
 
+[features]
+default = ["bundled-fonts"]
+# The fonts vectorcraft-text bundles for documents, through the engine's `bundled-fonts`. Off, for
+# an embedder that supplies every document font at run time (`vectorcraft_text::FontDb::add_font`);
+# the interface's own faces are separate copies in theme.rs and stay either way.
+bundled-fonts = ["vectorcraft-engine/bundled-fonts"]
+
 [dependencies]
 craft-ui = { workspace = true }
 vectorcraft-geom = { workspace = true }

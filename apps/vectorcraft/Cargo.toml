@@ -17,7 +17,7 @@ accessibility = ["eframe/accesskit"]
 windows7 = ["eframe/glow"]
 
 [dependencies]
-vectorcraft-engine = { workspace = true }
+vectorcraft-engine = { workspace = true, features = ["bundled-fonts"] }
 vectorcraft-ui-egui = { workspace = true }
 vectorcraft-text = { workspace = true }
 # Shared across the Craft suite: decides who draws the window frame per desktop (compositor vs app)

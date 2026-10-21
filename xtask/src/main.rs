@@ -105,6 +105,40 @@ fn run(mut cmd: Command, what: &str) -> Result<(), String> {
     if status.success() { Ok(()) } else { Err(format!("{what}: exited with {status}")) }
 }
 
+/// `vectorcraft-ui-egui` and `vectorcraft-mcp` without their default features leave
+/// vectorcraft-text's bundled fonts out: no crate they depend on turns them on (docs/development.md
+/// › Leaving out the bundled fonts). The same tree with the default features must show them, so a
+/// change in cargo tree's output can't make the check pass by finding nothing.
+fn libraries_without_bundled_fonts() -> Result<(), String> {
+    ["vectorcraft-ui-egui", "vectorcraft-mcp"].into_iter().try_for_each(without_bundled_fonts)
+}
+
+fn without_bundled_fonts(package: &str) -> Result<(), String> {
+    const FEATURE: &str = "vectorcraft-text feature \"bundled-fonts\"";
+    let tree = |defaults: bool| -> Result<String, String> {
+        let mut args = vec!["tree", "-p", package, "--target", "all", "-e", "features,normal", "-i", "vectorcraft-text"];
+        if !defaults {
+            args.insert(3, "--no-default-features");
+        }
+        let what = format!("cargo {}", args.join(" "));
+        eprintln!("$ {what}");
+        let out = cargo().args(&args).output().map_err(|e| format!("{what}: failed to spawn: {e}"))?;
+        if !out.status.success() {
+            return Err(format!("{what}: exited with {}:\n{}", out.status, String::from_utf8_lossy(&out.stderr)));
+        }
+        Ok(String::from_utf8_lossy(&out.stdout).into_owned())
+    };
+    let with = tree(true)?;
+    if !with.contains(FEATURE) {
+        return Err(format!("{package} with its default features shows no {FEATURE} (has cargo tree's output changed?):\n{with}"));
+    }
+    let without = tree(false)?;
+    if without.contains(FEATURE) {
+        return Err(format!("{package} without default features still bundles the fonts:\n{without}"));
+    }
+    Ok(())
+}
+
 pub fn metadata() -> Result<serde_json::Value, String> {
     let out = cargo().args(["metadata", "--format-version", "1", "--no-deps"]).output().map_err(|e| format!("cargo metadata: {e}"))?;
     if !out.status.success() {
@@ -212,7 +246,10 @@ fn cmd_ci() -> Result<(), String> {
                 // vectorcraft-text as embedders that bring their own fonts build it.
                 let mut c = cargo();
                 c.args(["test", "-p", "vectorcraft-text", "--no-default-features", "--test", "without_bundled_fonts"]);
-                run(c, "cargo test -p vectorcraft-text --no-default-features --test without_bundled_fonts")
+                run(c, "cargo test -p vectorcraft-text --no-default-features --test without_bundled_fonts")?;
+                // The egui panels and the MCP server as such an embedder builds them: nothing turns
+                // the fonts back on.
+                libraries_without_bundled_fonts()
             }),
         ),
         ("pdf-deps", Box::new(|| pdf_deps::run(&root()))),
