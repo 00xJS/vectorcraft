@@ -4609,6 +4609,9 @@ effect	Regular	Normale
 @msg	before must name a panel	before deve indicare un pannello
 @msg	docking action contains an unknown panel or an excessive split path	L’azione di ancoraggio contiene un pannello sconosciuto o un percorso di divisioni troppo lungo
 @msg	group must be true or false	group deve essere true o false
+@msg	icon must be true or false	icon deve essere true o false
+@msg	icon only docks a panel in the icon column, with no anchor	icon ancora un pannello solo nella colonna delle icone, senza anchor
+@msg	column docks a set as a dock column, with no anchor or icon	column ancora un insieme come colonna del dock, senza anchor né icon
 @msg	move requires a destination panel	Lo spostamento richiede un pannello di destinazione
 @msg	move requires an existing destination panel	Lo spostamento richiede un pannello di destinazione esistente
 @msg	onto must name a floating panel	onto deve indicare un pannello mobile

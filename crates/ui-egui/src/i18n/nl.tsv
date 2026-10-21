@@ -4462,6 +4462,9 @@ imageTrace	Outline	Contour
 @msg	before must name a panel	before moet een paneel benoemen
 @msg	docking action contains an unknown panel or an excessive split path	dokactie bevat een onbekend paneel of een overmatig splitspad
 @msg	group must be true or false	group moet true of false zijn
+@msg	icon must be true or false	icon moet true of false zijn
+@msg	icon only docks a panel in the icon column, with no anchor	icon dockt een paneel alleen in de pictogramkolom, zonder anchor
+@msg	column docks a set as a dock column, with no anchor or icon	column dockt een set als dockkolom, zonder anchor of icon
 @msg	move requires a destination panel	move vereist een doelpaneel
 @msg	move requires an existing destination panel	move vereist een bestaand doelpaneel
 @msg	onto must name a floating panel	onto moet een zwevend paneel benoemen

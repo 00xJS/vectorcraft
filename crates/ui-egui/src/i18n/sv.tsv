@@ -4490,6 +4490,9 @@ effect	Soft	Mjuk
 @msg	before must name a panel	before måste ange en panel
 @msg	docking action contains an unknown panel or an excessive split path	dockningsåtgärden innehåller en okänd panel eller en alltför djup delningssökväg
 @msg	group must be true or false	group måste vara true eller false
+@msg	icon must be true or false	icon måste vara true eller false
+@msg	icon only docks a panel in the icon column, with no anchor	icon dockar bara en panel i ikonkolumnen, utan anchor
+@msg	column docks a set as a dock column, with no anchor or icon	column dockar en uppsättning som en dockningskolumn, utan anchor eller icon
 @msg	move requires a destination panel	flyttning kräver en målpanel
 @msg	move requires an existing destination panel	flyttning kräver en befintlig målpanel
 @msg	onto must name a floating panel	onto måste ange en flytande panel

@@ -4450,6 +4450,9 @@ imageTrace	Outline	Kontur
 @msg	before must name a panel	before skal angive et panel
 @msg	docking action contains an unknown panel or an excessive split path	dokningshandlingen indeholder et ukendt panel eller en overdreven opdelingssti
 @msg	group must be true or false	group skal være true eller false
+@msg	icon must be true or false	icon skal være true eller false
+@msg	icon only docks a panel in the icon column, with no anchor	icon docker kun et panel i ikonkolonnen, uden anchor
+@msg	column docks a set as a dock column, with no anchor or icon	column docker et sæt som en dockkolonne, uden anchor eller icon
 @msg	move requires a destination panel	move kræver et destinationspanel
 @msg	move requires an existing destination panel	move kræver et eksisterende destinationspanel
 @msg	onto must name a floating panel	onto skal angive et flydende panel

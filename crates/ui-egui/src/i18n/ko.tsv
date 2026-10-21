@@ -4579,6 +4579,9 @@ effect	Vertical	세로
 @msg	before must name a panel	before는 패널을 지정해야 합니다
 @msg	docking action contains an unknown panel or an excessive split path	도킹 동작에 알 수 없는 패널이나 지나치게 많은 분할 경로가 있습니다
 @msg	group must be true or false	group은 true 또는 false여야 합니다
+@msg	icon must be true or false	icon은 true 또는 false여야 합니다
+@msg	icon only docks a panel in the icon column, with no anchor	icon은 anchor 없이 패널을 아이콘 열에만 도킹합니다
+@msg	column docks a set as a dock column, with no anchor or icon	column은 anchor나 icon 없이 세트를 도크 열로 도킹합니다
 @msg	move requires a destination panel	move에는 대상 패널이 필요합니다
 @msg	move requires an existing destination panel	move에는 존재하는 대상 패널이 필요합니다
 @msg	onto must name a floating panel	onto는 떠 있는 패널을 지정해야 합니다

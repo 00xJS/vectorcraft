@@ -4577,6 +4577,9 @@ imageTrace	Outline	Kontur
 @msg	before must name a panel	before musi wskazywać panel
 @msg	docking action contains an unknown panel or an excessive split path	operacja dokowania zawiera nieznany panel lub zbyt długą ścieżkę podziału
 @msg	group must be true or false	group musi mieć wartość true lub false
+@msg	icon must be true or false	icon musi mieć wartość true lub false
+@msg	icon only docks a panel in the icon column, with no anchor	icon tylko dokuje panel w kolumnie ikon, bez anchor
+@msg	column docks a set as a dock column, with no anchor or icon	column dokuje zestaw jako kolumnę doku, bez anchor ani icon
 @msg	move requires a destination panel	przeniesienie wymaga panelu docelowego
 @msg	move requires an existing destination panel	przeniesienie wymaga istniejącego panelu docelowego
 @msg	onto must name a floating panel	onto musi wskazywać panel pływający

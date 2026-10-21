@@ -204,8 +204,7 @@ pub fn apply(ui: &mut UiState, w: &Workspace) {
     ui.docking_generation = ui.docking_generation.wrapping_add(1);
     ui.docking = w.docking.clone().filter(crate::panel_docking::valid);
     ui.docking_hidden = w.docking_hidden.clone();
-    ui.docking_icons =
-        w.docking_icons.iter().filter(|id| crate::state::ICON_PANELS.iter().any(|entry| entry.0 == id.as_str())).take(64).cloned().collect();
+    ui.docking_icons = w.docking_icons.iter().filter(|id| crate::state::rail_panel(id).is_some()).take(64).cloned().collect();
     ui.toolbar_pos = w.toolbar_pos;
     ui.dock_width = w.dock_width;
     ui.dock_width_pending = true;

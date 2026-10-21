@@ -4484,6 +4484,9 @@ effect	Soft	Меко
 @msg	before must name a panel	параметърът „преди“ трябва да указва панел
 @msg	docking action contains an unknown panel or an excessive split path	действието по закачане съдържа непознат панел или прекомерен път на разделяне
 @msg	group must be true or false	групата трябва да е истина или лъжа
+@msg	icon must be true or false	icon трябва да е истина или лъжа
+@msg	icon only docks a panel in the icon column, with no anchor	icon закачва панел само в колоната с икони, без anchor
+@msg	column docks a set as a dock column, with no anchor or icon	column закачва набор като колона на дока, без anchor или icon
 @msg	move requires a destination panel	преместването изисква целеви панел
 @msg	move requires an existing destination panel	преместването изисква съществуващ целеви панел
 @msg	onto must name a floating panel	параметърът „върху“ трябва да указва плаващ панел

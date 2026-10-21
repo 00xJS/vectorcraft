@@ -4241,6 +4241,9 @@ theme	Appearance	Giao diện
 @msg	give the path `id` and the width point `index`	hãy cung cấp `id` đường dẫn và `index` điểm chiều rộng
 @msg	gradient “{name}” isn't defined in the file: a plain colour stands in for it	chuyển sắc “{name}” không được định nghĩa trong tệp: một màu đơn thay thế
 @msg	group must be true or false	group phải là true hoặc false
+@msg	icon must be true or false	icon phải là true hoặc false
+@msg	icon only docks a panel in the icon column, with no anchor	icon chỉ neo bảng vào cột biểu tượng, không có anchor
+@msg	column docks a set as a dock column, with no anchor or icon	column neo một bộ thành cột neo, không có anchor hay icon
 @msg	guides are locked	đường căn bị khóa
 @msg	handle must be in or out	handle phải là in hoặc out
 @msg	image '{key}' has no pixels and was left out	ảnh '{key}' không có pixel và bị bỏ qua

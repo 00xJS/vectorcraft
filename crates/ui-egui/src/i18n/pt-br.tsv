@@ -4021,6 +4021,9 @@ axis	Both	Ambos
 @msg	before must name a panel	before deve nomear um painel
 @msg	docking action contains an unknown panel or an excessive split path	a ação de encaixe contém um painel desconhecido ou um caminho de divisão excessivo
 @msg	group must be true or false	group deve ser true ou false
+@msg	icon must be true or false	icon deve ser true ou false
+@msg	icon only docks a panel in the icon column, with no anchor	icon apenas encaixa um painel na coluna de ícones, sem anchor
+@msg	column docks a set as a dock column, with no anchor or icon	column encaixa um conjunto como coluna do encaixe, sem anchor nem icon
 @msg	move requires a destination panel	mover exige um painel de destino
 @msg	move requires an existing destination panel	mover exige um painel de destino existente
 @msg	onto must name a floating panel	onto deve nomear um painel flutuante
