@@ -1071,3 +1071,25 @@ fn offset_path_that_leaves_nothing_says_so() {
     let e = s.execute("object.path.offsetPath", &json!({"offset": -20})).unwrap_err().to_string();
     assert!(e.contains("leaves nothing") && !e.contains("select paths"), "{e}");
 }
+
+/// COLR glyphs become groups of their layers: real paths with their colours and gradients, the
+/// composite's blend mode kept, every node with an id of the document's.
+#[test]
+fn create_outlines_turns_colr_glyphs_into_layer_groups() {
+    use vectorcraft_text::test_fonts::{COLOUR_CHAR, colr_family, colr_font};
+    vectorcraft_text::FontDb::global().add_font(colr_font(true).unwrap());
+    let mut s = session();
+    s.execute("text.create", &json!({"x": 10, "y": 50, "text": format!("{COLOUR_CHAR}F"), "size": 32, "font": colr_family(true)})).unwrap();
+    let r = ids(&s.execute("type.createOutlines", &json!({})).unwrap());
+    let g = node(&s, r[0]);
+    let ch = g.children().unwrap();
+    assert!(matches!(ch[0].kind, NodeKind::Group { .. }), "the glyph's group: {:?}", ch[0].kind_label());
+    assert!(matches!(ch[1].kind, NodeKind::Path { .. } | NodeKind::Compound { .. }), "the `F` an outline");
+    let mut nodes = vec![];
+    ch[0].walk(&mut |n| nodes.push((n.id, n.blend, n.appearance.fill_paint())));
+    assert!(nodes.iter().any(|(_, _, p)| matches!(p, vectorcraft_color::Paint::Gradient(_))), "its gradients");
+    assert!(nodes.iter().any(|(_, b, _)| *b == vectorcraft_color::BlendMode::Multiply), "its multiply");
+    let d = &s.doc().unwrap().doc;
+    let mut seen = std::collections::HashSet::new();
+    assert!(nodes.iter().all(|(id, ..)| d.node(*id).is_some() && seen.insert(*id)), "ids of the document's, each once");
+}

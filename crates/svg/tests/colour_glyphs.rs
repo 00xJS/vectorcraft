@@ -42,3 +42,43 @@ fn embedded_fonts_leave_bitmap_glyphs_to_the_viewer() {
     assert!(out.warnings.iter().any(|w| w.contains("emoji")), "{:?}", out.warnings);
     assert!(out.svg.contains(&format!("{COLOUR_CHAR}F")), "the character stays text");
 }
+
+/// `ch` in the COLR test font (v1 or v0), 24 pt, filled blue.
+fn colr_doc(v1: bool, ch: char) -> Document {
+    use vectorcraft_text::test_fonts::{colr_family, colr_font};
+    vectorcraft_text::FontDb::global().add_font(colr_font(v1).unwrap());
+    let mut d = Document::new(200.0, 100.0);
+    let fill = vectorcraft_doc::color::Paint::solid(vectorcraft_doc::color::Color::rgb8(0, 0, 255));
+    let st = CharStyle { font_family: colr_family(v1).into(), size: 24.0, fill, ..CharStyle::default() };
+    let n = Node::new(d.alloc_id(), NodeKind::Text(Box::new(TextObject::point(Point::new(10.0, 50.0), &ch.to_string(), st))));
+    let l = d.layers[0].id;
+    d.insert(Some(l), 0, n).unwrap();
+    d
+}
+
+#[test]
+fn outlined_text_writes_colr_glyphs_as_vector_art() {
+    let svg = export_full(&colr_doc(true, COLOUR_CHAR), &ExportOptions { outline_text: true, ..Default::default() }, None).svg;
+    assert!(!svg.contains("<image "), "{svg}");
+    assert!(svg.contains("<linearGradient") && svg.contains("<radialGradient"), "{svg}");
+    assert!(svg.contains("<clipPath"), "the clip box: {svg}");
+    assert!(svg.contains("mix-blend-mode:multiply") || svg.contains("mix-blend-mode: multiply"), "{svg}");
+    let v0 = export_full(&colr_doc(false, COLOUR_CHAR), &ExportOptions { outline_text: true, ..Default::default() }, None).svg;
+    assert!(v0.contains("#f00") || v0.contains("#ff0000"), "the red layer: {v0}");
+    assert!(v0.contains("#00f") || v0.contains("#0000ff"), "the foreground layer in the fill: {v0}");
+}
+
+#[test]
+fn outlined_text_writes_a_sweep_glyph_as_its_image() {
+    use vectorcraft_text::test_fonts::COLR_SWEEP_CHAR;
+    let svg = export_full(&colr_doc(true, COLR_SWEEP_CHAR), &ExportOptions { outline_text: true, ..Default::default() }, None).svg;
+    assert_eq!(svg.matches("<image ").count(), 1, "{svg}");
+}
+
+#[test]
+fn embedded_fonts_leave_colr_glyphs_to_the_viewer() {
+    let out = export_full(&colr_doc(false, COLOUR_CHAR), &ExportOptions { embed_fonts: true, ..Default::default() }, None);
+    assert!(!out.svg.contains("base64,"), "no subset without its colour layers: {}", out.svg);
+    assert!(out.warnings.iter().any(|w| w.contains("emoji")), "{:?}", out.warnings);
+    assert!(out.svg.contains(COLOUR_CHAR), "the character stays text");
+}

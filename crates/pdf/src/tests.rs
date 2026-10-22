@@ -1068,3 +1068,35 @@ fn dithered_perceptual_gradients_export_as_images_with_noise_on_the_fill() {
     assert_ne!(export_with(true, false), export_with(false, false), "the fill's pixels carry the noise");
     assert_eq!(export_with(true, true), export_with(false, true), "a stroke has no dither");
 }
+
+/// COLR glyphs in the PDF: as real text, in their font's Type 3 glyphs (the foreground layer in
+/// the fill); outlined, as vector art, a sweep glyph as an image.
+#[test]
+fn colr_glyphs_export_as_vector_art() {
+    use vectorcraft_text::test_fonts::{COLOUR_CHAR, COLR_SWEEP_CHAR, colr_family, colr_font};
+    for v1 in [false, true] {
+        vectorcraft_text::FontDb::global().add_font(colr_font(v1).unwrap());
+    }
+    let page = |v1: bool, ch: char, outline_text: bool| {
+        let mut d = doc(300.0, 100.0);
+        let fill = Paint::solid(Color::rgb(0.0, 0.0, 1.0));
+        let st = CharStyle { font_family: colr_family(v1).into(), size: 24.0, fill, ..CharStyle::default() };
+        add(&mut d, Node::new(NodeId(0), NodeKind::Text(Box::new(TextObject::point(Point::new(10.0, 50.0), &ch.to_string(), st)))));
+        let mut o = PdfOptions::uncompressed();
+        o.settings.advanced.outline_text = outline_text;
+        import_with_report(&export(&d, &o).unwrap(), &ImportOptions::default()).unwrap().document
+    };
+    let fills = |d: &Document| -> Vec<Paint> { leaves(d).iter().map(|n| n.appearance.fill_paint()).collect() };
+    let near =
+        |p: &Paint, rgb: [f32; 3]| matches!(p, Paint::Solid { color, .. } if color.to_rgb().iter().zip(rgb).all(|(a, b)| (a - b).abs() < 0.02));
+    for outline_text in [false, true] {
+        let v0 = fills(&page(false, COLOUR_CHAR, outline_text));
+        assert!(v0.iter().any(|p| near(p, [1.0, 0.0, 0.0])), "the red layer (outlined {outline_text}): {v0:?}");
+        assert!(v0.iter().any(|p| near(p, [0.0, 0.0, 1.0])), "the foreground layer in the fill (outlined {outline_text}): {v0:?}");
+    }
+    let v1 = page(true, COLOUR_CHAR, true);
+    assert!(!leaves(&v1).iter().any(|n| matches!(n.kind, NodeKind::Image(_))), "vector art");
+    assert!(fills(&v1).iter().any(|p| matches!(p, Paint::Gradient(_))), "with its gradients");
+    let sweep = page(true, COLR_SWEEP_CHAR, true);
+    assert!(leaves(&sweep).iter().any(|n| matches!(n.kind, NodeKind::Image(_))), "a sweep glyph is an image");
+}

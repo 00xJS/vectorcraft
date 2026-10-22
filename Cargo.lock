@@ -4990,6 +4990,7 @@ dependencies = [
  "unicode-segmentation",
  "vectorcraft-doc",
  "vectorcraft-geom",
+ "vello_cpu 0.2.0",
  "windows-registry",
  "write-fonts",
 ]

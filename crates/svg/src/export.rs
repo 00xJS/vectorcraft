@@ -1910,6 +1910,10 @@ impl Writer<'_> {
                 xml_escape(&href)
             ));
         }
+        // COLR glyphs: their layers, as art.
+        for art in lay.glyphs.iter().filter_map(|g| g.placed_colour(Affine::IDENTITY)) {
+            self.node(&art);
+        }
         self.xf = saved;
         self.depth -= 1;
         self.line("</g>");
@@ -2103,8 +2107,9 @@ impl Writer<'_> {
         let mut face: Option<Arc<FontFace>> = None;
         for g in &lay.glyphs {
             let Some(st) = t.runs.get(g.run).map(|r| &r.style) else { continue };
-            // A colour bitmap font's subset would hold no bitmaps: its emoji are left to the viewer.
-            if g.image.is_some() {
+            // A colour font's subset would hold no bitmaps or COLR layers: its emoji are left to the
+            // viewer.
+            if g.image.is_some() || g.colour.is_some() {
                 self.warn("colour emoji fonts are not embedded: viewers show emoji in their own fonts");
                 continue;
             }

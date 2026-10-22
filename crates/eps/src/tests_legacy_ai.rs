@@ -93,7 +93,8 @@ fn write_with(doc: &Document, o: LegacyAiOptions) -> LegacyAiOutput {
 /// in their first stop's color.
 fn as_printed(doc: &Document, o: &LegacyAiOptions) -> Document {
     // A run's glyphs, laid out, as one path with the run's fill (the renderer draws no type), and
-    // its colour bitmap glyphs as images (their pixels added to `images`).
+    // its colour bitmap glyphs as images (their pixels added to `images`), its COLR glyphs as their
+    // layers.
     fn outlined(t: &vectorcraft_doc::TextObject, images: &mut std::collections::BTreeMap<String, ImageBlob>) -> Node {
         let layout = vectorcraft_text::layout(vectorcraft_text::FontDb::global(), t);
         let mut nodes: Vec<Arc<Node>> = t
@@ -116,6 +117,8 @@ fn as_printed(doc: &Document, o: &LegacyAiOptions) -> Document {
             let im = ImageObject { key, width: image.width, height: image.height, xf: t.xf * to_text, link: None, placement: Default::default() };
             nodes.push(Arc::new(Node::new(vectorcraft_doc::NodeId(0), NodeKind::Image(Box::new(im)))));
         }
+        // COLR glyphs: their layers.
+        nodes.extend(layout.glyphs.iter().filter_map(|g| g.placed_colour(t.xf)).map(Arc::new));
         Node::group(vectorcraft_doc::NodeId(0), nodes)
     }
     fn plain(nodes: &mut Vec<Arc<Node>>, o: &LegacyAiOptions, images: &mut std::collections::BTreeMap<String, ImageBlob>) {
@@ -1174,4 +1177,21 @@ fn colour_bitmap_glyphs_of_outlined_type_are_images() {
     let images = rasters(&text);
     assert_eq!(images.len(), 1, "{text}");
     assert!(images[0][2].ends_with(" ] 0 0 16 16 16 16 8 3 0 0 0 0 XI"), "{:?}", images[0]);
+}
+
+#[test]
+fn colr_glyphs_of_outlined_type_are_vector_art() {
+    use vectorcraft_doc::{CharStyle, TextObject};
+    use vectorcraft_text::test_fonts::{COLOUR_CHAR, colr_family, colr_font};
+    vectorcraft_text::FontDb::global().add_font(colr_font(false).unwrap());
+    let mut doc = Document::new(200.0, 100.0);
+    let st = CharStyle { font_family: colr_family(false).into(), size: 32.0, ..CharStyle::default() };
+    // Cyrillic, which 8-bit text can't hold: the type is written as outlines.
+    let t = TextObject::point(vectorcraft_geom::Point::new(20.0, 60.0), &format!("{COLOUR_CHAR}\u{416}"), st);
+    let l = doc.layers[0].id;
+    let id = doc.alloc_id();
+    doc.insert(Some(l), 0, Node::new(id, NodeKind::Text(Box::new(t)))).unwrap();
+    let text = String::from_utf8(write(&doc).bytes).unwrap();
+    assert!(rasters(&text).is_empty(), "no images: {text}");
+    assert!(text.contains("1 0 0 Xa"), "the red layer: {text}");
 }

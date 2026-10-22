@@ -573,6 +573,11 @@ fn create_outlines(s: &mut Session, _: &Value) -> Result<Value> {
                     children.push(Arc::new(Node::new(d.alloc_id(), NodeKind::Image(Box::new(im)))));
                     continue;
                 }
+                // COLR glyphs become groups of their layers, in place, with ids of the document's.
+                if let Some(art) = g.placed_colour(t.xf) {
+                    children.push(Arc::new(d.reid(&art)));
+                    continue;
+                }
                 let path = PathData::from_bezpath(&g.outline).transformed(t.xf);
                 if path.is_empty() {
                     continue;

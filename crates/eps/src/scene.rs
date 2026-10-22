@@ -591,6 +591,10 @@ impl<'a> Scene<'a> {
                     let key = format!("\u{0}glyph\u{0}{}", image.blob.content_key());
                     self.image(&key, Some(&image.blob), image.width, image.height, to_text);
                 }
+                // COLR glyphs: their layers, as art (in text space, as the images).
+                if let Some(art) = g.placed_colour(Affine::IDENTITY) {
+                    self.node(&art, true);
+                }
             }
             if bp.elements().is_empty() {
                 continue;
