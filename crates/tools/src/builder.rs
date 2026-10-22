@@ -495,7 +495,8 @@ pub struct ShapeBuilderOptions {
     /// Pick Color From Color Swatches (`pickColorFrom: "swatches"`; off: `"artwork"`): a merge
     /// fills the new shape with the current fill, and the Left and Right arrow keys step the current
     /// fill through the document's color swatches. With Artwork, the shape takes the look of the
-    /// art it is merged from.
+    /// object where the drag starts, else of the one where it ends, else of the front-most selected
+    /// object.
     pub swatches: bool,
     /// Cursor Swatch Preview (`cursorSwatchPreview`, off): with Color Swatches, the current fill
     /// and the swatches before and after it show as chips above the pointer while no drag is on.

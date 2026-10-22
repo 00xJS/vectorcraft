@@ -39,7 +39,7 @@ pub fn specs() -> Vec<CommandSpec> {
             "Shape Builder",
             [],
             None,
-            "{ids?|id?: [id…] (default: selection), points: [[x,y]…] (drag path; one point = click), erase?: bool (erase mode, Alt: deletes the regions touched, and the pieces of open paths that cut regions and the edges (outline pieces between the points where paths meet; see shapeBuilder.regions) within tolerance; a deleted edge opens its path there, and edges bounding a deleted region go with it), tolerance?: pt (2, erase only), gap?: pt (0–72; 0: Gap Detection off), openFilledAsClosed?: true (Consider Open Filled Paths as Closed: a filled open path bounds a region as if an invisible edge closed it; false: it cuts the regions it crosses like an unfilled one), pickColorFrom?: \"artwork\" (default: the merged shape takes the fill of the front-most object over the first region the drag touches that an object covers; the current fill when only lines enclose every region touched) | \"swatches\" (the current fill), fill?: \"#rrggbb\" | {color|swatch|gradient|none} (overrides pickColorFrom)} → {ids, merged, regions, lines, edges} (counts deleted or merged)",
+            "{ids?|id?: [id…] (default: selection), points: [[x,y]…] (drag path; one point = click), erase?: bool (erase mode, Alt: deletes the regions touched, and the pieces of open paths that cut regions and the edges (outline pieces between the points where paths meet; see shapeBuilder.regions) within tolerance; a deleted edge opens its path there, and edges bounding a deleted region go with it), tolerance?: pt (2, erase only), gap?: pt (0–72; 0: Gap Detection off), openFilledAsClosed?: true (Consider Open Filled Paths as Closed: a filled open path bounds a region as if an invisible edge closed it; false: it cuts the regions it crosses like an unfilled one), pickColorFrom?: \"artwork\" (default: the merged shape takes the look of the front-most object under the first point, else under the last point, else of the front-most object) | \"swatches\" (the current fill, with the rest of the look of the front-most object over the first region the drag touches that an object covers, else of the front-most object), fill?: \"#rrggbb\" | {color|swatch|gradient|none} (overrides pickColorFrom)} → {ids, merged, regions, lines, edges} (counts deleted or merged)",
             has_selection_or_ids,
             sb_merge
         ),
@@ -261,9 +261,8 @@ fn sb_merge(s: &mut Session, p: &Value) -> Result<Value> {
             _ => return Err(bad(C, format!("pickColorFrom is \"artwork\" or \"swatches\", not {v}"))),
         },
     };
-    let current_fill = s.paint.fill.clone();
     let fill = match fill_param(s, p, C)? {
-        None if swatches => Some(current_fill.clone()),
+        None if swatches => Some(s.paint.fill.clone()),
         f => f,
     };
     let roots = root_ids(s, p)?;
@@ -289,11 +288,14 @@ fn sb_merge(s: &mut Session, p: &Value) -> Result<Value> {
         let picked: Vec<&po::Region> = touched.regions.iter().filter_map(|&i| map.regions.get(i).map(|r| &r.0)).collect();
         let faces = po::FaceMerger::with_gap(&map.shapes, gap_param(p));
         let union = if picked.is_empty() { PathData::default() } else { faces.merge(&picked) };
-        // The merged shape takes the look of the front-most object over the first region, or (for an
-        // area only lines enclose) of the front-most object and the current fill.
-        let covered = picked.iter().find_map(|r| r.top());
+        // Pick Color From Artwork: the merged shape takes the look of the front-most object under the
+        // drag's first point, else under its last point, else of the front-most object. Color
+        // Swatches: the current fill, with the rest of the look of the front-most object over the
+        // first region the drag touched that an object covers, else of the front-most object.
+        let top_at = |q: &Point| map.region_at(*q).and_then(|k| map.regions.get(k)).and_then(|(r, ..)| r.top());
+        let covered =
+            if swatches { picked.iter().find_map(|r| r.top()) } else { pts.first().and_then(top_at).or_else(|| pts.last().and_then(top_at)) };
         let style_src = covered.or(map.shapes.len().checked_sub(1));
-        let merged_fill = fill.or_else(|| covered.is_none().then_some(current_fill));
         let mut new_nodes: Vec<Node> = vec![];
         let mut merged_id = None;
         for (i, (sh, leaf)) in map.shapes.iter().zip(&leaves).enumerate() {
@@ -346,7 +348,7 @@ fn sb_merge(s: &mut Session, p: &Value) -> Result<Value> {
             }
             if !erase && !union.is_empty() && Some(i) == style_src {
                 let mut m = shape_node(d, union.clone(), Some(leaf));
-                if let Some(f) = &merged_fill {
+                if let Some(f) = &fill {
                     m.appearance.set_fill(f.clone());
                 }
                 merged_id = Some(m.id);

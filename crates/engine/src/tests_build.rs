@@ -350,11 +350,11 @@ fn shape_builder_fills_an_area_lines_enclose() {
     let r = s.execute("shapeBuilder.regions", &json!({})).unwrap();
     assert_eq!(r["regions"].as_array().unwrap().len(), 1);
     assert_eq!(r["regions"][0]["sources"], json!([]));
+    let top_line = node(&s, l3).appearance.clone();
     let r = s.execute("shapeBuilder.merge", &json!({"points": [[50, 70]]})).unwrap();
     let merged = NodeId(r["merged"].as_u64().unwrap());
     assert!((area(&s, merged) - 900.0).abs() < 1e-6, "{}", area(&s, merged));
-    assert_eq!(node(&s, merged).appearance.fill_paint(), s.paint.fill, "the current fill");
-    assert!(!node(&s, merged).appearance.stroke_paint().is_none(), "the lines' stroke");
+    assert_eq!(node(&s, merged).appearance, top_line, "no object at the click: the look of the front-most selected line");
     assert_eq!(ids(&r).len(), 4, "the triangle + the three lines, which only bound it");
 }
 
@@ -465,6 +465,117 @@ fn shape_builder_pick_color_from_swatches_fills_with_the_current_fill() {
     s.execute("edit.undo", &json!({})).unwrap();
     s.execute("select.all", &json!({})).unwrap();
     assert!(s.execute("shapeBuilder.merge", &json!({"points": [[25, 50]], "pickColorFrom": "layers"})).is_err());
+}
+
+/// Four #888888 bars round a hole (20..80 on both axes), and in front of them a red square
+/// (90..140 × 30..70) with a 5 pt stroke that overlaps the right bar. Returns the bars, back to
+/// front, and the square.
+fn frame_and_red_square(s: &mut Session) -> (Vec<NodeId>, NodeId) {
+    let gray = Color::from_hex("#888888").unwrap();
+    let mut bars = vec![];
+    for (x, y, w, h) in [(0.0, 0.0, 20.0, 100.0), (80.0, 0.0, 20.0, 100.0), (0.0, 0.0, 100.0, 20.0), (0.0, 80.0, 100.0, 20.0)] {
+        let id = rect(s, x, y, w, h);
+        set_fill(s, id, gray);
+        bars.push(id);
+    }
+    let red = rect(s, 90.0, 30.0, 50.0, 40.0);
+    s.edit("t", |d, _| {
+        let a = &mut d.node_mut(red).unwrap().appearance;
+        a.set_fill(Paint::solid(Color::rgb(1.0, 0.0, 0.0)));
+        a.set_stroke(Paint::solid(Color::rgb(0.0, 0.0, 0.0)));
+        a.stroke_mut().unwrap().width = 5.0;
+        Ok(())
+    })
+    .unwrap();
+    (bars, red)
+}
+
+fn select_ids(s: &mut Session, list: &[NodeId]) {
+    s.execute("select.set", &json!({"ids": list.iter().map(|i| i.0).collect::<Vec<_>>()})).unwrap();
+}
+
+fn merged_look(s: &Session, r: &Value) -> vectorcraft_doc::Shared<vectorcraft_doc::Appearance> {
+    node(s, NodeId(r["merged"].as_u64().unwrap())).appearance
+}
+
+/// Pick Color From Artwork: the merged shape takes the look of the object where the drag starts,
+/// else of the object where it ends, else of the front-most selected object, as the combine page
+/// states. A drag that starts in an object keeps that object's look.
+#[test]
+fn shape_builder_artwork_takes_the_look_where_the_drag_starts_then_ends_then_the_top_object() {
+    let mut s = session();
+    let (bars, red) = frame_and_red_square(&mut s);
+    s.execute("paint.setFill", &json!({"color": "#00ff00", "ids": []})).unwrap();
+    let gray = node(&s, bars[3]).appearance.clone();
+    let red_look = node(&s, red).appearance.clone();
+    let all: Vec<NodeId> = bars.iter().copied().chain([red]).collect();
+    let merge = |s: &mut Session, list: &[NodeId], points: Value| {
+        select_ids(s, list);
+        let r = s.execute("shapeBuilder.merge", &json!({ "points": points })).unwrap();
+        let look = merged_look(s, &r);
+        s.execute("edit.undo", &json!({})).unwrap();
+        (r["regions"].as_u64().unwrap(), look)
+    };
+    // A click in the hole, where no object is: the front-most selected object's look, not the
+    // current fill.
+    assert_eq!(merge(&mut s, &bars, json!([[50, 50]])), (1, gray.clone()), "the front bar's look");
+    assert_eq!(merge(&mut s, &all, json!([[50, 50]])), (1, red_look.clone()), "the square is in front");
+    // A drag from the hole across the right bar into the square: the look where it ends, not
+    // the look of the first object it crosses.
+    assert_eq!(merge(&mut s, &all, json!([[50, 50], [120, 50]])), (4, red_look.clone()));
+    // Ending on the right bar, the drag takes the bar's look, though the square is in front.
+    let right_bar = node(&s, bars[1]).appearance.clone();
+    assert_eq!(merge(&mut s, &all, json!([[50, 50], [85, 50]])), (2, right_bar.clone()));
+    // A drag from outside every region: the look where it ends.
+    assert_eq!(merge(&mut s, &all, json!([[-10, 50], [120, 50]])).1, red_look);
+    // A drag that starts on the right bar: the bar's look.
+    assert_eq!(merge(&mut s, &all, json!([[85, 50], [120, 50]])).1, right_bar);
+    // From the square back into the hole: the square's look.
+    assert_eq!(merge(&mut s, &all, json!([[120, 50], [50, 50]])).1, red_look);
+
+    // A drag from blue into red takes blue, where it starts.
+    let mut s = session();
+    let (_, b) = two(&mut s);
+    let blue = node(&s, b).appearance.clone();
+    let r = s.execute("shapeBuilder.merge", &json!({"points": [[125, 50], [25, 50]]})).unwrap();
+    assert_eq!(merged_look(&s, &r), blue);
+}
+
+/// With Pick Color From Color Swatches, the merged shape takes the current fill, and the rest of
+/// its look from the front-most object over the first region the drag touches that an object
+/// covers.
+#[test]
+fn shape_builder_swatches_keep_the_current_fill_and_the_first_covered_objects_look() {
+    let mut s = session();
+    let (bars, red) = frame_and_red_square(&mut s);
+    s.execute("paint.setFill", &json!({"color": "#00ff00", "ids": []})).unwrap();
+    let green = s.paint.fill.clone();
+    let bar = node(&s, bars[1]).appearance.clone();
+    select_ids(&mut s, &bars.iter().copied().chain([red]).collect::<Vec<_>>());
+    let r = s.execute("shapeBuilder.merge", &json!({"points": [[50, 50], [120, 50]], "pickColorFrom": "swatches"})).unwrap();
+    let look = merged_look(&s, &r);
+    assert_eq!(look.fill_paint(), green);
+    assert_eq!((look.stroke_paint(), look.stroke().map(|k| k.width)), (bar.stroke_paint(), bar.stroke().map(|k| k.width)), "the right bar's stroke");
+}
+
+/// The Shape Builder tool sends the point where the drag started first and the point where it
+/// ended last, so a drag from the hole into the square takes the square's look.
+#[test]
+fn shape_builder_tool_drag_from_the_hole_takes_the_look_where_it_ends() {
+    let mut s = session();
+    let (bars, red) = frame_and_red_square(&mut s);
+    let red_look = node(&s, red).appearance.clone();
+    select_ids(&mut s, &bars.iter().copied().chain([red]).collect::<Vec<_>>());
+    let v = ViewInfo::default();
+    s.select_tool("shapeBuilder", v).unwrap();
+    s.pointer(&PointerEvent::new(PointerKind::Down, 50.0, 50.0), v).unwrap();
+    s.pointer(&PointerEvent::new(PointerKind::Drag, 85.0, 50.0), v).unwrap();
+    s.pointer(&PointerEvent::new(PointerKind::Drag, 120.0, 50.0), v).unwrap();
+    s.pointer(&PointerEvent::new(PointerKind::Up, 120.0, 50.0), v).unwrap();
+    assert_eq!(s.journal.last().unwrap().0, "shapeBuilder.merge");
+    let d = &s.doc().unwrap().doc;
+    let kids = d.children(d.default_layer()).unwrap();
+    assert_eq!(kids.iter().filter(|n| n.appearance == red_look).count(), 1, "the merged shape has the square's look");
 }
 
 /// The Shape Builder Tool Options reach what the tool does: Straight Line sends the drag's first
