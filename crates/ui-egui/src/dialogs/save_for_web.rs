@@ -68,10 +68,13 @@ const MATTE_LABELS: [&str; 4] = ["None", "White", "Black", "Other"];
 /// JPEG quality steps: (label, quality).
 const QUALITIES: [(&str, u8); 5] = [("Low", 10), ("Medium", 30), ("High", 60), ("Very High", 80), ("Maximum", 100)];
 
-/// Open the dialog on the remembered settings.
+/// Open on remembered settings; with the Artboard tool, use its active artboard (also in a multiselection).
 pub fn open(app: &mut VectorcraftApp) -> Result<Value, String> {
     let n = app.session.active().ok_or("no document")?.doc.artboards.len();
     let mut s = app.session.last_web_settings();
+    if app.session.tool_id() == "artboard" {
+        s.artboard = Some(crate::panels::artboards::selected(app, n));
+    }
     // A remembered artboard this document doesn't have: its first.
     if s.artboard.is_some_and(|a| a >= n) {
         s.artboard = None;
