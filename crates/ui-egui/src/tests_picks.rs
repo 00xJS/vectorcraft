@@ -260,7 +260,10 @@ fn other_swatch_library_asks_off_the_ui_thread() {
     app.run("swatch.new", json!({"name": "Signal", "color": "#ff3300"})).unwrap();
     let (dir, file) = saved_document(&mut app, "swatches");
     click(&mut app, "Other Library…", library_menu::<SwatchLibraries>);
-    assert!(matches!(shown.requests().as_slice(), [PickRequest::Open(_)]));
+    assert!(matches!(
+        shown.requests().as_slice(),
+        [PickRequest::Open(p)] if p.filters.first().is_some_and(|(label, exts)| label == "Swatch libraries" && exts.iter().any(|e| e == "ase"))
+    ));
     poll(&mut app);
     assert!(library_panel::last_open(&app.ui).is_none() && app.ui.status.is_empty(), "{}", app.ui.status);
     shown.answer(&[&file]);
