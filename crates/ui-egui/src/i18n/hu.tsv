@@ -5319,6 +5319,7 @@ imageTrace	Outline	Körvonal
 @msg	Persistent libraries not found: {files}	Nem találhatók állandó könyvtárak: {files}
 @msg	`{given}` isn't a library panel (see window.swatchLibrary)	A(z) `{given}` nem könyvtárpanel (lásd: window.swatchLibrary)
 @msg	library panel `{given}` isn't open	a(z) `{given}` könyvtárpanel nincs megnyitva
+@msg	library panel `{given}` isn't missing its library	a(z) `{given}` könyvtárpanel könyvtára nem hiányzik
 @msg	too many library panels were opened in this session	ebben a munkamenetben túl sok könyvtárpanel nyílt meg
 @msg	The image is {_1} × {_2} pixels, more than {LARGE_TRACE_SIDE} on a side: it is traced, but more slowly. A lower-fidelity preset or a smaller copy of the image traces faster.	A kép {_1} × {_2} képpont, egyik oldalán több mint {LARGE_TRACE_SIDE}: a vektorizálás megtörténik, de lassabban. Kisebb hűségű előbeállítással vagy a kép kisebb másolatával gyorsabb.
 @msg	The image was traced at {_1} × {_2} pixels, scaled down from {_3} × {_4} ({_5} megapixels at most).	A kép vektorizálása {_1} × {_2} képponton történt, {_3} × {_4} méretről kicsinyítve (legfeljebb {_5} megapixel).

@@ -5191,6 +5191,7 @@ imageTrace	Outline	კონტური
 @msg	handle must be in or out	handle უნდა იყოს in ან out
 @msg	index must be ≥ 0	index უნდა იყოს ≥ 0
 @msg	library panel `{given}` isn't open	ბიბლიოთეკის პანელი `{given}` გახსნილი არ არის
+@msg	library panel `{given}` isn't missing its library	ბიბლიოთეკის პანელს `{given}` ბიბლიოთეკა არ აკლია
 @msg	mask art ends outside a mask dictionary	ნიღბის ნახატი ნიღბის ლექსიკონის გარეთ მთავრდება
 @msg	missing number `{key}`	აკლია რიცხვი `{key}`
 @msg	missing integer `{key}`	აკლია მთელი რიცხვი `{key}`
