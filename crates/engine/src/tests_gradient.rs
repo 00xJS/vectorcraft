@@ -440,7 +440,29 @@ fn dither_is_a_fill_gradient_option_that_saves_and_loads() {
     s.execute("paint.setStroke", &json!({"gradient": {}})).unwrap();
     let before = node(&s, id).appearance.clone();
     assert!(s.execute("paint.editGradient", &json!({"dither": true, "stroke": true})).is_err());
+    assert!(s.execute("paint.setStroke", &json!({"gradient": {"dither": true}})).is_err());
     assert!(s.execute("paint.editGradient", &json!({"dither": "yes"})).is_err());
     assert!(s.execute("paint.setFill", &json!({"gradient": {"dither": 1}})).is_err());
     assert_eq!(node(&s, id).appearance, before);
+}
+
+/// A stroke ignores dither, so one that holds it anyway (swapped from a fill) outlines to a fill
+/// without it: Outline Stroke keeps the look.
+#[test]
+fn an_outlined_stroke_leaves_dither_behind() {
+    let mut s = session();
+    let id = rect(&mut s, 0.0, 0.0, 100.0, 100.0);
+    s.execute("paint.setStroke", &json!({"gradient": {}})).unwrap();
+    s.execute("paint.setFill", &json!({"gradient": {"dither": true}})).unwrap();
+    s.execute("paint.swap", &json!({})).unwrap();
+    let Paint::Gradient(st) = node(&s, id).appearance.stroke_paint() else { panic!("a gradient stroke") };
+    assert!(st.gradient.dither, "the swapped stroke keeps the option");
+    s.execute("object.path.outlineStroke", &json!({})).unwrap();
+    let mut fills = vec![];
+    s.doc().unwrap().doc.walk(|n| {
+        if let Paint::Gradient(g) = n.appearance.fill_paint() {
+            fills.push(g.gradient.dither);
+        }
+    });
+    assert_eq!(fills, [false, false], "the fill and the outline, neither dithered");
 }

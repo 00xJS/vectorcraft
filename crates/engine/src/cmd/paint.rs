@@ -403,6 +403,10 @@ fn set_paint(s: &mut Session, p: &Value, fill: bool) -> Result<Value> {
     }
     check_keep_model(p, cmd)?;
     let paint = paint_from(s, p)?.ok_or_else(|| bad(cmd, "give color, none, swatch or gradient"))?;
+    // As `paint.editGradient`: a `dither` given applies to gradient fills only.
+    if !fill && matches!(&paint, Paint::Gradient(g) if g.gradient.dither) && p.get("swatch").is_none() {
+        return Err(bad(cmd, "`dither` applies to gradient fills (paint.setFill)"));
+    }
     apply_paint(s, p, paint, fill)
 }
 

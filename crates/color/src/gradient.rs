@@ -553,11 +553,25 @@ impl GradientPaint {
     /// as `rgb` gives them, mixed as the renderer mixes them: [`Ramp`]). Dithered, each colour
     /// channel of pixel (column, row) gets [`dither_noise`] before it is rounded to a level.
     pub fn pixels(&self, bounds: Rect, area: Rect, cols: u16, rows: u16, rgb: &dyn Fn(&Color) -> [f32; 3]) -> impl Iterator<Item = [u8; 4]> + use<> {
+        self.pixels_within(bounds, area, cols, rows, [0..cols, 0..rows], rgb)
+    }
+    /// [`Self::pixels`] for the cells in columns `cells[0]` and rows `cells[1]` of the grid only,
+    /// row by row: the same pixels, noise and all, the whole grid has there.
+    pub fn pixels_within(
+        &self,
+        bounds: Rect,
+        area: Rect,
+        cols: u16,
+        rows: u16,
+        cells: [std::ops::Range<u16>; 2],
+        rgb: &dyn Fn(&Color) -> [f32; 3],
+    ) -> impl Iterator<Item = [u8; 4]> + use<> {
         let (kind, geom, dither) = (self.gradient.kind, self.resolve(bounds), self.gradient.dither);
         let ramp = Ramp::new(&self.gradient, rgb);
         let (cw, ch) = (area.width() / f64::from(cols.max(1)), area.height() / f64::from(rows.max(1)));
         let (x0, y0) = (area.x0, area.y0);
-        (0..u32::from(rows)).flat_map(move |j| (0..u32::from(cols)).map(move |i| (i, j))).map(move |(i, j)| {
+        let [across, down] = cells.map(|r| u32::from(r.start)..u32::from(r.end));
+        down.flat_map(move |j| across.clone().map(move |i| (i, j))).map(move |(i, j)| {
             let p = Point::new(x0 + (f64::from(i) + 0.5) * cw, y0 + (f64::from(j) + 0.5) * ch);
             let c = ramp.at(geom.param_at(kind, p) as f32);
             let level = |k: usize| {

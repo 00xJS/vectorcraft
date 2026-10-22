@@ -5395,4 +5395,5 @@ axis	Y Axis	Y ekseni
 	Dither	Titreme
 	Fine noise hides banding in the gradient fill	İnce gürültü, degrade dolgudaki bantları gizler
 @msg	`dither` applies to gradient fills (stroke: false)	`dither` degrade dolgulara uygulanır (stroke: false)
+@msg	`dither` applies to gradient fills (paint.setFill)	`dither` degrade dolgulara uygulanır (paint.setFill)
 @msg	`dither` must be true or false	"dither" doğru veya yanlış olmalıdır

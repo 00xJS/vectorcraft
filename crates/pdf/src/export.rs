@@ -602,7 +602,8 @@ pub(crate) struct Exporter<'a> {
     pub overprint: bool,
     /// An overprinting fill or stroke was drawn so.
     pub overprinted: bool,
-    /// Characters with neither fill nor stroke were written as text in forms marked invisible.
+    /// Characters with neither fill nor stroke, or whose fill is drawn as art (outlines filled
+    /// with an image or pattern), were written as text in forms marked invisible.
     pub invisible: bool,
     /// Inline graphics being drawn inside inline graphics (text in a symbol shown inline in
     /// text…): deeper ones are left out.
@@ -1336,13 +1337,17 @@ impl Exporter<'_> {
     }
 
     /// Draw gradient `g`, placed on `bounds`, as an image over `area`, sampled at the document's
-    /// raster effects resolution: a freeform gradient's colour field (at most [`MAX_FIELD_PX`] a
-    /// side), or a linear or radial gradient (at most [`MAX_GRADIENT_PX`] a side).
+    /// raster effects resolution where it is drawn (`area` as the current transform sizes it, so
+    /// scaled type gets its pixels too): a freeform gradient's colour field (at most
+    /// [`MAX_FIELD_PX`] a side), or a linear or radial gradient (at most [`MAX_GRADIENT_PX`] a side).
     fn field_image(&mut self, s: &mut Surface, g: &vectorcraft_color::GradientPaint, bounds: Rect, area: Rect) {
         use vectorcraft_color::freeform::{painted_box, spread_scale};
         let Some(b) = painted_box(bounds) else { return };
         let area = area.abs();
-        let long = area.width().max(area.height());
+        // The area's sides in points on the page.
+        let [m0, m1, m2, m3, _, _] = ctm(s).as_coeffs();
+        let (w, h) = (area.width() * m0.hypot(m1), area.height() * m2.hypot(m3));
+        let long = w.max(h);
         if !(long > 1e-9 && long.is_finite()) {
             return;
         }
@@ -1350,7 +1355,7 @@ impl Exporter<'_> {
         let max = if freeform { MAX_FIELD_PX } else { MAX_GRADIENT_PX };
         let k = (self.doc.raster_effects_ppi / 72.0).min(max / long);
         let along = |len: f64| (len * k).ceil().clamp(1.0, max) as u16;
-        let (cols, rows) = (along(area.width()), along(area.height()));
+        let (cols, rows) = (along(w), along(h));
         let rgba: Vec<u8> = if freeform {
             let field = g.freeform_on(b).field_with(spread_scale(b), &|c| c.to_rgb());
             field.grid(area, cols, rows).flat_map(|(c, a)| [q(c[0]), q(c[1]), q(c[2]), q(a)]).collect()
@@ -1588,9 +1593,12 @@ impl Exporter<'_> {
                 }
                 s.pop();
             });
-            // Characters with neither fill nor stroke (a scanned page's recognized text) are still
-            // text: written invisible (rendering mode 3), so they can still be selected and searched.
-            if let Some(text) = plain.as_deref().filter(|_| fill.is_none() && !run.style.has_stroke()) {
+            // Characters with neither fill nor stroke (a scanned page's recognized text), or whose
+            // fill is drawn as art (a dithered gradient's image, a pattern: outlines, not text),
+            // are still text: written invisible (rendering mode 3), so they can still be selected
+            // and searched.
+            let unpainted = fill.is_none() && !run.style.has_stroke();
+            if let Some(text) = plain.as_deref().filter(|_| unpainted || self.area_paint(fill, true)) {
                 self.invisible = true;
                 crate::forms::form(s, Mark::Invisible, |s| {
                     s.push_transform(&text_space);

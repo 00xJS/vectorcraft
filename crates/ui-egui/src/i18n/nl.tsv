@@ -5445,4 +5445,5 @@ axis	Y Axis	Y-as
 	Dither	Dither
 	Fine noise hides banding in the gradient fill	Fijne ruis verbergt banden in de verloopvulling
 @msg	`dither` applies to gradient fills (stroke: false)	`dither` geldt voor verloopvullingen (stroke: false)
+@msg	`dither` applies to gradient fills (paint.setFill)	`dither` geldt voor verloopvullingen (paint.setFill)
 @msg	`dither` must be true or false	`dither` moet true of false zijn

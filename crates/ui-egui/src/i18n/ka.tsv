@@ -5347,4 +5347,5 @@ axis	Y Axis	Y ღერძი
 	Dither	დიზერინგი
 	Fine noise hides banding in the gradient fill	წვრილი ხმაური მალავს ზოლებს გრადიენტულ შევსებაში
 @msg	`dither` applies to gradient fills (stroke: false)	`dither` ვრცელდება გრადიენტულ შევსებებზე (stroke: false)
+@msg	`dither` applies to gradient fills (paint.setFill)	`dither` ვრცელდება გრადიენტულ შევსებებზე (paint.setFill)
 @msg	`dither` must be true or false	`dither` უნდა იყოს true ან false

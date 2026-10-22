@@ -98,3 +98,38 @@ fn a_zoomed_or_rotated_dithered_gradient_keeps_its_colours() {
         }
     }
 }
+
+#[test]
+fn a_large_dithered_box_mostly_off_screen_samples_only_what_shows() {
+    // A 2000-unit square, the shallow ramp across it: a 2048-cell grid a side, 16 MiB.
+    const S: u32 = 2000;
+    let mut d = Document::new(f64::from(S), f64::from(S));
+    let id = d.alloc_id();
+    let n = Node::path(
+        id,
+        shapes::rectangle(Rect::new(0.0, 0.0, f64::from(S), f64::from(S))),
+        Appearance::basic(shallow(GradientKind::Linear, true), Paint::None, 0.0),
+    );
+    d.insert(Some(d.layers[0].id), 0, n).unwrap();
+    let opts = RenderOptions { background: Some([255, 255, 255, 255]), ..Default::default() };
+    let whole = Renderer::new().render(&d, S, S, Affine::IDENTITY, &opts);
+    // A 64-pixel view of its middle draws the pixels the whole render has there...
+    let mut part = None;
+    let bytes = dither::grid_bytes_after(|| part = Some(Renderer::new().render(&d, 64, 64, Affine::translate((-1000.0, -1000.0)), &opts)));
+    let part = part.unwrap();
+    assert!((0..64).all(|y| (0..64).all(|x| part.pixel(x, y) == whole.pixel(1000 + x, 1000 + y))), "the view draws what the whole render does");
+    // ...from the cells around it only, not the whole grid.
+    assert!(bytes > 0 && bytes <= 512 * 512 * 4, "{bytes} bytes of grid for a 64-pixel view");
+}
+
+#[test]
+fn a_dithered_gradient_without_stops_draws_nothing_and_samples_nothing() {
+    let mut g = Gradient::new(GradientKind::Linear, Vec::new());
+    g.dither = true;
+    let d = doc(Paint::Gradient(Box::new(GradientPaint::new(g))), Paint::None);
+    let mut r = None;
+    let bytes = dither::grid_bytes_after(|| r = Some(render(&d, Affine::IDENTITY)));
+    assert_eq!(bytes, 0, "no grid is sampled");
+    let r = r.unwrap();
+    assert!((0..H).all(|y| (0..W).all(|x| r.pixel(x, y) == [255, 255, 255, 255])), "nothing is drawn");
+}

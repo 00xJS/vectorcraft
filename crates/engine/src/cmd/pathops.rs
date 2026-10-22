@@ -635,7 +635,7 @@ pub(crate) fn outlined_stroke(
         blend: st.blend,
         effects: st.effects.clone(),
         overprint: st.overprint,
-        ..vectorcraft_doc::appearance::FillLayer::new(st.paint.clone())
+        ..vectorcraft_doc::appearance::FillLayer::new(st.paint.stroke_as_fill())
     };
     n.appearance = Appearance { items: vec![AppearanceItem::Fill(fill)], ..Default::default() }.into();
     Some(n)

@@ -378,6 +378,18 @@ impl Paint {
             _ => None,
         }
     }
+    /// This stroke paint as the fill of the stroke's outline, so the outline looks as the stroke
+    /// did: without dither, which strokes ignore ([`GradientPaint::draws_as_pixels`]).
+    pub fn stroke_as_fill(&self) -> Paint {
+        match self {
+            Paint::Gradient(g) if g.gradient.dither => {
+                let mut g = g.clone();
+                g.gradient.dither = false;
+                Paint::Gradient(g)
+            }
+            p => p.clone(),
+        }
+    }
     /// The Registration colour: 100% of every ink, linked to [`swatch::REGISTRATION`].
     pub fn registration() -> Self {
         Paint::Solid { color: Color::cmyk(1.0, 1.0, 1.0, 1.0), swatch: Some(swatch::REGISTRATION.into()), tint: 1.0 }
