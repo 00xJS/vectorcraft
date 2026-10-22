@@ -2961,7 +2961,11 @@ Placement: `edit.paste {center}` centres the objects on a point (the app passes 
 by `dx`/`dy` (the Paste Offset preference). With nothing selected, `edit.pasteInFront` / `edit.pasteInBack` put them
 on top / at the bottom of the current layer. `edit.pasteOnAllArtboards` keeps their offset to the artboard they were
 copied from. `layer.pasteRemembersLayers {on?}` (a document option, `document.inspect` → `pasteRemembersLayers`)
-pastes objects back into the layers they came from, by name, making missing ones.
+pastes objects back into the layers they came from, by name, making missing ones. Drawing modes (`view.drawMode`) apply
+too: in Draw Inside, `edit.paste`, `edit.pasteInPlace` and `edit.pasteOnAllArtboards` put the objects inside the
+object drawn into (its clip group, made on the first paste), whatever Paste Remembers Layers says; in Draw Behind,
+`edit.pasteInPlace` and `edit.pasteOnAllArtboards` put them just below the selection. `edit.pasteInFront` and
+`edit.pasteInBack` ignore the drawing mode.
 
 Artboards copy with their art. `artboard.copy {index? | indices?, art?}` puts artboards on the clipboard together
 with the art fully inside each (`index` and `indices` default to the artboards the Artboard tool has selected; `art`

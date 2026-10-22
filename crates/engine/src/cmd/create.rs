@@ -73,7 +73,7 @@ pub fn specs() -> Vec<CommandSpec> {
             "Drawing Mode",
             [],
             Some("Shift+D"),
-            "{mode?: normal|behind|inside} (no param cycles; inside needs one selected path)",
+            "{mode?: normal|behind|inside} (inside needs one selected path, compound path or type; no param cycles normal → behind → inside → normal, going from behind back to normal when Draw Inside can't draw into the selection)",
             has_doc,
             draw_mode
         ),
@@ -157,23 +157,7 @@ fn insert_look_turned(
         n.bbox_angle = bbox_angle;
         match (mode, inside) {
             (crate::DrawMode::Inside, Some(target)) if d.node(target).is_some() => {
-                // Wrap the target once in a clip group [mask copy, target, …new art].
-                let group = match d.parent_of(target).and_then(|p| d.node(p).map(|pn| (p, pn.kind.clone()))) {
-                    Some((p, NodeKind::Group { clip: true, children })) if children.get(1).is_some_and(|c| c.id == target) => p,
-                    _ => {
-                        let (par, idx, _) = d.position(target).ok_or(crate::EngineError::NoNode(target))?;
-                        let mut mask = d.node(target).cloned().ok_or(crate::EngineError::NoNode(target))?;
-                        mask.id = d.alloc_id();
-                        mask.appearance = Appearance::basic(vectorcraft_color::Paint::None, vectorcraft_color::Paint::None, 0.0).into();
-                        if let NodeKind::Path { clipping, .. } = &mut mask.kind {
-                            *clipping = true;
-                        }
-                        let gid = d.alloc_id();
-                        d.insert(par, idx + 1, Node::new(gid, NodeKind::Group { children: vec![std::sync::Arc::new(mask)], clip: true }))?;
-                        d.move_node(target, Some(gid), usize::MAX)?;
-                        gid
-                    }
-                };
+                let group = draw_inside_group(d, target)?;
                 d.insert(Some(group), usize::MAX, n)?;
             }
             (crate::DrawMode::Behind, _) => match behind_of.and_then(|b| d.position(b)) {
@@ -196,27 +180,56 @@ fn insert_look_turned(
     Ok(json!({ "id": id.0 }))
 }
 
+/// Draw Inside's clip group for `target`, the object new art goes inside: the clip group
+/// [mask copy, target, …] `target` already is the clipped object of, else one made where `target`
+/// was, holding an unpainted clipping copy of it and then `target`. New art and pastes go on top
+/// of its children.
+pub(crate) fn draw_inside_group(d: &mut vectorcraft_doc::Document, target: NodeId) -> Result<NodeId> {
+    if let Some(p) = d.parent_of(target)
+        && d.node(p).is_some_and(|pn| matches!(&pn.kind, NodeKind::Group { clip: true, children } if children.get(1).is_some_and(|c| c.id == target)))
+    {
+        return Ok(p);
+    }
+    let (par, idx, _) = d.position(target).ok_or(crate::EngineError::NoNode(target))?;
+    let mut mask = d.node(target).cloned().ok_or(crate::EngineError::NoNode(target))?;
+    mask.id = d.alloc_id();
+    mask.appearance = Appearance::basic(vectorcraft_color::Paint::None, vectorcraft_color::Paint::None, 0.0).into();
+    if let NodeKind::Path { clipping, .. } = &mut mask.kind {
+        *clipping = true;
+    }
+    let gid = d.alloc_id();
+    d.insert(par, idx + 1, Node::new(gid, NodeKind::Group { children: vec![std::sync::Arc::new(mask)], clip: true }))?;
+    d.move_node(target, Some(gid), usize::MAX)?;
+    Ok(gid)
+}
+
+/// The object Draw Inside would draw into: the one selected object, when it is a path, a compound
+/// path or type.
+fn inside_target(st: &crate::DocState) -> Option<NodeId> {
+    let first = st.selection.objects.first().copied()?;
+    let fits = matches!(st.doc.node(first).map(|n| &n.kind), Some(NodeKind::Path { .. } | NodeKind::Compound { .. } | NodeKind::Text(_)));
+    (fits && st.selection.len() == 1).then_some(first)
+}
+
 fn draw_mode(s: &mut Session, p: &Value) -> Result<Value> {
     let mode = match str_param(p, "mode") {
         Some("behind") => crate::DrawMode::Behind,
         Some("inside") => crate::DrawMode::Inside,
         Some("normal") => crate::DrawMode::Normal,
+        // Cycling (Shift+D): Draw Behind goes on to Draw Inside only when it can draw inside the
+        // selection, else back to Draw Normal (#3705: with one group selected it stayed in Draw
+        // Behind).
         None => match s.draw_mode {
             crate::DrawMode::Normal => crate::DrawMode::Behind,
-            crate::DrawMode::Behind if s.doc()?.selection.len() == 1 => crate::DrawMode::Inside,
+            crate::DrawMode::Behind if inside_target(s.doc()?).is_some() => crate::DrawMode::Inside,
             _ => crate::DrawMode::Normal,
         },
         Some(o) => return Err(bad("view.drawMode", format!("unknown mode `{o}`"))),
     };
     if mode == crate::DrawMode::Inside {
-        let st = s.doc()?;
-        let target =
-            st.selection.objects.first().copied().filter(|id| {
-                matches!(st.doc.node(*id).map(|n| &n.kind), Some(NodeKind::Path { .. } | NodeKind::Compound { .. } | NodeKind::Text(_)))
-            });
-        match target {
-            Some(t) if st.selection.len() == 1 => s.draw_inside = Some(t),
-            _ => return Err(bad("view.drawMode", "Draw Inside needs exactly one selected path, compound path or text")),
+        match inside_target(s.doc()?) {
+            Some(t) => s.draw_inside = Some(t),
+            None => return Err(bad("view.drawMode", "Draw Inside needs exactly one selected path, compound path or text")),
         }
     } else {
         s.draw_inside = None;
