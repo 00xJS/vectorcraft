@@ -509,6 +509,30 @@ fn text_exported_as_outlines() {
     assert!(b.x0 >= 9.0 && b.x1 < 120.0 && b.y1 <= 56.0 && b.y0 > 25.0, "{b:?}");
 }
 
+/// Colour bitmap glyphs (emoji) are images in the PDF: in their font's Type 3 glyphs with real
+/// text, else drawn where the glyphs are.
+#[test]
+fn colour_bitmap_glyphs_export_as_images() {
+    use vectorcraft_text::test_fonts::{COLOUR_CHAR, colour_bitmap_family, colour_bitmap_font};
+    for sbix in [true, false] {
+        vectorcraft_text::FontDb::global().add_font(colour_bitmap_font(sbix).unwrap());
+        let mut d = doc(300.0, 100.0);
+        let st = CharStyle { font_family: colour_bitmap_family(sbix).into(), size: 24.0, ..CharStyle::default() };
+        add(&mut d, Node::new(NodeId(0), NodeKind::Text(Box::new(TextObject::point(Point::new(10.0, 50.0), &format!("{COLOUR_CHAR}F"), st)))));
+        let text = uncompressed(&d).replace(' ', "");
+        assert!(text.contains("/Type3") && text.contains("/Subtype/Image"), "an image in a Type 3 glyph (sbix {sbix})");
+        let mut outlined = PdfOptions::uncompressed();
+        outlined.settings.advanced.outline_text = true;
+        let r = import_with_report(&export(&d, &outlined).unwrap(), &ImportOptions::default()).unwrap();
+        let l = leaves(&r.document);
+        let images: Vec<_> = l.iter().filter(|n| matches!(n.kind, NodeKind::Image(_))).collect();
+        assert_eq!(images.len(), 1, "outlined, the glyph is an image (sbix {sbix})");
+        let b = images[0].geometric_bounds().unwrap();
+        assert!((b.width() - 24.0).abs() < 0.1 && (b.height() - 24.0).abs() < 0.1, "one em: {b:?}");
+        assert!(l.iter().any(|n| matches!(n.kind, NodeKind::Path { .. })), "the other glyph stays an outline");
+    }
+}
+
 fn tiny_png() -> Vec<u8> {
     let mut img = image::RgbaImage::new(4, 2);
     for (x, _, p) in img.enumerate_pixels_mut() {

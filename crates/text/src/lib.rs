@@ -10,6 +10,7 @@
 //! Frames (`TextKind::Area`) and paths (`TextKind::OnPath`) are interpreted in text space.
 #![forbid(unsafe_code)]
 
+mod bitmap;
 mod composer;
 pub mod craft_fonts;
 pub mod edit;
@@ -28,6 +29,7 @@ mod suitcase;
 pub mod test_fonts;
 pub mod thread;
 
+pub use bitmap::GlyphImage;
 pub use craft_fonts::{CRAFT_FONTS, CraftFont, WEB_FONTS, WebFont};
 pub use features::{EXTRA_FEATURES, LIGATURE_TRACKING_LIMITS, OtFeatures, explicit_ligatures, ligatures_suppressed_by};
 pub use fontdb::{
@@ -35,6 +37,8 @@ pub use fontdb::{
     is_font_file, is_suitcase, set_app_font_dir, set_platform_font_files, set_user_font_dirs, style_weight, system_font_dirs, user_font_dirs,
 };
 pub use hyphen::{hyphenation_exceptions, set_hyphenation_exceptions};
+use std::sync::Arc;
+
 use kurbo::{Affine, BezPath, Point, Rect, Vec2};
 pub use layout::{decorations, fit_first_line, layout, layout_with, scaled};
 pub use vectorcraft_doc::TextObject;
@@ -118,6 +122,16 @@ pub struct PositionedGlyph {
     /// (Justification…), Desired and justification together: 1 at 100%. Horizontal Scale isn't
     /// included.
     pub scale: f64,
+    /// A colour bitmap glyph (emoji), drawn through `xf` instead of an outline: its `outline` is
+    /// empty.
+    pub image: Option<Arc<GlyphImage>>,
+}
+
+impl PositionedGlyph {
+    /// The glyph's colour bitmap, and the transform from its pixels to text space.
+    pub fn placed_image(&self) -> Option<(&Arc<GlyphImage>, Affine)> {
+        self.image.as_ref().map(|i| (i, self.xf * i.xf))
+    }
 }
 
 /// One line of laid-out text.
@@ -595,6 +609,8 @@ mod tests;
 mod tests_axes;
 #[cfg(test)]
 mod tests_bidi;
+#[cfg(test)]
+mod tests_bitmaps;
 #[cfg(test)]
 mod tests_combos;
 #[cfg(test)]

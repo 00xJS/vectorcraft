@@ -1571,12 +1571,15 @@ impl Exporter<'_> {
             }
             bp.extend(run_bars.iter());
             let fill = &run.style.fill;
+            // Colour bitmap glyphs (emoji) real text doesn't write: all of them, or those it leaves.
+            let mut images: Option<Vec<usize>> = None;
             self.overprinting(s, run.style.overprint_fill, fill, |ex, s| {
                 s.push_transform(&text_space);
                 // The outlines left to fill as paths: all of them, or those real text leaves.
                 let outlines = match plain.as_deref().filter(|_| !fill.is_none() && !ex.area_paint(fill, true)) {
                     Some(text) => {
-                        let mut left = ex.glyph_text(s, &layout, i, text, fill);
+                        let (mut left, unwritten) = ex.glyph_text(s, &layout, i, text, fill, true);
+                        images = Some(unwritten);
                         left.extend(run_bars.iter());
                         Cow::Owned(left)
                     }
@@ -1593,6 +1596,13 @@ impl Exporter<'_> {
                 }
                 s.pop();
             });
+            // They paint themselves, whatever the fill.
+            let images = images.unwrap_or_else(|| layout.glyphs.iter().enumerate().filter(|(_, g)| g.run == i).map(|(gi, _)| gi).collect());
+            s.push_transform(&text_space);
+            for g in images.iter().filter_map(|&gi| layout.glyphs.get(gi)) {
+                self.glyph_image(s, g);
+            }
+            s.pop();
             // Characters with neither fill nor stroke (a scanned page's recognized text), or whose
             // fill is drawn as art (a dithered gradient's image, a pattern: outlines, not text),
             // are still text: written invisible (rendering mode 3), so they can still be selected
@@ -1603,8 +1613,8 @@ impl Exporter<'_> {
                 crate::forms::form(s, Mark::Invisible, |s| {
                     s.push_transform(&text_space);
                     // The paint only lets the writer write the text; the glyphs it can't write
-                    // as text draw nothing.
-                    self.glyph_text(s, &layout, i, text, &Paint::solid(Color::gray(0.0)));
+                    // as text draw nothing, and colour bitmap glyphs are drawn already.
+                    self.glyph_text(s, &layout, i, text, &Paint::solid(Color::gray(0.0)), false);
                     s.pop();
                 });
             }
@@ -1669,16 +1679,21 @@ impl Exporter<'_> {
     /// text space; `text` is the plain text, whose characters the glyphs stand for, which makes
     /// the text selectable and searchable) → the outlines of the glyphs left to draw as paths:
     /// those of fonts that can't be embedded, and missing glyphs. Glyphs sharing a font, a frame
-    /// (size, scale, rotation) and a baseline are written together.
-    fn glyph_text(&mut self, s: &mut Surface, layout: &TextLayout, run: usize, text: &str, fill: &Paint) -> BezPath {
-        let mut rest = BezPath::new();
+    /// (size, scale, rotation) and a baseline are written together. Colour bitmap glyphs (emoji),
+    /// with `images`, are written as text too, which draws their images; the indices of those it
+    /// can't write are returned with the outlines.
+    fn glyph_text(&mut self, s: &mut Surface, layout: &TextLayout, run: usize, text: &str, fill: &Paint, images: bool) -> (BezPath, Vec<usize>) {
+        let (mut rest, mut unwritten) = (BezPath::new(), vec![]);
         let mut line: Option<GlyphLine> = None;
-        for g in layout.glyphs.iter().filter(|g| g.run == run) {
+        for (gi, g) in layout.glyphs.iter().enumerate().filter(|(_, g)| g.run == run) {
+            if g.image.is_some() && !images {
+                continue;
+            }
             let range = g.byte..g.byte + g.len;
             let ch = text.get(range.clone()).and_then(|t| t.chars().next());
             // Spaces are written too (text extraction needs them); control characters and soft
             // hyphens draw nothing.
-            let blank = g.outline.elements().is_empty();
+            let blank = g.outline.elements().is_empty() && g.image.is_none();
             if blank && !ch.is_some_and(|c| c.is_whitespace() && !c.is_control()) {
                 continue;
             }
@@ -1690,6 +1705,9 @@ impl Exporter<'_> {
             let det = g.xf.determinant();
             let Some((font, upem)) = font.filter(|(_, upem)| det.is_finite() && det.abs() > 1e-9 && (1e-3..=1e5).contains(&(upem * sy))) else {
                 rest.extend(g.outline.iter());
+                if g.image.is_some() {
+                    unwritten.push(gi);
+                }
                 continue;
             };
             let size = upem * sy;
@@ -1719,7 +1737,28 @@ impl Exporter<'_> {
         if let Some(l) = line {
             self.draw_glyph_line(s, l, text, fill, layout.bounds);
         }
-        rest
+        (rest, unwritten)
+    }
+
+    /// Draw colour bitmap glyph `g`'s image (on `s` in text space), its PNG written once.
+    fn glyph_image(&mut self, s: &mut Surface, g: &vectorcraft_text::PositionedGlyph) {
+        let Some((image, to_text)) = g.placed_image() else { return };
+        if !writable(s, to_text, image.rect()) {
+            return;
+        }
+        let cache = format!("\u{0}glyph\u{0}{}", image.blob.content_key());
+        let img = match self.images.get(&cache) {
+            Some(img) => img.clone(),
+            None => {
+                let img = embed(&image.blob, self.interpolate, self.sixteen_bit);
+                self.images.insert(cache, img.clone());
+                img
+            }
+        };
+        let (Some(img), Some(size)) = (img, Size::from_wh(image.width as f32, image.height as f32)) else { return };
+        s.push_transform(&xf(to_text));
+        s.draw_image(img, size);
+        s.pop();
     }
 
     /// Draw glyphs `line` (of `text`), filled with `fill` (whose space is text space, where

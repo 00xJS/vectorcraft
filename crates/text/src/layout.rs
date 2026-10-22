@@ -104,7 +104,11 @@ impl Ctx<'_> {
     }
 
     fn emit(&mut self, g: &SGlyph, pre: Affine, origin: Point, angle: f64, advance: f64, line: usize) {
-        let src = if g.inline.is_some() { std::sync::Arc::new(BezPath::new()) } else { self.db.outline(&g.face, g.gid) };
+        // Control characters (tabs) and soft hyphens draw nothing (fonts map them to .notdef).
+        let blank = g.is_soft_hyphen() || g.ch.is_control();
+        // A colour bitmap glyph draws its image, not its outline.
+        let image = if g.inline.is_some() || blank { None } else { self.db.glyph_image(&g.face, g.gid) };
+        let src = if g.inline.is_some() || image.is_some() { std::sync::Arc::new(BezPath::new()) } else { self.db.outline(&g.face, g.gid) };
         // A glyph whose leading space was taken off (mojikumi) is drawn that much earlier: an
         // upright one in vertical type by moving it up the column once it stands upright.
         let upright = self.vertical && !self.on_path && g.tcy.is_none() && stands_upright(g);
@@ -140,8 +144,7 @@ impl Ctx<'_> {
                 * Affine::rotate_about(-std::f64::consts::FRAC_PI_2, Point::new(origin.x + cell * 0.5, origin.y - upright_centre(g, cell, em)))
                 * m;
         }
-        // Control characters (tabs) and soft hyphens draw nothing (fonts map them to .notdef).
-        let outline = if src.elements().is_empty() || g.is_soft_hyphen() || g.ch.is_control() {
+        let outline = if src.elements().is_empty() || blank {
             BezPath::new()
         } else {
             let mut p = BezPath::with_capacity(src.elements().len());
@@ -169,6 +172,7 @@ impl Ctx<'_> {
             // Vertical type keeps its logical order down the column.
             rtl: g.level.is_rtl() && !self.vertical,
             scale: 1.0,
+            image,
         });
     }
 
@@ -722,6 +726,9 @@ fn finish_bounds(out: &mut TextLayout) {
     for g in &out.glyphs {
         if !g.outline.elements().is_empty() {
             add(g.outline.bounding_box());
+        }
+        if let Some((image, xf)) = g.placed_image() {
+            add(xf.transform_rect_bbox(image.rect()));
         }
     }
     // Ruby: covered by its line's ascent, but its ink can overhang sideways past the line.
@@ -2935,5 +2942,7 @@ fn ruby_glyph(g: &PositionedGlyph, m: Affine, run: usize, byte: usize, line: usi
         xf: Affine::IDENTITY,
         rtl: false,
         scale: 1.0,
+        // Ruby draws outlines only.
+        image: None,
     }
 }
