@@ -104,12 +104,23 @@ fn safe_asset_name(name: &str) -> String {
 /// A file placed: (page, bounding, page box) of each placed object showing it.
 type PlacedPages = Vec<(u32, bool, vectorcraft_doc::PageBox)>;
 
+#[cfg(test)]
+thread_local! {
+    /// Tests: how many placed PDF or `.ai` pages [`page_fonts`] read on this thread.
+    pub(crate) static PAGES_READ: std::cell::Cell<usize> = const { std::cell::Cell::new(0) };
+    /// Tests: how many linked `.vectorcraft` files had their preview and PDF read on this thread,
+    /// to keep them in the rewritten copy.
+    pub(crate) static PARTS_READ: std::cell::Cell<usize> = const { std::cell::Cell::new(0) };
+}
+
 /// The fonts of the type on `pages` of the PDF or `.ai` file `name` (`bytes`, found at `path`);
 /// none for other files.
 fn page_fonts(name: &str, bytes: &[u8], path: &str, pages: &PlacedPages) -> BTreeSet<super::fonts::UsedFont> {
     let mut fonts = BTreeSet::new();
     if super::place::document::is_pdf(name, bytes) {
         for &(page, bounding, page_box) in pages {
+            #[cfg(test)]
+            PAGES_READ.with(|c| c.set(c.get() + 1));
             if let Ok(a) = super::place::document::document_art(name, bytes, Some(path), page, bounding, page_box, C) {
                 fonts.extend(super::fonts::art_fonts(&a.doc, &a.nodes));
             }
@@ -231,7 +242,9 @@ impl<'a> Collector<'a> {
                         self.renamed(&mut lines, source, &file.path, &file.name, &existing.name);
                     }
                     // Another document may place other pages of a PDF copied already.
-                    if let (Some(pages), Some(bytes)) = (placed.get(&file.path), &file.bytes) {
+                    if self.opts.copy_fonts
+                        && let (Some(pages), Some(bytes)) = (placed.get(&file.path), &file.bytes)
+                    {
                         placed_fonts.extend(page_fonts(&file.name, bytes, found_path, pages));
                     }
                     local.insert(file.path.clone(), existing);
@@ -262,7 +275,9 @@ impl<'a> Collector<'a> {
                     } else {
                         self.collect(&mut art, found_path, &destination_file, depth + 1, true)?;
                     }
-                } else if let Some(pages) = pages {
+                } else if self.opts.copy_fonts
+                    && let Some(pages) = pages
+                {
                     placed_fonts.extend(page_fonts(&file.name, &bytes, found_path, pages));
                 }
                 if placed_file && super::place::document::is_native(&file.name, &bytes) {
@@ -271,18 +286,18 @@ impl<'a> Collector<'a> {
                     } else {
                         match vectorcraft_format::load_file(&bytes) {
                             Ok(saved) => {
-                                let preview = vectorcraft_format::preview(&bytes);
-                                let pdf = vectorcraft_format::pdf_content(&bytes);
                                 let compressed = bytes.starts_with(&[0x1f, 0x8b]);
                                 let include_linked =
                                     saved.doc.linked_only_images().iter().any(|key| saved.doc.images.get(key).is_some_and(|blob| !blob.is_proxy()));
                                 let mut nested = saved.doc;
                                 self.collect(&mut nested, found_path, &destination_file, depth + 1, false)?;
                                 if self.opts.relink {
+                                    #[cfg(test)]
+                                    PARTS_READ.with(|c| c.set(c.get() + 1));
                                     // Preserve auxiliary native-file content when rewriting.
                                     let mut options = vectorcraft_format::SaveOptions::for_doc(&nested);
-                                    options.preview = preview;
-                                    options.pdf = pdf;
+                                    options.preview = vectorcraft_format::preview(&bytes);
+                                    options.pdf = vectorcraft_format::pdf_content(&bytes);
                                     options.profiles = saved.profiles;
                                     options.compress = compressed;
                                     options.include_linked = include_linked;

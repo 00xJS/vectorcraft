@@ -471,6 +471,35 @@ fn package_copies_the_fonts_of_each_page_of_a_pdf_that_two_documents_place() {
     assert_eq!((r["links"].as_u64(), r["fonts"].as_u64(), r["skippedFonts"].clone()), (Some(2), Some(2), json!([])), "{r}");
 }
 
+/// With Copy Fonts off, Package reads no placed PDF page for its type: neither a page of a PDF it
+/// copies nor a page of one another document placed and it copied already.
+#[test]
+fn package_reads_no_placed_pdf_page_without_copy_fonts() {
+    use cmd::package::PAGES_READ;
+    let dir = Folder::new("package-placed-pdf-no-fonts");
+    let mut src = session();
+    run(&mut src, "text.create", json!({"x": 10, "y": 40, "text": "One"}));
+    run(&mut src, "artboard.new", json!({"x": 500, "y": 0, "width": 400, "height": 300}));
+    run(&mut src, "text.create", json!({"x": 510, "y": 40, "text": "Two"}));
+    let pdf = run(&mut src, "document.serialize", json!({"format": "pdf", "preserveEditing": false}));
+    let path = dir.file("art/flyer.pdf");
+    write(&path, &vectorcraft_format::base64_decode(pdf["dataBase64"].as_str().unwrap()).unwrap());
+    let mut part = session();
+    run(&mut part, "file.place", json!({"path": path, "page": 2}));
+    let part_path = dir.file("art/part.vectorcraft");
+    save(&mut part, &part_path);
+    let mut s = session();
+    run(&mut s, "file.place", json!({"path": path, "page": 1}));
+    run(&mut s, "file.place", json!({"path": part_path}));
+    save(&mut s, &dir.file("poster.vectorcraft"));
+    for (copy_links, copy_fonts, fonts, reads, out) in [(true, false, 0, 0, "links"), (false, false, 0, 0, "neither"), (true, true, 1, 2, "both")] {
+        let before = PAGES_READ.with(std::cell::Cell::get);
+        let r = run(&mut s, "file.package", json!({"folder": dir.file(out), "copyLinks": copy_links, "copyFonts": copy_fonts}));
+        let read = PAGES_READ.with(std::cell::Cell::get) - before;
+        assert_eq!((r["fonts"].as_u64(), read), (Some(fonts), reads), "{out}: {r}");
+    }
+}
+
 /// `dir/art/badge.ai`, saved without its PDF part, its art placing each of `pics` (600 × 300 px,
 /// with a 2×1 preview) → its path.
 fn ai_placing(dir: &Folder, pics: &[&str]) -> String {
@@ -662,6 +691,21 @@ fn packaging_nested_files_preserves_embedded_preview_pdf_and_compression() {
     nested.visit_images(|_, image| images.push(image.link.clone()));
     assert_eq!(images.len(), 1);
     assert_eq!(images[0].as_ref().unwrap().relative.as_deref(), Some("photo.png"));
+}
+
+/// Without Relink, Package copies a placed document as it is and reads no preview or PDF from it.
+#[test]
+fn package_reads_no_preview_or_pdf_of_a_placed_document_without_relink() {
+    use cmd::package::PARTS_READ;
+    let dir = Folder::new("package-native-no-relink");
+    let mut parent = poster_with_placed_document(&dir);
+    let original = std::fs::read(dir.file("art/part.vectorcraft")).unwrap();
+    for (relink, reads, out) in [(false, 0, "as is"), (true, 1, "relinked")] {
+        let before = PARTS_READ.with(std::cell::Cell::get);
+        let r = run(&mut parent, "file.package", json!({"folder": dir.file(out), "relink": relink}));
+        assert_eq!((r["links"].as_u64(), PARTS_READ.with(std::cell::Cell::get) - before), (Some(2), reads), "{out}: {r}");
+    }
+    assert_eq!(std::fs::read(dir.0.join("as is/poster Folder/Links/part.vectorcraft")).unwrap(), original);
 }
 
 /// The report keeps the packaged document's sections as they were, then gives each placed
