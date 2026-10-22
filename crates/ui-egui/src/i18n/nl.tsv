@@ -5417,3 +5417,10 @@ swatch	Bright Violet	Felviolet
 	Fresco	Fresco
 	Effect Gallery…	Effectgalerij…
 	Effect Gallery Dialog	Dialoogvenster Effectgalerij
+@msg	Packaged {n} file(s) in {folder}	{n} bestand(en) verpakt in {folder}
+@msg	Packaged {n} file(s) {note}	{n} bestand(en) verpakt {note}
+@msg	Packaged {n} file(s)	{n} bestand(en) verpakt
+	Packaged {n} file(s)	{n} bestand(en) verpakt
+	Packaged {n} file(s) in {folder}	{n} bestand(en) verpakt in {folder}
+	Packaged {n} file(s) {note}	{n} bestand(en) verpakt {note}
+	{count} file(s) in {folder}. Show the package folder?	{count} bestand(en) in {folder}. De pakketmap openen?

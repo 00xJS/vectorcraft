@@ -5319,3 +5319,10 @@ mark-style	Japanese	Japonesas
 	Fresco	Afresco
 	Effect Gallery…	Galeria de Efeitos…
 	Effect Gallery Dialog	Caixa de diálogo Galeria de Efeitos
+@msg	Packaged {n} file(s) in {folder}	{n} arquivo(s) empacotado(s) em {folder}
+@msg	Packaged {n} file(s) {note}	{n} arquivo(s) empacotado(s) {note}
+@msg	Packaged {n} file(s)	{n} arquivo(s) empacotado(s)
+	Packaged {n} file(s)	{n} arquivo(s) empacotado(s)
+	Packaged {n} file(s) in {folder}	{n} arquivo(s) empacotado(s) em {folder}
+	Packaged {n} file(s) {note}	{n} arquivo(s) empacotado(s) {note}
+	{count} file(s) in {folder}. Show the package folder?	{count} arquivo(s) em {folder}. Mostrar a pasta do pacote?

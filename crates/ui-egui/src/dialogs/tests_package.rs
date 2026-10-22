@@ -135,6 +135,20 @@ fn fonts_left_out_of_the_package_are_named() {
 }
 
 #[test]
+fn package_status_without_notes_has_no_extra_spaces() {
+    let dir = Folder::new("spaces");
+    let mut app = saved(&dir);
+    app.run("ui.packageDialog", json!({})).unwrap();
+    let out = dir.path("out");
+    std::fs::create_dir_all(&out).unwrap();
+    app.ui.dialog.as_mut().unwrap().fields.insert("folder".into(), json!(out));
+    confirm(&mut app).unwrap();
+    assert!(!app.ui.status.ends_with(' '), "{}", app.ui.status);
+    let detail = app.ui.dialog.as_ref().unwrap().str("detail");
+    assert!(!detail.contains(" ."), "{detail}");
+}
+
+#[test]
 fn package_without_a_location_says_so() {
     let dir = Folder::new("empty");
     let mut app = saved(&dir);

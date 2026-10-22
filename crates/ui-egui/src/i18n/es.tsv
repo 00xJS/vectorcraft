@@ -5344,3 +5344,10 @@ mark-style	Japanese	Japonesas
 	Fresco	Fresco
 	Effect Gallery…	Galería de efectos…
 	Effect Gallery Dialog	Cuadro de diálogo Galería de efectos
+@msg	Packaged {n} file(s) in {folder}	Se empaquetaron {n} archivo(s) en {folder}
+@msg	Packaged {n} file(s) {note}	Se empaquetaron {n} archivo(s) {note}
+@msg	Packaged {n} file(s)	Se empaquetaron {n} archivo(s)
+	Packaged {n} file(s)	Se empaquetaron {n} archivo(s)
+	Packaged {n} file(s) in {folder}	Se empaquetaron {n} archivo(s) en {folder}
+	Packaged {n} file(s) {note}	Se empaquetaron {n} archivo(s) {note}
+	{count} file(s) in {folder}. Show the package folder?	{count} archivo(s) en {folder}. ¿Mostrar la carpeta del paquete?

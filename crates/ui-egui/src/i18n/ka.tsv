@@ -5311,3 +5311,10 @@ imageTrace	Outline	კონტური
 	Select artwork to apply effects	აირჩიეთ ნამუშევარი ეფექტების გამოსაყენებლად
 	Effect Gallery…	ეფექტების გალერეა…
 	Effect Gallery Dialog	ეფექტების გალერეა დიალოგი
+@msg	Packaged {n} file(s) in {folder}	შეფუთულია ფაილი ({n}) საქაღალდეში {folder}
+@msg	Packaged {n} file(s) {note}	შეფუთულია ფაილი ({n}) {note}
+@msg	Packaged {n} file(s)	შეფუთულია ფაილი ({n})
+	Packaged {n} file(s)	შეფუთულია ფაილი ({n})
+	Packaged {n} file(s) in {folder}	შეფუთულია ფაილი ({n}) საქაღალდეში {folder}
+	Packaged {n} file(s) {note}	შეფუთულია ფაილი ({n}) {note}
+	{count} file(s) in {folder}. Show the package folder?	ფაილები: {count}, ადგილი: {folder}. ვაჩვენოთ შეფუთვის საქაღალდე?

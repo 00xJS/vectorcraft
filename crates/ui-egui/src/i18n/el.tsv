@@ -5354,3 +5354,10 @@ effect	Points	Σημεία
 	Fresco	Νωπογραφία
 	Effect Gallery…	Συλλογή εφέ…
 	Effect Gallery Dialog	Παράθυρο διαλόγου Συλλογή εφέ
+@msg	Packaged {n} file(s) in {folder}	Συσκευάστηκαν {n} αρχεία στον φάκελο {folder}
+@msg	Packaged {n} file(s) {note}	Συσκευάστηκαν {n} αρχεία {note}
+@msg	Packaged {n} file(s)	Συσκευάστηκαν {n} αρχεία
+	Packaged {n} file(s)	Συσκευάστηκαν {n} αρχεία
+	Packaged {n} file(s) in {folder}	Συσκευάστηκαν {n} αρχεία στον φάκελο {folder}
+	Packaged {n} file(s) {note}	Συσκευάστηκαν {n} αρχεία {note}
+	{count} file(s) in {folder}. Show the package folder?	{count} αρχεία στον φάκελο {folder}. Να εμφανιστεί ο φάκελος συσκευασίας;

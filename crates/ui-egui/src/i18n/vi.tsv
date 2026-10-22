@@ -4997,3 +4997,10 @@ theme	Appearance	Giao diện
 	Fresco	Bích họa
 	Effect Gallery…	Thư viện hiệu ứng…
 	Effect Gallery Dialog	Hộp thoại Thư viện hiệu ứng
+@msg	Packaged {n} file(s) in {folder}	Đã đóng gói {n} tệp trong {folder}
+@msg	Packaged {n} file(s) {note}	Đã đóng gói {n} tệp {note}
+@msg	Packaged {n} file(s)	Đã đóng gói {n} tệp
+	Packaged {n} file(s)	Đã đóng gói {n} tệp
+	Packaged {n} file(s) in {folder}	Đã đóng gói {n} tệp trong {folder}
+	Packaged {n} file(s) {note}	Đã đóng gói {n} tệp {note}
+	{count} file(s) in {folder}. Show the package folder?	{count} tệp trong {folder}. Hiện thư mục gói?

@@ -5358,3 +5358,10 @@ theme	Appearance	Външен вид
 	Fresco	Фреска
 	Effect Gallery…	Галерия с ефекти…
 	Effect Gallery Dialog	Диалог „Галерия с ефекти“
+@msg	Packaged {n} file(s) in {folder}	Пакетирани са {n} файла в {folder}
+@msg	Packaged {n} file(s) {note}	Пакетирани са {n} файла {note}
+@msg	Packaged {n} file(s)	Пакетирани са {n} файла
+	Packaged {n} file(s)	Пакетирани са {n} файла
+	Packaged {n} file(s) in {folder}	Пакетирани са {n} файла в {folder}
+	Packaged {n} file(s) {note}	Пакетирани са {n} файла {note}
+	{count} file(s) in {folder}. Show the package folder?	{count} файл(а) в {folder}. Показване на папката на пакета?

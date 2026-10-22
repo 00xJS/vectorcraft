@@ -5241,3 +5241,10 @@ lighting	Light	光源
 	Fresco	壁画
 	Effect Gallery…	效果库…
 	Effect Gallery Dialog	效果库对话框
+@msg	Packaged {n} file(s) in {folder}	已将 {n} 个文件打包到 {folder}
+@msg	Packaged {n} file(s) {note}	已打包 {n} 个文件 {note}
+@msg	Packaged {n} file(s)	已打包 {n} 个文件
+	Packaged {n} file(s)	已打包 {n} 个文件
+	Packaged {n} file(s) in {folder}	已将 {n} 个文件打包到 {folder}
+	Packaged {n} file(s) {note}	已打包 {n} 个文件 {note}
+	{count} file(s) in {folder}. Show the package folder?	{folder} 中有 {count} 个文件。要显示打包文件夹吗？

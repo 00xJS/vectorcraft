@@ -4997,3 +4997,10 @@ lighting	Light	Світло
 	Fresco	Фреска
 	Effect Gallery…	Галерея ефектів…
 	Effect Gallery Dialog	Діалог «Галерея ефектів»
+@msg	Packaged {n} file(s) in {folder}	Упаковано файли: {n} {folder}
+@msg	Packaged {n} file(s) {note}	Упаковано файли: {n} {note}
+@msg	Packaged {n} file(s)	Упаковано файли: {n}
+	Packaged {n} file(s)	Упаковано файли: {n}
+	Packaged {n} file(s) in {folder}	Упаковано файли: {n} {folder}
+	Packaged {n} file(s) {note}	Упаковано файли: {n} {note}
+	{count} file(s) in {folder}. Show the package folder?	файлів: {count} {folder}. Показати папку пакета?

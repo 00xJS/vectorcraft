@@ -5017,3 +5017,10 @@ lighting	Light	Luce
 	Fresco	Affresco
 	Effect Gallery…	Galleria effetti…
 	Effect Gallery Dialog	Finestra di dialogo Galleria effetti
+@msg	Packaged {n} file(s) in {folder}	Pacchetto creato con {n} file in {folder}
+@msg	Packaged {n} file(s) {note}	Pacchetto creato con {n} file {note}
+@msg	Packaged {n} file(s)	Pacchetto creato con {n} file
+	Packaged {n} file(s)	Pacchetto creato con {n} file
+	Packaged {n} file(s) in {folder}	Pacchetto creato con {n} file in {folder}
+	Packaged {n} file(s) {note}	Pacchetto creato con {n} file {note}
+	{count} file(s) in {folder}. Show the package folder?	{count} file in {folder}. Vuoi mostrare la cartella del pacchetto?

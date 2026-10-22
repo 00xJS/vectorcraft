@@ -4980,3 +4980,10 @@ lighting	Light	광원
 	Fresco	프레스코
 	Effect Gallery…	효과 갤러리…
 	Effect Gallery Dialog	효과 갤러리 대화 상자
+@msg	Packaged {n} file(s) in {folder}	{folder}에 파일 {n}개를 패키지했습니다
+@msg	Packaged {n} file(s) {note}	파일 {n}개를 패키지했습니다 {note}
+@msg	Packaged {n} file(s)	파일 {n}개를 패키지했습니다
+	Packaged {n} file(s)	파일 {n}개를 패키지했습니다
+	Packaged {n} file(s) in {folder}	{folder}에 파일 {n}개를 패키지했습니다
+	Packaged {n} file(s) {note}	파일 {n}개를 패키지했습니다 {note}
+	{count} file(s) in {folder}. Show the package folder?	{folder}에 파일 {count}개. 패키지 폴더를 표시하시겠습니까?

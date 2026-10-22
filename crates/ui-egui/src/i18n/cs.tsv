@@ -5402,3 +5402,10 @@ mark-style	Japanese	Japonské
 	Fresco	Freska
 	Effect Gallery…	Galerie efektů…
 	Effect Gallery Dialog	Dialog Galerie efektů
+@msg	Packaged {n} file(s) in {folder}	Zabaleno souborů: {n} do {folder}
+@msg	Packaged {n} file(s) {note}	Zabaleno souborů: {n} {note}
+@msg	Packaged {n} file(s)	Zabaleno souborů: {n}
+	Packaged {n} file(s)	Zabaleno souborů: {n}
+	Packaged {n} file(s) in {folder}	Zabaleno souborů: {n} do {folder}
+	Packaged {n} file(s) {note}	Zabaleno souborů: {n} {note}
+	{count} file(s) in {folder}. Show the package folder?	Souborů: {count} v {folder}. Zobrazit složku balíčku?

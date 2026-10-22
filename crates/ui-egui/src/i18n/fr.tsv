@@ -5401,3 +5401,10 @@ theme	Appearance	Apparence
 	Fresco	Fresque
 	Effect Gallery…	Galerie d'effets…
 	Effect Gallery Dialog	Boîte de dialogue Galerie d'effets
+@msg	Packaged {n} file(s) in {folder}	{n} fichier(s) assemblé(s) dans {folder}
+@msg	Packaged {n} file(s) {note}	{n} fichier(s) assemblé(s) {note}
+@msg	Packaged {n} file(s)	{n} fichier(s) assemblé(s)
+	Packaged {n} file(s)	{n} fichier(s) assemblé(s)
+	Packaged {n} file(s) in {folder}	{n} fichier(s) assemblé(s) dans {folder}
+	Packaged {n} file(s) {note}	{n} fichier(s) assemblé(s) {note}
+	{count} file(s) in {folder}. Show the package folder?	{count} fichier(s) dans {folder}. Afficher le dossier de l’assemblage ?

@@ -5361,8 +5361,14 @@ theme	Appearance	Görünüm
 	Fresco	Fresk
 	Effect Gallery…	Efekt Galerisi…
 	Effect Gallery Dialog	Efekt Galerisi İletişim Kutusu
-
+@msg	Packaged {n} file(s) in {folder}	{folder} biçiminde paketlenmiş {n} dosyası/dosyaları
+@msg	Packaged {n} file(s) {note}	Paketlenmiş {n} dosyası/dosyaları {note}
+@msg	Packaged {n} file(s)	Paketlenmiş {n} dosyası/dosyaları
 # Artwork drag between document tabs.
 	Drop Artwork	Çizimi Bırak
 @msg	{key} must be [x, y] with finite coordinates	{key}, sonlu koordinatlı [x, y] olmalı
 @msg	ids must contain 1–10000 object ids	ids 1–10000 nesne kimliği içermeli
+	Packaged {n} file(s)	Paketlenmiş {n} dosyası/dosyaları
+	Packaged {n} file(s) in {folder}	{folder} biçiminde paketlenmiş {n} dosyası/dosyaları
+	Packaged {n} file(s) {note}	Paketlenmiş {n} dosyası/dosyaları {note}
+	{count} file(s) in {folder}. Show the package folder?	{folder} içindeki {count} dosyası/dosyaları. Paket klasörü gösterilsin mi?

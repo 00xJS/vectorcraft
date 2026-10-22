@@ -5358,3 +5358,10 @@ theme	Appearance	Utseende
 	Fresco	Fresk
 	Effect Gallery…	Effektgalleri…
 	Effect Gallery Dialog	Dialogrutan Effektgalleri
+@msg	Packaged {n} file(s) in {folder}	Paketerade {n} fil(er) i {folder}
+@msg	Packaged {n} file(s) {note}	Paketerade {n} fil(er) {note}
+@msg	Packaged {n} file(s)	Paketerade {n} fil(er)
+	Packaged {n} file(s)	Paketerade {n} fil(er)
+	Packaged {n} file(s) in {folder}	Paketerade {n} fil(er) i {folder}
+	Packaged {n} file(s) {note}	Paketerade {n} fil(er) {note}
+	{count} file(s) in {folder}. Show the package folder?	{count} fil(er) i {folder}. Visa paketmappen?

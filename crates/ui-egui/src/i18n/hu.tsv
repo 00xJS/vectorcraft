@@ -5388,3 +5388,10 @@ imageTrace	Outline	Körvonal
 	Fresco	Freskó
 	Effect Gallery…	Effektusgaléria…
 	Effect Gallery Dialog	Effektusgaléria párbeszédpanel
+@msg	Packaged {n} file(s) in {folder}	Becsomagolt fájlok: {n}, mappa: {folder}
+@msg	Packaged {n} file(s) {note}	Becsomagolt fájlok: {n} {note}
+@msg	Packaged {n} file(s)	Becsomagolt fájlok: {n}
+	Packaged {n} file(s)	Becsomagolt fájlok: {n}
+	Packaged {n} file(s) in {folder}	Becsomagolt fájlok: {n}, mappa: {folder}
+	Packaged {n} file(s) {note}	Becsomagolt fájlok: {n} {note}
+	{count} file(s) in {folder}. Show the package folder?	Fájlok: {count}, mappa: {folder}. Megnyitod a csomag mappáját?

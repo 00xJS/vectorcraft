@@ -5013,3 +5013,10 @@ lighting	Light	Свет
 	Fresco	Фреска
 	Effect Gallery…	Галерея эффектов…
 	Effect Gallery Dialog	Диалог «Галерея эффектов»
+@msg	Packaged {n} file(s) in {folder}	Упаковано файлов: {n} в {folder}
+@msg	Packaged {n} file(s) {note}	Упаковано файлов: {n} {note}
+@msg	Packaged {n} file(s)	Упаковано файлов: {n}
+	Packaged {n} file(s)	Упаковано файлов: {n}
+	Packaged {n} file(s) in {folder}	Упаковано файлов: {n} в {folder}
+	Packaged {n} file(s) {note}	Упаковано файлов: {n} {note}
+	{count} file(s) in {folder}. Show the package folder?	Файлов: {count} в {folder}. Показать папку пакета?

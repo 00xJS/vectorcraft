@@ -5374,3 +5374,10 @@ swatch	Bright Violet	Kraftig violet
 	Fresco	Fresko
 	Effect Gallery…	Effektgalleri…
 	Effect Gallery Dialog	Dialogboksen Effektgalleri
+@msg	Packaged {n} file(s) in {folder}	Pakkede {n} fil(er) i {folder}
+@msg	Packaged {n} file(s) {note}	Pakkede {n} fil(er) {note}
+@msg	Packaged {n} file(s)	Pakkede {n} fil(er)
+	Packaged {n} file(s)	Pakkede {n} fil(er)
+	Packaged {n} file(s) in {folder}	Pakkede {n} fil(er) i {folder}
+	Packaged {n} file(s) {note}	Pakkede {n} fil(er) {note}
+	{count} file(s) in {folder}. Show the package folder?	{count} fil(er) i {folder}. Vis pakkemappen?
