@@ -800,10 +800,12 @@ fn items(
     };
     if o.full_document {
         // The bounds of all visible art, as the one artboard of the files that aren't PDFs (a PDF
-        // row writes every artboard of the document itself).
+        // row writes every artboard of the document itself). It is named after the document: an
+        // SVG of one artboard takes the artboard's name as its title (#3544), and this one stands
+        // for the whole document.
         let (whole, region) = if crop {
             let bounds = vectorcraft_render::encode::art_bounds(doc).ok_or_else(|| bad(C, "nothing to export: the document has no visible art"))?;
-            (Arc::new(single_artboard(doc, bounds, "Document")), bounds)
+            (Arc::new(single_artboard(doc, bounds, &doc.title)), bounds)
         } else {
             (doc.clone(), Rect::ZERO)
         };

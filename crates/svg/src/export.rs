@@ -133,9 +133,13 @@ fn write(doc: &Document, opts: &ExportOptions, native: Option<&[u8]>, id_prefix:
         out.push_str(&w.indent(1));
         out.push_str(&format!("</defs>{nl}"));
     }
-    if !doc.title.is_empty() {
+    // An artboard exported on its own is named after it (#3544), else after the document.
+    // A name that is blank once the characters XML can't hold are dropped falls back too.
+    let board = opts.artboard.filter(|_| opts.artboard_title).and_then(|i| doc.artboards.get(i)).map(|a| xml_text(&a.name));
+    let title = board.filter(|n| !n.trim().is_empty()).unwrap_or_else(|| xml_text(&doc.title));
+    if !title.is_empty() {
         out.push_str(&w.indent(1));
-        out.push_str(&format!("<title>{}</title>{nl}", xml_text(&doc.title)));
+        out.push_str(&format!("<title>{title}</title>{nl}"));
     }
     // File Info's description.
     if !doc.metadata.description.trim().is_empty() {
