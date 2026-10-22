@@ -364,6 +364,25 @@ fn templates_open_untitled() {
 }
 
 #[test]
+fn open_same_path_activates_existing_document() {
+    let mut s = Session::new();
+    let dir = tmp_dir("reopen");
+    let path = dir.join("doc.vectorcraft").to_string_lossy().to_string();
+    let mut fresh = Session::new();
+    fresh.execute("file.new", &json!({"width": 100, "height": 100})).unwrap();
+    std::fs::write(&path, b64(&fresh.execute("document.serialize", &json!({})).unwrap())).unwrap();
+    s.execute("document.open", &json!({"path": path})).unwrap();
+    assert_eq!(s.documents().len(), 1);
+    s.execute("shape.rectangle", &json!({"x": 1, "y": 2, "width": 10, "height": 10})).unwrap();
+    let r = s.execute("document.open", &json!({"path": path})).unwrap();
+    assert_eq!(r["activated"], true);
+    assert_eq!(s.documents().len(), 1);
+    assert_eq!(s.active_index(), Some(0));
+    assert_eq!(s.doc().unwrap().doc.layers[0].children().unwrap().len(), 1);
+    let _ = std::fs::remove_dir_all(dir);
+}
+
+#[test]
 fn open_exts_cover_every_readable_format() {
     for f in FORMATS.iter().filter(|f| f.read) {
         for e in f.extensions {

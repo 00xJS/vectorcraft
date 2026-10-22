@@ -369,6 +369,11 @@ pub fn open_bytes(s: &mut Session, name: &str, bytes: &[u8], path: Option<String
 
 /// [`open_bytes`] with the `document.open` options in `p` ([`LoadOptions::from_params`]).
 pub fn open_bytes_with(s: &mut Session, name: &str, bytes: &[u8], path: Option<String>, p: &Value) -> Result<Value> {
+    if let Some(path) = path.as_deref()
+        && let Some(index) = document_index_for_path(s, path)
+    {
+        return activate_open_document(s, index);
+    }
     let update_links = s.prefs.update_links == "automatically";
     open_read(s, read_for_open(name, bytes, path, p, update_links)?)
 }
@@ -703,4 +708,23 @@ fn same_file(a: &str, b: &str) -> bool {
         (Ok(a), Ok(b)) => a == b,
         _ => a == b,
     }
+}
+
+/// The open document whose saved path is the same file as `path`, if any.
+fn document_index_for_path(s: &Session, path: &str) -> Option<usize> {
+    s.documents().iter().position(|st| st.path.as_deref().is_some_and(|p| same_file(p, path)))
+}
+
+/// Bring an already-open document to the front instead of reading the file again (Home › Recent).
+fn activate_open_document(s: &mut Session, index: usize) -> Result<Value> {
+    s.set_active(index);
+    let st = &s.documents()[index];
+    Ok(json!({
+        "index": index,
+        "title": st.title(),
+        "format": st.format,
+        "warnings": [],
+        "restored": false,
+        "activated": true,
+    }))
 }
