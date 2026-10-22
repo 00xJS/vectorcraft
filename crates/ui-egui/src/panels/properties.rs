@@ -323,6 +323,58 @@ fn turned(landscape: bool, pw: f64, ph: f64) -> (f64, f64) {
 /// width and height of each selected artboard that is not square and not already in it. Each
 /// top-left corner stays put.
 pub(crate) fn artboard_size_row(app: &mut VectorcraftApp, ui: &mut Ui, i: usize, w: f64, h: f64) {
+    let Some(choice) = artboard_size_controls(app, ui, w, h) else { return };
+    let scale_art = super::artboards::scale_art(app);
+    let indices = super::artboards::resized_with(app, i);
+    super::artboards::set_props(app, &indices, json!({"scaleArt": scale_art}), |j, r| {
+        let (width, height) = choice.size_for(r.width(), r.height())?;
+        Some(json!({"index": j, "width": width, "height": height}))
+    })
+    .ok();
+}
+
+/// A shared picker choice, applied separately to each artboard's orientation.
+#[derive(Clone, Copy)]
+pub(crate) enum ArtboardSizeChoice {
+    Preset(f64, f64),
+    Orientation(bool),
+}
+
+impl ArtboardSizeChoice {
+    pub(crate) fn size_for(self, w: f64, h: f64) -> Option<(f64, f64)> {
+        match self {
+            Self::Preset(pw, ph) => Some(turned(w > h, pw, ph)),
+            Self::Orientation(landscape) if (w > h) != landscape && w != h => Some((h, w)),
+            Self::Orientation(_) => None,
+        }
+    }
+}
+
+/// Shared existing presets/orientation UI. Dialogs keep the chosen size in their draft until OK.
+pub(crate) fn artboard_size_controls(app: &VectorcraftApp, ui: &mut Ui, w: f64, h: f64) -> Option<ArtboardSizeChoice> {
+    artboard_size_controls_inner(app, ui, w, h, None).0
+}
+
+/// The dialog's shared preset/orientation picker with optional artwork and selection fits.
+/// The second return value is a chosen Fit: false for all artwork, true for selected artwork.
+pub(crate) fn artboard_size_controls_with_fit(
+    app: &VectorcraftApp,
+    ui: &mut Ui,
+    w: f64,
+    h: f64,
+    enabled: [bool; 2],
+) -> (Option<ArtboardSizeChoice>, Option<bool>) {
+    artboard_size_controls_inner(app, ui, w, h, Some(enabled))
+}
+
+/// Properties and Control keep their ordinary picker; Artboard Options adds two Fit entries.
+fn artboard_size_controls_inner(
+    app: &VectorcraftApp,
+    ui: &mut Ui,
+    w: f64,
+    h: f64,
+    fits: Option<[bool; 2]>,
+) -> (Option<ArtboardSizeChoice>, Option<bool>) {
     let landscape = w > h;
     let same = |s: &newdoc::DocSettings| {
         let (pw, ph) = turned(landscape, s.width, s.height);
@@ -338,10 +390,19 @@ pub(crate) fn artboard_size_row(app: &mut VectorcraftApp, ui: &mut Ui, i: usize,
     // The preset's width and height as listed, or the orientation clicked.
     let mut preset = None;
     let mut orientation = None;
+    let mut fit = None;
     ui.horizontal(|ui| {
         dim_label(ui, tl!("Preset:"));
         preset = widgets::combo(ui, "ab-preset", &current, 140.0, false, |ui| {
             let mut chosen = None;
+            if let Some(enabled) = fits {
+                for (selection, label) in [(false, tl!("Fit to Artwork Bounds")), (true, tl!("Fit to Selected Art"))] {
+                    if widgets::menu_item_name(ui, label, enabled[usize::from(selection)], false) {
+                        fit = Some(selection);
+                    }
+                }
+                ui.separator();
+            }
             for (cat, list) in &cats {
                 ui.menu_button(tl!(cat), |ui| {
                     widgets::menu_scroll(ui, |ui| {
@@ -362,21 +423,7 @@ pub(crate) fn artboard_size_row(app: &mut VectorcraftApp, ui: &mut Ui, i: usize,
             }
         }
     });
-    if preset.is_none() && orientation.is_none() {
-        return;
-    }
-    let scale_art = super::artboards::scale_art(app);
-    let indices = super::artboards::resized_with(app, i);
-    super::artboards::set_props(app, &indices, json!({"scaleArt": scale_art}), |j, r| {
-        let (w, h) = (r.width(), r.height());
-        let (width, height) = match (preset, orientation) {
-            (Some((pw, ph)), _) => turned(w > h, pw, ph),
-            (None, Some(l)) if (w > h) != l && w != h => (h, w),
-            _ => return None,
-        };
-        Some(json!({"index": j, "width": width, "height": height}))
-    })
-    .ok();
+    (preset.map(|(w, h)| ArtboardSizeChoice::Preset(w, h)).or_else(|| orientation.map(ArtboardSizeChoice::Orientation)), fit)
 }
 
 /// Artboard `i`'s Fill, its background `color`: the chip shows it (the None paint when the artboard
