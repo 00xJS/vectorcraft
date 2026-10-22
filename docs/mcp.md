@@ -782,6 +782,14 @@ radial shadings:
 {"name":"run_command","arguments":{"command":"paint.setGradientGeom","params":{"aspect":60,"focal":[130,140]}}}
 ```
 
+Dither (the Gradient panel's box) draws a linear or radial gradient fill with fine noise that hides banding;
+SVG and PDF exports write such a fill as an image at the Document Raster Effects resolution. It applies to fills
+(`stroke: true` is refused):
+
+```json
+{"name":"run_command","arguments":{"command":"paint.editGradient","params":{"dither":true}}}
+```
+
 Freeform gradients: `paint.editGradient {kind: "freeform"}` places four or more colour points inside each selected
 object (coloured along the stops; `mode: "points"|"lines"` is the Draw toggle). `paint.freeform.get` lists the points
 (document coordinates), lines and the selected point; `paint.freeform.addPoint {at, color?, opacity?, spread?,

@@ -75,6 +75,10 @@ fn half() -> f32 {
 pub struct Gradient {
     pub kind: GradientKind,
     pub stops: Vec<GradientStop>,
+    /// Dither: a fill of this gradient is drawn as pixels with fine noise of up to a colour level
+    /// added, which hides the steps (banding) between the levels 8-bit colour has.
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub dither: bool,
 }
 
 impl Default for Gradient {
@@ -87,7 +91,7 @@ impl Default for Gradient {
 impl Gradient {
     /// A gradient of `kind` through `stops`, with the default options.
     pub fn new(kind: GradientKind, stops: Vec<GradientStop>) -> Self {
-        Self { kind, stops }
+        Self { kind, stops, dither: false }
     }
     /// Colour and opacity at `t` (honours midpoints).
     pub fn sample(&self, t: f32) -> (Color, f32) {
@@ -538,24 +542,29 @@ impl GradientPaint {
             f.transform(a);
         }
     }
-    /// Is this gradient drawn as pixels rather than as a vector gradient (SVG and PDF draw such
-    /// gradients as images): a freeform gradient.
-    pub fn draws_as_pixels(&self) -> bool {
-        self.gradient.kind == GradientKind::Freeform
+    /// Is this gradient drawn as pixels rather than as a vector gradient when it paints a fill
+    /// (`fill`) or a stroke: a freeform gradient, or a dithered fill (dither applies to fills
+    /// only)?
+    pub fn draws_as_pixels(&self, fill: bool) -> bool {
+        self.gradient.kind == GradientKind::Freeform || (fill && self.gradient.dither)
     }
     /// A linear or radial gradient placed on box `bounds` as a `cols` × `rows` grid of
     /// unpremultiplied RGBA8 pixels over `area`, row by row, each sampled at its centre (colours
-    /// as `rgb` gives them, mixed as the renderer mixes them: [`Ramp`]).
+    /// as `rgb` gives them, mixed as the renderer mixes them: [`Ramp`]). Dithered, each colour
+    /// channel of pixel (column, row) gets [`dither_noise`] before it is rounded to a level.
     pub fn pixels(&self, bounds: Rect, area: Rect, cols: u16, rows: u16, rgb: &dyn Fn(&Color) -> [f32; 3]) -> impl Iterator<Item = [u8; 4]> + use<> {
-        let (kind, geom) = (self.gradient.kind, self.resolve(bounds));
+        let (kind, geom, dither) = (self.gradient.kind, self.resolve(bounds), self.gradient.dither);
         let ramp = Ramp::new(&self.gradient, rgb);
         let (cw, ch) = (area.width() / f64::from(cols.max(1)), area.height() / f64::from(rows.max(1)));
         let (x0, y0) = (area.x0, area.y0);
         (0..u32::from(rows)).flat_map(move |j| (0..u32::from(cols)).map(move |i| (i, j))).map(move |(i, j)| {
             let p = Point::new(x0 + (f64::from(i) + 0.5) * cw, y0 + (f64::from(j) + 0.5) * ch);
             let c = ramp.at(geom.param_at(kind, p) as f32);
-            let level = |k: usize| (c[k].clamp(0.0, 1.0) * 255.0).round() as u8;
-            [level(0), level(1), level(2), level(3)]
+            let level = |k: usize| {
+                let noise = if dither { dither_noise(i, j, k as u32) } else { 0.0 };
+                (c[k].clamp(0.0, 1.0) * 255.0 + noise).round().clamp(0.0, 255.0) as u8
+            };
+            [level(0), level(1), level(2), (c[3].clamp(0.0, 1.0) * 255.0).round() as u8]
         })
     }
 }
@@ -596,6 +605,27 @@ impl Ramp {
         }
         self.stops.last().map_or([0.0; 4], |s| s.1)
     }
+}
+
+/// Seed of [`dither_noise`]: fixed, so a dithered gradient draws and exports the same pixels on
+/// every run.
+const DITHER_SEED: u32 = 0x5eed_d17e;
+
+/// An integer hash that mixes every input bit into every output bit (the "lowbias32" mix).
+fn mix32(mut v: u32) -> u32 {
+    v ^= v >> 16;
+    v = v.wrapping_mul(0x7feb_352d);
+    v ^= v >> 15;
+    v = v.wrapping_mul(0x846c_a68b);
+    v ^ (v >> 16)
+}
+
+/// Dither noise for colour channel `channel` of pixel (`x`, `y`), in colour levels: -1..1,
+/// densest around 0 (the sum of two uniform values: noise that hides steps between levels without
+/// a pattern of its own), the same for the same pixel on every run.
+pub fn dither_noise(x: u32, y: u32, channel: u32) -> f32 {
+    let h = mix32(x ^ mix32(y ^ mix32(channel ^ DITHER_SEED)));
+    ((h & 0xffff) as f32 + (h >> 16) as f32) / 65535.0 - 1.0
 }
 
 #[cfg(test)]

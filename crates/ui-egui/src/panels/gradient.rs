@@ -322,6 +322,13 @@ pub fn show(app: &mut VectorcraftApp, ui: &mut Ui) {
     ramp(app, ui, &g.gradient, is_grad);
     ui.add_space(4.0);
     stop_fields(app, ui, &g.gradient, is_grad);
+    // Dither applies to gradient fills only: off and dimmed behind the Stroke proxy.
+    ui.add_space(4.0);
+    let fill = app.session.fill_active;
+    let dither = is_grad && fill && g.gradient.dither;
+    if widgets::check_tip(ui, tl!("Dither"), dither, is_grad && fill, tl!("Fine noise hides banding in the gradient fill")) {
+        edit(app, json!({"dither": !dither}), Live::Released);
+    }
     if !is_grad {
         widgets::dim_label(ui, tl!("Click the ramp or a type button to apply a gradient."));
     }
@@ -966,6 +973,30 @@ mod tests {
         }
         app.run("edit.undo", json!({})).unwrap();
         assert_eq!(mode(&app), StrokeGradientMode::Across, "one undo step per click");
+    }
+
+    #[test]
+    fn the_dither_box_dithers_the_gradient_fill_and_is_off_for_strokes() {
+        let mut app = app(json!({"gradient": {}}));
+        app.run("paint.setStroke", json!({"gradient": {}, "focus": false})).unwrap();
+        let mut p = Panel::new();
+        let texts = p.frame(&mut app, vec![], Modifiers::NONE);
+        let at = texts.iter().find(|(t, _)| t == "Dither").expect("the Dither box").1;
+        p.click(&mut app, at);
+        assert!(fill(&app).gradient.dither, "the fill's gradient is dithered");
+        p.click(&mut app, at);
+        assert!(!fill(&app).gradient.dither, "a second click clears it");
+        app.run("edit.undo", json!({})).unwrap();
+        assert!(fill(&app).gradient.dither, "one undo step per click");
+        // Behind the Stroke proxy the box is dimmed and does nothing.
+        let stroke = p.widget("stroke-proxy");
+        p.click(&mut app, stroke.right_bottom() - vec2(2.0, 2.0));
+        assert!(!app.session.fill_active);
+        let undo = app.session.doc().unwrap().history.undo.len();
+        p.click(&mut app, at);
+        assert_eq!(app.session.doc().unwrap().history.undo.len(), undo, "no edit on the stroke");
+        let Paint::Gradient(st) = app.session.shown_stroke().unwrap().paint.clone() else { panic!("a gradient stroke") };
+        assert!(!st.gradient.dither);
     }
 
     #[test]

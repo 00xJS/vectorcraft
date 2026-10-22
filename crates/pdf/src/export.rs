@@ -1277,18 +1277,20 @@ impl Exporter<'_> {
         }
     }
 
-    /// Is `p` a paint PDF has no paint for, which [`Self::area`] draws as art: a pattern swatch or
-    /// a gradient drawn as pixels ([`vectorcraft_color::GradientPaint::draws_as_pixels`])?
-    fn area_paint(&self, p: &Paint) -> bool {
+    /// Is `p` a paint PDF has no paint for when it paints a fill (`fill`) or a stroke, which
+    /// [`Self::area`] draws as art: a pattern swatch or a gradient drawn as pixels
+    /// ([`vectorcraft_color::GradientPaint::draws_as_pixels`])?
+    fn area_paint(&self, p: &Paint, fill: bool) -> bool {
         match p {
             Paint::Pattern { pattern, .. } => self.doc.pattern(pattern).is_some(),
-            Paint::Gradient(g) => g.draws_as_pixels(),
+            Paint::Gradient(g) => g.draws_as_pixels(fill),
             _ => false,
         }
     }
 
     /// Paint the area `clip` (filled by `rule`; bounds `area`) with `p` at `transparency` (opacity,
-    /// blend mode) when it is an [area paint](Self::area_paint): a pattern's tile instances
+    /// blend mode) when it is an [area paint](Self::area_paint) of a fill (strokes check theirs
+    /// first): a pattern's tile instances
     /// covering it, or an image of a gradient drawn as pixels placed on `bounds` (the painted
     /// object's box, as on the canvas), clipped to it. False (nothing drawn) for other paints.
     #[allow(clippy::too_many_arguments)]
@@ -1302,7 +1304,7 @@ impl Exporter<'_> {
         bounds: Rect,
         area: Rect,
     ) -> bool {
-        if !self.area_paint(p) {
+        if !self.area_paint(p, true) {
             return false;
         }
         let (opacity, mode) = transparency;
@@ -1375,7 +1377,7 @@ impl Exporter<'_> {
         if !stroke::is_plain(st) && self.brush_art(s, bp, st, page) {
             return;
         }
-        if self.area_paint(&st.paint) {
+        if self.area_paint(&st.paint, false) {
             // The area the stroke paints (dashes, caps, joins, profile, arrowheads, alignment), as
             // Outline Stroke makes it, painted with the pattern's tiles or the freeform's image.
             let region = stroke::outline_region(&vectorcraft_geom::PathData::from_bezpath(bp), r, st).to_bezpath();
@@ -1567,7 +1569,7 @@ impl Exporter<'_> {
             self.overprinting(s, run.style.overprint_fill, fill, |ex, s| {
                 s.push_transform(&text_space);
                 // The outlines left to fill as paths: all of them, or those real text leaves.
-                let outlines = match plain.as_deref().filter(|_| !fill.is_none() && !ex.area_paint(fill)) {
+                let outlines = match plain.as_deref().filter(|_| !fill.is_none() && !ex.area_paint(fill, true)) {
                     Some(text) => {
                         let mut left = ex.glyph_text(s, &layout, i, text, fill);
                         left.extend(run_bars.iter());

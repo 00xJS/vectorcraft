@@ -104,3 +104,42 @@ fn linked_images_write_the_gradient_next_to_the_svg_and_characters_stay_linear()
     assert!(o.svg.contains("linearGradient") && !o.svg.contains("<image"), "{}", o.svg);
     assert!(o.warnings.iter().any(|w| w.contains("characters")), "{:?}", o.warnings);
 }
+
+/// A shallow grey ramp, dithered or not.
+fn shallow(dither: bool) -> Paint {
+    let stops = vec![
+        vectorcraft_color::GradientStop::new(0.0, Color::rgb8(0x40, 0x40, 0x40)),
+        vectorcraft_color::GradientStop::new(1.0, Color::rgb8(0x4a, 0x4a, 0x4a)),
+    ];
+    let mut g = Gradient::new(GradientKind::Linear, stops);
+    g.dither = dither;
+    Paint::Gradient(Box::new(GradientPaint::new(g)))
+}
+
+/// Illustrator's documentation describes dither as the gradient converted to pixels with subtle
+/// noise, at the Document Raster Effects resolution
+/// (https://helpx.adobe.com/illustrator/desktop/paint-and-fill/create-and-edit-gradients/control-dither-in-gradients.html):
+/// a dithered fill is written as an image of the gradient with its noise, clipped to the shape; a
+/// stroke (dither applies to fills only) and an undithered fill stay vector gradients.
+#[test]
+fn a_dithered_fill_is_an_image_at_the_raster_effects_resolution() {
+    let shape = shapes::rectangle(Rect::new(20.0, 20.0, 180.0, 140.0));
+    let mut d = doc_with(Node::path(NodeId(0), shape.clone(), Appearance::basic(shallow(true), shallow(true), 4.0)));
+    d.raster_effects_ppi = 144.0;
+    let o = export_full(&d, &ExportOptions::default(), None);
+    let svg = &o.svg;
+    assert_eq!(svg.matches("<image ").count(), 1, "the fill: {svg}");
+    assert_eq!(svg.matches("<linearGradient").count(), 1, "the stroke keeps its gradient: {svg}");
+    assert!(o.warnings.iter().any(|w| w.contains("drawn as pixels are written as images")), "{:?}", o.warnings);
+    // Two pixels a point at 144 ppi, the levels around the ramp's, with noise along each row.
+    let png = png_of(svg);
+    assert_eq!(png.dimensions(), (320, 240));
+    let row: Vec<u8> = (0..320).map(|x| png.get_pixel(x, 120).0[0]).collect();
+    let longest = row.chunk_by(|a, b| a == b).map(<[_]>::len).max().unwrap();
+    assert!(longest <= 12, "no bands: longest run {longest}");
+    assert!(row.iter().all(|v| (0x3f..=0x4b).contains(v)), "{row:?}");
+    // Undithered: a vector gradient, no image.
+    let plain = doc_with(Node::path(NodeId(0), shape, Appearance::basic(shallow(false), Paint::None, 0.0)));
+    let svg = export_full(&plain, &ExportOptions::default(), None).svg;
+    assert!(!svg.contains("<image ") && svg.contains("<linearGradient"), "{svg}");
+}

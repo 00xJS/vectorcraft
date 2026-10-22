@@ -5426,3 +5426,7 @@ axis	Y Axis	Axe Y
 	Packaged {n} file(s) in {folder}	{n} fichier(s) assemblé(s) dans {folder}
 	Packaged {n} file(s) {note}	{n} fichier(s) assemblé(s) {note}
 	{count} file(s) in {folder}. Show the package folder?	{count} fichier(s) dans {folder}. Afficher le dossier de l’assemblage ?
+	Dither	Simulation
+	Fine noise hides banding in the gradient fill	Un bruit fin masque les bandes du fond en dégradé
+@msg	`dither` applies to gradient fills (stroke: false)	`dither` s’applique aux fonds en dégradé (stroke: false)
+@msg	`dither` must be true or false	`dither` doit valoir true ou false

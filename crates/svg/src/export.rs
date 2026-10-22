@@ -1047,7 +1047,7 @@ impl Writer<'_> {
             && strokes <= 1
             && !items.iter().any(|i| has_raster(i.effects()))
             && items.iter().all(|i| i.blend() == BlendMode::Normal)
-            && !items.iter().any(|i| pixel_gradient(i.paint()).is_some())
+            && !items.iter().any(|i| pixel_gradient(i.paint(), matches!(i, AppearanceItem::Fill(_))).is_some())
             && plans.iter().flatten().all(|p| matches!(p, StrokePlan::Written(Written { shape: WrittenShape::Stroke { .. }, side: None })));
         if simple {
             let mut p = Props::new();
@@ -1081,7 +1081,7 @@ impl Writer<'_> {
             match (it, plan) {
                 (AppearanceItem::Fill(f), _) => {
                     let blend = (f.blend != BlendMode::Normal).then(|| ("mix-blend-mode", blend_css(f.blend).to_string()));
-                    if let (Some(g), Some(b)) = (pixel_gradient(&f.paint), bounds) {
+                    if let (Some(g), Some(b)) = (pixel_gradient(&f.paint, true), bounds) {
                         p.extend((f.opacity < 1.0).then(|| ("opacity", fmt_num(f.opacity as f64, 3))));
                         p.extend(blend);
                         self.raster_paint(g, b, &[d.to_string()], rule, &p, "");
@@ -1113,7 +1113,7 @@ impl Writer<'_> {
                     let side = self.side_attr(w.side, d, rule, w.reach(s, bounds.unwrap_or_default()));
                     let blend = (s.blend != BlendMode::Normal).then(|| ("mix-blend-mode", blend_css(s.blend).to_string()));
                     let opacity = (s.opacity < 1.0).then(|| ("opacity", fmt_num(s.opacity as f64, 3)));
-                    match (&w.shape, pixel_gradient(&s.paint).zip(paint_bounds(s))) {
+                    match (&w.shape, pixel_gradient(&s.paint, false).zip(paint_bounds(s))) {
                         (WrittenShape::Stroke { width }, Some((g, b))) => {
                             // The stroke's outline clips the gradient's image.
                             let bp = bp.get_or_insert_with(|| doc_path(paths));
@@ -1776,6 +1776,12 @@ impl Writer<'_> {
         // Character paints resolve in the text's space (`to_user` maps it into user space).
         let (bounds, to_user) = space;
         let saved = std::mem::replace(&mut self.xf, to_user);
+        if let Paint::Gradient(g) = &st.fill
+            && g.gradient.dither
+            && g.gradient.kind != GradientKind::Freeform
+        {
+            self.warn("dithered gradients on characters are written without dither");
+        }
         let fill = self.paint(&st.fill, Some(bounds));
         p.push(("fill", fill));
         // An inside or outside stroke is drawn on the glyph outlines instead
@@ -2269,11 +2275,11 @@ const OUTLINE_TOLERANCE: f64 = 0.01;
 /// Most pixels along a side of a linear or radial gradient's image.
 const MAX_GRADIENT_PX: f64 = 4096.0;
 
-/// The gradient a paint is, if it is drawn as pixels ([`GradientPaint::draws_as_pixels`]; SVG
-/// has no freeform gradients, for one).
-fn pixel_gradient(p: &Paint) -> Option<&GradientPaint> {
+/// The gradient a fill (`fill`) or stroke paint is, if it is drawn as pixels
+/// ([`GradientPaint::draws_as_pixels`]; SVG has no freeform gradients, for one).
+fn pixel_gradient(p: &Paint, fill: bool) -> Option<&GradientPaint> {
     match p {
-        Paint::Gradient(g) if g.draws_as_pixels() => Some(g),
+        Paint::Gradient(g) if g.draws_as_pixels(fill) => Some(g),
         _ => None,
     }
 }

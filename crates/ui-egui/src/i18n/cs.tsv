@@ -5427,3 +5427,7 @@ axis	Y Axis	osa Y
 	Packaged {n} file(s) in {folder}	Zabaleno souborů: {n} do {folder}
 	Packaged {n} file(s) {note}	Zabaleno souborů: {n} {note}
 	{count} file(s) in {folder}. Show the package folder?	Souborů: {count} v {folder}. Zobrazit složku balíčku?
+	Dither	Rozptýlení
+	Fine noise hides banding in the gradient fill	Jemný šum skryje pruhy ve výplni přechodem
+@msg	`dither` applies to gradient fills (stroke: false)	`dither` platí pro výplně přechodem (stroke: false)
+@msg	`dither` must be true or false	`dither` musí být true nebo false

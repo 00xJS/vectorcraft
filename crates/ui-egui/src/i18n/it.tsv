@@ -5043,3 +5043,7 @@ axis	Y Axis	Asse Y
 	Packaged {n} file(s) in {folder}	Pacchetto creato con {n} file in {folder}
 	Packaged {n} file(s) {note}	Pacchetto creato con {n} file {note}
 	{count} file(s) in {folder}. Show the package folder?	{count} file in {folder}. Vuoi mostrare la cartella del pacchetto?
+	Dither	Dithering
+	Fine noise hides banding in the gradient fill	Un rumore fine nasconde le bande nel riempimento sfumato
+@msg	`dither` applies to gradient fills (stroke: false)	`dither` si applica ai riempimenti sfumati (stroke: false)
+@msg	`dither` must be true or false	`dither` deve essere true o false

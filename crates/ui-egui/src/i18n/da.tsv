@@ -5398,3 +5398,7 @@ axis	Y Axis	Y-akse
 	Packaged {n} file(s) in {folder}	Pakkede {n} fil(er) i {folder}
 	Packaged {n} file(s) {note}	Pakkede {n} fil(er) {note}
 	{count} file(s) in {folder}. Show the package folder?	{count} fil(er) i {folder}. Vis pakkemappen?
+	Dither	Dither
+	Fine noise hides banding in the gradient fill	Fin støj skjuler striber i gradientfyldet
+@msg	`dither` applies to gradient fills (stroke: false)	`dither` gælder for gradientfyld (stroke: false)
+@msg	`dither` must be true or false	`dither` skal være true eller false
