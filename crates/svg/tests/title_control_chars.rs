@@ -51,4 +51,7 @@ fn an_artboard_exported_alone_is_titled_after_it() {
     // An unnamed artboard falls back to the document's title.
     d.artboards[1].name = " ".into();
     assert_eq!(title(&d, alone(Some(1))).as_deref(), Some("<title>Icons</title>"));
+    // So does one whose only characters can't appear in XML.
+    d.artboards[1].name = "\u{1}\u{2}".into();
+    assert_eq!(title(&d, alone(Some(1))).as_deref(), Some("<title>Icons</title>"));
 }
