@@ -176,7 +176,7 @@ fn run_refuses_malformed_commands_naming_the_step() {
     bad("params-array.json", br#"[{"command":"select.all","params":[1]}]"#, &["`params` of select.all must be a JSON object"]);
     bad("typo.json", br#"[{"command":"select.all","param":{}}]"#, &["unknown key `param`"]);
     bad("broken.json", b"[{\"command\":", &["--commands", "broken.json"]);
-    bad("lines.jsonl", b"{\"command\":\"select.all\"}\n\n{oops}\n", &["line 3"]);
+    bad("lines.jsonl", b"{\"command\":\"select.all\"}\n\n{oops}\n", &["step 2 (line 3)"]);
     bad("line-array.jsonl", b"{\"command\":\"select.all\"}\n[1]\n", &["step 2 (line 2)"]);
     bad("latin1.json", b"[{\"command\":\"select.all\",\"params\":{\"name\":\"\xe9\"}}]", &["not UTF-8"]);
     let many = "{\"command\":\"select.all\"}\n".repeat(100_001);

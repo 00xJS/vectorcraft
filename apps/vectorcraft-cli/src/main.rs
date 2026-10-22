@@ -386,7 +386,7 @@ fn parse_commands(source: &str, text: &str, first: usize) -> Result<Vec<Step>, S
             if entries.len() == MAX_COMMANDS_STEPS {
                 return Err(too_many());
             }
-            let v = serde_json::from_str(line).map_err(|e| format!("--commands {source}: line {}: {e}", n + 1))?;
+            let v = serde_json::from_str(line).map_err(|e| format!("--commands {source}: step {} (line {}): {e}", first + entries.len(), n + 1))?;
             entries.push((Some(n + 1), v));
         }
     }
