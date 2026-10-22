@@ -115,13 +115,17 @@ fn shared_styles<T: PartialEq>(
 
 /// `f` of the paragraph and style of each piece of `t`'s runs that lies in one paragraph (a
 /// paragraph's closing line break belongs to it): the pieces within bytes `a..b`, or with no
-/// range every run's, empty ones included.
+/// range every run's, empty ones included. With no range, a final empty paragraph (the text ends
+/// in a line break) counts too, with the style of the run before it, as the caret there types.
 fn each_paragraph_run<'a>(
     t: &'a vectorcraft_doc::TextObject,
     range: Option<(usize, usize)>,
     mut f: impl FnMut(&'a vectorcraft_doc::ParaStyle, &'a CharStyle),
 ) {
     let (mut end, mut para) = (0, 0);
+    // The style of the last character and whether it is a line break: the paragraph after it has
+    // no characters of its own.
+    let mut last: Option<(&'a CharStyle, bool)> = None;
     for r in &t.runs {
         if r.text.is_empty() {
             if range.is_none_or(|(a, b)| a < end && end < b) {
@@ -136,7 +140,13 @@ fn each_paragraph_run<'a>(
                 f(t.para_at(para), &r.style);
             }
             para += usize::from(piece.ends_with('\n'));
+            last = Some((&r.style, piece.ends_with('\n')));
         }
+    }
+    if range.is_none()
+        && let Some((style, true)) = last
+    {
+        f(t.para_at(para), style);
     }
 }
 
@@ -940,6 +950,19 @@ mod tests {
         ] {
             assert!((actual.expect("equal dimensions must not be mixed") - expected).abs() < 1e-8);
         }
+    }
+
+    /// A final empty paragraph counts: with the object selected, its Auto Leading differing from
+    /// the paragraph before it shows Leading as mixed.
+    #[test]
+    fn leading_field_counts_the_final_empty_paragraph() {
+        let mut app = VectorcraftApp::new(Session::new(), Default::default());
+        app.run("file.new", json!({"width": 300, "height": 200})).unwrap();
+        let id = app.run("text.create", json!({"x": 20, "y": 50, "text": "One\n", "size": 10})).unwrap()["id"].clone();
+        app.run("select.set", json!({"ids": [id]})).unwrap();
+        assert!((shared_leading(&app).unwrap() - 12.0).abs() < 1e-9);
+        app.run("text.setFormat", json!({"autoLeading": 200, "start": 4, "end": 4})).unwrap();
+        assert_eq!(shared_leading(&app), None, "the empty last paragraph differs");
     }
 
     /// Auto leading shows the leading the paragraph's Justification › Auto Leading sets.
