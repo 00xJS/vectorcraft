@@ -4980,6 +4980,17 @@ lighting	Light	광원
 	Fresco	프레스코
 	Effect Gallery…	효과 갤러리…
 	Effect Gallery Dialog	효과 갤러리 대화 상자
+	Arc Segment Tool Options	호 세그먼트 도구 옵션
+	Base Along:	기준 방향:
+	Closed	닫힘
+	Concave	오목
+	Convex	볼록
+	Fill Arc	호 채우기
+	Length X-Axis:	X축 길이:
+	Length Y-Axis:	Y축 길이:
+	Slope:	기울기:
+axis	X Axis	X축
+axis	Y Axis	Y축
 @msg	Packaged {n} file(s) in {folder}	{folder}에 파일 {n}개를 패키지했습니다
 @msg	Packaged {n} file(s) {note}	파일 {n}개를 패키지했습니다 {note}
 @msg	Packaged {n} file(s)	파일 {n}개를 패키지했습니다

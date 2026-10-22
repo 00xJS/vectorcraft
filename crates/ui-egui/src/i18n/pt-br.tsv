@@ -5319,6 +5319,16 @@ mark-style	Japanese	Japonesas
 	Fresco	Afresco
 	Effect Gallery…	Galeria de Efeitos…
 	Effect Gallery Dialog	Caixa de diálogo Galeria de Efeitos
+	Arc Segment Tool Options	Opções da Ferramenta Segmento de Arco
+	Base Along:	Base ao longo de:
+	Closed	Fechado
+	Convex	Convexo
+	Fill Arc	Preencher arco
+	Length X-Axis:	Comprimento eixo X:
+	Length Y-Axis:	Comprimento eixo Y:
+	Slope:	Inclinação:
+axis	X Axis	Eixo X
+axis	Y Axis	Eixo Y
 @msg	Packaged {n} file(s) in {folder}	{n} arquivo(s) empacotado(s) em {folder}
 @msg	Packaged {n} file(s) {note}	{n} arquivo(s) empacotado(s) {note}
 @msg	Packaged {n} file(s)	{n} arquivo(s) empacotado(s)

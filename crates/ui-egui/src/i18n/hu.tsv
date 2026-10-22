@@ -5388,6 +5388,16 @@ imageTrace	Outline	Körvonal
 	Fresco	Freskó
 	Effect Gallery…	Effektusgaléria…
 	Effect Gallery Dialog	Effektusgaléria párbeszédpanel
+	Arc Segment Tool Options	Ívszakasz eszköz beállításai
+	Base Along:	Alap mentén:
+	Closed	Zárt
+	Convex	Domború
+	Fill Arc	Ív kitöltése
+	Length X-Axis:	Hossz X tengely:
+	Length Y-Axis:	Hossz Y tengely:
+	Slope:	Lejtés:
+axis	X Axis	X tengely
+axis	Y Axis	Y tengely
 @msg	Packaged {n} file(s) in {folder}	Becsomagolt fájlok: {n}, mappa: {folder}
 @msg	Packaged {n} file(s) {note}	Becsomagolt fájlok: {n} {note}
 @msg	Packaged {n} file(s)	Becsomagolt fájlok: {n}

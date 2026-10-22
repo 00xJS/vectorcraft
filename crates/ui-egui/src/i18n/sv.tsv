@@ -5358,6 +5358,16 @@ theme	Appearance	Utseende
 	Fresco	Fresk
 	Effect Gallery…	Effektgalleri…
 	Effect Gallery Dialog	Dialogrutan Effektgalleri
+	Arc Segment Tool Options	Alternativ för bågsegmentsverktyget
+	Base Along:	Bas längs:
+	Closed	Stängd
+	Convex	Konvex
+	Fill Arc	Fyll båge
+	Length X-Axis:	Längd X-axel:
+	Length Y-Axis:	Längd Y-axel:
+	Slope:	Lutning:
+axis	X Axis	X-axel
+axis	Y Axis	Y-axel
 @msg	Packaged {n} file(s) in {folder}	Paketerade {n} fil(er) i {folder}
 @msg	Packaged {n} file(s) {note}	Paketerade {n} fil(er) {note}
 @msg	Packaged {n} file(s)	Paketerade {n} fil(er)

@@ -5374,6 +5374,16 @@ swatch	Bright Violet	Kraftig violet
 	Fresco	Fresko
 	Effect Gallery…	Effektgalleri…
 	Effect Gallery Dialog	Dialogboksen Effektgalleri
+	Arc Segment Tool Options	Indstillinger for buesegmentværktøj
+	Base Along:	Base langs:
+	Closed	Lukket
+	Convex	Konvex
+	Fill Arc	Udfyld bue
+	Length X-Axis:	Længde X-akse:
+	Length Y-Axis:	Længde Y-akse:
+	Slope:	Hældning:
+axis	X Axis	X-akse
+axis	Y Axis	Y-akse
 @msg	Packaged {n} file(s) in {folder}	Pakkede {n} fil(er) i {folder}
 @msg	Packaged {n} file(s) {note}	Pakkede {n} fil(er) {note}
 @msg	Packaged {n} file(s)	Pakkede {n} fil(er)

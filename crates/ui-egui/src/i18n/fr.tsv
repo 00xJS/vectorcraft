@@ -5401,6 +5401,16 @@ theme	Appearance	Apparence
 	Fresco	Fresque
 	Effect Gallery…	Galerie d'effets…
 	Effect Gallery Dialog	Boîte de dialogue Galerie d'effets
+	Arc Segment Tool Options	Options de l’outil Segment d’arc
+	Base Along:	Base le long de :
+	Closed	Fermé
+	Convex	Convexe
+	Fill Arc	Remplir l’arc
+	Length X-Axis:	Longueur axe X :
+	Length Y-Axis:	Longueur axe Y :
+	Slope:	Pente :
+axis	X Axis	Axe X
+axis	Y Axis	Axe Y
 @msg	Packaged {n} file(s) in {folder}	{n} fichier(s) assemblé(s) dans {folder}
 @msg	Packaged {n} file(s) {note}	{n} fichier(s) assemblé(s) {note}
 @msg	Packaged {n} file(s)	{n} fichier(s) assemblé(s)

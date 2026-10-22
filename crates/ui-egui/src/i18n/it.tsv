@@ -5017,6 +5017,17 @@ lighting	Light	Luce
 	Fresco	Affresco
 	Effect Gallery…	Galleria effetti…
 	Effect Gallery Dialog	Finestra di dialogo Galleria effetti
+	Arc Segment Tool Options	Opzioni strumento Segmento arco
+	Base Along:	Base lungo:
+	Closed	Chiuso
+	Concave	Concavo
+	Convex	Convesso
+	Fill Arc	Riempi arco
+	Length X-Axis:	Lunghezza asse X:
+	Length Y-Axis:	Lunghezza asse Y:
+	Slope:	Pendenza:
+axis	X Axis	Asse X
+axis	Y Axis	Asse Y
 @msg	Packaged {n} file(s) in {folder}	Pacchetto creato con {n} file in {folder}
 @msg	Packaged {n} file(s) {note}	Pacchetto creato con {n} file {note}
 @msg	Packaged {n} file(s)	Pacchetto creato con {n} file

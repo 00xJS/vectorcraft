@@ -5344,6 +5344,16 @@ mark-style	Japanese	Japonesas
 	Fresco	Fresco
 	Effect Gallery…	Galería de efectos…
 	Effect Gallery Dialog	Cuadro de diálogo Galería de efectos
+	Arc Segment Tool Options	Opciones de la herramienta Segmento de arco
+	Base Along:	Base a lo largo de:
+	Closed	Cerrado
+	Convex	Convexo
+	Fill Arc	Rellenar arco
+	Length X-Axis:	Longitud eje X:
+	Length Y-Axis:	Longitud eje Y:
+	Slope:	Pendiente:
+axis	X Axis	Eje X
+axis	Y Axis	Eje Y
 @msg	Packaged {n} file(s) in {folder}	Se empaquetaron {n} archivo(s) en {folder}
 @msg	Packaged {n} file(s) {note}	Se empaquetaron {n} archivo(s) {note}
 @msg	Packaged {n} file(s)	Se empaquetaron {n} archivo(s)

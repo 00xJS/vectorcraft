@@ -1,7 +1,8 @@
 //! Shape size dialogs (a click with a shape tool): Rectangle, Rounded Rectangle, Ellipse, Polygon,
-//! Star, Line Segment Tool Options and the two grids (size, divider counts and skews, switches).
+//! Star, Line Segment and Arc tool options, and the two grids (size, divider counts and skews, switches).
 
 use serde_json::{Value, json};
+use vectorcraft_doc::Unit;
 use vectorcraft_geom::{Point, Rect};
 
 use super::{DialogSpec, form, run_and_close};
@@ -21,6 +22,7 @@ fn title(kind: &str) -> &'static str {
         "star" => tl!("Star"),
         "rectangularGrid" => tl!("Rectangular Grid"),
         "polarGrid" => tl!("Polar Grid"),
+        "arc" => tl!("Arc Segment Tool Options"),
         _ => tl!("Line Segment Tool Options"),
     }
 }
@@ -46,6 +48,21 @@ fn set_grid_placed(d: &mut Dialog, r: Rect) {
     d.fields.insert("y".into(), json!(r.y0));
     d.fields.insert("width".into(), json!(r.width()));
     d.fields.insert("height".into(), json!(r.height()));
+}
+
+/// Arc segment dialog: keep reference `refi` on the canvas click (`__anchorX`/`__anchorY`).
+pub(crate) fn arc_pin_to_anchor(d: &mut Dialog) {
+    let anchor = Point::new(d.f64("__anchorX", d.f64("x", 0.0)), d.f64("__anchorY", d.f64("y", 0.0)));
+    let refi = d.fields.get("reference").and_then(|v| v.as_u64()).map(|n| (n as usize).min(8)).unwrap_or(0);
+    let w = d.f64("lengthX", 100.0).abs().max(1e-9);
+    let h = d.f64("lengthY", 100.0).abs().max(1e-9);
+    let rp = vectorcraft_geom::reference_point(Rect::new(0.0, 0.0, w, h), refi);
+    d.fields.insert("x".into(), json!(anchor.x - rp.x));
+    d.fields.insert("y".into(), json!(anchor.y - rp.y));
+}
+
+fn arc_reference(d: &Dialog) -> usize {
+    d.fields.get("reference").and_then(|v| v.as_u64()).map(|n| (n as usize).min(8)).unwrap_or(0)
 }
 
 /// Top-left `x`/`y` so reference point `refi` sits on the canvas click (`__anchorX`/`__anchorY`).
@@ -78,6 +95,8 @@ fn body(app: &mut VectorcraftApp, ui: &mut egui::Ui, d: &mut Dialog) -> bool {
                 set_grid_placed(d, artboard_rect(was, refi, None, None, Some(w), Some(h), false));
             }
         });
+    } else if d.kind == "arc" {
+        arc_form(ui, d, unit);
     } else {
         form::grid(ui, d, unit);
     }
@@ -91,6 +110,50 @@ fn body(app: &mut VectorcraftApp, ui: &mut egui::Ui, d: &mut Dialog) -> bool {
         form::check(ui, d, key, label);
     }
     false
+}
+
+fn arc_form(ui: &mut egui::Ui, d: &mut Dialog, unit: Unit) {
+    ui.horizontal(|ui| {
+        let refi = arc_reference(d);
+        if let Some(i) = widgets::reference_point(ui, refi) {
+            d.fields.insert("reference".into(), json!(i));
+            arc_pin_to_anchor(d);
+        }
+    });
+    ui.add_space(4.0);
+    let rail = crate::theme::Tokens::get(ui.ctx()).input_border;
+    egui::Grid::new("arc-dlg").num_columns(2).spacing([10.0, 8.0]).show(ui, |ui| {
+        let lx0 = d.f64("lengthX", 100.0);
+        form::length_field(ui, d, "lengthX", tl!("Length X-Axis:"), unit);
+        if d.f64("lengthX", 100.0) != lx0 {
+            arc_pin_to_anchor(d);
+        }
+        let ly0 = d.f64("lengthY", 100.0);
+        form::length_field(ui, d, "lengthY", tl!("Length Y-Axis:"), unit);
+        if d.f64("lengthY", 100.0) != ly0 {
+            arc_pin_to_anchor(d);
+        }
+        form::choice(ui, d, "arcType", tl!("Type:"), (form::FIELD_W, form::FIELD_W - 12.0), &[("open", tl!("Open")), ("closed", tl!("Closed"))]);
+        form::choice(
+            ui,
+            d,
+            "baseAlong",
+            tl!("Base Along:"),
+            (form::FIELD_W, form::FIELD_W - 12.0),
+            &[
+                ("x", crate::i18n::tr_ctx(crate::i18n::current(), "axis", "X Axis")),
+                ("y", crate::i18n::tr_ctx(crate::i18n::current(), "axis", "Y Axis")),
+            ],
+        );
+        form::row_label(ui, tl!("Slope:"));
+        ui.vertical(|ui| {
+            form::slider_field_named(ui, d, "slope", tl!("Slope:"), -100.0..=100.0, "", &|_| rail);
+            form::slider_ends(ui, form::SLIDER_LABEL, (tl!("Concave"), tl!("Convex")));
+        });
+        ui.end_row();
+    });
+    ui.add_space(8.0);
+    form::check(ui, d, "fillArc", tl!("Fill Arc"));
 }
 
 /// The top-left corner of a rectangle or ellipse: the click itself, or with Alt held (draw from centre) the click minus half the size.
@@ -109,11 +172,25 @@ fn confirm(app: &mut VectorcraftApp, d: &Dialog) -> Result<Value, String> {
         "star" => Some(("points", 5.0, 2.0)),
         _ => None,
     };
-    let options = count.map(|(key, default, min)| {
-        let mut values = json!({});
-        values[key] = json!(d.f64(key, default).clamp(min, 1000.0) as u64);
-        values
-    });
+    let options = count
+        .map(|(key, default, min)| {
+            let mut values = json!({});
+            values[key] = json!(d.f64(key, default).clamp(min, 1000.0) as u64);
+            values
+        })
+        .or_else(|| {
+            (d.kind == "arc").then(|| {
+                json!({
+                    "closed": d.str("arcType").eq_ignore_ascii_case("closed"),
+                    "lengthX": d.f64("lengthX", 100.0),
+                    "lengthY": d.f64("lengthY", 100.0),
+                    "reference": arc_reference(d),
+                    "baseAlong": d.str("baseAlong"),
+                    "slope": d.f64("slope", 50.0),
+                    "fillArc": d.bool("fillArc"),
+                })
+            })
+        });
     let (x, y) = (d.f64("x", 0.0), d.f64("y", 0.0));
     let (bx, by) = box_origin(d);
     let (id, params) = match d.kind.as_str() {
@@ -139,6 +216,23 @@ fn confirm(app: &mut VectorcraftApp, d: &Dialog) -> Result<Value, String> {
         "lineSegment" => {
             let (l, a) = (d.f64("length", 100.0), d.f64("angle", 0.0).to_radians());
             ("shape.line", json!({"x1": x, "y1": y, "x2": x + l * a.cos(), "y2": y - l * a.sin()}))
+        }
+        "arc" => {
+            let anchor = Point::new(d.f64("__anchorX", x), d.f64("__anchorY", y));
+            (
+                "shape.arc",
+                json!({
+                    "x": anchor.x,
+                    "y": anchor.y,
+                    "lengthX": d.f64("lengthX", 100.0),
+                    "lengthY": d.f64("lengthY", 100.0),
+                    "reference": arc_reference(d),
+                    "baseAlong": d.str("baseAlong"),
+                    "slope": d.f64("slope", 50.0),
+                    "closed": d.str("arcType").eq_ignore_ascii_case("closed"),
+                    "fillArc": d.bool("fillArc"),
+                }),
+            )
         }
         _ => (
             "shape.rectangle",
