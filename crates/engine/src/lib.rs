@@ -2321,6 +2321,8 @@ mod tests_colormgmt;
 #[cfg(test)]
 mod tests_colorthemes;
 #[cfg(test)]
+mod tests_compoundpaint;
+#[cfg(test)]
 mod tests_containers;
 #[cfg(test)]
 mod tests_css;
