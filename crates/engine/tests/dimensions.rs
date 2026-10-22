@@ -505,4 +505,19 @@ fn dimension_colours_follow_the_document_colour_model() {
     let line = edge(&mut s);
     let id = dim(&mut s, line);
     assert!(colours(&s, id).iter().all(|c| *c == vectorcraft_color::Color::rgb8(0, 0, 0)));
+    // Document Color Mode redraws dimensions in the new mode: K-only black in CMYK, RGB black back
+    // in RGB (not a profile conversion of the old art).
+    let k = vectorcraft_color::Color::cmyk(0.0, 0.0, 0.0, 1.0);
+    run(&mut s, "file.documentColorMode", json!({"mode":"cmyk"}));
+    let after = colours(&s, id);
+    assert!(!after.is_empty() && after.iter().all(|c| *c == k), "{after:?}");
+    run(&mut s, "file.documentColorMode", json!({"mode":"rgb"}));
+    assert!(colours(&s, id).iter().all(|c| *c == vectorcraft_color::Color::rgb8(0, 0, 0)), "{:?}", colours(&s, id));
+    // A CMYK file saved with RGB dimension art (before dimensions followed the colour mode) opens
+    // with its dimensions redrawn in CMYK.
+    let mut old = (*s.doc().unwrap().doc).clone();
+    old.color_mode = vectorcraft_doc::ColorMode::Cmyk;
+    s.add_document(old, None);
+    let opened = colours(&s, id);
+    assert!(!opened.is_empty() && opened.iter().all(|c| *c == k), "{opened:?}");
 }
