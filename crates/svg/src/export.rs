@@ -1897,6 +1897,17 @@ impl Writer<'_> {
             let d = self.path_d(&pd, self.xf);
             self.shape(&glyphs, &d, &[&pd], FillRule::NonZero, Some(lay.bounds));
         }
+        // Colour bitmap glyphs (emoji): their images, which the runs' paint doesn't paint.
+        for (image, to_text) in lay.glyphs.iter().filter_map(|g| g.placed_image()) {
+            let m = self.matrix(self.xf * to_text);
+            let href = self.blob_href(&image.blob);
+            self.line(&format!(
+                "<image width=\"{}\" height=\"{}\" transform=\"{m}\" preserveAspectRatio=\"none\" xlink:href=\"{}\"/>",
+                image.width,
+                image.height,
+                xml_escape(&href)
+            ));
+        }
         self.xf = saved;
         self.depth -= 1;
         self.line("</g>");
@@ -2090,6 +2101,11 @@ impl Writer<'_> {
         let mut face: Option<Arc<FontFace>> = None;
         for g in &lay.glyphs {
             let Some(st) = t.runs.get(g.run).map(|r| &r.style) else { continue };
+            // A colour bitmap font's subset would hold no bitmaps: its emoji are left to the viewer.
+            if g.image.is_some() {
+                self.warn("colour emoji fonts are not embedded: viewers show emoji in their own fonts");
+                continue;
+            }
             if face.as_ref().is_none_or(|f| f.id() != g.font_id) {
                 face = db.face_by_id(g.font_id);
             }

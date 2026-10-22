@@ -850,6 +850,57 @@ fn create_outlines_matches_text_bounds() {
     assert!(s.doc().unwrap().doc.node(t).is_some());
 }
 
+/// Colour bitmap glyphs (emoji) become embedded images where they sat; glyphs showing one image
+/// share its pixels.
+#[test]
+fn create_outlines_turns_bitmap_glyphs_into_images() {
+    use vectorcraft_text::test_fonts::{COLOUR_CHAR, colour_bitmap_family, colour_bitmap_font};
+    vectorcraft_text::FontDb::global().add_font(colour_bitmap_font(false).unwrap());
+    let mut s = session();
+    let r = s
+        .execute(
+            "text.create",
+            &json!({"x": 10, "y": 50, "text": format!("{COLOUR_CHAR}F{COLOUR_CHAR}"), "size": 32, "font": colour_bitmap_family(false)}),
+        )
+        .unwrap();
+    let t = NodeId(r["id"].as_u64().unwrap());
+    let tb = bounds(&s, t);
+    let r = ids(&s.execute("type.createOutlines", &json!({})).unwrap());
+    let g = node(&s, r[0]);
+    let ch = g.children().unwrap();
+    let images: Vec<_> = ch.iter().filter_map(|c| if let NodeKind::Image(im) = &c.kind { Some(im) } else { None }).collect();
+    assert_eq!(images.len(), 2, "{:?}", ch.iter().map(|c| c.kind_label()).collect::<Vec<_>>());
+    assert!(matches!(ch[1].kind, NodeKind::Path { .. } | NodeKind::Compound { .. }), "the outline between them");
+    assert_eq!(images[0].key, images[1].key, "one image");
+    let d = &s.doc().unwrap().doc;
+    assert!(d.images.contains_key(&images[0].key));
+    // The first one em (32 pt) square, from 2 px (4 pt) right of the origin and 12 px (24 pt)
+    // above the baseline; inside the type's bounds.
+    let b = ch[0].geometric_bounds().unwrap();
+    assert!((b.x0 - 14.0).abs() < 1e-6 && (b.y0 - 26.0).abs() < 1e-6 && (b.width() - 32.0).abs() < 1e-6, "{b:?}");
+    assert!(b.x0 >= tb.x0 && b.y0 >= tb.y0 - 1e-6 && b.y1 <= tb.y1 + 1e-6, "{b:?} in {tb:?}");
+}
+
+/// A glyph image whose key another image of the document holds gets a key of its own.
+#[test]
+fn create_outlines_keeps_an_image_already_under_a_glyph_images_key() {
+    use vectorcraft_text::test_fonts::{COLOUR_CHAR, COLOUR_LARGE, COLOUR_PPEM, colour_bitmap_family, colour_bitmap_font, solid_png};
+    vectorcraft_text::FontDb::global().add_font(colour_bitmap_font(false).unwrap());
+    let mut s = session();
+    let glyph = vectorcraft_doc::ImageBlob::png(solid_png(COLOUR_PPEM.into(), COLOUR_LARGE));
+    let taken = format!("glyph-{}", glyph.content_key());
+    let other = vectorcraft_doc::ImageBlob::png(solid_png(4, [0, 255, 0, 255]));
+    std::sync::Arc::make_mut(&mut s.doc_mut().unwrap().doc).images.insert(taken.clone(), other.clone());
+    s.execute("text.create", &json!({"x": 10, "y": 50, "text": COLOUR_CHAR.to_string(), "size": 32, "font": colour_bitmap_family(false)})).unwrap();
+    let r = ids(&s.execute("type.createOutlines", &json!({})).unwrap());
+    let g = node(&s, r[0]);
+    let Some(NodeKind::Image(im)) = g.children().unwrap().first().map(|c| &c.kind) else { panic!("an image") };
+    let d = &s.doc().unwrap().doc;
+    assert_ne!(im.key, taken);
+    assert_eq!(d.images[&im.key].bytes, glyph.bytes, "the glyph's own pixels");
+    assert_eq!(d.images[&taken].bytes, other.bytes, "the other image is kept");
+}
+
 #[test]
 fn set_style_size_changes_bounds() {
     let mut s = session();

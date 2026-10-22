@@ -1811,6 +1811,12 @@ impl Renderer {
             ctx.set_stroke(kurbo::Stroke::new(1.0));
             ctx.set_paint(peniko::Color::BLACK);
             ctx.stroke_path(&p);
+            // Colour bitmap glyphs: their boxes, as images show in outline mode.
+            for (_, image, to_text) in &g.images {
+                let mut b = image.rect().to_path(0.1);
+                b.apply_affine(t.xf * *to_text);
+                self.hairline(ctx, f, &b, [0, 0, 0, 255]);
+            }
             self.draw_inlines(ctx, f, t, g);
             return;
         }
@@ -1852,6 +1858,11 @@ impl Renderer {
             }
         }
         for (i, run) in t.runs.iter().enumerate() {
+            // Colour bitmap glyphs paint themselves: the run's fill and stroke don't.
+            for (_, image, to_text) in g.images.iter().filter(|(r, ..)| *r == i) {
+                overprint(ctx, false);
+                self.draw_glyph_image(ctx, f, image, t.xf * *to_text);
+            }
             let path = g.run(i);
             let path = path.as_ref();
             if path.elements().is_empty() {
@@ -1906,6 +1917,26 @@ impl Renderer {
                 AppearanceItem::Stroke(_) => {}
             }
         }
+    }
+
+    /// Draw colour bitmap glyph `image` through `xf` (its pixels → document space), its pixels
+    /// decoded once and kept with the images' pixels.
+    fn draw_glyph_image(&mut self, ctx: &mut RenderContext, f: &Frame, image: &vectorcraft_text::GlyphImage, xf: Affine) {
+        let Some((key, pm)) = blob_pixmap(&image.blob, true) else { return };
+        let (key, pm) = ink::ink_image(&key, &pm, f.ink, Some(&image.blob), true);
+        let unit = f.view * xf * Affine::scale_non_uniform(image.width as f64, image.height as f64);
+        let pm = image_mip(&key, pm, unit);
+        let sx = image.width as f64 / pm.width().max(1) as f64;
+        let sy = image.height as f64 / pm.height().max(1) as f64;
+        let quality = if f.opts.smooth_images { peniko::ImageQuality::Medium } else { peniko::ImageQuality::Low };
+        ctx.set_paint(vello_cpu::Image {
+            image: vello_cpu::ImageSource::Pixmap(pm),
+            sampler: peniko::ImageSampler { quality, ..Default::default() },
+        });
+        ctx.set_transform(f.view * xf);
+        ctx.set_paint_transform(Affine::scale_non_uniform(sx, sy));
+        ctx.fill_rect(&image.rect());
+        ctx.reset_paint_transform();
     }
 
     fn draw_image(&mut self, ctx: &mut RenderContext, f: &Frame, im: &vectorcraft_doc::ImageObject) {
@@ -2336,6 +2367,8 @@ struct TextGeom {
     alternate_glyphs: std::sync::OnceLock<BezPath>,
     /// Inline graphics placed by the layout.
     inlines: Vec<vectorcraft_text::InlineGlyph>,
+    /// Colour bitmap glyphs: (run, image, its pixels → text space), in text order.
+    images: Vec<(usize, Arc<vectorcraft_text::GlyphImage>, Affine)>,
 }
 
 impl TextGeom {
@@ -2384,6 +2417,7 @@ impl TextGeom {
             + self.alternate_glyphs.get().map_or(0, lru::path_bytes)
             + self.spans.len() * size_of::<(usize, usize, usize)>()
             + self.inlines.len() * size_of::<vectorcraft_text::InlineGlyph>()
+            + self.images.len() * size_of::<(usize, Arc<vectorcraft_text::GlyphImage>, Affine)>()
     }
 }
 
@@ -2464,8 +2498,12 @@ fn text_geom_snapped(t: &TextObject, snap: Option<Affine>) -> TextGeom {
         .collect();
     let (mut substituted_fonts, mut substituted_glyphs, mut alternate_candidates) = (BezPath::new(), BezPath::new(), vec![]);
     let plain = t.plain_text();
+    let mut images = vec![];
     for g in &layout.glyphs {
         push(&mut all, g.run, &g.outline);
+        if let Some((image, xf)) = g.placed_image() {
+            images.push((g.run, image.clone(), xf));
+        }
         let Some(&(missing, face)) = faces.get(g.run) else { continue };
         let Some(line) = layout.lines.get(g.line) else { continue };
         let mut cell = Rect::new(g.origin.x, g.origin.y - line.ascent, g.origin.x + g.advance, g.origin.y + line.descent).to_path(0.1);
@@ -2504,6 +2542,7 @@ fn text_geom_snapped(t: &TextObject, snap: Option<Affine>) -> TextGeom {
         alternate_candidates,
         alternate_glyphs: std::sync::OnceLock::new(),
         inlines: layout.inlines,
+        images,
     }
 }
 
@@ -2564,6 +2603,8 @@ mod tests;
 mod tests_adjust;
 #[cfg(test)]
 mod tests_alternate;
+#[cfg(test)]
+mod tests_bitmapglyphs;
 #[cfg(test)]
 mod tests_blend;
 #[cfg(test)]
