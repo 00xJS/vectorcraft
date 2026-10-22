@@ -747,6 +747,11 @@ pub(crate) fn gradient_sampler(g: &GradientPaint, bounds: Rect, doc_model: Model
 fn breaks(g: &Gradient, t0: f64, t1: f64, max_gap: f64) -> Vec<(f64, (Color, f32))> {
     let at = |t: f64| (t, g.sample_keep_model(t as f32));
     let mut v = vec![at(t0)];
+    // A Perceptual gradient curves between its stops: the mesh takes a column at each of the stops
+    // its expansion adds, so the linear mix between columns follows that curve.
+    if !g.method.is_classic() {
+        v.extend(g.expanded().map(|(o, ..)| f64::from(o)).filter(|o| *o > t0 && *o < t1).map(at));
+    }
     for (i, s) in g.stops.iter().enumerate() {
         let o = s.offset as f64;
         if o > t0 && o < t1 {
