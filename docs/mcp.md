@@ -332,7 +332,9 @@ also style the new object in the same call: `dash` (lengths, or null for solid),
 (butt|round|square) and `join` (miter|round|bevel) go to `stroke.set` with `strokeWidth`; `opacity` (0–100 %)
 and `name` to `object.setProps`; `effects: [{effect, params?}]` are applied in order as `apply_effect`
 does, to the whole object. They are checked before anything is drawn (effect ids against `effect.list`),
-so a bad one draws nothing. The reply adds `name`, `opacity` and `effects` (each `effect.apply` result)
+so a bad one draws nothing. The object and its styling are one `command.batch`, so the call is one undo step
+(named as the drawing command names its own, e.g. Pen or Rectangle) and a paint the engine refuses (a colour
+it can't read, a swatch the document lacks) fails the call and leaves the document as it was. The reply adds `name`, `opacity` and `effects` (each `effect.apply` result)
 when given; `paint` lists the stroke options applied.
 A gradient given to several objects fits each one's own bounds; `paint.setFill` / `paint.setStroke` with
 `span: "selection"` place a linear or radial gradient once on the union of the targets' bounds instead, so one
