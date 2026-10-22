@@ -897,9 +897,10 @@ mod tests {
         assert_eq!(names(&app), ["Artboard 1", "Solo", "Artboard 3", "Artboard 4"]);
     }
 
-    /// Paste with the Artboard tool selects the pasted artboard and leaves the active artboard
-    /// where it was. The panel menu's Rename then opens the name field on the selected artboard's
-    /// row and renames that artboard, not the active one.
+    /// Paste run on the session alone (`session.execute`, which leaves the view as it is) with the
+    /// Artboard tool selects the pasted artboard and leaves the active artboard where it was. The
+    /// panel menu's Rename then opens the name field on the selected artboard's row and renames
+    /// that artboard, not the active one.
     #[test]
     fn the_panel_menus_rename_opens_on_a_selected_artboard() {
         let mut app = VectorcraftApp::new(Session::new(), Default::default());
@@ -934,6 +935,52 @@ mod tests {
         frame(vec![]);
         let names: Vec<String> = app.session.active().unwrap().doc.artboards.iter().map(|a| a.name.clone()).collect();
         assert_eq!(names, ["Artboard 1", "Artboard 2", "Pasted"]);
+    }
+
+    /// With the Artboard tool, Paste and Paste in Place make the pasted artboard the active one
+    /// (the navigator's and the panel's), and Cut makes the artboard before the cut one active, the
+    /// one the tool then has active.
+    #[test]
+    fn paste_and_cut_with_the_artboard_tool_make_its_artboard_active() {
+        let mut app = VectorcraftApp::new(Session::new(), Default::default());
+        app.run("file.new", json!({"width": 200, "height": 150, "artboards": 3})).unwrap();
+        app.select_tool("artboard");
+        select(&mut app, 1);
+        let active = |app: &VectorcraftApp| (app.view().unwrap().artboard, app.session.tool_options()["active"].clone());
+        app.run("edit.copy", json!({})).unwrap();
+        app.run("edit.paste", json!({})).unwrap();
+        assert_eq!(active(&app), (3, json!(3)), "Paste: the pasted Artboard 4");
+        app.run("edit.pasteInPlace", json!({})).unwrap();
+        assert_eq!(active(&app), (4, json!(4)), "Paste in Place: the pasted Artboard 5");
+        select(&mut app, 2);
+        app.run("edit.cut", json!({})).unwrap();
+        assert_eq!(active(&app), (1, json!(1)), "Cut Artboard 3: Artboard 2");
+    }
+
+    /// `tool.setOption` with the Artboard tool's `selected` or `active` makes the artboard the tool
+    /// then has active the active one.
+    #[test]
+    fn the_artboard_tools_options_make_its_artboard_active() {
+        let mut app = VectorcraftApp::new(Session::new(), Default::default());
+        app.run("file.new", json!({"width": 200, "height": 150, "artboards": 3})).unwrap();
+        app.select_tool("artboard");
+        app.run("tool.setOption", json!({"key": "selected", "value": [2, 0]})).unwrap();
+        assert_eq!((app.view().unwrap().artboard, picked(&app, 3)), (2, vec![0, 2]));
+        app.run("tool.setOption", json!({"tool": "artboard", "values": {"active": 1}})).unwrap();
+        assert_eq!((app.view().unwrap().artboard, picked(&app, 3)), (1, vec![1]));
+    }
+
+    /// With the Artboard tool, `document.activate` makes the active artboard of the document it
+    /// switches to the tool's, as choosing the document's tab does.
+    #[test]
+    fn switching_documents_with_the_artboard_tool_keeps_the_active_artboard() {
+        let mut app = VectorcraftApp::new(Session::new(), Default::default());
+        app.run("file.new", json!({"width": 200, "height": 150, "artboards": 3})).unwrap();
+        app.select_tool("artboard");
+        select(&mut app, 2);
+        app.run("file.new", json!({"width": 200, "height": 150, "artboards": 2})).unwrap();
+        app.run("document.activate", json!({"index": 0})).unwrap();
+        assert_eq!((app.view().unwrap().artboard, app.session.tool_options()["selected"].clone()), (2, json!([2])));
     }
 
     /// With the Artboard tool, a double-click on a name with Shift or Ctrl/Cmd held that leaves
