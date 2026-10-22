@@ -404,7 +404,7 @@ since 2026-10-01.
 | Dimension | Estimate | Evidence and what's missing |
 |---|---|---|
 | **Breadth:** menus, tools and panels exist | ~90% | 13 menu items still stubbed; every tool implemented except Touch Type; 51 panel modules |
-| **Depth:** each feature behaves like Illustrator | ~69–75% | Strong: paint, appearance and colour (M3), Pathfinder and booleans, selection, drawing, files (M4). Weak: advanced type (~45%; inline symbols in text are beyond parity and don't raise it), brushes and symbols (in progress), raster effects (~20%) |
+| **Depth:** each feature behaves like Illustrator | ~69–75% | Strong: paint, appearance and colour (M3), Pathfinder and booleans, selection, drawing, files (M4). Weak: advanced type (~45%; inline symbols in text are beyond parity and don't raise it), brushes and symbols (in progress), raster effects (~20%; since 57/57 filters and the Effect Gallery, #2883, see the area table above) |
 | **Large missing subsystems** | 0–20% | 3D & Materials (~25%, initial 3D types without materials), SVG Filters (Photoshop-style raster effects (57/57) and the Effect Gallery (#2883) have since shipped), CJK composition (vertical type with kinsoku, tate-chu-yoko and the font's vertical metrics; mojikumi open), scripting |
 | **Interaction fidelity:** modifiers, cursors, small behaviours | ~30–40% | The dedicated pass hasn't started, and there has been no side-by-side session with Illustrator yet. A power user notices this first |
 | **Look & feel** | ~75–80% | Measured against Illustrator 2026 screenshots (2026-10-02); the panels added since haven't been re-measured |
