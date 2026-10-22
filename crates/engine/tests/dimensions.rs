@@ -452,3 +452,57 @@ fn both_points_snap_onto_anchors_with_a_visible_indicator() {
     run(&mut s, "object.scale", json!({"sx":200,"sy":100}));
     assert_eq!(text(&s, id), "144.00 pt", "linked to both anchors");
 }
+
+/// The page content streams of exported PDF `v`, inflated.
+fn pdf_content(v: &Value) -> String {
+    let bytes = vectorcraft_format::base64_decode(v["dataBase64"].as_str().unwrap()).unwrap();
+    let mut out = String::new();
+    let mut rest = &bytes[..];
+    while let Some(at) = rest.windows(7).position(|w| w == b"stream\n" || w == b"stream\r") {
+        let body = &rest[at + 7..];
+        let body = body.strip_prefix(b"\n").unwrap_or(body);
+        let end = body.windows(9).position(|w| w == b"endstream").unwrap_or(body.len());
+        let mut raw = Vec::new();
+        if std::io::Read::read_to_end(&mut flate2::read::ZlibDecoder::new(&body[..end]), &mut raw).is_ok() {
+            out.push_str(&String::from_utf8_lossy(&raw));
+        }
+        rest = &body[(end + 9).min(body.len())..];
+    }
+    out
+}
+
+/// #3233: in a CMYK document a dimension's black lines and label print on the black plate only
+/// (`0 0 0 1 K`), not as a four-ink rich black; other colours convert to CMYK; RGB documents keep
+/// RGB.
+#[test]
+fn dimension_colours_follow_the_document_colour_model() {
+    let mut s = Session::new();
+    run(&mut s, "file.new", json!({"width":600,"height":500,"colorMode":"cmyk"}));
+    let line = edge(&mut s);
+    run(&mut s, "object.hide", json!({"ids":[line]}));
+    let id = dim(&mut s, line);
+    let colours = |s: &Session, id: u64| {
+        let mut v = Vec::new();
+        s.doc().unwrap().doc.node(NodeId(id)).unwrap().walk(&mut |n| {
+            v.extend([n.appearance.fill_paint(), n.appearance.stroke_paint()].iter().filter_map(|p| p.color()));
+        });
+        v
+    };
+    let black = colours(&s, id);
+    assert!(!black.is_empty() && black.iter().all(|c| *c == vectorcraft_color::Color::cmyk(0.0, 0.0, 0.0, 1.0)), "{black:?}");
+    let pdf = pdf_content(&run(&mut s, "document.exportPdf", json!({"preset":"PDF/X-4:2010"})));
+    // PDF/X-4 paints in the output intent's CMYK space: `/c0 CS 0 0 0 1 SCN` strokes, `scn` fills.
+    let operands = |op: &str| pdf.match_indices(op).map(|(i, _)| pdf[i.saturating_sub(7)..i].to_string()).collect::<Vec<_>>();
+    let (strokes, fills) = (operands(" SCN"), operands(" scn"));
+    assert!(!strokes.is_empty() && !fills.is_empty(), "{pdf}");
+    assert!(strokes.iter().chain(&fills).all(|v| v == "0 0 0 1"), "K-only colours: {strokes:?} {fills:?}");
+    run(&mut s, "dimension.update", json!({"ids":[id],"options":{"lineColor":[255,0,0]}}));
+    let red = colours(&s, id);
+    assert!(red.iter().any(|c| matches!(c, vectorcraft_color::Color::Cmyk { m, y, .. } if *m > 0.5 && *y > 0.5)), "{red:?}");
+    assert!(red.iter().all(|c| matches!(c, vectorcraft_color::Color::Cmyk { .. })), "{red:?}");
+    // RGB documents are unchanged.
+    let mut s = session();
+    let line = edge(&mut s);
+    let id = dim(&mut s, line);
+    assert!(colours(&s, id).iter().all(|c| *c == vectorcraft_color::Color::rgb8(0, 0, 0)));
+}
