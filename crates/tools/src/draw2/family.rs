@@ -9,7 +9,7 @@
 use serde_json::{Value, json};
 use vectorcraft_geom::Point;
 
-use crate::guides::{DrawSnap, Leave, square};
+use crate::guides::{DrawSnap, Leave};
 use crate::shape::drag_rect;
 use crate::{Action, Cursor, Mods, Overlay, PointerEvent, PointerKind, Tool, ToolContext, ToolKey};
 
@@ -20,6 +20,12 @@ pub struct FamilyTool {
     mods: Mods,
     began: bool,
     pub closed: bool,
+    length_x: f64,
+    length_y: f64,
+    reference: usize,
+    base_along: &'static str,
+    slope: f64,
+    fill_arc: bool,
     pub decay: f64,
     pub segments: u32,
     pub clockwise: bool,
@@ -53,6 +59,12 @@ impl FamilyTool {
             mods: Mods::default(),
             began: false,
             closed: false,
+            length_x: 100.0,
+            length_y: 100.0,
+            reference: 0,
+            base_along: "x",
+            slope: 50.0,
+            fill_arc: false,
             decay: 80.0,
             segments: 10,
             clockwise: true,
@@ -101,9 +113,24 @@ impl FamilyTool {
                 (format!("shape.{}", self.id), params)
             }
             _ => {
-                let d = if m.shift { square(p - start) } else { p - start };
-                let (a, b) = if m.alt { (start - d, start + d) } else { (start, start + d) };
-                ("shape.arc".into(), json!({"x1": a.x, "y1": a.y, "x2": b.x, "y2": b.y, "closed": self.closed}))
+                let r = drag_rect(start, p, m).abs();
+                let (w, h) = (r.width().max(1e-9), r.height().max(1e-9));
+                let rp = vectorcraft_geom::reference_point(vectorcraft_geom::Rect::new(0.0, 0.0, w, h), self.reference.min(8));
+                let anchor = Point::new(r.x0 + rp.x, r.y0 + rp.y);
+                (
+                    "shape.arc".into(),
+                    json!({
+                        "x": anchor.x,
+                        "y": anchor.y,
+                        "lengthX": w,
+                        "lengthY": h,
+                        "reference": self.reference,
+                        "baseAlong": self.base_along,
+                        "slope": self.slope,
+                        "closed": self.closed,
+                        "fillArc": self.fill_arc,
+                    }),
+                )
             }
         }
     }
@@ -219,12 +246,30 @@ impl Tool for FamilyTool {
             "polarGrid" => json!({
                 "concentric": self.rows, "radial": self.columns, "concentricSkew": self.skew[0], "radialSkew": self.skew[1], "compound": self.compound, "fill": self.fill,
             }),
-            _ => json!({"closed": self.closed}),
+            _ => json!({
+                "closed": self.closed,
+                "lengthX": self.length_x,
+                "lengthY": self.length_y,
+                "reference": self.reference,
+                "baseAlong": self.base_along,
+                "slope": self.slope,
+                "fillArc": self.fill_arc,
+            }),
         }
     }
     fn set_option(&mut self, key: &str, v: &Value) {
         match key {
             "closed" => self.closed = v.as_bool().unwrap_or(self.closed),
+            "lengthX" => self.length_x = arc_length(v, self.length_x),
+            "lengthY" => self.length_y = arc_length(v, self.length_y),
+            "reference" => self.reference = v.as_u64().unwrap_or(self.reference as u64).min(8) as usize,
+            "baseAlong" => {
+                if let Some(s) = v.as_str() {
+                    self.base_along = if s.eq_ignore_ascii_case("y") { "y" } else { "x" };
+                }
+            }
+            "slope" => self.slope = v.as_f64().filter(|n| n.is_finite()).map_or(self.slope, |n| n.clamp(-100.0, 100.0)),
+            "fillArc" => self.fill_arc = v.as_bool().unwrap_or(self.fill_arc),
             "decay" => self.decay = v.as_f64().unwrap_or(self.decay).clamp(5.0, 150.0),
             "segments" => self.segments = v.as_u64().unwrap_or(10).clamp(2, 1000) as u32,
             "clockwise" => self.clockwise = v.as_bool().unwrap_or(self.clockwise),
@@ -238,6 +283,11 @@ impl Tool for FamilyTool {
             _ => {}
         }
     }
+}
+
+/// Arc segment length from a dialog or preference value.
+fn arc_length(v: &Value, current: f64) -> f64 {
+    v.as_f64().filter(|n| n.is_finite()).map_or(current, |n| n.abs().max(1e-9))
 }
 
 /// A grid divider skew from option value `v`: a finite number within the range, else `current`.
@@ -327,7 +377,52 @@ mod tests {
         let t = FamilyTool::new("arc");
         let (c, v) = t.command(Point::new(0.0, 0.0), Point::new(10.0, 4.0), Mods { shift: true, ..Default::default() });
         assert_eq!(c, "shape.arc");
-        assert_eq!(v, json!({"x1": 0.0, "y1": 0.0, "x2": 10.0, "y2": 10.0, "closed": false}));
+        assert_eq!(
+            v,
+            json!({
+                "x": 0.0,
+                "y": 0.0,
+                "lengthX": 10.0,
+                "lengthY": 10.0,
+                "reference": 0,
+                "baseAlong": "x",
+                "slope": 50.0,
+                "closed": false,
+                "fillArc": false,
+            })
+        );
+    }
+
+    #[test]
+    fn arc_drag_uses_stored_segment_options() {
+        let mut t = FamilyTool::new("arc");
+        for (key, value) in [
+            ("lengthX", json!(80.0)),
+            ("lengthY", json!(40.0)),
+            ("reference", json!(4)),
+            ("baseAlong", json!("y")),
+            ("slope", json!(-25.0)),
+            ("closed", json!(true)),
+            ("fillArc", json!(true)),
+        ] {
+            t.set_option(key, &value);
+        }
+        let (command, params) = t.command(Point::new(10.0, 20.0), Point::new(50.0, 70.0), Mods::default());
+        assert_eq!(command, "shape.arc");
+        assert_eq!(
+            params,
+            json!({
+                "x": 30.0,
+                "y": 45.0,
+                "lengthX": 40.0,
+                "lengthY": 50.0,
+                "reference": 4,
+                "baseAlong": "y",
+                "slope": -25.0,
+                "closed": true,
+                "fillArc": true,
+            })
+        );
     }
 
     /// The start and the dragged corner snap to Smart Guides (#506), Shift sliding the corner of
