@@ -4,7 +4,7 @@
 
 ## Feature submission evidence
 
-**Feature evidence last updated:** 2026-10-21.
+**Feature evidence last updated:** 2026-10-22.
 
 The shared assessment status line and revision table retain the feature-base snapshot; merging retains upstream's current shared assessment and history. This dated section records the submission's feature evidence and does not rescore upstream or claim a new combined build or runtime measurement.
 
@@ -13,10 +13,13 @@ The shared assessment status line and revision table retain the feature-base sna
 
 - Artboard Options puts Fit to Artwork Bounds and Fit to Selected Art in the Preset menu. Artwork bounds cover all drawn document art, including other artboards and off-board art; selection bounds may span artboards. Fit changes only the active artboard and keeps artwork stationary, including position-only fitting with Move Artwork enabled. Existing Background Color and presets remain available; scores and estimates unchanged.
 
+Artboard Options forwards the active Artboard tool's Scale Artwork with Artboard option for ordinary resizing. Fit to Artwork Bounds and Fit to Selected Art explicitly leave artwork stationary. Dialog regression coverage checks preset/orientation/typed-size intent with scaling on and off, draft cancellation, one-step Undo/Redo, and fitting while Move Artwork and Scale Artwork are enabled. This is a narrow follow-up to #3277; no parity score or estimate is reassessed.
+
 ### Feature revisions
 
 | Date | Change | Summary |
 |---|---|---|
+| 2026-10-22 | minor | Artboard Options honors Scale Artwork with Artboard for preset, orientation and typed-size changes; both Fits keep artwork stationary; scores and estimates unchanged. |
 | 2026-10-21 | minor | Correct current global-all-art and document/revision cache descriptions; mark target-scoped fitting as superseded 2026-10-20 history. Runtime, tests, scores and estimates unchanged. |
 | 2026-10-21 | minor | Artboard Options puts Fit to Artwork Bounds and Fit to Selected Art in the Preset menu. Artwork bounds cover all drawn document art, including other artboards and off-board art; selection bounds may span artboards. Fit changes only the active artboard and keeps artwork stationary, including position-only fitting with Move Artwork enabled. Existing Background Color and presets remain available; scores and estimates unchanged. |
 | 2026-10-21 | minor | Reconcile feature status and revision evidence in a dated section; retain shared baseline metadata for independent upstream updates. Scores and estimates are not reassessed. |
@@ -66,8 +69,6 @@ Checked 2026-10-10 from the code, tests and open issues; no workflow fails, so V
 - **Beta:** G1, G9, G10, G11, G12, the corpus part of G8, type core, macOS pen pressure and the perf budgets
   (~170–270 h one agent, ~50–80 h with 4–6 agents).
 - **1.0:** feature parity plus the fidelity pass, hardening and packaging for all three desktop OSes and the web.
-
-Artboard Options forwards the active Artboard tool's Scale Artwork with Artboard option for ordinary resizing. Fit to Artwork Bounds and Fit to Selected Art explicitly leave artwork stationary. Dialog regression coverage checks preset/orientation/typed-size intent with scaling on and off, draft cancellation, one-step Undo/Redo, and fitting while Move Artwork and Scale Artwork are enabled. This is a narrow follow-up to #3277; no parity score or estimate is reassessed.
 
 ## Milestones
 
@@ -127,10 +128,10 @@ separate. Scores and hours unchanged. [Behavior and command details](development
 
 | Date | Change | Summary |
 |---|---|---|
+| 2026-10-22 | minor | Recolor Artwork Edit chips scroll within the available screen height (#3416); small palettes retain their tab height; scores and estimates unchanged. |
 | 2026-10-22 | minor | Artboard Options honors Scale Artwork with Artboard for preset, orientation and typed-size changes; both Fits keep artwork stationary; scores and estimates unchanged. |
 | 2026-10-22 | minor | G2: the Effect Gallery shipped (#2883): Effect › Effect Gallery… browses the Artistic, Brush Strokes, Distort, Sketch, Stylize and Texture filters, edits each filter's settings, builds an ordered stack (add, reorder, hide, remove) with a live canvas preview, and OK applies it as separate appearance effects in one undo step; remaining: filter thumbnails and a preview area inside the dialog; G2 estimate 4–6 → 1–2 h; Raster effects 82% → 85% (power-user view 49% → 52%), estimated, a modest move because the named missing dialog landed without thumbnails or an in-dialog preview. |
 | 2026-10-22 | minor | G2: Effect › Sketch › Conté Crayon (Foreground Level, Background Level, Texture, Scaling, Relief, Light Direction, Invert; a black crayon in the dark areas and a white one in the light areas on textured mid-grey paper; ranges and defaults unverified VectorCraft choices); measured Photoshop-style filters 57/57, the Effect Gallery remains (4–6 h). |
-| 2026-10-22 | minor | Recolor Artwork Edit chips scroll within the available screen height (#3416); small palettes retain their tab height; scores and estimates unchanged. |
 | 2026-10-22 | minor | Font pickers list recently applied families first (#3515), using the existing recent-font limit; search, filters, previews and keyboard selection share the same rows. Scores and estimates unchanged. |
 | 2026-10-21 | minor | Blend panel Type and Ramp control step easing with a separate color Shift (#2539); Blend Options retains spacing and orientation; polynomial curves are original approximation. Scores and estimates unchanged. |
 | 2026-10-21 | minor | M14: workspaces keep the layout changes made in them across switches and restarts until Reset <name> (UI.7); estimates unchanged |

@@ -4,7 +4,7 @@
 
 ## Feature submission evidence
 
-**Feature evidence last updated:** 2026-10-21.
+**Feature evidence last updated:** 2026-10-22.
 
 The shared assessment status line and revision table retain the feature-base snapshot; merging retains upstream's current shared assessment and history. This dated section records the submission's feature evidence and does not rescore upstream or claim a new combined build or runtime measurement.
 
@@ -13,10 +13,13 @@ The shared assessment status line and revision table retain the feature-base sna
 
 - Artboard Options puts Fit to Artwork Bounds and Fit to Selected Art in the Preset menu. Artwork bounds cover all drawn document art, including other artboards and off-board art; selection bounds may span artboards. Fit changes only the active artboard and keeps artwork stationary, including position-only fitting with Move Artwork enabled. Existing Background Color and presets remain available; scores and estimates unchanged.
 
+Artboard Options forwards the active Artboard tool's Scale Artwork with Artboard option for ordinary resizing. Fit to Artwork Bounds and Fit to Selected Art explicitly leave artwork stationary. Dialog regression coverage checks preset/orientation/typed-size intent with scaling on and off, draft cancellation, one-step Undo/Redo, and fitting while Move Artwork and Scale Artwork are enabled. This is a narrow follow-up to #3277; no parity score or estimate is reassessed.
+
 ### Feature revisions
 
 | Date | Change | Summary |
 |---|---|---|
+| 2026-10-22 | minor | Artboard Options honors Scale Artwork with Artboard for preset, orientation and typed-size changes; both Fits keep artwork stationary; scores and estimates unchanged. |
 | 2026-10-21 | minor | Correct current global-all-art and document/revision cache descriptions; mark target-scoped fitting as superseded 2026-10-20 history. Runtime, tests, scores and estimates unchanged. |
 | 2026-10-21 | minor | Artboard Options puts Fit to Artwork Bounds and Fit to Selected Art in the Preset menu. Artwork bounds cover all drawn document art, including other artboards and off-board art; selection bounds may span artboards. Fit changes only the active artboard and keeps artwork stationary, including position-only fitting with Move Artwork enabled. Existing Background Color and presets remain available; scores and estimates unchanged. |
 | 2026-10-21 | minor | Reconcile feature status and revision evidence in a dated section; retain shared baseline metadata for independent upstream updates. Scores and estimates are not reassessed. |
@@ -35,8 +38,6 @@ how far an arrow key nudges. This checklist is the work list for the **interacti
 forbids launching or measuring Illustrator, so there has been **no side-by-side session**. Every "done" below is
 "behaves as the documentation describes", which is weaker than "a power user can't tell". Status:
 **done** (documented behaviour implemented and tested), **partial**, **missing**.
-
-Artboard Options forwards the active Artboard tool's Scale Artwork with Artboard option for ordinary resizing. Fit to Artwork Bounds and Fit to Selected Art explicitly leave artwork stationary. Dialog regression coverage checks preset/orientation/typed-size intent with scaling on and off, draft cancellation, one-step Undo/Redo, and fitting while Move Artwork and Scale Artwork are enabled. This is a narrow follow-up to #3277; no parity score or estimate is reassessed.
 
 ## Summary
 
@@ -323,10 +324,10 @@ separate. Scores and hours unchanged. [Behavior and command details](development
 
 | Date | Change | Summary |
 |---|---|---|
+| 2026-10-22 | minor | Recolor Artwork Edit chips scroll within the available screen height (#3416); small palettes retain their tab height; scores and estimates unchanged. |
 | 2026-10-22 | minor | Artboard Options honors Scale Artwork with Artboard for preset, orientation and typed-size changes; both Fits keep artwork stationary; scores and estimates unchanged. |
 | 2026-10-22 | minor | Gradient panel: the Method menu, Classic or Perceptual (Illustrator 30.0); scores and estimates unchanged. |
 | 2026-10-22 | minor | Gradient panel: the Dither box (Illustrator 30.0); scores and estimates unchanged. |
-| 2026-10-22 | minor | Recolor Artwork Edit chips scroll within the available screen height (#3416); small palettes retain their tab height; scores and estimates unchanged. |
 | 2026-10-21 | minor | Blend panel Type and Ramp control step easing with a separate color Shift (#2539); Blend Options retains spacing and orientation; polynomial curves are original approximations. Scores and estimates unchanged. |
 | 2026-10-21 | minor | Workspaces keep the layout changes made in them when switching away and back, and across restarts; Reset <name> returns to the saved layout; score unchanged (estimated) |
 | 2026-10-21 | minor | Panels dragged by the mouse join a dock group as tabs, split it top/bottom or become icons in the icon column; dock tabs close from their context menu; score unchanged (estimated) |
