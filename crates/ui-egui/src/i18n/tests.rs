@@ -281,6 +281,7 @@ fn is_cjk(c: char) -> bool {
 }
 
 /// Georgian letters (Mkhedruli, Mtavruli, Asomtavruli): only craft-fonts' Noto Sans Georgian has them.
+#[cfg(feature = "interface-fonts")]
 fn is_georgian(c: char) -> bool {
     matches!(c as u32, 0x10A0..=0x10FF | 0x1C90..=0x1CBF | 0x2D00..=0x2D2F)
 }
@@ -290,7 +291,9 @@ fn is_georgian(c: char) -> bool {
 /// the craft-fonts build input, which is optional: without it they are left to the installed
 /// fonts, and with it the Japanese catalog is checked against BIZ UDPGothic (the Traditional
 /// Chinese one waits for a Traditional Chinese UI font in craft-fonts). Georgian letters are the
-/// same: checked against Noto Sans Georgian when craft-fonts has it.
+/// same: checked against Noto Sans Georgian when craft-fonts has it. It needs the interface's own
+/// faces (`interface-fonts`): egui's built-in fonts lack some of the catalogs' symbols.
+#[cfg(feature = "interface-fonts")]
 #[test]
 fn bundled_fonts_cover_the_catalogs() {
     let japanese_ui_font = vectorcraft_text::CRAFT_FONTS.iter().any(|f| f.is_japanese());
