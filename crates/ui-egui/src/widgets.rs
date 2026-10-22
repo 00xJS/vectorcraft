@@ -390,6 +390,8 @@ fn step_value(
     let mut v = read(buf)?;
     for (mods, size, n) in steps {
         v = if mods == egui::Modifiers::SHIFT { v + size * n } else { step_to_multiple(v, size, n) };
+        // Each step stops at the bounds, so a step back in the same frame starts from there.
+        v = within(v, bounds);
     }
     // Rounded as fields show it, within the field's bounds.
     let v = within(round_to(v, STEP_DECIMALS), bounds);

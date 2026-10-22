@@ -642,6 +642,11 @@ mod tests {
             let texts = frame(&mut app, vec![]);
             assert_eq!(stroke(&app)[which], low, "{shown}: {:?}", stroke(&app));
             assert!(texts.iter().any(|(t, _)| t == after), "{shown} → {after}: {texts:?}");
+            // At the bound, a step down and a step up in one frame end one step above it.
+            let key = |key| Event::Key { key, physical_key: None, pressed: true, repeat: false, modifiers: Modifiers::NONE };
+            frame(&mut app, vec![key(egui::Key::ArrowDown), key(egui::Key::ArrowUp)]);
+            let texts = frame(&mut app, vec![]);
+            assert!(texts.iter().any(|(t, _)| t == shown), "{after}, down and up → {shown}: {texts:?}");
         }
     }
 }
