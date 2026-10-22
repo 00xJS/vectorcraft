@@ -378,7 +378,9 @@ fn parse_measure(s: &str, default: Unit) -> Option<f64> {
 /// A number with an optional unit suffix (`12`, `3 mm`, `2in`) → (the number, its unit).
 fn number_unit(s: &str) -> Option<(f64, Option<Unit>)> {
     let s = s.trim();
-    let num_end = s.find(|c: char| !(c.is_ascii_digit() || c == '.' || c == '-')).unwrap_or(s.len());
+    // A leading `+` is a sign (`+5`), like `-`.
+    let sign = usize::from(s.starts_with('+'));
+    let num_end = s.get(sign..)?.find(|c: char| !(c.is_ascii_digit() || c == '.' || c == '-')).map_or(s.len(), |i| i + sign);
     let v: f64 = s.get(..num_end)?.trim().parse().ok()?;
     let unit = match s.get(num_end..)?.trim() {
         "" => None,
