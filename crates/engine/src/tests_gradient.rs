@@ -441,6 +441,7 @@ fn dither_is_a_fill_gradient_option_that_saves_and_loads() {
     let before = node(&s, id).appearance.clone();
     assert!(s.execute("paint.editGradient", &json!({"dither": true, "stroke": true})).is_err());
     assert!(s.execute("paint.setStroke", &json!({"gradient": {"dither": true}})).is_err());
+    assert!(s.execute("paint.setStroke", &json!({"swatch": null, "gradient": {"dither": true}})).is_err(), "a null swatch names none");
     assert!(s.execute("paint.editGradient", &json!({"dither": "yes"})).is_err());
     assert!(s.execute("paint.setFill", &json!({"gradient": {"dither": 1}})).is_err());
     assert_eq!(node(&s, id).appearance, before);
