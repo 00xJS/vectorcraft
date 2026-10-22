@@ -1393,6 +1393,33 @@ fn highlight_alternate_glyphs_preference_is_off_by_default() {
     assert!(!s.prefs.highlight_alternate_glyphs);
 }
 
+/// File Handling › Use Low Resolution Proxy for Linked EPS (#394): off by default; toggling it does
+/// not replace full-resolution pixels already in the document.
+#[test]
+fn low_res_proxy_eps_preference_does_not_swap_full_resolution_pixels() {
+    use crate::tests_links::{Folder, RED, place, png, save, write};
+    let dir = Folder::new("eps-proxy-pref");
+    let pic = dir.file("photo.eps");
+    write(&pic, &png(600, 300, RED));
+    let mut s = Session::new();
+    s.execute("file.new", &json!({"width": 400, "height": 300})).unwrap();
+    assert!(!s.prefs.low_res_proxy_eps);
+    let id = place(&mut s, &pic);
+    let doc_path = dir.file("doc.vectorcraft");
+    save(&mut s, &doc_path);
+    s.execute("links.update", &json!({})).unwrap();
+    let key = {
+        let st = s.doc().unwrap();
+        let NodeKind::Image(im) = &st.doc.node(id).unwrap().kind else { panic!("image") };
+        im.key.clone()
+    };
+    assert!(!s.doc().unwrap().doc.images[&key].is_proxy());
+    set_pref(&mut s, "lowResProxyEps", json!(true));
+    assert!(!s.doc().unwrap().doc.images[&key].is_proxy(), "full pixels stay in the document");
+    set_pref(&mut s, "lowResProxyEps", json!(false));
+    assert!(!s.prefs.low_res_proxy_eps);
+}
+
 /// Preferences › Hyphenation › Exceptions (#394): `prefs.set` pushes the list into the hyphenator
 /// and bumps open documents so type reflows. Parsing of the list is covered in `vectorcraft-text`.
 #[test]

@@ -242,7 +242,7 @@ fn load(p: &Value, cmd: &str, board: Option<Rect>, link_pdf: bool) -> Result<Loa
             ));
         }
         // Linked images show their files, found from its folder.
-        super::links::resolve(&mut l.doc, src.path, false);
+        super::links::resolve(&mut l.doc, src.path, false, false);
         (l.doc, l.warnings)
     };
     doc.drop_edit_modes();
@@ -297,7 +297,7 @@ pub(crate) fn pdf_art(
         fileio::page_or_editing_data(src, bytes, o.password.as_deref(), read).map_err(|e| bad(cmd, format!("{name}: {e}")))?;
     if alone {
         // Linked images show their files, found from its folder.
-        super::links::resolve(&mut doc, path, false);
+        super::links::resolve(&mut doc, path, false, false);
     }
     doc.drop_edit_modes();
     let layers = std::mem::take(&mut doc.layers);

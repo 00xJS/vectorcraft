@@ -293,6 +293,60 @@ fn a_modified_link_follows_the_update_links_preference() {
     assert!(s.doc().unwrap().history.undo.is_empty(), "opening is not an undo step");
 }
 
+/// Preferences › File Handling › Use Low Resolution Proxy for Linked EPS (#394): an unchanged linked
+/// `.eps` keeps its saved preview on open; Update Links still reads a modified file when set to
+/// Automatically.
+#[test]
+fn low_res_proxy_eps_keeps_unchanged_preview_and_automatic_update_reads_modified_eps() {
+    let dir = Folder::new("eps-proxy");
+    let pic = dir.file("photo.eps");
+    write(&pic, &png(600, 300, RED));
+    let mut s = session();
+    let id = place(&mut s, &pic);
+    let doc_path = dir.file("poster.vectorcraft");
+    save(&mut s, &doc_path);
+    s.execute("prefs.set", &json!({"key": "lowResProxyEps", "value": true})).unwrap();
+    s.execute("prefs.set", &json!({"key": "updateLinks", "value": "askWhenModified"})).unwrap();
+    let r = open(&mut s, &doc_path);
+    assert_eq!((r["modifiedLinks"].clone(), r["updatedLinks"].clone()), (json!([]), json!([])), "{r}");
+    assert!(near(centre_colour(&s.doc().unwrap().doc), RED), "unchanged EPS stays on its preview");
+    assert!(s.doc().unwrap().doc.images[&image(&s, id).key].is_proxy());
+    write(&pic, &png(400, 400, BLUE));
+    s.execute("prefs.set", &json!({"key": "updateLinks", "value": "automatically"})).unwrap();
+    let r = open(&mut s, &doc_path);
+    assert_eq!(r["updatedLinks"][0]["ids"].clone(), json!([id.0]), "modified EPS updates on open: {r}");
+    assert!(!s.doc().unwrap().doc.images[&image(&s, id).key].is_proxy());
+    assert!(near(centre_colour(&s.doc().unwrap().doc), BLUE));
+}
+
+/// With Low Resolution Proxy on, export reads the linked EPS file's full pixels, not the preview.
+#[test]
+fn low_res_proxy_eps_export_uses_full_resolution_from_the_linked_file() {
+    let dir = Folder::new("eps-proxy-export");
+    let pic = dir.file("photo.eps");
+    write(&pic, &png(600, 300, RED));
+    let mut s = session();
+    let id = place(&mut s, &pic);
+    let doc_path = dir.file("poster.vectorcraft");
+    save(&mut s, &doc_path);
+    s.execute("prefs.set", &json!({"key": "lowResProxyEps", "value": true})).unwrap();
+    let r = open(&mut s, &doc_path);
+    assert_eq!((r["modifiedLinks"].clone(), r["updatedLinks"].clone()), (json!([]), json!([])), "{r}");
+    let key = image(&s, id).key;
+    assert!(s.doc().unwrap().doc.images[&key].is_proxy());
+    let (full, warnings) = cmd::links::full_linked_images(&s.doc().unwrap().doc, None);
+    assert!(warnings.is_empty(), "{warnings:?}");
+    assert!(!full.images[&key].is_proxy());
+    let dim =
+        image::ImageReader::new(std::io::Cursor::new(full.images[&key].bytes.as_ref())).with_guessed_format().unwrap().into_dimensions().unwrap();
+    assert_eq!(dim, (600, 300));
+    let png_out = s.execute("document.export", &json!({"format": "png"})).unwrap();
+    let bytes = vectorcraft_format::base64_decode(png_out["dataBase64"].as_str().unwrap()).unwrap();
+    let rendered = image::load_from_memory(&bytes).unwrap();
+    assert!(rendered.width() >= 400 && rendered.height() >= 300);
+    assert!(near(centre_colour(&s.doc().unwrap().doc), RED), "canvas still shows the preview");
+}
+
 /// The half of opening that the desktop app runs on a thread of its own (`read_for_open`) reads
 /// the linked files and lays out the type. The half left for the UI thread (`open_read`) reads no
 /// file: with a linked file moved away in between, it opens the document that `document.open` opens.
@@ -326,7 +380,7 @@ fn a_file_read_for_opening_has_its_links_read_and_its_type_laid_out() {
         let expected = open(&mut at_once, &doc_path);
         let rows = if update == "automatically" { &expected["updatedLinks"] } else { &expected["modifiedLinks"] };
         assert!(expected["missingLinks"][0]["name"] == "gone.png" && rows[0]["name"] == "changed.png", "{update}: {expected}");
-        let file = cmd::fileio::read_for_open(&doc_path, &bytes, Some(doc_path.clone()), &Value::Null, update == "automatically").unwrap();
+        let file = cmd::fileio::read_for_open(&doc_path, &bytes, Some(doc_path.clone()), &Value::Null, update == "automatically", false).unwrap();
         let doc = file.document();
         let NodeKind::Image(im) = &doc.node(photo).unwrap().kind else { panic!("not an image") };
         assert!(!doc.images[&im.key].is_proxy(), "{update}: the TIFF is read, not the preview saved for it");
