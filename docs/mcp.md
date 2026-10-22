@@ -828,10 +828,35 @@ vectorcraft-cli run --cmd file.new --params '{"width":800,"height":600}' \
   --export star.vectorcraft
 ```
 
-`run` prints one JSON line per step (`open`, `cmd`, `export`) and exits non-zero on the first failure. `--params`
-applies to the `--cmd` just before it. `run` also accepts the host commands `file.open`, `file.save`, `file.export`,
-`file.exportForScreens` and `tool.select`. `run --in`, `convert` and `info` read every format `document.open` reads
-(`vectorcraft-cli --help` lists them).
+`run` prints one JSON line per step (`open`, `cmd`, `export`) and exits non-zero on the first failure, naming the step
+(counting from 0, as `"$N"` references do) and its command. `--params` applies to the `--cmd` just before it. `run`
+also accepts the host commands `file.open`, `file.save`, `file.export`, `file.exportForScreens` and `tool.select`.
+`run --in`, `convert` and `info` read every format `document.open` reads (`vectorcraft-cli --help` lists them).
+
+### Steps from a file or standard input
+
+A command line has a length limit (32,767 characters on Windows), which long parameters such as a placed file's
+`dataBase64` or a long list of ids soon reach (#3147). `--commands FILE` reads the steps from a file instead, and
+`--commands -` from standard input:
+
+```sh
+vectorcraft-cli run --in sheet.vectorcraft --commands steps.json --export out.pdf
+```
+
+```json
+[
+  {"command": "file.place", "params": {"name": "code.svg", "dataBase64": "PHN2ZyB4bWxucz0i…", "rect": [20, 40, 16, 57]}},
+  {"command": "object.setProps", "params": {"id": "$0.ids.0", "name": "barcode"}}
+]
+```
+
+The text is a JSON array of steps, or one step per line (JSON Lines; blank lines are skipped). A step is an object
+with `command`, the command id (or `id`, as `command_batch` names it), and optional `params`, a JSON object; any
+other key is refused. The steps run where `--commands` stands among the `--cmd` and `--export` options, in order,
+and count with them for `"$N"`, so a file can refer to the ids an earlier `--cmd` made and a later `--cmd` to the
+file's results. `--commands` may be given more than once (standard input once). The text is untrusted input: it
+must be UTF-8 (a byte order mark is skipped), at most 64 MiB and 100,000 steps, and a malformed step stops the run
+before anything runs, with the step's number and its entry (`entry 3`) or line (`line 3`) in the message.
 
 ### What a headless session remembers
 
