@@ -83,6 +83,59 @@ struct Builder {
     cmyk_profile: Option<Vec<u8>>,
     /// That table, once made (`Some(None)`: there is none).
     cmyk_lut: Option<Option<Arc<vectorcraft_color::cms::CmykLut>>>,
+    /// The working CMYK profile's table, once a CMYK pixel layer needs it.
+    working_cmyk: Option<Arc<vectorcraft_color::cms::CmykLut>>,
+    /// What baking colour and gradient overlays may still take ([`overlay::MAX_WORK`]).
+    overlay_work: u64,
+    /// What copying master pages onto the pages that show them may still take.
+    copy_left: CopyCost,
+    /// Each master spread's objects as its pages show them, made the first time one does.
+    master_parts: std::collections::HashMap<usize, Arc<[MasterPart]>>,
+}
+
+/// What copying a subtree takes: its nodes, characters and table cells (`work`), and its pixels.
+#[derive(Clone, Copy, Debug, Default)]
+struct CopyCost {
+    work: u64,
+    pixels: u64,
+}
+
+impl CopyCost {
+    fn plus(self, o: CopyCost) -> CopyCost {
+        CopyCost { work: self.work.saturating_add(o.work), pixels: self.pixels.saturating_add(o.pixels) }
+    }
+    fn minus(self, o: CopyCost) -> Option<CopyCost> {
+        Some(CopyCost { work: self.work.checked_sub(o.work)?, pixels: self.pixels.checked_sub(o.pixels)? })
+    }
+}
+
+/// Master page copies of one import together: as many objects, characters and pixels as a
+/// document may hold, a few times over. A master shown on thousands of pages, or a huge one
+/// on many, would otherwise multiply them.
+const MAX_MASTER_COPIES: CopyCost = CopyCost { work: 1 << 23, pixels: 512 << 20 };
+
+/// One object a master spread shows on the pages that show it: a top-level node of the spread
+/// (`child` `None`) or one object in one of its layers, with its bounds and what copying it takes.
+#[derive(Clone, Copy, Debug)]
+struct MasterPart {
+    node: usize,
+    child: Option<usize>,
+    bounds: Option<af::Rect>,
+    cost: CopyCost,
+}
+
+fn copy_cost(n: &af::Node, depth: usize) -> CopyCost {
+    if depth > MAX_DEPTH {
+        return CopyCost::default();
+    }
+    let len = |runs: &[af::TextRun]| runs.iter().map(|r| r.text.len() as u64).sum::<u64>();
+    let own = match &n.kind {
+        Kind::Text(t) => CopyCost { work: 1 + len(&t.runs), pixels: 0 },
+        Kind::Table(t) => CopyCost { work: 1 + t.cells.iter().map(|c| 1 + len(&c.runs)).sum::<u64>(), pixels: 0 },
+        Kind::Image(img) => CopyCost { work: 1, pixels: u64::from(img.width) * u64::from(img.height) },
+        _ => CopyCost { work: 1, pixels: 0 },
+    };
+    n.children.iter().fold(own, |c, ch| c.plus(copy_cost(ch, depth + 1)))
 }
 
 /// Deepest node tree mapped (the reader bounds trees well below this).
@@ -110,7 +163,20 @@ struct Placement {
 
 impl Builder {
     fn new(k: f64) -> Self {
-        Self { doc: Document::new(0.0, 0.0), warnings: Vec::new(), k, layer: 0, embedded: 0, masters: Vec::new(), cmyk_profile: None, cmyk_lut: None }
+        Self {
+            doc: Document::new(0.0, 0.0),
+            warnings: Vec::new(),
+            k,
+            layer: 0,
+            embedded: 0,
+            masters: Vec::new(),
+            cmyk_profile: None,
+            cmyk_lut: None,
+            working_cmyk: None,
+            overlay_work: vectorcraft_affinity::overlay::MAX_WORK,
+            copy_left: MAX_MASTER_COPIES,
+            master_parts: std::collections::HashMap::new(),
+        }
     }
 
     fn warn(&mut self, w: &str) {
@@ -160,7 +226,8 @@ impl Builder {
                     artboards.push((name, to_doc.transform_rect_bbox(rect_of(r))));
                 }
             }
-            x = artboards.iter().map(|(_, r)| r.x1).fold(x, f64::max) + 36.0;
+            // (Earlier spreads' artboards are all left of `x` already.)
+            x = artboards.get(before..).unwrap_or_default().iter().map(|(_, r)| r.x1).fold(x, f64::max) + 36.0;
             if spread.transparent && i == 0 {
                 self.warn("transparent page backgrounds show as white artboards");
             }
@@ -205,34 +272,56 @@ impl Builder {
     /// Each master page shows only the objects on it, moved from its page to the one showing it.
     fn master_pages(&mut self, d: &af::Document, spread: &af::Spread, to_doc: Affine) {
         let instances = master_instances(&spread.nodes);
+        if instances.is_empty() {
+            return;
+        }
+        let owners = page_masters(&instances, spread.pages.len());
         for (pi, page) in spread.pages.iter().enumerate() {
-            let Some(&(master, first, master_page, _)) = instances.iter().find(|(_, p, _, n)| pi >= *p && pi < p.saturating_add(*n)) else {
-                continue;
-            };
+            let Some(&Some((master, first, master_page))) = owners.get(pi) else { continue };
             let Some(m) = d.masters.get(master) else { continue };
-            let index = master_page.saturating_add(pi - first);
+            let index = master_page.saturating_add(pi.saturating_sub(first));
             let r = m.pages.get(index).or_else(|| m.pages.last()).copied().unwrap_or(m.bounds);
-            if !master_instances(&m.nodes).is_empty() {
-                self.warn("master pages based on other master pages (only their own objects are used)");
-            }
+            let parts = self.master_parts(master, m);
+            let on_page = |b: &Option<af::Rect>| b.is_some_and(|b| b.x1 > r.x0 && b.x0 < r.x1 && b.y1 > r.y0 && b.y0 < r.y1);
+            // Looking through the master's objects takes one each, copying them what they hold.
+            let looked = CopyCost { work: parts.len() as u64, pixels: 0 };
+            let cost = parts.iter().filter(|p| on_page(&p.bounds)).fold(looked, |c, p| c.plus(p.cost));
+            let Some(left) = self.copy_left.minus(cost) else {
+                self.warn("master pages shown on more pages than one import copies them to (left out on the rest)");
+                return;
+            };
+            self.copy_left = left;
             let place = to_doc * Affine::translate((page.x0 - r.x0, page.y0 - r.y0));
-            let on_page =
-                |n: &af::Node| af::nodes_bounds(std::slice::from_ref(n)).is_some_and(|b| b.x1 > r.x0 && b.x0 < r.x1 && b.y1 > r.y0 && b.y0 < r.y1);
             let mut art = Vec::new();
             let mut boards = Vec::new();
             self.embedded += 1;
-            for n in &m.nodes {
-                if matches!(n.kind, Kind::Layer) {
-                    // A layer of the master spread: just its objects on this page.
-                    let kids: Vec<Arc<Node>> =
-                        n.children.iter().filter(|c| on_page(c)).filter_map(|c| self.node(c, place, &mut boards, false, 1)).collect();
-                    if !kids.is_empty() {
-                        let mut g = self.base(n, NodeKind::Group { children: kids, clip: false });
-                        g.isolate = n.blend != Blend::PassThrough;
-                        art.push(Arc::new(g));
+            let mut i = 0;
+            while let Some(p) = parts.get(i).copied() {
+                let Some(n) = m.nodes.get(p.node) else {
+                    i += 1;
+                    continue;
+                };
+                if p.child.is_none() {
+                    if on_page(&p.bounds) {
+                        art.extend(self.node(n, place, &mut boards, false, 0));
                     }
-                } else if on_page(n) {
-                    art.extend(self.node(n, place, &mut boards, false, 0));
+                    i += 1;
+                    continue;
+                }
+                // A layer of the master spread: just its objects on this page.
+                let mut kids: Vec<Arc<Node>> = Vec::new();
+                while let Some(q) = parts.get(i).copied().filter(|q| q.node == p.node) {
+                    if on_page(&q.bounds)
+                        && let Some(c) = q.child.and_then(|c| n.children.get(c))
+                    {
+                        kids.extend(self.node(c, place, &mut boards, false, 1));
+                    }
+                    i += 1;
+                }
+                if !kids.is_empty() {
+                    let mut g = self.base(n, NodeKind::Group { children: kids, clip: false });
+                    g.isolate = n.blend != Blend::PassThrough;
+                    art.push(Arc::new(g));
                 }
             }
             self.embedded -= 1;
@@ -246,6 +335,34 @@ impl Builder {
                 None => self.masters.push((master, vec![Arc::new(g)])),
             }
         }
+    }
+
+    /// The objects of master spread `m` (number `index`) as its pages show them: its layers'
+    /// objects one by one and its other top-level objects, with their bounds and costs.
+    fn master_parts(&mut self, index: usize, m: &af::Spread) -> Arc<[MasterPart]> {
+        if let Some(parts) = self.master_parts.get(&index) {
+            return parts.clone();
+        }
+        if !master_instances(&m.nodes).is_empty() {
+            self.warn("master pages based on other master pages (only their own objects are used)");
+        }
+        let part = |node: usize, child: Option<usize>, n: &af::Node| MasterPart {
+            node,
+            child,
+            bounds: af::nodes_bounds(std::slice::from_ref(n)),
+            cost: copy_cost(n, 0),
+        };
+        let mut parts = Vec::new();
+        for (i, n) in m.nodes.iter().enumerate() {
+            if matches!(n.kind, Kind::Layer) {
+                parts.extend(n.children.iter().enumerate().map(|(c, child)| part(i, Some(c), child)));
+            } else {
+                parts.push(part(i, None, n));
+            }
+        }
+        let parts: Arc<[MasterPart]> = parts.into();
+        self.master_parts.insert(index, parts.clone());
+        parts
     }
 
     fn layer_with(&mut self, name: Option<&str>, children: Vec<Arc<Node>>) -> Arc<Node> {
@@ -305,8 +422,15 @@ impl Builder {
     /// `n` with its colour and gradient overlays baked into its paint and pixels (VectorCraft has
     /// no overlay effect).
     fn overlaid<'n>(&mut self, n: &'n af::Node) -> std::borrow::Cow<'n, af::Node> {
-        let mut warnings = Vec::new();
-        let out = vectorcraft_affinity::overlay::apply(n, &mut |w| warnings.push(w.to_string()));
+        // Each kind of message once, however often it is heard.
+        let mut warnings: Vec<String> = Vec::new();
+        let mut work = self.overlay_work;
+        let out = vectorcraft_affinity::overlay::apply(n, &mut work, &mut |w| {
+            if !warnings.iter().any(|x| x == w) {
+                warnings.push(w.to_string());
+            }
+        });
+        self.overlay_work = work;
         for w in warnings {
             self.warn(&w);
         }
@@ -319,6 +443,15 @@ impl Builder {
         if depth > MAX_DEPTH {
             self.warn("objects nested too deeply (left out)");
             return None;
+        }
+        // VectorCraft documents stay within `MAX_COORD` of the origin (renderers and exports rely
+        // on it): objects reaching beyond it are left out.
+        if let Some(b) = af::kind_bounds(&n.kind) {
+            let r = to_doc.transform_rect_bbox(rect_of(b));
+            if ![r.x0, r.y0, r.x1, r.y1].iter().all(|v| v.is_finite() && v.abs() <= crate::MAX_COORD) {
+                self.warn("objects beyond the document range VectorCraft supports (left out)");
+                return None;
+            }
         }
         let n = &*self.overlaid(n);
         // Register before descending so nested artboards keep their document order. Inside an
@@ -851,14 +984,14 @@ impl Builder {
         let count = obj.runs.iter().map(|r| r.text.matches('\n').count()).sum::<usize>() + 1;
         let mut paras = Vec::with_capacity(count);
         let mut previous_after = 0.0;
-        let mut first_styles = Vec::with_capacity(count);
+        // The run of each paragraph's first character.
+        let mut first_runs = Vec::with_capacity(count);
         {
-            // The first character's style of each paragraph.
             let mut at_start = true;
-            for r in &obj.runs {
+            for (i, r) in obj.runs.iter().enumerate() {
                 for c in r.text.chars() {
                     if at_start {
-                        first_styles.push((r.style.font_family.clone(), r.style.font_style.clone()));
+                        first_runs.push(i);
                         at_start = false;
                     }
                     if c == '\n' {
@@ -867,6 +1000,8 @@ impl Builder {
                 }
             }
         }
+        // Line gaps by font, each looked up once.
+        let mut gaps: std::collections::HashMap<(&str, &str), f64> = std::collections::HashMap::new();
         for i in 0..count {
             let f = formats.get(i).or(formats.last()).copied().unwrap_or_default();
             let pt = |x: f64, k: f64| if (x * k).is_finite() { (x * k).clamp(-5000.0, 5000.0) } else { 0.0 };
@@ -895,8 +1030,10 @@ impl Builder {
             // factor, for artistic and frame text alike. Fitted on Affinity's thumbnails: Bebas
             // Neue Pro and Impact lines about 1 em apart, DIN Condensed (a gap of 0.2 em) 1.2 em,
             // and the public Arial frame fixture fits this better than the font's line height.
-            let (family, style) = first_styles.get(i).cloned().unwrap_or_default();
-            let ratio = (1.0 + line_gap(&family, &style)) * f.auto_leading;
+            let (family, style) =
+                first_runs.get(i).and_then(|r| obj.runs.get(*r)).map_or(("", ""), |r| (r.style.font_family.as_str(), r.style.font_style.as_str()));
+            let gap = *gaps.entry((family, style)).or_insert_with(|| line_gap(family, style));
+            let ratio = (1.0 + gap) * f.auto_leading;
             // Affinity documents use tiny factors for spacer paragraphs (0.15 of a line); VectorCraft
             // takes 0–500 %.
             if ratio.is_finite() && (0.01..=5.0).contains(&ratio) {
@@ -1071,10 +1208,15 @@ impl Builder {
             }
         }
         self.warn("CMYK pixel layers with transparency (converted to RGB through the working CMYK profile)");
-        let lut = vectorcraft_color::cms::CmykLut::build(|[c, m, y, k]| {
-            let [r, g, b] = Color::cmyk(c, m, y, k).to_rgb();
-            [r, g, b, 0.0]
-        });
+        let lut = self
+            .working_cmyk
+            .get_or_insert_with(|| {
+                Arc::new(vectorcraft_color::cms::CmykLut::build(|[c, m, y, k]| {
+                    let [r, g, b] = Color::cmyk(c, m, y, k).to_rgb();
+                    [r, g, b, 0.0]
+                }))
+            })
+            .clone();
         let rgba = px
             .iter()
             .flat_map(|p| {
@@ -1152,6 +1294,43 @@ fn master_instances(nodes: &[af::Node]) -> Vec<(usize, usize, usize, usize)> {
     out
 }
 
+/// Which master page instance each of `pages` pages shows: (master, first page, first master
+/// page) of the first instance in `instances` that covers it. Each page is settled once (the
+/// next page still open is found by a path-halving jump), so this is about linear in pages and
+/// instances however much their ranges overlap.
+fn page_masters(instances: &[(usize, usize, usize, usize)], pages: usize) -> Vec<Option<(usize, usize, usize)>> {
+    fn open_from(next: &mut [usize], mut i: usize) -> usize {
+        while let Some(&n) = next.get(i) {
+            if n == i {
+                break;
+            }
+            let skip = next.get(n).copied().unwrap_or(n);
+            if let Some(slot) = next.get_mut(i) {
+                *slot = skip;
+            }
+            i = n;
+        }
+        i
+    }
+    let mut owner = vec![None; pages];
+    // `next[p]` leads towards the first page from `p` on with no master yet (`pages`: none).
+    let mut next: Vec<usize> = (0..=pages).collect();
+    for &(master, first, master_page, count) in instances {
+        let end = first.saturating_add(count).min(pages);
+        let mut p = open_from(&mut next, first.min(pages));
+        while p < end {
+            if let Some(o) = owner.get_mut(p) {
+                *o = Some((master, first, master_page));
+            }
+            if let Some(n) = next.get_mut(p) {
+                *n = p + 1;
+            }
+            p = open_from(&mut next, p + 1);
+        }
+    }
+    owner
+}
+
 /// Master names: A, B … Z, then A1, B1 ….
 fn master_prefix(index: usize) -> String {
     let letter = char::from(b'A' + (index % 26) as u8);
@@ -1194,7 +1373,11 @@ fn place_cell(obj: &mut TextObject, w: f64, h: f64) -> f64 {
 /// such a line out. The frame is made taller, from its top, by what those lines need. Whether it was.
 fn fit_lines(obj: &mut TextObject, w: f64, h: f64) -> bool {
     let db = vectorcraft_text::FontDb::global();
-    if !(w > 0.0 && h > 0.0 && h.is_finite()) || !vectorcraft_text::layout(db, obj).overflow {
+    if !(w > 0.0 && h > 0.0 && h.is_finite()) {
+        return false;
+    }
+    let first = vectorcraft_text::layout(db, obj);
+    if !first.overflow {
         return false;
     }
     // Where the lines go in a frame with room for all of them.
@@ -1210,7 +1393,7 @@ fn fit_lines(obj: &mut TextObject, w: f64, h: f64) -> bool {
     if need <= h {
         return false;
     }
-    let before = vectorcraft_text::layout(db, obj).lines.len();
+    let before = first.lines.len();
     // (A little more than they need, for the rounding of the layout.)
     let short = std::mem::replace(&mut obj.kind, TextKind::Area { frame: shapes::rectangle(Rect::new(0.0, 0.0, w, need + 0.05)) });
     // Something else keeps the lines out: as the source has it.

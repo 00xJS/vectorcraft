@@ -119,9 +119,14 @@ text-frame fixture.
   pass CI. Run locally with `AFFINITY_CORPUS_REQUIRED=1` for the same strict gate.
 * Synthetic engine regressions cover nested, rotated and curved artboards, negative origins,
   multiple spreads and resolution conversion, alongside text recovery and native save/export.
-* `engine/tests/import_fuzz.rs` mutates a synthetic native document's stream and archive and checks
-  that whatever opens also renders and exports; `fuzz/` has `cargo-fuzz` targets for the whole
-  reader (`container`) and the object stream (`stream`):
+* `engine/tests/import_fuzz.rs` mutates a synthetic native document's stream and archive, and
+  documents with layer effects, colour overlays (also over tables), line styles, paragraph and
+  character formats, tables, master pages, CMYK pixel layers and embedded documents (the embedding
+  and the embedded stream), and checks that whatever opens also renders and exports.
+  `tests/import_limits.rs` builds hostile documents against the limits below: grids of 16 million
+  cells, grids and stories shared by many layers, 200 000 paragraphs, a document embedded hundreds
+  of times. `fuzz/` has `cargo-fuzz` targets for the whole reader (`container`) and the object
+  stream (`stream`):
 
   ```sh
   cd crates/affinity
@@ -149,13 +154,21 @@ nodes per curve; compound outlines also cap recursion at 128 levels, operand vis
 and cumulative geometry work at four million, rejecting cycles and partial results on limits.
 Pie sweeps normalize finite angles in constant time. Pixel layers are decoded at no more than 64
 megapixels each (cropped to their content first; larger ones are read at a half, a quarter… of
-their resolution) and 512 megapixels for the whole document, embedded documents included; pixel
-masks are read only over what they mask. Embedded documents nest four deep at most and count
-against the importing document's limits. Tables have at most 4096 rows and columns, and 64 layer
-effects per node are read. Gradients are limited to 1024 stops. Text collection is bounded to a
-million characters per node before allocation, with a cumulative 16 MiB budget for owned font
-names, features and gradient stops. Exhaustion warns and uses default attributes for remaining
-text, preserving its characters.
+their resolution) and 512 megapixels for the whole document; pixel masks are read only over what
+they mask (all of it under artistic text, whose glyphs only the layout places). One budget covers
+the whole read: layers, pixels, 16 million characters of stories and 262 144 table cells, so
+content that many layers link, or a document embedded many times, can't multiply them. Embedded
+documents nest four deep at most; both of their readings are charged to that budget and to the
+importing document's archive limits, also when they fail part of the way. Tables have at most
+4096 rows and columns and 65 536 cells, and 64 layer effects per node are read. Gradients are
+limited to 1024 stops. Text collection is bounded to a million characters per node before
+allocation, with a cumulative 16 MiB budget for owned font names (256 bytes at most each),
+features and gradient stops; paragraph formats are matched to runs by binary search. Exhaustion
+warns and uses default attributes for remaining text, preserving its characters. Colour and
+gradient overlays share one work budget per import (`overlay::MAX_WORK`: the nodes and pixels
+each is baked into); past it they are left out, and said. In VectorCraft, master pages are
+copied onto at most as many objects, characters and pixels as a document may hold, a few times
+over, and objects beyond `MAX_COORD` of the origin are left out.
 Every archive entry's CRC-32 and size must match. Malformed input returns an `Error`; the
 crate has no panics outside tests.
 

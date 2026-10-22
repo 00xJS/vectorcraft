@@ -168,11 +168,11 @@ fn decode_within(r: &mut Reader, bitmap: ObjId, crop: (u32, u32, u32, u32), worl
     }
     // Before anything is allocated: a layer's tiles can be flat colour, with nothing to extract.
     let pixels = u64::from(w.div_ceil(step)) * u64::from(h.div_ceil(step));
-    let Some(left) = r.pixels_left.checked_sub(pixels) else {
+    let Some(left) = r.budget.pixels.checked_sub(pixels) else {
         r.warn("pixel layers beyond the pixels one document may hold");
         return Ok(None);
     };
-    r.pixels_left = left;
+    r.budget.pixels = left;
     let format = s.enumeration(bitmap, b"Frmt").map(|(f, _)| f);
     let (channels, bps) = match format {
         Some(0) => (4, 1),
