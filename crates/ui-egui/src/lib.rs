@@ -362,6 +362,12 @@ pub struct CanvasCache {
     pub content_bounds: Option<((u64, u64), Option<vectorcraft_geom::Rect>)>,
     /// The tools' cursors as OS cursor bitmaps.
     pub cursors: cursors::Images,
+    /// The view the canvas last drew and when it last changed (egui's input time): while it moves,
+    /// the canvas doesn't hit-test the art under the pointer ([`canvas::hover_wait`], #2452).
+    pub view_moved: Option<(canvas::ViewKey, f64)>,
+    /// The cursor the active tool last gave over the canvas, with the tool and the modifier keys
+    /// it was for: kept while the view moves.
+    pub hover_cursor: Option<(&'static str, vectorcraft_tools::Mods, vectorcraft_tools::Cursor)>,
 }
 
 /// [`CanvasCache::slices`]: the layout of the slices of (document uid, revision).
@@ -588,6 +594,8 @@ impl VectorcraftApp {
                 selection_bounds: None,
                 content_bounds: None,
                 cursors: Default::default(),
+                view_moved: None,
+                hover_cursor: None,
             },
             perf: Perf::default(),
             titlebar_inset: 0.0,
