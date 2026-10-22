@@ -192,6 +192,7 @@ The full pre-standard record of what landed is kept in [docs/roadmap.md](docs/ro
 
 | Date | Change | Summary |
 |---|---|---|
+| 2026-10-22 | minor | Effects: Sketch › Conté Crayon; measured Photoshop-style filters 57/57, the Effect Gallery remains (G2 estimate 4–6 h). |
 | 2026-10-21 | minor | 3D: original Standard, Diffuse, Top Left and Right lighting presets; command access, effective-setting recognition and preview/history; scores and estimates unchanged |
 | 2026-10-21 | minor | Print: Japanese paper sizes in the Print dialog's Media list (JIS B4/B5/B6, はがき, 往復はがき, 封筒 長形3号/長形4号/角形2号/角形3号, 四六判); ISO B4/B5 keep their sizes, and a paper is named by id or label, any case and spacing. Headline numbers unchanged. |
 | 2026-10-17 | minor | Colored Inflate: shared membrane normals and smooth RGB vector ramps replace flat polygon bands; channel groups are batched per solid-fill surface. White-light Inflate retains its original polygons, paint composition and seam joins; the 0.05 seam minimum is restored. Scores and hour estimates unchanged. |
