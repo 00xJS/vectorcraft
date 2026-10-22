@@ -4574,10 +4574,12 @@ Clicking Stroke Splits the Path; off), `highlightStroke` (Highlight Stroke When 
 (`#rrggbb` or a layer color's name; `#ff4f4f`, the layer color Red). With `clickStrokeSplitsPath` on, in merge mode,
 the pointer shows scissors within 4 screen pixels of a stroke, `highlightStroke` draws the run of stroke under it in
 `highlightColor`, and a click splits that run off its path: the run goes from the anchor or crossing point before the
-pointer to the one after it, the path keeps the rest of it, and a copy of the path with the run goes directly above it.
-A lone rectangle's side is such a run. A lone line is a run that is all of its path, so the pointer shows no scissors
-over it and a click on it does not split it. A release up to 3 screen pixels from the press is a click when the pointer
-went no farther during the drag.
+pointer to the one after it, the path keeps the rest of it, and a copy of the path with the run, in the path's
+direction, goes directly above it. Both keep the path's gradients where they were on it.
+A lone rectangle's side is such a run. A lone line is a run that is all of its path, and a run that would leave 0.05 pt
+or less of its path (a ten-thousandth of the larger side of a path over 500 pt) counts as all of it, so the pointer
+shows no scissors over it and a click on it does not split it. A release up to 3 screen pixels from the press is a
+click when the pointer went no farther during the drag.
 With `pickColorFrom` `swatches`, the run takes the current fill as its stroke. The tool sends `openFilledAsClosed`,
 `pickColorFrom`, the gap length (`gap`, 0 with Gap Detection off) and, for such a click, `splitStroke: true` with
 `shapeBuilder.merge`, which takes them all as params, and `shapeBuilder.regions` takes `openFilledAsClosed` and `gap`.

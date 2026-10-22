@@ -319,10 +319,11 @@ impl BuilderMap {
     /// line piece or edge nearest `p` within `tol` (as [`BuilderMap::hit`] finds it), from the
     /// anchor or crossing point before `p` to the one after it on the path it lies on. `outlines`
     /// are the inputs' outlines as they are drawn (a filled open path without the edge that closes
-    /// it in the map). Returns the input's index and the run; None when no piece is that close,
-    /// when the run is not on the outline as drawn, when it would be a whole closed subpath, when
-    /// it is too short to cut out (see [`po::cut_out`]), or when it is all of the path (a lone
-    /// line), which leaves nothing to split off.
+    /// it in the map). Returns the input's index and the run, going the way the path goes; None
+    /// when no piece is that close, when the run is not on the outline as drawn, when it would be a
+    /// whole closed subpath, when it is too short to cut out (see [`po::cut_out`]), or when it is
+    /// all of the path (a lone line) or leaves no more of it than [`outline_snap`], which leaves
+    /// nothing to split off.
     pub fn stroke_at(&self, outlines: &[PathData], p: Point, tol: f64) -> Option<(usize, SubPath)> {
         use kurbo::ParamCurve as _;
         let piece = match self.hit(p, Some(tol))? {
@@ -334,17 +335,25 @@ impl BuilderMap {
         let drawn = outlines.get(i)?;
         let stops: Vec<Point> = drawn.anchors().map(|(.., a)| a.p).collect();
         let snap = outline_snap(drawn);
-        let run = po::run_around(piece.0.path.subpaths.first()?, &stops, p, snap)?;
+        let mut run = po::run_around(piece.0.path.subpaths.first()?, &stops, p, snap)?;
         let n = run.segment_count();
         if n == 0 {
             return None;
         }
         let mid = run.segment(n / 2).eval(0.5);
         drawn.nearest(mid).filter(|n| n.4 <= snap)?;
-        // A run that cannot be cut out, or that is all of the path (such as a lone line), leaves
-        // nothing to split off.
-        if !po::cut_out(drawn, &run, false, snap).is_some_and(|rest| !rest.is_empty()) {
+        // A run that cannot be cut out, or that is all of the path (such as a lone line) or all
+        // but a speck of it, leaves nothing to split off.
+        if !po::cut_out(drawn, &run, false, snap).is_some_and(|rest| rest.length() > snap) {
             return None;
+        }
+        // Reverse the run when the path's parameter goes down along it.
+        let seg = run.segment(n / 2);
+        if let (Some(a), Some(b)) = (drawn.nearest(seg.eval(0.25)), drawn.nearest(seg.eval(0.75)))
+            && a.0 == b.0
+            && (b.1 as f64 + b.2) < (a.1 as f64 + a.2)
+        {
+            run.reverse();
         }
         Some((i, run))
     }
