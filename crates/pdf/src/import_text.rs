@@ -1,6 +1,6 @@
 //! Text as editable point type: glyphs drawn one after another on the same baseline make one
 //! point text object of their Unicode text, a run per font, size and paint (a gap wider than a
-//! fifth of the size reads as a space). Fonts are named from the file's base font name (its
+//! fifth of the smaller size beside it reads as a space). Fonts are named from the file's base font name (its
 //! subset prefix dropped, the family matched against the fonts available); a font that isn't
 //! available keeps its name, and the text shows in the fallback font until it is.
 //!
@@ -124,7 +124,8 @@ struct Gap {
     at: usize,
     /// From the end of the glyph before to the start of the next (points).
     width: f64,
-    /// The larger of the two glyphs' sizes (points).
+    /// The smaller of the two glyphs' sizes (points): a word gap beside a much larger glyph is
+    /// narrow for the large size (#3623).
     em: f64,
     /// Along the line, not turned along a curve.
     on_line: bool,
@@ -156,6 +157,8 @@ pub(crate) struct TextLine {
     visible: Point,
     /// The last glyph's baseline direction.
     last_dir: Vec2,
+    /// The last glyph's size (points).
+    last_size: f64,
     /// Each glyph's baseline origin, then where the last one ends.
     baseline: Vec<Point>,
     runs: Vec<(Look, String)>,
@@ -207,6 +210,7 @@ impl TextLine {
             last: at.origin,
             visible: at.origin,
             last_dir: at.dir,
+            last_size: at.size,
             baseline: vec![],
             runs: vec![],
             upright: None,
@@ -297,7 +301,7 @@ impl TextLine {
                 return false;
             }
             if !run.ends_with(' ') && !text.starts_with(' ') {
-                self.gaps.push(Gap { at: bytes, width: gap, em: size, on_line });
+                self.gaps.push(Gap { at: bytes, width: gap, em: self.last_size.min(at.size), on_line });
             }
             // A space the file draws between two glyphs spans the gaps on both sides of it.
             let drawn = self.drawn_space.take();
@@ -322,6 +326,7 @@ impl TextLine {
         }
         self.last = at.origin;
         self.last_dir = at.dir;
+        self.last_size = at.size;
         self.baseline.push(at.origin);
         self.advances.push(advance);
         true
