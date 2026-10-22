@@ -328,6 +328,9 @@ pub enum SvgError {
     /// Its elements nest (references followed) deeper than the reader goes.
     #[error("the SVG's elements are nested more than {0} deep")]
     TooDeep(usize),
+    /// SVGZ data unpacks to more than the reader takes (a guard against decompression bombs).
+    #[error("SVG parse error: {0}")]
+    TooBig(String),
 }
 
 /// Export a document as an SVG string (linked images are not returned: see [`export_full`]).
@@ -435,25 +438,33 @@ pub fn compress_bytes(svg: &[u8]) -> Vec<u8> {
 }
 
 /// Most bytes an SVGZ file may unpack to (a guard against decompression bombs).
-const MAX_SVGZ: u64 = 512 << 20;
+pub(crate) const MAX_SVGZ: u64 = 512 << 20;
 
 /// SVG text from SVG or SVGZ bytes: UTF-8, UTF-16 (after a byte order mark) or, when the XML
 /// declaration says so, ISO 8859-1.
 pub fn text_of(bytes: &[u8]) -> Result<std::borrow::Cow<'_, str>, SvgError> {
+    text_within(bytes, &std::sync::atomic::AtomicU64::new(0))
+}
+
+/// [`text_of`], SVGZ bytes unpacking within what `unpacked`, the bytes SVGZ data unpacked to so
+/// far, leaves of [`MAX_SVGZ`]. What they unpack to is added to it, whether or not it decodes.
+pub(crate) fn text_within<'a>(bytes: &'a [u8], unpacked: &std::sync::atomic::AtomicU64) -> Result<std::borrow::Cow<'a, str>, SvgError> {
     use std::io::Read as _;
+    use std::sync::atomic::Ordering;
     if !is_svgz(bytes) {
         return match decode(bytes)? {
             Decoded::Utf8(skip) => std::str::from_utf8(bytes.get(skip..).unwrap_or_default()).map(Into::into).map_err(|_| not_utf8()),
             Decoded::Text(t) => Ok(t.into()),
         };
     }
+    let most = MAX_SVGZ.saturating_sub(unpacked.load(Ordering::Relaxed));
     let mut raw = Vec::new();
-    flate2::read::GzDecoder::new(bytes)
-        .take(MAX_SVGZ + 1)
-        .read_to_end(&mut raw)
-        .map_err(|e| SvgError::Parse(format!("not a valid SVGZ file: {e}")))?;
-    if raw.len() as u64 > MAX_SVGZ {
-        return Err(SvgError::Parse(format!("the SVGZ file unpacks to more than {} MB", MAX_SVGZ >> 20)));
+    let read = flate2::read::GzDecoder::new(bytes).take(most.saturating_add(1)).read_to_end(&mut raw);
+    // Read before a failure is kept: it was unpacked too.
+    unpacked.fetch_add(raw.len() as u64, Ordering::Relaxed);
+    read.map_err(|e| SvgError::Parse(format!("not a valid SVGZ file: {e}")))?;
+    if raw.len() as u64 > most {
+        return Err(SvgError::TooBig(format!("the SVGZ file unpacks to more than {} MB", most >> 20)));
     }
     match decode(&raw)? {
         Decoded::Utf8(skip) => {

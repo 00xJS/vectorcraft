@@ -7,6 +7,10 @@
 //! refers to, and a clip path, mask, pattern, marker or filter is converted where it is used
 //! (`clip-path: url(#a)` on an element of a clip path makes a chain as deep as there are clip
 //! paths). So each element's depth is the deepest of what it holds and what it refers to.
+//!
+//! An SVG image (`<image>` of SVG data or an SVG file) is read while the SVG showing it is, on
+//! the same stack: the depths of the SVGs around it are added to its own, and an image past the
+//! cap is left out (`files`).
 
 use std::borrow::Cow;
 use std::collections::HashMap;
@@ -88,10 +92,21 @@ pub(crate) fn xml_too_deep(svg: &str) -> bool {
     prescan(svg).too_deep
 }
 
-/// The one pass: tags are counted as the text has them; markup in the values of a document
-/// type's entities counts ten times (how deep entities may refer to one another), on top of the
-/// deepest element. Past the cap the pass stops, and the markers are the whole text.
+/// Do the elements of the XML text `svg` nest deeper than `most`? See [`prescan_with`].
+pub(super) fn xml_deeper_than(svg: &str, most: usize) -> bool {
+    prescan_with(svg, most).too_deep
+}
+
+/// [`prescan_with`] against [`MAX_ELEMENT_DEPTH`].
 pub(crate) fn prescan(svg: &str) -> Prescan<'_> {
+    prescan_with(svg, MAX_ELEMENT_DEPTH)
+}
+
+/// The one pass, with elements allowed to nest `most` deep: tags are counted as the text has
+/// them; markup in the values of a document type's entities counts ten times (how deep entities
+/// may refer to one another), on top of the deepest element. Past the cap the pass stops, and
+/// the markers are the whole text.
+fn prescan_with(svg: &str, most: usize) -> Prescan<'_> {
     let b = svg.as_bytes();
     let find =
         |from: usize, what: &[u8]| b.get(from..).and_then(|rest| rest.windows(what.len()).position(|w| w == what)).map(|at| from + at + what.len());
@@ -158,7 +173,7 @@ pub(crate) fn prescan(svg: &str) -> Prescan<'_> {
             depth.0 += usize::from(!empty);
             end
         };
-        if elements.1 + 10 * entities.1 > MAX_ELEMENT_DEPTH {
+        if elements.1 + 10 * entities.1 > most {
             return Prescan { too_deep: true, markers: Cow::Borrowed(svg) };
         }
     }
@@ -178,9 +193,9 @@ pub(crate) fn prescan(svg: &str) -> Prescan<'_> {
     Prescan { too_deep: false, markers }
 }
 
-/// Does anything in `xml` nest deeper than [`MAX_ELEMENT_DEPTH`], references followed? Without
-/// recursion.
-pub(super) fn too_deep(xml: &roxmltree::Document) -> bool {
+/// How deep the elements of `xml` nest, references followed (the root alone is 1); `None` past
+/// `most`. Without recursion.
+pub(super) fn height(xml: &roxmltree::Document, most: usize) -> Option<usize> {
     let elements = || xml.descendants().filter(|n| n.is_element());
     let ids: HashMap<&str, XNode> = elements().filter_map(|n| Some((n.attribute("id")?, n))).collect();
     let css = Styles::new(xml);
@@ -210,14 +225,14 @@ pub(super) fn too_deep(xml: &roxmltree::Document) -> bool {
                 let held = n.children().filter(|c| c.is_element()).map(of).max().unwrap_or(0);
                 let used = |inherited: bool| refs.iter().filter(|(_, i)| *i == inherited).map(|(t, _)| of(*t)).max().unwrap_or(0);
                 let height = 1 + held.max(used(false)) + used(true);
-                if height > MAX_ELEMENT_DEPTH {
-                    return true;
+                if height > most {
+                    return None;
                 }
                 heights.insert(n.id(), height);
             }
         }
     }
-    false
+    heights.get(&xml.root_element().id()).copied()
 }
 
 #[cfg(test)]
@@ -225,7 +240,7 @@ mod tests {
     use super::*;
 
     fn deep(svg: &str) -> bool {
-        too_deep(&roxmltree::Document::parse(svg).unwrap())
+        height(&roxmltree::Document::parse(svg).unwrap(), MAX_ELEMENT_DEPTH).is_none()
     }
 
     fn svg(body: &str) -> String {
@@ -244,6 +259,15 @@ mod tests {
         assert!(!deep(&at) && !xml_too_deep(&at));
         assert!(deep(&past) && xml_too_deep(&past));
         assert!(xml_too_deep(&svg(&groups(200_000))), "any depth is measured");
+    }
+
+    #[test]
+    fn what_is_left_of_the_cap_is_measured_too() {
+        let ten = svg(&groups(8));
+        assert!(!xml_deeper_than(&ten, 10) && xml_deeper_than(&ten, 9));
+        let xml = roxmltree::Document::parse(&ten).unwrap();
+        assert_eq!((height(&xml, 10), height(&xml, 9)), (Some(10), None));
+        assert_eq!(height(&roxmltree::Document::parse("<svg/>").unwrap(), 1), Some(1));
     }
 
     #[test]

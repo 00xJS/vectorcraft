@@ -47,9 +47,9 @@ pub(crate) fn import(svg: &str, opts: &ImportOptions) -> Result<(Document, Vec<S
         return Err(too_deep());
     }
     let xml = parse(svg)?;
-    if depth::too_deep(&xml) {
+    let Some(height) = depth::height(&xml, depth::MAX_ELEMENT_DEPTH) else {
         return Err(too_deep());
-    }
+    };
     let (svg, found) = prepass(svg, &scan.markers, &xml, opts);
     // The prepass's edits are in the text: the XML is read again only when it made any.
     let xml = match &svg {
@@ -66,7 +66,7 @@ pub(crate) fn import(svg: &str, opts: &ImportOptions) -> Result<(Document, Vec<S
         let opt = usvg::Options {
             dpi: units.dpi as f32,
             font_size: DEFAULT_FONT_SIZE as f32,
-            image_href_resolver: files.resolver(),
+            image_href_resolver: files.resolver(height),
             ..usvg::Options::default()
         };
         usvg::Tree::from_str(&src, &opt).map_err(|e| SvgError::Parse(e.to_string()))?
@@ -99,6 +99,9 @@ pub(crate) fn import(svg: &str, opts: &ImportOptions) -> Result<(Document, Vec<S
     im.doc.svg_scripts = found.scripts;
     if im.files.nested_text() {
         im.warn("text inside an SVG image isn't imported".into());
+    }
+    for note in im.files.left_out() {
+        im.warn(note);
     }
 
     // usvg wraps everything in an id-less group carrying the viewBox transform when needed.

@@ -3353,17 +3353,38 @@ fn deeply_nested_svg_is_refused_or_merged() {
             "<svg {SVG_NS} width=\"9\" height=\"9\"><defs>{links}<rect id=\"u3000\" width=\"1\" height=\"1\"/></defs><use href=\"#u0\"/></svg>"
         );
         assert!(open_deep("chain.svg", chain.as_bytes()).is_none());
+        // SVG images in SVG images, read on the same stack: each too deep, of a type that is read
+        // as SVG too (`text/plain`), or each within the cap but not all together (#3562). What is
+        // past the cap is left out.
+        let images = [nested_images(3, 1000), nested_images(12, most - 4)];
+        for (i, file) in images.iter().enumerate() {
+            let (_, warnings) = open_deep("images.svg", file.as_bytes()).expect("opens");
+            assert!(warnings.iter().any(|w| w.contains("SVG images were left out")), "{i}: {warnings:?}");
+        }
         // Placed and pasted, as opened.
         let mut s = vectorcraft_engine::Session::new();
         s.execute("file.new", &json!({"width": 300, "height": 200})).unwrap();
-        for n in [40, 2 * most] {
-            let p = json!({"name": "deep.svg", "dataBase64": vectorcraft_format::base64_encode(nested_svg(n).as_bytes())});
+        for svg in [nested_svg(40), nested_svg(2 * most)].iter().chain(&images) {
+            let p = json!({"name": "deep.svg", "dataBase64": vectorcraft_format::base64_encode(svg.as_bytes())});
             let _ = no_panic(s.execute("file.place", &p));
-            let _ = no_panic(s.execute("clipboard.importSvg", &json!({"svg": nested_svg(n)})));
+            let _ = no_panic(s.execute("clipboard.importSvg", &json!({"svg": svg})));
             let _ = no_panic(s.execute("edit.paste", &json!({})));
             assert!(!s.doc().unwrap().doc.too_deep(None));
         }
     });
+}
+
+/// An SVG showing a chain of `levels` SVG images from `text/plain` data URLs, each `n` groups
+/// deep around the next.
+fn nested_images(levels: usize, n: usize) -> String {
+    let image = |svg: &str| {
+        format!("<image href=\"data:text/plain;base64,{}\" width=\"9\" height=\"9\"/>", vectorcraft_format::base64_encode(svg.as_bytes()))
+    };
+    let mut svg = nested_svg(0);
+    for _ in 0..levels {
+        svg = format!("<svg {SVG_NS} width=\"9\" height=\"9\">{}{}{}</svg>", "<g>".repeat(n), image(&svg), "</g>".repeat(n));
+    }
+    format!("<svg {SVG_NS} width=\"9\" height=\"9\">{}</svg>", image(&svg))
 }
 
 /// A page whose content is `content`, with `resources`.
