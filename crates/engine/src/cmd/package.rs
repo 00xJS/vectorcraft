@@ -148,7 +148,20 @@ impl<'a> Collector<'a> {
         self.warnings.push(message);
     }
 
-    fn collect(&mut self, doc: &mut Document, source: &str, destination: &str, depth: usize) -> Result<()> {
+    /// Warns when a file that placed `.ai` file `source` links (`name`) was copied as `copy`: the
+    /// copy of `source` finds it only by its name, beside it.
+    fn renamed(&mut self, lines: &mut Vec<String>, source: &str, path: &str, name: &str, copy: &str) {
+        if Path::new(copy).file_name().and_then(|n| n.to_str()) != Some(name) {
+            let message = format!(
+                "{path}: copied as {copy}; the copy of {source} looks for it as {name} and shows the file of that name, if any, else its preview"
+            );
+            self.warn(lines, message);
+        }
+    }
+
+    /// Collects the files `doc` links. `by_name`: `doc` is a placed `.ai` file's editing data,
+    /// whose links are not rewritten, so its copy finds them by name beside it.
+    fn collect(&mut self, doc: &mut Document, source: &str, destination: &str, depth: usize, by_name: bool) -> Result<()> {
         // The caller checks cycles and depth before descending; active documents have
         // a destination reserved so back-links can point at their single packaged copy.
         self.visiting.insert(source.to_string(), destination.to_string());
@@ -183,8 +196,11 @@ impl<'a> Collector<'a> {
                     local.insert(file.path.clone(), Copied { name: ancestor, size: None, hash: None });
                     continue;
                 }
-                if let Some(existing) = self.copies.get(found_path) {
-                    local.insert(file.path.clone(), existing.clone());
+                if let Some(existing) = self.copies.get(found_path).cloned() {
+                    if by_name {
+                        self.renamed(&mut lines, source, &file.path, &file.name, &existing.name);
+                    }
+                    local.insert(file.path.clone(), existing);
                     continue;
                 }
                 let Some(mut bytes) = file.bytes else {
@@ -199,8 +215,20 @@ impl<'a> Collector<'a> {
                 let name = safe_asset_name(&file.name);
                 let unique = free_name(&name, if self.opts.links_folder { &mut self.link_names } else { &mut self.taken });
                 let destination_file = format!("{dir}{unique}");
-                // A placed PDF or .ai file is copied as it is, as an image is.
-                if placed.contains(&file.path) && super::place::document::is_native(&file.name, &bytes) {
+                if by_name {
+                    self.renamed(&mut lines, source, &file.path, &file.name, &destination_file);
+                }
+                // A placed PDF or .ai file is copied as it is, as an image is; the files a .ai file
+                // read from its editing data links are copied beside it.
+                let placed_file = placed.contains(&file.path);
+                if placed_file && let Some(mut art) = super::place::document::editing_data(&file.name, &bytes) {
+                    if depth >= vectorcraft_doc::placed_document::MAX_DEPTH {
+                        self.warn(&mut lines, format!("{}: nesting limit reached; copied unchanged without collecting its own links", file.path));
+                    } else {
+                        self.collect(&mut art, found_path, &destination_file, depth + 1, true)?;
+                    }
+                }
+                if placed_file && super::place::document::is_native(&file.name, &bytes) {
                     if depth >= vectorcraft_doc::placed_document::MAX_DEPTH {
                         self.warn(&mut lines, format!("{}: nesting limit reached; copied unchanged without collecting its own links", file.path));
                     } else {
@@ -212,7 +240,7 @@ impl<'a> Collector<'a> {
                                 let include_linked =
                                     saved.doc.linked_only_images().iter().any(|key| saved.doc.images.get(key).is_some_and(|blob| !blob.is_proxy()));
                                 let mut nested = saved.doc;
-                                self.collect(&mut nested, found_path, &destination_file, depth + 1)?;
+                                self.collect(&mut nested, found_path, &destination_file, depth + 1, false)?;
                                 if self.opts.relink {
                                     // Preserve auxiliary native-file content when rewriting.
                                     let mut options = vectorcraft_format::SaveOptions::for_doc(&nested);
@@ -394,7 +422,7 @@ fn collect_and_write(package: Package, write: &mut dyn FnMut(&str, &[u8]) -> Res
         doc = d;
     }
     let mut collector = Collector::new(&o, root.clone(), &doc_name);
-    collector.collect(&mut doc, &doc_path, &doc_name, 0)?;
+    collector.collect(&mut doc, &doc_path, &doc_name, 0, false)?;
     let mut entries = std::mem::take(&mut collector.entries);
     entries.insert(0, (doc_name.clone(), vectorcraft_format::save_file(&doc)));
     let mut taken = std::mem::take(&mut collector.taken);

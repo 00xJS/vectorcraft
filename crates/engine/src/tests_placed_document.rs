@@ -1,8 +1,7 @@
 //! Placed documents: a VectorCraft document placed linked (`file.place`'s default for one read
 //! from a file), drawn and output as vectors, saved with its preview, checked, updated and
 //! relinked when the file changes, and turned into an editable copy (Break Link, Expand). A PDF
-//! or `.ai` page places the same way with Preferences › File Handling › Link Placed PDF and .ai
-//! Files on.
+//! or `.ai` page places the same way.
 
 use serde_json::{Value, json};
 use vectorcraft_color::{Color, Paint};
@@ -462,39 +461,29 @@ fn pdf_source(path: &str, format: &str, pages: &[[u8; 3]], extra: usize) {
     write(path, &cmd::fileio::encode_all(&d, format, &p).unwrap().files[0].1);
 }
 
-/// Preferences › File Handling › Link Placed PDF and .ai Files on.
-fn link_pdfs(s: &mut Session) {
-    s.execute("prefs.set", &json!({"key": "linkPlacedPdf", "value": true})).unwrap();
-}
-
 #[test]
-fn a_pdf_page_stays_embedded_without_the_preference() {
-    let dir = Folder::new("placed-pdf-default");
+fn a_pdf_page_placed_without_link_is_embedded() {
+    let dir = Folder::new("placed-pdf-embedded");
     let src = dir.file("flyer.pdf");
     pdf_source(&src, "pdf", &[RED], 0);
     let mut s = session();
-    assert_eq!(s.execute("prefs.get", &json!({"key": "linkPlacedPdf"})).unwrap(), json!(false), "off by default");
-    let r = s.execute("file.place", &json!({"path": src, "link": true, "at": [200, 150]})).unwrap();
+    let r = s.execute("file.place", &json!({"path": src, "link": false, "at": [200, 150]})).unwrap();
     assert_eq!(r["linked"], false, "{r}");
     let n = s.doc().unwrap().doc.node(NodeId(r["ids"][0].as_u64().unwrap())).unwrap();
     assert_eq!(n.kind_label(), "Clip Group");
     assert!(!s.doc().unwrap().doc.has_placed());
-    // With the preference on, Link off still embeds, and so does text asked for as outlines.
-    link_pdfs(&mut s);
-    for p in [json!({"path": src, "link": false}), json!({"path": src, "textAs": "outlines"})] {
-        let r = s.execute("file.place", &p).unwrap();
-        assert_eq!(r["linked"], false, "{p}: {r}");
-    }
+    // Text asked for as outlines is embedded with Link too.
+    let r = s.execute("file.place", &json!({"path": src, "textAs": "outlines"})).unwrap();
+    assert_eq!(r["linked"], false, "{r}");
     assert!(!s.doc().unwrap().doc.has_placed());
 }
 
 #[test]
-fn with_the_preference_a_pdf_page_places_linked() {
+fn with_link_a_pdf_page_places_linked() {
     let dir = Folder::new("placed-pdf-linked");
     let src = dir.file("flyer.pdf");
     pdf_source(&src, "pdf", &[RED], 0);
     let mut s = session();
-    link_pdfs(&mut s);
     let id = place(&mut s, &src);
     let p = placed(&s, id);
     assert_eq!((p.link.path.as_str(), p.link.page, p.bounding), (src.as_str(), Some(1), false), "{p:?}");
@@ -517,7 +506,6 @@ fn a_changed_pdf_is_modified_and_update_links_reads_it_again() {
     let src = dir.file("flyer.pdf");
     pdf_source(&src, "pdf", &[RED], 0);
     let mut s = session();
-    link_pdfs(&mut s);
     let id = place(&mut s, &src);
     pdf_source(&src, "pdf", &[BLUE], 1);
     assert_eq!(s.execute("links.check", &json!({})).unwrap()["links"][0]["status"], "modified");
@@ -546,7 +534,6 @@ fn a_linked_pdf_page_outputs_as_vectors_after_the_document_reopens() {
     let src = dir.file("flyer.pdf");
     pdf_source(&src, "pdf", &[RED], 3);
     let mut s = session();
-    link_pdfs(&mut s);
     let id = place(&mut s, &src);
     let doc_path = dir.file("poster.vectorcraft");
     save(&mut s, &doc_path);
@@ -572,7 +559,6 @@ fn saving_and_reopening_keeps_a_linked_pdf_pages_number_and_box() {
     let src = dir.file("flyer.pdf");
     pdf_source(&src, "pdf", &[RED, BLUE], 4);
     let mut s = session();
-    link_pdfs(&mut s);
     let r = s.execute("file.place", &json!({"path": src, "page": 2, "crop": "media", "at": [200, 150]})).unwrap();
     assert_eq!(r["linked"], true, "{r}");
     let id = NodeId(r["ids"][0].as_u64().unwrap());
@@ -604,7 +590,6 @@ fn a_pdf_compatible_ai_file_places_linked_like_a_pdf() {
     let src = dir.file("badge.ai");
     pdf_source(&src, "ai", &[RED], 0);
     let mut s = session();
-    link_pdfs(&mut s);
     let id = place(&mut s, &src);
     assert_eq!(placed(&s, id).link.path, src);
     assert!(near(centre_colour(&s.doc().unwrap().doc), RED));

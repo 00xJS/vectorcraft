@@ -1,6 +1,6 @@
-//! Placed documents (`file.place` of a VectorCraft document from a file, with `link`; of a PDF or
-//! `.ai` file too, with Preferences › File Handling › Link Placed PDF and .ai Files): one locked
-//! object showing an artboard of the document or a page of the PDF, a [`PlacedDocument`].
+//! Placed documents (`file.place` of a VectorCraft document, a PDF or a `.ai` file from a file,
+//! with `link`): one locked object showing an artboard of the document or a page of the PDF, a
+//! [`PlacedDocument`].
 //!
 //! The object keeps the file's bytes (in the document's images, like image data) and the link; the
 //! art it shows is read from them the way placing the file without Link reads it
@@ -42,6 +42,20 @@ pub(crate) fn is_native(name: &str, bytes: &[u8]) -> bool {
 /// Is `name` with `bytes` a PDF, or a `.ai` or `.ait` file read as PDF pages (not PostScript)?
 pub(crate) fn is_pdf(name: &str, bytes: &[u8]) -> bool {
     fileio::detect(name, bytes).is_some_and(|f| matches!(f.id, "pdf" | "ai" | "ait")) && !vectorcraft_pdf::is_postscript(bytes)
+}
+
+/// The editing data of the `.ai` file `name` (`bytes`) when its PDF part is only a placeholder:
+/// the document its pages are read from ([`super::pdf_art`]), with the files it links. `None` for
+/// other files.
+pub(crate) fn editing_data(name: &str, bytes: &[u8]) -> Option<Document> {
+    if !is_pdf(name, bytes) {
+        return None;
+    }
+    let read = fileio::page_document(bytes, 0, &fileio::LoadOptions::default());
+    match fileio::page_or_editing_data(name, bytes, None, read) {
+        Ok((doc, _, true)) => Some(doc),
+        _ => None,
+    }
 }
 
 /// The type the bytes of placed file `name` (`bytes`) are stored with: a PDF's format's, else

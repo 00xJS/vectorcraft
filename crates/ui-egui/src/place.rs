@@ -155,7 +155,6 @@ fn open_dialog(app: &mut VectorcraftApp, files: Vec<Value>) {
     let units = app.session.active().map(|d| d.doc.units).unwrap_or_default();
     let info: Vec<String> = files.iter().map(|f| summary(app, f, units)).collect();
     let one_object = app.session.active().is_some_and(|d| d.selection.objects.len() == 1);
-    let pdf = app.session.prefs.link_placed_pdf;
     app.ui.dialog = Some(crate::state::Dialog::new(
         crate::dialogs::place::KIND,
         json!({
@@ -164,20 +163,18 @@ fn open_dialog(app: &mut VectorcraftApp, files: Vec<Value>) {
             "template": false,
             "replace": false,
             "__replace": files.len() == 1 && one_object,
-            "__documents": files.iter().any(|f| is_vectorcraft_file(f, pdf)),
-            "__others": !files.iter().all(|f| is_vectorcraft_file(f, pdf)),
+            "__documents": files.iter().any(is_vectorcraft_file),
+            "__others": !files.iter().all(is_vectorcraft_file),
             "__info": info,
         }),
     ));
 }
 
 /// Is dialog file entry `file` a VectorCraft document on disk (what Link places as one locked
-/// object), or, with `pdf` (Preferences › File Handling › Link Placed PDF and .ai Files), a PDF or
-/// `.ai` file on disk?
-fn is_vectorcraft_file(file: &Value, pdf: bool) -> bool {
-    let native = ["vectorcraft", vectorcraft_format::LEGACY_EXTENSION, "vctemplate"];
-    let linked = |ext: &str| native.contains(&ext) || (pdf && matches!(ext, "pdf" | "ai" | "ait"));
-    file.get("path").and_then(Value::as_str).is_some_and(|p| linked(fileio::extension(p).as_str()))
+/// object), or a PDF or `.ai` file on disk?
+fn is_vectorcraft_file(file: &Value) -> bool {
+    let linked = ["vectorcraft", vectorcraft_format::LEGACY_EXTENSION, "vctemplate", "pdf", "ai", "ait"];
+    file.get("path").and_then(Value::as_str).is_some_and(|p| linked.contains(&fileio::extension(p).as_str()))
 }
 
 /// The engine params naming `file` (a dialog file entry).

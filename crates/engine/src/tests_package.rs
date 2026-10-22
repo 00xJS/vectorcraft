@@ -415,7 +415,6 @@ fn package_copies_a_linked_pdf_page_as_it_is() {
     let src = dir.file("art/flyer.pdf");
     write(&src, &pdf);
     let mut s = session();
-    run(&mut s, "prefs.set", json!({"key": "linkPlacedPdf", "value": true}));
     let placed = run(&mut s, "file.place", json!({"path": src}));
     assert_eq!(placed["linked"], true, "{placed}");
     save(&mut s, &dir.file("poster.vectorcraft"));
@@ -428,6 +427,71 @@ fn package_copies_a_linked_pdf_page_as_it_is() {
     let opened = open(&mut s, &root.join("poster.vectorcraft").to_string_lossy());
     assert_eq!(opened["missingLinks"], json!([]), "{opened}");
     assert!(s.doc().unwrap().doc.has_placed());
+}
+
+/// `dir/art/badge.ai`, saved without its PDF part, its art placing each of `pics` (600 × 300 px,
+/// with a 2×1 preview) → its path.
+fn ai_placing(dir: &Folder, pics: &[&str]) -> String {
+    use vectorcraft_testkit::ai;
+    let place = |pic: &str| {
+        let pic = pic.replace('\\', "/");
+        format!(
+            "%AI5_BeginPlace\n[0.1 0 0 -0.1 20 80] 0 0 600 300 4 4 0\n({pic})`\n%AI26_BeginPlacedObjectPreview\n2 1 8 32 17 \x7f\x10\x10\x60\x7f\x10\x10\x60\n%AI26_EndPlacedObjectPreview\n~\n%AI5_EndPlace\n"
+        )
+    };
+    let data = ai::editing_data(200.0, 100.0, &ai::layer("Art", &pics.iter().map(|p| place(p)).collect::<String>()));
+    let src = dir.file("art/badge.ai");
+    write(&src, &ai::ai(data.as_bytes(), "BT /F1 12 Tf 10 50 Td (Saved without its PDF part) Tj ET"));
+    src
+}
+
+#[test]
+fn package_copies_the_files_a_linked_ai_files_editing_data_places_beside_it() {
+    let dir = Folder::new("package-placed-ai");
+    let pic = dir.file("art/photo.png");
+    write(&pic, &png(600, 300, RED));
+    let src = ai_placing(&dir, &[&pic]);
+    let mut s = session();
+    let placed = run(&mut s, "file.place", json!({"path": src}));
+    assert_eq!(placed["linked"], true, "{placed}");
+    save(&mut s, &dir.file("poster.vectorcraft"));
+    let r = run(&mut s, "file.package", json!({"folder": dir.file("out")}));
+    assert_eq!((r["links"].as_u64(), r["missingLinks"].clone(), r["warnings"].clone()), (Some(2), json!([]), json!([])), "{r}");
+    let root = dir.0.join("out/poster Folder");
+    assert_eq!(std::fs::read(root.join("Links/photo.png")).unwrap(), png(600, 300, RED));
+    // The copy of the .ai finds the picture beside it, not its preview.
+    std::fs::remove_dir_all(dir.0.join("art")).unwrap();
+    let copy = root.join("Links/badge.ai").to_string_lossy().into_owned();
+    let shows_the_file = || {
+        let bytes = std::fs::read(&copy).unwrap();
+        let a = cmd::place::document::document_art("badge.ai", &bytes, Some(&copy), 1, false, vectorcraft_doc::PageBox::Crop, "t").unwrap();
+        a.doc.images.values().any(|b| !b.is_proxy())
+    };
+    assert!(shows_the_file());
+    std::fs::remove_file(root.join("Links/photo.png")).unwrap();
+    assert!(!shows_the_file(), "the preview only");
+}
+
+#[test]
+fn package_warns_when_a_file_a_linked_ai_file_places_is_copied_under_another_name() {
+    let dir = Folder::new("package-placed-ai-names");
+    let (one, two) = (dir.file("art/a/photo.png"), dir.file("art/b/photo.png"));
+    write(&one, &png(600, 300, RED));
+    write(&two, &png(600, 300, BLUE));
+    let src = ai_placing(&dir, &[&one, &two]);
+    let mut s = session();
+    run(&mut s, "file.place", json!({"path": src}));
+    save(&mut s, &dir.file("poster.vectorcraft"));
+    let r = run(&mut s, "file.package", json!({"folder": dir.file("out")}));
+    let warnings = r["warnings"].as_array().unwrap();
+    assert_eq!(r["links"].as_u64(), Some(3), "{r}");
+    assert!(warnings.len() == 1 && warnings[0].as_str().unwrap().contains("looks for it as photo.png and shows the file of that name"), "{r}");
+    // Moved, the copy of the .ai shows Links/photo.png for both, as the warning says.
+    std::fs::remove_dir_all(dir.0.join("art")).unwrap();
+    let copy = dir.0.join("out/poster Folder/Links/badge.ai").to_string_lossy().into_owned();
+    let bytes = std::fs::read(&copy).unwrap();
+    let a = cmd::place::document::document_art("badge.ai", &bytes, Some(&copy), 1, false, vectorcraft_doc::PageBox::Crop, "t").unwrap();
+    assert_eq!(a.doc.images.values().filter(|b| !b.is_proxy()).count(), 1);
 }
 
 #[test]
