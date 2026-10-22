@@ -1008,3 +1008,63 @@ fn dithered_gradient_fills_export_as_images_and_strokes_as_shadings() {
     let pdf = uncompressed(&plain).replace(' ', "");
     assert!(!pdf.contains("/Subtype/Image") && pdf.contains("/ShadingType2"));
 }
+
+/// Illustrator's documentation: perceptual gradients aren't supported in PDF exports, and are
+/// rasterised when saved that way
+/// (https://helpx.adobe.com/illustrator/desktop/paint-and-fill/create-and-edit-gradients/control-perceptual-interpolation-in-gradients.html).
+/// A Perceptual fill and stroke are drawn as images at the raster effects resolution, clipped to
+/// what they paint; a Classic gradient stays a shading, and so does a gradient along a stroke
+/// (slices through stops on the perceptual curve, as the canvas draws it).
+#[test]
+fn perceptual_gradients_export_as_images_and_classic_ones_as_shadings() {
+    let grad = |method| Paint::Gradient(Box::new(GradientPaint::new(Gradient { method, ..Default::default() })));
+    let p = grad(vectorcraft_color::GradientMethod::Perceptual);
+    let shape = shapes::rectangle(Rect::new(10.0, 10.0, 110.0, 60.0));
+    let mut d = doc(200.0, 100.0);
+    d.raster_effects_ppi = 144.0;
+    add(&mut d, Node::path(NodeId(0), shape.clone(), Appearance::basic(p.clone(), p.clone(), 4.0)));
+    let pdf = uncompressed(&d).replace(' ', "");
+    assert_eq!(pdf.matches("/Subtype/Image").count(), 2, "the fill and the stroke are images");
+    assert!(pdf.contains("/Width200") && pdf.contains("/Height100"), "two pixels a point at 144 ppi");
+    assert!(!pdf.contains("/ShadingType2"), "no shading");
+    let mut along = Appearance::basic(Paint::None, p, 4.0);
+    if let Some(AppearanceItem::Stroke(st)) = along.items.get_mut(1) {
+        st.gradient_mode = vectorcraft_doc::StrokeGradientMode::Along;
+    }
+    let mut a = doc(200.0, 100.0);
+    add(&mut a, Node::path(NodeId(0), shape.clone(), along));
+    let pdf = uncompressed(&a).replace(' ', "");
+    assert!(!pdf.contains("/Subtype/Image") && pdf.contains("/ShadingType2"), "along the stroke: slices");
+    let c = grad(vectorcraft_color::GradientMethod::Classic);
+    let mut plain = doc(200.0, 100.0);
+    add(&mut plain, Node::path(NodeId(0), shape, Appearance::basic(c.clone(), c, 4.0)));
+    let pdf = uncompressed(&plain).replace(' ', "");
+    assert!(!pdf.contains("/Subtype/Image") && pdf.contains("/ShadingType2"));
+}
+
+/// A dithered Perceptual gradient: the fill and the stroke are images (Perceptual), and dither
+/// adds its noise to the fill's pixels only.
+#[test]
+fn dithered_perceptual_gradients_export_as_images_with_noise_on_the_fill() {
+    let grad = |dither| {
+        Paint::Gradient(Box::new(GradientPaint::new(Gradient {
+            dither,
+            method: vectorcraft_color::GradientMethod::Perceptual,
+            ..Default::default()
+        })))
+    };
+    let shape = shapes::rectangle(Rect::new(10.0, 10.0, 110.0, 60.0));
+    let export_with = |dither, stroke: bool| {
+        let mut d = doc(200.0, 100.0);
+        let (fill, stroke) = if stroke { (Paint::None, grad(dither)) } else { (grad(dither), Paint::None) };
+        add(&mut d, Node::path(NodeId(0), shape.clone(), Appearance::basic(fill, stroke, 4.0)));
+        uncompressed(&d).replace(' ', "")
+    };
+    for stroke in [false, true] {
+        let pdf = export_with(true, stroke);
+        assert_eq!(pdf.matches("/Subtype/Image").count(), 1, "stroke {stroke}: an image");
+        assert!(!pdf.contains("/ShadingType"), "stroke {stroke}: no shading");
+    }
+    assert_ne!(export_with(true, false), export_with(false, false), "the fill's pixels carry the noise");
+    assert_eq!(export_with(true, true), export_with(false, true), "a stroke has no dither");
+}

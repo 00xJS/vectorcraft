@@ -1237,7 +1237,7 @@ impl Exporter<'_> {
                     }
                     self.warn_raster(&fl.effects, || "fills".into());
                     self.overprinting(s, fl.overprint, &fl.paint, |ex, s| {
-                        if ex.area(s, &path, rule(r), &fl.paint, (fl.opacity, fl.blend), bounds, bounds) {
+                        if ex.area(s, &path, rule(r), &fl.paint, (fl.opacity, fl.blend), bounds, bounds, true) {
                             return;
                         }
                         let Some(paint) = ex.paint(s, &fl.paint, bounds) else { return };
@@ -1291,10 +1291,10 @@ impl Exporter<'_> {
     }
 
     /// Paint the area `clip` (filled by `rule`; bounds `area`) with `p` at `transparency` (opacity,
-    /// blend mode) when it is an [area paint](Self::area_paint) of a fill (strokes check theirs
-    /// first): a pattern's tile instances
-    /// covering it, or an image of a gradient drawn as pixels placed on `bounds` (the painted
-    /// object's box, as on the canvas), clipped to it. False (nothing drawn) for other paints.
+    /// blend mode) when it is an [area paint](Self::area_paint) of a fill (`fill`) or a stroke: a
+    /// pattern's tile instances covering it, or an image of a gradient drawn as pixels placed on
+    /// `bounds` (the painted object's box, as on the canvas), clipped to it. False (nothing drawn)
+    /// for other paints.
     #[allow(clippy::too_many_arguments)]
     fn area(
         &mut self,
@@ -1305,8 +1305,9 @@ impl Exporter<'_> {
         transparency: (f32, BlendMode),
         bounds: Rect,
         area: Rect,
+        fill: bool,
     ) -> bool {
-        if !self.area_paint(p, true) {
+        if !self.area_paint(p, fill) {
             return false;
         }
         let (opacity, mode) = transparency;
@@ -1328,7 +1329,7 @@ impl Exporter<'_> {
                     self.node(s, &inst, area, true);
                 }
             }
-            Paint::Gradient(g) => self.field_image(s, g, bounds, area),
+            Paint::Gradient(g) => self.field_image(s, g, bounds, area, fill),
             _ => {}
         }
         for _ in 0..pushes {
@@ -1340,8 +1341,9 @@ impl Exporter<'_> {
     /// Draw gradient `g`, placed on `bounds`, as an image over `area`, sampled at the document's
     /// raster effects resolution where it is drawn (`area` as the current transform sizes it, so
     /// scaled type gets its pixels too): a freeform gradient's colour field (at most
-    /// [`MAX_FIELD_PX`] a side), or a linear or radial gradient (at most [`MAX_GRADIENT_PX`] a side).
-    fn field_image(&mut self, s: &mut Surface, g: &vectorcraft_color::GradientPaint, bounds: Rect, area: Rect) {
+    /// [`MAX_FIELD_PX`] a side), or a linear or radial gradient (at most [`MAX_GRADIENT_PX`] a side),
+    /// with dither's noise when it paints a fill (`fill`).
+    fn field_image(&mut self, s: &mut Surface, g: &vectorcraft_color::GradientPaint, bounds: Rect, area: Rect, fill: bool) {
         use vectorcraft_color::freeform::{painted_box, spread_scale};
         let Some(b) = painted_box(bounds) else { return };
         let area = area.abs();
@@ -1362,7 +1364,7 @@ impl Exporter<'_> {
             field.grid(area, cols, rows).flat_map(|(c, a)| [q(c[0]), q(c[1]), q(c[2]), q(a)]).collect()
         } else {
             self.warn("linear and radial gradients drawn as pixels are exported as images");
-            g.pixels(b, area, cols, rows, &|c| c.to_rgb()).flatten().collect()
+            g.pixels(b, area, cols, rows, fill, &|c| c.to_rgb()).flatten().collect()
         };
         let pixels = if self.convert { self.out.pixels() } else { None };
         let (Some(img), Some(size)) = (
@@ -1383,13 +1385,14 @@ impl Exporter<'_> {
         if !stroke::is_plain(st) && self.brush_art(s, bp, st, page) {
             return;
         }
-        if self.area_paint(&st.paint, false) {
+        if self.area_paint(&st.paint, false) && st.path_gradient().is_none() {
             // The area the stroke paints (dashes, caps, joins, profile, arrowheads, alignment), as
-            // Outline Stroke makes it, painted with the pattern's tiles or the freeform's image.
+            // Outline Stroke makes it, painted with the pattern's tiles or the gradient's image (a
+            // gradient along or across the stroke is written as slices below).
             let region = stroke::outline_region(&vectorcraft_geom::PathData::from_bezpath(bp), r, st).to_bezpath();
             if let Some(clip) = to_path(s, &region) {
                 let area = region.bounding_box();
-                self.area(s, &clip, krilla::paint::FillRule::NonZero, &st.paint, (st.opacity, st.blend), st.paint_bounds(bounds), area);
+                self.area(s, &clip, krilla::paint::FillRule::NonZero, &st.paint, (st.opacity, st.blend), st.paint_bounds(bounds), area, false);
             }
             return;
         }
@@ -1588,7 +1591,7 @@ impl Exporter<'_> {
                 };
                 let opaque = (1.0, BlendMode::Normal);
                 if let Some(path) = to_path(s, &outlines)
-                    && !ex.area(s, &path, krilla::paint::FillRule::NonZero, fill, opaque, layout.bounds, outlines.bounding_box())
+                    && !ex.area(s, &path, krilla::paint::FillRule::NonZero, fill, opaque, layout.bounds, outlines.bounding_box(), true)
                     && let Some(paint) = ex.paint(s, fill, layout.bounds)
                 {
                     s.set_stroke(None);
@@ -1658,7 +1661,7 @@ impl Exporter<'_> {
         for item in items {
             match item {
                 AppearanceItem::Fill(fl) if fl.visible => self.overprinting(s, fl.overprint, &fl.paint, |ex, s| {
-                    if !ex.area(s, path, krilla::paint::FillRule::NonZero, &fl.paint, (fl.opacity, fl.blend), tb, bp.bounding_box())
+                    if !ex.area(s, path, krilla::paint::FillRule::NonZero, &fl.paint, (fl.opacity, fl.blend), tb, bp.bounding_box(), true)
                         && let Some(paint) = ex.paint(s, &fl.paint, tb)
                     {
                         s.set_stroke(None);

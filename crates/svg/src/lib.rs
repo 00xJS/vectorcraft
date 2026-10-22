@@ -37,6 +37,12 @@
 //!   describes dither as the gradient converted to pixels with subtle noise
 //!   (<https://helpx.adobe.com/illustrator/desktop/paint-and-fill/create-and-edit-gradients/control-dither-in-gradients.html>).
 //!   On characters the gradient stays a vector gradient, without dither (with a warning).
+//! * **Perceptual gradients** fill or stroke objects as an `<image>` of the gradient, at the
+//!   document's raster effects resolution, clipped to the shape or the stroke's outline: SVG
+//!   gradients mix linearly, and Illustrator's documentation says perceptual gradients are
+//!   rasterised in SVG
+//!   (<https://helpx.adobe.com/illustrator/desktop/paint-and-fill/create-and-edit-gradients/control-perceptual-interpolation-in-gradients.html>).
+//!   On characters they are written as linear gradients through stops on the perceptual curve.
 //! * **Symbol instances** the shared `<symbol>` would paint differently from the canvas (stained,
 //!   scaled with strokes, turned or scaled with effects, brushes or live objects, or holding
 //!   pattern paints or unlinked masks, which stay on the page) are written as their own art.
