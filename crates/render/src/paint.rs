@@ -52,11 +52,11 @@ pub(crate) fn set_paint(ctx: &mut RenderContext, p: &Paint, bounds: Rect, f: &Fr
     }
 }
 
-/// [`set_paint`] for a fill: a dithered gradient (dither applies to fills only) is drawn as
-/// pixels with fine noise ([`crate::dither`]).
+/// [`set_paint`] for a fill: a dithered gradient (dither applies to fills only) with stops is
+/// drawn as pixels with fine noise ([`crate::dither`]).
 pub(crate) fn set_fill_paint(ctx: &mut RenderContext, p: &Paint, bounds: Rect, f: &Frame) -> bool {
     match p {
-        Paint::Gradient(g) if g.gradient.dither && g.gradient.kind != GradientKind::Freeform => {
+        Paint::Gradient(g) if g.gradient.dither && g.gradient.kind != GradientKind::Freeform && !g.gradient.stops.is_empty() => {
             crate::dither::set_dithered_paint(ctx, g, bounds, f.ink)
         }
         _ => set_paint(ctx, p, bounds, f),

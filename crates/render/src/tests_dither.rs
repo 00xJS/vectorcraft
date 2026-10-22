@@ -121,3 +121,15 @@ fn a_large_dithered_box_mostly_off_screen_samples_only_what_shows() {
     // ...from the cells around it only, not the whole grid.
     assert!(bytes > 0 && bytes <= 512 * 512 * 4, "{bytes} bytes of grid for a 64-pixel view");
 }
+
+#[test]
+fn a_dithered_gradient_without_stops_draws_nothing_and_samples_nothing() {
+    let mut g = Gradient::new(GradientKind::Linear, Vec::new());
+    g.dither = true;
+    let d = doc(Paint::Gradient(Box::new(GradientPaint::new(g))), Paint::None);
+    let mut r = None;
+    let bytes = dither::grid_bytes_after(|| r = Some(render(&d, Affine::IDENTITY)));
+    assert_eq!(bytes, 0, "no grid is sampled");
+    let r = r.unwrap();
+    assert!((0..H).all(|y| (0..W).all(|x| r.pixel(x, y) == [255, 255, 255, 255])), "nothing is drawn");
+}
