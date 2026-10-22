@@ -76,14 +76,14 @@ fn references<'a, 'i>(n: XNode<'a, 'i>, ids: &HashMap<&str, XNode<'a, 'i>>, css:
 
 /// What one pass over the XML text `svg` finds before any XML reader: whether its elements nest
 /// deeper than [`MAX_ELEMENT_DEPTH`] (roxmltree, ours and usvg's, reads elements by recursion
-/// too), and the text the prepass searches for its markers, with every `data:` attribute value
-/// left out. An embedded picture is such a value and is most of the text when there is one: with
+/// too), and the text the prepass searches for its markers, with the data URLs in its elements'
+/// attribute values left out. An embedded picture is one and is most of the text when there is: with
 /// a 1 MB picture, each of the prepass's dozen substring searches was a pass over a megabyte, and
 /// no tag, attribute name, selector or CSS declaration can be inside a data URL.
 pub(crate) struct Prescan<'s> {
     pub too_deep: bool,
-    /// `svg` with the value of every `data:` attribute left out, its quotes kept. Borrowed when
-    /// there is none.
+    /// `svg` with each data URL in an element's attribute values left out: a `data:` value's
+    /// quotes kept, a `url(…)`'s parentheses and quotes. Borrowed when there is none.
     pub markers: Cow<'s, str>,
 }
 
@@ -112,27 +112,50 @@ fn prescan_with(svg: &str, most: usize) -> Prescan<'_> {
         |from: usize, what: &[u8]| b.get(from..).and_then(|rest| rest.windows(what.len()).position(|w| w == what)).map(|at| from + at + what.len());
     // The `data:` attribute values seen: each from past its opening quote to its closing quote.
     let mut data_values: Vec<(usize, usize)> = vec![];
+    let is = |at: usize, what: &[u8]| b.get(at..at + what.len()).is_some_and(|v| v.eq_ignore_ascii_case(what));
     // The end of the tag starting at `from` (past its `>`), and whether it closes itself. An
-    // element's `data:` values are noted; the document type's quoted values are entities, whose
-    // markup becomes elements, so none of them is.
+    // element's `data:` values are noted, and in its other values (a `style`, a `fill`) the data
+    // URL of each `url(…)`, up to its closing quote or `)`: what follows it, `display:none` say,
+    // stays. The document type's quoted values are entities, whose markup becomes elements, so
+    // none of them is. Where a URL's end is unclear, less is left out, never more.
+    // The first `what` or `quote` at or after `at`: a data URL's end, or its value's.
+    let next = |at: usize, what: u8, quote: u8| b.get(at..).and_then(|rest| rest.iter().position(|c| *c == what || *c == quote)).map(|n| at + n);
     let mut tag_end = |from: usize, element: bool| {
         let mut quote = None;
-        let mut data = None;
-        for (i, c) in b.iter().enumerate().skip(from) {
-            match (quote, c) {
-                (None, b'"' | b'\'') => {
-                    quote = Some(*c);
-                    data = b.get(i + 1..i + 6).filter(|v| element && v.eq_ignore_ascii_case(b"data:")).map(|_| i + 1);
-                }
-                (Some(q), c) if q == *c => {
-                    quote = None;
-                    if let Some(start) = data.take() {
-                        data_values.push((start, i));
+        let mut i = from;
+        while let Some(&c) = b.get(i) {
+            match quote {
+                None if c == b'"' || c == b'\'' => {
+                    quote = Some(c);
+                    // A `data:` value: one search for its closing quote, not a step a byte.
+                    if element && is(i + 1, b"data:") {
+                        let Some(end) = next(i + 1, c, c) else { return (b.len(), false) };
+                        data_values.push((i + 1, end));
+                        i = end;
+                        continue;
                     }
                 }
-                (None, b'>') => return (i + 1, b.get(i.wrapping_sub(1)) == Some(&b'/')),
+                None if c == b'>' => return (i + 1, b.get(i.wrapping_sub(1)) == Some(&b'/')),
+                Some(q) if c == q => quote = None,
+                Some(q) if element && is(i, b"url(") => {
+                    let at = b.get(i + 4..).and_then(|rest| rest.iter().position(|c| !c.is_ascii_whitespace())).map_or(b.len(), |n| i + 4 + n);
+                    let (at, close) = match b.get(at) {
+                        Some(&inner @ (b'"' | b'\'')) if inner != q => (at + 1, inner),
+                        _ => (at, b')'),
+                    };
+                    // Its data URL, up to the byte that closes it; a value that ends first keeps it.
+                    if is(at, b"data:") {
+                        let Some(end) = next(at, close, q) else { return (b.len(), false) };
+                        if b.get(end) == Some(&close) {
+                            data_values.push((at, end));
+                        }
+                        i = end;
+                        continue;
+                    }
+                }
                 _ => {}
             }
+            i += 1;
         }
         (b.len(), false)
     };
@@ -180,10 +203,10 @@ fn prescan_with(svg: &str, most: usize) -> Prescan<'_> {
     let markers = if data_values.is_empty() {
         Cow::Borrowed(svg)
     } else {
-        let mut text = String::with_capacity(svg.len() - data_values.iter().map(|(start, end)| end - start).sum::<usize>());
+        let mut text = String::with_capacity(svg.len().saturating_sub(data_values.iter().map(|(start, end)| end.saturating_sub(*start)).sum()));
         let mut from = 0;
         for &(start, end) in &data_values {
-            // Both ends are at a quote, so both are character boundaries.
+            // Each end is at a quote or a `)`, so both are character boundaries.
             text.push_str(svg.get(from..start).unwrap_or_default());
             from = end;
         }
@@ -311,6 +334,19 @@ mod tests {
         // Nor does one in the document type: an entity's value is markup the tree will hold.
         let entity = format!(r#"<!DOCTYPE svg [<!ENTITY e "data:<script href='a.js'/>">]>{}"#, svg("<g>&e;</g>"));
         assert!(matches!(prescan(&entity).markers, Cow::Borrowed(_)));
+        // In a style or a paint, the data URL of a `url(…)` alone, up to its quote or `)`; what
+        // follows it stays.
+        let styled = svg(&format!(
+            r#"<rect style="fill:url(data:image/png;base64,{0});display:none"/><rect fill='url( "{1}" )' stroke="URL(DATA:x)"/>"#,
+            "script".repeat(500),
+            picture
+        ));
+        let markers = prescan(&styled).markers.into_owned();
+        assert!(!markers.contains("script") && !markers.contains("base64") && !markers.contains("DATA:"), "{markers}");
+        assert!(markers.contains(r#"style="fill:url();display:none""#) && markers.contains(r#"fill='url( "" )' stroke="URL()""#), "{markers}");
+        // A `url(…)` that does not hold a data URL, or never closes inside its value, is kept.
+        let kept = svg(r#"<rect style="fill:url(#p);stroke:url( data:x" fill="url('data:y)"/><rect fill="url("data:z)"/>"#);
+        assert!(matches!(prescan(&kept).markers, Cow::Borrowed(_)));
         // Past the cap, nothing more is read.
         assert!(prescan(&svg(&groups(MAX_ELEMENT_DEPTH))).too_deep);
     }
