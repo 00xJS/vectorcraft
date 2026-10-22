@@ -1843,6 +1843,9 @@ fn artboard_options_fit_drafts_cancel_and_apply_without_moving_art() {
         let mut app = app();
         app.run("shape.rectangle", json!({"x":30,"y":40,"width":80,"height":60})).unwrap();
         app.run("paint.setStroke", json!({"none":true})).unwrap();
+        app.select_tool("artboard");
+        app.session.set_tool_option("scaleArt", &json!(true));
+        app.session.set_tool_option("moveArt", &json!(true));
         let before = app.session.doc().unwrap().doc.clone();
         for apply in [false, true] {
             artboard_options::open(&mut app).unwrap();
@@ -1861,6 +1864,54 @@ fn artboard_options_fit_drafts_cancel_and_apply_without_moving_art() {
             assert_eq!(app.session.doc().unwrap().doc.artboards[0].rect, vectorcraft_geom::Rect::new(30.0, 40.0, 110.0, 100.0));
             app.run("edit.undo", json!({})).unwrap();
             assert_eq!(app.session.doc().unwrap().doc, before);
+        }
+    }
+}
+
+/// Size edits honor the live tool switch; drafts/cancel and one-step history remain intact.
+#[test]
+fn artboard_options_size_changes_honor_scale_artwork() {
+    for scale in [false, true] {
+        for (choice, width, height) in
+            [(json!(null), 400.0, 200.0), (json!({"preset":[612.0,792.0]}), 792.0, 612.0), (json!({"landscape":false}), 100.0, 200.0)]
+        {
+            let mut app = app();
+            app.run("file.new", json!({"width":200,"height":100})).unwrap();
+            app.run("shape.rectangle", json!({"x":20,"y":10,"width":40,"height":20})).unwrap();
+            app.run("paint.setStroke", json!({"none":true})).unwrap();
+            app.select_tool("artboard");
+            app.session.set_tool_option("scaleArt", &json!(scale));
+            let before = app.session.doc().unwrap().doc.clone();
+            for apply in [false, true] {
+                artboard_options::open(&mut app).unwrap();
+                let draft = app.ui.dialog.as_mut().unwrap();
+                draft.fields.insert("width".into(), json!(width));
+                draft.fields.insert("height".into(), json!(height));
+                if !choice.is_null() {
+                    draft.fields.insert("__sizeChoice".into(), choice.clone());
+                }
+                assert_eq!(app.session.doc().unwrap().doc, before, "size change remains a draft");
+                if !apply {
+                    cancel(&mut app);
+                    assert_eq!(app.session.doc().unwrap().doc, before);
+                    continue;
+                }
+                let steps = app.session.doc().unwrap().history.undo.len();
+                confirm(&mut app).unwrap();
+                let after = app.session.doc().unwrap().doc.clone();
+                let bounds = vectorcraft_render::encode::art_bounds(&after).unwrap();
+                let (sx, sy) = if scale { (width / 200.0, height / 100.0) } else { (1.0, 1.0) };
+                for (actual, expected) in [(bounds.x0, 20.0 * sx), (bounds.y0, 10.0 * sy), (bounds.x1, 60.0 * sx), (bounds.y1, 30.0 * sy)] {
+                    assert!((actual - expected).abs() < 1e-6, "{actual} != {expected}, scale={scale}, choice={choice}");
+                }
+                assert_eq!((after.artboards[0].rect.width(), after.artboards[0].rect.height()), (width, height));
+                assert_eq!(app.session.doc().unwrap().history.undo.len(), steps + 1);
+                app.run("edit.undo", json!({})).unwrap();
+                assert_eq!(app.session.doc().unwrap().doc, before);
+                app.run("edit.redo", json!({})).unwrap();
+                assert_eq!(app.session.doc().unwrap().doc, after);
+                app.run("edit.undo", json!({})).unwrap();
+            }
         }
     }
 }
