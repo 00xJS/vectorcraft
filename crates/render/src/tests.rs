@@ -980,6 +980,9 @@ fn dashed_stroke_opacity_folds_into_its_colour() {
     };
     let mut d = Document::new(100.0, 100.0);
     assert_eq!(painted_items(&dashed(&mut d, 0.6, 1.0)), 1, "a dashed stroke takes the folded fast path");
+    let mut brushed = dashed(&mut d, 0.6, 1.0);
+    brushed.appearance.stroke_mut().unwrap().brush = Some("Calligraphic".into());
+    assert_ne!(painted_items(&brushed), 1, "a dashed brush stroke draws its pieces one by one: no folding");
     let folded = render(&doc(0.6, 1.0));
     let layered = render(&doc(1.0, 0.6));
     assert_ne!(folded.pixel(20, 40), [255, 255, 255, 255], "the stroke is drawn");
