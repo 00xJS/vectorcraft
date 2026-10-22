@@ -4550,14 +4550,14 @@ default name, "Artboard N" for the Nth artboard.
 
 The Shape Builder tool's options are its Shape Builder Tool Options (dialog `shapeBuilderOptions`):
 `openFilledAsClosed` (on: a filled open path bounds a region as if an invisible edge closed it; off: it cuts regions
-as an unfilled path does), `pickColorFrom` (`artwork`, the default: a merged shape takes the fill of the front-most
-object over the first region the drag touches that an object covers, and the current fill when only lines enclose
-every region touched; `swatches`: the current fill, and the Left and Right arrow keys step the current fill through the
-document's color swatches), `cursorSwatchPreview` (off; with `swatches`, chips above the pointer show the current fill
-and the swatches before and after it), `selection` (`freeform`, the default, or `straightLine`: a drag touches what
-the line from its first point to the pointer crosses) and `highlightFill` (on by default; when it is off, merge mode
-shades no regions). The tool sends `openFilledAsClosed` and `pickColorFrom` with `shapeBuilder.merge`, which takes
-both as params, and `shapeBuilder.regions` takes `openFilledAsClosed`.
+as an unfilled path does), `pickColorFrom` (`artwork`, the default: a merged shape takes the appearance, opacity and
+blending mode of the front-most selected object under the drag's first point, else of the one under its last point,
+else of the front-most selected object; `swatches`: the current fill, and the Left and Right arrow keys step the
+current fill through the document's color swatches), `cursorSwatchPreview` (off; with `swatches`, chips above the
+pointer show the current fill and the swatches before and after it), `selection` (`freeform`, the default, or
+`straightLine`: a drag touches what the line from its first point to the pointer crosses) and `highlightFill` (on by
+default; when it is off, merge mode shades no regions). The tool sends `openFilledAsClosed` and `pickColorFrom` with
+`shapeBuilder.merge`, which takes both as params, and `shapeBuilder.regions` takes `openFilledAsClosed`.
 
 ```json
 {"name":"run_command","arguments":{"command":"tool.setOption","params":{"tool":"shapeBuilder","values":{"selection":"straightLine","pickColorFrom":"swatches"}}}}
