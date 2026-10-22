@@ -970,6 +970,23 @@ mod tests {
         assert_eq!((app.view().unwrap().artboard, picked(&app, 3)), (1, vec![1]));
     }
 
+    /// With the Artboard tool, a `command.batch` that stays in the document makes the artboard the
+    /// tool then has active the active one, as its steps do on their own: a batch that leaves the
+    /// tool's artboards keeps the active artboard, and Copy and Paste make the pasted one active.
+    #[test]
+    fn a_batch_in_one_document_makes_the_artboard_tools_artboard_active() {
+        let mut app = VectorcraftApp::new(Session::new(), Default::default());
+        app.run("file.new", json!({"width": 200, "height": 150, "artboards": 3})).unwrap();
+        app.select_tool("artboard");
+        select(&mut app, 1);
+        let active = |app: &VectorcraftApp| (app.view().unwrap().artboard, app.session.tool_options()["active"].clone());
+        app.run("command.batch", json!({"commands": [{"command": "object.unlockAll", "params": {}}]})).unwrap();
+        assert_eq!(active(&app), (1, json!(1)));
+        let steps = [json!({"command": "edit.copy", "params": {}}), json!({"command": "edit.paste", "params": {}})];
+        app.run("command.batch", json!({"commands": steps})).unwrap();
+        assert_eq!(active(&app), (3, json!(3)), "the pasted Artboard 4");
+    }
+
     /// With the Artboard tool, `document.activate` makes the active artboard of the document it
     /// switches to the tool's, as choosing the document's tab does.
     #[test]
@@ -981,6 +998,34 @@ mod tests {
         app.run("file.new", json!({"width": 200, "height": 150, "artboards": 2})).unwrap();
         app.run("document.activate", json!({"index": 0})).unwrap();
         assert_eq!((app.view().unwrap().artboard, app.session.tool_options()["selected"].clone()), (2, json!([2])));
+    }
+
+    /// With the Artboard tool, a `command.batch` that switches to another document and back keeps
+    /// the active artboard, and the tool starts on it. When a later step of the batch pastes an
+    /// artboard, the pasted one becomes active, as Paste on its own makes it. A later Cut of the
+    /// tool's artboard 1 makes the new first artboard active, as Cut on its own makes it.
+    #[test]
+    fn a_batch_that_switches_documents_and_back_keeps_the_active_artboard() {
+        let mut app = VectorcraftApp::new(Session::new(), Default::default());
+        app.run("file.new", json!({"width": 200, "height": 150, "artboards": 3})).unwrap();
+        app.run("file.new", json!({"width": 200, "height": 150, "artboards": 2})).unwrap();
+        app.run("document.activate", json!({"index": 0})).unwrap();
+        app.select_tool("artboard");
+        select(&mut app, 2);
+        let step = |command: &str, params: Value| json!({"command": command, "params": params});
+        let back = [step("document.activate", json!({"index": 1})), step("document.activate", json!({"index": 0}))];
+        app.run("command.batch", json!({"commands": back})).unwrap();
+        assert_eq!((app.view().unwrap().artboard, app.session.tool_options()["selected"].clone()), (2, json!([2])));
+        app.run("edit.copy", json!({})).unwrap();
+        let mut steps = back.to_vec();
+        steps.push(step("edit.paste", json!({})));
+        app.run("command.batch", json!({"commands": steps})).unwrap();
+        assert_eq!((app.view().unwrap().artboard, app.session.tool_options()["selected"].clone()), (3, json!([3])), "the pasted Artboard 4");
+        let mut steps = back.to_vec();
+        steps.push(step("edit.cut", json!({})));
+        app.run("command.batch", json!({"commands": steps})).unwrap();
+        assert_eq!(app.session.doc().unwrap().doc.artboards.len(), 3, "Artboard 1 cut");
+        assert_eq!((app.view().unwrap().artboard, app.session.tool_options()["selected"].clone()), (0, json!([0])), "the new first artboard");
     }
 
     /// With the Artboard tool, a double-click on a name with Shift or Ctrl/Cmd held that leaves

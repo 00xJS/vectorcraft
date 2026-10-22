@@ -1322,6 +1322,12 @@ pub struct Session {
     depth: u32,
     /// Set when the active tool panicked (see [`guard`]); reported by the next tool event.
     tool_panic: Option<EngineError>,
+    /// How many times switching or closing documents, or replacing the active one, has started the
+    /// tool afresh ([`Session::tool_resets`]).
+    tool_resets: u64,
+    /// Whether the tool's options were set after it last started afresh
+    /// ([`Session::tool_set_since_reset`]).
+    tool_set_since_reset: bool,
     /// Draw Normal / Behind / Inside (toolbar drawing modes).
     pub draw_mode: DrawMode,
     /// The path new art is drawn inside (Draw Inside).
@@ -1447,6 +1453,8 @@ impl Session {
             preview_memo: Default::default(),
             depth: 0,
             tool_panic: None,
+            tool_resets: 0,
+            tool_set_since_reset: false,
             draw_mode: DrawMode::Normal,
             draw_inside: None,
             untitled_counter: 0,
@@ -1527,6 +1535,8 @@ impl Session {
         }
         self.keep_tool_settings();
         self.tool = self.make_tool(self.tool.id());
+        self.tool_resets = self.tool_resets.wrapping_add(1);
+        self.tool_set_since_reset = false;
     }
     pub fn set_active(&mut self, index: usize) -> bool {
         if index < self.docs.len() {
