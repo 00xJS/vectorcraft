@@ -40,7 +40,7 @@ pub fn specs() -> Vec<CommandSpec> {
             "Shape Builder",
             [],
             None,
-            "{ids?|id?: [id…] (default: selection), points: [[x,y]…] (drag path; one point = click), erase?: bool (erase mode, Alt: deletes the regions touched, and the pieces of open paths that cut regions and the edges (outline pieces between the points where paths meet; see shapeBuilder.regions) within tolerance; a deleted edge opens its path there, and edges bounding a deleted region go with it; what is left of each path keeps its look, with gradients fitted to its bounds kept where they were on it, its name, opacity mask and attributes, and its fill rule unless merged regions shaped it), splitStroke?: false (In Merge Mode, Clicking Stroke Splits the Path; not with erase: when the one point of a click is within tolerance of a stroke, the path that stroke is on splits in two instead of a merge: the path keeps the rest of it, and a copy of the path holding the run of it from the anchor or crossing point before the click to the one after it, in the path's direction, goes directly above it; both keep the path's gradients where they were on it; the other objects stay as they are; with pickColorFrom \"swatches\" or fill, the run's stroke takes that paint; a path in a Live Paint group or a Shaper Group does not split, and nor does a path the run is all of, such as a lone line, or all but 0.05 pt or less of (a ten-thousandth of the larger side of a path over 500 pt)), tolerance?: pt (2, erase or splitStroke), gap?: pt (0–72; 0: Gap Detection off), openFilledAsClosed?: true (Consider Open Filled Paths as Closed: a filled open path bounds a region as if an invisible edge closed it; false: it cuts the regions it crosses like an unfilled one), pickColorFrom?: \"artwork\" (default: the merged shape takes the look of the front-most object under the first point, else under the last point, else of the front-most object) | \"swatches\" (the current fill, with the rest of the look of the front-most object over the first region the drag touches that an object covers, else of the front-most object), fill?: \"#rrggbb\" | {color|swatch|gradient|none} (overrides pickColorFrom)} → {ids, merged, regions, lines, edges (counts deleted, merged or split), split?: id (the run split off, after a split)}; after a split, ids are the roots, with the rest and the run in place of the path when it was one",
+            "{ids?|id?: [id…] (default: selection), points: [[x,y]…] (drag path; one point = click; may be left out with rect), rect?: [x, y, width, height] (Shift-drag marquee from where the drag started, x and y, to x+width and y+height; width and height may be negative: touches every region whose outline crosses the rectangle or has an anchor inside it and the region holding the whole rectangle, the region under x, y comes first and the one under the opposite corner comes next; with points, it also touches the regions along them; for pickColorFrom, x, y is the drag's first point and the opposite corner is its last), erase?: bool (erase mode, Alt: deletes the regions touched, and the pieces of open paths that cut regions and the edges (outline pieces between the points where paths meet; see shapeBuilder.regions) within tolerance; a deleted edge opens its path there, and edges bounding a deleted region go with it; what is left of each path keeps its look, with gradients fitted to its bounds kept where they were on it, its name, opacity mask and attributes, and its fill rule unless merged regions shaped it), splitStroke?: false (In Merge Mode, Clicking Stroke Splits the Path; not with erase or rect: when the one point of a click is within tolerance of a stroke, the path that stroke is on splits in two instead of a merge: the path keeps the rest of it, and a copy of the path holding the run of it from the anchor or crossing point before the click to the one after it, in the path's direction, goes directly above it; both keep the path's gradients where they were on it; the other objects stay as they are; with pickColorFrom \"swatches\" or fill, the run's stroke takes that paint; a path in a Live Paint group or a Shaper Group does not split, and nor does a path the run is all of, such as a lone line, or all but 0.05 pt or less of (a ten-thousandth of the larger side of a path over 500 pt)), tolerance?: pt (2, erase or splitStroke), gap?: pt (0–72; 0: Gap Detection off), openFilledAsClosed?: true (Consider Open Filled Paths as Closed: a filled open path bounds a region as if an invisible edge closed it; false: it cuts the regions it crosses like an unfilled one), pickColorFrom?: \"artwork\" (default: the merged shape takes the look of the front-most object under the first point, else under the last point, else of the front-most object) | \"swatches\" (the current fill, with the rest of the look of the front-most object over the first region the drag touches that an object covers, else of the front-most object), fill?: \"#rrggbb\" | {color|swatch|gradient|none} (overrides pickColorFrom)} → {ids, merged, regions, lines, edges (counts deleted, merged or split), split?: id (the run split off, after a split)}; after a split, ids are the roots, with the rest and the run in place of the path when it was one",
             has_selection_or_ids,
             sb_merge
         ),
@@ -243,18 +243,37 @@ fn gap_param(p: &Value) -> f64 {
     if gap.is_finite() { gap.clamp(0.0, po::SHAPE_BUILDER_MAX_GAP) } else { 0.0 }
 }
 
+/// The Shift-drag marquee `rect: [x, y, width, height]`, as the point where the drag started
+/// (`x`, `y`) and the opposite corner; the width and height may be negative.
+fn marquee_param(p: &Value, cmd: &str) -> Result<Option<(Point, Point)>> {
+    let Some(v) = p.get("rect").filter(|v| !v.is_null()) else { return Ok(None) };
+    let corners = finite_numbers(v).map(|[x, y, w, h]| (Point::new(x, y), Point::new(x + w, y + h)));
+    match corners {
+        Some((a, b)) if finite(a) && finite(b) => Ok(Some((a, b))),
+        _ => Err(bad(cmd, "rect must be [x, y, width, height]")),
+    }
+}
+
 fn sb_merge(s: &mut Session, p: &Value) -> Result<Value> {
     const C: &str = "shapeBuilder.merge";
-    let pts = points_param(p, "points").ok_or_else(|| bad(C, "missing points [[x,y]…]"))?;
-    if pts.is_empty() || !pts.iter().all(|q| finite(*q)) {
+    let marquee = marquee_param(p, C)?;
+    let pts = match points_param(p, "points") {
+        Some(pts) => pts,
+        // A marquee needs no drag path.
+        None if marquee.is_some() && p.get("points").is_none_or(Value::is_null) => vec![],
+        None => return Err(bad(C, "missing points [[x,y]…]")),
+    };
+    if (pts.is_empty() && marquee.is_none()) || !pts.iter().all(|q| finite(*q)) {
         return Err(bad(C, "points must be a non-empty list of finite [x,y]"));
     }
     let erase = switch_or(p, "erase", false, C)?;
     check_numbers(p, &["tolerance", "gap"], C)?;
     // Line pieces and edges are only deleted (erase mode), never merged.
     let piece_tol = erase.then(|| f64_or(p, "tolerance", 2.0).clamp(0.0, 1000.0));
-    // In Merge Mode, Clicking Stroke Splits the Path: a click (one point) on a stroke splits it.
-    let split_tol = (switch_or(p, "splitStroke", false, C)? && !erase && pts.len() == 1).then(|| f64_or(p, "tolerance", 2.0).clamp(0.0, 1000.0));
+    // In Merge Mode, Clicking Stroke Splits the Path: a click (one point) on a stroke splits it; a
+    // marquee does not.
+    let split_tol = (switch_or(p, "splitStroke", false, C)? && !erase && pts.len() == 1 && marquee.is_none())
+        .then(|| f64_or(p, "tolerance", 2.0).clamp(0.0, 1000.0));
     let open_filled_as_closed = switch_or(p, "openFilledAsClosed", true, C)?;
     let swatches = match p.get("pickColorFrom") {
         None | Some(Value::Null) => false,
@@ -309,7 +328,7 @@ fn sb_merge(s: &mut Session, p: &Value) -> Result<Value> {
             touched.add(map.hit(q, Some(tol)));
             return Ok((ids, None, touched, Some(split)));
         }
-        let mut touched = Touched::default();
+        let mut touched = Touched { regions: marquee.map(|(a, b)| map.regions_in_marquee(a, b)).unwrap_or_default(), ..Default::default() };
         for q in sample_polyline(&pts, step) {
             touched.add(map.hit(q, piece_tol));
         }
@@ -324,10 +343,15 @@ fn sb_merge(s: &mut Session, p: &Value) -> Result<Value> {
         // Pick Color From Artwork: the merged shape takes the look of the front-most object under the
         // drag's first point, else under its last point, else of the front-most object. Color
         // Swatches: the current fill, with the rest of the look of the front-most object over the
-        // first region the drag touched that an object covers, else of the front-most object.
+        // first region the drag touched that an object covers, else of the front-most object. A
+        // marquee's drag starts at its first corner and ends at the opposite one.
         let top_at = |q: &Point| map.region_at(*q).and_then(|k| map.regions.get(k)).and_then(|(r, ..)| r.top());
+        let (first, last) = match marquee {
+            Some((a, b)) => (Some(a), Some(b)),
+            None => (pts.first().copied(), pts.last().copied()),
+        };
         let covered =
-            if swatches { picked.iter().find_map(|r| r.top()) } else { pts.first().and_then(top_at).or_else(|| pts.last().and_then(top_at)) };
+            if swatches { picked.iter().find_map(|r| r.top()) } else { first.as_ref().and_then(top_at).or_else(|| last.as_ref().and_then(top_at)) };
         let style_src = covered.or(map.shapes.len().checked_sub(1));
         let mut new_nodes: Vec<Node> = vec![];
         let mut merged_id = None;
