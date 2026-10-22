@@ -4225,6 +4225,7 @@ theme	Appearance	외관
 @msg	SVG parse error: {0}	SVG 구문 분석 오류: {0}
 @msg	decimals must be {_1}–{_2} (got {_3})	소수 자릿수는 {_1}~{_2}이어야 합니다({_3} 입력됨)
 @msg	Exporting {_1}	{_1} 내보내는 중
+@msg	Packaging {_1}	{_1} 패키지 만드는 중
 @msg	Exported {what}	{what}을(를) 내보냈습니다
 @msg	"{0}" is not a colour: write it as #rrggbb	"{0}"은(는) 색상이 아닙니다: #rrggbb 형식으로 입력하세요
 @msg	could not decode image: {0}	이미지를 디코딩할 수 없습니다: {0}

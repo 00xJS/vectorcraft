@@ -2010,6 +2010,7 @@ file-filter	Templates	範本
 @msg	SVG parse error: {0}	SVG 剖析錯誤：{0}
 @msg	decimals must be {_1}–{_2} (got {_3})	小數位數必須為 {_1}–{_2} (收到 {_3})
 @msg	Exporting {_1}	正在匯出 {_1}
+@msg	Packaging {_1}	正在封裝 {_1}
 @msg	Exported {what}	已匯出 {what}
 @msg	"{0}" is not a colour: write it as #rrggbb	"{0}" 不是顏色：請寫成 #rrggbb
 @msg	could not decode image: {0}	無法解碼影像：{0}

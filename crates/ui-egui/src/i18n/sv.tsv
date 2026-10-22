@@ -4262,6 +4262,7 @@ axis	Both	Båda
 @msg	Saving	Sparar
 @msg	Saving {_1}	Sparar {_1}
 @msg	Exporting {_1}	Exporterar {_1}
+@msg	Packaging {_1}	Paketerar {_1}
 @msg	Saving recovery data for {_1}	Sparar återställningsdata för {_1}
 @msg	Discarded {_1} recovered document(s)	Kastade {_1} återställda dokument
 @msg	Restored {_1} recovered document(s): save them to keep them	Återställde {_1} återskapade dokument: spara dem för att behålla dem

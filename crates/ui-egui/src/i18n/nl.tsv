@@ -4364,6 +4364,7 @@ imageTrace	Outline	Contour
 @msg	Saving	Bezig met opslaan
 @msg	Saving {_1}	Bezig met opslaan van {_1}
 @msg	Exporting {_1}	Bezig met exporteren van {_1}
+@msg	Packaging {_1}	Bezig met verpakken van {_1}
 @msg	Saving recovery data for {_1}	Bezig met opslaan van herstelgegevens voor {_1}
 @msg	Discarded {_1} recovered document(s)	{_1} hersteld(e) document(en) verworpen
 @msg	Restored {_1} recovered document(s): save them to keep them	{_1} hersteld(e) document(en) teruggezet: sla ze op om ze te behouden

@@ -5,12 +5,18 @@
 //!
 //! Fields: `folder` (the location), `name` (the package folder), `copyLinks`, `linksFolder`,
 //! `relink`, `copyFonts`, `report`. OK runs `file.package` with them, then offers to show the
-//! package folder (`file.showPackage`).
+//! package folder (`file.showPackage`). On the desktop with Background Export on, the package is
+//! collected and written on the background thread ([`crate::background`]) after the dialog closes.
+
+use std::cell::Cell;
+use std::rc::Rc;
 
 use serde_json::{Value, json};
+use vectorcraft_engine::EngineError;
 
 use super::confirm::ask;
 use super::{DialogSpec, form};
+use crate::background::{self, Writer};
 use crate::state::Dialog;
 use crate::theme::Tokens;
 use crate::{VectorcraftApp, io, widgets};
@@ -110,8 +116,38 @@ fn confirm(app: &mut VectorcraftApp, d: &Dialog) -> Result<Value, String> {
             return Ok(r);
         }
     }
-    let r = app.run("file.package", params)?;
-    app.ui.dialog = None;
+    // Background Export (Preferences › File Handling): the linked files and fonts are collected
+    // and the package is written from the document as it is now, while editing goes on. The jobs
+    // started before it (a save started above, an earlier package to the same folder) are written
+    // first: the worker runs its jobs in order, and a package made at once waits for them.
+    let enabled = app.session.prefs.background_export;
+    if !enabled {
+        background::wait_all(app);
+    }
+    let package = app.session.prepare_package(&params).map_err(|e| e.to_string()).inspect_err(|e| app.ui.status = e.clone())?;
+    let label = format!("Packaging {}", d.str("name"));
+    let later = Rc::new(Cell::new(false));
+    let in_background = later.clone();
+    let work = move |write: Writer| {
+        let mut write = |path: &str, bytes: &[u8]| write(path, bytes).map_err(|e| EngineError::Other(format!("{path}: {e}")));
+        package.write(&mut write).map_err(|e| e.to_string())
+    };
+    let r = background::run(app, enabled, label, None, work, move |app, r| packaged(app, r, web, in_background.get()))?;
+    if r["background"] == true {
+        later.set(true);
+        app.ui.dialog = None;
+    }
+    Ok(r)
+}
+
+/// Report the package `r` (`file.package`'s reply): the status bar, the web's download, and the
+/// offer to show the package folder. `later`: it was written in the background, after the dialog
+/// closed, and a dialog open now is another one, which stays (the status bar names the folder).
+fn packaged(app: &mut VectorcraftApp, r: Result<Value, String>, web: bool, later: bool) -> Result<Value, String> {
+    let r = r.inspect_err(|e| app.ui.status = e.clone())?;
+    if !later {
+        app.ui.dialog = None;
+    }
     let n = r["files"].as_array().map_or(0, Vec::len);
     let missing = r["missingLinks"].as_array().map_or(0, Vec::len);
     // The fonts left out: their license doesn't allow it, or they aren't on this computer.
@@ -145,7 +181,9 @@ fn confirm(app: &mut VectorcraftApp, d: &Dialog) -> Result<Value, String> {
             &[("count", &n_s), ("folder", &folder), ("note", &shown_note)],
         )
     };
-    ask(app, tl!("Package created"), &detail, "file.showPackage", json!({ "folder": folder }));
+    if app.ui.dialog.is_none() {
+        ask(app, tl!("Package created"), &detail, "file.showPackage", json!({ "folder": folder }));
+    }
     Ok(r)
 }
 

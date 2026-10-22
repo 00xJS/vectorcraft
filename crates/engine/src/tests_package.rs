@@ -124,6 +124,80 @@ fn without_a_folder_the_zip_has_the_same_files() {
     assert_eq!(f["files"], r["files"]);
 }
 
+/// The reply of a prepared package's [`cmd::package::Package::write`] and the files it gave the
+/// writer, by path.
+fn write_prepared(package: cmd::package::Package) -> (Value, BTreeMap<String, Vec<u8>>) {
+    let mut files = BTreeMap::new();
+    let mut write = |path: &str, bytes: &[u8]| {
+        files.insert(path.to_string(), bytes.to_vec());
+        Ok(())
+    };
+    let r = package.write(&mut write).unwrap_or_else(|e| panic!("{e}"));
+    (r, files)
+}
+
+#[test]
+fn a_prepared_package_writes_what_file_package_writes() {
+    let dir = Folder::new("package-prepared");
+    let mut s = poster(&dir);
+    run(&mut s, "text.create", json!({"x": 10, "y": 80, "text": "Gone", "font": "No Such Font Family"}));
+    save(&mut s, &dir.file("poster.vectorcraft"));
+    std::fs::remove_file(dir.file("art/blue.png")).unwrap();
+    open(&mut s, &dir.file("poster.vectorcraft"));
+    let p = json!({"folder": dir.file("out")});
+    let want = run(&mut s, "file.package", p.clone());
+    assert_eq!((want["missingLinks"].clone(), want["skippedFonts"][0]["font"].clone()), (json!(["blue.png"]), json!("No Such Font Family Regular")));
+    let root = std::path::Path::new(&dir.file("out")).join("poster Folder");
+    let on_disk: BTreeMap<String, Vec<u8>> = want["files"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|f| root.join(f.as_str().unwrap()))
+        .map(|f| (f.to_string_lossy().into_owned(), std::fs::read(&f).unwrap()))
+        .collect();
+    assert_eq!(on_disk.len(), 4, "{want}");
+    std::fs::remove_dir_all(&root).unwrap();
+    // A prepared package is journaled as the command, and nothing is written until `Package::write` runs.
+    let journaled = s.journal.len();
+    let package = s.prepare_package(&p).unwrap();
+    assert_eq!((s.journal.len(), s.journal.last().map(|(id, _)| id.as_str())), (journaled + 1, Some("file.package")));
+    assert!(!root.exists());
+    let (got, files) = write_prepared(package);
+    assert_eq!(got, want);
+    assert_eq!(files.keys().collect::<Vec<_>>(), on_disk.keys().collect::<Vec<_>>());
+    for (path, bytes) in &on_disk {
+        assert!(files[path] == *bytes, "{path} differs");
+    }
+    // Without a folder, the package is the same zip and no file is written.
+    let want = run(&mut s, "file.package", json!({}));
+    let (got, files) = write_prepared(s.prepare_package(&json!({})).unwrap());
+    assert!(files.is_empty(), "{:?}", files.keys());
+    let unzipped = |r: &Value| unzip(&vectorcraft_format::base64_decode(r["dataBase64"].as_str().unwrap()).unwrap());
+    assert_eq!(unzipped(&got), unzipped(&want));
+    for key in ["files", "links", "fonts", "missingLinks", "skippedFonts", "warnings", "name", "bytes"] {
+        assert_eq!(got[key], want[key], "{key}");
+    }
+    // The checks come first, as the command's do.
+    let e = s.prepare_package(&json!({"name": "../up"})).err().map(|e| e.to_string()).unwrap_or_default();
+    assert!(e.contains("can't name a folder"), "{e}");
+}
+
+#[test]
+fn a_prepared_package_holds_the_document_as_it_was() {
+    let dir = Folder::new("package-snapshot");
+    let mut s = poster(&dir);
+    let nodes = s.doc().unwrap().doc.node_count();
+    let package = s.prepare_package(&json!({})).unwrap();
+    run(&mut s, "select.all", json!({}));
+    run(&mut s, "edit.clear", json!({}));
+    run(&mut s, "shape.rectangle", json!({"x": 0, "y": 0, "width": 10, "height": 10}));
+    let (r, _) = write_prepared(package);
+    let zip = unzip(&vectorcraft_format::base64_decode(r["dataBase64"].as_str().unwrap()).unwrap());
+    let doc = vectorcraft_format::load(&zip["poster Folder/poster.vectorcraft"]).unwrap();
+    assert_eq!(doc.node_count(), nodes);
+    assert_eq!(r["links"], 2, "{r}");
+}
+
 #[test]
 fn options_leave_out_links_fonts_and_the_report() {
     let dir = Folder::new("package-options");

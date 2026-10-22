@@ -4561,6 +4561,7 @@ imageTrace	Outline	Ääriviiva
 @msg	Saving	Tallennetaan
 @msg	Saving {_1}	Tallennetaan {_1}
 @msg	Exporting {_1}	Viedään {_1}
+@msg	Packaging {_1}	Paketoidaan {_1}
 @msg	Saving recovery data for {_1}	Tallennetaan palautustietoja: {_1}
 @msg	Discarded {_1} recovered document(s)	Hylättiin {_1} palautettu(a) asiakirja(a)
 @msg	Restored {_1} recovered document(s): save them to keep them	Palautettiin {_1} asiakirja(a): tallenna ne säilyttääksesi ne

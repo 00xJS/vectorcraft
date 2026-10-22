@@ -4275,6 +4275,7 @@ theme	Appearance	Erscheinungsbild
 @msg	Saving	Wird gespeichert
 @msg	Saving {_1}	{_1} wird gespeichert
 @msg	Exporting {_1}	{_1} wird exportiert
+@msg	Packaging {_1}	{_1} wird verpackt
 @msg	Saving recovery data for {_1}	Wiederherstellungsdaten für {_1} werden gespeichert
 @msg	Discarded {_1} recovered document(s)	{_1} wiederhergestellte(s) Dokument(e) verworfen
 @msg	Restored {_1} recovered document(s): save them to keep them	{_1} wiederhergestellte(s) Dokument(e) geöffnet: Speichern Sie sie, um sie zu behalten

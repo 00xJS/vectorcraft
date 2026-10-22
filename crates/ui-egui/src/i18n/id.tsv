@@ -4352,6 +4352,7 @@ imageTrace	Outline	Kontur
 @msg	Saving	Menyimpan
 @msg	Saving {_1}	Menyimpan {_1}
 @msg	Exporting {_1}	Mengekspor {_1}
+@msg	Packaging {_1}	Mengemas {_1}
 @msg	Saving recovery data for {_1}	Menyimpan data pemulihan untuk {_1}
 @msg	Discarded {_1} recovered document(s)	{_1} dokumen hasil pemulihan dibuang
 @msg	Restored {_1} recovered document(s): save them to keep them	{_1} dokumen hasil pemulihan dipulihkan: simpan agar tidak hilang
