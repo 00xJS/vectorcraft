@@ -4132,6 +4132,37 @@ mod tests {
         assert_eq!(edges(&mut app), active(2), "Artboard 3 is the active one of the two selected");
     }
 
+    // Regression test for #824: with the Artboard tool, the active artboard's name was drawn twice,
+    // once by the canvas as for every artboard and once, a little higher and in blue, by the tool.
+    // Now each artboard is named once, and the active one's name sits where the others' do.
+    #[test]
+    fn the_artboard_tool_names_its_active_artboard_once() {
+        let mut app = VectorcraftApp::new(Session::new(), Default::default());
+        app.session.execute("file.new", &json!({"width": 200, "height": 100, "artboards": 2})).unwrap();
+        app.select_tool("artboard");
+        let ctx = egui::Context::default();
+        frame(&mut app, &ctx, vec![]);
+        let drawn = shapes(&mut app, &ctx);
+        let xf = Xf::new(app.canvas_rect.unwrap(), app.view().unwrap());
+        // Each name drawn: how far its left edge is right of the artboard's corner, and its bottom above it.
+        let named = |name: &str, board: usize| -> Vec<(f32, f32)> {
+            let r = app.session.active().unwrap().doc.artboards[board].rect;
+            let corner = xf.to_screen(Point::new(r.x0, r.y0));
+            drawn
+                .iter()
+                .filter_map(|s| match s {
+                    Shape::Text(t) if t.galley.text() == name => Some((t.pos.x - corner.x, corner.y - (t.pos.y + t.galley.size().y))),
+                    _ => None,
+                })
+                .collect()
+        };
+        let (active, other) = (named("01 - Artboard 1", 0), named("02 - Artboard 2", 1));
+        assert_eq!(other.len(), 1, "the other artboard is named once: {other:?}");
+        assert_eq!(active.len(), 1, "the active artboard is named once: {active:?}");
+        assert!((active[0].0 - other[0].0).abs() < 0.6, "flush with the artboard's left edge like the other name: {active:?} vs {other:?}");
+        assert!((active[0].1 - other[0].1).abs() < 2.0, "on the artboard's top edge like the other name: {active:?} vs {other:?}");
+    }
+
     /// Enable Touch Gestures (#585): a two-finger tap undoes and a three-finger one redoes, and the
     /// first finger's press (the pointer egui makes of it) draws nothing. Off, a tap does nothing.
     #[test]
