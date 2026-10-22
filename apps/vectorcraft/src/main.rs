@@ -30,6 +30,8 @@ mod control_server;
 mod cursor_theme;
 #[cfg(feature = "wgpu")]
 mod gpu;
+#[cfg(target_os = "linux")]
+mod linux_stylus;
 mod logging;
 #[cfg(target_os = "macos")]
 mod mac_fonts;
@@ -952,9 +954,18 @@ fn main() -> std::process::ExitCode {
     #[cfg(feature = "wgpu")]
     let created = startup.clone();
     // A panic that ends the window (egui-wgpu's own, #502) is caught here: never a crash.
+    let run = |options: eframe::NativeOptions, app_creator: eframe::AppCreator<'_>| {
+        #[cfg(target_os = "linux")]
+        {
+            linux_stylus::run_native("VectorCraft", options, app_creator)
+        }
+        #[cfg(not(target_os = "linux"))]
+        {
+            eframe::run_native("VectorCraft", options, app_creator)
+        }
+    };
     let outcome = vectorcraft_engine::guard::catch_panic(|| {
-        eframe::run_native(
-            "VectorCraft",
+        run(
             options,
             Box::new(move |cc| {
                 let mut session = Session::new();
