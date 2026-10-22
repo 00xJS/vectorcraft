@@ -214,6 +214,44 @@ pub fn open_reporting(app: &mut VectorcraftApp, path: &str) -> Result<Value, Str
     r
 }
 
+/// Home › Recent Files and File › Open Recent: focus an already-open tab for that path instead of
+/// calling `document.open` again (#3455).
+pub fn open_recent_reporting(app: &mut VectorcraftApp, path: &str) -> Result<Value, String> {
+    if let Some(r) = try_activate_open_document(app, path)? {
+        return Ok(r);
+    }
+    open_reporting(app, path)
+}
+
+fn try_activate_open_document(app: &mut VectorcraftApp, path: &str) -> Result<Option<Value>, String> {
+    let Some(index) = document_index_for_path(app, path) else {
+        return Ok(None);
+    };
+    let st = &app.session.documents()[index];
+    let r = json!({
+        "index": index,
+        "title": st.title(),
+        "format": st.format,
+        "warnings": [],
+        "restored": false,
+        "activated": true,
+    });
+    app.run("document.activate", json!({ "index": index }))?;
+    opened(app, &r);
+    Ok(Some(r))
+}
+
+fn document_index_for_path(app: &VectorcraftApp, path: &str) -> Option<usize> {
+    app.session.documents().iter().position(|st| st.path.as_deref().is_some_and(|p| same_open_path(p, path)))
+}
+
+fn same_open_path(a: &str, b: &str) -> bool {
+    match (std::fs::canonicalize(a), std::fs::canonicalize(b)) {
+        (Ok(a), Ok(b)) => a == b,
+        _ => a == b,
+    }
+}
+
 fn read(app: &VectorcraftApp, path: &str) -> Result<Vec<u8>, String> {
     app.services.read.as_ref().ok_or("no file reader")?(path)
 }
