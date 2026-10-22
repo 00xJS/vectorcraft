@@ -73,6 +73,7 @@ fn export_with_report_inner(doc: &Document, opts: &PdfOptions, left_out: &mut Ha
     let now = vectorcraft_doc::metadata::output_time();
     let created_at = opts.created.or(now);
     crate::pdfx::require_date(set.standard, created_at)?;
+    let display_doc_title = opts.display_doc_title || opts.title.as_deref().is_some_and(|title| !title.trim().is_empty());
     let mut w = Writer::new(doc, set, &title, created_at, doc.color_mode == vectorcraft_doc::ColorMode::Cmyk)?;
     // Preserve Editing: the native document as an embedded file (`check` refused PDF/A with it).
     let mut warnings = set.warnings();
@@ -132,7 +133,7 @@ fn export_with_report_inner(doc: &Document, opts: &PdfOptions, left_out: &mut Ha
     vectorcraft_doc::cancel::check().map_err(|_| PdfError::Cancelled)?;
     let (layers, overprinted, invisible) = (ex.layers, ex.overprinted, ex.invisible);
     w.absorb(ex);
-    let (bytes, more) = w.finish(left_out)?;
+    let (bytes, more) = w.finish(left_out, display_doc_title)?;
     let bytes = crate::forms::finish(bytes, doc, set, layers, overprinted, invisible)?;
     // The writer gives the file its creation date as its modification date too.
     let bytes = match opts.modified.filter(|m| Some(*m) != created_at) {
@@ -425,7 +426,7 @@ impl Writer {
     /// standard) and the warnings of its drawing. PDF/X-1a spot colours keep their CMYK
     /// alternates. When the writer couldn't decode one of the images, its key is added to
     /// `left_out` ([`leaving_out_undecodable`]) and the writer's error is returned.
-    pub(crate) fn finish(mut self, left_out: &mut HashSet<String>) -> Result<(Vec<u8>, Vec<String>), PdfError> {
+    pub(crate) fn finish(mut self, left_out: &mut HashSet<String>, display_doc_title: bool) -> Result<(Vec<u8>, Vec<String>), PdfError> {
         let images = std::mem::take(&mut self.images);
         let mut bytes = self.pdf.finish().map_err(|e| {
             if let write::WriteError::Serialization(k) = &e
@@ -440,7 +441,7 @@ impl Writer {
         }
         let lab = !self.lab_spots.is_empty() && !self.out.standard.cmyk_only();
         let bytes = if lab { crate::lab_spot::lab_alternates(bytes, &self.lab_spots) } else { bytes };
-        let (bytes, more) = self.out.write_catalog(bytes)?;
+        let (bytes, more) = self.out.write_catalog(bytes, display_doc_title)?;
         self.warnings.extend(more);
         self.warnings.extend(self.rgb_in_cmyk.warning());
         Ok((crate::pdfx::finish(bytes, self.out.standard, self.pdf13)?, self.warnings))

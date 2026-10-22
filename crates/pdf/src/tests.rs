@@ -902,15 +902,17 @@ fn empty_and_populated_file_info_preserve_key_presence() {
     for key in ["/Title", "/Author", "/Keywords", "<dc:title>", "<dc:creator>", "<pdf:Keywords>"] {
         assert!(!s.contains(key), "unexpected empty metadata {key}");
     }
+    assert!(!s.contains("/DisplayDocTitle true"), "the default export does not request displaying its metadata title");
     d.title = "Synthetic title".into();
     d.metadata.author = " Test author ".into();
     d.metadata.keywords = vec!["test keyword".into()];
-    let bytes = export(&d, &PdfOptions { created: Some(1_700_000_000), ..PdfOptions::uncompressed() }).unwrap();
+    let bytes = export(&d, &PdfOptions { display_doc_title: true, created: Some(1_700_000_000), ..PdfOptions::uncompressed() }).unwrap();
     let s = String::from_utf8_lossy(&bytes);
     for key in ["/Title", "/Author", "/Keywords", "/CreationDate", "<dc:title>", "<dc:creator>", "<pdf:Keywords>"] {
         assert!(s.contains(key), "missing populated metadata {key}");
     }
     assert!(s.contains("Synthetic title") && s.contains("Test author") && s.contains("test keyword"));
+    assert!(s.contains("/ViewerPreferences<</DisplayDocTitle true>>"), "viewers should show the document title (#3646)");
 }
 
 /// A function or colour space built on itself is refused before the interpreter builds it (by
