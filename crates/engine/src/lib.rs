@@ -1415,6 +1415,9 @@ pub struct Session {
     /// Where folder searches may go; `None`: this computer's rules ([`cmd::findfiles::Rules`]).
     /// Tests set it.
     pub search_rules: Option<cmd::findfiles::Rules>,
+    /// Canvas feedback cached for the pending deferred preview ([`Session::overlays`]); cleared
+    /// when the preview params change or the interaction ends.
+    pub(crate) deferred_overlay_cache: Option<(String, Value, Vec<vectorcraft_tools::Overlay>)>,
     /// The walker threads a folder search starts; `None`: [`cmd::findfiles::threads`]. Tests set
     /// it.
     pub search_threads: Option<usize>,
@@ -1489,6 +1492,7 @@ impl Session {
             font_search: None,
             link_search: None,
             search_rules: None,
+            deferred_overlay_cache: None,
             search_threads: None,
             link_stamps: Default::default(),
             link_scan: None,
@@ -1941,12 +1945,23 @@ impl Session {
 
     // ---------- interactions (live drags) ----------
 
+    pub(crate) fn clear_deferred_overlay_cache(&mut self) {
+        self.deferred_overlay_cache = None;
+    }
+
+    /// The interaction's latest preview command when the document is still its snapshot (deferred
+    /// Real-time Drawing), regardless of the preference at commit or overlay time.
+    pub(crate) fn unapplied_interaction_preview(&self) -> Option<(String, Value)> {
+        self.active().and_then(|d| d.interaction.as_ref().filter(|it| std::sync::Arc::ptr_eq(&it.doc, &d.doc)).and_then(|it| it.preview.clone()))
+    }
+
     pub fn begin_interaction(&mut self, label: &str) -> Result<()> {
         // Typing in progress is kept first: a drag or a dialog's preview would otherwise start
         // from the snapshot taken before the typing, and drop it (#1881).
         if label != "Typing" && cmd::typing_in_progress(self) {
             cmd::settle_interaction(self)?;
         }
+        self.clear_deferred_overlay_cache();
         let st = self.doc_mut()?;
         if st.interaction.is_some() {
             return Ok(());
@@ -2000,6 +2015,7 @@ impl Session {
     }
 
     pub fn commit_interaction(&mut self) -> Result<()> {
+        self.clear_deferred_overlay_cache();
         self.remember_pending_paint();
         let st = self.doc_mut()?;
         let Some(mut it) = st.interaction.take() else { return Ok(()) };
@@ -2052,6 +2068,7 @@ impl Session {
     }
 
     pub fn cancel_interaction(&mut self) -> Result<()> {
+        self.clear_deferred_overlay_cache();
         self.pending_paint = None;
         let guides_locked = self.menu.guides_locked;
         let st = self.doc_mut()?;
