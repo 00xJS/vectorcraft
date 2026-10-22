@@ -224,6 +224,69 @@ fn shared_hyphenate(app: &VectorcraftApp) -> Option<bool> {
     shared_para(app, |p| p.hyphenate)
 }
 
+/// Plain text of paragraph `index` in `plain` (newline-separated paragraphs).
+fn paragraph_plain_at(plain: &str, index: usize) -> &str {
+    let mut rest = plain;
+    let mut idx = 0;
+    while idx <= index && (!rest.is_empty() || idx == 0) {
+        let span = vectorcraft_text::edit::paragraph_at(rest, 0);
+        let part = rest.get(span.clone()).unwrap_or("");
+        if idx == index {
+            return part;
+        }
+        idx += 1;
+        if span.end >= rest.len() {
+            break;
+        }
+        rest = rest.get(span.end + 1..).unwrap_or("");
+    }
+    ""
+}
+
+/// Whether the Paragraph Direction buttons would highlight RTL for this paragraph.
+fn displayed_paragraph_rtl(text: &vectorcraft_doc::TextObject, index: usize) -> bool {
+    let plain = text.plain_text();
+    let para = text.para_at(index);
+    vectorcraft_text::paragraph_is_rtl(paragraph_plain_at(&plain, index), para.direction)
+}
+
+/// Collect the direction the Paragraph panel shows for each paragraph in `text`; `false` is LTR.
+fn collect_text_direction(text: &vectorcraft_doc::TextObject, range: Option<(usize, usize)>, shared: &mut Option<bool>) -> bool {
+    let para_range = range.map(|(a, b)| text.paragraphs_in(a, b)).unwrap_or_else(|| 0..text.paragraph_count());
+    for i in para_range {
+        let rtl = displayed_paragraph_rtl(text, i);
+        if shared.is_some_and(|old| old != rtl) {
+            return false;
+        }
+        *shared = Some(rtl);
+    }
+    true
+}
+
+/// `None` when paragraphs in scope disagree on displayed direction (neither direction button on).
+fn selected_paragraph_direction(app: &VectorcraftApp, fallback: &ParaStyle) -> Option<bool> {
+    let default = Some(resolved_rtl(app, fallback));
+    let Some(st) = app.session.active() else { return default };
+    let mut shared = None;
+    if let Some((id, a, b)) = super::character::text_editing(app)
+        && let Some(NodeKind::Text(text)) = st.doc.node(id).map(|n| &n.kind)
+    {
+        return if collect_text_direction(text, Some((a, b)), &mut shared) { shared.or(default) } else { None };
+    }
+    fn collect(node: &vectorcraft_doc::Node, shared: &mut Option<bool>) -> bool {
+        if let NodeKind::Text(text) = &node.kind {
+            return collect_text_direction(text, None, shared);
+        }
+        node.children().is_none_or(|children| children.iter().all(|child| collect(child, shared)))
+    }
+    for node in st.selection.objects.iter().filter_map(|id| st.doc.node(*id)) {
+        if !collect(node, &mut shared) {
+            return None;
+        }
+    }
+    shared.or(default)
+}
+
 /// None means differing displayed alignments, following the other mixed-value controls.
 fn selected_alignment(app: &VectorcraftApp, fallback: &ParaStyle) -> Option<Justify> {
     let default = Some(shown_alignment(fallback.justify, fallback.direction == Some(ParaDirection::RightToLeft)));
@@ -273,18 +336,18 @@ pub fn show(app: &mut VectorcraftApp, ui: &mut Ui) {
         super::empty_state(ui, "pilcrow", tl!("No text selected"), tl!("Select a text object to edit its paragraph attributes."));
         return;
     };
-    let rtl = resolved_rtl(app, &para);
     ui.horizontal(|ui| {
         ui.spacing_mut().item_spacing.x = 3.0;
         alignment_buttons(app, ui, &para, 28.0);
         // Paragraph direction, with the Middle Eastern (Indic) options.
         if app.session.prefs.show_indic_options {
             ui.add_space(6.0);
+            let direction = selected_paragraph_direction(app, &para);
             for (to_rtl, icon, tip, id) in [
                 (false, "dc-para-ltr", tl!("Left-to-Right Paragraph Direction"), "leftToRight"),
                 (true, "dc-para-rtl", tl!("Right-to-Left Paragraph Direction"), "rightToLeft"),
             ] {
-                if widgets::icon_button(ui, icon, tip, rtl == to_rtl, 28.0).clicked() {
+                if widgets::icon_button(ui, icon, tip, direction == Some(to_rtl), 28.0).clicked() {
                     format(app, json!({"direction": id}));
                 }
             }
@@ -526,6 +589,23 @@ mod tests {
 
     fn select_range(app: &mut VectorcraftApp, start: usize, end: usize) {
         app.session.set_tool_option("select", &json!({"start": start, "end": end}));
+    }
+
+    #[test]
+    fn paragraph_mixed_direction_buttons_show_neither() {
+        let (mut app, id) = editing_text("A\nB");
+        app.session.prefs.show_indic_options = true;
+        app.run("text.setFormat", json!({"id": id, "direction": "leftToRight"})).unwrap();
+        app.run("text.setFormat", json!({"id": id, "start": 2, "end": 3, "direction": "rightToLeft"})).unwrap();
+        app.session.set_tool_option("selectAll", &json!(true));
+        let para = text_style(&app).unwrap().1;
+        assert_eq!(selected_paragraph_direction(&app, &para), None);
+        app.session.set_tool_option("selectAll", &json!(true));
+        app.run("text.setFormat", json!({"id": id, "direction": "leftToRight"})).unwrap();
+        assert_eq!(selected_paragraph_direction(&app, &para), Some(false));
+        app.session.set_tool_option("selectAll", &json!(true));
+        app.run("text.setFormat", json!({"id": id, "direction": "rightToLeft"})).unwrap();
+        assert_eq!(selected_paragraph_direction(&app, &para), Some(true));
     }
 
     #[test]
