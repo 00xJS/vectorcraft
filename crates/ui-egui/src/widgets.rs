@@ -3146,4 +3146,32 @@ pub(crate) mod look_tests {
             assert!((filled.min.x - rail.min.x).abs() < 1.0, "{brightness:?}: the fill starts at the rail's start");
         }
     }
+
+    // Regression test for #2083: the rows of the panels' menus didn't light up under the pointer, as
+    // the menu bar's items do.
+    #[test]
+    fn a_panel_menu_row_lights_up_under_the_pointer() {
+        let ctx = themed(Default::default());
+        let row_at = std::cell::Cell::new(Rect::NOTHING);
+        let mut add = |ui: &mut Ui| {
+            row_at.set(
+                ui.scope(|ui| {
+                    menu_item_name(ui, "Rename", true, false);
+                })
+                .response
+                .rect,
+            );
+        };
+        // A filled rectangle behind the row's text.
+        let lit = |shapes: &[egui::Shape], row: Rect| {
+            shapes.iter().any(|s| matches!(s, egui::Shape::Rect(r) if r.fill != Color32::TRANSPARENT && r.rect.contains(row.center())))
+        };
+        frame(&ctx, 0.0, vec![], &mut add);
+        let row = row_at.get();
+        let at_rest = frame(&ctx, 0.1, vec![], &mut add);
+        assert!(!lit(&at_rest, row), "no frame at rest");
+        frame(&ctx, 0.2, vec![egui::Event::PointerMoved(row.center())], &mut add);
+        let hovered = frame(&ctx, 0.3, vec![], &mut add);
+        assert!(lit(&hovered, row), "the row under the pointer is lit: {row:?}");
+    }
 }
