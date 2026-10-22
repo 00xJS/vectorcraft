@@ -16,7 +16,7 @@ use std::sync::Arc;
 use vectorcraft_doc::{Appearance, AppearanceItem, Effect, Node, NodeKind};
 use vectorcraft_geom::{Affine, BezPath, FillRule, PathData, Rect, Shape, shapes};
 
-use crate::{GeomContext, apply_one, is_geometry, merged_params};
+use crate::{Budget, GeomContext, apply_one, is_geometry, merged_params};
 
 /// Can object-level effects apply to `n` only through [`outline_art`] / an offscreen layer (it is
 /// neither a path nor a container)?
@@ -372,35 +372,52 @@ pub(crate) fn geometry_effects(n: &Node) -> Vec<&Effect> {
 /// Apply `fx` to every path under `art` as one piece: each effect takes the whole art's bounds as
 /// its reference box and the art's seed (a random Transform moves the pieces together). Images and
 /// symbol instances follow a Transform effect the same way ([`transform_placed`]); other geometry
-/// effects leave them as they are (a raster follows a non-affine map only as a mesh warp).
+/// effects leave them as they are (a raster follows a non-affine map only as a mesh warp). The
+/// paths keep to one [`Budget::EFFECTS`] together (or to what they cost, when that is more): a path
+/// whose effect would pass what the others leave of it keeps its shape.
 pub(crate) fn reshape_leaves(art: &mut Node, fx: &[&Effect]) {
+    reshape_leaves_within(art, fx, Budget::EFFECTS);
+}
+
+/// [`reshape_leaves`] whose paths keep to `budget` together, or to what they cost.
+pub(crate) fn reshape_leaves_within(art: &mut Node, fx: &[&Effect], budget: Budget) {
+    if fx.is_empty() {
+        return;
+    }
     let seed = art.id.0;
     // The placed gradients of type's outlines in `art` (`outline_text`) move and scale with the
     // pieces, from the outlines' bounds before the effects to their bounds after them.
     let mut outlines = vec![];
     type_outline_bounds(art, &mut outlines);
+    let mut used = art_cost(art);
+    let max = budget.at_least(used);
     for e in fx {
         let Some(bounds) = art.geometric_bounds() else { break };
         let params = merged_params(&e.id, &e.params);
         let transform = (e.id == "distort.transform").then(|| crate::distort::transform_map(bounds, &params, seed));
         for_each_leaf(art, &mut |leaf| {
             let Some((path, rule)) = leaf_geometry(leaf) else { return };
+            // What the other paths leave of the budget.
+            let before = Budget::of(&path);
+            let room = max.minus(used.minus(before));
             // A gradient paints each copy by itself, not the one piece the copies make together.
             if let Some((m, copies)) = transform
                 && copies > 0
                 && (leaf.appearance.has_unplaced_gradient() || leaf.appearance.has_placed_gradient())
             {
-                copy_with_gradients(leaf, &path, m, copies);
+                let made = copy_with_gradients(leaf, &path, m, copies, room);
+                used = used.minus(before).plus(made);
                 return;
             }
-            let out = apply_one(&e.id, &params, &path, bounds, &GeomContext { seed, ..GeomContext::of(leaf) });
+            let Some(out) = apply_one(&e.id, &params, &path, bounds, &GeomContext { seed, ..GeomContext::of(leaf) }, room) else { return };
+            used = used.minus(before).plus(Budget::of(&out));
             set_geometry(leaf, out, rule);
         });
         if let Some((m, copies)) = transform {
             transform_placed(art, m, copies);
         }
     }
-    if !fx.is_empty() && outlines.iter().any(Option::is_some) {
+    if outlines.iter().any(Option::is_some) {
         rebase_type_outlines(art, &mut outlines.into_iter());
     }
 }
@@ -408,29 +425,32 @@ pub(crate) fn reshape_leaves(art: &mut Node, fx: &[&Effect]) {
 /// Replace `leaf` (a path or compound path with geometry `path`) by a group of it and `copies`
 /// more, each mapped once more by `m` than the last, as a Transform effect copies an object. Each
 /// copy is an object of its own, so its gradients fit it (a placed gradient moves with it) rather
-/// than spanning every copy. The copies stop where [`crate::distort::transform_within`]'s would.
-fn copy_with_gradients(leaf: &mut Node, path: &PathData, m: Affine, copies: usize) {
-    let each = path.anchor_count();
-    let mut anchors = each;
+/// than spanning every copy. The copies stop where [`crate::distort::transform_within`]'s would,
+/// or before they pass `budget`. Returns what the copies cost, the original included.
+fn copy_with_gradients(leaf: &mut Node, path: &PathData, m: Affine, copies: usize, budget: Budget) -> Budget {
+    let mut made = Budget::of(path);
     let mut placements: Vec<Arc<Node>> = vec![Arc::new(leaf.clone())];
     let mut xf = Affine::IDENTITY;
     for _ in 0..copies {
-        anchors = anchors.saturating_add(each);
-        if anchors > crate::distort::MAX_COPY_ANCHORS {
+        xf *= m;
+        // A copy scaled up is drawn with more lines.
+        let cost = Budget::of(&path.transformed(xf));
+        if !budget.fits(made.plus(cost)) {
             break;
         }
-        xf *= m;
         let mut copy = leaf.clone();
         copy.transform(xf, vectorcraft_doc::Scaling::default());
         if !copy.geometric_bounds().is_some_and(crate::distort::within_reach) {
             break;
         }
         placements.push(Arc::new(copy));
+        made = made.plus(cost);
     }
     // The copies become nodes of their own under a group with the object's id and name.
     let mut g = Node::group(leaf.id, placements);
     g.name = leaf.name.clone();
     *leaf = g;
+    made
 }
 
 /// The bounds of each group of type's outlines under `n` ([`outline_text`]), `n` included, in
@@ -594,6 +614,18 @@ fn for_each_leaf(n: &mut Node, f: &mut dyn FnMut(&mut Node)) {
             }
         }
         _ => {}
+    }
+}
+
+/// What the paths under `n` that [`for_each_leaf`] visits cost together, as [`leaf_geometry`]
+/// gives them.
+fn art_cost(n: &Node) -> Budget {
+    let none = Budget { anchors: 0, lines: 0 };
+    match &n.kind {
+        NodeKind::Path { guide: false, path, .. } => Budget::of(path),
+        NodeKind::Compound { children, .. } => children.iter().filter_map(|c| c.path_data()).map(Budget::of).fold(none, Budget::plus),
+        NodeKind::Group { children, .. } | NodeKind::Layer { children, .. } => children.iter().map(|c| art_cost(c)).fold(none, Budget::plus),
+        _ => none,
     }
 }
 
