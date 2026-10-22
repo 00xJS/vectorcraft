@@ -5386,4 +5386,5 @@ axis	Y Axis	Y ос
 	Dither	Дитъринг
 	Fine noise hides banding in the gradient fill	Фин шум скрива ивиците в градиентната запълка
 @msg	`dither` applies to gradient fills (stroke: false)	`dither` се прилага към градиентни запълки (stroke: false)
+@msg	`dither` applies to gradient fills (paint.setFill)	`dither` се прилага към градиентни запълки (paint.setFill)
 @msg	`dither` must be true or false	`dither` трябва да бъде true или false

@@ -5109,4 +5109,5 @@ axis	Y Axis	Y 軸
 	Dither	ディザ
 	Fine noise hides banding in the gradient fill	細かいノイズでグラデーションの塗りの縞を目立たなくします
 @msg	`dither` applies to gradient fills (stroke: false)	`dither` はグラデーションの塗りに適用されます (stroke: false)
+@msg	`dither` applies to gradient fills (paint.setFill)	`dither` はグラデーションの塗りに適用されます (paint.setFill)
 @msg	`dither` must be true or false	`dither` には true または false を指定してください

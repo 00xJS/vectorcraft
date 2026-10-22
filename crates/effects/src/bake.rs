@@ -565,7 +565,7 @@ pub fn bake_appearance(n: &Node) -> Option<Node> {
                     }
                     None => {
                         let effects = st.effects.clone();
-                        let fill = FillLayer { opacity: st.opacity, blend: st.blend, effects, ..FillLayer::new(st.paint.clone()) };
+                        let fill = FillLayer { opacity: st.opacity, blend: st.blend, effects, ..FillLayer::new(st.paint.stroke_as_fill()) };
                         piece(outline, FillRule::NonZero, AppearanceItem::Fill(fill))
                     }
                 }
@@ -671,6 +671,22 @@ mod tests {
         let ch = m.children().unwrap();
         let Some(AppearanceItem::Fill(f)) = ch[1].appearance.items.first() else { panic!("the outline is filled") };
         assert_eq!(f.effects.iter().map(|e| e.id.as_str()).collect::<Vec<_>>(), ["stylize.dropShadow"]);
+    }
+
+    #[test]
+    fn a_baked_stroke_leaves_dither_behind() {
+        // Strokes ignore dither, so the filled outline goes without it and looks as the stroke did.
+        let mut n = Node::path(NodeId(50), shapes::rectangle(Rect::new(0.0, 0.0, 100.0, 100.0)), Appearance::default_art());
+        if let AppearanceItem::Stroke(s) = &mut n.appearance.items[1] {
+            let mut g = vectorcraft_color::GradientPaint::new(Default::default());
+            g.gradient.dither = true;
+            s.paint = Paint::Gradient(Box::new(g));
+        }
+        let m = bake_appearance(&n).unwrap();
+        let ch = m.children().unwrap();
+        let Some(AppearanceItem::Fill(f)) = ch[1].appearance.items.first() else { panic!("the outline is filled") };
+        let Paint::Gradient(g) = &f.paint else { panic!("a gradient fill") };
+        assert!(!g.gradient.dither);
     }
 
     #[test]

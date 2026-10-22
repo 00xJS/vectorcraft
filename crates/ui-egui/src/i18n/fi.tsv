@@ -5462,4 +5462,5 @@ axis	Y Axis	Y-akseli
 	Dither	Rasterointi
 	Fine noise hides banding in the gradient fill	Hieno kohina piilottaa raidat liukuväritäytöstä
 @msg	`dither` applies to gradient fills (stroke: false)	`dither` koskee liukuväritäyttöjä (stroke: false)
+@msg	`dither` applies to gradient fills (paint.setFill)	`dither` koskee liukuväritäyttöjä (paint.setFill)
 @msg	`dither` must be true or false	`dither` on oltava true tai false

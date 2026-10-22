@@ -5066,4 +5066,5 @@ axis	Y Axis	Y 軸
 	Dither	仿色
 	Fine noise hides banding in the gradient fill	細微雜色可隱藏漸層填色中的色帶
 @msg	`dither` applies to gradient fills (stroke: false)	`dither` 適用於漸層填色 (stroke: false)
+@msg	`dither` applies to gradient fills (paint.setFill)	`dither` 適用於漸層填色 (paint.setFill)
 @msg	`dither` must be true or false	`dither` 必須是 true 或 false

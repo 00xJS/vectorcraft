@@ -5387,4 +5387,5 @@ axis	Y Axis	Y-axel
 	Dither	Dithering
 	Fine noise hides banding in the gradient fill	Fint brus döljer bandningen i övertoningsfyllningen
 @msg	`dither` applies to gradient fills (stroke: false)	`dither` gäller övertoningsfyllningar (stroke: false)
+@msg	`dither` applies to gradient fills (paint.setFill)	`dither` gäller övertoningsfyllningar (paint.setFill)
 @msg	`dither` must be true or false	`dither` måste vara true eller false
