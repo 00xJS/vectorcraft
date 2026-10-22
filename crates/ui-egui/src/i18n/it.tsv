@@ -4391,6 +4391,7 @@ axis	Both	Entrambi
 @msg	Saving	Salvataggio
 @msg	Saving {_1}	Salvataggio di {_1}
 @msg	Exporting {_1}	Esportazione di {_1}
+@msg	Packaging {_1}	Creazione del pacchetto {_1}
 @msg	Saving recovery data for {_1}	Salvataggio dei dati di recupero per {_1}
 @msg	Discarded {_1} recovered document(s)	Documenti recuperati scartati: {_1}
 @msg	Restored {_1} recovered document(s): save them to keep them	Documenti recuperati ripristinati: {_1}. Salvali per conservarli

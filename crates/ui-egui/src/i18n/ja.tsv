@@ -4293,6 +4293,7 @@ swatch	Bright Violet	ビビッドバイオレット
 @msg	SVG parse error: {0}	SVG を解析できませんでした: {0}
 @msg	decimals must be {_1}–{_2} (got {_3})	小数点以下の桁数は {_1} から {_2} までにしてください (指定値: {_3})
 @msg	Exporting {_1}	{_1} を書き出し中
+@msg	Packaging {_1}	{_1} をパッケージ中
 @msg	Exported {what}	{what} を書き出しました
 @msg	"{0}" is not a colour: write it as #rrggbb	「{0}」はカラーではありません: #rrggbb の形式で指定してください
 @msg	could not decode image: {0}	画像をデコードできませんでした: {0}

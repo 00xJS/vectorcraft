@@ -4652,6 +4652,7 @@ imageTrace	Outline	Obrys
 @msg	Saving	Ukládání
 @msg	Saving {_1}	Ukládání {_1}
 @msg	Exporting {_1}	Exportování {_1}
+@msg	Packaging {_1}	Balení {_1}
 @msg	Saving recovery data for {_1}	Ukládání dat pro obnovení pro {_1}
 @msg	Discarded {_1} recovered document(s)	Zahozeno obnovených dokumentů: {_1}
 @msg	Restored {_1} recovered document(s): save them to keep them	Obnoveno dokumentů: {_1}; pokud je chcete zachovat, uložte je

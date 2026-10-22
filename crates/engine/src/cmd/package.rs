@@ -306,6 +306,51 @@ impl<'a> Collector<'a> {
 }
 
 fn package(s: &mut Session, p: &Value) -> Result<Value> {
+    let package = prepare(s, p)?;
+    match &mut s.package_hand_off {
+        Some(slot) => {
+            *slot = Some(package);
+            Ok(Value::Null)
+        }
+        None => package.write(&mut |path, bytes| write_file(path, bytes)),
+    }
+}
+
+/// A package of the active document as `file.package` takes it from the session: the options, the
+/// names, the report's Document Info text and the document as it is now
+/// ([`Session::prepare_package`]). [`Package::write`] collects and writes it without the session,
+/// on any thread.
+pub struct Package {
+    o: Options,
+    doc_path: String,
+    stem: String,
+    name: String,
+    root: Option<PathBuf>,
+    info: Option<String>,
+    doc: std::sync::Arc<Document>,
+}
+
+impl Session {
+    /// Run `file.package` with `params` as a command (checked and journaled as any other) that
+    /// collects and writes nothing → the package it prepared, which [`Package::write`] collects
+    /// and writes (on the desktop with Background Export on, File › Package… does this on the
+    /// background thread).
+    pub fn prepare_package(&mut self, params: &Value) -> Result<Package> {
+        self.package_hand_off = Some(None);
+        let r = self.execute(C, params);
+        let handed = self.package_hand_off.take().flatten();
+        match (r, handed) {
+            (Err(e), _) => Err(e),
+            (Ok(_), Some(package)) => Ok(package),
+            // Every run that succeeds hands one over; otherwise the package is prepared here.
+            (Ok(_), None) => prepare(self, params),
+        }
+    }
+}
+
+/// What `file.package` reads from the session: the options, the checks of the document and the
+/// name, the report's Document Info text and the document.
+fn prepare(s: &mut Session, p: &Value) -> Result<Package> {
     let o = Options {
         copy_links: bool_or(p, "copyLinks", true),
         links_folder: bool_or(p, "linksFolder", true),
@@ -322,8 +367,23 @@ fn package(s: &mut Session, p: &Value) -> Result<Value> {
     let folder = str_param(p, "folder");
     let root = folder.map(|f| Path::new(f).join(&name));
     let info = if o.report { Some(super::docinfo::report(s, false)?) } else { None };
-    let st = s.doc()?;
-    let mut doc = (*st.doc).clone();
+    let doc = s.doc()?.doc.clone();
+    Ok(Package { o, doc_path, stem, name, root, info, doc })
+}
+
+impl Package {
+    /// Collect the linked files and fonts and write the package's files with `write` into
+    /// `folder/name`, making its folders first, or into the zip without a folder → the reply of
+    /// `file.package`.
+    pub fn write(self, write: &mut dyn FnMut(&str, &[u8]) -> Result<()>) -> Result<Value> {
+        collect_and_write(self, write)
+    }
+}
+
+/// [`Package::write`].
+fn collect_and_write(package: Package, write: &mut dyn FnMut(&str, &[u8]) -> Result<()>) -> Result<Value> {
+    let Package { o, doc_path, stem, name, root, info, doc } = package;
+    let mut doc = (*doc).clone();
     let doc_name = format!("{stem}.{}", vectorcraft_format::EXTENSION);
     // Prepare original links for the destination *before* rebasing copied links.
     // Recalculating afterward would overwrite the portable relative paths.
@@ -366,7 +426,7 @@ fn package(s: &mut Session, p: &Value) -> Result<Value> {
                 if let Some(dir) = path.parent() {
                     create_dir(&dir.to_string_lossy())?;
                 }
-                write_file(&path.to_string_lossy(), bytes)?;
+                write(&path.to_string_lossy(), bytes)?;
             }
             out["folder"] = json!(root.to_string_lossy());
         }

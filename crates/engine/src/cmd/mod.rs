@@ -50,7 +50,7 @@ mod object;
 pub(crate) mod objects_on_path;
 mod opacitymask;
 mod overprint;
-mod package;
+pub mod package;
 mod paint;
 mod panelcmds;
 pub mod params;

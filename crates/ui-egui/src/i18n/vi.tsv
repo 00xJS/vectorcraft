@@ -4236,6 +4236,7 @@ theme	Appearance	Giao diện
 @msg	Exported {what}	Đã xuất {what}
 @msg	Exported {what} with {_1} note(s): {first}	Đã xuất {what} với {_1} ghi chú: {first}
 @msg	Exporting {_1}	Đang xuất {_1}
+@msg	Packaging {_1}	Đang đóng gói {_1}
 @msg	file version {0} is newer than this VectorCraft supports ({VERSION})	phiên bản tệp {0} mới hơn VectorCraft hỗ trợ ({VERSION})
 @msg	Flatten Transparency: select objects to flatten	Dẹp phẳng độ trong suốt: hãy chọn đối tượng để dẹp phẳng
 @msg	Flatten Transparency: {e}	Dẹp phẳng độ trong suốt: {e}

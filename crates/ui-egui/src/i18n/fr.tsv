@@ -4348,6 +4348,7 @@ axis	Both	Les deux
 @msg	Saving	Enregistrement
 @msg	Saving {_1}	Enregistrement de {_1}
 @msg	Exporting {_1}	Exportation de {_1}
+@msg	Packaging {_1}	Assemblage de {_1}
 @msg	Saving recovery data for {_1}	Enregistrement des données de récupération de {_1}
 @msg	Discarded {_1} recovered document(s)	{_1} document(s) récupéré(s) supprimé(s)
 @msg	Restored {_1} recovered document(s): save them to keep them	{_1} document(s) récupéré(s) restauré(s) : enregistrez-les pour les conserver

@@ -4256,6 +4256,7 @@ axis	Both	И двете
 @msg	Saving	Запазване
 @msg	Saving {_1}	Записване на {_1}
 @msg	Exporting {_1}	Експортиране на {_1}
+@msg	Packaging {_1}	Пакетиране на {_1}
 @msg	Saving recovery data for {_1}	Записване на данни за възстановяване на {_1}
 @msg	Discarded {_1} recovered document(s)	Изхвърлени са {_1} възстановени документ(и)
 @msg	Restored {_1} recovered document(s): save them to keep them	Възстановени са {_1} документ(и): запазете ги, за да ги съхраните

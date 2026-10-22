@@ -4024,6 +4024,7 @@ imageTrace	Outline	轮廓
 @msg	SVG parse error: {0}	SVG 解析错误：{0}
 @msg	decimals must be {_1}–{_2} (got {_3})	小数位数必须为 {_1}–{_2} (实际为 {_3})
 @msg	Exporting {_1}	正在导出 {_1}
+@msg	Packaging {_1}	正在打包 {_1}
 @msg	Exported {what}	已导出 {what}
 @msg	"{0}" is not a colour: write it as #rrggbb	"{0}" 不是颜色：请写为 #rrggbb
 @msg	could not decode image: {0}	无法解码图像：{0}

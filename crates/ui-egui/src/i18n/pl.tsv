@@ -4477,6 +4477,7 @@ imageTrace	Outline	Kontur
 @msg	Saving	Zapisywanie
 @msg	Saving {_1}	Zapisywanie {_1}
 @msg	Exporting {_1}	Eksportowanie {_1}
+@msg	Packaging {_1}	Pakowanie {_1}
 @msg	Saving recovery data for {_1}	Zapisywanie danych odzyskiwania dla {_1}
 @msg	Discarded {_1} recovered document(s)	Odrzucone odzyskane dokumenty: {_1}
 @msg	Restored {_1} recovered document(s): save them to keep them	Przywrócone odzyskane dokumenty: {_1} — zapisz je, aby je zachować

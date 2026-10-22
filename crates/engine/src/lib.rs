@@ -1378,6 +1378,9 @@ pub struct Session {
     /// While `command.batch` runs: the documents its steps closed or replaced (Revert), which an
     /// error brings back; `None` otherwise.
     pub(crate) batch_stash: Option<Vec<DocState>>,
+    /// While [`Session::prepare_package`] runs `file.package`: the package the command prepared,
+    /// which it leaves here instead of writing it; `None` otherwise.
+    pub(crate) package_hand_off: Option<Option<cmd::package::Package>>,
     /// Where Data Recovery keeps its copies ([`cmd::recovery`]).
     pub recovery: cmd::recovery::Recovery,
     /// While the active tool's actions run: their commands aren't "a command from outside the
@@ -1466,6 +1469,7 @@ impl Session {
             journal_note: Default::default(),
             note_depth: 1,
             batch_stash: None,
+            package_hand_off: None,
             recovery: Default::default(),
             in_tool_actions: false,
             previewing: false,

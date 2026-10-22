@@ -4326,6 +4326,7 @@ theme	Appearance	Εμφάνιση
 @msg	Saving	Αποθήκευση σε εξέλιξη
 @msg	Saving {_1}	Αποθήκευση {_1}
 @msg	Exporting {_1}	Εξαγωγή {_1}
+@msg	Packaging {_1}	Συσκευασία {_1}
 @msg	Saving recovery data for {_1}	Αποθήκευση δεδομένων ανάκτησης για {_1}
 @msg	Discarded {_1} recovered document(s)	Απορρίφθηκαν {_1} ανακτημένα έγγραφα
 @msg	Restored {_1} recovered document(s): save them to keep them	Επαναφέρθηκαν {_1} ανακτημένα έγγραφα: αποθηκεύστε τα για να διατηρηθούν

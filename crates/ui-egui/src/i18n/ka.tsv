@@ -4108,6 +4108,7 @@ effect	Regular	ჩვეულებრივი
 @msg	Saving	შენახვა
 @msg	Saving {_1}	{_1}-ის შენახვა
 @msg	Exporting {_1}	ექსპორტირდება: {_1}
+@msg	Packaging {_1}	იფუთება: {_1}
 @msg	Saving recovery data for {_1}	{_1}-ის აღდგენის მონაცემების შენახვა
 @msg	Discarded {_1} recovered document(s)	უარყოფილია აღდგენილი დოკუმენტები: {_1}
 @msg	Restored {_1} recovered document(s): save them to keep them	აღდგენილია დოკუმენტები: {_1}: შესანარჩუნებლად შეინახეთ ისინი

@@ -4351,6 +4351,7 @@ axis	Both	Ambos
 @msg	Saving	Guardando
 @msg	Saving {_1}	Guardando {_1}
 @msg	Exporting {_1}	Exportando {_1}
+@msg	Packaging {_1}	Empaquetando {_1}
 @msg	Saving recovery data for {_1}	Guardando datos de recuperación de {_1}
 @msg	Discarded {_1} recovered document(s)	Se descartaron {_1} documento(s) recuperado(s)
 @msg	Restored {_1} recovered document(s): save them to keep them	Se restauraron {_1} documento(s) recuperado(s): guárdalos para conservarlos
