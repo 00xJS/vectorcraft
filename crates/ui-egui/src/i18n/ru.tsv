@@ -2241,7 +2241,7 @@ file-filter	Templates	Шаблоны
 	Package	Упаковать
 	Package collects a saved document with its linked files and fonts.	Упаковка собирает сохранённый документ с его связанными файлами и шрифтами.
 	Package created	Пакет создан
-	Packaged {n} file(s) in {folder}{note}	Упаковано файлов: {n} в {folder}{note}
+	Packaged {n} file(s) in {folder} {note}	Упаковано файлов: {n} в {folder}{note}
 	Packaged {n} file(s){note}	Упаковано файлов: {n}{note}
 	Package…	Упаковать…
 	Page	Страница
@@ -3614,7 +3614,7 @@ mark-style	Japanese	Японский
 	Zoom Tool	Инструмент «Масштаб»
 	Zoom with Mouse Wheel	Масштабировать колесом мыши
 	Scrub Numeric Fields by Dragging	Изменять числовые поля перетаскиванием
-	{count} file(s) in {folder}{note}. Show the package folder?	Файлов: {count} в {folder}{note}. Показать папку пакета?
+	{count} file(s) in {folder} {note}. Show the package folder?	Файлов: {count} в {folder}{note}. Показать папку пакета?
 	{count} linked file(s) not found	Не найдено связанных файлов: {count}
 	fonts not copied: {fonts}	шрифты не скопированы: {fonts}
 	{count} linked image(s) changed since this document was saved. Show the new versions?	Связанных изображений ({count}) изменились с момента сохранения этого документа. Показать новые версии?
@@ -3859,7 +3859,7 @@ axis	Both	Оба
 @msg	Outline Stroke: no stroked paths selected	Обводка контура: не выделены контуры с обводкой
 @msg	PDF settings are not an object	параметры PDF не являются объектом
 @msg	PDF writer error: {0}	ошибка записи PDF: {0}
-@msg	Packaged {n} file(s) in {folder}{note}	Упаковано файлов: {n} в {folder}{note}
+@msg	Packaged {n} file(s) in {folder} {note}	Упаковано файлов: {n} в {folder}{note}
 @msg	Packaged {n} file(s){note}	Упаковано файлов: {n}{note}
 @msg	Preview in Browser needs the desktop app (the web downloads files instead)	Просмотр в браузере требует настольного приложения (web-версия скачивает файлы)
 @msg	Release Guides: no guides	Освобождение направляющих: нет направляющих
@@ -5013,3 +5013,10 @@ lighting	Light	Свет
 	Fresco	Фреска
 	Effect Gallery…	Галерея эффектов…
 	Effect Gallery Dialog	Диалог «Галерея эффектов»
+@msg	Packaged {n} file(s) in {folder}	Упаковано файлов: {n} в {folder}
+@msg	Packaged {n} file(s) {note}	Упаковано файлов: {n} {note}
+@msg	Packaged {n} file(s)	Упаковано файлов: {n}
+	Packaged {n} file(s)	Упаковано файлов: {n}
+	Packaged {n} file(s) in {folder}	Упаковано файлов: {n} в {folder}
+	Packaged {n} file(s) {note}	Упаковано файлов: {n} {note}
+	{count} file(s) in {folder}. Show the package folder?	Файлов: {count} в {folder}. Показать папку пакета?

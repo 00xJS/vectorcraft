@@ -103,6 +103,7 @@ fn the_web_downloads_a_zip() {
     assert!(!frame(&mut app).contains("Location:"), "no folder to choose");
     confirm(&mut app).unwrap();
     assert!(app.ui.dialog.is_none());
+    assert!(app.ui.status.contains("Packaged") && app.ui.status.contains("file(s)"), "{}", app.ui.status);
     let got = got.borrow();
     assert_eq!(got.len(), 1);
     assert_eq!(got[0].0, "card Folder.zip");
@@ -131,6 +132,20 @@ fn fonts_left_out_of_the_package_are_named() {
     app.run("ui.packageDialog", json!({})).unwrap();
     confirm(&mut app).unwrap();
     assert!(app.ui.status.contains(gone), "{}", app.ui.status);
+}
+
+#[test]
+fn package_status_without_notes_has_no_extra_spaces() {
+    let dir = Folder::new("spaces");
+    let mut app = saved(&dir);
+    app.run("ui.packageDialog", json!({})).unwrap();
+    let out = dir.path("out");
+    std::fs::create_dir_all(&out).unwrap();
+    app.ui.dialog.as_mut().unwrap().fields.insert("folder".into(), json!(out));
+    confirm(&mut app).unwrap();
+    assert!(!app.ui.status.ends_with(' '), "{}", app.ui.status);
+    let detail = app.ui.dialog.as_ref().unwrap().str("detail");
+    assert!(!detail.contains(" ."), "{detail}");
 }
 
 #[test]

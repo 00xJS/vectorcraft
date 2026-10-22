@@ -2044,7 +2044,7 @@
 	Package	Paket
 	Package collects a saved document with its linked files and fonts.	Paket, kayıtlı bir belgeyi bağlantılı dosyaları ve yazı tipleriyle birlikte toplar.
 	Package created	Paket oluşturuldu
-	Packaged {n} file(s) in {folder}{note}	{folder}{note} biçiminde paketlenmiş {n} dosyası/dosyaları
+	Packaged {n} file(s) in {folder} {note}	{folder}{note} biçiminde paketlenmiş {n} dosyası/dosyaları
 	Packaged {n} file(s){note}	Paketlenmiş {n} dosyası/dosyaları{note}
 	Package…	Paket…
 	Page	Sayfa
@@ -3408,7 +3408,7 @@
 	Zoom Tool	Yakınlaştırma Aracı
 	Zoom with Mouse Wheel	Fare Tekerleği ile Yakınlaştırma
 	Scrub Numeric Fields by Dragging	Sayısal Alanları Sürükleyerek Fırçalayın
-	{count} file(s) in {folder}{note}. Show the package folder?	{folder}{note} içindeki {count} dosyası/dosyaları. Paket klasörü gösterilsin mi?
+	{count} file(s) in {folder} {note}. Show the package folder?	{folder}{note} içindeki {count} dosyası/dosyaları. Paket klasörü gösterilsin mi?
 	{count} linked file(s) not found	{count} bağlantılı dosya(lar) bulunamadı
 	fonts not copied: {fonts}	kopyalanmayan yazı tipleri: {fonts}
 	{count} linked image(s) changed since this document was saved. Show the new versions?	{count} bağlantılı görseller bu belgenin kaydedilmesinden bu yana değiştirildi. Yeni sürümler gösterilsin mi?
@@ -3633,7 +3633,7 @@ axis	Both	Her İkisi
 @msg	Outline Stroke: no stroked paths selected	Anahat Konturu: konturlu yol seçilmedi
 @msg	PDF settings are not an object	PDF ayarları bir nesne değildir
 @msg	PDF writer error: {0}	PDF yazıcı hatası: {0}
-@msg	Packaged {n} file(s) in {folder}{note}	{folder}{note} biçiminde paketlenmiş {n} dosyası/dosyaları
+@msg	Packaged {n} file(s) in {folder} {note}	{folder}{note} biçiminde paketlenmiş {n} dosyası/dosyaları
 @msg	Packaged {n} file(s){note}	Paketlenmiş {n} dosyası/dosyaları{note}
 @msg	Preview in Browser needs the desktop app (the web downloads files instead)	Tarayıcıdaki önizleme için masaüstü uygulaması gerekir (bunun yerine web, dosyaları indirir)
 @msg	Release Guides: no guides	Sürüm Kılavuzları: kılavuz yok
@@ -5361,8 +5361,14 @@ theme	Appearance	Görünüm
 	Fresco	Fresk
 	Effect Gallery…	Efekt Galerisi…
 	Effect Gallery Dialog	Efekt Galerisi İletişim Kutusu
-
+@msg	Packaged {n} file(s) in {folder}	{folder} biçiminde paketlenmiş {n} dosyası/dosyaları
+@msg	Packaged {n} file(s) {note}	Paketlenmiş {n} dosyası/dosyaları {note}
+@msg	Packaged {n} file(s)	Paketlenmiş {n} dosyası/dosyaları
 # Artwork drag between document tabs.
 	Drop Artwork	Çizimi Bırak
 @msg	{key} must be [x, y] with finite coordinates	{key}, sonlu koordinatlı [x, y] olmalı
 @msg	ids must contain 1–10000 object ids	ids 1–10000 nesne kimliği içermeli
+	Packaged {n} file(s)	Paketlenmiş {n} dosyası/dosyaları
+	Packaged {n} file(s) in {folder}	{folder} biçiminde paketlenmiş {n} dosyası/dosyaları
+	Packaged {n} file(s) {note}	Paketlenmiş {n} dosyası/dosyaları {note}
+	{count} file(s) in {folder}. Show the package folder?	{folder} içindeki {count} dosyası/dosyaları. Paket klasörü gösterilsin mi?

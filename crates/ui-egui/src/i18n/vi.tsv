@@ -2518,7 +2518,7 @@ file-filter	Templates	Mẫu
 	Package	Gói
 	Package collects a saved document with its linked files and fonts.	Gói thu thập tài liệu đã lưu cùng tệp liên kết và phông chữ.
 	Package created	Đã tạo gói
-	Packaged {n} file(s) in {folder}{note}	Đã đóng gói {n} tệp trong {folder}{note}
+	Packaged {n} file(s) in {folder} {note}	Đã đóng gói {n} tệp trong {folder}{note}
 	Packaged {n} file(s){note}	Đã đóng gói {n} tệp{note}
 	Package…	Gói…
 	Page	Trang
@@ -3971,7 +3971,7 @@ mark-style	Japanese	Kiểu Nhật
 	Zoom to Selection	Thu phóng đến vùng chọn
 	Zoom Tool	Công cụ thu phóng
 	Zoom with Mouse Wheel	Thu phóng bằng con lăn chuột
-	{count} file(s) in {folder}{note}. Show the package folder?	{count} tệp trong {folder}{note}. Hiện thư mục gói?
+	{count} file(s) in {folder} {note}. Show the package folder?	{count} tệp trong {folder}{note}. Hiện thư mục gói?
 	{count} folder(s) or file(s) couldn't be read	{count} thư mục hoặc tệp không thể đọc được
 	{count} folder(s) skipped, such as other apps' and the system's folders and hidden ones	Đã bỏ qua {count} thư mục, chẳng hạn thư mục của ứng dụng khác, thư mục hệ thống và thư mục ẩn
 	{count} linked file(s) not found	Không tìm thấy {count} tệp liên kết
@@ -4473,7 +4473,7 @@ theme	Appearance	Giao diện
 @msg	Opened with {_1} note(s): {_2}	Đã mở với {_1} ghi chú: {_2}
 @msg	Opened {url}	Đã mở {url}
 @msg	Outline Stroke: no stroked paths selected	Đường bao nét: chưa chọn đường dẫn có nét
-@msg	Packaged {n} file(s) in {folder}{note}	Đã đóng gói {n} tệp trong {folder}{note}
+@msg	Packaged {n} file(s) in {folder} {note}	Đã đóng gói {n} tệp trong {folder}{note}
 @msg	Packaged {n} file(s){note}	Đã đóng gói {n} tệp{note}
 @msg	page size {w} × {h}	kích thước trang {w} × {h}
 @msg	page {0} does not exist (the PDF has {1})	trang {0} không tồn tại (PDF có {1} trang)
@@ -4997,3 +4997,10 @@ theme	Appearance	Giao diện
 	Fresco	Bích họa
 	Effect Gallery…	Thư viện hiệu ứng…
 	Effect Gallery Dialog	Hộp thoại Thư viện hiệu ứng
+@msg	Packaged {n} file(s) in {folder}	Đã đóng gói {n} tệp trong {folder}
+@msg	Packaged {n} file(s) {note}	Đã đóng gói {n} tệp {note}
+@msg	Packaged {n} file(s)	Đã đóng gói {n} tệp
+	Packaged {n} file(s)	Đã đóng gói {n} tệp
+	Packaged {n} file(s) in {folder}	Đã đóng gói {n} tệp trong {folder}
+	Packaged {n} file(s) {note}	Đã đóng gói {n} tệp {note}
+	{count} file(s) in {folder}. Show the package folder?	{count} tệp trong {folder}. Hiện thư mục gói?

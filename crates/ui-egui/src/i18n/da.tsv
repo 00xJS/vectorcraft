@@ -2184,11 +2184,11 @@ lighting	Light	Lys
 	Fonts whose licence doesn't allow embedding are not copied.	Skrifttyper, hvis licens ikke tillader indlejring, kopieres ikke.
 	Package collects a saved document with its linked files and fonts.	Pakning samler et gemt dokument med dets linkede filer og skrifttyper.
 	Package created	Pakke oprettet
-	Packaged {n} file(s) in {folder}{note}	Pakkede {n} fil(er) i {folder}{note}
+	Packaged {n} file(s) in {folder} {note}	Pakkede {n} fil(er) i {folder}{note}
 	Packaged {n} file(s){note}	Pakkede {n} fil(er){note}
 	Relink Linked Files to the Document	Genopret link til dokumentets linkede filer
 	Save the document first?	Gem dokumentet først?
-	{count} file(s) in {folder}{note}. Show the package folder?	{count} fil(er) i {folder}{note}. Vis pakkemappen?
+	{count} file(s) in {folder} {note}. Show the package folder?	{count} fil(er) i {folder}{note}. Vis pakkemappen?
 	{count} linked file(s) not found	{count} linkede fil(er) ikke fundet
 	fonts not copied: {fonts}	skrifttyper ikke kopieret: {fonts}
 	Built-in presets are read-only: New… starts an editable copy.	Indbyggede forudindstillinger er skrivebeskyttede: Ny… starter en redigerbar kopi.
@@ -3862,7 +3862,7 @@ imageTrace	Outline	Kontur
 @msg	Outline Stroke: no stroked paths selected	Konturér kurve: ingen kurver med kontur er markeret
 @msg	PDF settings are not an object	PDF-indstillinger er ikke et objekt
 @msg	PDF writer error: {0}	PDF-skriverfejl: {0}
-@msg	Packaged {n} file(s) in {folder}{note}	Pakkede {n} fil(er) i {folder}{note}
+@msg	Packaged {n} file(s) in {folder} {note}	Pakkede {n} fil(er) i {folder}{note}
 @msg	Packaged {n} file(s){note}	Pakkede {n} fil(er){note}
 @msg	Preview in Browser needs the desktop app (the web downloads files instead)	Forhåndsvisning i browser kræver skrivebordsappen (webversionen downloader filer i stedet)
 @msg	Release Guides: no guides	Frigiv hjælpelinjer: ingen hjælpelinjer
@@ -5374,3 +5374,10 @@ swatch	Bright Violet	Kraftig violet
 	Fresco	Fresko
 	Effect Gallery…	Effektgalleri…
 	Effect Gallery Dialog	Dialogboksen Effektgalleri
+@msg	Packaged {n} file(s) in {folder}	Pakkede {n} fil(er) i {folder}
+@msg	Packaged {n} file(s) {note}	Pakkede {n} fil(er) {note}
+@msg	Packaged {n} file(s)	Pakkede {n} fil(er)
+	Packaged {n} file(s)	Pakkede {n} fil(er)
+	Packaged {n} file(s) in {folder}	Pakkede {n} fil(er) i {folder}
+	Packaged {n} file(s) {note}	Pakkede {n} fil(er) {note}
+	{count} file(s) in {folder}. Show the package folder?	{count} fil(er) i {folder}. Vis pakkemappen?

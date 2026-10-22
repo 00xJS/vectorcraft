@@ -2184,11 +2184,11 @@ lighting	Light	Cahaya
 	Fonts whose licence doesn't allow embedding are not copied.	Font yang lisensinya tidak mengizinkan penyematan tidak disalin.
 	Package collects a saved document with its linked files and fonts.	Package mengumpulkan dokumen tersimpan beserta file dan font yang tertaut.
 	Package created	Paket dibuat
-	Packaged {n} file(s) in {folder}{note}	{n} file dipaketkan dalam {folder}{note}
+	Packaged {n} file(s) in {folder} {note}	{n} file dipaketkan dalam {folder}{note}
 	Packaged {n} file(s){note}	{n} file dipaketkan{note}
 	Relink Linked Files to the Document	Tautkan ulang file tertaut ke dokumen
 	Save the document first?	Simpan dokumen terlebih dahulu?
-	{count} file(s) in {folder}{note}. Show the package folder?	{count} file dalam {folder}{note}. Tampilkan folder paket?
+	{count} file(s) in {folder} {note}. Show the package folder?	{count} file dalam {folder}{note}. Tampilkan folder paket?
 	{count} linked file(s) not found	{count} file tertaut tidak ditemukan
 	fonts not copied: {fonts}	font tidak disalin: {fonts}
 	Built-in presets are read-only: New… starts an editable copy.	Preset bawaan bersifat hanya-baca: Baru… memulai salinan yang dapat diedit.
@@ -3862,7 +3862,7 @@ imageTrace	Outline	Kontur
 @msg	Outline Stroke: no stroked paths selected	Ubah goresan menjadi kontur: tidak ada jalur dengan goresan yang dipilih
 @msg	PDF settings are not an object	Pengaturan PDF bukan objek
 @msg	PDF writer error: {0}	Kesalahan penulis PDF: {0}
-@msg	Packaged {n} file(s) in {folder}{note}	Berhasil mengemas {n} file di {folder}{note}
+@msg	Packaged {n} file(s) in {folder} {note}	Berhasil mengemas {n} file di {folder}{note}
 @msg	Packaged {n} file(s){note}	Berhasil mengemas {n} file{note}
 @msg	Preview in Browser needs the desktop app (the web downloads files instead)	Pratinjau di Peramban memerlukan aplikasi desktop (versi web mengunduh file sebagai gantinya)
 @msg	Release Guides: no guides	Lepaskan panduan: tidak ada panduan
@@ -5374,3 +5374,10 @@ swatch	Bright Violet	Violet cerah
 	Fresco	Fresko
 	Effect Gallery…	Galeri Efek…
 	Effect Gallery Dialog	Dialog Galeri Efek
+@msg	Packaged {n} file(s) in {folder}	Berhasil mengemas {n} file di {folder}
+@msg	Packaged {n} file(s) {note}	Berhasil mengemas {n} file {note}
+@msg	Packaged {n} file(s)	Berhasil mengemas {n} file
+	Packaged {n} file(s)	Berhasil mengemas {n} file
+	Packaged {n} file(s) in {folder}	Berhasil mengemas {n} file di {folder}
+	Packaged {n} file(s) {note}	Berhasil mengemas {n} file {note}
+	{count} file(s) in {folder}. Show the package folder?	{count} file dalam {folder}. Tampilkan folder paket?

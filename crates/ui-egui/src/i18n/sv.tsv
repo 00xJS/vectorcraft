@@ -2168,7 +2168,7 @@
 	Package	Paketera
 	Package collects a saved document with its linked files and fonts.	Paketera samlar ett sparat dokument med dess länkade filer och typsnitt.
 	Package created	Paketet har skapats
-	Packaged {n} file(s) in {folder}{note}	Paketerade {n} fil(er) i {folder}{note}
+	Packaged {n} file(s) in {folder} {note}	Paketerade {n} fil(er) i {folder}{note}
 	Packaged {n} file(s){note}	Paketerade {n} fil(er){note}
 	Package…	Paketera…
 	Page	Sida
@@ -3517,7 +3517,7 @@
 	Zoom Tool	Zoomverktyg
 	Zoom with Mouse Wheel	Zooma med mushjulet
 	Scrub Numeric Fields by Dragging	Ändra numeriska fält genom att dra
-	{count} file(s) in {folder}{note}. Show the package folder?	{count} fil(er) i {folder}{note}. Visa paketmappen?
+	{count} file(s) in {folder} {note}. Show the package folder?	{count} fil(er) i {folder}{note}. Visa paketmappen?
 	{count} linked file(s) not found	{count} länkad(e) fil(er) hittades inte
 	fonts not copied: {fonts}	typsnitt som inte kopierats: {fonts}
 	{count} linked image(s) changed since this document was saved. Show the new versions?	{count} länkad(e) bild(er) har ändrats sedan dokumentet sparades. Visa de nya versionerna?
@@ -3745,7 +3745,7 @@ axis	Both	Båda
 @msg	Outline Stroke: no stroked paths selected	Kontur till bana: inga banor med kontur markerade
 @msg	PDF settings are not an object	PDF-inställningarna är inte ett objekt
 @msg	PDF writer error: {0}	fel i PDF-skrivaren: {0}
-@msg	Packaged {n} file(s) in {folder}{note}	Paketerade {n} fil(er) i {folder}{note}
+@msg	Packaged {n} file(s) in {folder} {note}	Paketerade {n} fil(er) i {folder}{note}
 @msg	Packaged {n} file(s){note}	Paketerade {n} fil(er){note}
 @msg	Preview in Browser needs the desktop app (the web downloads files instead)	Förhandsgranska i webbläsare kräver skrivbordsappen (webbversionen hämtar filer i stället)
 @msg	Release Guides: no guides	Släpp stödlinjer: inga stödlinjer
@@ -5358,3 +5358,10 @@ theme	Appearance	Utseende
 	Fresco	Fresk
 	Effect Gallery…	Effektgalleri…
 	Effect Gallery Dialog	Dialogrutan Effektgalleri
+@msg	Packaged {n} file(s) in {folder}	Paketerade {n} fil(er) i {folder}
+@msg	Packaged {n} file(s) {note}	Paketerade {n} fil(er) {note}
+@msg	Packaged {n} file(s)	Paketerade {n} fil(er)
+	Packaged {n} file(s)	Paketerade {n} fil(er)
+	Packaged {n} file(s) in {folder}	Paketerade {n} fil(er) i {folder}
+	Packaged {n} file(s) {note}	Paketerade {n} fil(er) {note}
+	{count} file(s) in {folder}. Show the package folder?	{count} fil(er) i {folder}. Visa paketmappen?

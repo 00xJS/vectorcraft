@@ -2218,7 +2218,7 @@
 	Package	Empaquetar
 	Package collects a saved document with its linked files and fonts.	Empaquetar reúne un documento guardado con sus archivos vinculados y fuentes.
 	Package created	Paquete creado
-	Packaged {n} file(s) in {folder}{note}	Se empaquetaron {n} archivo(s) en {folder}{note}
+	Packaged {n} file(s) in {folder} {note}	Se empaquetaron {n} archivo(s) en {folder}{note}
 	Packaged {n} file(s){note}	Se empaquetaron {n} archivo(s){note}
 	Package…	Empaquetar…
 	Page	Página
@@ -3583,7 +3583,7 @@
 	Zoom Tool	Herramienta Zoom
 	Zoom with Mouse Wheel	Zoom con la rueda del mouse
 	Scrub Numeric Fields by Dragging	Ajustar campos numéricos arrastrando
-	{count} file(s) in {folder}{note}. Show the package folder?	{count} archivo(s) en {folder}{note}. ¿Mostrar la carpeta del paquete?
+	{count} file(s) in {folder} {note}. Show the package folder?	{count} archivo(s) en {folder}{note}. ¿Mostrar la carpeta del paquete?
 	{count} linked file(s) not found	No se encontraron {count} archivo(s) vinculado(s)
 	fonts not copied: {fonts}	fuentes no copiadas: {fonts}
 	{count} linked image(s) changed since this document was saved. Show the new versions?	{count} imagen(es) vinculada(s) cambiaron desde que se guardó este documento. ¿Mostrar las versiones nuevas?
@@ -3823,7 +3823,7 @@ axis	Both	Ambos
 @msg	Outline Stroke: no stroked paths selected	Contornear trazo: no hay trazados con trazo seleccionados
 @msg	PDF settings are not an object	los ajustes de PDF no son un objeto
 @msg	PDF writer error: {0}	error del escritor de PDF: {0}
-@msg	Packaged {n} file(s) in {folder}{note}	Se empaquetaron {n} archivo(s) en {folder}{note}
+@msg	Packaged {n} file(s) in {folder} {note}	Se empaquetaron {n} archivo(s) en {folder}{note}
 @msg	Packaged {n} file(s){note}	Se empaquetaron {n} archivo(s){note}
 @msg	Preview in Browser needs the desktop app (the web downloads files instead)	Previsualizar en el navegador requiere la aplicación de escritorio (la versión web descarga los archivos)
 @msg	Release Guides: no guides	Soltar guías: no hay guías
@@ -5344,3 +5344,10 @@ mark-style	Japanese	Japonesas
 	Fresco	Fresco
 	Effect Gallery…	Galería de efectos…
 	Effect Gallery Dialog	Cuadro de diálogo Galería de efectos
+@msg	Packaged {n} file(s) in {folder}	Se empaquetaron {n} archivo(s) en {folder}
+@msg	Packaged {n} file(s) {note}	Se empaquetaron {n} archivo(s) {note}
+@msg	Packaged {n} file(s)	Se empaquetaron {n} archivo(s)
+	Packaged {n} file(s)	Se empaquetaron {n} archivo(s)
+	Packaged {n} file(s) in {folder}	Se empaquetaron {n} archivo(s) en {folder}
+	Packaged {n} file(s) {note}	Se empaquetaron {n} archivo(s) {note}
+	{count} file(s) in {folder}. Show the package folder?	{count} archivo(s) en {folder}. ¿Mostrar la carpeta del paquete?

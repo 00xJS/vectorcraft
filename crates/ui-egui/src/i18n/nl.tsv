@@ -2198,11 +2198,11 @@ lighting	Light	Licht
 	Fonts whose licence doesn't allow embedding are not copied.	Lettertypen waarvan de licentie insluiten niet toestaat, worden niet gekopieerd.
 	Package collects a saved document with its linked files and fonts.	Verpakken verzamelt een opgeslagen document met zijn gekoppelde bestanden en lettertypen.
 	Package created	Pakket gemaakt
-	Packaged {n} file(s) in {folder}{note}	{n} bestand(en) verpakt in {folder}{note}
+	Packaged {n} file(s) in {folder} {note}	{n} bestand(en) verpakt in {folder} {note}
 	Packaged {n} file(s){note}	{n} bestand(en) verpakt{note}
 	Relink Linked Files to the Document	Gekoppelde bestanden opnieuw koppelen aan het document
 	Save the document first?	Wil je het document eerst opslaan?
-	{count} file(s) in {folder}{note}. Show the package folder?	{count} bestand(en) in {folder}{note}. De pakketmap openen?
+	{count} file(s) in {folder} {note}. Show the package folder?	{count} bestand(en) in {folder} {note}. De pakketmap openen?
 	{count} linked file(s) not found	{count} gekoppelde bestand(en) niet gevonden
 	fonts not copied: {fonts}	niet gekopieerde lettertypen: {fonts}
 	Built-in presets are read-only: New… starts an editable copy.	Ingebouwde voorinstellingen zijn alleen-lezen: Nieuw… start een bewerkbare kopie.
@@ -3876,7 +3876,7 @@ imageTrace	Outline	Contour
 @msg	Outline Stroke: no stroked paths selected	Lijn omzetten in contouren: geen paden met een lijn geselecteerd
 @msg	PDF settings are not an object	PDF-instellingen zijn geen object
 @msg	PDF writer error: {0}	PDF-schrijffout: {0}
-@msg	Packaged {n} file(s) in {folder}{note}	{n} bestand(en) verpakt in {folder}{note}
+@msg	Packaged {n} file(s) in {folder} {note}	{n} bestand(en) verpakt in {folder} {note}
 @msg	Packaged {n} file(s){note}	{n} bestand(en) verpakt{note}
 @msg	Preview in Browser needs the desktop app (the web downloads files instead)	Voorvertoning in browser heeft de desktop-app nodig (het web downloadt in plaats daarvan bestanden)
 @msg	Release Guides: no guides	Hulplijnen vrijgeven: geen hulplijnen
@@ -5417,3 +5417,10 @@ swatch	Bright Violet	Felviolet
 	Fresco	Fresco
 	Effect Gallery…	Effectgalerij…
 	Effect Gallery Dialog	Dialoogvenster Effectgalerij
+@msg	Packaged {n} file(s) in {folder}	{n} bestand(en) verpakt in {folder}
+@msg	Packaged {n} file(s) {note}	{n} bestand(en) verpakt {note}
+@msg	Packaged {n} file(s)	{n} bestand(en) verpakt
+	Packaged {n} file(s)	{n} bestand(en) verpakt
+	Packaged {n} file(s) in {folder}	{n} bestand(en) verpakt in {folder}
+	Packaged {n} file(s) {note}	{n} bestand(en) verpakt {note}
+	{count} file(s) in {folder}. Show the package folder?	{count} bestand(en) in {folder}. De pakketmap openen?

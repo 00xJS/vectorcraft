@@ -1685,6 +1685,21 @@ fn messages_translate_by_template_and_their_parts() {
     assert_eq!(message(Lang::EN, nested), nested);
 }
 
+#[test]
+fn package_status_message_templates_parse() {
+    let c = Catalog::parse(concat!(
+        "@msg\tPackaged {n} file(s) in {folder}\tpackaged plain\n",
+        "@msg\tPackaged {n} file(s) in {folder} {note}\tpackaged noted\n",
+        "@msg\t{count} file(s) in {folder}. Show the package folder?\tdetail plain\n",
+        "@msg\t{count} file(s) in {folder} {note}. Show the package folder?\tdetail noted\n",
+    ));
+    assert!(c.message("Packaged 1 file(s) in /tmp/foo").is_some());
+    assert!(c.message("Packaged 1 file(s) in /tmp/foo (1 linked file(s) not found)").is_some());
+    assert!(c.message("2 file(s) in /tmp/foo. Show the package folder?").is_some());
+    assert!(c.message("2 file(s) in /tmp/foo (1 linked file(s) not found). Show the package folder?").is_some());
+    assert!(Catalog::parse("@msg\tPackaged {n} file(s) in {folder}{note}\tbad\n").message("Packaged 1 file(s) in /a b").is_none());
+}
+
 /// Each language that translates status and error messages ([`COMPLETE_MESSAGES`]) has an `@msg`
 /// row for every message in the sources that reach the status bar, so a new one can't ship
 /// untranslated by accident (`VECTORCRAFT_I18N_DUMP_MESSAGES=<file>` lists them). A message listed

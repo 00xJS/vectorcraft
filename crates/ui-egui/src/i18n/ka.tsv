@@ -2079,11 +2079,11 @@ lighting	Light	სინათლე
 	Fonts whose licence doesn't allow embedding are not copied.	შრიფტები, რომელთა ლიცენზია ჩაშენების უფლებას არ იძლევა, არ კოპირდება.
 	Package collects a saved document with its linked files and fonts.	შეფუთვა აგროვებს შენახულ დოკუმენტს მის დაკავშირებულ ფაილებთან და შრიფტებთან ერთად.
 	Package created	შეფუთვა შეიქმნა
-	Packaged {n} file(s) in {folder}{note}	შეიფუთა ფაილები: {n}, ადგილი: {folder}{note}
+	Packaged {n} file(s) in {folder} {note}	შეიფუთა ფაილები: {n}, ადგილი: {folder}{note}
 	Packaged {n} file(s){note}	შეიფუთა ფაილები: {n}{note}
 	Relink Linked Files to the Document	დაკავშირებული ფაილების დოკუმენტთან ხელახლა დაკავშირება
 	Save the document first?	ჯერ შევინახოთ დოკუმენტი?
-	{count} file(s) in {folder}{note}. Show the package folder?	ფაილები: {count}, ადგილი: {folder}{note}. ვაჩვენოთ შეფუთვის საქაღალდე?
+	{count} file(s) in {folder} {note}. Show the package folder?	ფაილები: {count}, ადგილი: {folder}{note}. ვაჩვენოთ შეფუთვის საქაღალდე?
 	{count} linked file(s) not found	ვერ მოიძებნა დაკავშირებული ფაილები: {count}
 	fonts not copied: {fonts}	არ დაკოპირდა შრიფტები: {fonts}
 	Built-in presets are read-only: New… starts an editable copy.	ჩაშენებული პრესეტები მხოლოდ წასაკითხია: „ახალი…“ ქმნის რედაქტირებად ასლს.
@@ -3623,7 +3623,7 @@ effect	Regular	ჩვეულებრივი
 @msg	Outline Stroke: no stroked paths selected	კონტურის ფიგურად გარდაქმნა: კონტურიანი ტრაექტორიები მონიშნული არ არის
 @msg	PDF settings are not an object	PDF-ის პარამეტრები ობიექტი არ არის
 @msg	PDF writer error: {0}	PDF-ის ჩამწერის შეცდომა: {0}
-@msg	Packaged {n} file(s) in {folder}{note}	შეფუთულია ფაილი ({n}) საქაღალდეში {folder}{note}
+@msg	Packaged {n} file(s) in {folder} {note}	შეფუთულია ფაილი ({n}) საქაღალდეში {folder}{note}
 @msg	Packaged {n} file(s){note}	შეფუთულია ფაილი ({n}){note}
 @msg	Preview in Browser needs the desktop app (the web downloads files instead)	ბრაუზერში წინასწარ ნახვას დესკტოპის აპი სჭირდება (ვებში ფაილები ჩამოიტვირთება)
 @msg	Release Guides: no guides	დამხმარე ხაზების მოხსნა: დამხმარე ხაზები არ არის
@@ -5311,3 +5311,10 @@ imageTrace	Outline	კონტური
 	Select artwork to apply effects	აირჩიეთ ნამუშევარი ეფექტების გამოსაყენებლად
 	Effect Gallery…	ეფექტების გალერეა…
 	Effect Gallery Dialog	ეფექტების გალერეა დიალოგი
+@msg	Packaged {n} file(s) in {folder}	შეფუთულია ფაილი ({n}) საქაღალდეში {folder}
+@msg	Packaged {n} file(s) {note}	შეფუთულია ფაილი ({n}) {note}
+@msg	Packaged {n} file(s)	შეფუთულია ფაილი ({n})
+	Packaged {n} file(s)	შეფუთულია ფაილი ({n})
+	Packaged {n} file(s) in {folder}	შეფუთულია ფაილი ({n}) საქაღალდეში {folder}
+	Packaged {n} file(s) {note}	შეფუთულია ფაილი ({n}) {note}
+	{count} file(s) in {folder}. Show the package folder?	ფაილები: {count}, ადგილი: {folder}. ვაჩვენოთ შეფუთვის საქაღალდე?

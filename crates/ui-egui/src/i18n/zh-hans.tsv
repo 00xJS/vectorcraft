@@ -2117,7 +2117,7 @@ file-filter	Templates	模板
 	Package	打包
 	Package collects a saved document with its linked files and fonts.	打包会将已存储的文件连同其链接文件与字体一并收集。
 	Package created	已创建打包
-	Packaged {n} file(s) in {folder}{note}	已将 {n} 个文件打包于 {folder}{note}
+	Packaged {n} file(s) in {folder} {note}	已将 {n} 个文件打包于 {folder}{note}
 	Packaged {n} file(s){note}	已打包 {n} 个文件{note}
 	Package…	打包…
 	Page	页面
@@ -3461,7 +3461,7 @@ font-script	Japanese	汉字
 	Zoom Tool	缩放工具
 	Zoom with Mouse Wheel	使用鼠标滚轮缩放
 	Scrub Numeric Fields by Dragging	拖动以调整数值字段
-	{count} file(s) in {folder}{note}. Show the package folder?	{folder} 中有 {count} 个文件{note}。要显示打包文件夹吗？
+	{count} file(s) in {folder} {note}. Show the package folder?	{folder} 中有 {count} 个文件{note}。要显示打包文件夹吗？
 	{count} linked file(s) not found	找不到 {count} 个链接文件
 	fonts not copied: {fonts}	未复制的字体：{fonts}
 	{count} linked image(s) changed since this document was saved. Show the new versions?	自存储此文档后，有 {count} 个链接图像已更改。要显示新版本吗？
@@ -4066,7 +4066,7 @@ imageTrace	Outline	轮廓
 @msg	{_1} linked file(s) can't be read here: their previews show	此处无法读取 {_1} 个链接文件：显示的是其预览
 @msg	{_1} linked image(s) changed on disk: Update Links shows the new versions	有 {_1} 个链接图像已在磁盘上更改：“更新链接”可显示新版本
 @msg	pick a colour, gradient or pattern to save as a swatch	请选取要保存为色板的颜色、渐变或图案
-@msg	Packaged {n} file(s) in {folder}{note}	已将 {n} 个文件打包到 {folder}{note}
+@msg	Packaged {n} file(s) in {folder} {note}	已将 {n} 个文件打包到 {folder}{note}
 @msg	Packaged {n} file(s){note}	已打包 {n} 个文件{note}
 @msg	choose a location for the package	请为打包选择位置
 @msg	missing `folder`	缺少 `folder`
@@ -5241,3 +5241,10 @@ lighting	Light	光源
 	Fresco	壁画
 	Effect Gallery…	效果库…
 	Effect Gallery Dialog	效果库对话框
+@msg	Packaged {n} file(s) in {folder}	已将 {n} 个文件打包到 {folder}
+@msg	Packaged {n} file(s) {note}	已打包 {n} 个文件 {note}
+@msg	Packaged {n} file(s)	已打包 {n} 个文件
+	Packaged {n} file(s)	已打包 {n} 个文件
+	Packaged {n} file(s) in {folder}	已将 {n} 个文件打包到 {folder}
+	Packaged {n} file(s) {note}	已打包 {n} 个文件 {note}
+	{count} file(s) in {folder}. Show the package folder?	{folder} 中有 {count} 个文件。要显示打包文件夹吗？

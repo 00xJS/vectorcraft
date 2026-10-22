@@ -2091,7 +2091,7 @@ axis	Both	Και τα δύο
 @msg	Outline Stroke: no stroked paths selected	Μετατροπή περιγράμματος σε διαδρομή: δεν επιλέχθηκαν διαδρομές με περίγραμμα
 @msg	PDF settings are not an object	Οι ρυθμίσεις PDF δεν είναι αντικείμενο
 @msg	PDF writer error: {0}	Σφάλμα εγγραφής PDF: {0}
-@msg	Packaged {n} file(s) in {folder}{note}	Συσκευάστηκαν {n} αρχεία στον φάκελο {folder}{note}
+@msg	Packaged {n} file(s) in {folder} {note}	Συσκευάστηκαν {n} αρχεία στον φάκελο {folder}{note}
 @msg	Packaged {n} file(s){note}	Συσκευάστηκαν {n} αρχεία{note}
 @msg	Preview in Browser needs the desktop app (the web downloads files instead)	Η προεπισκόπηση σε πρόγραμμα περιήγησης απαιτεί την εφαρμογή υπολογιστή (η έκδοση ιστού πραγματοποιεί λήψη αρχείων)
 @msg	Release Guides: no guides	Αποδέσμευση οδηγών: δεν υπάρχουν οδηγοί
@@ -2840,7 +2840,7 @@ theme	Appearance	Εμφάνιση
 	Override Character Color	Παράκαμψη χρώματος χαρακτήρων
 	Package collects a saved document with its linked files and fonts.	Η συσκευασία συγκεντρώνει ένα αποθηκευμένο έγγραφο μαζί με συνδεδεμένα αρχεία και γραμματοσειρές.
 	Package created	Η συσκευασία δημιουργήθηκε
-	Packaged {n} file(s) in {folder}{note}	Συσκευάστηκαν {n} αρχεία στον φάκελο {folder}{note}
+	Packaged {n} file(s) in {folder} {note}	Συσκευάστηκαν {n} αρχεία στον φάκελο {folder}{note}
 	Packaged {n} file(s){note}	Συσκευάστηκαν {n} αρχεία{note}
 	Page	Σελίδα
 	Page information	Πληροφορίες σελίδας
@@ -3826,7 +3826,7 @@ theme	Appearance	Εμφάνιση
 	Zoom to Selection	Ζουμ στην επιλογή
 	Zoom with Mouse Wheel	Ζουμ με τον τροχό του ποντικιού
 	Scrub Numeric Fields by Dragging	Ρύθμιση αριθμητικών πεδίων με σύρσιμο
-	{count} file(s) in {folder}{note}. Show the package folder?	{count} αρχεία στον φάκελο {folder}{note}. Να εμφανιστεί ο φάκελος συσκευασίας;
+	{count} file(s) in {folder} {note}. Show the package folder?	{count} αρχεία στον φάκελο {folder}{note}. Να εμφανιστεί ο φάκελος συσκευασίας;
 	{count} linked file(s) not found	Δεν βρέθηκαν {count} συνδεδεμένα αρχεία
 	fonts not copied: {fonts}	γραμματοσειρές που δεν αντιγράφηκαν: {fonts}
 	{count} linked image(s) changed since this document was saved. Show the new versions?	{count} συνδεδεμένες εικόνες άλλαξαν μετά την αποθήκευση του εγγράφου. Να εμφανιστούν οι νέες εκδόσεις;
@@ -5354,3 +5354,10 @@ effect	Points	Σημεία
 	Fresco	Νωπογραφία
 	Effect Gallery…	Συλλογή εφέ…
 	Effect Gallery Dialog	Παράθυρο διαλόγου Συλλογή εφέ
+@msg	Packaged {n} file(s) in {folder}	Συσκευάστηκαν {n} αρχεία στον φάκελο {folder}
+@msg	Packaged {n} file(s) {note}	Συσκευάστηκαν {n} αρχεία {note}
+@msg	Packaged {n} file(s)	Συσκευάστηκαν {n} αρχεία
+	Packaged {n} file(s)	Συσκευάστηκαν {n} αρχεία
+	Packaged {n} file(s) in {folder}	Συσκευάστηκαν {n} αρχεία στον φάκελο {folder}
+	Packaged {n} file(s) {note}	Συσκευάστηκαν {n} αρχεία {note}
+	{count} file(s) in {folder}. Show the package folder?	{count} αρχεία στον φάκελο {folder}. Να εμφανιστεί ο φάκελος συσκευασίας;
