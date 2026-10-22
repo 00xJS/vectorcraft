@@ -1083,11 +1083,10 @@ mod tests {
         g
     }
 
-    /// Illustrator 30's Perceptual method mixes colours "to match how the human eye perceives
-    /// differences between colors"
-    /// (https://helpx.adobe.com/illustrator/desktop/paint-and-fill/create-and-edit-gradients/control-perceptual-interpolation-in-gradients.html):
-    /// blue → yellow passes through a light blue-grey in OKLab, not the flat mid grey a display
-    /// RGB mix gives, and its lightness climbs evenly.
+    /// Illustrator 30's Perceptual method mixes colours in a perceptually even way
+    /// (https://helpx.adobe.com/illustrator/desktop/paint-and-fill/create-and-edit-gradients/control-perceptual-interpolation-in-gradients.html).
+    /// Here that is OKLab: blue → yellow passes through a light blue-grey, not the flat mid grey
+    /// a display RGB mix gives, and its lightness climbs evenly.
     #[test]
     fn perceptual_blue_to_yellow_is_not_the_grey_rgb_mix() {
         let classic = blue_yellow(GradientMethod::Classic).sample(0.5).0.to_rgb();
