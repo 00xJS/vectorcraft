@@ -316,6 +316,11 @@ fn an_untitled_document_saved_to_a_file_exports_titled_after_it() {
     for pdf in pdf_texts(&mut untitled) {
         assert!(!pdf.contains("/DisplayDocTitle true"), "{pdf}");
     }
+    // An explicitly empty document title is also not a title to display.
+    std::sync::Arc::make_mut(&mut untitled.doc_mut().unwrap().doc).title.clear();
+    for pdf in pdf_texts(&mut untitled) {
+        assert!(!pdf.contains("/DisplayDocTitle true"), "{pdf}");
+    }
 
     // Saved as a file, then exported: Untitled-1 was only the name New gave it.
     let mut s = Session::new();
@@ -324,6 +329,9 @@ fn an_untitled_document_saved_to_a_file_exports_titled_after_it() {
     for pdf in pdf_texts(&mut s) {
         assert!(pdf.contains("/Title(Document C)") && xmp_title(&pdf).contains("Document C"), "{}", xmp_title(&pdf));
     }
+    // Non-object parameters still preserve that the file-stem title was not user supplied.
+    let pdf = String::from_utf8_lossy(&b64(&s.execute("document.exportPdf", &Value::Null).unwrap())).into_owned();
+    assert!(!pdf.contains("/DisplayDocTitle true"), "{pdf}");
     // Opened from that file, in another session.
     let mut s = Session::new();
     s.execute("document.open", &json!({"path": path.to_str().unwrap()})).unwrap();

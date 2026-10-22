@@ -399,6 +399,8 @@ fn export_pdf(s: &mut Session, p: &Value) -> Result<Value> {
     let mut q = p.clone();
     if let Some(o) = q.as_object_mut() {
         o.insert("_displayDocTitle".into(), json!(display_doc_title));
+    } else {
+        q = json!({ "_displayDocTitle": display_doc_title });
     }
     let (bytes, warnings) = encode(C, titled.as_ref().unwrap_or(&st.doc), &q)?;
     write_or_return(str_param(p, "path"), &bytes, json!({ "warnings": warnings }))
