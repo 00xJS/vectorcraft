@@ -220,7 +220,7 @@ fn shared_composer(app: &VectorcraftApp) -> Option<Composer> {
 }
 
 /// Hyphenation shared by every paragraph in scope, or `None` when they differ (checkbox off).
-fn shared_hyphenate(app: &VectorcraftApp) -> Option<bool> {
+pub(crate) fn shared_hyphenate(app: &VectorcraftApp) -> Option<bool> {
     shared_para(app, |p| p.hyphenate)
 }
 
@@ -285,6 +285,16 @@ fn selected_paragraph_direction(app: &VectorcraftApp, fallback: &ParaStyle) -> O
         }
     }
     shared.or(default)
+}
+
+/// A hyphenation option shared by every paragraph in scope, or `None` when they differ.
+pub(crate) fn shared_hyphenation_field<T: PartialEq + Copy>(app: &VectorcraftApp, f: impl Fn(&HyphenationOptions) -> T) -> Option<T> {
+    shared_para(app, |p| f(&p.hyphenation))
+}
+
+/// The hyphenation zone shared by every paragraph in scope, or `None` when they differ.
+pub(crate) fn shared_hyphenation_zone(app: &VectorcraftApp) -> Option<f64> {
+    shared_para_field(app, |p| p.hyphenation.zone)
 }
 
 /// None means differing displayed alignments, following the other mixed-value controls.
