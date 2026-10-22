@@ -291,12 +291,15 @@ pub struct GradientMesh {
     pub points: Vec<MeshPoint>,
 }
 
-/// One tessellated piece of a mesh (a small quad with a solid colour).
+/// One tessellated piece of a mesh: a small quad, its colour at the centre, and its colour and
+/// opacity at each corner (in `pts` order), which a renderer shades between so neighbouring quads
+/// meet without a step.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct MeshQuad {
     pub pts: [Point; 4],
     pub color: Color,
     pub opacity: f32,
+    pub corners: [(Color, f32); 4],
 }
 
 /// Create Gradient Mesh → Appearance.
@@ -832,7 +835,7 @@ impl GradientMesh {
         (Color::rgb(rgb[0], rgb[1], rgb[2]), op)
     }
 
-    /// Tessellate into `n`×`n` quads per patch, each coloured at its centre.
+    /// Tessellate into `n`×`n` quads per patch, each coloured at its centre and its corners.
     pub fn quads(&self, n: usize) -> Vec<MeshQuad> {
         if !self.is_valid() {
             return vec![];
@@ -840,18 +843,27 @@ impl GradientMesh {
         let n = n.clamp(1, 64);
         let mut out = Vec::with_capacity(self.rows as usize * self.cols as usize * n * n);
         let mut grid = vec![Point::ZERO; (n + 1) * (n + 1)];
+        let mut colors = vec![(Color::default(), 0.0f32); (n + 1) * (n + 1)];
         for r in 0..self.rows as usize {
             for c in 0..self.cols as usize {
                 for j in 0..=n {
                     for i in 0..=n {
-                        grid[j * (n + 1) + i] = self.eval(r, c, i as f64 / n as f64, j as f64 / n as f64);
+                        let (u, v) = (i as f64 / n as f64, j as f64 / n as f64);
+                        grid[j * (n + 1) + i] = self.eval(r, c, u, v);
+                        colors[j * (n + 1) + i] = self.color_at(r, c, u, v);
                     }
                 }
                 for j in 0..n {
                     for i in 0..n {
                         let (color, opacity) = self.color_at(r, c, (i as f64 + 0.5) / n as f64, (j as f64 + 0.5) / n as f64);
                         let g = |a: usize, b: usize| grid[b * (n + 1) + a];
-                        out.push(MeshQuad { pts: [g(i, j), g(i + 1, j), g(i + 1, j + 1), g(i, j + 1)], color, opacity });
+                        let k = |a: usize, b: usize| colors[b * (n + 1) + a];
+                        out.push(MeshQuad {
+                            pts: [g(i, j), g(i + 1, j), g(i + 1, j + 1), g(i, j + 1)],
+                            color,
+                            opacity,
+                            corners: [k(i, j), k(i + 1, j), k(i + 1, j + 1), k(i, j + 1)],
+                        });
                     }
                 }
             }
