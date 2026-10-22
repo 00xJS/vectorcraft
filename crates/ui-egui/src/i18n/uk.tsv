@@ -4997,6 +4997,17 @@ lighting	Light	Світло
 	Fresco	Фреска
 	Effect Gallery…	Галерея ефектів…
 	Effect Gallery Dialog	Діалог «Галерея ефектів»
+	Arc Segment Tool Options	Параметри інструменту «Дуговий сегмент»
+	Base Along:	Основа вздовж:
+	Closed	Замкнений
+	Concave	Увігнутий
+	Convex	Опуклий
+	Fill Arc	Заливка дуги
+	Length X-Axis:	Довжина вздовж осі X:
+	Length Y-Axis:	Довжина вздовж осі Y:
+	Slope:	Ухил:
+axis	X Axis	Вісь X
+axis	Y Axis	Вісь Y
 @msg	Packaged {n} file(s) in {folder}	Упаковано файли: {n} {folder}
 @msg	Packaged {n} file(s) {note}	Упаковано файли: {n} {note}
 @msg	Packaged {n} file(s)	Упаковано файли: {n}

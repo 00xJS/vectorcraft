@@ -5358,6 +5358,16 @@ theme	Appearance	Външен вид
 	Fresco	Фреска
 	Effect Gallery…	Галерия с ефекти…
 	Effect Gallery Dialog	Диалог „Галерия с ефекти“
+	Arc Segment Tool Options	Опции на инструмента „Дъгов сегмент“
+	Base Along:	Основа по:
+	Closed	Затворен
+	Convex	Изпъкнал
+	Fill Arc	Запълване на дъга
+	Length X-Axis:	Дължина по X:
+	Length Y-Axis:	Дължина по Y:
+	Slope:	Наклон:
+axis	X Axis	X ос
+axis	Y Axis	Y ос
 @msg	Packaged {n} file(s) in {folder}	Пакетирани са {n} файла в {folder}
 @msg	Packaged {n} file(s) {note}	Пакетирани са {n} файла {note}
 @msg	Packaged {n} file(s)	Пакетирани са {n} файла

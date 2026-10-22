@@ -5311,6 +5311,16 @@ imageTrace	Outline	კონტური
 	Select artwork to apply effects	აირჩიეთ ნამუშევარი ეფექტების გამოსაყენებლად
 	Effect Gallery…	ეფექტების გალერეა…
 	Effect Gallery Dialog	ეფექტების გალერეა დიალოგი
+	Arc Segment Tool Options	რკალის სეგმენტის ხელსაწყოს პარამეტრები
+	Base Along:	საფუძველი გასწვრივ:
+	Closed	დახურული
+	Convex	ამობზარი
+	Fill Arc	რკალის შევსება
+	Length X-Axis:	სიგრძე X ღერძზე:
+	Length Y-Axis:	სიგრძე Y ღერძზე:
+	Slope:	დახრა:
+axis	X Axis	X ღერძი
+axis	Y Axis	Y ღერძი
 @msg	Packaged {n} file(s) in {folder}	შეფუთულია ფაილი ({n}) საქაღალდეში {folder}
 @msg	Packaged {n} file(s) {note}	შეფუთულია ფაილი ({n}) {note}
 @msg	Packaged {n} file(s)	შეფუთულია ფაილი ({n})

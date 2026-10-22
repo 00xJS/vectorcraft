@@ -5354,6 +5354,16 @@ effect	Points	Σημεία
 	Fresco	Νωπογραφία
 	Effect Gallery…	Συλλογή εφέ…
 	Effect Gallery Dialog	Παράθυρο διαλόγου Συλλογή εφέ
+	Arc Segment Tool Options	Επιλογές εργαλείου τμήματος τόξου
+	Base Along:	Βάση κατά:
+	Closed	Κλειστό
+	Convex	Κυρτό
+	Fill Arc	Γέμισμα τόξου
+	Length X-Axis:	Μήκος άξονα X:
+	Length Y-Axis:	Μήκος άξονα Y:
+	Slope:	Κλίση:
+axis	X Axis	Άξονας X
+axis	Y Axis	Άξονας Y
 @msg	Packaged {n} file(s) in {folder}	Συσκευάστηκαν {n} αρχεία στον φάκελο {folder}
 @msg	Packaged {n} file(s) {note}	Συσκευάστηκαν {n} αρχεία {note}
 @msg	Packaged {n} file(s)	Συσκευάστηκαν {n} αρχεία

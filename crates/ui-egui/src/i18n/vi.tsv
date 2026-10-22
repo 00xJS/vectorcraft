@@ -4997,6 +4997,17 @@ theme	Appearance	Giao diện
 	Fresco	Bích họa
 	Effect Gallery…	Thư viện hiệu ứng…
 	Effect Gallery Dialog	Hộp thoại Thư viện hiệu ứng
+	Arc Segment Tool Options	Tùy chọn công cụ cung phân đoạn
+	Base Along:	Cơ sở dọc theo:
+	Closed	Đóng
+	Concave	Lõm
+	Convex	Lồi
+	Fill Arc	Tô cung
+	Length X-Axis:	Chiều dài trục X:
+	Length Y-Axis:	Chiều dài trục Y:
+	Slope:	Độ dốc:
+axis	X Axis	Trục X
+axis	Y Axis	Trục Y
 @msg	Packaged {n} file(s) in {folder}	Đã đóng gói {n} tệp trong {folder}
 @msg	Packaged {n} file(s) {note}	Đã đóng gói {n} tệp {note}
 @msg	Packaged {n} file(s)	Đã đóng gói {n} tệp

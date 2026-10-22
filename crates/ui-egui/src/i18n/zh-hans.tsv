@@ -5241,6 +5241,17 @@ lighting	Light	光源
 	Fresco	壁画
 	Effect Gallery…	效果库…
 	Effect Gallery Dialog	效果库对话框
+	Arc Segment Tool Options	弧段工具选项
+	Base Along:	基线方向:
+	Closed	闭合
+	Concave	凹
+	Convex	凸
+	Fill Arc	填充弧
+	Length X-Axis:	X 轴长度:
+	Length Y-Axis:	Y 轴长度:
+	Slope:	斜率:
+axis	X Axis	X 轴
+axis	Y Axis	Y 轴
 @msg	Packaged {n} file(s) in {folder}	已将 {n} 个文件打包到 {folder}
 @msg	Packaged {n} file(s) {note}	已打包 {n} 个文件 {note}
 @msg	Packaged {n} file(s)	已打包 {n} 个文件

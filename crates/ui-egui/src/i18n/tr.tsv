@@ -5361,6 +5361,17 @@ theme	Appearance	Görünüm
 	Fresco	Fresk
 	Effect Gallery…	Efekt Galerisi…
 	Effect Gallery Dialog	Efekt Galerisi İletişim Kutusu
+	Arc Segment Tool Options	Yay Segmenti Aracı Seçenekleri
+	Base Along:	Taban boyunca:
+	Closed	Kapalı
+	Convex	dışbükey
+	Fill Arc	Yayı doldur
+	Length X-Axis:	X ekseni uzunluğu:
+	Length Y-Axis:	Y ekseni uzunluğu:
+	Slope:	Eğim:
+axis	X Axis	X ekseni
+axis	Y Axis	Y ekseni
+
 @msg	Packaged {n} file(s) in {folder}	{folder} biçiminde paketlenmiş {n} dosyası/dosyaları
 @msg	Packaged {n} file(s) {note}	Paketlenmiş {n} dosyası/dosyaları {note}
 @msg	Packaged {n} file(s)	Paketlenmiş {n} dosyası/dosyaları

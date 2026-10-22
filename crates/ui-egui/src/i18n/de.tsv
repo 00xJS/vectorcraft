@@ -4983,6 +4983,17 @@ effect	Soft	Weich
 	Fresco	Fresko
 	Effect Gallery…	Effekt-Galerie…
 	Effect Gallery Dialog	Dialogfeld „Effekt-Galerie“
+	Arc Segment Tool Options	Optionen für das Bogensegment-Werkzeug
+	Base Along:	Basis entlang:
+	Closed	Geschlossen
+	Concave	Konkav
+	Convex	Konvex
+	Fill Arc	Bogen füllen
+	Length X-Axis:	Länge X-Achse:
+	Length Y-Axis:	Länge Y-Achse:
+	Slope:	Steigung:
+axis	X Axis	X-Achse
+axis	Y Axis	Y-Achse
 @msg	Packaged {n} file(s) in {folder}	{n} Datei(en) in {folder} verpackt
 @msg	Packaged {n} file(s) {note}	{n} Datei(en) verpackt {note}
 @msg	Packaged {n} file(s)	{n} Datei(en) verpackt

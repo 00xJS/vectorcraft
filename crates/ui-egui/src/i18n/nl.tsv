@@ -5417,6 +5417,16 @@ swatch	Bright Violet	Felviolet
 	Fresco	Fresco
 	Effect Gallery…	Effectgalerij…
 	Effect Gallery Dialog	Dialoogvenster Effectgalerij
+	Arc Segment Tool Options	Opties boogsegmentgereedschap
+	Base Along:	Basis langs:
+	Closed	Gesloten
+	Convex	Concaaf
+	Fill Arc	Boog vullen
+	Length X-Axis:	Lengte X-as:
+	Length Y-Axis:	Lengte Y-as:
+	Slope:	Helling:
+axis	X Axis	X-as
+axis	Y Axis	Y-as
 @msg	Packaged {n} file(s) in {folder}	{n} bestand(en) verpakt in {folder}
 @msg	Packaged {n} file(s) {note}	{n} bestand(en) verpakt {note}
 @msg	Packaged {n} file(s)	{n} bestand(en) verpakt

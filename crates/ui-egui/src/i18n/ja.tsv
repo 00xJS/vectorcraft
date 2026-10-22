@@ -5079,6 +5079,17 @@ lighting	Light	ライト
 	Simulate prints overprints as Overprint Preview shows them; separations always keep them. A preset flattens transparency before printing (PostScript files always flatten it).	シミュレートでは、オーバープリントプレビューと同じ見え方でオーバープリントを印刷します。分版では常にオーバープリントが保持されます。プリセットを選ぶと、印刷前に透明が分割・統合されます (PostScript ファイルでは常に分割・統合されます)。
 	Effect Gallery…	効果ギャラリー…
 	Effect Gallery Dialog	効果ギャラリーダイアログ
+	Arc Segment Tool Options	円弧セグメントツールオプション
+	Base Along:	基準方向:
+	Closed	閉じる
+	Concave	凹
+	Convex	凸
+	Fill Arc	円弧を塗りつぶす
+	Length X-Axis:	X 軸の長さ:
+	Length Y-Axis:	Y 軸の長さ:
+	Slope:	勾配:
+axis	X Axis	X 軸
+axis	Y Axis	Y 軸
 @msg	Packaged {n} file(s) in {folder}	{n} 個のファイルを {folder} にパッケージしました
 @msg	Packaged {n} file(s) {note}	{n} 個のファイルをパッケージしました {note}
 @msg	Packaged {n} file(s)	{n} 個のファイルをパッケージしました

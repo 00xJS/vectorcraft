@@ -5254,6 +5254,16 @@ mark-style	Japanese	Japońskie
 	Fresco	Fresk
 	Effect Gallery…	Galeria efektów…
 	Effect Gallery Dialog	Okno dialogowe Galeria efektów
+	Arc Segment Tool Options	Opcje narzędzia Segment łuku
+	Base Along:	Podstawa wzdłuż:
+	Closed	Zamknięty
+	Convex	Wypukła
+	Fill Arc	Wypełnij łuk
+	Length X-Axis:	Długość osi X:
+	Length Y-Axis:	Długość osi Y:
+	Slope:	Nachylenie:
+axis	X Axis	Oś X
+axis	Y Axis	Oś Y
 @msg	Packaged {n} file(s) in {folder}	Spakowane pliki: {n} w {folder}
 @msg	Packaged {n} file(s) {note}	Spakowane pliki: {n} {note}
 @msg	Packaged {n} file(s)	Spakowane pliki: {n}
