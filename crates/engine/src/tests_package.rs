@@ -429,6 +429,48 @@ fn package_copies_a_linked_pdf_page_as_it_is() {
     assert!(s.doc().unwrap().doc.has_placed());
 }
 
+#[test]
+fn package_copies_the_fonts_of_the_type_on_a_linked_pdf_page() {
+    let dir = Folder::new("package-placed-pdf-type");
+    let mut src = session();
+    run(&mut src, "text.create", json!({"x": 10, "y": 40, "text": "Flyer"}));
+    let pdf = run(&mut src, "document.serialize", json!({"format": "pdf", "preserveEditing": false}));
+    let path = dir.file("art/flyer.pdf");
+    write(&path, &vectorcraft_format::base64_decode(pdf["dataBase64"].as_str().unwrap()).unwrap());
+    for (link, copy_links, out) in [(false, true, "embedded"), (true, true, "linked"), (true, false, "fonts only")] {
+        let mut s = session();
+        let placed = run(&mut s, "file.place", json!({"path": path, "link": link}));
+        assert_eq!(placed["linked"], link, "{placed}");
+        save(&mut s, &dir.file("poster.vectorcraft"));
+        let r = run(&mut s, "file.package", json!({"folder": dir.file(out), "copyLinks": copy_links}));
+        assert_eq!((r["fonts"].as_u64(), r["skippedFonts"].clone()), (Some(1), json!([])), "{out}: {r}");
+        assert!(dir.0.join(out).join("poster Folder/Fonts/SourceSans3-Regular.ttf").is_file(), "{out}");
+    }
+}
+
+#[test]
+fn package_copies_the_fonts_of_each_page_of_a_pdf_that_two_documents_place() {
+    let dir = Folder::new("package-placed-pdf-pages");
+    let mut src = session();
+    run(&mut src, "text.create", json!({"x": 10, "y": 40, "text": "One"}));
+    run(&mut src, "artboard.new", json!({"x": 500, "y": 0, "width": 400, "height": 300}));
+    run(&mut src, "text.create", json!({"x": 510, "y": 40, "text": "Two", "font": "SourceSans3-Semibold"}));
+    let pdf = run(&mut src, "document.serialize", json!({"format": "pdf", "preserveEditing": false}));
+    let path = dir.file("art/flyer.pdf");
+    write(&path, &vectorcraft_format::base64_decode(pdf["dataBase64"].as_str().unwrap()).unwrap());
+    // The poster places page 1, and a document it places shows page 2.
+    let mut part = session();
+    run(&mut part, "file.place", json!({"path": path, "page": 2}));
+    let part_path = dir.file("art/part.vectorcraft");
+    save(&mut part, &part_path);
+    let mut s = session();
+    run(&mut s, "file.place", json!({"path": path, "page": 1}));
+    run(&mut s, "file.place", json!({"path": part_path}));
+    save(&mut s, &dir.file("poster.vectorcraft"));
+    let r = run(&mut s, "file.package", json!({}));
+    assert_eq!((r["links"].as_u64(), r["fonts"].as_u64(), r["skippedFonts"].clone()), (Some(2), Some(2), json!([])), "{r}");
+}
+
 /// `dir/art/badge.ai`, saved without its PDF part, its art placing each of `pics` (600 × 300 px,
 /// with a 2×1 preview) → its path.
 fn ai_placing(dir: &Folder, pics: &[&str]) -> String {

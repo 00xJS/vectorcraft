@@ -4,7 +4,7 @@
 //! report). The packaged document links to the copies (Relink); the open document doesn't change.
 //! Without a folder (the web, agents) the same files come back as a zip archive.
 
-use std::collections::{BTreeMap, HashSet};
+use std::collections::{BTreeMap, BTreeSet, HashSet};
 use std::io::Write;
 use std::path::{Path, PathBuf};
 
@@ -101,6 +101,23 @@ fn safe_asset_name(name: &str) -> String {
     if name.is_empty() { "asset".into() } else { name.into() }
 }
 
+/// A file placed: (page, bounding, page box) of each placed object showing it.
+type PlacedPages = Vec<(u32, bool, vectorcraft_doc::PageBox)>;
+
+/// The fonts of the type on `pages` of the PDF or `.ai` file `name` (`bytes`, found at `path`);
+/// none for other files.
+fn page_fonts(name: &str, bytes: &[u8], path: &str, pages: &PlacedPages) -> BTreeSet<super::fonts::UsedFont> {
+    let mut fonts = BTreeSet::new();
+    if super::place::document::is_pdf(name, bytes) {
+        for &(page, bounding, page_box) in pages {
+            if let Ok(a) = super::place::document::document_art(name, bytes, Some(path), page, bounding, page_box, C) {
+                fonts.extend(super::fonts::art_fonts(&a.doc, &a.nodes));
+            }
+        }
+    }
+    fonts
+}
+
 /// Collect dependencies depth-first so nested VectorCraft files are rewritten before
 /// their parents: each parent can record the final hash of the rewritten child.
 /// Cycles, excessive nesting, and unreadable children are reported, not fatal.
@@ -180,11 +197,24 @@ impl<'a> Collector<'a> {
         // Different linked documents can reuse the same stale absolute path yet
         // resolve it to distinct local assets. Keep a mapping per document.
         let mut local = BTreeMap::<String, Copied>::new();
+        // The fonts of the type on the PDF and `.ai` pages placed linked.
+        let mut placed_fonts = BTreeSet::new();
+        let mut placed = BTreeMap::<String, PlacedPages>::new();
+        doc.visit_placed(|_, p| {
+            let page = (p.link.page.unwrap_or(1), p.bounding, p.page_box);
+            let pages = placed.entry(p.link.path.clone()).or_default();
+            if !pages.contains(&page) {
+                pages.push(page);
+            }
+        });
+        if self.opts.copy_fonts && !self.opts.copy_links && !placed.is_empty() {
+            for file in super::links::linked_files(doc, Some(source)) {
+                if let (Some(pages), Some(bytes)) = (placed.get(&file.path), &file.bytes) {
+                    placed_fonts.extend(page_fonts(&file.name, bytes, file.found_path.as_deref().unwrap_or(&file.path), pages));
+                }
+            }
+        }
         if self.opts.copy_links {
-            let mut placed = HashSet::new();
-            doc.visit_placed(|_, p| {
-                placed.insert(p.link.path.clone());
-            });
             heading(&mut lines, "LINKED FILES");
             for file in super::links::linked_files(doc, Some(source)) {
                 let found_path = file.found_path.as_deref().unwrap_or(&file.path);
@@ -199,6 +229,10 @@ impl<'a> Collector<'a> {
                 if let Some(existing) = self.copies.get(found_path).cloned() {
                     if by_name {
                         self.renamed(&mut lines, source, &file.path, &file.name, &existing.name);
+                    }
+                    // Another document may place other pages of a PDF copied already.
+                    if let (Some(pages), Some(bytes)) = (placed.get(&file.path), &file.bytes) {
+                        placed_fonts.extend(page_fonts(&file.name, bytes, found_path, pages));
                     }
                     local.insert(file.path.clone(), existing);
                     continue;
@@ -220,13 +254,16 @@ impl<'a> Collector<'a> {
                 }
                 // A placed PDF or .ai file is copied as it is, as an image is; the files a .ai file
                 // read from its editing data links are copied beside it.
-                let placed_file = placed.contains(&file.path);
+                let pages = placed.get(&file.path);
+                let placed_file = pages.is_some();
                 if placed_file && let Some(mut art) = super::place::document::editing_data(&file.name, &bytes) {
                     if depth >= vectorcraft_doc::placed_document::MAX_DEPTH {
                         self.warn(&mut lines, format!("{}: nesting limit reached; copied unchanged without collecting its own links", file.path));
                     } else {
                         self.collect(&mut art, found_path, &destination_file, depth + 1, true)?;
                     }
+                } else if let Some(pages) = pages {
+                    placed_fonts.extend(page_fonts(&file.name, &bytes, found_path, pages));
                 }
                 if placed_file && super::place::document::is_native(&file.name, &bytes) {
                     if depth >= vectorcraft_doc::placed_document::MAX_DEPTH {
@@ -279,7 +316,9 @@ impl<'a> Collector<'a> {
         if self.opts.copy_fonts {
             let db = vectorcraft_text::FontDb::global();
             heading(&mut lines, "FONTS");
-            for used in super::fonts::used_fonts(doc) {
+            let mut used_fonts = super::fonts::used_fonts(doc);
+            used_fonts.append(&mut placed_fonts);
+            for used in used_fonts {
                 let font = super::fonts::font_label(&used);
                 let (family, style, version) = used;
                 // Found by any of its names, as the canvas draws it (in the version the type names).
