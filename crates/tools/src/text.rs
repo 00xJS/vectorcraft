@@ -250,9 +250,7 @@ impl TypeTool {
 
     /// Path under `p` for the Area Type / Type on a Path tools.
     fn path_at(cx: &ToolContext, p: Point, closed: bool) -> Option<NodeId> {
-        let mut opt = cx.hit_options();
-        opt.tol = cx.tol(4.0);
-        let h = hit_test(cx.doc, p, opt)?;
+        let h = hit_test(cx.doc, p, vectorcraft_doc::hit::HitOptions { tol: cx.tol(4.0), outline: true, ..Default::default() })?;
         match &cx.doc.node(h.leaf)?.kind {
             NodeKind::Path { path, .. } if !closed || path.is_closed() => Some(h.leaf),
             _ => None,

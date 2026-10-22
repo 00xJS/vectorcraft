@@ -419,23 +419,32 @@ fn area_and_path_tools_convert_clicked_paths() {
     assert!(acts.iter().any(|a| matches!(a, Action::Exec(cmd, p) if cmd == "text.createInPath" && p["mode"] == "onPath")), "{acts:?}");
 }
 
-/// #3505: a filled path with no stroke is hittable in the interior, not only on its outline.
+/// Area Type and Type on a Path follow the reference app: click the path outline, not the fill interior
+/// (helpx: add-text-work-with-type-objects, creating-type-path).
 #[test]
-fn type_on_path_and_area_type_hit_filled_paths_without_a_stroke() {
+fn area_and_path_tools_hit_path_outline_not_fill_interior() {
     let (mut d, rect) = crate::testutil::doc_with_rect();
     if let Some(n) = d.node_mut(rect) {
         n.appearance.set_stroke(vectorcraft_color::Paint::None);
     }
     let (sel, p) = (Selection::default(), paint());
     let c = cx(&d, &sel, &p);
-    let center = (150.0, 150.0);
-    for (tool_id, mode) in [("areaType", "area"), ("typeOnPath", "onPath")] {
+    let edge = (100.0, 150.0);
+    let interior = (150.0, 150.0);
+    for tool_id in ["areaType", "typeOnPath"] {
         let mut tool = TypeTool::new(tool_id);
-        tool.pointer(&c, &PointerEvent::new(PointerKind::Down, center.0, center.1));
-        let acts = tool.pointer(&c, &PointerEvent::new(PointerKind::Up, center.0, center.1));
+        tool.pointer(&c, &PointerEvent::new(PointerKind::Down, edge.0, edge.1));
+        let acts = tool.pointer(&c, &PointerEvent::new(PointerKind::Up, edge.0, edge.1));
         assert!(
-            acts.iter().any(|a| matches!(a, Action::Exec(cmd, v) if cmd == "text.createInPath" && v["path"] == json!(rect.0) && v["mode"] == mode)),
-            "{tool_id}: {acts:?}"
+            acts.iter().any(|a| matches!(a, Action::Exec(cmd, v) if cmd == "text.createInPath" && v["path"] == json!(rect.0))),
+            "{tool_id} on outline: {acts:?}"
+        );
+        let mut tool = TypeTool::new(tool_id);
+        tool.pointer(&c, &PointerEvent::new(PointerKind::Down, interior.0, interior.1));
+        let acts = tool.pointer(&c, &PointerEvent::new(PointerKind::Up, interior.0, interior.1));
+        assert!(
+            !acts.iter().any(|a| matches!(a, Action::Exec(cmd, _) if cmd == "text.createInPath")),
+            "{tool_id} in fill interior should not attach to path: {acts:?}"
         );
     }
 }
