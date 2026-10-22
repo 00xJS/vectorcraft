@@ -5279,6 +5279,7 @@ axis	Y Axis	Oś Y
 	Packaged {n} file(s) in {folder}	Spakowane pliki: {n} w {folder}
 	Packaged {n} file(s) {note}	Spakowane pliki: {n} {note}
 	{count} file(s) in {folder}. Show the package folder?	Pliki: {count} w {folder}. Pokazać folder pakietu?
+	Clockwise	Zgodnie z ruchem wskazówek zegara
 	Dither	Rozpraszanie
 	Fine noise hides banding in the gradient fill	Drobny szum ukrywa pasy w wypełnieniu gradientem
 @msg	`dither` applies to gradient fills (stroke: false)	`dither` dotyczy wypełnień gradientem (stroke: false)

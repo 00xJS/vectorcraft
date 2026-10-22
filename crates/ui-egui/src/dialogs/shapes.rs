@@ -1,5 +1,5 @@
 //! Shape size dialogs (a click with a shape tool): Rectangle, Rounded Rectangle, Ellipse, Polygon,
-//! Star, Line Segment and Arc tool options, and the two grids (size, divider counts and skews, switches).
+//! Star, Line Segment, Arc and Spiral tool options, and the two grids (size, divider counts and skews, switches).
 
 use serde_json::{Value, json};
 use vectorcraft_doc::Unit;
@@ -20,6 +20,7 @@ fn title(kind: &str) -> &'static str {
         "ellipse" => tl!("Ellipse"),
         "polygon" => tl!("Polygon"),
         "star" => tl!("Star"),
+        "spiral" => tl!("Spiral"),
         "rectangularGrid" => tl!("Rectangular Grid"),
         "polarGrid" => tl!("Polar Grid"),
         "arc" => tl!("Arc Segment Tool Options"),
@@ -99,6 +100,11 @@ fn body(app: &mut VectorcraftApp, ui: &mut egui::Ui, d: &mut Dialog) -> bool {
         arc_form(ui, d, unit);
     } else {
         form::grid(ui, d, unit);
+    }
+    if d.kind == "spiral" {
+        ui.add_space(8.0);
+        form::check(ui, d, "clockwise", tl!("Clockwise"));
+        return false;
     }
     let own = match d.kind.as_str() {
         "rectangularGrid" => ("frame", tl!("Use Outside Rectangle As Frame")),
@@ -200,6 +206,17 @@ fn confirm(app: &mut VectorcraftApp, d: &Dialog) -> Result<Value, String> {
             "shape.star",
             json!({"cx": x, "cy": y, "radius1": d.f64("radius1", 50.0), "radius2": d.f64("radius2", 25.0), "points": d.f64("points", 5.0) as u64}),
         ),
+        "spiral" => (
+            "shape.spiral",
+            json!({
+                "cx": x,
+                "cy": y,
+                "radius": d.f64("radius", 50.0).max(0.01),
+                "decay": d.f64("decay", 80.0).clamp(5.0, 150.0),
+                "segments": (d.f64("segments", 10.0) as u64).clamp(2, 1000),
+                "clockwise": d.bool("clockwise"),
+            }),
+        ),
         kind @ ("rectangularGrid" | "polarGrid") => {
             // The switches as they are; the typed fields as numbers.
             let (mut p, (counts, skews)) = (form::params(d), grid_keys(kind));
@@ -240,7 +257,7 @@ fn confirm(app: &mut VectorcraftApp, d: &Dialog) -> Result<Value, String> {
         ),
     };
     // On the active plane while the perspective grid shows, sized in plane units from the click.
-    let options = options.or_else(|| matches!(d.kind.as_str(), "rectangularGrid" | "polarGrid").then(|| params.clone()));
+    let options = options.or_else(|| matches!(d.kind.as_str(), "spiral" | "rectangularGrid" | "polarGrid").then(|| params.clone()));
     let result = match vectorcraft_engine::perspective_click(&app.session, id, &params, vectorcraft_geom::Point::new(x, y)) {
         Some((id, params)) => run_and_close(app, &id, params),
         None => run_and_close(app, id, params),
@@ -254,6 +271,32 @@ fn confirm(app: &mut VectorcraftApp, d: &Dialog) -> Result<Value, String> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use vectorcraft_engine::Session;
+
+    #[test]
+    fn spiral_click_dialog_uses_and_updates_tool_options() {
+        let mut app = VectorcraftApp::new(Session::new(), Default::default());
+        app.run("file.new", json!({"width": 300, "height": 200})).unwrap();
+        app.run("tool.select", json!({"tool": "spiral"})).unwrap();
+        app.run("tool.setOption", json!({"tool": "spiral", "values": {"decay": 72.0, "segments": 14, "clockwise": false}})).unwrap();
+
+        super::super::open_tool_dialog(&mut app, "spiral", json!({"x": 40.0, "y": 60.0}));
+        let d = app.ui.dialog.as_ref().expect("Spiral dialog");
+        assert_eq!(d.kind, "spiral");
+        assert_eq!((d.f64("x", 0.0), d.f64("y", 0.0), d.f64("radius", 0.0)), (40.0, 60.0, 50.0));
+        assert_eq!((d.f64("decay", 0.0), d.f64("segments", 0.0), d.bool("clockwise")), (72.0, 14.0, false));
+
+        let d = app.ui.dialog.as_mut().unwrap();
+        d.fields.insert("radius".into(), json!(35.0));
+        d.fields.insert("decay".into(), json!(65.0));
+        d.fields.insert("segments".into(), json!(12));
+        d.fields.insert("clockwise".into(), json!(true));
+        super::super::confirm(&mut app).unwrap();
+
+        assert!(app.ui.dialog.is_none());
+        assert_eq!(app.session.doc().unwrap().doc.layers[0].children().unwrap().len(), 1);
+        assert_eq!(app.session.tool_options_of("spiral"), json!({"decay": 65.0, "segments": 12, "clockwise": true}));
+    }
 
     #[test]
     fn alt_click_centres_the_typed_size_on_the_click() {
