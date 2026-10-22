@@ -29,7 +29,7 @@ blocking it ([Alpha gate](docs/roadmap.md#alpha-gate)).
 
 | | Value | Kind |
 |---|---|---|
-| **Feature breadth** (Illustrator's menu items, tools, effects, formats exist) | **~88%** | measured in part: menu items 348/375 wired (92.8%), tools 89/92, Illustrator effects 46/50, Photoshop effects 54/57, 3D 4/4 (initial types, no materials) |
+| **Feature breadth** (Illustrator's menu items, tools, effects, formats exist) | **~88%** | measured in part: menu items 348/375 wired (92.8%), tools 89/92, Illustrator effects 46/50, Photoshop effects 57/57, 3D 4/4 (initial types, no materials) |
 | **Feature depth** (weighted by use, scored by behaviour) | **~75%** | estimated |
 | **To beta** | **~170–270 h** one agent · ~50–80 h with 4–6 agents | estimated |
 | **To full parity** | **~360–590 h** one agent · ~95–165 h with 4–6 agents | estimated |
@@ -76,7 +76,7 @@ The dimension hours overlap (feature rows hold some UI, format and AI work), so 
 | Strokes, brushes, width profiles | 88% | 8–15 |
 | Appearance, transparency, graphic styles, masks | 97% | 1–2 |
 | Live vector effects | 85% | 6–10 |
-| Raster effects (Effect Gallery) — [effects-parity.md](docs/effects-parity.md) | 82% | 8–14 |
+| Raster effects (Effect Gallery) — [effects-parity.md](docs/effects-parity.md) | 82% | 4–6 |
 | 3D and Materials | ~25% | 30–55 |
 | Type core — [type-parity.md](docs/type-parity.md) | 80% | 14–19 |
 | Type advanced (CJK, spelling, Touch Type) | 50% | 20–28 |
@@ -123,10 +123,12 @@ Ranked; detail in [docs/roadmap.md](docs/roadmap.md) and [docs/gaps.md](docs/gap
 2. **`.ai` files from real users** (G9): layer structure, guides, speed: 10–20 h.
 3. **Launch and stability on real machines** (G10): 20–35 h.
 4. **Core-tool correctness** (G11: Shape Builder regions, Asset Export borders): 8–15 h.
-5. **Raster effects** (G2) alongside: the 10 remaining filters (7 Artistic, 2 Sketch, 1 more) and the Effect Gallery, 8–14 h.
+5. **Raster effects** (G2) alongside: the Effect Gallery (every Photoshop-style filter is in), 4–6 h.
 6. **Then:** type core and advanced type (G4), the Illustrator 2026 additions (G13), 3D (G3).
 
 ## Progress log
+
+- 2026-10-22: Effect › Sketch › Conté Crayon: a black crayon in the dark areas and a white one in the light areas, on mid-grey paper whose texture (Brick, Burlap, Canvas, Sandstone; Scaling, Relief, Light Direction, Invert) breaks the strokes, with Foreground Level and Background Level; an original approximation, defaults unverified. Every Photoshop-style filter is now in (57/57); the Effect Gallery remains (4–6 h).
 
 - 2026-10-22: Ruby (ふりがな) for live text: `type.ruby` sets or removes a reading over a byte range of the selected type — above it in horizontal type, right of the column in vertical type (or below/left), start/centre/end aligned, at 1–100% of the base size (default half), overhanging or squeezed to the base width. It is saved in the native file, laid out with its line growing (following lines move on), drawn on the canvas, and written in SVG and PDF as outlines where ruby is present. UI panel and type on a path are next. Headline numbers unchanged.
 
@@ -190,6 +192,7 @@ The full pre-standard record of what landed is kept in [docs/roadmap.md](docs/ro
 
 | Date | Change | Summary |
 |---|---|---|
+| 2026-10-22 | minor | Effects: Sketch › Conté Crayon; measured Photoshop-style filters 57/57, the Effect Gallery remains (G2 estimate 4–6 h). |
 | 2026-10-21 | minor | 3D: original Standard, Diffuse, Top Left and Right lighting presets; command access, effective-setting recognition and preview/history; scores and estimates unchanged |
 | 2026-10-21 | minor | Print: Japanese paper sizes in the Print dialog's Media list (JIS B4/B5/B6, はがき, 往復はがき, 封筒 長形3号/長形4号/角形2号/角形3号, 四六判); ISO B4/B5 keep their sizes, and a paper is named by id or label, any case and spacing. Headline numbers unchanged. |
 | 2026-10-17 | minor | Colored Inflate: shared membrane normals and smooth RGB vector ramps replace flat polygon bands; channel groups are batched per solid-fill surface. White-light Inflate retains its original polygons, paint composition and seam joins; the 0.05 seam minimum is restored. Scores and hour estimates unchanged. |

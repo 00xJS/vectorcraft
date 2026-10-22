@@ -301,8 +301,8 @@ fn choices(effect: &str, key: &str) -> Option<form::Choices> {
         ("sketch.halftonePattern", "patternType") => Some(&vectorcraft_effects::pixel::HALFTONE_TYPES),
         ("sketch.plaster", "lightDirection") => Some(&vectorcraft_effects::pixel::LIGHT_DIRECTIONS),
         ("texture.grain", "grainType") => Some(&vectorcraft_effects::pixel::GRAIN_TYPES),
-        ("texture.texturizer" | "artistic.underpainting", "texture") => Some(&vectorcraft_effects::pixel::TEXTURES),
-        ("sketch.basRelief" | "texture.texturizer" | "artistic.underpainting", "lightDirection") => {
+        ("texture.texturizer" | "artistic.underpainting" | "sketch.conteCrayon", "texture") => Some(&vectorcraft_effects::pixel::TEXTURES),
+        ("sketch.basRelief" | "texture.texturizer" | "artistic.underpainting" | "sketch.conteCrayon", "lightDirection") => {
             Some(&vectorcraft_effects::pixel::LIGHT_DIRECTIONS)
         }
         ("video.deinterlace", "eliminate") => Some(&[("Odd Fields", "odd"), ("Even Fields", "even")]),
