@@ -19,6 +19,7 @@ Artboard Options forwards the active Artboard tool's Scale Artwork with Artboard
 
 | Date | Change | Summary |
 |---|---|---|
+| 2026-10-22 | minor | Reconcile upstream documentation after review F-2; preserve every dated revision and the original scaleArt runtime evidence without repeating completed jobs. |
 | 2026-10-22 | minor | Reconcile subsequent upstream progress updates without changing the runtime or repeating completed evidence; retain every dated upstream and feature revision. |
 | 2026-10-22 | minor | Resynchronize newer upstream progress documentation using the same owned source/build cache; preserve every feature revision and the original scaleArt runtime evidence. |
 | 2026-10-22 | minor | Retain the latest upstream shared assessment and complete revision history after newer documentation landed; scaleArt runtime and its original evidence remain unchanged. |
@@ -328,6 +329,7 @@ separate. Scores and hours unchanged. [Behavior and command details](development
 
 | Date | Change | Summary |
 |---|---|---|
+| 2026-10-22 | minor | Gradient panel: the Method menu, Classic or Perceptual (Illustrator 30.0); scores and estimates unchanged. |
 | 2026-10-22 | minor | Gradient panel: the Dither box (Illustrator 30.0); scores and estimates unchanged. |
 | 2026-10-22 | minor | Recolor Artwork Edit chips scroll within the available screen height (#3416); small palettes retain their tab height; scores and estimates unchanged. |
 | 2026-10-22 | minor | Artboard Options honors Scale Artwork with Artboard for preset, orientation and typed-size changes; both Fits keep artwork stationary; scores and estimates unchanged. |

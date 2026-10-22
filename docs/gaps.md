@@ -19,6 +19,7 @@ Artboard Options forwards the active Artboard tool's Scale Artwork with Artboard
 
 | Date | Change | Summary |
 |---|---|---|
+| 2026-10-22 | minor | Reconcile upstream documentation after review F-2; preserve every dated revision and the original scaleArt runtime evidence without repeating completed jobs. |
 | 2026-10-22 | minor | Reconcile subsequent upstream progress updates without changing the runtime or repeating completed evidence; retain every dated upstream and feature revision. |
 | 2026-10-22 | minor | Resynchronize newer upstream progress documentation using the same owned source/build cache; preserve every feature revision and the original scaleArt runtime evidence. |
 | 2026-10-22 | minor | Retain the latest upstream shared assessment and complete revision history after newer documentation landed; scaleArt runtime and its original evidence remain unchanged. |
@@ -52,10 +53,10 @@ stage ([ROADMAP.md](../ROADMAP.md)).
 | 6 | [G4 Advanced type](#g4-advanced-type) | 34–47 | core part | [type-parity.md](type-parity.md) |
 | 7 | [G12 Preferences and panels that don't act yet](#g12-preferences-and-panels-that-dont-act-yet) | 13–20 | yes | [ui-parity.md](ui-parity.md) |
 | 8 | [G2 Photoshop-style raster effects and the Effect Gallery](#g2-photoshop-style-raster-effects-and-the-effect-gallery) | 4–6 | no | [effects-parity.md](effects-parity.md) |
+| 9 | [G13 Illustrator 2026 (30.x) additions](#g13-illustrator-2026-30x-additions) | 13–23 | no | [target-app-parity.md](target-app-parity.md) |
 | 9 | [G13 Illustrator 2026 (30.x) additions](#g13-illustrator-2026-30x-additions) | 14–24 | no | [target-app-parity.md](target-app-parity.md) |
 | 9 | [G13 Illustrator 2026 (30.x) additions](#g13-illustrator-2026-30x-additions) | 15–25 | no | [target-app-parity.md](target-app-parity.md) |
 | 8 | [G2 Photoshop-style raster effects and the Effect Gallery](#g2-photoshop-style-raster-effects-and-the-effect-gallery) | 1–2 | no | [effects-parity.md](effects-parity.md) |
-| 9 | [G13 Illustrator 2026 (30.x) additions](#g13-illustrator-2026-30x-additions) | 13–23 | no | [target-app-parity.md](target-app-parity.md) |
 | 10 | [G14 Pen hardware beyond Windows pressure](#g14-pen-hardware-beyond-windows-pressure) | 8–16 | macOS pressure | [hardware-parity.md](hardware-parity.md) |
 | 11 | [G5 Brushes, symbols and libraries](#g5-brushes-symbols-and-libraries) | 16–27 | no | [target-app-parity.md](target-app-parity.md) |
 | 12 | [G3 3D and Materials](#g3-3d-and-materials) | 25–45 | no | [effects-parity.md](effects-parity.md) |
@@ -351,20 +352,20 @@ from G14 and the budget run of G15: **~170–270 h** one agent, ~50–80 h wall 
   perceptual mix with dither's noise (an image with the noise in SVG and PDF); a stroke has no noise.
 - **Missing (asked for by users, from earlier versions):** radial gradients in Image Trace's
   Gradients option, which traces linear ones only (draft #1849). Inside the estimate below.
+- **Missing:** gradient presets (30.0); tangent and perpendicular
 - **Missing:** gradient perceptual blending and gradient presets (30.0); tangent and perpendicular
 - **Partial (#2530):** tangent snapping to curves and perpendicular snapping to straight target
   segments for drawn lines. Controls are saved under Preferences › Smart Guides › Geometric Guides
   and available from Control bar › Snapping; both default to on. Existing-line endpoint editing and
   other tool cases remain unverified. [Public source](https://helpx.adobe.com/illustrator/desktop/measure-and-align/plot-and-measure/snap-to-perpendicular.html).
 - **Missing:** gradient perceptual blending and gradient presets (30.0); remaining tangent/perpendicular snapping cases and the consolidated snapping options (30.0); artboard locking, artboard colors in exports and print, and managing
-- **Missing:** gradient presets (30.0); tangent and perpendicular
   snapping and the consolidated snapping options (30.0); artboard locking, artboard colors in exports and print, and managing
   artboards from the canvas (30.0); the Blend panel with ease in/out and separate colour acceleration (30.7);
   the Dimension tool (28.x).
 - **Evidence:** Adobe's 30.0 and 30.7 release announcements, see
   [target-app-parity.md](target-app-parity.md#how-this-was-measured-2026-10-10).
-- **Estimate:** 14–24 h.
 - **Estimate:** 13–23 h.
+- **Estimate:** 14–24 h.
 
 ## G14 Pen hardware beyond Windows pressure
 
@@ -495,6 +496,7 @@ separate. Scores and hours unchanged. [Behavior and command details](development
 
 | Date | Change | Summary |
 |---|---|---|
+| 2026-10-22 | minor | G13: gradient Method (30.0), Classic or Perceptual, in the Gradient panel, on the canvas, in raster exports and as images in SVG and PDF exports (with Dither, a Perceptual fill takes its noise); G13 estimate 14–24 h → 13–23 h. |
 | 2026-10-22 | minor | G8: SVG images in SVG images share the depth cap (any data URL type usvg reads as SVG) and SVGZ images one 512 MB unpacking cap; past either, an image is left out with a warning (#3562, #3563). No entry closed, estimates unchanged. |
 | 2026-10-22 | minor | G19: PDF export asks viewers to display the document title only when File Info has a Document Title or an explicit export title is supplied; untitled documents keep the PDF file name in the viewer title bar (#3646); scores and estimates unchanged. |
 | 2026-10-22 | minor | G4: colour emoji fonts with bitmap glyphs (`sbix`: Apple Color Emoji; `CBDT`: Noto Color Emoji) draw on the canvas and export: PDF Type 3 glyphs or images, SVG images with outlined text, EPS and legacy `.ai` images, Create Outlines images; COLR and OpenType SVG fonts remain; estimate unchanged. |
