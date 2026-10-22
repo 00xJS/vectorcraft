@@ -212,12 +212,13 @@ type and `blob` but without their data, which follows the JSON in a saved file; 
 
 ```json
 {"amount": 50, "mode": "soft",
- "_context": {"mode": "filter", "bounds": [10, 0, 75, 60], "artboard": [0, 0, 612, 792]}}
+ "_context": {"mode": "filter", "bounds": [10, 0, 75, 60], "artboard": [0, 0, 612, 792], "documentData": {"pens": 4}}}
 ```
 
 `mode` is `"filter"`, `"effect"` or `"export"`; `bounds` the selection's geometric bounds (a live effect: the reference
 box of the effect, the object's bounds or those of the previous effect's result); `artboard` (filters) the artboard
-under the selection's centre, else the first. A live effect's `item` says where it sits: `"object"` (one of the
+under the selection's centre, else the first; `documentData` (filters) what the plug-in last kept with the document
+(`null` until it keeps something; see Output). A live effect's `item` says where it sits: `"object"` (one of the
 object's effects), or `{"fill": i}` / `{"stroke": i}` (in the own effects of the object's `i`th fill or stroke,
 counted from the bottom as in `fills` and `strokes`). An export's `_context` is `{"mode": "export", "extension": "plt",
 "name": "Poster"}` instead: the extension of the file being written (one the exporter lists) and its name without the
@@ -253,6 +254,14 @@ most 100,000 objects and 4,000,000 anchors, 256 fills, strokes or gradient stops
 clamped into range, stroke weights to 0–1,000 pt and miter limits to 1–500; a pattern must exist in the document. A
 paint returned unchanged keeps its swatch link; any other paint is unlinked. One refused effect record refuses the
 whole output.
+
+A filter's output may also hold `documentData`: any JSON of at most 1 MiB, which replaces what the plug-in keeps with
+the document (`null` removes it), in the same undo step as its objects. Settings that belong to the whole document
+rather than to one object go there, such as the pens a plotter holds. A filter reads and writes only its own data. It
+is the document's foreign data, as the perspective grid is: the native file keeps it in `document.unknown.pluginData`
+under the plug-in's id, and hosts from before `documentData` keep it when they save. An exporter is given the whole
+document, so it can read what every plug-in keeps there, not only its own. A live effect isn't given it: its geometry
+is worked out from the object alone.
 
 For a **live effect**, the geometry of every returned object's `path` (their subpaths, in order) replaces the
 object's; the rest is ignored (the object keeps its own appearance). An empty list removes the geometry.

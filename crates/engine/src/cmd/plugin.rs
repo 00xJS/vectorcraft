@@ -4,9 +4,10 @@
 //! [`Session::attach_plugin_store`]) or from every `*.wasm` in the Additional Plug-ins Folder
 //! preference, and listed with `plugin.list` / `plugin.info`. Object filters run
 //! with `plugin.run` on the selected paths and compound paths (one undo step, transactional: a
-//! plug-in that fails leaves the document untouched); live-effect plug-ins are applied like any
-//! effect (`effect.apply {effect: "plugin.<id>"}`) and drawn by `vectorcraft-effects`; exporters
-//! add a file format that `document.export` writes (`fileio::plugin_formats`).
+//! plug-in that fails leaves the document untouched), and read and write the data they keep with
+//! the document ([`vectorcraft_doc::plugin_data`], theirs alone); live-effect plug-ins are applied
+//! like any effect (`effect.apply {effect: "plugin.<id>"}`) and drawn by `vectorcraft-effects`;
+//! exporters add a file format that `document.export` writes (`fileio::plugin_formats`).
 
 use std::sync::{Arc, Mutex};
 
@@ -60,8 +61,9 @@ fn plugin_by_id(cmd: &str, p: &Value) -> Result<Arc<Plugin>> {
 }
 
 /// `plugin.run`: runs filter `id` on `ids` (else the selected paths and compound paths) with its
-/// parameters and `_context`, and applies its output as one undo step ([`objects::apply_output`];
-/// effect records as [`admit_effects`] admits them). → `{plugin, ids}`: what it made or changed,
+/// parameters and `_context` (what it keeps with the document included), and applies its output as
+/// one undo step ([`objects::apply_output`]; effect records as [`admit_effects`] admits them),
+/// with what it keeps with the document from now on. → `{plugin, ids}`: what it made or changed,
 /// which is then selected.
 fn run(s: &mut Session, p: &Value) -> Result<Value> {
     const C: &str = "plugin.run";
@@ -85,12 +87,17 @@ fn run(s: &mut Session, p: &Value) -> Result<Value> {
     let bounds = st.doc.bounds_of(&inputs, false);
     let board = bounds.and_then(|b| st.doc.artboard_at(b.center())).and_then(|i| st.doc.artboards.get(i)).or(st.doc.artboards.first());
     let rect = |r: vectorcraft_geom::Rect| json!([r.x0, r.y0, r.x1, r.y1]);
-    params["_context"] = json!({"mode": "filter", "bounds": bounds.map(rect), "artboard": board.map(|a| rect(a.rect))});
+    // What the plug-in keeps with the document, as it last wrote it.
+    let data = st.doc.plugin_data(&m.id).cloned().unwrap_or(Value::Null);
+    params["_context"] = json!({"mode": "filter", "bounds": bounds.map(rect), "artboard": board.map(|a| rect(a.rect)), "documentData": data});
     let input = objects::encode_input(&st.doc, &inputs);
     let params = serde_json::to_vec(&params).map_err(|e| bad(C, e.to_string()))?;
-    let out = objects::decode(&plugin.run(&input, &params).map_err(err)?).map_err(err)?;
+    let out = objects::decode_output(&plugin.run(&input, &params).map_err(err)?).map_err(err)?;
     let ids = s.edit(m.name.trim_end_matches('…'), |d, sel| {
-        let ids = objects::apply_output(d, &inputs, out, parent, &admit_effects).map_err(err)?;
+        let ids = objects::apply_output(d, &inputs, out.objects, parent, &admit_effects).map_err(err)?;
+        if let Some(data) = out.document_data {
+            d.set_plugin_data(&m.id, data);
+        }
         sel.set(ids.iter().copied());
         Ok(ids)
     })?;

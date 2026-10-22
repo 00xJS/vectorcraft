@@ -2068,6 +2068,7 @@ file-filter	Templates	範本
 @msg	no plug-in {id} is installed	未安裝增效模組 {id}
 @msg	{_1} is a live effect (Effect › Plug-ins)	{_1} 是即時效果 (效果 › 增效模組)
 @msg	{_1} is an exporter (File › Export › Export As…)	{_1} 是匯出增效模組 (檔案 › 匯出 › 匯出為…)
+@msg	`documentData` is {size} bytes (limit {MAX_DOCUMENT_DATA})	`documentData` 為 {size} 位元組（上限 {MAX_DOCUMENT_DATA}）
 @msg	a preset named `{_1}` exists	名為 `{_1}` 的預設集已存在
 @msg	a swatch or color group named `{n}` exists	名為 `{n}` 的色票或顏色群組已存在
 @msg	no print preset named `{base}`	沒有名為 `{base}` 的列印預設集
