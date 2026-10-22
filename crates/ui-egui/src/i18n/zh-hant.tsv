@@ -4980,6 +4980,10 @@ lighting	Light	光源
 	Persistent	持久
 	Locate Library…	尋找資料庫…
 	Library Panel Options	資料庫面板選項
+	Snapping	靠齊
+	Snap to Tangent	靠齊切線
+	Snap to Perpendicular	靠齊垂線
+@msg	unknown snap option `{key}` (use {options})	未知的靠齊選項 `{key}`（可用：{options}）
 	Gap Length:	間隙長度：
 	Artboard {n} of {total}	工作區域 {n} / {total}
 	Encoding and writing the file…	正在編碼並寫入檔案…
@@ -5036,6 +5040,7 @@ lighting	Light	光源
 	Water Paper	水彩畫紙
 	Ruby…	注音…
 	Ruby	注音
+	Geometric Guides	幾何參考線
 	Ease In	緩入
 	Ease Out	緩出
 	Ease In Out	緩入緩出

@@ -1372,11 +1372,14 @@ mod tests {
         bar_frame_in(&mut app, &ctx, vec![], width);
         let texts = bar_frame_in(&mut app, &ctx, vec![], width);
         assert!(has(&texts, "Scale Artwork with Artboard") && !has(&texts, "X:") && !has(&texts, "W:"), "{texts:?}");
+        // The Snapping menu sits first on a wide bar and leaves the narrow bar to the artboard controls.
+        assert!(has(&bar_texts(&mut app, &ctx), "Snapping"));
         // In the app's narrowest window, 800 points wide, the name and the Transform link still fit,
         // and a click on the link shows the artboard's X, Y, W and H in the Transform panel's popover.
         let narrow = |app: &mut VectorcraftApp, events| bar_frame_in(app, &ctx, events, 800.0);
         narrow(&mut app, vec![]);
         let texts = narrow(&mut app, vec![]);
+        assert!(!has(&texts, "Snapping"), "{texts:?}");
         let link = text_rect(&texts, "Transform");
         assert!(link.right() < 790.0 && text_rect(&texts, "Artboard 1").right() < link.left(), "{texts:?}");
         // Move and Scale Artwork with Artboard show as their boxes alone, inside the window, and the

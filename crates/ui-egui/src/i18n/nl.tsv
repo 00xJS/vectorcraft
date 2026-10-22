@@ -5313,6 +5313,10 @@ swatch	Bright Violet	Felviolet
 	Typing	Typen
 	Persistent	Permanent
 	Library Panel Options	Opties voor bibliotheekpaneel
+	Snapping	Uitlijnen
+	Snap to Tangent	Uitlijnen op raaklijn
+	Snap to Perpendicular	Uitlijnen op loodlijn
+@msg	unknown snap option `{key}` (use {options})	onbekende uitlijnoptie `{key}` (gebruik {options})
 	Gap Length:	Lengte van opening:
 	Locate Library…	Bibliotheek lokaliseren…
 
@@ -5416,6 +5420,7 @@ swatch	Bright Violet	Felviolet
 	Water Paper	Nat papier
 	Ruby…	Ruby…
 	Ruby	Ruby
+	Geometric Guides	Geometrische hulplijnen
 	Ease In	Langzaam beginnen
 	Ease Out	Langzaam eindigen
 	Ease In Out	Langzaam beginnen en eindigen

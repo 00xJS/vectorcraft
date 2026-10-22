@@ -190,7 +190,10 @@ impl Tool for PenTool {
         }
         // The path being drawn moves its bounds as it grows: only its anchors and segments pull.
         let drawn = active.map(|a| a.0);
-        let from = active.map(|(_, _, last, _)| Leave::segment(cx, last, ev.mods.shift));
+        let from = active.map(|(_, _, last, handle)| {
+            let leave = Leave::segment(cx, last, ev.mods.shift);
+            if handle == last { leave } else { leave.without_contact() }
+        });
         let p = match ev.kind {
             PointerKind::Move => self.snap.hover(cx, ev.pos, drawn.as_slice(), from.as_ref()),
             PointerKind::Down => self.snap.press(cx, ev.pos, drawn.as_slice(), from.as_ref()),

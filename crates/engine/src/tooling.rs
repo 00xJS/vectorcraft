@@ -238,6 +238,8 @@ impl Session {
             // wins instead of pixels quietly rounding every drag to whole points (#1816).
             snap_to_pixel: view.snap_to_pixel && !view.snap_to_grid,
             snap_to_point: view.snap_to_point,
+            snap_tangent: self.prefs.snap_tangent,
+            snap_perpendicular: self.prefs.snap_perpendicular,
             snap_to_glyph: view.snap_to_glyph && view.smart_guides && !view.snap_to_grid,
             corner_widgets: view.corner_widgets,
             fill_active: self.fill_active,

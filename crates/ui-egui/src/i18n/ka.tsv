@@ -5257,6 +5257,10 @@ imageTrace	Outline	კონტური
 # Select by Color (select.color)
 	Select by Color	მონიშვნა ფერის მიხედვით
 @msg	thumbnail: no page {n} (the file has 1)	thumbnail: გვერდი {n} არ არსებობს (ფაილს 1 გვერდი აქვს)
+	Snapping	მიბმა
+	Snap to Tangent	მხებზე მიბმა
+	Snap to Perpendicular	პერპენდიკულარზე მიბმა
+@msg	unknown snap option `{key}` (use {options})	უცნობი მიბმის პარამეტრი `{key}` (გამოიყენეთ: {options})
 	Gap Length:	ღრეჩოს სიგრძე:
 	Smudge Stick…	დასაზელი ჯოხი…
 	Smudge Stick	დასაზელი ჯოხი
@@ -5307,6 +5311,7 @@ imageTrace	Outline	კონტური
 	 selects several, or draws one inside an artboard)	 რამდენიმეს მონიშნავს ან ახალს სამუშაო დაფის შიგნით ხატავს)
 	Ruby…	რუბი…
 	Ruby	რუბი
+	Geometric Guides	გეომეტრიული მიმმართველები
 	Ease In	ნელი დასაწყისი
 	Ease Out	ნელი დასასრული
 	Ease In Out	ნელი დასაწყისი და დასასრული
