@@ -384,7 +384,8 @@ fn fonts_are_noted_past_font_resources_the_reader_cannot_parse() {
         let mut fonts = crate::import_scan::FontNames::new();
         let mut ocgs = crate::import_scan::Ocgs::read(&pdf);
         crate::import_scan::scan_page(&pdf.pages()[0], &mut ocgs, false, &mut fonts, pdf.decode_limits().max_decoded_stream()).unwrap();
-        assert_eq!(fonts.into_values().collect::<Vec<_>>(), [("Helvetica".to_string(), false)], "{junk}");
+        let noted: Vec<_> = fonts.into_values().map(|f| (f.name, f.embedded)).collect();
+        assert_eq!(noted, [("Helvetica".to_string(), false)], "{junk}");
     }
 }
 

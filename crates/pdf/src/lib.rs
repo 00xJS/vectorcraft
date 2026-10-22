@@ -307,6 +307,8 @@ mod tests_stroke;
 #[cfg(test)]
 mod tests_strokeout;
 #[cfg(test)]
+mod tests_text_placement;
+#[cfg(test)]
 mod tests_textstroke;
 #[cfg(test)]
 mod tests_webview;
