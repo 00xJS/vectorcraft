@@ -216,6 +216,11 @@ impl FontFace {
     pub fn vertical_metrics(&self) -> (f64, f64) {
         (self.ascent, self.descent)
     }
+    /// The line gap the font asks for between lines, in font units (from the same table as
+    /// [`vertical_metrics`](Self::vertical_metrics); 0 when it has none).
+    pub fn line_gap(&self) -> f64 {
+        self.skrifa().map_or(0.0, |f| f64::from(f.metrics(Size::unscaled(), self.location()).leading)).max(0.0)
+    }
     /// Every mapped character and its glyph id, sorted by code point (the Glyphs panel).
     pub fn chars(&self) -> Vec<(char, u32)> {
         let Some(f) = self.skrifa() else { return vec![] };

@@ -11,7 +11,7 @@ mod support {
 use support::text_fixture::*;
 use vectorcraft_affinity::{
     Document, Limits,
-    model::{Align, Kind, Text},
+    model::{Align, Kind, Paragraph, Text},
     paint::{Color, Paint},
     synth::{F, tag},
 };
@@ -108,7 +108,7 @@ fn mixed_paragraph_alignments_are_explicitly_reported() {
     let d = read(vec![block(utf8("one\u{2029}"), vec![run(4, None)], &[2]), block(utf8("two"), vec![run(3, None)], &[0, 1])]);
     assert_eq!(content(text(&d)), "one\u{2029}two");
     assert_eq!(text(&d).align, Align::Right);
-    assert!(warning(&d, "mixed paragraph alignments"));
+    assert!(warning(&d, "mixed paragraph formats"));
 }
 
 #[test]
@@ -194,10 +194,22 @@ fn real_affinity3_text_fixtures_confirm_unicode_and_caps_fields() {
     assert_eq!(texts.len(), 2);
     assert!(texts[0].runs[0].all_caps);
     assert_eq!(texts[1].runs[0].features, ["smcp"]);
-    for name in ["patchy-text-indent.af", "patchy-text-para-spacing.af"] {
+    // Indents and paragraph spacing are read (values in document pixels, as these fixtures set
+    // them in Affinity's paragraph panel).
+    let paragraphs = |name: &str| -> Vec<Paragraph> {
         let d = load(name);
-        assert!(warning(&d, "paragraph indents or spacing"), "{name}: {:?}", d.warnings);
-    }
+        assert!(!warning(&d, "paragraph"), "{name}: {:?}", d.warnings);
+        d.spreads[0]
+            .nodes
+            .iter()
+            .filter_map(|n| if let Kind::Text(t) = &n.kind { Some(t) } else { None })
+            .flat_map(|t| t.runs.iter().map(|r| r.paragraph))
+            .collect()
+    };
+    let p = paragraphs("patchy-text-indent.af");
+    assert_eq!(p.iter().map(|p| (p.left, p.first, p.space_after)).collect::<Vec<_>>(), [(40.0, 0.0, 12.0), (0.0, 25.0, 12.0)]);
+    let p = paragraphs("patchy-text-para-spacing.af");
+    assert_eq!(p.iter().map(|p| (p.space_before, p.space_after)).collect::<Vec<_>>(), [(9.0, 17.0)]);
 }
 
 proptest::proptest! {
