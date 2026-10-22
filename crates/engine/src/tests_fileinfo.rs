@@ -310,6 +310,13 @@ fn an_untitled_document_saved_to_a_file_exports_titled_after_it() {
     let dir = std::env::temp_dir().join(format!("vc-pdftitle-{}", std::process::id()));
     std::fs::create_dir_all(&dir).unwrap();
     let path = dir.join("Document C.vectorcraft");
+    // Unsaved and untitled: viewers keep showing the file name, not "Untitled-1".
+    let mut untitled = Session::new();
+    untitled.execute("file.new", &json!({"width": 100, "height": 80})).unwrap();
+    for pdf in pdf_texts(&mut untitled) {
+        assert!(!pdf.contains("/DisplayDocTitle true"), "{pdf}");
+    }
+
     // Saved as a file, then exported: Untitled-1 was only the name New gave it.
     let mut s = Session::new();
     s.execute("file.new", &json!({"width": 100, "height": 80})).unwrap();
@@ -330,6 +337,7 @@ fn an_untitled_document_saved_to_a_file_exports_titled_after_it() {
     s.execute("document.save", &json!({"path": dir.join("Document D.vectorcraft").to_str().unwrap()})).unwrap();
     for pdf in pdf_texts(&mut s) {
         assert!(pdf.contains("/Title(Poster)") && xmp_title(&pdf).contains("Poster"));
+        assert!(pdf.contains("/ViewerPreferences<</DisplayDocTitle true>>"), "{pdf}");
     }
     let _ = std::fs::remove_dir_all(dir);
 }

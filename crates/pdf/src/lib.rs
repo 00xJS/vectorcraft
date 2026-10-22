@@ -94,6 +94,8 @@ pub struct PdfOptions {
     pub artboards: Option<Vec<usize>>,
     /// Document title for the metadata; `None` = the document's title.
     pub title: Option<String>,
+    /// Ask PDF viewers to display the document title instead of the file name.
+    pub display_doc_title: bool,
     /// Creation date as Unix seconds (UTC); `None` = now (native) / omitted (wasm). PDF/A needs a date.
     pub created: Option<i64>,
     /// Modification date as Unix seconds (UTC); `None` = the creation date.
