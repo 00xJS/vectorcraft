@@ -6,7 +6,7 @@
 
 **Feature evidence last updated:** 2026-10-22.
 
-The shared assessment status line and revision table retain the feature-base snapshot; merging retains upstream's current shared assessment and history. This dated section records the submission's feature evidence and does not rescore upstream or claim a new combined build or runtime measurement.
+The shared assessment status line and revision history are current upstream; this dated section records the submission's feature evidence and revisions without rescoring upstream or claiming a new combined build or runtime measurement.
 
 - Current-main conflict reconciliation retains upstream and feature behavior; scores and estimates unchanged
 - Superseded 2026-10-20 behavior, retained as history: Artboard Options shares existing presets and orientation controls and can fit artwork without moving it; artwork fitting uses the original target artboard and revision-scoped bounds caches (scores/hours unchanged)
@@ -19,6 +19,7 @@ Artboard Options forwards the active Artboard tool's Scale Artwork with Artboard
 
 | Date | Change | Summary |
 |---|---|---|
+| 2026-10-22 | minor | Correct the scaleArt follow-up evidence description to match current upstream shared status and revision history; runtime, evidence, scores and estimates unchanged. |
 | 2026-10-22 | minor | Artboard Options honors Scale Artwork with Artboard for preset, orientation and typed-size changes; both Fits keep artwork stationary; scores and estimates unchanged. |
 | 2026-10-21 | minor | Correct current global-all-art and document/revision cache descriptions; mark target-scoped fitting as superseded 2026-10-20 history. Runtime, tests, scores and estimates unchanged. |
 | 2026-10-21 | minor | Artboard Options puts Fit to Artwork Bounds and Fit to Selected Art in the Preset menu. Artwork bounds cover all drawn document art, including other artboards and off-board art; selection bounds may span artboards. Fit changes only the active artboard and keeps artwork stationary, including position-only fitting with Move Artwork enabled. Existing Background Color and presets remain available; scores and estimates unchanged. |
