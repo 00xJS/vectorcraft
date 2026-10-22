@@ -4931,6 +4931,14 @@ lighting	Light	광원
 	Minimum must not exceed Desired, nor Desired Maximum.	최소값은 희망값을, 희망값은 최대값을 넘을 수 없습니다.
 	Minimum	최소
 	Justification	양끝 맞춤
+	Add filters from the list above	위 목록에서 필터 추가
+	Add to Stack	스택에 추가
+	Applied Filters	적용된 필터
+	Categories	범주
+	Choose a filter	필터 선택
+	Effect Gallery	효과 갤러리
+	Filters	필터
+	Select artwork to apply effects	효과를 적용할 그래픽을 선택하세요
 @msg	the file's variables and data sets weren't read (variables: {variables}, data sets: {data_sets}): the Variables panel doesn't list them	파일의 변수와 데이터 세트를 읽지 않았습니다(변수: {variables}, 데이터 세트: {data_sets}). 변수 패널에 표시되지 않습니다
 # Select by Color (select.color)
 	Select by Color	색상별 선택
@@ -4964,3 +4972,5 @@ lighting	Light	광원
 	Shift:	이동:
 	Fresco…	프레스코…
 	Fresco	프레스코
+	Effect Gallery…	효과 갤러리…
+	Effect Gallery Dialog	효과 갤러리 대화 상자

@@ -5309,6 +5309,14 @@ theme	Appearance	Utseende
 	Full Justify	Fullständig marginaljustering
 	Minimum must not exceed Desired, nor Desired Maximum.	Minimum får inte överstiga Önskat, och Önskat inte Maximum.
 	Justification	Justering
+	Add filters from the list above	Lägg till filter från listan ovan
+	Add to Stack	Lägg till i stacken
+	Applied Filters	Tillämpade filter
+	Categories	Kategorier
+	Choose a filter	Välj ett filter
+	Effect Gallery	Effektgalleri
+	Filters	Filter
+	Select artwork to apply effects	Välj grafik för att tillämpa effekter
 @msg	the file's variables and data sets weren't read (variables: {variables}, data sets: {data_sets}): the Variables panel doesn't list them	filens variabler och datauppsättningar lästes inte (variabler: {variables}, datauppsättningar: {data_sets}): panelen Variabler visar dem inte
 # Select by Color (select.color)
 	Select by Color	Markera efter färg
@@ -5342,3 +5350,5 @@ theme	Appearance	Utseende
 	Shift:	Förskjutning:
 	Fresco…	Fresk…
 	Fresco	Fresk
+	Effect Gallery…	Effektgalleri…
+	Effect Gallery Dialog	Dialogrutan Effektgalleri

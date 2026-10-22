@@ -5306,6 +5306,14 @@ swatch	Bright Violet	Kraftig violet
 	Full Justify	Lige margener
 	Minimum must not exceed Desired, nor Desired Maximum.	Minimum må ikke overstige Ønsket, og Ønsket ikke Maksimum.
 	Justification	Justering
+	Add filters from the list above	Tilføj filtre fra listen ovenfor
+	Add to Stack	Tilføj til stak
+	Applied Filters	Anvendte filtre
+	Categories	Kategorier
+	Choose a filter	Vælg et filter
+	Effect Gallery	Effektgalleri
+	Filters	Filtre
+	Select artwork to apply effects	Vælg grafik for at anvende effekter
 # Select by Color (select.color)
 	Select by Color	Markér efter farve
 	Smudge Stick…	Udtværingsstift…
@@ -5359,3 +5367,5 @@ swatch	Bright Violet	Kraftig violet
 	Shift:	Forskydning:
 	Fresco…	Fresko…
 	Fresco	Fresko
+	Effect Gallery…	Effektgalleri…
+	Effect Gallery Dialog	Dialogboksen Effektgalleri

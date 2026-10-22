@@ -5295,6 +5295,14 @@ mark-style	Japanese	Japonesas
 	Full Justify	Justificar completamente
 	Minimum must not exceed Desired, nor Desired Maximum.	El mínimo no puede superar el deseado, ni el deseado el máximo.
 	Justification	Justificación
+	Add filters from the list above	Añada filtros de la lista de arriba
+	Add to Stack	Añadir a la pila
+	Applied Filters	Filtros aplicados
+	Categories	Categorías
+	Choose a filter	Elija un filtro
+	Effect Gallery	Galería de efectos
+	Filters	Filtros
+	Select artwork to apply effects	Seleccione gráficos para aplicar efectos
 @msg	the file's variables and data sets weren't read (variables: {variables}, data sets: {data_sets}): the Variables panel doesn't list them	no se leyeron las variables ni los conjuntos de datos del archivo (variables: {variables}, conjuntos de datos: {data_sets}): el panel Variables no los muestra
 # Select by Color (select.color)
 	Select by Color	Seleccionar por color
@@ -5328,3 +5336,5 @@ mark-style	Japanese	Japonesas
 	Shift:	Desplazamiento:
 	Fresco…	Fresco…
 	Fresco	Fresco
+	Effect Gallery…	Galería de efectos…
+	Effect Gallery Dialog	Cuadro de diálogo Galería de efectos

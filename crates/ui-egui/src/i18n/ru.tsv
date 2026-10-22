@@ -4964,6 +4964,14 @@ lighting	Light	Свет
 	Minimum must not exceed Desired, nor Desired Maximum.	Минимум не может превышать желательное значение, а желательное — максимум.
 	Minimum	Минимум
 	Justification	Выключка
+	Add filters from the list above	Добавьте фильтры из списка выше
+	Add to Stack	Добавить в стек
+	Applied Filters	Применённые фильтры
+	Categories	Категории
+	Choose a filter	Выберите фильтр
+	Effect Gallery	Галерея эффектов
+	Filters	Фильтры
+	Select artwork to apply effects	Выберите графику, чтобы применить эффекты
 @msg	the file's variables and data sets weren't read (variables: {variables}, data sets: {data_sets}): the Variables panel doesn't list them	переменные и наборы данных файла не прочитаны (переменных: {variables}, наборов данных: {data_sets}): панель «Переменные» их не показывает
 # Select by Color (select.color)
 	Select by Color	Выделить по цвету
@@ -4997,3 +5005,5 @@ lighting	Light	Свет
 	Shift:	Сдвиг:
 	Fresco…	Фреска…
 	Fresco	Фреска
+	Effect Gallery…	Галерея эффектов…
+	Effect Gallery Dialog	Диалог «Галерея эффектов»

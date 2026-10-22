@@ -5310,6 +5310,14 @@ theme	Appearance	Външен вид
 	Full Justify	Пълно двустранно
 	Minimum must not exceed Desired, nor Desired Maximum.	Минималната стойност не може да надвишава желаната, нито желаната – максималната.
 	Justification	Подравняване
+	Add filters from the list above	Добавете филтри от списъка по-горе
+	Add to Stack	Добавяне към стека
+	Applied Filters	Приложени филтри
+	Categories	Категории
+	Choose a filter	Изберете филтър
+	Effect Gallery	Галерия с ефекти
+	Filters	Филтри
+	Select artwork to apply effects	Изберете графика, за да приложите ефекти
 @msg	the file's variables and data sets weren't read (variables: {variables}, data sets: {data_sets}): the Variables panel doesn't list them	променливите и наборите от данни на файла не бяха прочетени (променливи: {variables}, набори от данни: {data_sets}): панелът „Променливи“ не ги показва
 # Select by Color (select.color)
 	Select by Color	Избиране по цвят
@@ -5343,3 +5351,5 @@ theme	Appearance	Външен вид
 	Shift:	Изместване:
 	Fresco…	Фреска…
 	Fresco	Фреска
+	Effect Gallery…	Галерия с ефекти…
+	Effect Gallery Dialog	Диалог „Галерия с ефекти“

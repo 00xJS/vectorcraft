@@ -5317,6 +5317,14 @@ mark-style	Japanese	Japanilainen
 	Full Justify	Täysi tasaus
 	Minimum must not exceed Desired, nor Desired Maximum.	Minimi ei saa ylittää haluttua arvoa eikä haluttu arvo maksimia.
 	Justification	Tasaus
+	Add filters from the list above	Lisää suodattimia yllä olevasta luettelosta
+	Add to Stack	Lisää pinoon
+	Applied Filters	Käytetyt suodattimet
+	Categories	Luokat
+	Choose a filter	Valitse suodatin
+	Effect Gallery	Tehostegalleria
+	Filters	Suodattimet
+	Select artwork to apply effects	Valitse grafiikka, johon tehosteet otetaan
 @msg	the file's variables and data sets weren't read (variables: {variables}, data sets: {data_sets}): the Variables panel doesn't list them	tiedoston muuttujia ja tietojoukkoja ei luettu (muuttujia: {variables}, tietojoukkoja: {data_sets}): Muuttujat-paneeli ei näytä niitä
 # Select by Color (select.color)
 	Select by Color	Valitse värin mukaan
@@ -5417,3 +5425,5 @@ swatch	Bright Violet	Kirkas violetti
 	Shift:	Siirtymä:
 	Fresco…	Fresko…
 	Fresco	Fresko
+	Effect Gallery…	Tehostegalleria…
+	Effect Gallery Dialog	Tehostegalleria-valintaikkuna

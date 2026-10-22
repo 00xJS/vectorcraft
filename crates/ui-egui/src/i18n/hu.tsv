@@ -5339,6 +5339,14 @@ imageTrace	Outline	Körvonal
 	Full Justify	Teljes sorkizárás
 	Minimum must not exceed Desired, nor Desired Maximum.	A minimum nem haladhatja meg a kívánt értéket, sem a kívánt érték a maximumot.
 	Justification	Sorkizárás
+	Add filters from the list above	Adjon hozzá szűrőket a fenti listából
+	Add to Stack	Hozzáadás a veremhez
+	Applied Filters	Alkalmazott szűrők
+	Categories	Kategóriák
+	Choose a filter	Válasszon szűrőt
+	Effect Gallery	Effektusgaléria
+	Filters	Szűrők
+	Select artwork to apply effects	Válasszon ki grafikát az effektusok alkalmazásához
 @msg	the file's variables and data sets weren't read (variables: {variables}, data sets: {data_sets}): the Variables panel doesn't list them	a fájl változói és adatkészletei nem lettek beolvasva (változók: {variables}, adatkészletek: {data_sets}): a Változók panel nem listázza őket
 # Select by Color (select.color)
 	Select by Color	Kijelölés szín szerint
@@ -5372,3 +5380,5 @@ imageTrace	Outline	Körvonal
 	Shift:	Eltolás:
 	Fresco…	Freskó…
 	Fresco	Freskó
+	Effect Gallery…	Effektusgaléria…
+	Effect Gallery Dialog	Effektusgaléria párbeszédpanel
