@@ -391,6 +391,19 @@ fn master_pages_of_embedded_documents_are_left_out() {
     named(&loaded.doc, "Page box");
 }
 
+/// A dash pattern has a few lengths; a crafted one of thousands would be copied with every stroke.
+#[test]
+fn dash_patterns_of_more_than_64_lengths_import_as_solid_lines() {
+    use vectorcraft_affinity::model::Kind;
+    for (lengths, dashed) in [(64, true), (65, false)] {
+        let dash: Vec<f64> = (0..lengths).map(|i| 1.0 + f64::from(i)).collect();
+        let d = vectorcraft_affinity::read(&canvas_with(vec![stroked(10, 2, &dash)], None), vectorcraft_affinity::Limits::default()).unwrap();
+        let Kind::Shape { strokes, .. } = &d.spreads[0].nodes[0].kind else { panic!("{:?}", d.spreads[0].nodes[0].kind) };
+        assert_eq!(strokes[0].dash.as_ref().map(|(d, _)| d.len()), dashed.then_some(64));
+        assert_eq!(d.warnings.iter().any(|w| w.contains("dash patterns of more than 64")), !dashed, "{:?}", d.warnings);
+    }
+}
+
 #[test]
 fn master_pages_show_on_the_pages_that_use_them() {
     let loaded = open("master.afpub", &with_master(1));

@@ -126,6 +126,9 @@ pub struct Stroke {
 /// Gradient stops per gradient.
 const MAX_STOPS: usize = 1024;
 
+/// Dash and gap lengths per dash pattern (a pattern has a few; strokes and text runs copy theirs).
+const MAX_DASHES: usize = 64;
+
 fn floats(v: &Value) -> Option<Vec<f64>> {
     match v {
         Value::Floats(f) => Some(f.clone()),
@@ -319,6 +322,10 @@ pub(crate) fn stroke(r: &mut Reader, pen: ObjId, ldsc: ObjId, local: Affine, beh
         _ => Align::Center,
     };
     let dash = match s.field(lsty, b"Patn") {
+        Some(Value::Array(a)) if a.len() > MAX_DASHES => {
+            r.warn("dash patterns of more than 64 lengths (imported as solid lines)");
+            None
+        }
         Some(Value::Array(a)) if data.get(10) == Some(&2) || !a.is_empty() => {
             let mut v: Vec<f64> = a.iter().filter_map(|x| if let Value::Float(f) = x { Some(*f) } else { None }).collect();
             while v.len() >= 2 && v.iter().rev().take(2).all(|x| *x == 0.0) {
