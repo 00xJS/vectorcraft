@@ -3120,4 +3120,30 @@ pub(crate) mod look_tests {
             assert_ne!(t.text_strong, t.accent);
         }
     }
+
+    // Regression test for #1483: the theme's widget fill is the panel's colour, so a slider in a
+    // dialog showed only its handle. `slider` draws the rail in the buttons' border colour and
+    // fills it up to the handle in the accent.
+    #[test]
+    fn a_slider_shows_its_rail_filled_up_to_the_handle() {
+        for brightness in theme::Brightness::ALL {
+            let ctx = themed(brightness);
+            let t = Tokens::get(&ctx);
+            let mut value = 30.0_f64;
+            let mut add = |ui: &mut Ui| {
+                slider(ui, egui::Slider::new(&mut value, 0.0..=100.0).show_value(false));
+            };
+            frame(&ctx, 0.0, vec![], &mut add);
+            let shapes = frame(&ctx, 0.1, vec![], &mut add);
+            let rects: Vec<(Rect, Color32)> =
+                shapes.iter().filter_map(|s| if let egui::Shape::Rect(r) = s { Some((r.rect, r.fill)) } else { None }).collect();
+            let rail = rects.iter().find(|(_, c)| *c == t.button_border).map(|(r, _)| *r);
+            let filled = rects.iter().find(|(_, c)| *c == t.accent).map(|(r, _)| *r);
+            let (Some(rail), Some(filled)) = (rail, filled) else {
+                panic!("{brightness:?}: the rail ({:?}) and its fill ({:?}) are drawn: {rects:?}", t.button_border, t.accent);
+            };
+            assert!(filled.width() > 1.0 && filled.width() < rail.width(), "{brightness:?}: filled {filled:?} of the rail {rail:?}");
+            assert!((filled.min.x - rail.min.x).abs() < 1.0, "{brightness:?}: the fill starts at the rail's start");
+        }
+    }
 }
