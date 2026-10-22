@@ -127,7 +127,7 @@ pub(crate) fn document_art(
     }
     let mut l = fileio::load(name, bytes)?;
     // Its linked images show their files; its placed documents stay as they are.
-    super::super::links::resolve(&mut l.doc, path, false);
+    super::super::links::resolve(&mut l.doc, path, false, false);
     l.doc.drop_edit_modes();
     let n = l.doc.artboards.len();
     let board = (page as usize).checked_sub(1).and_then(|i| l.doc.artboards.get(i)).map(|a| a.rect);
@@ -281,22 +281,30 @@ pub(crate) fn node(d: &mut Document, s: &Source, link: LinkInfo, bounding: bool)
     Node::new(d.alloc_id(), NodeKind::PlacedDocument(Box::new(placed)))
 }
 
-/// `d` for output: the placed documents that keep only their previews get their files back,
-/// else (their files gone or changed) output as their previews, with a warning.
+/// `d` for output: linked images and placed documents that keep only their previews get their
+/// files back, else output as their previews, with a warning.
 pub(crate) fn full_documents(d: &Document) -> (Cow<'_, Document>, Vec<String>) {
+    let (d, mut warnings) = super::super::links::full_linked_images(d, None);
+    let doc = match &d {
+        Cow::Borrowed(doc) => doc,
+        Cow::Owned(doc) => doc,
+    };
     let mut need: Vec<PlacedDocument> = vec![];
-    d.visit_placed(|_, p| {
-        if d.images.get(&p.key).is_some_and(ImageBlob::is_proxy) && !need.iter().any(|n| n.key == p.key) {
+    doc.visit_placed(|_, p| {
+        if doc.images.get(&p.key).is_some_and(ImageBlob::is_proxy) && !need.iter().any(|n| n.key == p.key) {
             need.push(p.clone());
         }
     });
     if need.is_empty() {
-        return (Cow::Borrowed(d), vec![]);
+        return (d, warnings);
     }
-    let mut out = d.clone();
+    let mut out = match d {
+        Cow::Borrowed(doc) => doc.clone(),
+        Cow::Owned(doc) => doc,
+    };
     let mut previews = BTreeSet::new();
     for p in need {
-        let Some(blob) = d.images.get(&p.key) else { continue };
+        let Some(blob) = out.images.get(&p.key) else { continue };
         match vectorcraft_doc::placed_document::full_bytes(&p, blob) {
             Some(bytes) => {
                 out.images.insert(p.key.clone(), ImageBlob { mime: mime(p.link.name(), &bytes).into(), bytes, proxy: blob.proxy.clone() });
@@ -306,7 +314,6 @@ pub(crate) fn full_documents(d: &Document) -> (Cow<'_, Document>, Vec<String>) {
             }
         }
     }
-    let mut warnings = vec![];
     if !previews.is_empty() {
         warnings.push(format!(
             "{} placed document(s) output as their previews: their files can't be found, or changed since they were read (relink or update them)",
