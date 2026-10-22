@@ -495,35 +495,54 @@ pub fn mono(size: f32) -> FontId {
     FontId::new(size, FontFamily::Name(FONT_MONO.into()))
 }
 
+/// Installs the interface's fonts and binds the families the panels and dialogs draw in
+/// ([`FONT_UI`], [`FONT_UI_SEMIBOLD`], [`FONT_MONO`]). egui panics drawing text in a family no font
+/// is bound to, so every context that shows them needs this once: [`crate::VectorcraftApp::logic`]
+/// calls it on its first frame, and an embedder that draws the panels or dialogs without it calls
+/// it when it makes the context. It replaces the context's font definitions: add other fonts after
+/// it, or keep these families in definitions of one's own. Without the `interface-fonts` feature
+/// the families are egui's built-in fonts (and craft-fonts' faces in a build with them), which lack
+/// some symbols the panels show (→ ▾ ● ✓).
 pub fn install_fonts(ctx: &egui::Context) {
     let mut fonts = FontDefinitions::default();
+    let (ui, semi, mono) = interface_faces(&mut fonts);
+    let stack = |fonts: &FontDefinitions, family: FontFamily| fonts.families.get(&family).cloned().unwrap_or_default();
+    let (fallback, monospace) = (stack(&fonts, FontFamily::Proportional), stack(&fonts, FontFamily::Monospace));
+    // Without its own monospace face, `mono` is egui's; with it, the face falls back to the text's.
+    let mono_fallback = if mono.is_empty() { monospace } else { fallback.clone() };
+    let family =
+        |faces: Vec<&str>, fallback: &[String]| -> Vec<String> { faces.into_iter().map(str::to_owned).chain(fallback.iter().cloned()).collect() };
+    fonts.families.insert(FontFamily::Proportional, family(ui.clone(), &fallback));
+    fonts.families.insert(FontFamily::Name(FONT_UI_SEMIBOLD.into()), family(semi, &fallback));
+    fonts.families.insert(FontFamily::Name(FONT_UI.into()), family(ui, &fallback));
+    fonts.families.insert(FontFamily::Name(FONT_MONO.into()), family(mono, &mono_fallback));
+    add_craft_fonts(&mut fonts);
+    ctx.set_fonts(fonts);
+}
+
+/// The interface's own faces, added to `fonts`: the names of the regular, semibold and monospace
+/// faces that head their families, in order.
+#[cfg(feature = "interface-fonts")]
+fn interface_faces(fonts: &mut FontDefinitions) -> (Vec<&'static str>, Vec<&'static str>, Vec<&'static str>) {
     let add = |f: &mut FontDefinitions, name: &str, bytes: &'static [u8]| {
         f.font_data.insert(name.to_owned(), Arc::new(FontData::from_static(bytes)));
     };
-    add(&mut fonts, "SourceSans3", include_bytes!("../../../assets/fonts/SourceSans3-Regular.ttf"));
+    add(fonts, "SourceSans3", include_bytes!("../../../assets/fonts/SourceSans3-Regular.ttf"));
     // Inter is drawn a little smaller than its size: its letters are wider than Source Sans's, and
     // the panels are laid out for those.
     let inter =
         |bytes: &'static [u8]| Arc::new(FontData::from_static(bytes).tweak(egui::epaint::text::FontTweak { scale: 0.92, ..Default::default() }));
     fonts.font_data.insert("Inter".to_owned(), inter(include_bytes!("../../../assets/fonts/Inter-Regular.ttf")));
     fonts.font_data.insert("Inter-SemiBold".to_owned(), inter(include_bytes!("../../../assets/fonts/Inter-SemiBold.ttf")));
-    add(&mut fonts, "SourceSans3-Semibold", include_bytes!("../../../assets/fonts/SourceSans3-Semibold.ttf"));
-    add(&mut fonts, "JetBrainsMono", include_bytes!("../../../assets/fonts/JetBrainsMono-Regular.ttf"));
-    let fallback: Vec<String> = fonts.families.get(&FontFamily::Proportional).cloned().unwrap_or_default();
-    let mut prop = vec!["Inter".to_string(), "SourceSans3".to_string()];
-    prop.extend(fallback.clone());
-    fonts.families.insert(FontFamily::Proportional, prop);
-    let mut semi = vec!["Inter-SemiBold".to_string(), "SourceSans3-Semibold".to_string()];
-    semi.extend(fallback.clone());
-    fonts.families.insert(FontFamily::Name(FONT_UI_SEMIBOLD.into()), semi);
-    let mut ui = vec!["Inter".to_string(), "SourceSans3".to_string()];
-    ui.extend(fallback.clone());
-    fonts.families.insert(FontFamily::Name(FONT_UI.into()), ui);
-    let mut mono = vec!["JetBrainsMono".to_string()];
-    mono.extend(fallback);
-    fonts.families.insert(FontFamily::Name(FONT_MONO.into()), mono);
-    add_craft_fonts(&mut fonts);
-    ctx.set_fonts(fonts);
+    add(fonts, "SourceSans3-Semibold", include_bytes!("../../../assets/fonts/SourceSans3-Semibold.ttf"));
+    add(fonts, "JetBrainsMono", include_bytes!("../../../assets/fonts/JetBrainsMono-Regular.ttf"));
+    (vec!["Inter", "SourceSans3"], vec!["Inter-SemiBold", "SourceSans3-Semibold"], vec!["JetBrainsMono"])
+}
+
+/// Without the `interface-fonts` feature the interface has no faces of its own: every family is egui's.
+#[cfg(not(feature = "interface-fonts"))]
+fn interface_faces(_fonts: &mut FontDefinitions) -> (Vec<&'static str>, Vec<&'static str>, Vec<&'static str>) {
+    (Vec::new(), Vec::new(), Vec::new())
 }
 
 /// The egui name of a craft-fonts face.
