@@ -254,7 +254,13 @@ pub(crate) fn conform(doc: &mut Document) {
     doc.walk(|n| {
         if let Some(d) = &n.extras().dimension {
             let mut off = false;
-            n.walk(&mut |c| off |= [c.appearance.fill_paint(), c.appearance.stroke_paint()].iter().filter_map(|p| p.color()).any(|c| off_mode(&c)));
+            n.walk(&mut |c| {
+                off |= [c.appearance.fill_paint(), c.appearance.stroke_paint()].iter().filter_map(|p| p.color()).any(|c| off_mode(&c));
+                // The label's characters carry their own fill.
+                if let NodeKind::Text(t) = &c.kind {
+                    off |= t.runs.iter().filter_map(|r| r.style.fill.color()).any(|c| off_mode(&c));
+                }
+            });
             if off {
                 stale.push((n.id, (**d).clone()));
             }
