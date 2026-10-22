@@ -1225,6 +1225,24 @@ fn touch_params(seg: &PathSeg, at: Point, perpendicular: bool) -> Vec<f64> {
     out
 }
 
+/// Where a press at `p` takes hold of `path` by its outline: the point of the path nearest `p`,
+/// when it is within `reach`, and on a straight segment exactly on its line. A path dragged by a
+/// press on its stroke or beside its edge snaps by that point of the path, so it is the path that
+/// lands on a ruler guide or lines up, not the pressed spot a few pixels beside it (#3701).
+pub(crate) fn hold_on_path(path: &vectorcraft_geom::PathData, p: Point, reach: f64) -> Option<Point> {
+    let (si, seg, _, q, d) = path.nearest(p)?;
+    if d > reach {
+        return None;
+    }
+    let sp = path.subpaths.get(si)?;
+    if !sp.segment_is_line(seg) {
+        return Some(q);
+    }
+    let c = sp.segment(seg);
+    let line = Line::new(c.p0, c.p3);
+    Some(line.eval(line.nearest(p, 0.0).t))
+}
+
 /// Snap `p` for a drawing tool when smart guides (or grid snapping) are on.
 pub fn snap_draw(cx: &ToolContext, p: Point, exclude: &[NodeId]) -> (Point, Vec<Overlay>) {
     snap_with(cx, p, || Targets::collect(cx.doc, exclude, None))

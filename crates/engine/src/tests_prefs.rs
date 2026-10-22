@@ -1601,3 +1601,65 @@ fn snap_to_point_cues_anchors_and_lands_pen_clicks_on_them() {
         s.execute("select.none", &json!({})).unwrap();
     }
 }
+
+/// A millimetre document with a rectangle (100, 100)–(300, 250) stroked 1 pt and a vertical
+/// ruler guide at no whole number of millimetres or points (62.31 mm): the rectangle and the
+/// guide's x.
+fn stroked_rect_and_guide() -> (Session, NodeId, f64) {
+    let mut s = Session::new();
+    s.execute("file.new", &json!({"width": 600, "height": 600, "units": "Millimeters"})).unwrap();
+    let id = NodeId(s.execute("shape.rectangle", &json!({"x": 100, "y": 100, "width": 200, "height": 150})).unwrap()["id"].as_u64().unwrap());
+    s.execute("stroke.set", &json!({"weight": 1})).unwrap();
+    let g = 62.31 / 25.4 * 72.0;
+    s.execute("guide.add", &json!({"vertical": true, "pos": g})).unwrap();
+    (s, id, g)
+}
+
+/// #3701: at 3,891%, the Selection tool pressed on a rectangle's 1 pt stroke inside its left edge,
+/// or on its fill 3 px inside it, and dragged until the edge is 1 px from a ruler guide lands the
+/// edge on the guide exactly, with "align". The pressed spot used to be what snapped, so the edge
+/// stopped that far beside the guide however far one zoomed in.
+#[test]
+fn a_move_held_by_a_paths_stroke_lands_the_path_on_a_ruler_guide() {
+    use vectorcraft_tools::Overlay;
+    use vectorcraft_tools::PointerKind::{Down, Drag, Up};
+    let (mut s, id, g) = stroked_rect_and_guide();
+    let v = ViewInfo { zoom: 38.91, ..ViewInfo::default() };
+    s.select_tool("selection", v).unwrap();
+    // 0.3 pt (12 px) into the stroke, and 3 px into the fill.
+    for x in [100.3, 100.0 + 3.0 / v.zoom] {
+        s.execute("select.none", &json!({})).unwrap();
+        let to = x + g + 1.0 / v.zoom - 100.0;
+        gesture(&mut s, v, &[(Down, x, 175.0), (Drag, (x + to) / 2.0, 175.0), (Drag, to, 175.0)]);
+        let align = s.overlays(v).iter().any(|o| matches!(o, Overlay::Label { text, .. } if text == "align"));
+        gesture(&mut s, v, &[(Up, to, 175.0)]);
+        let edge = top_left(&s, id).0;
+        assert!((edge - g).abs() < 1e-9 && align, "pressed at {x}: the edge is {} pt off the guide (align: {align})", edge - g);
+        s.execute("edit.undo", &json!({})).unwrap();
+    }
+}
+
+/// #3701: at 28,757%, Direct Selection pressed 1.5 px beside a rectangle's straight left side and
+/// dragged until the side is 1 px from a ruler guide lands both its anchors on the guide; so does
+/// the same press and drag on the rectangle selected whole, which moves it.
+#[test]
+fn a_straight_segment_dragged_by_direct_selection_lands_on_a_ruler_guide() {
+    use vectorcraft_tools::PointerKind::{Down, Drag, Up};
+    let (mut s, id, g) = stroked_rect_and_guide();
+    let v = ViewInfo { zoom: 287.57, ..ViewInfo::default() };
+    s.select_tool("directSelection", v).unwrap();
+    for whole in [false, true] {
+        s.execute("select.set", &json!({"ids": if whole { vec![id.0] } else { vec![] }})).unwrap();
+        let x = 100.0 + 1.5 / v.zoom;
+        let to = x + g + 1.0 / v.zoom - 100.0;
+        gesture(&mut s, v, &[(Down, x, 175.0), (Drag, (x + to) / 2.0, 175.0), (Drag, to, 175.0), (Up, to, 175.0)]);
+        let mut xs: Vec<f64> = s.doc().unwrap().doc.node(id).unwrap().path_data().unwrap().subpaths[0].anchors.iter().map(|a| a.p.x).collect();
+        xs.sort_by(f64::total_cmp);
+        assert!(
+            xs[..2].iter().all(|x| (x - g).abs() < 1e-9),
+            "whole: {whole}, the side's anchors are {:?} pt off the guide",
+            xs[..2].iter().map(|x| x - g).collect::<Vec<_>>()
+        );
+        s.execute("edit.undo", &json!({})).unwrap();
+    }
+}
