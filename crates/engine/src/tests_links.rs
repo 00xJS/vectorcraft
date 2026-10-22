@@ -448,7 +448,7 @@ fn a_placed_document_brings_its_links_with_the_files_pixels() {
 
 /// The placed (linked) files of a `.ai` file come in with the preview the file keeps of them: one
 /// not found shows it, one found is read at once into the same bounds, which isn't a change. A copy
-/// saved without PDF compatibility, placed, reads the found file too.
+/// saved without PDF compatibility, placed without Link, reads the found file too.
 #[test]
 fn links_of_an_imported_file_are_read_where_they_are_found() {
     use vectorcraft_testkit::ai;
@@ -487,7 +487,7 @@ fn links_of_an_imported_file_are_read_where_they_are_found() {
     let alone = dir.file("alone.ai");
     write(&alone, &ai::ai(data.as_bytes(), "BT /F1 12 Tf 10 50 Td (Saved without its PDF part) Tj ET"));
     let mut s = session();
-    s.execute("file.place", &json!({"path": alone})).unwrap();
+    s.execute("file.place", &json!({"path": alone, "link": false})).unwrap();
     let (_, im) = placed(&s);
     assert!((im.width, im.height) == (600, 300) && !s.doc().unwrap().doc.images[&im.key].is_proxy(), "{im:?}");
 }

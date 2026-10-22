@@ -4057,6 +4057,7 @@ axis	Both	Les deux
 @msg	no file system here	aucun système de fichiers ici
 @msg	no file writer	aucun module d’écriture de fichiers
 @msg	no files to place	aucun fichier à importer
+@msg	`{file}` isn't a VectorCraft document, a PDF or a PDF-compatible .ai file	`{file}` n’est ni un document VectorCraft, ni un PDF, ni un fichier .ai compatible PDF
 @msg	no format to export to	aucun format d’exportation
 @msg	no free recovery area	aucune zone de récupération libre
 @msg	no gradient stop or freeform point is selected	aucune étape de dégradé ni point de forme libre n’est sélectionné

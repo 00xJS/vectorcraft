@@ -155,6 +155,7 @@ fn open_dialog(app: &mut VectorcraftApp, files: Vec<Value>) {
     let units = app.session.active().map(|d| d.doc.units).unwrap_or_default();
     let info: Vec<String> = files.iter().map(|f| summary(app, f, units)).collect();
     let one_object = app.session.active().is_some_and(|d| d.selection.objects.len() == 1);
+    let linked: Vec<bool> = files.iter().map(|f| is_vectorcraft_file(app, f)).collect();
     app.ui.dialog = Some(crate::state::Dialog::new(
         crate::dialogs::place::KIND,
         json!({
@@ -163,18 +164,24 @@ fn open_dialog(app: &mut VectorcraftApp, files: Vec<Value>) {
             "template": false,
             "replace": false,
             "__replace": files.len() == 1 && one_object,
-            "__documents": files.iter().any(is_vectorcraft_file),
-            "__others": !files.iter().all(is_vectorcraft_file),
+            "__documents": linked.contains(&true),
+            "__others": linked.contains(&false),
             "__info": info,
         }),
     ));
 }
 
 /// Is dialog file entry `file` a VectorCraft document on disk (what Link places as one locked
-/// object)?
-fn is_vectorcraft_file(file: &Value) -> bool {
+/// object), or a PDF or `.ai` file on disk? A `.ai` saved without PDF compatibility is PostScript,
+/// which `file.place` embeds whether Link is on or not.
+fn is_vectorcraft_file(app: &VectorcraftApp, file: &Value) -> bool {
+    let Some(path) = file.get("path").and_then(Value::as_str) else { return false };
     let native = ["vectorcraft", vectorcraft_format::LEGACY_EXTENSION, "vctemplate"];
-    file.get("path").and_then(Value::as_str).is_some_and(|p| native.contains(&fileio::extension(p).as_str()))
+    match fileio::extension(path).as_str() {
+        e if native.contains(&e) => true,
+        "pdf" | "ai" | "ait" => app.services.read.as_ref().and_then(|r| r(path).ok()).is_none_or(|b| !vectorcraft_pdf::is_postscript(&b)),
+        _ => false,
+    }
 }
 
 /// The engine params naming `file` (a dialog file entry).

@@ -3836,6 +3836,7 @@ axis	Both	Her İkisi
 @msg	no file system here	burada dosya sistemi yok
 @msg	no file writer	dosya yazarı yok
 @msg	no files to place	yerleştirilecek dosya yok
+@msg	`{file}` isn't a VectorCraft document, a PDF or a PDF-compatible .ai file	`{file}` bir VectorCraft belgesi, bir PDF ya da PDF ile uyumlu bir .ai dosyası değil
 @msg	no format to export to	dışa aktarılacak format yok
 @msg	no free recovery area	ücretsiz kurtarma alanı yok
 @msg	no gradient stop or freeform point is selected	degrade durağı veya serbest biçim noktası seçili değil

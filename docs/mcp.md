@@ -2897,7 +2897,9 @@ unless `link: false`; a Photoshop document as its merged image), an SVG as one g
 and swatches it uses. A VectorCraft document read from `path` is a placed document: one locked object showing its
 artboard `page` (or, with `crop: "bounding"`, its art's bounds), linked to the file and read again when it changes
 (see Linked images), and vectors in every output; with `link: false` (or from `dataBase64`) it is an editable copy
-of its art, as one clipped group. `at` centres it, `rect` fits it, `replace`
+of its art, as one clipped group. A PDF, `.ai` or `.ait` page read from `path` (with neither `password` nor
+`textAs: "outlines"`) is a placed document the same way, showing page `page` clipped to its `crop` box (or its
+art's bounds); with `link: false` it is placed as one clipped group. EPS and PostScript `.ai` files are embedded. `at` centres it, `rect` fits it, `replace`
 swaps the selected object (keeping its place and transform), `template` puts it on a new template layer.
 The art's bounds are the bounds of the art that shows, with its strokes and effects, as an export measures them:
 hidden objects, guides and template layers do not count, and symbol instances are measured by their art. A page or artboard holds the objects
@@ -3166,10 +3168,15 @@ that includes a placed document fails and relinks nothing; placed documents are 
 files are. Find in Folder… in the Linked File Not Found dialog and in the Links panel menu (`ui.findLinksInFolder`) runs
 both. The web build has no folder search.
 
-Placed documents (a `.vectorcraft` file placed linked) work the same way: the document keeps the file's bytes and a
-preview (JPEG or PNG, 1 px per point, at most 1024 px a side), and a save writes the preview (Include Linked Files:
-the file); output reads the file again, or uses the preview with a warning when it is gone or changed.
-`links.list` and `links.info` give them `document: true` and the artboard's `pageWidth` and `pageHeight` (pt).
+Placed documents (a `.vectorcraft` file, or a PDF or `.ai` page, placed linked)
+work the same way: the document keeps the file's bytes and a preview (JPEG or PNG, 1 px per point, at most 1024 px
+a side), and a save writes the preview (Include Linked Files: the file); output reads the file again, or uses the
+preview with a warning when it is gone or changed.
+`links.list` and `links.info` give them `document: true`, the file's `format` (`VectorCraft`, `PDF`,
+`PDF-compatible .ai`) and the artboard's or page's `pageWidth` and `pageHeight` (pt). A relinked PDF shows the same
+page and box of the new file. File › Package copies a placed PDF or `.ai` file as it is. For a `.ai` file read from
+its editing data, Package also copies the files its art places into the same folder. That file finds them by name,
+and Package warns when one is copied under another name: the copy then shows the file of that name, or its preview.
 Saving the file in the app updates the open documents that place it. `links.embed` (the Links panel's Break Link)
 turns one into the editable copy placing without link gives, its symbols, patterns, swatches and images joining
 the document; so does `object.expand`.

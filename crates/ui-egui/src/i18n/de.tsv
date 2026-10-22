@@ -3985,6 +3985,7 @@ theme	Appearance	Erscheinungsbild
 @msg	no file system here	hier gibt es kein Dateisystem
 @msg	no file writer	kein Dateischreiber
 @msg	no files to place	keine Dateien zum Platzieren
+@msg	`{file}` isn't a VectorCraft document, a PDF or a PDF-compatible .ai file	`{file}` ist weder ein VectorCraft-Dokument noch eine PDF- oder PDF-kompatible .ai-Datei
 @msg	no format to export to	kein Format für den Export
 @msg	no free recovery area	kein freier Wiederherstellungsbereich
 @msg	no gradient stop or freeform point is selected	es ist kein Farbstopp und kein Freiformpunkt ausgewählt

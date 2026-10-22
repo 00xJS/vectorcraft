@@ -4720,6 +4720,7 @@ imageTrace	Outline	Körvonal
 @msg	no file system here	itt nincs fájlrendszer
 @msg	no file writer	nincs fájlíró
 @msg	no files to place	nincs elhelyezendő fájl
+@msg	`{file}` isn't a VectorCraft document, a PDF or a PDF-compatible .ai file	nem VectorCraft-dokumentum, PDF- vagy PDF-kompatibilis .ai-fájl: `{file}`
 @msg	No fonts are missing in this document	Ebből a dokumentumból nem hiányzik betűtípus
 @msg	no format to export to	nincs exportálási formátum
 @msg	no free recovery area	nincs szabad helyreállítási terület

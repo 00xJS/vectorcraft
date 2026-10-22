@@ -4185,6 +4185,7 @@ imageTrace	Outline	Kontur
 @msg	no file system here	brak systemu plików
 @msg	no file writer	brak modułu zapisu plików
 @msg	no files to place	brak plików do umieszczenia
+@msg	`{file}` isn't a VectorCraft document, a PDF or a PDF-compatible .ai file	`{file}` nie jest dokumentem VectorCraft, plikiem PDF ani plikiem .ai zgodnym z PDF
 @msg	no format to export to	brak formatu eksportu
 @msg	no free recovery area	brak wolnego obszaru odzyskiwania
 @msg	no gradient stop or freeform point is selected	nie zaznaczono punktu koloru gradientu ani dowolnego punktu

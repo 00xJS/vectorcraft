@@ -523,8 +523,8 @@ pub enum NodeKind {
     Mesh(GradientMesh),
     /// Live Repeat (radial / grid / mirror) of source art.
     Repeat(RepeatSpec),
-    /// A placed document: an artboard of another VectorCraft file, linked and locked (see
-    /// [`crate::placed_document`]).
+    /// A placed document: an artboard of another VectorCraft file, or a page of a PDF or `.ai`
+    /// file, linked and locked (see [`crate::placed_document`]).
     PlacedDocument(Box<crate::placed_document::PlacedDocument>),
     /// Object › Intertwine: the objects keep their own stacking order, except where one of them
     /// is drawn over the others: the area [`NodeExtras::intertwine`] of that member (see

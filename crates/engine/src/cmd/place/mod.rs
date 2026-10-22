@@ -13,7 +13,8 @@
 //!   preview ([`fileio::load`]).
 //! - A PDF/.ai/.ait page or a native document's artboard becomes one group, clipped to the page
 //!   (`crop: "crop"`; a PDF page's `art`, `trim`, `bleed` or `media` box too) or bounded by its art
-//!   (`crop: "bounding"`).
+//!   (`crop: "bounding"`). With Link, a PDF/.ai/.ait page placed from a file becomes a placed
+//!   document instead, as a VectorCraft document does (below).
 //! - A text file becomes area type, decoded and cleaned up with the Text Import Options (`text`,
 //!   [`text`]).
 //! - An RTF file becomes area type with its character and paragraph formatting ([`rtf`]).
@@ -38,7 +39,7 @@ use std::sync::Arc;
 
 use serde_json::{Value, json};
 use vectorcraft_color::Paint;
-use vectorcraft_doc::{Appearance, Document, ImageObject, LinkInfo, Node, NodeId, NodeKind, Scaling, SymbolBoxes};
+use vectorcraft_doc::{Appearance, Document, ImageObject, LinkInfo, Node, NodeId, NodeKind, PageBox, Scaling, SymbolBoxes};
 use vectorcraft_geom::{Affine, Point, Rect, shapes};
 use vectorcraft_pdf::CropTo;
 
@@ -62,7 +63,7 @@ pub fn specs() -> Vec<CommandSpec> {
             "Place…",
             ["File"],
             Some("Cmd+Shift+P"),
-            "{path | name | dataBase64 (a file's path, or its name with its bytes), link?: true (a raster image keeps its file's path; a VectorCraft document at path becomes one locked placed document showing artboard `page`, linked to the file and read again when it changes (links.update; saving it in this app updates it at once), drawn as vectors in every output; false: an editable copy of its art, as from dataBase64; other files are embedded), text?: {characterSet?: \"unicode\" (UTF-8, or UTF-16 with a byte-order mark; other bytes as the platform's 8-bit set) | \"ansi\" (the platform's 8-bit set), platform?: \"windows\" (Windows-1252) | \"mac\" (Mac Roman), removeLineReturns?: false (each block of lines becomes one paragraph; blank lines end paragraphs), removeParagraphReturns?: false (drop blank lines), replaceSpaces?: n (runs of n ≥ 2 spaces become a tab)} (a .txt file, placed as area type filling rect, the replaced object's bounds, or else the artboard less a 36 pt margin), template?: false (onto a new locked template layer below the current layer), replace?: false (swap the one selected object, keeping its stacking place and transform; no at/rect), at?: [x, y] centre (default: the first artboard's centre), rect?: [x, y, width, height] fit inside; aspect kept (wins over at), page?: 1 (PDF/.ai page, or a native document's artboard), crop?: \"crop\" (clipped to that page or artboard, default; an SVG, only when given: framed and clipped by its viewBox, else by its art's bounds) | \"bounding\" (the bounds of the art that shows, with its strokes and effects, as an export measures them: hidden objects and guides left out) | \"art\" | \"trim\" | \"bleed\" | \"media\" (a PDF page's boxes), password? (an encrypted PDF), dxf?: {…the DXF options of document.open} (a .dxf drawing: fit fills the artboard under at, else the first; fitted or uncentred art lands with its drawing's artboard on that artboard, else it is centred on at)} → {ids, name, format, linked, width, height, warnings}. Raster images come in at 100% of their physical size (the file's ppi, else 72); SVG, DXF, PDF/.ai, EMF/WMF (clipped to the picture's frame), EPS (clipped to its bounding box; as document.open reads it), a .ai saved without PDF compatibility (from its editing data, as document.open reads it: the art of the layers that show on artboard `page`, clipped to that artboard unless crop is \"bounding\") and native documents as one group, with the images, symbols, patterns and swatches they use. One undo step; selects what it placed (unless on a template layer); never touches the clipboard",
+            "{path | name | dataBase64 (a file's path, or its name with its bytes), link?: true (a raster image keeps its file's path; a VectorCraft document at path becomes one locked placed document showing artboard `page`, linked to the file and read again when it changes (links.update; saving it in this app updates it at once), drawn as vectors in every output; so does a PDF/.ai page at path, showing its `crop` box, unless password or textAs: \"outlines\" is given; false: an editable copy of its art, as from dataBase64; other files are embedded), text?: {characterSet?: \"unicode\" (UTF-8, or UTF-16 with a byte-order mark; other bytes as the platform's 8-bit set) | \"ansi\" (the platform's 8-bit set), platform?: \"windows\" (Windows-1252) | \"mac\" (Mac Roman), removeLineReturns?: false (each block of lines becomes one paragraph; blank lines end paragraphs), removeParagraphReturns?: false (drop blank lines), replaceSpaces?: n (runs of n ≥ 2 spaces become a tab)} (a .txt file, placed as area type filling rect, the replaced object's bounds, or else the artboard less a 36 pt margin), template?: false (onto a new locked template layer below the current layer), replace?: false (swap the one selected object, keeping its stacking place and transform; no at/rect), at?: [x, y] centre (default: the first artboard's centre), rect?: [x, y, width, height] fit inside; aspect kept (wins over at), page?: 1 (PDF/.ai page, or a native document's artboard), crop?: \"crop\" (clipped to that page or artboard, default; an SVG, only when given: framed and clipped by its viewBox, else by its art's bounds) | \"bounding\" (the bounds of the art that shows, with its strokes and effects, as an export measures them: hidden objects and guides left out) | \"art\" | \"trim\" | \"bleed\" | \"media\" (a PDF page's boxes), password? (an encrypted PDF), dxf?: {…the DXF options of document.open} (a .dxf drawing: fit fills the artboard under at, else the first; fitted or uncentred art lands with its drawing's artboard on that artboard, else it is centred on at)} → {ids, name, format, linked, width, height, warnings}. Raster images come in at 100% of their physical size (the file's ppi, else 72); SVG, DXF, PDF/.ai, EMF/WMF (clipped to the picture's frame), EPS (clipped to its bounding box; as document.open reads it), a .ai saved without PDF compatibility (from its editing data, as document.open reads it: the art of the layers that show on artboard `page`, clipped to that artboard unless crop is \"bounding\") and native documents as one group, with the images, symbols, patterns and swatches they use. One undo step; selects what it placed (unless on a template layer); never touches the clipboard",
             has_doc,
             place
         ),
@@ -104,8 +105,8 @@ enum Art {
     /// A text file's, an RTF file's or a Word document's text, placed as area type filling the
     /// natural box.
     Text(text::Story),
-    /// A VectorCraft document placed linked: the file read, the link, and whether the art's
-    /// bounds (not the artboard) are shown.
+    /// A VectorCraft document or a PDF/.ai page placed linked: the file read, the link, and
+    /// whether the art's bounds (not the artboard or page) are shown.
     Document(document::Source, LinkInfo, bool),
     Vector {
         /// The loaded document: the source of the art's resources.
@@ -124,7 +125,7 @@ struct Loaded {
     /// The art's natural box (what `at` centres and `rect` fits).
     natural: Rect,
     warnings: Vec<String>,
-    /// The link to a raster image's file (for Link), when read from a path.
+    /// The link to a raster image's file or a placed document's (for Link), when read from a path.
     link: Option<LinkInfo>,
     /// The artboard a DXF drawing fitted to an artboard, or not centred, was laid out on: it lands
     /// on the target artboard the same way.
@@ -138,8 +139,9 @@ pub(crate) fn pt_per_px(ppi: Option<(f64, f64)>) -> (f64, f64) {
 }
 
 /// The file `p` names, read into placeable art; a DXF drawing's Fit to Artboard fills `board`
-/// (unless the params name their own box).
-fn load(p: &Value, cmd: &str, board: Option<Rect>) -> Result<Loaded> {
+/// (unless the params name their own box). A PDF/.ai page read from a path is placed linked with
+/// Link when `link_pdf` (false for the queries, which read it embedded).
+fn load(p: &Value, cmd: &str, board: Option<Rect>, link_pdf: bool) -> Result<Loaded> {
     let src = fileio::source(p, cmd)?;
     let name = fileio::file_name(src.name);
     // An Affinity file is recognised by its signature, whatever its name says.
@@ -192,12 +194,12 @@ fn load(p: &Value, cmd: &str, board: Option<Rect>) -> Result<Loaded> {
     if matches!(format.id, "vectorcraft" | "template") {
         let page = page as u32;
         if let Some(path) = src.path.filter(|_| bool_or(p, "link", true)) {
-            let s = document::source(src.name, &src.bytes, Some(path), page, !crop, cmd)?;
+            let s = document::source(src.name, &src.bytes, Some(path), page, !crop, PageBox::Crop, cmd)?;
             let link = LinkInfo { page: Some(page), ..super::links::link_info(path, &src.bytes) };
             let (natural, warnings) = (s.frame, s.warnings.clone());
             return Ok(Loaded { name, format, art: Art::Document(s, link.clone(), !crop), natural, warnings, link: Some(link), board: None });
         }
-        let a = document::document_art(src.name, &src.bytes, src.path, page, !crop, cmd)?;
+        let a = document::document_art(src.name, &src.bytes, src.path, page, !crop, PageBox::Crop, cmd)?;
         let art = Art::Vector { src: Box::new(a.doc), nodes: a.nodes, clip: a.clip };
         return Ok(Loaded { name, format, art, natural: a.frame, warnings: a.warnings, link: None, board: None });
     }
@@ -209,48 +211,39 @@ fn load(p: &Value, cmd: &str, board: Option<Rect>) -> Result<Loaded> {
         let warnings = fileio::too_large_note(&img.blob.bytes).into_iter().collect();
         return Ok(Loaded { name, format, art: Art::Image(img), natural, warnings, link, board: None });
     }
+    if pdf {
+        // Linked: placed like a VectorCraft document, read again with the page's box only. A page
+        // asked for with a password or with its text as outlines is embedded.
+        let linked = link_pdf && bool_or(p, "link", true) && opts.password.is_none() && opts.text_as == vectorcraft_pdf::TextAs::Text;
+        if let Some(path) = src.path.filter(|_| linked) {
+            let page = page as u32;
+            let s = document::source(src.name, &src.bytes, Some(path), page, !crop, document::page_box(opts.crop), cmd)?;
+            let link = LinkInfo { page: Some(page), ..super::links::link_info(path, &src.bytes) };
+            let (natural, warnings) = (s.frame, s.warnings.clone());
+            return Ok(Loaded { name, format, art: Art::Document(s, link.clone(), !crop), natural, warnings, link: Some(link), board: None });
+        }
+        let a = pdf_art(src.name, &src.bytes, src.path, page, opts, !crop, cmd)?;
+        let art = Art::Vector { src: Box::new(a.doc), nodes: a.nodes, clip: a.clip };
+        return Ok(Loaded { name, format, art, natural: a.frame, warnings: a.warnings, link: None, board: None });
+    }
     let anchored = format.id == "dxf" && (opts.dxf.fit || !opts.dxf.center);
-    let (mut doc, warnings, pdf) = match format.id {
-        // Only the page placed is read, its artboard the box asked for (Bounding Box: the art's
-        // bounds, below). A .ai saved without PDF compatibility is read from its editing data, as
-        // it opens, and placed as an EPS is: the art on artboard `page`.
-        "pdf" | "ai" | "ait" if pdf => {
-            let o = fileio::LoadOptions { crop: if crop { opts.crop } else { CropTo::Crop }, ..opts };
-            let mut read = fileio::page_document(&src.bytes, page - 1, &o);
-            // Such a file can have more artboards than placeholder pages.
-            if page > 1
-                && read.is_err()
-                && let Err(e) = fileio::page_document(&src.bytes, 0, &o)
-                && fileio::is_placeholder(&e)
-            {
-                read = Err(e);
-            }
-            let (mut doc, warnings, alone) =
-                fileio::page_or_editing_data(src.name, &src.bytes, o.password.as_deref(), read).map_err(|e| bad(cmd, format!("{name}: {e}")))?;
-            if alone {
-                // Linked images show their files, found from its folder.
-                super::links::resolve(&mut doc, src.path, false);
-            }
-            (doc, warnings, !alone)
+    let (mut doc, warnings) = {
+        // Of the open options, only a DXF drawing's apply (the colour mode stays the file's).
+        let o = fileio::LoadOptions { dxf: opts.dxf, ..Default::default() };
+        let mut l = fileio::load_with(src.name, &src.bytes, &o)?;
+        // An Affinity file whose native document couldn't be read is only its preview: it
+        // must never silently stand in for the art.
+        if l.preview_only {
+            return Err(bad(
+                cmd,
+                format!(
+                    "{name}: only this Affinity file's embedded preview could be read; use File › Open to see it with its warning, or export SVG or PDF from Affinity before placing"
+                ),
+            ));
         }
-        _ => {
-            // Of the open options, only a DXF drawing's apply (the colour mode stays the file's).
-            let o = fileio::LoadOptions { dxf: opts.dxf, ..Default::default() };
-            let mut l = fileio::load_with(src.name, &src.bytes, &o)?;
-            // An Affinity file whose native document couldn't be read is only its preview: it
-            // must never silently stand in for the art.
-            if l.preview_only {
-                return Err(bad(
-                    cmd,
-                    format!(
-                        "{name}: only this Affinity file's embedded preview could be read; use File › Open to see it with its warning, or export SVG or PDF from Affinity before placing"
-                    ),
-                ));
-            }
-            // Linked images show their files, found from its folder.
-            super::links::resolve(&mut l.doc, src.path, false);
-            (l.doc, l.warnings, false)
-        }
+        // Linked images show their files, found from its folder.
+        super::links::resolve(&mut l.doc, src.path, false);
+        (l.doc, l.warnings)
     };
     doc.drop_edit_modes();
     let board = doc.artboards.first().map(|a| a.rect).filter(|_| anchored);
@@ -264,17 +257,62 @@ fn load(p: &Value, cmd: &str, board: Option<Rect>) -> Result<Loaded> {
         let frame = doc.artboards.first().map(|a| a.rect).filter(|_| framed);
         (art_of(layer_art(&layers)), frame)
     } else {
-        // The page placed is a PDF import's only one.
-        let index = if pdf { 0 } else { page - 1 };
         let n = doc.artboards.len();
-        let board = doc.artboards.get(index).map(|a| a.rect).ok_or_else(|| bad(cmd, format!("page {page}: `{name}` has {n} page(s)")))?;
-        // A PDF import has one layer per page; an EPS file's art is whatever lies on the artboard.
-        let pages = if pdf { layers.get(index..=index).unwrap_or_default() } else { &layers[..] };
-        (on_artboard(&symbols, pages, board), crop.then_some(board))
+        let board = doc.artboards.get(page - 1).map(|a| a.rect).ok_or_else(|| bad(cmd, format!("page {page}: `{name}` has {n} page(s)")))?;
+        // An EPS file's art is whatever lies on the artboard.
+        (on_artboard(&symbols, &layers, board), crop.then_some(board))
     };
     let natural = clip.or_else(|| shown_bounds(&symbols, &nodes));
     let natural = natural.filter(|r| r.width() > 0.0 || r.height() > 0.0).ok_or_else(|| bad(cmd, format!("`{name}` has no art to place")))?;
     Ok(Loaded { name, format, art: Art::Vector { src: Box::new(doc), nodes, clip }, natural, warnings, link: None, board })
+}
+
+/// Page `page` (1-based) of the PDF/.ai/.ait file `src` (`bytes`, read from `path` when there is
+/// one) as art to place: clipped to the box `opts.crop` names, or (`bounding`) the bounds of its
+/// art; read with `opts.password`. Only the page placed is read. A .ai saved without PDF
+/// compatibility is read from its editing data, as it opens, and placed as an EPS is: the art on
+/// artboard `page`, its linked images found from its folder.
+pub(crate) fn pdf_art(
+    src: &str,
+    bytes: &[u8],
+    path: Option<&str>,
+    page: usize,
+    opts: fileio::LoadOptions,
+    bounding: bool,
+    cmd: &str,
+) -> Result<document::DocumentArt> {
+    let name = fileio::file_name(src);
+    let index = page.checked_sub(1).ok_or_else(|| bad(cmd, "page must be a whole number from 1"))?;
+    let o = fileio::LoadOptions { crop: if bounding { CropTo::Crop } else { opts.crop }, ..opts };
+    let mut read = fileio::page_document(bytes, index, &o);
+    // Such a file can have more artboards than placeholder pages.
+    if page > 1
+        && read.is_err()
+        && let Err(e) = fileio::page_document(bytes, 0, &o)
+        && fileio::is_placeholder(&e)
+    {
+        read = Err(e);
+    }
+    let (mut doc, warnings, alone) =
+        fileio::page_or_editing_data(src, bytes, o.password.as_deref(), read).map_err(|e| bad(cmd, format!("{name}: {e}")))?;
+    if alone {
+        // Linked images show their files, found from its folder.
+        super::links::resolve(&mut doc, path, false);
+    }
+    doc.drop_edit_modes();
+    let layers = std::mem::take(&mut doc.layers);
+    let symbols = doc.symbol_boxes();
+    // The page placed is a PDF import's only one, with one layer; the editing data's art is
+    // whatever lies on the artboard.
+    let index = if alone { index } else { 0 };
+    let n = doc.artboards.len();
+    let board = doc.artboards.get(index).map(|a| a.rect).ok_or_else(|| bad(cmd, format!("page {page}: `{name}` has {n} page(s)")))?;
+    let pages = if alone { &layers[..] } else { layers.get(index..=index).unwrap_or_default() };
+    let nodes = on_artboard(&symbols, pages, board);
+    let clip = (!bounding).then_some(board);
+    let frame = clip.or_else(|| shown_bounds(&symbols, &nodes));
+    let frame = frame.filter(|r| r.width() > 0.0 || r.height() > 0.0).ok_or_else(|| bad(cmd, format!("`{name}` has no art to place")))?;
+    Ok(document::DocumentArt { doc, nodes, clip, frame, warnings })
 }
 
 /// The bounds of what `nodes` draw, as an export measures art
@@ -435,7 +473,7 @@ fn place(s: &mut Session, p: &Value) -> Result<Value> {
         (true, _) => return Err(bad(PLACE, "replace: select the one object to replace")),
     };
     let target = board_at(&st.doc, at);
-    let mut loaded = load(p, PLACE, target)?;
+    let mut loaded = load(p, PLACE, target, true)?;
     let old_node = old.and_then(|id| st.doc.node(id));
     // Type reflows rather than scales: its frame takes the size it is placed at.
     let is_text = matches!(loaded.art, Art::Text(_));
@@ -548,7 +586,8 @@ fn queue(s: &mut Session, p: &Value) -> Result<Value> {
                 q[k] = v.clone();
             }
         }
-        match load(&q, QUEUE, None) {
+        // Read for its size and thumbnail: each click places it with file.place.
+        match load(&q, QUEUE, None, false) {
             Ok(l) => {
                 let (w, h) = (l.natural.width(), l.natural.height());
                 let mut f = json!({ "name": l.name, "format": l.format.id, "width": w, "height": h });
@@ -606,7 +645,8 @@ fn thumbnail_png(l: Loaded, px: f64) -> Result<String> {
 }
 
 fn info(_: &mut Session, p: &Value) -> Result<Value> {
-    let mut l = load(p, "file.place.info", None)?;
+    // A PDF/.ai page linked or not has the same size and art.
+    let mut l = load(p, "file.place.info", None, false)?;
     let natural = l.natural;
     let mut out = json!({
         "name": l.name,
