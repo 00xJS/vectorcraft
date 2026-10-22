@@ -1177,6 +1177,22 @@ pub fn strip_scroll<R>(ui: &mut Ui, id: &str, add_contents: impl FnOnce(&mut Ui)
     .inner
 }
 
+/// A panel's scrolling body (Properties, a dock column, a panel in the shared dock): `area` with
+/// the scroll bar of a menu's list ([`list_scroll_style`]), in a column of its own at the right
+/// edge, so it never covers the controls there, such as a dropdown's arrow (#3093). The scroll
+/// areas inside the body keep their own style.
+pub fn panel_scroll<R>(ui: &mut Ui, area: egui::ScrollArea, add_contents: impl FnOnce(&mut Ui) -> R) -> R {
+    ui.scope(|ui| {
+        let inner = std::mem::replace(&mut ui.spacing_mut().scroll, list_scroll_style());
+        area.show(ui, |ui| {
+            ui.spacing_mut().scroll = inner;
+            add_contents(ui)
+        })
+        .inner
+    })
+    .inner
+}
+
 /// Whether the blend-mode list draws a separator above `BlendMode::ALL[i]`: where a
 /// [`BlendMode::group`] starts.
 pub fn blend_separator_before(i: usize) -> bool {
