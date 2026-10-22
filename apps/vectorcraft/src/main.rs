@@ -70,6 +70,12 @@ struct App {
     frames: u64,
     /// Keeps the custom title bar's window borderless (Windows, #1758).
     window_frame: Option<window_frame::WindowFrameFn>,
+    /// The main window; used to read and set maximized state the UI layer does not see on Linux (#3635).
+    winit_window: Option<std::sync::Arc<winit::window::Window>>,
+    /// A saved or fitted geometry asked for maximize once the window is mapped (Linux).
+    pending_maximize: bool,
+    /// Frames left to retry [`window::apply_pending_maximize`].
+    maximize_tries: u8,
 }
 
 impl eframe::App for App {
@@ -147,7 +153,15 @@ impl App {
             open_files(&mut self.app, open_documents::take());
         }
         self.app.logic(ctx);
-        window::track(ctx, &mut self.app.ui.window);
+        if self.pending_maximize {
+            if let Some(w) = &self.winit_window {
+                self.pending_maximize = window::apply_pending_maximize(w, true, &mut self.maximize_tries);
+            } else {
+                self.pending_maximize = false;
+            }
+        }
+        let host_maximized = self.winit_window.as_ref().map(|w| w.is_maximized());
+        window::track(ctx, &mut self.app.ui.window, host_maximized);
         if self.app.ui.status == "quit" {
             ctx.send_viewport_cmd(egui::ViewportCommand::Close);
         }
@@ -953,11 +967,15 @@ fn main() -> std::process::ExitCode {
                 // which takes over from the copy the preferences file used to hold.
                 prefs_dir::attach_pdf_preset_store(&mut app.session);
                 // Fit the window to its monitor, or put it back where it was (still hidden).
-                if let Some(w) = cc.winit_window() {
-                    app.ui.window = Some(window::restore(w, saved_window));
+                let winit_window = cc.winit_window().cloned();
+                if let Some(w) = &winit_window {
+                    let g = window::restore(w, saved_window);
+                    app.ui.window = Some(g);
                     #[cfg(windows)]
                     set_taskbar_icon(w);
                 }
+                // Linux may not map the window before the first frames, so a saved maximize is retried then (#3635).
+                let pending_maximize = cfg!(target_os = "linux") && app.ui.window.as_ref().is_some_and(|g| g.maximized);
                 // User Defined swatch and graphic style libraries live next to the preferences.
                 let swatches = prefs_path().and_then(|p| Some(p.parent()?.join("Swatches").to_string_lossy().to_string()));
                 app.session.swatch_libraries.set_user_dir(swatches);
@@ -1038,7 +1056,16 @@ fn main() -> std::process::ExitCode {
                 created.ready();
                 // The content and the pointer stay aligned on Windows (#1758).
                 let window_frame = window_frame::service(cc, custom_titlebar);
-                Ok(Box::new(App { app, graphics_loss, graphics_lost: false, frames: 0, window_frame }))
+                Ok(Box::new(App {
+                    app,
+                    graphics_loss,
+                    graphics_lost: false,
+                    frames: 0,
+                    window_frame,
+                    winit_window,
+                    pending_maximize,
+                    maximize_tries: 8,
+                }))
             }),
         )
     });
