@@ -5062,5 +5062,20 @@ lighting	Light	ライト
 	Shift:	シフト:
 	Fresco…	フレスコ…
 	Fresco	フレスコ
+
+# Keyboard Shortcuts editor (File › Keyboard Shortcuts…) and the Print dialog's overprint note.
+	Keyboard Shortcuts	キーボードショートカット
+	Set:	セット:
+	Reset to Defaults	初期設定に戻す
+	All shortcuts reset to defaults.	すべてのショートカットを初期設定に戻しました。
+	Command	コマンド
+	Tool	ツール
+	Press keys…	キーを押してください…
+	Click, then press the new shortcut (Esc cancels)	クリックしてから、新しいショートカットを押します (Esc でキャンセル)
+	Go to Conflict	競合箇所へ移動
+	Remove the shortcut	ショートカットを削除
+	Use Default	初期設定を使用
+	⚠ {chord} was already used by {names} — it has been removed there.	⚠ {chord} は {names} で使用済みのため、そちらから削除しました。
+	Simulate prints overprints as Overprint Preview shows them; separations always keep them. A preset flattens transparency before printing (PostScript files always flatten it).	シミュレートでは、オーバープリントプレビューと同じ見え方でオーバープリントを印刷します。分版では常にオーバープリントが保持されます。プリセットを選ぶと、印刷前に透明が分割・統合されます (PostScript ファイルでは常に分割・統合されます)。
 	Effect Gallery…	効果ギャラリー…
 	Effect Gallery Dialog	効果ギャラリーダイアログ
