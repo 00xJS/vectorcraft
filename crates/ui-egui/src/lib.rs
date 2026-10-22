@@ -64,6 +64,7 @@ pub mod unsaved;
 pub mod widgets;
 pub mod workspaces;
 
+mod document_drag;
 #[cfg(test)]
 mod tests_adjust;
 #[cfg(test)]
@@ -82,6 +83,8 @@ mod tests_cut;
 mod tests_distortkeys;
 #[cfg(test)]
 mod tests_docsetup;
+#[cfg(test)]
+mod tests_document_drag;
 #[cfg(test)]
 mod tests_font_menu;
 #[cfg(test)]

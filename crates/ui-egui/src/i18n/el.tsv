@@ -1015,6 +1015,11 @@
 	Fidelity:	Πιστότητα:
 	Figure Space	Κενό ψηφίου
 	Figure:	Σχήμα:
+# Artwork drag between document tabs.
+	Drop Artwork	Απόθεση γραφικών
+@msg	{key} must be [x, y] with finite coordinates	Το {key} πρέπει να είναι [x, y] με πεπερασμένες συντεταγμένες
+@msg	ids must contain 1–10000 object ids	Το ids πρέπει να περιέχει 1–10000 αναγνωριστικά αντικειμένων
+
 	File	Αρχείο
 	File Dimensions	Διαστάσεις αρχείου
 	File Format:	Μορφή αρχείου:

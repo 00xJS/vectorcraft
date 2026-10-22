@@ -1046,6 +1046,11 @@
 	Fidelity:	Genauigkeit:
 	Figure Space	Ziffernleerzeichen
 	Figure:	Ziffern:
+# Artwork drag between document tabs.
+	Drop Artwork	Grafik ablegen
+@msg	{key} must be [x, y] with finite coordinates	{key} muss [x, y] mit endlichen Koordinaten sein
+@msg	ids must contain 1–10000 object ids	ids muss 1–10000 Objekt-IDs enthalten
+
 	File	Datei
 	File Dimensions	Dateiabmessungen
 	File Format:	Dateiformat:

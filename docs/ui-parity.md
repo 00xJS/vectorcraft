@@ -212,6 +212,10 @@ empty), without opening the dialog.
 
 ## Panels, Control bar, Properties, context menus
 
+| Interaction | Status | Evidence |
+|---|---|---|
+| Selection artwork drag hovers a visible document tab to activate it, then drops editable artwork on its canvas | done | `tests_document_drag`, `edit.dropSelection`, lossless resource and one-step Undo regressions; overflow and cross-window drag remain separate |
+
 | Behaviour | Status | Notes |
 |---|---|---|
 | Effect > Warp Options: style previews, orientation choices and percent controls | done | #1760; focused input, mixed-style and history checks passed; original captures reviewed. No geometry or optional Properties changes. |
@@ -277,6 +281,14 @@ font/paint attributes. Enabled non-neutral source or target object transparency 
 atomically; disable Transparency to preserve object transparency while sampling the range.
 `tests_eyedropper.rs` covers ranges, Unicode, history and transparency; tool tests cover brush-key
 sampling coexistence. Scores and estimates unchanged. See [development.md](development.md#highlighted-text-eyedropper-2026-10-21).
+
+## Drag artwork between document tabs (2026-10-22)
+
+Selection drags activate another visible document tab after 400 ms, then copy editable artwork
+on canvas release with the original grab point. Source and clipboard preservation, resource
+rendering, swatch conflicts, cancellation, rotated/zoomed views and target Undo/Redo have regression
+coverage (`tests_document_drag`, `tests_clipboard`). Overflow-menu and cross-window drag remain
+separate. Scores and hours unchanged. [Behavior and command details](development.md#drag-artwork-between-document-tabs-2026-10-22).
 
 ## Revision history
 
@@ -370,3 +382,12 @@ sampling coexistence. Scores and estimates unchanged. See [development.md](devel
 | 2026-10-11 | minor | Edit Toolbar opens the All Tools drawer beside the toolbar instead of a centred dialog, dims the tools the toolbar holds, and edits the toolbar by drag and drop while it is open (#1018); score unchanged (estimated) |
 | 2026-10-11 | minor | Direct Selection: dragging a path selected whole by an anchor moves it whole; Alt-drag copies by an anchor too, toggles during the drag and snaps onto the original (#1104); score unchanged (estimated) |
 | 2026-10-10 | major | First checklist, built from the tool sources and tests against Illustrator 2026's public documentation |
+
+> **Tab-drag status (2026-10-22):** updated from upstream, including the Turkish catalog and all three tab-drag translations requested in #3479; Selection-tool reset regression-checked and clipboard evidence scoped to internal state; drag lifecycle, insertion and regression contracts documented; behavior, scores and estimates unchanged.
+
+| Date | Change | Tab-drag history |
+|---|---|---|
+| 2026-10-22 | minor | Verify Selection-tool reset after tab activation, drop and cancellation; narrow clipboard evidence to the tested internal clipboard and correct documentation grammar; behavior, scores and estimates unchanged. |
+| 2026-10-22 | minor | Merge current main and complete the Turkish tab-drag labels and validation messages requested by the maintainer; all 24 catalogs covered; scores and estimates unchanged. |
+| 2026-10-22 | minor | Tab-drag follow-up: reconcile upstream progress updates and document drag lifecycle, insertion behavior and regression contracts; behavior, scores and estimates unchanged. |
+| 2026-10-22 | minor | Artwork dragged with Selection switches visible document tabs after a 400 ms hover, then copies editable artwork on canvas release; source and clipboard stay intact; scores and hours unchanged |

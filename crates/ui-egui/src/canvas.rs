@@ -101,6 +101,14 @@ enum Drag {
     Present,
 }
 
+/// Clear canvas interaction state before a tab transfer takes ownership of the artwork drag.
+pub(crate) fn end_document_drag(ctx: &egui::Context) {
+    ctx.data_mut(|d| {
+        d.remove::<Drag>(drag_id());
+        d.remove::<Pos2>(drag_pos_id());
+    });
+}
+
 fn drag_id() -> egui::Id {
     egui::Id::new("canvas-drag")
 }
@@ -114,7 +122,7 @@ fn drag_layer_id() -> egui::Id {
 }
 /// Whether `p` is over the canvas itself, not a panel or a floating window over it.
 fn on_canvas(ui: &Ui, resp: &egui::Response, p: Pos2) -> bool {
-    ui.clip_rect().contains(p) && ui.ctx().layer_id_at(p).is_none_or(|l| l == resp.layer_id)
+    resp.rect.contains(p) && ui.clip_rect().contains(p) && ui.ctx().layer_id_at(p).is_none_or(|l| l == resp.layer_id)
 }
 /// The document point last sent to the tool as a drag during [`Drag::Tool`].
 fn tool_drag_doc_id() -> egui::Id {
@@ -274,6 +282,7 @@ pub fn show(app: &mut VectorcraftApp, ui: &mut Ui) {
     let v = *app.view().unwrap_or(&View::default());
     let xf = Xf::new(rect, &v);
     let origin_preview = if app.ui.view.rulers && app.ui.screen_mode < 3 { ruler_input(app, ui, full, rect, &xf) } else { None };
+    crate::document_drag::drop_on_canvas(app, &resp, &xf);
     panel_drop(app, ui, &resp, &xf);
     // In Presentation Mode a right click or a long touch opens no context menu.
     if app.ui.screen_mode < 3 {
@@ -813,6 +822,7 @@ fn cursor_icon(c: Cursor) -> egui::CursorIcon {
     }
 }
 
+/// Dispatch canvas pointer, keyboard and drop events through the active document view.
 fn handle_input(app: &mut VectorcraftApp, ui: &Ui, resp: &egui::Response, rect: egui::Rect) {
     let line = ui.ctx().options(|o| o.input_options.line_scroll_speed);
     let wheel_zooms = app.session.prefs.zoom_with_mouse_wheel;
@@ -929,6 +939,7 @@ fn handle_input(app: &mut VectorcraftApp, ui: &Ui, resp: &egui::Response, rect: 
                 // Cmd with another tool drags with the selection tool used last (the session lends it).
                 let ev = PointerEvent { kind: PointerKind::Down, pos: xf.to_doc(p), mods: mods(m, space), pressure: pen_pressure(ui, true) };
                 dispatch(app, &ev, view);
+                crate::document_drag::begin(app, ui.ctx(), ev.pos);
                 Drag::Tool
             };
             ui.data_mut(|dd| {
@@ -1494,7 +1505,7 @@ fn drop_press(app: &mut VectorcraftApp, ui: &Ui, view: vectorcraft_engine::ViewI
 /// canvas, and a panel it is released on takes it (the Graphic Styles panel makes a style of it).
 /// Back on the canvas, [`Drag::Art`] takes the move up again where the pointer is (#2826).
 fn drag_art_out(app: &VectorcraftApp, ui: &Ui, resp: &egui::Response, p: Pos2) -> bool {
-    let off = !ui.clip_rect().contains(p) || ui.ctx().layer_id_at(p).is_some_and(|l| l != resp.layer_id);
+    let off = !on_canvas(ui, resp, p);
     let Some(st) = app.session.active().filter(|_| off && app.session.tool_id() == "selection") else { return false };
     // The Selection tool's interaction while it moves (or Alt-copies) the selection.
     if !st.interaction.as_ref().is_some_and(|i| i.label == "Move" || i.label == "Copy") {
@@ -1509,6 +1520,7 @@ fn drag_art_out(app: &VectorcraftApp, ui: &Ui, resp: &egui::Response, p: Pos2) -
 /// panel that takes the art ([`widgets::PanelDrag::Art`]) takes it where it was, and no move is
 /// left open (#2826). The art stays where it last moved while the pointer is over the panel.
 pub(crate) fn release_over_panel(app: &mut VectorcraftApp, ctx: &egui::Context) {
+    crate::document_drag::cleanup(app, ctx);
     if !ctx.input(|i| i.pointer.primary_released()) {
         return;
     }

@@ -1069,6 +1069,11 @@
 	Fidelity:	Fedeltà:
 	Figure Space	Spazio cifra
 	Figure:	Cifre:
+# Artwork drag between document tabs.
+	Drop Artwork	Rilascia illustrazione
+@msg	{key} must be [x, y] with finite coordinates	{key} deve essere [x, y] con coordinate finite
+@msg	ids must contain 1–10000 object ids	ids deve contenere da 1 a 10000 identificatori di oggetti
+
 	File	File
 	File Dimensions	Dimensioni file
 	File Format:	Formato file:

@@ -310,6 +310,8 @@ from G14 and the budget run of G15: **~170–270 h** one agent, ~50–80 h wall 
 
 ## G7 Views and windows
 
+- **Done:** Selection artwork drag across visible document tabs (400 ms hover); lossless target copy, source/clipboard preservation and cancellation regressions. Cross-window dragging remains separate.
+
 - **Done:** custom document ruler origin (#1212): corner drag with preview, double-click reset to the active artboard, relative X/Y inputs and native save/reopen.
 - **Done:** View › Rulers › Change to Global / Artboard Rulers (`view.globalRulers`, Cmd+Alt+R): artboard rulers, a new document's, count from the active artboard, each artboard with its own zero point; rulers, X/Y fields and guide readouts follow the mode, which is saved with the document. Estimate unchanged.
 - **Missing (noted for reporters, 2026-10-14):** custom toolbars (Window › Toolbars › New Toolbar, #1759);
@@ -392,6 +394,14 @@ font/paint attributes. Enabled non-neutral source or target object transparency 
 atomically; disable Transparency to preserve object transparency while sampling the range.
 `tests_eyedropper.rs` covers ranges, Unicode, history and transparency; tool tests cover brush-key
 sampling coexistence. Scores and estimates unchanged. See [development.md](development.md#highlighted-text-eyedropper-2026-10-21).
+
+## Drag artwork between document tabs (2026-10-22)
+
+Selection drags activate another visible document tab after 400 ms, then copy editable artwork
+on canvas release with the original grab point. Source and clipboard preservation, resource
+rendering, swatch conflicts, cancellation, rotated/zoomed views and target Undo/Redo have regression
+coverage (`tests_document_drag`, `tests_clipboard`). Overflow-menu and cross-window drag remain
+separate. Scores and hours unchanged. [Behavior and command details](development.md#drag-artwork-between-document-tabs-2026-10-22).
 
 ## Revision history
 
@@ -510,3 +520,12 @@ sampling coexistence. Scores and estimates unchanged. See [development.md](devel
 | 2026-10-10 | minor | G9 evidence counted from the tracker (28 `.ai`/EPS issues, 20 fixed); impact narrowed to handing files back |
 | 2026-10-10 | minor | Alpha blockers checked against the core-workflow gate: none |
 | 2026-10-10 | major | Moved from the ROADMAP's "Where we're lacking"; kept ids G1–G8, added G9–G19 (file formats, stability, bugs, preferences, 30.x additions, pen hardware, performance, localization, ecosystem, AI, accessibility) and re-ranked |
+
+> **Tab-drag status (2026-10-22):** updated from upstream, including the Turkish catalog and all three tab-drag translations requested in #3479; Selection-tool reset regression-checked and clipboard evidence scoped to internal state; drag lifecycle, insertion and regression contracts documented; behavior, scores and estimates unchanged.
+
+| Date | Change | Tab-drag history |
+|---|---|---|
+| 2026-10-22 | minor | Verify Selection-tool reset after tab activation, drop and cancellation; narrow clipboard evidence to the tested internal clipboard and correct documentation grammar; behavior, scores and estimates unchanged. |
+| 2026-10-22 | minor | Merge current main and complete the Turkish tab-drag labels and validation messages requested by the maintainer; all 24 catalogs covered; scores and estimates unchanged. |
+| 2026-10-22 | minor | Tab-drag follow-up: reconcile upstream progress updates and document drag lifecycle, insertion behavior and regression contracts; behavior, scores and estimates unchanged. |
+| 2026-10-22 | minor | Artwork dragged with Selection switches visible document tabs after a 400 ms hover, then copies editable artwork on canvas release; source and clipboard stay intact; scores and hours unchanged |

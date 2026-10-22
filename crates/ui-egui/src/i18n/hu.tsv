@@ -1355,6 +1355,11 @@
 	Fidelity:	Pontosság:
 	Figure Space	Számjegyszóköz
 	Figure:	Számjegyek:
+# Artwork drag between document tabs.
+	Drop Artwork	Grafika elhelyezése
+@msg	{key} must be [x, y] with finite coordinates	A(z) {key} értékének [x, y] alakúnak kell lennie véges koordinátákkal
+@msg	ids must contain 1–10000 object ids	Az ids értékének 1–10000 objektumazonosítót kell tartalmaznia
+
 	File	Fájl
 	File Dimensions	Fájl méretei
 	File Format:	Fájlformátum:

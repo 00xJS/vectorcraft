@@ -42,7 +42,7 @@ struct StackEntry {
 
 /// Open the gallery on the current selection.
 pub fn open(app: &mut VectorcraftApp, _p: &Value) -> Result<Value, String> {
-    if !app.session.active().is_some_and(|s| !s.selection.is_empty()) {
+    if app.session.active().is_none_or(|s| s.selection.is_empty()) {
         return Err(tl!("Select artwork to apply effects").into());
     }
     let selected = effects_in_category(0).first().map(|e| e.id).unwrap_or("");

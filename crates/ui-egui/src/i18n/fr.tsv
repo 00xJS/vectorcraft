@@ -1069,6 +1069,11 @@
 	Fidelity:	Fidélité :
 	Figure Space	Espace numérique
 	Figure:	Chiffres :
+# Artwork drag between document tabs.
+	Drop Artwork	Déposer l’illustration
+@msg	{key} must be [x, y] with finite coordinates	{key} doit être [x, y] avec des coordonnées finies
+@msg	ids must contain 1–10000 object ids	ids doit contenir de 1 à 10000 identifiants d’objets
+
 	File	Fichier
 	File Dimensions	Dimensions du fichier
 	File Format:	Format de fichier :

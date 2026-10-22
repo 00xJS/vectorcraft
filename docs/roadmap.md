@@ -50,7 +50,7 @@ Checked 2026-10-10 from the code, tests and open issues; no workflow fails, so V
 | # | Milestone | Status | Est. remaining, one agent (h) |
 |---|---|---|---|
 | M0 | Skeleton + vertical slice | ✅ done | — |
-| M1 | Selection, transform, layers, MCP (common command tools, strict keys, session resources and version-aware result hints) | ✅ mostly done (malformed MCP app replies discard the connection without replay, #1761; bounded control socket waits and connection-slot recovery, #1726; bounded synthetic control input, #1709; no-op anchor Align keeps Undo, Redo and saved state (#1180 follow-up); transform reference point snaps to anchors/centres; rotated objects keep a rotated bounding box and their angle; Free Transform, Scale and Reflect along a rotated box pending) | 4–6 |
+| M1 | Selection, transform, layers, MCP (common command tools, strict keys, session resources and version-aware result hints) | ✅ mostly done (document-tab artwork drag with lossless resource transfer and one target Undo; malformed MCP app replies discard the connection without replay, #1761; bounded control socket waits and connection-slot recovery, #1726; bounded synthetic control input, #1709; no-op anchor Align keeps Undo, Redo and saved state (#1180 follow-up); transform reference point snaps to anchors/centres; rotated objects keep a rotated bounding box and their angle; Free Transform, Scale and Reflect along a rotated box pending) | 4–6 |
 | M2 | Drawing tools + smart guides | ✅ mostly done (Polygon/Star exact-size count persistence, with repeated-drag, tool-switch and Cancel regression coverage; Curvature point markers without direction handles (#1236, in part); Direct Selection segment click/Delete preserves neighboring edges, #1278; Flare, Reshape, Live Corners widget dragging and per-corner radii and kinds landed, on any path's corners; Shaper rough-shape recognition and orientation steps, the remaining Pen modifier nuances; Shaper Groups with editable sources and separate fill/stroke edits landed; custom ruler origin with drag preview, active-artboard reset, relative X/Y fields and native round-trip (#1212); construction widget/refinements pending) | 12–18 |
 | M3 | Paint & appearance (swatches, color, gradient, stroke, appearance, transparency, styles) | ✅ done (M3.7–M3.98): swatches, groups, libraries, tints, Lab spots and Registration; Eyedropper styles highlighted text only (atomic transparency rejection); Eyedropper reads visible locked and outside-isolation sources (#1251); Color Picker, Color panel, Color Guide, Color Themes, Edit Colors and Recolor Artwork; gradients that follow every transform, the annotator, linked stops, freeform gradients, focal points, gradients on strokes and Expand; visible strokes when paint is added to inherited None/zero-width art (#1253); stroke geometry, arrowheads, dashes fitted to corners, stroke on type, width profiles and the Width tool (Shift-double-click enables adjoining adjustment in Width Point Edit; finite-arithmetic follow-up regressions and full CI passed ([Validation evidence](target-app-parity.md#evidence-what-ships-today-by-area))), Scale Strokes and preview bounds; Appearance targeting, container appearance, target circles, Expand Appearance; knockout, isolation, blend accuracy, CMYK blending, overprint, Attributes, masks and clipping, Flatten Transparency; graphic styles, links and libraries; CSS library export preserves fractional linear and radial gradient stop positions. Left: freeform and mixed spot/process gradients export as stops or process colours to SVG/PDF; confirm the Scale Strokes & Effects default; Recolor model selection is available through the engine and MCP only (#2520); the dialog retains its existing controls | 4–8 |
 | M2 | Drawing tools + smart guides | ✅ mostly done (Curvature point markers without direction handles (#1236, in part); Direct Selection segment click/Delete preserves neighboring edges, #1278; Flare, Reshape, Live Corners widget dragging and per-corner radii and kinds landed, on any path's corners; Shaper rough-shape recognition and orientation steps, the remaining Pen modifier nuances; Shaper Groups with editable sources and separate fill/stroke edits landed; custom ruler origin with drag preview, active-artboard reset, relative X/Y fields and native round-trip (#1212); construction widget/refinements pending) | 12–18 |
@@ -90,6 +90,14 @@ font/paint attributes. Enabled non-neutral source or target object transparency 
 atomically; disable Transparency to preserve object transparency while sampling the range.
 `tests_eyedropper.rs` covers ranges, Unicode, history and transparency; tool tests cover brush-key
 sampling coexistence. Scores and estimates unchanged. See [development.md](development.md#highlighted-text-eyedropper-2026-10-21).
+
+## Drag artwork between document tabs (2026-10-22)
+
+Selection drags activate another visible document tab after 400 ms, then copy editable artwork
+on canvas release with the original grab point. Source and clipboard preservation, resource
+rendering, swatch conflicts, cancellation, rotated/zoomed views and target Undo/Redo have regression
+coverage (`tests_document_drag`, `tests_clipboard`). Overflow-menu and cross-window drag remain
+separate. Scores and hours unchanged. [Behavior and command details](development.md#drag-artwork-between-document-tabs-2026-10-22).
 
 ## Revision history
 
@@ -212,3 +220,12 @@ sampling coexistence. Scores and estimates unchanged. See [development.md](devel
 | 2026-10-10 | minor | M9 row from main: initial Revolve |
 | 2026-10-10 | minor | Added the Alpha gate table (core-workflow gate): all six workflows work end to end, `.ai` exchange partial but not blocking; stage stays alpha |
 | 2026-10-10 | major | Created from ROADMAP.md's milestone table and "Where we're going"; added Current focus and the beta list |
+
+> **Tab-drag status (2026-10-22):** updated from upstream, including the Turkish catalog and all three tab-drag translations requested in #3479; Selection-tool reset regression-checked and clipboard evidence scoped to internal state; drag lifecycle, insertion and regression contracts documented; behavior, scores and estimates unchanged.
+
+| Date | Change | Tab-drag history |
+|---|---|---|
+| 2026-10-22 | minor | Verify Selection-tool reset after tab activation, drop and cancellation; narrow clipboard evidence to the tested internal clipboard and correct documentation grammar; behavior, scores and estimates unchanged. |
+| 2026-10-22 | minor | Merge current main and complete the Turkish tab-drag labels and validation messages requested by the maintainer; all 24 catalogs covered; scores and estimates unchanged. |
+| 2026-10-22 | minor | Tab-drag follow-up: reconcile upstream progress updates and document drag lifecycle, insertion behavior and regression contracts; behavior, scores and estimates unchanged. |
+| 2026-10-22 | minor | Artwork dragged with Selection switches visible document tabs after a 400 ms hover, then copies editable artwork on canvas release; source and clipboard stay intact; scores and hours unchanged |

@@ -20,6 +20,11 @@
 	Medium Light	Agak terang
 	Light	Terang
 	Quit VectorCraft	Keluar dari VectorCraft
+# Artwork drag between document tabs.
+	Drop Artwork	Letakkan karya
+@msg	{key} must be [x, y] with finite coordinates	{key} harus berupa [x, y] dengan koordinat berhingga
+@msg	ids must contain 1–10000 object ids	ids harus berisi 1–10000 ID objek
+
 	File	Berkas
 	New…	Baru…
 	New Without Dialog	Baru tanpa dialog

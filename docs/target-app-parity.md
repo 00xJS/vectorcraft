@@ -85,9 +85,9 @@ dominate; 3D, graphs and automation are specialist). They sum to 105. Feature de
 | Symbols, blends, envelopes, Repeat, perspective | 5 | 87% | 30.7's Blend panel with ease in/out, dynamic symbols, symbol libraries, Start Global Edit, envelope Anti-Alias/Preserve Shape; Symbol Options › Registration and Export Type (Graphic / Movie Clip) are done | 5–9 | estimated |
 | Image Trace, graphs, image tools | 3 | 75% | graph Column designs, Image Trace Create Strokes depth (Create Object Mosaic is done; junction-returning piece survival has source-generated regressions in `image-trace-quality.md`; large images trace with a warning; Auto Color keeps rare distinct colours) | 5–8 | estimated (raised from 72%); quick presets reveal adjustment controls, Properties reopens them |
 | Layers, artboards, document setup | 5 | 78% | Selected-artboard deletion is consistent across panel actions (all-selected retains artboard 1); history prunes removed indices while preserving valid multiselection; remaining:  30.0's artboard locking and colours and managing artboards from the canvas, Layers panel row context menus and Collect for Export (click-to-fit objects is done, #1227) | 5–8 | estimated (lowered from 82%: target moved); Artboard deletion keys keep artwork and the first of an all-selected set |
-| View & navigation | 3 | 70% | New View/Edit Views, multiple windows and Arrange | 9–14 | estimated; cached canvas reprojection preserves scale during resize, rotation and DPI changes (regression and contributor original-file evidence below; scores/hours unchanged); cached canvas dimensions match the renderer limit before cache-key creation, view construction and worker submission (regression evidence below) |
+| View & navigation | 3 | 70% | New View/Edit Views, multiple windows and Arrange | 9–14 | estimated; document-tab artwork hover/copy and lossless transfer tested (2026-10-22; score/hours unchanged); cached canvas reprojection preserves scale during resize, rotation and DPI changes (regression and contributor original-file evidence below; scores/hours unchanged); cached canvas dimensions match the renderer limit before cache-key creation, view construction and worker submission (regression evidence below) |
 | File formats | 6 | 75% | `.ai` files open with a flattened or wrong layer structure in real cases (#951), guides lost (#779), no writing of Illustrator's editing data (#868), FreeHand/CorelDRAW/DWG/HEIC/JPEG 2000 import, 3D export; see [file-format-parity.md](file-format-parity.md); EPS legacy mesh/opacity-mask and raster comparison follow-up verified | 10–20 | estimated (lowered from 85%: open issues); DXF control-point SPLINE import closure regression-tested (#1299 follow-up after #1320); PDF writer metadata, reader streaming and immutable backend checks in `crates/pdf/src/tests.rs`, `crates/pdf/src/tests_reader_streaming.rs` and `xtask/src/pdf_deps.rs`; PDF Place and clipboard paste retain live text (synthetic regressions) |
-| View & navigation | 3 | 70% | New View/Edit Views, multiple windows and Arrange | 9–14 | estimated; cached canvas reprojection preserves scale during resize, rotation and DPI changes (regression and contributor original-file evidence below; scores/hours unchanged) |
+| View & navigation | 3 | 70% | New View/Edit Views, multiple windows and Arrange | 9–14 | estimated; document-tab artwork hover/copy and lossless transfer tested (2026-10-22; score/hours unchanged); cached canvas reprojection preserves scale during resize, rotation and DPI changes (regression and contributor original-file evidence below; scores/hours unchanged) |
 | View & navigation | 3 | 70% | New View/Edit Views, multiple windows and Arrange | 9–14 | estimated |
 | Guides, grids, smart guides, snapping, rulers | 3 | 80% | 30.0's tangent and perpendicular snapping and its snapping panel, "intersect" smart guides for a moved selection's anchors (drawn points and dragged anchors snap to intersections, #1658), video rulers, distance readouts while drawing | 4–7 | estimated (lowered from 85%: target moved); new ruler-guide Alt orientation implemented |
 | Guides, grids, smart guides, snapping, rulers | 3 | 80% | 30.0's tangent and perpendicular snapping and its snapping panel, "intersect" smart guides for a moved selection's anchors (drawn points and dragged anchors snap to intersections, #1658), global/artboard ruler mode switch and video rulers, distance readouts while drawing | 4–7 | estimated (lowered from 85%: target moved); new ruler-guide Alt orientation implemented |
@@ -936,6 +936,14 @@ atomically; disable Transparency to preserve object transparency while sampling 
 `tests_eyedropper.rs` covers ranges, Unicode, history and transparency; tool tests cover brush-key
 sampling coexistence. Scores and estimates unchanged. See [development.md](development.md#highlighted-text-eyedropper-2026-10-21).
 
+## Drag artwork between document tabs (2026-10-22)
+
+Selection drags activate another visible document tab after 400 ms, then copy editable artwork
+on canvas release with the original grab point. Source and clipboard preservation, resource
+rendering, swatch conflicts, cancellation, rotated/zoomed views and target Undo/Redo have regression
+coverage (`tests_document_drag`, `tests_clipboard`). Overflow-menu and cross-window drag remain
+separate. Scores and hours unchanged. [Behavior and command details](development.md#drag-artwork-between-document-tabs-2026-10-22).
+
 ## Revision history
 
 | Date | Change | Summary |
@@ -1123,3 +1131,12 @@ sampling coexistence. Scores and estimates unchanged. See [development.md](devel
 | 2026-10-10 | major | Full re-measure against Illustrator 2026 30.x from code counts, open issues and public docs; added breadth/depth/ready-for-real-work numbers, generative-AI row, calibration from PR timestamps; merged the ROADMAP's parity estimate, honest assessment and "Shipped so far" into this file |
 | 2026-10-05 | major | (in ROADMAP.md) M3 and M4 rows re-derived after the paint and files milestones |
 | 2026-10-02 | major | (in ROADMAP.md) First 22-area weighted estimate |
+
+> **Tab-drag status (2026-10-22):** updated from upstream, including the Turkish catalog and all three tab-drag translations requested in #3479; Selection-tool reset regression-checked and clipboard evidence scoped to internal state; drag lifecycle, insertion and regression contracts documented; behavior, scores and estimates unchanged.
+
+| Date | Change | Tab-drag history |
+|---|---|---|
+| 2026-10-22 | minor | Verify Selection-tool reset after tab activation, drop and cancellation; narrow clipboard evidence to the tested internal clipboard and correct documentation grammar; behavior, scores and estimates unchanged. |
+| 2026-10-22 | minor | Merge current main and complete the Turkish tab-drag labels and validation messages requested by the maintainer; all 24 catalogs covered; scores and estimates unchanged. |
+| 2026-10-22 | minor | Tab-drag follow-up: reconcile upstream progress updates and document drag lifecycle, insertion behavior and regression contracts; behavior, scores and estimates unchanged. |
+| 2026-10-22 | minor | Artwork dragged with Selection switches visible document tabs after a 400 ms hover, then copies editable artwork on canvas release; source and clipboard stay intact; scores and hours unchanged |

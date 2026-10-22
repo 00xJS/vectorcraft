@@ -42,6 +42,11 @@
 	Medium Light	Keskivaalea
 	Light	Vaalea
 	Quit VectorCraft	Lopeta VectorCraft
+# Artwork drag between document tabs.
+	Drop Artwork	Pudota kuvitus
+@msg	{key} must be [x, y] with finite coordinates	{key} on annettava muodossa [x, y] äärellisillä koordinaateilla
+@msg	ids must contain 1–10000 object ids	ids-arvon on sisällettävä 1–10000 objektitunnusta
+
 	File	Tiedosto
 	New…	Uusi…
 	New Without Dialog	Uusi ilman valintaikkunaa
