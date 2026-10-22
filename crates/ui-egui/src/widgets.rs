@@ -3174,4 +3174,42 @@ pub(crate) mod look_tests {
         let hovered = frame(&ctx, 0.3, vec![], &mut add);
         assert!(lit(&hovered, row), "the row under the pointer is lit: {row:?}");
     }
+
+    // Regression test for #3440: the Fill/Stroke chip's popover closed on the click that ended a
+    // drag between its proxies. It stays open for a click on its own anchor and while a panel
+    // drag is on; a click elsewhere still closes it.
+    #[test]
+    fn a_popover_stays_open_for_a_click_on_its_anchor_or_during_a_panel_drag() {
+        let press = |pos, pressed| egui::Event::PointerButton { pos, button: egui::PointerButton::Primary, pressed, modifiers: Default::default() };
+        // Opens the popover, then clicks at `click` (with `drag` as the panel drag under way).
+        let open_after_click = |click: Option<Pos2>, drag: Option<PanelDrag>| -> bool {
+            let ctx = themed(Default::default());
+            let toggle = std::cell::Cell::new(true);
+            let shown = std::cell::Cell::new(false);
+            let anchor = std::cell::Cell::new(Rect::NOTHING);
+            let mut add = |ui: &mut Ui| {
+                let resp = ui.allocate_response(vec2(40.0, 24.0), Sense::hover());
+                anchor.set(resp.rect);
+                shown.set(popover(&resp, toggle.replace(false), |ui| ui.label("Colour")).is_some());
+            };
+            frame(&ctx, 0.0, vec![], &mut add);
+            assert!(shown.get(), "the toggle opens it");
+            frame(&ctx, 0.2, vec![], &mut add);
+            assert!(shown.get(), "it stays open");
+            if let Some(d) = drag {
+                egui::DragAndDrop::set_payload(&ctx, d);
+            }
+            let pos = click.unwrap_or_else(|| anchor.get().center());
+            frame(&ctx, 0.3, vec![egui::Event::PointerMoved(pos), press(pos, true)], &mut add);
+            frame(&ctx, 0.4, vec![press(pos, false)], &mut add);
+            frame(&ctx, 0.5, vec![], &mut add);
+            shown.get()
+        };
+        let far = Some(pos2(500.0, 350.0));
+        let panel_drag = || Some(PanelDrag::Symbol("s".into()));
+        // Whether it is open after: a click elsewhere; a click on its anchor that doesn't toggle it;
+        // a panel drag released elsewhere.
+        let open = [open_after_click(far, None), open_after_click(None, None), open_after_click(far, panel_drag())];
+        assert_eq!(open, [false, true, true]);
+    }
 }
