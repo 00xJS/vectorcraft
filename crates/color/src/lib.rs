@@ -146,6 +146,8 @@ impl Color {
         } else {
             60.0 * ((r - g) / d + 4.0)
         };
+        // f32 rounding in rem_euclid can yield exactly 360; wrap back to 0.
+        let h = if h >= 360.0 { 0.0 } else { h };
         let s = if max <= 0.0 { 0.0 } else { d / max };
         [h, s, max]
     }
@@ -437,6 +439,12 @@ impl Paint {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn hue_below_360() {
+        let h = Color::Rgb { r: 1.0, g: 0.0, b: 1e-7 }.to_hsb()[0];
+        assert!((0.0..360.0).contains(&h), "hue {h}");
+    }
 
     #[test]
     fn hex_roundtrip() {
