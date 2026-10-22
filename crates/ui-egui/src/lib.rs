@@ -852,11 +852,11 @@ impl VectorcraftApp {
                 if matches!(id, "dataset.select" | "dataset.next" | "dataset.prev") {
                     self.ui.status.clear();
                 }
-                if id == "text.setStyle"
+                if matches!(id, "text.setStyle" | "text.setRangeStyle")
                     && let Some(font) = params.get("font").and_then(Value::as_str)
                 {
                     let r = &mut self.ui.recent_fonts;
-                    r.retain(|f| f != font);
+                    r.retain(|f| !f.eq_ignore_ascii_case(font));
                     r.insert(0, font.to_string());
                     r.truncate(MAX_RECENT_FONTS);
                 }
