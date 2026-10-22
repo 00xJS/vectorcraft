@@ -36,13 +36,33 @@ pub fn needs_outline(n: &Node) -> bool {
 
 /// Is `n` a path or compound path with a visible Transform effect that makes copies and a gradient
 /// in a fill or stroke? Such an object is drawn through its art ([`outline_art`]) so that each copy
-/// paints its gradient by itself ([`copy_with_gradients`]), as a group's copies do.
+/// paints its gradient by itself ([`copy_leaf`]), as a group's copies do.
 pub fn has_gradient_copies(n: &Node) -> bool {
     matches!(n.kind, NodeKind::Path { guide: false, clipping: false, .. } | NodeKind::Compound { .. })
         && (n.appearance.has_unplaced_gradient() || n.appearance.has_placed_gradient())
         && geometry_effects(n)
             .iter()
             .any(|e| e.id == "distort.transform" && crate::distort::transform_map(Rect::ZERO, &merged_params(&e.id, &e.params), 0).1 > 0)
+}
+
+/// Is `n` a path or compound path with a visible Transform effect whose Transform Patterns or
+/// Scale Strokes & Effects is on (#885)? Such an effect changes the fills and strokes as well as
+/// the geometry, so the object is drawn through its art ([`outline_art`]), each copy an object of
+/// its own with its strokes scaled and its patterns moved ([`transform_leaf`]).
+pub fn has_transform_options(n: &Node) -> bool {
+    matches!(n.kind, NodeKind::Path { guide: false, clipping: false, .. } | NodeKind::Compound { .. })
+        && geometry_effects(n)
+            .iter()
+            // Both options default to off, so the stored params tell without merging the defaults
+            // (this runs for every object drawn).
+            .any(|e| e.id == "distort.transform" && crate::distort::TransformOptions::of(&e.params).reach_appearance())
+}
+
+/// Is `n` a path or compound path that its Transform effects make into art of separate objects
+/// ([`has_gradient_copies`], [`has_transform_options`])? It is drawn, baked and expanded through
+/// that art ([`reshape`]).
+pub fn has_transform_art(n: &Node) -> bool {
+    has_gradient_copies(n) || has_transform_options(n)
 }
 
 /// Is `n` type without inline graphics that has a fill or stroke of its own that paints and has a
@@ -205,7 +225,7 @@ pub fn outline_art(n: &Node, symbol_art: Option<&Node>) -> Option<Node> {
             Node::group(n.id, vec![Arc::new(a)])
         }
         // The object as the one piece the copies of its Transform effect are made from.
-        _ if has_gradient_copies(n) => {
+        _ if has_transform_art(n) => {
             let mut one = n.clone();
             one.opacity = 1.0;
             one.blend = Default::default();
@@ -260,19 +280,20 @@ pub(crate) fn outline_nested_text(n: &mut Node, clipping: bool) {
 /// and is not type or an image with a fill or stroke of its own that [`has_item_geometry`] counts,
 /// or has no art (a symbol instance without `symbol_art`).
 pub fn reshape(n: &Node, symbol_art: Option<&Node>) -> Option<Node> {
-    if (geometry_effects(n).is_empty() && n.projection().is_none() && !has_item_geometry(n)) || !(needs_outline(n) || has_gradient_copies(n)) {
+    if (geometry_effects(n).is_empty() && n.projection().is_none() && !has_item_geometry(n)) || !(needs_outline(n) || has_transform_art(n)) {
         return None;
     }
     as_art(n, symbol_art)
 }
 
-/// `n` (see [`needs_outline`], or a path with [`has_gradient_copies`]) as plain art for Expand
+/// `n` (see [`needs_outline`], or a path with [`has_transform_art`]) as plain art for Expand
 /// Appearance: [`reshape`]d when it has
 /// geometry effects, else type with fills or strokes of its own outlined, or an image with fills
 /// or strokes of its own that paint a shape, in the same form. `None` when it has none of these.
 pub fn expand_outlined(n: &Node, symbol_art: Option<&Node>) -> Option<Node> {
-    // A path whose Transform effect copies it with a gradient: each copy an object of its own.
-    if has_gradient_copies(n) {
+    // A path whose Transform effect copies it with a gradient, or scales its strokes or moves its
+    // patterns: each copy an object of its own.
+    if has_transform_art(n) {
         return as_art(n, symbol_art);
     }
     let own_paint = match n.kind {
@@ -394,26 +415,39 @@ pub(crate) fn reshape_leaves_within(art: &mut Node, fx: &[&Effect], budget: Budg
     for e in fx {
         let Some(bounds) = art.geometric_bounds() else { break };
         let params = merged_params(&e.id, &e.params);
-        let transform = (e.id == "distort.transform").then(|| crate::distort::transform_map(bounds, &params, seed));
+        let transform = (e.id == "distort.transform").then(|| {
+            let (m, copies) = crate::distort::transform_map(bounds, &params, seed);
+            let options = crate::distort::TransformOptions::of(&params);
+            (m, copies, options, crate::distort::transform_affine(bounds, &params, seed))
+        });
         for_each_leaf(art, &mut |leaf| {
             let Some((path, rule)) = leaf_geometry(leaf) else { return };
             // What the other paths leave of the budget.
             let before = Budget::of(&path);
             let room = max.minus(used.minus(before));
-            // A gradient paints each copy by itself, not the one piece the copies make together.
-            if let Some((m, copies)) = transform
-                && copies > 0
-                && (leaf.appearance.has_unplaced_gradient() || leaf.appearance.has_placed_gradient())
-            {
-                let made = copy_with_gradients(leaf, &path, m, copies, room);
-                used = used.minus(before).plus(made);
-                return;
+            if let Some((m, copies, options, map)) = transform {
+                // Transform Patterns and Scale Strokes & Effects change each copy's fills and
+                // strokes; a gradient paints each copy by itself, not the one piece the copies
+                // make together.
+                let gradient = copies > 0 && (leaf.appearance.has_unplaced_gradient() || leaf.appearance.has_placed_gradient());
+                if options.reach_appearance() {
+                    let made = transform_leaf(leaf, &path, map, copies, options, room);
+                    used = used.minus(before).plus(made);
+                    return;
+                }
+                if gradient {
+                    let made = copy_leaf(leaf, &path, m, copies, vectorcraft_doc::Scaling::default(), room);
+                    used = used.minus(before).plus(made);
+                    return;
+                }
             }
             let Some(out) = apply_one(&e.id, &params, &path, bounds, &GeomContext { seed, ..GeomContext::of(leaf) }, room) else { return };
             used = used.minus(before).plus(Budget::of(&out));
             set_geometry(leaf, out, rule);
         });
-        if let Some((m, copies)) = transform {
+        if let Some((m, copies, options, _)) = transform
+            && options.objects
+        {
             transform_placed(art, m, copies);
         }
     }
@@ -422,12 +456,57 @@ pub(crate) fn reshape_leaves_within(art: &mut Node, fx: &[&Effect], budget: Budg
     }
 }
 
+/// Largest factor a Transform effect's Scale Strokes & Effects scales one object's strokes by
+/// (its copies stop before one would take more), so stroke weights stay finite where the geometry
+/// doesn't grow with them (a horizontal line stretched vertically).
+const MAX_STROKE_SCALE: f64 = 1.0e6;
+
+/// A Transform effect whose Transform Patterns or Scale Strokes & Effects is on (`options`), with
+/// map `m` and `copies`, applied to `leaf` (a path or compound path with geometry `path`) as Object
+/// › Transform with those options transforms an object (#885): the strokes' weights and dashes
+/// and the distances of the effects on its fills and strokes scale by `m`'s mean scale, and its
+/// pattern paints transform by `m`. With copies, the original keeps them and copy `k` takes them
+/// `k` times, each copy an object of its own ([`copy_leaf`], within `budget`). With Transform
+/// Objects off the geometry stays and the options apply once. Returns what the leaf costs after.
+fn transform_leaf(leaf: &mut Node, path: &PathData, m: Affine, copies: usize, options: crate::distort::TransformOptions, budget: Budget) -> Budget {
+    let scaling = vectorcraft_doc::Scaling {
+        strokes: options.strokes,
+        effects: options.strokes.then_some(crate::scale_effect as fn(&mut Effect, f64)),
+        patterns: options.patterns,
+        ..Default::default()
+    };
+    if !options.objects {
+        if options.strokes
+            && let Some(k) = vectorcraft_doc::Scaling::factor(m).filter(|k| k.is_finite() && *k > 0.0)
+        {
+            leaf.appearance.scale_strokes(k);
+            leaf.appearance.scale_effects(k, crate::scale_effect);
+        }
+        if options.patterns {
+            vectorcraft_doc::pattern::transform_pattern_paints(leaf, m);
+        }
+        return Budget::of(path);
+    }
+    if copies == 0 {
+        // A path scaled up is drawn with more lines; past the budget it keeps its shape.
+        let moved = path.transformed(m);
+        if !budget.fits(Budget::of(&moved)) {
+            return Budget::of(path);
+        }
+        leaf.transform(m, scaling);
+        return Budget::of(&moved);
+    }
+    copy_leaf(leaf, path, m, copies, scaling, budget)
+}
+
 /// Replace `leaf` (a path or compound path with geometry `path`) by a group of it and `copies`
-/// more, each mapped once more by `m` than the last, as a Transform effect copies an object. Each
-/// copy is an object of its own, so its gradients fit it (a placed gradient moves with it) rather
-/// than spanning every copy. The copies stop where [`crate::distort::transform_within`]'s would,
-/// or before they pass `budget`. Returns what the copies cost, the original included.
-fn copy_with_gradients(leaf: &mut Node, path: &PathData, m: Affine, copies: usize, budget: Budget) -> Budget {
+/// more, each mapped once more by `m` than the last (with `scaling`), as a Transform effect copies
+/// an object. Each copy is an object of its own, so its gradients fit it (a placed gradient moves
+/// with it) rather than spanning every copy, and its strokes and patterns can differ from the
+/// others'. The copies stop where [`crate::distort::transform_within`]'s would, before they pass
+/// `budget`, and before one's strokes would scale past [`MAX_STROKE_SCALE`]. Returns what the
+/// copies cost, the original included.
+fn copy_leaf(leaf: &mut Node, path: &PathData, m: Affine, copies: usize, scaling: vectorcraft_doc::Scaling, budget: Budget) -> Budget {
     let mut made = Budget::of(path);
     let mut placements: Vec<Arc<Node>> = vec![Arc::new(leaf.clone())];
     let mut xf = Affine::IDENTITY;
@@ -438,8 +517,11 @@ fn copy_with_gradients(leaf: &mut Node, path: &PathData, m: Affine, copies: usiz
         if !budget.fits(made.plus(cost)) {
             break;
         }
+        if scaling.strokes && vectorcraft_doc::Scaling::factor(xf).is_some_and(|k| !(k.is_finite() && k <= MAX_STROKE_SCALE)) {
+            break;
+        }
         let mut copy = leaf.clone();
-        copy.transform(xf, vectorcraft_doc::Scaling::default());
+        copy.transform(xf, scaling);
         if !copy.geometric_bounds().is_some_and(crate::distort::within_reach) {
             break;
         }

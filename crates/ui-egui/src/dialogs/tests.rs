@@ -927,11 +927,17 @@ fn the_transform_effect_dialog_has_its_controls_previews_them_and_shows_them_aga
         "Reflect Y",
         "Reference Point",
         "Random",
+        "Transform Objects",
+        "Transform Patterns",
+        "Scale Strokes & Effects",
         "Preview",
     ] {
         assert!(text.lines().any(|l| l == s), "{s} in {text}");
     }
     assert!(app.session.in_interaction(), "the preview runs");
+    // The options start at the catalog defaults (#885).
+    let d = app.ui.dialog.as_ref().unwrap();
+    assert_eq!((d.bool("objects"), d.bool("patterns"), d.bool("strokes")), (true, false, false));
     let effect = |app: &VectorcraftApp| app.session.doc().unwrap().doc.node(vectorcraft_doc::NodeId(id)).unwrap().appearance.effects[0].clone();
     // The reference point and Random update the preview.
     let d = app.ui.dialog.as_mut().unwrap();
@@ -943,6 +949,10 @@ fn the_transform_effect_dialog_has_its_controls_previews_them_and_shows_them_aga
     app.ui.dialog.as_mut().unwrap().fields.insert("random".into(), json!(true));
     frame(&mut app, Default::default());
     assert_eq!(effect(&app).params["random"], json!(true));
+    // So does Scale Strokes & Effects.
+    app.ui.dialog.as_mut().unwrap().fields.insert("strokes".into(), json!(true));
+    frame(&mut app, Default::default());
+    assert_eq!(effect(&app).params["strokes"], json!(true));
     confirm(&mut app).unwrap();
     assert!(!app.session.in_interaction());
     assert_eq!(app.session.doc().unwrap().doc.node(vectorcraft_doc::NodeId(id)).unwrap().appearance.effects.len(), 1);
@@ -950,6 +960,7 @@ fn the_transform_effect_dialog_has_its_controls_previews_them_and_shows_them_aga
     app.run("effect.dialog", json!({"effect": "distort.transform", "index": 0})).unwrap();
     let d = app.ui.dialog.as_ref().unwrap();
     assert_eq!((d.f64("reference", 4.0), d.f64("copies", 0.0), d.f64("moveH", 0.0), d.bool("random")), (8.0, 3.0, 30.0, true));
+    assert_eq!((d.bool("objects"), d.bool("strokes")), (true, true));
     let text = crate::tests_labels::painted_text(&mut app, |app, ui| show(app, ui.ctx()));
     assert!(text.lines().any(|l| l == "Reference Point"), "{text}");
 }
