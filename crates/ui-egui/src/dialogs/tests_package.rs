@@ -6,6 +6,7 @@ use std::sync::Arc;
 
 use serde_json::json;
 use vectorcraft_engine::Session;
+use vectorcraft_engine::file_access::{Access, AutomationRoots};
 
 use super::*;
 use crate::background;
@@ -296,6 +297,33 @@ fn package_status_without_notes_has_no_extra_spaces() {
     assert!(!app.ui.status.ends_with(' '), "{}", app.ui.status);
     let detail = app.ui.dialog.as_ref().unwrap().str("detail");
     assert!(!detail.contains(" ."), "{detail}");
+}
+
+/// A file the writer refuses is named once in the status bar: a refusal from the automation-root
+/// check already names the path, and an error without it gets the path in front.
+#[test]
+fn a_refused_file_is_named_once() {
+    let dir = Folder::new("refused");
+    let mut app = saved(&dir);
+    app.session.execute("prefs.set", &json!({"values": {"backgroundExport": false}})).unwrap();
+    let (out, elsewhere, other) = (dir.path("out"), dir.path("elsewhere"), dir.path("other"));
+    std::fs::create_dir_all(&elsewhere).unwrap();
+    std::fs::create_dir_all(&other).unwrap();
+    let doc = std::path::Path::new(&out).join("card Folder").join("card.vectorcraft").to_string_lossy().into_owned();
+    let (elsewhere, other) = (std::path::Path::new(&elsewhere), std::path::Path::new(&other));
+    for write_roots in [vec![elsewhere], vec![elsewhere, other]] {
+        let roots = AutomationRoots::new(&[], &write_roots).unwrap().unwrap();
+        let refused = roots.check(&doc, Access::Write).unwrap_err();
+        assert!(refused.ends_with(&doc), "{refused}");
+        app.services.write = Some(Box::new(move |p: &str, _: &[u8]| roots.check(p, Access::Write)));
+        package_dialog(&mut app, &out);
+        assert_eq!(confirm(&mut app), Err(refused.clone()));
+        assert_eq!(app.ui.status, refused);
+    }
+    app.services.write = Some(Box::new(|_: &str, _: &[u8]| Err("Access is denied. (os error 5)".into())));
+    package_dialog(&mut app, &out);
+    assert!(confirm(&mut app).is_err());
+    assert_eq!(app.ui.status, format!("{doc}: Access is denied. (os error 5)"));
 }
 
 #[test]

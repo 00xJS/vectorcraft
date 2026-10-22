@@ -129,7 +129,9 @@ fn confirm(app: &mut VectorcraftApp, d: &Dialog) -> Result<Value, String> {
     let later = Rc::new(Cell::new(false));
     let in_background = later.clone();
     let work = move |write: Writer| {
-        let mut write = |path: &str, bytes: &[u8]| write(path, bytes).map_err(|e| EngineError::Other(format!("{path}: {e}")));
+        // A writer error that already names the file (an automation root's refusal) is kept as it is.
+        let mut write =
+            |path: &str, bytes: &[u8]| write(path, bytes).map_err(|e| EngineError::Other(if e.contains(path) { e } else { format!("{path}: {e}") }));
         package.write(&mut write).map_err(|e| e.to_string())
     };
     let r = background::run(app, enabled, label, None, work, move |app, r| packaged(app, r, web, in_background.get()))?;
