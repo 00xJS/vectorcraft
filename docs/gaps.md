@@ -199,6 +199,14 @@ from G14 and the budget run of G15: **~170–270 h** one agent, ~50–80 h wall 
   again with fewer points. Three Roughens of a rectangle in a 25 KB file needed tens of gigabytes of geometry, and two
   million anchors of them 141 million lines (7 GB, past vello's 2²⁷ lines a path); the file now opens in 0.4 s and
   about 450 MB (#3578). The budget is per path, not per document: many objects that each reach it still add up.
+- **Done (2026-10-23):** a brushed stroke makes at most 2 million anchors in total, the same figure as the
+  stacked-effects budget above. Pattern tiling and scatter capped each factor on its own (20,000 tiles a run, 4,000
+  subdivisions a segment, 20,000 copies a track), but those caps are per track and a path has as many tracks as it
+  has subpaths, so they multiplied instead of bounding: one track at its cap measures 20,000 pieces and 320,000
+  anchors, and sixteen subpaths measured exactly sixteen times that, 5.1 million anchors in 0.57 s. A piece is now
+  taken whole or not at all, and the walk that counts an art tile's anchors charges the whole budget for a tree it
+  cannot finish, so nesting buys no room (#3594). The budget is per brushed stroke, not per document: many strokes
+  that each reach it still add up, and a brush inside a symbol is bounded per stroke rather than per instantiation.
 - **Missing:** a corpus of real-world SVG/PDF/EPS files; more Affinity versions and platforms (51 pinned files
   now, including 28 original Affinity 3.2.3 feature probes; large interacting documents and complex typography
   missing); Windows, Linux and browser QA by hand; packaging polish (Homebrew cask #588, Flathub #554, update
