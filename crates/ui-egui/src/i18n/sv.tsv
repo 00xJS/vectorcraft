@@ -2342,6 +2342,7 @@
 	Proof Setup	Provtrycksinställningar
 	Properties	Egenskaper
 	Proportional Metrics	Proportionella mått
+	Character Direction	Teckenriktning
 	Digits	Siffror
 	Arabic	Arabiska
 	Hindi	Hindi
@@ -3905,7 +3906,7 @@ axis	Both	Båda
 @msg	give the path `id` and the width point `index`	ange banans `id` och breddpunktens `index`
 @msg	guides are locked	stödlinjerna är låsta
 @msg	handle must be in or out	handle måste vara in eller out
-@msg	image '{key}' has no pixels and was left out	bilden '{key}' har inga pixlar och utelämnades
+@msg	an image has no pixels and was left out	en bild utan pixlar utelämnades
 @msg	image data `{_1}` is missing	bilddata `{_1}` saknas
 @msg	image would be too large; lower the resolution	bilden skulle bli för stor; sänk upplösningen
 @msg	index must be a number or first, previous, next or last	index måste vara ett tal eller first, previous, next eller last
@@ -5333,6 +5334,12 @@ theme	Appearance	Utseende
 	Water Paper	Vått papper
 	Ruby…	Ruby…
 	Ruby	Ruby
+	Ease In	Långsam start
+	Ease Out	Långsamt slut
+	Ease In Out	Långsam start och slut
+	Ease Out In	Långsamt slut och start
+	Ramp:	Styrka:
+	Shift:	Förskjutning:
 	Fresco…	Fresk…
 	Fresco	Fresk
 

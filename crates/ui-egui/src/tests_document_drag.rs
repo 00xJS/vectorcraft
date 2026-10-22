@@ -7,6 +7,7 @@ use vectorcraft_geom::Point;
 
 use crate::{VectorcraftApp, canvas, chrome};
 
+/// Run a real tab-strip/canvas frame and return title bounds for pointer-driven gestures.
 fn frame(app: &mut VectorcraftApp, ctx: &egui::Context, time: f64, events: Vec<Event>) -> Vec<egui::Rect> {
     app.sync_views();
     let focused = events
@@ -46,10 +47,12 @@ fn frame(app: &mut VectorcraftApp, ctx: &egui::Context, time: f64, events: Vec<E
     titles
 }
 
+/// Build a primary-pointer event without keyboard modifiers.
 fn button(pos: Pos2, pressed: bool) -> Event {
     Event::PointerButton { pos, button: PointerButton::Primary, pressed, modifiers: Default::default() }
 }
 
+/// Verify dwell activation, editable placement, source and clipboard preservation, and target Undo/Redo.
 #[test]
 fn dragging_artwork_over_a_tab_switches_then_copies_on_drop() {
     let mut app = VectorcraftApp::new(Session::new(), Default::default());
@@ -100,10 +103,12 @@ fn dragging_artwork_over_a_tab_switches_then_copies_on_drop() {
     assert_eq!(app.session.active().unwrap().history.undo.len(), dest_undo + 1);
 }
 
+/// Begin a Selection move in the first of three documents with no keyboard modifiers.
 fn drag_fixture() -> (VectorcraftApp, egui::Context, Pos2, Vec<egui::Rect>) {
     drag_fixture_modifiers(Default::default())
 }
 
+/// Create three document tabs and start dragging source artwork with the supplied modifiers.
 fn drag_fixture_modifiers(modifiers: egui::Modifiers) -> (VectorcraftApp, egui::Context, Pos2, Vec<egui::Rect>) {
     let mut app = VectorcraftApp::new(Session::new(), Default::default());
     app.run("file.new", json!({"width":400,"height":300,"name":"Source"})).unwrap();
@@ -134,6 +139,7 @@ fn drag_fixture_modifiers(modifiers: egui::Modifiers) -> (VectorcraftApp, egui::
     (app, ctx, grab, tabs)
 }
 
+/// Verify that leaving a tab restarts its dwell timer and hovering its close button never activates it.
 #[test]
 fn tab_hover_delay_restarts_after_leaving_and_close_button_does_not_activate() {
     let (mut app, ctx, grab, tabs) = drag_fixture();
@@ -155,6 +161,7 @@ fn tab_hover_delay_restarts_after_leaving_and_close_button_does_not_activate() {
     assert_eq!(app.session.active_index(), Some(1));
 }
 
+/// Verify Escape and release outside the canvas preserve both documents and their undo histories.
 #[test]
 fn escape_or_release_over_tab_cancels_the_transfer_without_edits() {
     for escape in [false, true] {
@@ -186,6 +193,7 @@ fn escape_or_release_over_tab_cancels_the_transfer_without_edits() {
     }
 }
 
+/// Verify destination view transforms preserve the original artwork grab point during placement.
 #[test]
 fn tab_drop_preserves_hotspot_across_zoom_and_rotation() {
     let (mut app, ctx, _, tabs) = drag_fixture();
@@ -205,6 +213,7 @@ fn tab_drop_preserves_hotspot_across_zoom_and_rotation() {
     assert!((bounds.x0 - 150.0).abs() < 0.001 && (bounds.y0 - 150.0).abs() < 0.001, "{bounds:?}");
 }
 
+/// Verify returning to the source tab moves its original object instead of inserting a duplicate.
 #[test]
 fn hovering_back_to_source_resumes_move_instead_of_copying() {
     let (mut app, ctx, _, tabs) = drag_fixture();
@@ -226,6 +235,7 @@ fn hovering_back_to_source_resumes_move_instead_of_copying() {
     assert!((bounds.x0 - 150.0).abs() < 0.001 && (bounds.y0 - 150.0).abs() < 0.001, "{bounds:?}");
 }
 
+/// Verify Alt-drag transfers restored originals across tabs without retaining preview duplicates.
 #[test]
 fn alt_drag_can_continue_across_multiple_tabs_without_copying_the_source_preview() {
     let (mut app, ctx, _, tabs) = drag_fixture_modifiers(egui::Modifiers::ALT);
@@ -246,6 +256,7 @@ fn alt_drag_can_continue_across_multiple_tabs_without_copying_the_source_preview
     assert!(app.session.documents()[1].history.undo.is_empty());
 }
 
+/// Verify closing the originating document cancels a transfer before its eventual mouse release.
 #[test]
 fn closing_the_source_during_a_transfer_cancels_it() {
     let (mut app, ctx, _, tabs) = drag_fixture();
@@ -261,6 +272,7 @@ fn closing_the_source_during_a_transfer_cancels_it() {
     assert!(app.session.active().unwrap().history.undo.is_empty());
 }
 
+/// Verify document changes, reused IDs, focus loss and touch cancellation cannot release stale artwork.
 #[test]
 fn source_edits_target_closure_switches_and_focus_loss_cancel_stale_transfers() {
     for change in ["source", "close target", "switch target", "focus", "touch cancel", "two fingers"] {
@@ -312,6 +324,7 @@ fn source_edits_target_closure_switches_and_focus_loss_cancel_stale_transfers() 
     }
 }
 
+/// Verify tab-strip relayout under a stationary pointer cannot trigger another document switch.
 #[test]
 fn scrolling_tabs_under_a_stationary_drag_does_not_cascade_to_other_documents() {
     let mut app = VectorcraftApp::new(Session::new(), Default::default());

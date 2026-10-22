@@ -29,16 +29,20 @@ struct Hover {
     since: f64,
 }
 
+/// Key for the source document and original canvas grab point.
 fn origin_id() -> Id {
     Id::new("document-drag-origin")
 }
+/// Key for the tab identity and dwell start time of the current hover.
 fn hover_id() -> Id {
     Id::new("document-drag-hover")
 }
+/// Key for the pointer position latched after tab activation to prevent cascading switches.
 fn activated_at_id() -> Id {
     Id::new("document-drag-activated-at")
 }
 
+/// Record the Selection drag source and grab point, clearing any previous tab-hover timer.
 pub(crate) fn begin(app: &VectorcraftApp, ctx: &Context, grab: Point) {
     ctx.data_mut(|d| {
         d.remove::<Origin>(origin_id());
@@ -155,12 +159,14 @@ pub(crate) fn hover_tab(app: &mut VectorcraftApp, resp: &Response, index: usize,
     true
 }
 
+/// Reset the dwell timer when no eligible inactive tab is under the artwork.
 pub(crate) fn finish_tabs(ctx: &Context, hovering: bool) {
     if !hovering {
         ctx.data_mut(|d| d.remove::<Hover>(hover_id()));
     }
 }
 
+/// Release artwork into the active canvas; returning to the source resumes Move or Alt-copy.
 pub(crate) fn drop_on_canvas(app: &mut VectorcraftApp, resp: &Response, xf: &canvas::Xf) {
     let Some(payload) = egui::DragAndDrop::payload::<Artwork>(&resp.ctx) else {
         return;

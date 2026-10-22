@@ -83,16 +83,19 @@ fn renamed(v: &Value) -> Vec<(String, String, String)> {
 
 // ---------- M4.22: resources ----------
 
+/// Verify ordinary paste retains image, symbol and pattern resources and their rendered appearance.
 #[test]
 fn an_image_symbol_and_pattern_rect_pasted_into_a_new_document_render_the_same() {
     resource_transfer(false);
 }
 
+/// Verify a translated artwork drop preserves editable resources, pattern phase, opacity and clipboard contents.
 #[test]
 fn dropped_artwork_preserves_editable_images_symbols_patterns_and_clipboard() {
     resource_transfer(true);
 }
 
+/// Exercise paste or tab-drop resource transfer and compare source and destination rendering.
 fn resource_transfer(drag: bool) {
     let mut s = session();
     // Pattern "Dots" painting a rectangle.
@@ -675,6 +678,7 @@ fn paste_remembers_layers_survives_save_and_old_files_load_without_it() {
     assert!(!vectorcraft_format::load(v.to_string().as_bytes()).unwrap().paste_remembers_layers);
 }
 
+/// Verify document-scoped object IDs, grab-point placement and one destination Undo/Redo step.
 #[test]
 fn artwork_drop_uses_source_ids_hotspot_and_one_target_undo_step() {
     let mut s = session();
@@ -701,6 +705,7 @@ fn artwork_drop_uses_source_ids_hotspot_and_one_target_undo_step() {
     assert_eq!(s.doc().unwrap().selection.objects, ids);
 }
 
+/// Verify malformed, oversized, stale and overflowing drop requests leave document and clipboard state intact.
 #[test]
 fn invalid_artwork_drop_is_atomic() {
     let mut s = session();
@@ -740,6 +745,7 @@ fn invalid_artwork_drop_is_atomic() {
     assert_eq!(s.doc().unwrap().doc, target.doc);
 }
 
+/// Verify refusing a locked insertion context preserves the target document and its undo history.
 #[test]
 fn artwork_drop_into_a_locked_destination_is_atomic() {
     let mut s = session();
@@ -755,6 +761,7 @@ fn artwork_drop_into_a_locked_destination_is_atomic() {
     assert_eq!(s.doc().unwrap().history.undo.len(), target.history.undo.len());
 }
 
+/// Verify tab drops use the editable current layer despite Paste Remembers Layers and source-layer name collisions.
 #[test]
 fn artwork_drop_uses_the_current_layer_even_when_paste_remembers_hidden_or_locked_source_layers() {
     for hidden in [true, false] {

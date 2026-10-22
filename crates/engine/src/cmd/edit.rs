@@ -11,6 +11,7 @@ use super::clipboard::SwatchChoices;
 use super::*;
 use crate::{Clipboard, EngineError, inspect};
 
+/// Register editing commands, including document-to-document artwork drops and their parameter contracts.
 pub fn specs() -> Vec<CommandSpec> {
     vec![
         cmd!(
@@ -627,6 +628,7 @@ enum PasteMode {
 }
 
 impl PasteMode {
+    /// Return the user-visible action label for this insertion mode.
     fn label(self) -> &'static str {
         match self {
             PasteMode::Front => "Paste in Front",
@@ -668,6 +670,7 @@ fn onto_artboard(doc: &Document, p: &Value, clip: &Clipboard) -> Affine {
     }
 }
 
+/// Insert clipboard resources atomically in the active editable context using the requested placement mode.
 fn paste_clip(s: &mut Session, p: &Value, mode: PasteMode, clip: &Clipboard, choices: &SwatchChoices) -> Result<Value> {
     let off = s.prefs.paste_offset;
     let st = s.doc()?;
