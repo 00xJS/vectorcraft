@@ -2970,3 +2970,77 @@ mod button_tests {
         out.textures_delta.clear();
     }
 }
+
+/// How the shared widgets look once laid out and painted: shapes of whole frames, measured.
+#[cfg(test)]
+pub(crate) mod look_tests {
+    use super::*;
+
+    /// A context with the fonts and the theme in `brightness`, in English.
+    pub(crate) fn themed(brightness: theme::Brightness) -> egui::Context {
+        crate::i18n::set_current(crate::i18n::Lang::EN);
+        let ctx = egui::Context::default();
+        theme::install_fonts(&ctx);
+        theme::apply(&ctx, brightness);
+        ctx
+    }
+
+    /// One frame at `time` seconds of `add` in a 600 × 400 window with `events` → the shapes it
+    /// drew, `Shape::Vec`s flattened.
+    pub(crate) fn frame(ctx: &egui::Context, time: f64, events: Vec<egui::Event>, add: impl FnMut(&mut Ui)) -> Vec<egui::Shape> {
+        fn flat(s: egui::Shape, out: &mut Vec<egui::Shape>) {
+            match s {
+                egui::Shape::Vec(v) => v.into_iter().for_each(|s| flat(s, out)),
+                s => out.push(s),
+            }
+        }
+        let raw =
+            egui::RawInput { time: Some(time), screen_rect: Some(Rect::from_min_size(Pos2::ZERO, vec2(600.0, 400.0))), events, ..Default::default() };
+        let mut out = ctx.run_ui(raw, add);
+        out.textures_delta.clear();
+        let mut shapes = vec![];
+        out.shapes.into_iter().for_each(|c| flat(c.shape, &mut shapes));
+        shapes
+    }
+
+    // Regression test for #808: the scroll bar of the toolbar and the dock's icon column widened to
+    // 10 points while it was dragged or the pointer was on it, covering the group labels and the
+    // right edge of the tool icons. It stays a slim line.
+    #[test]
+    fn the_strip_scroll_bar_stays_a_slim_line_while_the_pointer_is_on_it() {
+        let ctx = themed(Default::default());
+        let area = std::cell::Cell::new(Rect::NOTHING);
+        let mut add = |ui: &mut Ui| {
+            area.set(
+                ui.allocate_ui(vec2(80.0, 200.0), |ui| {
+                    strip_scroll(ui, "strip", |ui| {
+                        for i in 0..40 {
+                            ui.label(format!("Tool {i}"));
+                        }
+                    });
+                })
+                .response
+                .rect,
+            );
+        };
+        frame(&ctx, 0.0, vec![], &mut add);
+        let area = area.get();
+        assert!(area.height() >= 199.0, "the strip fills the height it was given: {area:?}");
+        // The pointer comes onto the bar's edge and stays there while the bar settles.
+        let on_the_bar = egui::Event::PointerMoved(pos2(area.right() - 1.0, area.center().y));
+        let mut widest = 0.0_f32;
+        for i in 1..=15 {
+            let shapes = frame(&ctx, f64::from(i) * 0.1, if i == 1 { vec![on_the_bar.clone()] } else { vec![] }, &mut add);
+            for s in shapes {
+                // The bar's track and handle are the filled rectangles.
+                if let egui::Shape::Rect(r) = s
+                    && r.fill != Color32::TRANSPARENT
+                {
+                    widest = widest.max(r.rect.width());
+                }
+            }
+        }
+        assert!(widest > 0.0, "the scroll bar is drawn");
+        assert!(widest <= 4.5, "the scroll bar is {widest} points wide");
+    }
+}
