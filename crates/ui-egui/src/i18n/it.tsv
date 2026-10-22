@@ -1096,6 +1096,7 @@
 	Keep selected	Mantieni selezionato
 	Merge only with selection	Unisci solo con la selezione
 	Consider Open Filled Paths as Closed	Considera chiusi i tracciati aperti con riempimento
+	In Merge Mode, Clicking Stroke Splits the Path	In modalità fusione, un clic sulla traccia divide il tracciato
 	Pick Color From:	Prendi il colore da:
 	Artwork	Grafica
 	Cursor Swatch Preview	Anteprima dei campioni accanto al cursore
@@ -1103,6 +1104,7 @@
 	Freeform	Libera
 	Straight Line	Linea retta
 	Highlight:	Evidenziazione:
+	Stroke When Editable	Traccia se modificabile
 	Fill Color	Colore riempimento
 	Fill New Type Objects With Placeholder Text	Riempi i nuovi oggetti di testo con testo segnaposto
 	Fill Rule	Regola di riempimento

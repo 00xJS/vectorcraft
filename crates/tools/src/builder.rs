@@ -16,7 +16,7 @@ use std::sync::Arc;
 use serde_json::{Value, json};
 use vectorcraft_color::{Paint, Swatch};
 use vectorcraft_doc::{Document, Node, NodeId, NodeKind};
-use vectorcraft_geom::{BezPath, FillRule, PathData, Point, Rect, Shape as _};
+use vectorcraft_geom::{BezPath, FillRule, PathData, Point, Rect, Shape as _, SubPath};
 use vectorcraft_pathops as po;
 
 use crate::{Action, Cursor, Mods, Overlay, PointerEvent, PointerKind, Tool, ToolContext, ToolKey, json_ids};
@@ -156,6 +156,30 @@ pub fn node_outline(n: &Node) -> Option<(PathData, FillRule)> {
     }
 }
 
+/// How far (pt) a piece of the planar map may lie from `outline`, the outline it follows, to be
+/// matched to it or cut out of it: a ten-thousandth of the outline's larger side, at least 0.05.
+/// The map's pieces follow the outlines to within a few hundredths of a point.
+pub fn outline_snap(outline: &PathData) -> f64 {
+    outline.bounds().map_or(0.05, |b| (b.width().max(b.height()) / 2000.0).max(0.25) * 0.2)
+}
+
+/// The outlines of `leaves` as they are drawn ([`node_outline`]), in their order, for
+/// [`BuilderMap::stroke_at`]. A leaf without an outline, and one inside a Live Paint group or a
+/// Shaper Group (which make their own paths), gets an empty outline, so no stroke of it splits.
+pub fn drawn_outlines(doc: &Document, leaves: &[&Node]) -> Vec<PathData> {
+    let in_live_group = |id: NodeId| {
+        let mut up = doc.parent_of(id);
+        while let Some(p) = up {
+            if doc.node(p).is_some_and(|n| is_live_paint(n) || n.extras().shaper.is_some()) {
+                return true;
+            }
+            up = doc.parent_of(p);
+        }
+        false
+    };
+    leaves.iter().map(|l| if in_live_group(l.id) { None } else { node_outline(l) }.map_or_else(PathData::default, |o| o.0)).collect()
+}
+
 /// Pathfinder shapes for the given roots (back → front by the order given), keyed by leaf index,
 /// with the leaves they came from.
 pub fn shapes_for<'a>(doc: &'a Document, roots: &[NodeId]) -> (Vec<po::Shape>, Vec<&'a Node>) {
@@ -289,6 +313,40 @@ impl BuilderMap {
             (None, e) => e.map(|e| Hit::Edge(e.1)),
         });
         piece.or_else(|| self.region_at(p).map(Hit::Region))
+    }
+
+    /// The stroke a click at `p` splits with In Merge Mode, Clicking Stroke Splits the Path: the
+    /// line piece or edge nearest `p` within `tol` (as [`BuilderMap::hit`] finds it), from the
+    /// anchor or crossing point before `p` to the one after it on the path it lies on. `outlines`
+    /// are the inputs' outlines as they are drawn (a filled open path without the edge that closes
+    /// it in the map). Returns the input's index and the run; None when no piece is that close,
+    /// when the run is not on the outline as drawn, when it would be a whole closed subpath, when
+    /// it is too short to cut out (see [`po::cut_out`]), or when it is all of the path (a lone
+    /// line), which leaves nothing to split off.
+    pub fn stroke_at(&self, outlines: &[PathData], p: Point, tol: f64) -> Option<(usize, SubPath)> {
+        use kurbo::ParamCurve as _;
+        let piece = match self.hit(p, Some(tol))? {
+            Hit::Line(i) => self.lines.get(i),
+            Hit::Edge(i) => self.edges.get(i),
+            Hit::Region(_) => None,
+        }?;
+        let i = piece.0.key as usize;
+        let drawn = outlines.get(i)?;
+        let stops: Vec<Point> = drawn.anchors().map(|(.., a)| a.p).collect();
+        let snap = outline_snap(drawn);
+        let run = po::run_around(piece.0.path.subpaths.first()?, &stops, p, snap)?;
+        let n = run.segment_count();
+        if n == 0 {
+            return None;
+        }
+        let mid = run.segment(n / 2).eval(0.5);
+        drawn.nearest(mid).filter(|n| n.4 <= snap)?;
+        // A run that cannot be cut out, or that is all of the path (such as a lone line), leaves
+        // nothing to split off.
+        if !po::cut_out(drawn, &run, false, snap).is_some_and(|rest| !rest.is_empty()) {
+            return None;
+        }
+        Some((i, run))
     }
 
     /// The regions just either side of the middle of `piece` (None: outside every region).
@@ -449,6 +507,8 @@ struct RegionCache {
     edges: bool,
     /// Gap Detection distance; changing tool options invalidates the cache.
     gap: f64,
+    /// The outlines of the Shape Builder's inputs as they are drawn (see [`BuilderMap::stroke_at`]).
+    outlines: Vec<PathData>,
 }
 
 impl RegionCache {
@@ -466,7 +526,9 @@ impl RegionCache {
                 let regions = if shapes.is_empty() { vec![] } else { faces_of(po::live_paint(&shapes).0) };
                 BuilderMap { regions, ..Default::default() }
             } else {
-                BuilderMap::with_gap(cx.doc, &roots, edges, open_filled_as_closed, self.gap).0
+                let (map, leaves) = BuilderMap::with_gap(cx.doc, &roots, edges, open_filled_as_closed, self.gap);
+                self.outlines = drawn_outlines(cx.doc, &leaves);
+                map
             };
             self.key = Some(key);
             self.edges = edges;
@@ -512,7 +574,20 @@ pub struct ShapeBuilderOptions {
     pub gap_detection: bool,
     /// Gap Length in points (at most [`SHAPE_BUILDER_MAX_GAP`]).
     pub gap_length: f64,
+    /// In Merge Mode, Clicking Stroke Splits the Path (`clickStrokeSplitsPath`, off): in merge mode,
+    /// a click on a stroke splits its path into the run under the pointer
+    /// ([`BuilderMap::stroke_at`]) and the rest, and the pointer shows scissors over such a stroke.
+    pub click_stroke_splits: bool,
+    /// Highlight Stroke When Editable (`highlightStroke`, on): with `click_stroke_splits`, the run
+    /// of stroke a click would split is drawn in `stroke_color` while the pointer is over it.
+    pub highlight_stroke: bool,
+    /// The color of that highlight (`highlightColor`: `#rrggbb` or a layer color's name; the layer
+    /// color Red by default).
+    pub stroke_color: [u8; 3],
 }
+
+/// The color Highlight Stroke When Editable draws in by default: the layer color Red.
+pub const STROKE_HIGHLIGHT: [u8; 3] = [0xff, 0x4f, 0x4f];
 
 impl Default for ShapeBuilderOptions {
     fn default() -> Self {
@@ -524,6 +599,9 @@ impl Default for ShapeBuilderOptions {
             highlight_fill: true,
             gap_detection: false,
             gap_length: GAP_LENGTHS[0],
+            click_stroke_splits: false,
+            highlight_stroke: true,
+            stroke_color: STROKE_HIGHLIGHT,
         }
     }
 }
@@ -578,14 +656,34 @@ pub struct ShapeBuilderTool {
     /// The index in [`color_swatches`] of the swatch the arrow keys picked last.
     picked: Option<usize>,
     opts: ShapeBuilderOptions,
+    /// With In Merge Mode, Clicking Stroke Splits the Path: the run of stroke under the pointer,
+    /// which a click splits off.
+    stroke: Option<SubPath>,
+    /// The pointer went more than [`CLICK_TOL_PX`] from the press during the drag, so the gesture
+    /// is not a click.
+    far: bool,
 }
 
 /// How close (screen px) the pointer must come to a line piece or an edge to delete it.
 const LINE_TOL_PX: f64 = 4.0;
 
+/// How far (screen px) the pointer may move between press and release for the gesture to be a
+/// click, which with In Merge Mode, Clicking Stroke Splits the Path splits the stroke at the press.
+const CLICK_TOL_PX: f64 = 3.0;
+
 impl ShapeBuilderTool {
     fn gap(&self) -> f64 {
         if self.opts.gap_detection { self.opts.gap_length } else { 0.0 }
+    }
+
+    /// With In Merge Mode, Clicking Stroke Splits the Path and not in erase mode (`alt`): the run of
+    /// stroke a click at `p` splits off ([`BuilderMap::stroke_at`]).
+    fn stroke_at(&mut self, cx: &ToolContext, p: Point, alt: bool) -> Option<SubPath> {
+        if alt || !self.opts.click_stroke_splits {
+            return None;
+        }
+        self.cache.get(cx, true, self.opts.open_filled_as_closed);
+        self.cache.map.stroke_at(&self.cache.outlines, p, cx.tol(LINE_TOL_PX)).map(|(_, run)| run)
     }
 
     fn line_tol(cx: &ToolContext, alt: bool) -> Option<f64> {
@@ -648,7 +746,12 @@ impl Tool for ShapeBuilderTool {
             PointerKind::Move => {
                 self.alt = ev.mods.alt;
                 self.at = Some(p);
-                self.hover = self.cache.get(cx, self.alt, self.opts.open_filled_as_closed).hit(p, Self::line_tol(cx, self.alt));
+                // Over a stroke a click would split, the tool highlights the stroke and not the region.
+                self.stroke = self.stroke_at(cx, p, self.alt);
+                self.hover = match self.stroke {
+                    Some(_) => None,
+                    None => self.cache.get(cx, self.alt, self.opts.open_filled_as_closed).hit(p, Self::line_tol(cx, self.alt)),
+                };
                 vec![]
             }
             PointerKind::Down => {
@@ -658,12 +761,16 @@ impl Tool for ShapeBuilderTool {
                 self.dragging = true;
                 self.alt = ev.mods.alt;
                 self.points = vec![p];
+                self.far = false;
                 self.touched = Touched::default();
                 self.touch(cx, None, p);
                 vec![]
             }
             PointerKind::Drag if self.dragging => {
                 self.at = Some(p);
+                if self.points.first().is_some_and(|s| s.distance(p) > cx.tol(CLICK_TOL_PX)) {
+                    self.far = true;
+                }
                 if self.opts.straight_line {
                     self.straight_to(cx, p);
                     return vec![];
@@ -685,17 +792,27 @@ impl Tool for ShapeBuilderTool {
                     self.points.push(p);
                 }
                 let points = std::mem::take(&mut self.points);
-                if std::mem::take(&mut self.touched).is_empty() {
+                // The mode the drag started in, which its highlight showed.
+                let erase = self.alt;
+                // With In Merge Mode, Clicking Stroke Splits the Path, a click on a stroke splits it
+                // where the press was.
+                let press = points.first().copied().filter(|s| !self.far && s.distance(p) <= cx.tol(CLICK_TOL_PX));
+                let split = press.filter(|q| self.stroke_at(cx, *q, erase).is_some());
+                if std::mem::take(&mut self.touched).is_empty() && split.is_none() {
                     return vec![];
                 }
                 self.cache.key = None;
+                self.stroke = None;
                 let roots = sorted_roots(cx.doc, &cx.selection.objects);
+                let points = split.map_or(points, |q| vec![q]);
                 let pts: Vec<Value> = points.iter().map(|q| json!([q.x, q.y])).collect();
-                // The mode the drag started in, which its highlight showed.
-                let erase = self.alt;
                 let mut params = json!({ "ids": json_ids(&roots), "points": pts, "erase": erase, "gap": self.gap() });
                 if let Some(t) = Self::line_tol(cx, erase) {
                     params["tolerance"] = json!(t);
+                }
+                if split.is_some() {
+                    params["splitStroke"] = json!(true);
+                    params["tolerance"] = json!(cx.tol(LINE_TOL_PX));
                 }
                 if !self.opts.open_filled_as_closed {
                     params["openFilledAsClosed"] = json!(false);
@@ -749,13 +866,26 @@ impl Tool for ShapeBuilderTool {
         if self.opts.swatches && self.opts.cursor_swatch_preview && !self.dragging {
             out.extend(self.swatch_chips(cx));
         }
+        // Highlight Stroke When Editable draws the stroke a click would split.
+        if let Some(run) = self.stroke.as_ref().filter(|_| self.opts.highlight_stroke && !self.dragging) {
+            let mut path = BezPath::new();
+            run.to_bezpath_into(&mut path);
+            out.push(Overlay::Path { path, color: self.opts.stroke_color, width: 3.0, dashed: false });
+        }
         out
     }
 
     fn cursor(&self, _cx: &ToolContext, _p: Point, m: Mods) -> Cursor {
         // A drag keeps the mode it started in; hovering follows the key.
         let erase = if self.dragging { self.alt } else { m.alt };
-        if erase { Cursor::ShapeBuilderErase } else { Cursor::ShapeBuilder }
+        if erase {
+            Cursor::ShapeBuilderErase
+        } else if self.stroke.is_some() && !self.dragging {
+            // Over a stroke a click splits.
+            Cursor::Scissors
+        } else {
+            Cursor::ShapeBuilder
+        }
     }
 
     fn busy(&self) -> bool {
@@ -783,6 +913,7 @@ impl Tool for ShapeBuilderTool {
 
     fn options(&self) -> Value {
         let o = &self.opts;
+        let [r, g, b] = o.stroke_color;
         json!({
             "openFilledAsClosed": o.open_filled_as_closed,
             "pickColorFrom": if o.swatches { "swatches" } else { "artwork" },
@@ -791,6 +922,9 @@ impl Tool for ShapeBuilderTool {
             "highlightFill": o.highlight_fill,
             "gapDetection": o.gap_detection,
             "gapLength": o.gap_length,
+            "clickStrokeSplitsPath": o.click_stroke_splits,
+            "highlightStroke": o.highlight_stroke,
+            "highlightColor": format!("#{r:02x}{g:02x}{b:02x}"),
         })
     }
 
@@ -808,8 +942,12 @@ impl Tool for ShapeBuilderTool {
                     o.gap_length = n.clamp(0.0, SHAPE_BUILDER_MAX_GAP);
                 }
             }
+            "clickStrokeSplitsPath" => o.click_stroke_splits = v.as_bool().unwrap_or(o.click_stroke_splits),
+            "highlightStroke" => o.highlight_stroke = v.as_bool().unwrap_or(o.highlight_stroke),
+            "highlightColor" => o.stroke_color = lp_color(v).unwrap_or(o.stroke_color),
             _ => {}
         }
+        self.stroke = None;
         self.cache.key = None;
         self.cache.gap = self.gap();
     }
@@ -1216,6 +1354,65 @@ mod tests {
         assert!(t.cache.map.erased_edges(&t.touched).is_empty(), "which goes with the regions");
         // Two regions (mesh + outline each) and the drag's trail, all red.
         assert_eq!(colors(&t.overlays(&cx)), [HIGHLIGHT_RED; 5]);
+    }
+
+    #[test]
+    fn shape_builder_stroke_options_round_trip_and_pick_the_side_under_the_pointer() {
+        let (d, s) = corner_rects();
+        let p = paint();
+        let cx = cx(&d, &s, &p);
+        let mut t = ShapeBuilderTool::default();
+        let o = t.options();
+        assert_eq!((&o["clickStrokeSplitsPath"], &o["highlightStroke"], &o["highlightColor"]), (&json!(false), &json!(true), &json!("#ff4f4f")));
+        // With the option off, the pointer 1 pt outside A's left side highlights nothing.
+        t.pointer(&cx, &ev(PointerKind::Move, -1.0, 25.0));
+        assert!(t.overlays(&cx).is_empty());
+        assert_eq!(t.cursor(&cx, Point::new(-1.0, 25.0), Mods::default()), Cursor::ShapeBuilder);
+        t.set_option("clickStrokeSplitsPath", &json!(true));
+        t.set_option("highlightColor", &json!("#00ff00"));
+        // A value that is not a color or not a switch is ignored.
+        t.set_option("highlightColor", &json!("nope"));
+        t.set_option("highlightStroke", &json!("off"));
+        let o = t.options();
+        assert_eq!((&o["clickStrokeSplitsPath"], &o["highlightStroke"], &o["highlightColor"]), (&json!(true), &json!(true), &json!("#00ff00")));
+        // On, the tool draws A's left side from corner to corner in the highlight color and shows the scissors.
+        t.pointer(&cx, &ev(PointerKind::Move, -1.0, 25.0));
+        let ov = t.overlays(&cx);
+        let [Overlay::Path { path, color: [0, 0xff, 0], width: 3.0, .. }] = ov.as_slice() else { panic!("{ov:?}") };
+        assert_eq!(path.bounding_box(), Rect::new(0.0, 0.0, 0.0, 100.0));
+        assert_eq!(t.cursor(&cx, Point::new(-1.0, 25.0), Mods::default()), Cursor::Scissors);
+        // With Alt the tool is in erase mode, which deletes edges and does not split them.
+        let alt = Mods { alt: true, ..Default::default() };
+        t.pointer(&cx, &ev(PointerKind::Move, -1.0, 25.0).with_mods(alt));
+        assert_eq!(t.cursor(&cx, Point::new(-1.0, 25.0), alt), Cursor::ShapeBuilderErase);
+        assert!(t.stroke.is_none());
+        // A click splits; the command gets the point, the switch and the tolerance.
+        t.pointer(&cx, &ev(PointerKind::Down, -1.0, 25.0));
+        let acts = t.pointer(&cx, &ev(PointerKind::Up, -1.0, 25.0));
+        let [Action::Exec(id, v)] = acts.as_slice() else { panic!("{acts:?}") };
+        assert_eq!((id.as_str(), &v["splitStroke"], &v["erase"], &v["tolerance"]), ("shapeBuilder.merge", &json!(true), &json!(false), &json!(4.0)));
+        // A release up to 3 pixels from the press is still a click, which splits where the press was.
+        t.pointer(&cx, &ev(PointerKind::Down, -1.0, 25.0));
+        t.pointer(&cx, &ev(PointerKind::Drag, -1.5, 26.0));
+        let acts = t.pointer(&cx, &ev(PointerKind::Up, 0.5, 27.0));
+        let [Action::Exec(_, v)] = acts.as_slice() else { panic!("{acts:?}") };
+        assert_eq!((&v["splitStroke"], &v["points"]), (&json!(true), &json!([[-1.0, 25.0]])));
+        // A release farther away is a drag, which splits nothing.
+        t.pointer(&cx, &ev(PointerKind::Down, -1.0, 25.0));
+        assert!(t.pointer(&cx, &ev(PointerKind::Up, -1.0, 30.0)).is_empty());
+        // So is a Straight Line drag that goes away and ends back near the press.
+        t.set_option("selection", &json!("straightLine"));
+        t.pointer(&cx, &ev(PointerKind::Down, -1.0, 25.0));
+        t.pointer(&cx, &ev(PointerKind::Drag, 30.0, 25.0));
+        let acts = t.pointer(&cx, &ev(PointerKind::Up, -0.5, 25.5));
+        assert!(!acts.iter().any(|a| matches!(a, Action::Exec(_, v) if v.get("splitStroke").is_some())), "{acts:?}");
+        t.set_option("selection", &json!("freeform"));
+        // A drag merges as before and sends no switch.
+        t.pointer(&cx, &ev(PointerKind::Down, 25.0, 25.0));
+        t.pointer(&cx, &ev(PointerKind::Drag, 75.0, 75.0));
+        let acts = t.pointer(&cx, &ev(PointerKind::Up, 75.0, 75.0));
+        let [Action::Exec(_, v)] = acts.as_slice() else { panic!("{acts:?}") };
+        assert!(v.get("splitStroke").is_none(), "{v}");
     }
 
     #[test]

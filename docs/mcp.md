@@ -1053,8 +1053,8 @@ and `type.fractionalWidths`; `remove` and `overhang` in `type.ruby`; `expandInst
 `swatch.delete`; `fromArtwork`, `toGlobal` and `includeTints` in `swatch.newGroup`; `global` and `selection` in
 `swatch.addUsedColors`; `visible` in `appearance.setItem`; `copy` in `appearance.transfer`; `reverse` and `append` in
 `appearance.copyFrom`; `reverse` and `stroke` in `paint.editGradient`; `stroke` in `paint.setGradientGeom` and in
-`paint.freeform.addPoint`, `setPoint`, `deletePoint`, `addLine`, `splitLine` and `get`; `erase` and
-`openFilledAsClosed` in `shapeBuilder.merge`; `openFilledAsClosed` in `shapeBuilder.regions`; `closeGaps` in `livePaint.gapOptions`; and
+`paint.freeform.addPoint`, `setPoint`, `deletePoint`, `addLine`, `splitLine` and `get`; `erase`,
+`openFilledAsClosed` and `splitStroke` in `shapeBuilder.merge`; `openFilledAsClosed` in `shapeBuilder.regions`; `closeGaps` in `livePaint.gapOptions`; and
 `enhanced` in `imageTrace.make` and `imageTrace.makeAndExpand`. A null is read as a key left out.
 
 These commands refuse a string or another value that is not a number with `` `radius` must be a number, not "2" ``,
@@ -4568,12 +4568,24 @@ blending mode of the front-most selected object under the drag's first point, el
 else of the front-most selected object; `swatches`: the current fill, and the Left and Right arrow keys step the
 current fill through the document's color swatches), `cursorSwatchPreview` (off; with `swatches`, chips above the
 pointer show the current fill and the swatches before and after it), `selection` (`freeform`, the default, or
-`straightLine`: a drag touches what the line from its first point to the pointer crosses) and `highlightFill` (on by
-default; when it is off, merge mode shades no regions). The tool sends `openFilledAsClosed` and `pickColorFrom` with
-`shapeBuilder.merge`, which takes both as params, and `shapeBuilder.regions` takes `openFilledAsClosed`.
+`straightLine`: a drag touches what the line from its first point to the pointer crosses), `highlightFill` (on by
+default; when it is off, merge mode shades no regions), `gapDetection` (off) with `gapLength` (pt, 0 to 72; 3), `clickStrokeSplitsPath` (In Merge Mode,
+Clicking Stroke Splits the Path; off), `highlightStroke` (Highlight Stroke When Editable; on) and `highlightColor`
+(`#rrggbb` or a layer color's name; `#ff4f4f`, the layer color Red). With `clickStrokeSplitsPath` on, in merge mode,
+the pointer shows scissors within 4 screen pixels of a stroke, `highlightStroke` draws the run of stroke under it in
+`highlightColor`, and a click splits that run off its path: the run goes from the anchor or crossing point before the
+pointer to the one after it, the path keeps the rest of it, and a copy of the path with the run goes directly above it.
+A lone rectangle's side is such a run. A lone line is a run that is all of its path, so the pointer shows no scissors
+over it and a click on it does not split it. A release up to 3 screen pixels from the press is a click when the pointer
+went no farther during the drag.
+With `pickColorFrom` `swatches`, the run takes the current fill as its stroke. The tool sends `openFilledAsClosed`,
+`pickColorFrom`, the gap length (`gap`, 0 with Gap Detection off) and, for such a click, `splitStroke: true` with
+`shapeBuilder.merge`, which takes them all as params, and `shapeBuilder.regions` takes `openFilledAsClosed` and `gap`.
+`shapeBuilder.merge` with `splitStroke` returns the run's id as `split`.
 
 ```json
 {"name":"run_command","arguments":{"command":"tool.setOption","params":{"tool":"shapeBuilder","values":{"selection":"straightLine","pickColorFrom":"swatches"}}}}
+{"name":"run_command","arguments":{"command":"shapeBuilder.merge","params":{"points":[[50,-1]],"splitStroke":true}}}
 ```
 
 ## Perspective grid

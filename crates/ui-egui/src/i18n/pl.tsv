@@ -2199,12 +2199,14 @@ lighting	Light	Światło
 	Keep selected	Zachowaj zaznaczenie
 	Merge only with selection	Scalaj tylko z zaznaczeniem
 	Consider Open Filled Paths as Closed	Traktuj otwarte wypełnione ścieżki jako zamknięte
+	In Merge Mode, Clicking Stroke Splits the Path	W trybie scalania kliknięcie obrysu dzieli ścieżkę
 	Pick Color From:	Źródło koloru:
 	Artwork	Grafika
 	Cursor Swatch Preview	Podgląd próbek przy kursorze
 	Selection:	Zaznaczanie:
 	Straight Line	Linia prosta
 	Highlight:	Podświetlenie:
+	Stroke When Editable	Obrys, gdy edytowalny
 	The document has no colour swatches.	Dokument nie zawiera próbek kolorów.
 	Style Name:	Nazwa stylu:
 	Crop To	Kadruj do

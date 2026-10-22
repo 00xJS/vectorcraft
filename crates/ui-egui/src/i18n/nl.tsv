@@ -5151,12 +5151,14 @@ swatch	Bright Violet	Felviolet
 @msg	no saved selection recalled	geen opgeslagen selectie opgeroepen
 	Merge only with selection	Alleen samenvoegen met selectie
 	Consider Open Filled Paths as Closed	Open gevulde paden als gesloten beschouwen
+	In Merge Mode, Clicking Stroke Splits the Path	In samenvoegmodus splitst klikken op de contour het pad
 	Pick Color From:	Kleur kiezen uit:
 	Artwork	Artwork
 	Cursor Swatch Preview	Staalvoorbeeld bij de cursor
 	Selection:	Selectie:
 	Straight Line	Rechte lijn
 	Highlight:	Markering:
+	Stroke When Editable	Contour indien bewerkbaar
 	Sketch	Schets
 	Halftone Pattern…	Rasterpatroon…
 	Halftone Pattern	Rasterpatroon

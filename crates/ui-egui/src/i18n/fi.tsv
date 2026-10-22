@@ -5161,12 +5161,14 @@ mark-style	Japanese	Japanilainen
 	Keep selected	Pidä valittuna
 	Merge only with selection	Yhdistä vain valintaan
 	Consider Open Filled Paths as Closed	Käsittele avoimia täytettyjä polkuja suljettuina
+	In Merge Mode, Clicking Stroke Splits the Path	Yhdistämistilassa viivan napsauttaminen jakaa polun
 	Pick Color From:	Värin lähde:
 	Artwork	Kuvitus
 	Cursor Swatch Preview	Värimallien esikatselu osoittimen vieressä
 	Selection:	Valinta:
 	Straight Line	Suora viiva
 	Highlight:	Korostus:
+	Stroke When Editable	Viiva, kun muokattavissa
 	Legacy (version 7)	Vanha (versio 7)
 	Legacy .ai Options	Vanhan .ai-muodon asetukset
 	Linked Files	Linkitetyt tiedostot
