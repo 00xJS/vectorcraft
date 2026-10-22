@@ -8,6 +8,10 @@
 </p>
 
 
+<p align="center">
+  <img src="assets/app-icon/hicolor/256x256/apps/ai.storyteller.vectorcraft.png" width="128" height="128" alt="VectorCraft icon: an engraved dragon on a red tile">
+</p>
+
 <h1 align="center">VectorCraft</h1>
 
 <p align="center">
