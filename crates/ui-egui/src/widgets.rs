@@ -3073,4 +3073,51 @@ pub(crate) mod look_tests {
             assert!((pair[1].min.x - pair[0].max.x + 1.0).abs() < 0.01, "neighbours share one border: {boxes:?}");
         }
     }
+
+    /// The colour of every glyph of the text in `shapes`: selected glyphs are drawn in the
+    /// selection stroke's colour.
+    pub(crate) fn glyph_colours(shapes: &[egui::Shape]) -> Vec<Color32> {
+        let mut colours = vec![];
+        for s in shapes {
+            if let egui::Shape::Text(t) = s {
+                for row in &t.galley.rows {
+                    let visuals = &row.row.visuals;
+                    colours.extend(visuals.mesh.vertices[visuals.glyph_vertex_range.clone()].iter().map(|v| v.color));
+                }
+            }
+        }
+        colours
+    }
+
+    // Regression test for #1465: the selected number in a value field was hard to read in every
+    // brightness: egui draws selected text in the selection stroke's colour, the accent, on a
+    // selection tinted with the same accent. It is in the strong text colour.
+    #[test]
+    fn selected_text_in_a_value_field_is_in_the_strong_text_colour() {
+        for brightness in theme::Brightness::ALL {
+            let ctx = themed(brightness);
+            let t = Tokens::get(&ctx);
+            let id = std::cell::Cell::new(egui::Id::NULL);
+            let mut add = |ui: &mut Ui| {
+                id.set(ui.id().with("w"));
+                num_field(ui, "w", Some(1234.0), Unit::Points, 80.0);
+            };
+            frame(&ctx, 0.0, vec![], &mut add);
+            // The field takes focus, and all of its text is selected.
+            ctx.memory_mut(|m| m.request_focus(id.get()));
+            frame(&ctx, 0.1, vec![], &mut add);
+            assert!(ctx.memory(|m| m.has_focus(id.get())), "{brightness:?}: the field has focus");
+            let len = Unit::Points.format(1234.0).chars().count();
+            let mut state = egui::TextEdit::load_state(&ctx, id.get()).unwrap_or_default();
+            state.cursor.set_char_range(Some(egui::text::CCursorRange::two(egui::text::CCursor::new(0), egui::text::CCursor::new(len))));
+            state.store(&ctx, id.get());
+            let shapes = frame(&ctx, 0.2, vec![], &mut add);
+            let colours = glyph_colours(&shapes);
+            assert!(!colours.is_empty(), "{brightness:?}: the number is drawn");
+            let mut used = colours.clone();
+            used.dedup();
+            assert_eq!(used, [t.text_strong], "{brightness:?}: selected text in {used:?}");
+            assert_ne!(t.text_strong, t.accent);
+        }
+    }
 }

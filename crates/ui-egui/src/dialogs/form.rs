@@ -894,3 +894,38 @@ mod typed_number_tests {
         assert!(typed_number(1e20).is_f64());
     }
 }
+
+#[cfg(test)]
+mod selected_text_tests {
+    use super::*;
+    use crate::widgets::look_tests::{frame, glyph_colours, themed};
+
+    // Regression test for #1465: selected text in a dialog's text field was in the accent, on a
+    // selection tinted with the same accent. It is in the strong text colour.
+    #[test]
+    fn selected_text_in_a_dialog_text_field_is_in_the_strong_text_colour() {
+        for brightness in crate::theme::Brightness::ALL {
+            let ctx = themed(brightness);
+            let t = Tokens::get(&ctx);
+            let mut d = Dialog::new("test", json!({"name": "Artboard 1"}));
+            let id = std::cell::Cell::new(egui::Id::NULL);
+            let mut add = |ui: &mut egui::Ui| {
+                id.set(ui.id().with(("dlg-text", "name")));
+                text_edit(ui, &mut d, "name", 120.0);
+            };
+            frame(&ctx, 0.0, vec![], &mut add);
+            // Focus the field and select all of its text.
+            ctx.memory_mut(|m| m.request_focus(id.get()));
+            frame(&ctx, 0.1, vec![], &mut add);
+            let mut state = egui::TextEdit::load_state(&ctx, id.get()).unwrap_or_default();
+            state.cursor.set_char_range(Some(egui::text::CCursorRange::two(egui::text::CCursor::new(0), egui::text::CCursor::new(10))));
+            state.store(&ctx, id.get());
+            let shapes = frame(&ctx, 0.2, vec![], &mut add);
+            let colours = glyph_colours(&shapes);
+            assert!(!colours.is_empty(), "{brightness:?}: the text is drawn");
+            let mut used = colours.clone();
+            used.dedup();
+            assert_eq!(used, [t.text_strong], "{brightness:?}: selected text in {used:?}");
+        }
+    }
+}
