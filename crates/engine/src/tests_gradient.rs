@@ -467,3 +467,60 @@ fn an_outlined_stroke_leaves_dither_behind() {
     });
     assert_eq!(fills, [false, false], "the fill and the outline, neither dithered");
 }
+
+/// The Gradient panel's Method (Illustrator 30): `method` set and cleared through the gradient
+/// commands, on fills and strokes, kept by the params, swatches and a native save and load;
+/// anything but classic or perceptual is refused without editing.
+#[test]
+fn method_is_a_gradient_option_that_saves_and_loads() {
+    use vectorcraft_color::GradientMethod;
+    let mut s = session();
+    let id = rect(&mut s, 0.0, 0.0, 100.0, 100.0);
+    let stops = json!([{"offset": 0, "color": "#0000ff"}, {"offset": 1, "color": "#ffff00"}]);
+    s.execute("paint.setFill", &json!({"gradient": {"stops": stops}})).unwrap();
+    assert_eq!(fill_gradient(&s, id).gradient.method, GradientMethod::Classic, "classic by default");
+    let undo = s.doc().unwrap().history.undo.len();
+    s.execute("paint.editGradient", &json!({"method": "perceptual"})).unwrap();
+    let g = fill_gradient(&s, id);
+    assert_eq!(g.gradient.method, GradientMethod::Perceptual);
+    assert_eq!(g.gradient.stops.len(), 2, "the stops stay as they were");
+    assert_eq!(s.doc().unwrap().history.undo.len(), undo + 1, "one undo step");
+    // The params carry it, so a swatch and a copied paint keep it.
+    assert_eq!(vectorcraft_tools::params::gradient_params(&g)["method"], json!("perceptual"));
+    let mut q = gradient_param(&g);
+    q["name"] = json!("Even");
+    s.execute("swatch.new", &q).unwrap();
+    let Some(Paint::Gradient(sw)) = s.doc().unwrap().doc.swatch("Even").map(|w| w.paint.clone()) else { panic!("a gradient swatch") };
+    assert_eq!(sw.gradient.method, GradientMethod::Perceptual);
+    // Saved and opened again.
+    let back = vectorcraft_format::load(&vectorcraft_format::save(&s.doc().unwrap().doc, false)).unwrap();
+    let Paint::Gradient(saved) = back.node(id).unwrap().appearance.fill_paint() else { panic!("a gradient fill") };
+    assert_eq!(saved.gradient.method, GradientMethod::Perceptual, "the native file keeps the method");
+    // Strokes take it too.
+    s.execute("paint.setStroke", &json!({"gradient": {"method": "perceptual"}})).unwrap();
+    let Paint::Gradient(st) = node(&s, id).appearance.stroke_paint() else { panic!("a gradient stroke") };
+    assert_eq!(st.gradient.method, GradientMethod::Perceptual);
+    s.execute("paint.editGradient", &json!({"method": "classic", "stroke": true})).unwrap();
+    let Paint::Gradient(st) = node(&s, id).appearance.stroke_paint() else { panic!("a gradient stroke") };
+    assert_eq!(st.gradient.method, GradientMethod::Classic);
+    // Bad values: refused, nothing changed.
+    let before = node(&s, id).appearance.clone();
+    for bad in [json!("smooth"), json!(1), json!(true)] {
+        let e = s.execute("paint.editGradient", &json!({"method": bad})).unwrap_err().to_string();
+        assert!(e.contains("`method` must be classic or perceptual"), "{e}");
+        assert!(s.execute("paint.setFill", &json!({"gradient": {"method": bad}})).is_err());
+    }
+    assert_eq!(node(&s, id).appearance, before);
+    s.execute("paint.editGradient", &json!({"method": "Classic", "stroke": false})).unwrap();
+    assert_eq!(fill_gradient(&s, id).gradient.method, GradientMethod::Classic);
+    assert!(vectorcraft_tools::params::gradient_params(&fill_gradient(&s, id)).get("method").is_none());
+    // With dither: one edit sets both, and the params carry both back.
+    s.execute("paint.editGradient", &json!({"method": "perceptual", "dither": true, "stroke": false})).unwrap();
+    let g = fill_gradient(&s, id);
+    assert!(g.gradient.dither && g.gradient.method == GradientMethod::Perceptual);
+    let p = vectorcraft_tools::params::gradient_params(&g);
+    assert_eq!((&p["method"], &p["dither"]), (&json!("perceptual"), &json!(true)));
+    s.execute("paint.setFill", &json!({"gradient": p})).unwrap();
+    let back = fill_gradient(&s, id);
+    assert!(back.gradient.dither && back.gradient.method == GradientMethod::Perceptual);
+}

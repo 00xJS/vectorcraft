@@ -5285,3 +5285,4 @@ axis	Y Axis	Oś Y
 @msg	`dither` applies to gradient fills (stroke: false)	`dither` dotyczy wypełnień gradientem (stroke: false)
 @msg	`dither` applies to gradient fills (paint.setFill)	`dither` dotyczy wypełnień gradientem (paint.setFill)
 @msg	`dither` must be true or false	`dither` musi mieć wartość true lub false
+@msg	`method` must be classic or perceptual	`method` musi mieć wartość classic lub perceptual

@@ -98,7 +98,7 @@ pub fn builtin_library(id: &str) -> Option<Arc<SwatchLibrary>> {
 // ---------- colour construction ----------
 
 /// sRGB (0..=1, gamma encoded) of OKLab `(l, a, b)`, unclamped.
-fn oklab_to_srgb(l: f64, a: f64, b: f64) -> [f64; 3] {
+pub(crate) fn oklab_to_srgb(l: f64, a: f64, b: f64) -> [f64; 3] {
     let l_ = l + 0.396_337_777_4 * a + 0.215_803_757_3 * b;
     let m_ = l - 0.105_561_345_8 * a - 0.063_854_172_8 * b;
     let s_ = l - 0.089_484_177_5 * a - 1.291_485_548_0 * b;
@@ -113,7 +113,12 @@ fn oklab_to_srgb(l: f64, a: f64, b: f64) -> [f64; 3] {
 
 /// OKLab `[l, a, b]` of a colour's display RGB.
 pub fn to_oklab(c: &Color) -> [f64; 3] {
-    let [r, g, b] = c.to_rgb_uncalibrated().map(|v| {
+    srgb_to_oklab(c.to_rgb_uncalibrated())
+}
+
+/// OKLab `[l, a, b]` of sRGB `rgb` (0..=1, gamma encoded).
+pub(crate) fn srgb_to_oklab(rgb: [f32; 3]) -> [f64; 3] {
+    let [r, g, b] = rgb.map(|v| {
         let v = f64::from(v);
         if v <= 0.040_45 { v / 12.92 } else { ((v + 0.055) / 1.055).powf(2.4) }
     });

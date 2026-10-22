@@ -5433,3 +5433,4 @@ axis	Y Axis	osa Y
 @msg	`dither` applies to gradient fills (stroke: false)	`dither` platí pro výplně přechodem (stroke: false)
 @msg	`dither` applies to gradient fills (paint.setFill)	`dither` platí pro výplně přechodem (paint.setFill)
 @msg	`dither` must be true or false	`dither` musí být true nebo false
+@msg	`method` must be classic or perceptual	`method` musí být classic nebo perceptual

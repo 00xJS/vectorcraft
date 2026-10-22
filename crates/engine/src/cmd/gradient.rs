@@ -1,7 +1,7 @@
 //! The Gradient panel and the Gradient tool: in-place gradient edits and the gradient vector.
 
 use serde_json::{Value, json};
-use vectorcraft_color::{Gradient, GradientGeom, GradientKind, GradientPaint, GradientStop, Paint};
+use vectorcraft_color::{Gradient, GradientGeom, GradientKind, GradientMethod, GradientPaint, GradientStop, Paint};
 use vectorcraft_doc::appearance::stroke_paint_bounds;
 use vectorcraft_doc::{Document, Node, NodeKind, StrokeGradientMode};
 use vectorcraft_geom::{Affine, Point, Rect};
@@ -20,7 +20,7 @@ pub fn specs() -> Vec<CommandSpec> {
             "Gradient",
             ["Window", "Gradient"],
             None,
-            "{stroke?: bool (default: the targeted item's kind, else the active proxy), kind?: linear|radial|freeform (freeform places points on each object, coloured along the stops), mode?: points|lines (freeform: how the Gradient tool adds points), stops?: [{offset 0..1, color? (needed without swatch), opacity? 0..1 (or 0..100), midpoint? 0.13..0.87, swatch?: colour swatch name (a global or spot colour or tint swatch links the stop, so swatch edits recolour it and a spot stop prints on its plate; a process colour just gives its colour), tint?: 0..100 (% of the linked swatch; default 100, or a tint swatch's own)}] (at least 2; a freeform gradient's points are recoloured along them), keepModel?: bool (as paint.setFill; a stop color the gradient already has keeps its model), angle?: deg, aspect?: %, reverse?: bool, dither?: bool (fills only: a linear or radial gradient fill is drawn with fine noise that hides banding, and as pixels in SVG and PDF exports), item?: fill/stroke item index|null (omitted: the Appearance panel's active item when it is of the edited kind), ids?|id?, strokeMode?: within|along|across (strokes only: the gradient lies on the page and shows through the stroke, runs from the start of each subpath to its end, or runs from the stroke's left edge to its right all along it; with nothing selected, for the next object drawn; type characters' own strokes always paint within), target?: \"object\"|\"contents\"} edit the gradient in place (keeps its placement); solid/none paints become the default gradient",
+            "{stroke?: bool (default: the targeted item's kind, else the active proxy), kind?: linear|radial|freeform (freeform places points on each object, coloured along the stops), mode?: points|lines (freeform: how the Gradient tool adds points), method?: classic|perceptual (how the colours between the stops mix: in display RGB, or perceptually (OKLab) so the steps look even, which SVG and PDF exports draw as an image; freeform gradients mix their own way), stops?: [{offset 0..1, color? (needed without swatch), opacity? 0..1 (or 0..100), midpoint? 0.13..0.87, swatch?: colour swatch name (a global or spot colour or tint swatch links the stop, so swatch edits recolour it and a spot stop prints on its plate; a process colour just gives its colour), tint?: 0..100 (% of the linked swatch; default 100, or a tint swatch's own)}] (at least 2; a freeform gradient's points are recoloured along them), keepModel?: bool (as paint.setFill; a stop color the gradient already has keeps its model), angle?: deg, aspect?: %, reverse?: bool, dither?: bool (fills only: a linear or radial gradient fill is drawn with fine noise that hides banding, and as pixels in SVG and PDF exports), item?: fill/stroke item index|null (omitted: the Appearance panel's active item when it is of the edited kind), ids?|id?, strokeMode?: within|along|across (strokes only: the gradient lies on the page and shows through the stroke, runs from the start of each subpath to its end, or runs from the stroke's left edge to its right all along it; with nothing selected, for the next object drawn; type characters' own strokes always paint within), target?: \"object\"|\"contents\"} edit the gradient in place (keeps its placement); solid/none paints become the default gradient",
             has_doc,
             edit_gradient
         ),
@@ -103,6 +103,14 @@ type Parsed<T> = std::result::Result<T, String>;
 /// Parse a kind name.
 fn parse_kind(k: &str) -> Parsed<GradientKind> {
     GradientKind::parse(k).ok_or_else(|| format!("unknown gradient kind `{k}` (linear, radial, freeform)"))
+}
+
+/// The `method` param of `p`, if given: how the colours between the stops mix.
+fn method_param(p: &Value) -> Parsed<Option<GradientMethod>> {
+    match p.get("method") {
+        None | Some(Value::Null) => Ok(None),
+        Some(v) => v.as_str().and_then(GradientMethod::parse).map(Some).ok_or_else(|| "`method` must be classic or perceptual".into()),
+    }
 }
 
 /// `v` (params holding `stops`) with each stop that names a `swatch` resolved through `d`
@@ -229,6 +237,7 @@ pub(crate) fn parse_gradient(g: &Value) -> Parsed<GradientPaint> {
         None | Some(Value::Null) => false,
         Some(v) => v.as_bool().ok_or("`dither` must be true or false")?,
     };
+    gp.gradient.method = method_param(g)?.unwrap_or_default();
     gp.angle = f64_or(g, "angle", 0.0);
     gp.swatch = str_param(g, "swatch").map(str::to_string);
     let geom = GeomEdit::parse(g)?;
@@ -325,6 +334,9 @@ pub(crate) fn apply_gradient_edit_in(
     }
     if let Some(d) = p.get("dither").and_then(Value::as_bool) {
         gp.gradient.dither = d;
+    }
+    if let Some(m) = method_param(p)? {
+        gp.gradient.method = m;
     }
     // Angle and aspect edits keep the focal point in its place in the extent ellipse.
     let before = gp.geom;

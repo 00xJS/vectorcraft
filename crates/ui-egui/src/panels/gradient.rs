@@ -23,7 +23,7 @@ use serde_json::{Value, json};
 use vectorcraft_color::gradient::{
     MIN_STOPS, duplicate_stop, insert_stop, midpoint_from_pos, midpoint_pos, move_stop, remove_stop, set_midpoint, swap_stop_colors,
 };
-use vectorcraft_color::{Color, Freeform, FreeformMode, Gradient, GradientKind, GradientPaint, GradientStop, Paint};
+use vectorcraft_color::{Color, Freeform, FreeformMode, Gradient, GradientKind, GradientMethod, GradientPaint, GradientStop, Paint};
 use vectorcraft_doc::{NodeId, StrokeGradientMode};
 
 use super::{active_paint, live_run, pstate, set_pstate};
@@ -287,6 +287,7 @@ pub fn show(app: &mut VectorcraftApp, ui: &mut Ui) {
         freeform_section(app, ui, &g);
         return;
     }
+    method_row(app, ui, &g, is_grad);
     // The proxy beside the angle and aspect ratio fields.
     ui.horizontal(|ui| {
         super::proxy(app, ui, 36.0);
@@ -332,6 +333,24 @@ pub fn show(app: &mut VectorcraftApp, ui: &mut Ui) {
     if !is_grad {
         widgets::dim_label(ui, tl!("Click the ramp or a type button to apply a gradient."));
     }
+}
+
+/// The Method row (Illustrator 30): how a linear or radial gradient mixes the colours between its
+/// stops, Classic or Perceptual.
+fn method_row(app: &mut VectorcraftApp, ui: &mut Ui, g: &GradientPaint, is_grad: bool) {
+    let methods = [(GradientMethod::Classic, tl!("Classic")), (GradientMethod::Perceptual, tl!("Perceptual"))];
+    let current = g.gradient.method;
+    let shown = methods.iter().find(|(m, _)| *m == current).map_or("", |(_, l)| *l);
+    ui.horizontal(|ui| {
+        widgets::dim_label(ui, tl!("Method:"));
+        let labels = methods.map(|(_, l)| l);
+        let chosen = ui.add_enabled_ui(is_grad, |ui| widgets::dropdown_names(ui, "grad-method", shown, &labels, 104.0)).inner;
+        if let Some((m, _)) = chosen.and_then(|i| methods.get(i))
+            && *m != current
+        {
+            edit(app, json!({"method": m.label().to_lowercase()}), Live::Released);
+        }
+    });
 }
 
 /// The freeform points shown: the gradient's own, else (unplaced) as many as it places, coloured
@@ -997,6 +1016,25 @@ mod tests {
         assert_eq!(app.session.doc().unwrap().history.undo.len(), undo, "no edit on the stroke");
         let Paint::Gradient(st) = app.session.shown_stroke().unwrap().paint.clone() else { panic!("a gradient stroke") };
         assert!(!st.gradient.dither);
+    }
+
+    #[test]
+    fn the_method_menu_makes_the_gradient_perceptual() {
+        let mut app = app(json!({"gradient": {}}));
+        let mut p = Panel::new();
+        let texts = p.frame(&mut app, vec![], Modifiers::NONE);
+        assert!(texts.iter().any(|(t, _)| t == "Method:"), "{texts:?}");
+        let shown = texts.iter().find(|(t, _)| t == "Classic").expect("Classic shown").1;
+        let undo = app.session.doc().unwrap().history.undo.len();
+        let texts = p.click(&mut app, shown);
+        let option = texts.iter().find(|(t, _)| t == "Perceptual").expect("the menu lists Perceptual").1;
+        p.click(&mut app, option);
+        assert_eq!(fill(&app).gradient.method, GradientMethod::Perceptual);
+        assert_eq!(app.session.doc().unwrap().history.undo.len(), undo + 1, "one undo step");
+        let texts = p.frame(&mut app, vec![], Modifiers::NONE);
+        assert!(texts.iter().any(|(t, _)| t == "Perceptual"), "the menu shows the method: {texts:?}");
+        app.run("edit.undo", json!({})).unwrap();
+        assert_eq!(fill(&app).gradient.method, GradientMethod::Classic);
     }
 
     #[test]

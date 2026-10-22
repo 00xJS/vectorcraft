@@ -790,6 +790,15 @@ SVG and PDF exports write such a fill as an image at the Document Raster Effects
 {"name":"run_command","arguments":{"command":"paint.editGradient","params":{"dither":true}}}
 ```
 
+Method (the Gradient panel's menu): `classic` (the default) mixes the colours between stops in display RGB,
+`perceptual` mixes a linear or radial gradient's colours in OKLab so the steps look even. SVG and PDF exports write a
+Perceptual gradient as an image at the Document Raster Effects resolution (a dithered Perceptual fill with its noise).
+`paint.setFill`/`paint.setStroke` take it in `gradient` too:
+
+```json
+{"name":"run_command","arguments":{"command":"paint.editGradient","params":{"method":"perceptual"}}}
+```
+
 Freeform gradients: `paint.editGradient {kind: "freeform"}` places four or more colour points inside each selected
 object (coloured along the stops; `mode: "points"|"lines"` is the Draw toggle). `paint.freeform.get` lists the points
 (document coordinates), lines and the selected point; `paint.freeform.addPoint {at, color?, opacity?, spread?,

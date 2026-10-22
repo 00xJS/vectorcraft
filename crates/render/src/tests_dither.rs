@@ -133,3 +133,40 @@ fn a_dithered_gradient_without_stops_draws_nothing_and_samples_nothing() {
     let r = r.unwrap();
     assert!((0..H).all(|y| (0..W).all(|x| r.pixel(x, y) == [255, 255, 255, 255])), "nothing is drawn");
 }
+
+/// Blue to yellow across the document, mixed `method`'s way, dithered or not.
+fn blue_yellow(method: vectorcraft_color::GradientMethod, dither: bool) -> Paint {
+    let mut g = Gradient::new(
+        GradientKind::Linear,
+        vec![GradientStop::new(0.0, Color::rgb(0.0, 0.0, 1.0)), GradientStop::new(1.0, Color::rgb(1.0, 1.0, 0.0))],
+    );
+    (g.method, g.dither) = (method, dither);
+    Paint::Gradient(Box::new(GradientPaint::new(g)))
+}
+
+#[test]
+fn a_dithered_perceptual_gradient_is_the_perceptual_mix_with_noise() {
+    use vectorcraft_color::GradientMethod::{Classic, Perceptual};
+    // Classic first: the two share stops and box, and must not share a dithered grid.
+    let classic = render(&doc(blue_yellow(Classic, true), Paint::None), Affine::IDENTITY);
+    let dithered = render(&doc(blue_yellow(Perceptual, true), Paint::None), Affine::IDENTITY);
+    // Each pixel within a level or so of the perceptual mix across it (its grid cell's centre lies
+    // in it; the noise, rounding, and the mix's stops within half a level), and dither's noise
+    // moving many off the rounded mix at its centre.
+    let Paint::Gradient(want) = blue_yellow(Perceptual, false) else { panic!("a gradient") };
+    let mix = |x: f32| want.gradient.sample(x / W as f32).0.to_rgb().map(|v| v.clamp(0.0, 1.0) * 255.0);
+    let mut noisy = 0;
+    for x in 5..W - 5 {
+        let p = dithered.pixel(x, 20);
+        let (a, m, b) = (mix(x as f32), mix(x as f32 + 0.5), mix(x as f32 + 1.0));
+        let near = |k: usize| (a[k].min(b[k]) - 2.0..=a[k].max(b[k]) + 2.0).contains(&f32::from(p[k]));
+        assert!((0..3).all(near), "({x}, 20): {p:?} vs {a:?} to {b:?}");
+        noisy += usize::from((0..3).any(|k| p[k] != m[k].round() as u8));
+    }
+    assert!(noisy > 100, "dither's noise: {noisy} pixels off the rounded mix");
+    // The middle: a blue-grey (OKLab), where Classic+Dither gives the display RGB mid grey.
+    let [r, g, b, _] = dithered.pixel(W / 2, 20).map(i32::from);
+    assert!(b > r + 20 && b > g + 10, "perceptual: {:?}", [r, g, b]);
+    let [r, g, b, _] = classic.pixel(W / 2, 20).map(i32::from);
+    assert!((r - b).abs() <= 4 && (g - b).abs() <= 4, "classic: {:?}", [r, g, b]);
+}

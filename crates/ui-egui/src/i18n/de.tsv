@@ -5015,3 +5015,5 @@ axis	Y Axis	Y-Achse
 @msg	`dither` applies to gradient fills (stroke: false)	`dither` gilt für Verlaufsflächen (stroke: false)
 @msg	`dither` applies to gradient fills (paint.setFill)	`dither` gilt für Verlaufsflächen (paint.setFill)
 @msg	`dither` must be true or false	`dither` muss true oder false sein
+	Perceptual	Perzeptiv
+@msg	`method` must be classic or perceptual	`method` muss classic oder perceptual sein

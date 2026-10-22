@@ -1084,7 +1084,7 @@ impl Writer<'_> {
                     if let (Some(g), Some(b)) = (pixel_gradient(&f.paint, true), bounds) {
                         p.extend((f.opacity < 1.0).then(|| ("opacity", fmt_num(f.opacity as f64, 3))));
                         p.extend(blend);
-                        self.raster_paint(g, b, &[d.to_string()], rule, &p, "");
+                        self.raster_paint(g, b, &[d.to_string()], rule, &p, "", true);
                     } else {
                         self.fill_props(f, rule, bounds, &mut p);
                         p.extend(blend);
@@ -1121,13 +1121,13 @@ impl Writer<'_> {
                             let clip = self.path_d(&PathData::from_bezpath(&outline), self.xf);
                             p.extend(opacity);
                             p.extend(blend);
-                            self.raster_paint(g, b, &[clip], FillRule::NonZero, &p, &side);
+                            self.raster_paint(g, b, &[clip], FillRule::NonZero, &p, &side, false);
                         }
                         (WrittenShape::Fill(outlines), Some((g, b))) if s.path_gradient().is_none() => {
                             let clip: Vec<String> = outlines.iter().map(|o| self.path_d(&PathData::from_bezpath(o), self.xf)).collect();
                             p.extend(opacity);
                             p.extend(blend);
-                            self.raster_paint(g, b, &clip, FillRule::NonZero, &p, &side);
+                            self.raster_paint(g, b, &clip, FillRule::NonZero, &p, &side, false);
                         }
                         (WrittenShape::Stroke { width }, _) => {
                             p.push(("fill", "none".into()));
@@ -1535,13 +1535,15 @@ impl Writer<'_> {
     }
 
     /// A gradient `g` painted over `bounds` (the space [`Self::xf`] maps into user space) that is
-    /// drawn as pixels ([`GradientPaint::draws_as_pixels`]): an `<image>` over its painted box,
-    /// clipped to `clip` (outlines in user space filled by `rule`), in a group with `props` and
-    /// the `side` attribute. A freeform gradient's colour field, which SVG can't express, is
-    /// sampled as the canvas samples it (at twice the box's size in points); a linear or radial
-    /// gradient at the document's raster effects resolution (at most [`MAX_GRADIENT_PX`] a
-    /// side). Nothing is written for an empty box.
-    fn raster_paint(&mut self, g: &GradientPaint, bounds: Rect, clip: &[String], rule: FillRule, props: &Props, side: &str) {
+    /// drawn as pixels ([`GradientPaint::draws_as_pixels`]) when it paints a fill (`fill`) or a
+    /// stroke: an `<image>` over its painted box, clipped to `clip` (outlines in user space filled
+    /// by `rule`), in a group with `props` and the `side` attribute. A freeform gradient's colour
+    /// field, which SVG can't express, is sampled as the canvas samples it (at twice the box's size
+    /// in points); a linear or radial gradient at the document's raster effects resolution (at most
+    /// [`MAX_GRADIENT_PX`] a side), with dither's noise on a fill. Nothing is written for an empty
+    /// box.
+    #[allow(clippy::too_many_arguments)]
+    fn raster_paint(&mut self, g: &GradientPaint, bounds: Rect, clip: &[String], rule: FillRule, props: &Props, side: &str, fill: bool) {
         use vectorcraft_color::freeform::{grid_size, painted_box, spread_scale};
         let Some(b) = painted_box(bounds) else { return };
         let freeform = g.gradient.kind == GradientKind::Freeform;
@@ -1554,7 +1556,7 @@ impl Writer<'_> {
             let k = self.doc.raster_effects_ppi / 72.0;
             let along = |len: f64| (len * k).ceil().clamp(1.0, MAX_GRADIENT_PX) as u16;
             let (cols, rows) = (along(b.width()), along(b.height()));
-            (g.pixels(b, b, cols, rows, &Color::to_rgb).flatten().collect(), cols, rows)
+            (g.pixels(b, b, cols, rows, fill, &Color::to_rgb).flatten().collect(), cols, rows)
         };
         let mut png = Vec::new();
         let Some(img) = image::RgbaImage::from_raw(u32::from(cols), u32::from(rows), rgba) else { return };

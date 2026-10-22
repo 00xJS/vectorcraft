@@ -5404,3 +5404,4 @@ axis	Y Axis	Sumbu Y
 @msg	`dither` applies to gradient fills (stroke: false)	`dither` berlaku untuk isian gradien (stroke: false)
 @msg	`dither` applies to gradient fills (paint.setFill)	`dither` berlaku untuk isian gradien (paint.setFill)
 @msg	`dither` must be true or false	`dither` harus true atau false
+@msg	`method` must be classic or perceptual	`method` harus classic atau perceptual

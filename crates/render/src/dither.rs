@@ -57,7 +57,7 @@ fn cells(px: f64) -> u16 {
 fn key(g: &GradientPaint, b: Rect, cols: u16, rows: u16, win: &[Range<u16>; 2], ink: Ink) -> u64 {
     let mut h = std::collections::hash_map::DefaultHasher::new();
     let gr = &g.gradient;
-    (gr.kind as u8, gr.dither).hash(&mut h);
+    (gr.kind as u8, gr.dither, gr.method as u8).hash(&mut h);
     for s in &gr.stops {
         (s.offset.to_bits(), s.opacity.to_bits(), s.midpoint.to_bits()).hash(&mut h);
         hash_color(&s.color, &mut h);
@@ -95,7 +95,7 @@ fn window(xf: Affine, w: u16, h: u16, b: Rect, cols: u16, rows: u16) -> Option<[
 pub(crate) fn rasterize(g: &GradientPaint, b: Rect, cols: u16, rows: u16, win: [Range<u16>; 2], ink: Ink) -> Pixmap {
     let (w, h) = (win[0].len() as u16, win[1].len() as u16);
     let data = g
-        .pixels_within(b, b, cols, rows, win, &|c| ink.rgb(c))
+        .pixels_within(b, b, cols, rows, win, true, &|c| ink.rgb(c))
         .map(|[r, gr, bl, a]| {
             let pm = |v: u8| ((u16::from(v) * u16::from(a) + 127) / 255) as u8;
             vello_cpu::color::PremulRgba8 { r: pm(r), g: pm(gr), b: pm(bl), a }

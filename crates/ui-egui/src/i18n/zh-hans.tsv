@@ -5273,3 +5273,4 @@ axis	Y Axis	Y 轴
 @msg	`dither` applies to gradient fills (stroke: false)	`dither` 适用于渐变填色 (stroke: false)
 @msg	`dither` applies to gradient fills (paint.setFill)	`dither` 适用于渐变填色 (paint.setFill)
 @msg	`dither` must be true or false	`dither` 必须是 true 或 false
+@msg	`method` must be classic or perceptual	`method` 必须是 classic 或 perceptual

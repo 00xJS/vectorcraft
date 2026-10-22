@@ -5389,3 +5389,4 @@ axis	Y Axis	Y-axel
 @msg	`dither` applies to gradient fills (stroke: false)	`dither` gäller övertoningsfyllningar (stroke: false)
 @msg	`dither` applies to gradient fills (paint.setFill)	`dither` gäller övertoningsfyllningar (paint.setFill)
 @msg	`dither` must be true or false	`dither` måste vara true eller false
+@msg	`method` must be classic or perceptual	`method` måste vara classic eller perceptual

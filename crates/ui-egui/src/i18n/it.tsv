@@ -5049,3 +5049,5 @@ axis	Y Axis	Asse Y
 @msg	`dither` applies to gradient fills (stroke: false)	`dither` si applica ai riempimenti sfumati (stroke: false)
 @msg	`dither` applies to gradient fills (paint.setFill)	`dither` si applica ai riempimenti sfumati (paint.setFill)
 @msg	`dither` must be true or false	`dither` deve essere true o false
+	Perceptual	Percettivo
+@msg	`method` must be classic or perceptual	`method` deve essere classic o perceptual

@@ -5029,3 +5029,5 @@ axis	Y Axis	Вісь Y
 @msg	`dither` applies to gradient fills (stroke: false)	`dither` застосовується до градієнтних заливок (stroke: false)
 @msg	`dither` applies to gradient fills (paint.setFill)	`dither` застосовується до градієнтних заливок (paint.setFill)
 @msg	`dither` must be true or false	`dither` має бути true або false
+	Perceptual	Перцептивний
+@msg	`method` must be classic or perceptual	`method` має бути classic або perceptual
