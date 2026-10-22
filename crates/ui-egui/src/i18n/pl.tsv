@@ -5214,6 +5214,7 @@ mark-style	Japanese	Japońskie
 @msg	unknown snap option `{key}` (use {options})	nieznana opcja przyciągania `{key}` (użyj: {options})
 	Gap Length:	Długość przerwy:
 	Artboard {n} of {total}	Obszar kompozycji {n} z {total}
+	File {n} of {total}	Plik {n} z {total}
 	Encoding and writing the file…	Kodowanie i zapisywanie pliku…
 @plural	{n} more export waiting|{n} more exports waiting	Czeka jeszcze {n} eksport|Czekają jeszcze {n} eksporty|Czeka jeszcze {n} eksportów
 	Continue in Background	Kontynuuj w tle

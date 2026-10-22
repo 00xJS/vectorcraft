@@ -2662,6 +2662,7 @@
 	Desired	İstenen
 	Edit Path	Yolu Düzenle
 	Encoding and writing the file…	Dosya kodlanıyor ve yazılıyor…
+	File {n} of {total}	Dosya {n} / {total}
 	Full Justify	Tam Yasla
 	Glyph Scaling:	Glif Ölçekleme:
 	If a drawing tablet's pen doesn't draw, choose an X11 (XWayland) option.	Çizim tabletinin kalemi çizmiyorsa, bir X11 (XWayland) seçeneği belirleyin.

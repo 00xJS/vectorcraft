@@ -271,7 +271,8 @@ while an export runs (#2165, #2171, #2172):
 - **Progress.** A request with `_meta.progressToken` gets `notifications/progress`
   ([spec](https://modelcontextprotocol.io/specification/2025-06-18/basic/utilities/progress)) before
   its reply: the PDF writer reports "Writing page 2 of 5" with `progress` 2 and `total` 5, raster
-  export reports each artboard, and the PDF flattening stage reports a message without a total. `progress` only grows, updates come at most every 200 ms (the last page always),
+  export reports each artboard, `document.exportForScreens` and `assets.export` report each file
+  ("Exporting file 3 of 250", in place of their encoders' steps), and the PDF flattening stage reports a message without a total. `progress` only grows, updates come at most every 200 ms (the last page always),
   and none follows the reply. A client that does not read fast enough misses updates, never the reply.
 - **A busy engine.** `ping`, `tools/list`, `resources/list`, `resources/templates/list`,
   `prompts/list` and `prompts/get` need no engine and are answered at once, whatever is running.

@@ -1405,6 +1405,10 @@ pub struct Session {
     /// While [`Session::prepare_package`] runs `file.package`: the package the command prepared,
     /// which it leaves here instead of writing it; `None` otherwise.
     pub(crate) package_hand_off: Option<Option<cmd::package::Package>>,
+    /// While [`Session::prepare_screen_export`] runs `document.exportForScreens` or
+    /// `assets.export`: the export the command prepared, which it leaves here instead of writing
+    /// it; `None` otherwise.
+    pub(crate) screens_hand_off: Option<Option<cmd::fileio::ScreenExport>>,
     /// Where Data Recovery keeps its copies ([`cmd::recovery`]).
     pub recovery: cmd::recovery::Recovery,
     /// While the active tool's actions run: their commands aren't "a command from outside the
@@ -1508,6 +1512,7 @@ impl Session {
             queue_hand_off: None,
             place_cursor_requests: false,
             package_hand_off: None,
+            screens_hand_off: None,
             recovery: Default::default(),
             in_tool_actions: false,
             previewing: false,

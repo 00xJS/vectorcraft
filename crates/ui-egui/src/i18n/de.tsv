@@ -4942,6 +4942,7 @@ effect	Soft	Weich
 @msg	unknown snap option `{key}` (use {options})	unbekannte Einrastoption `{key}` (möglich: {options})
 	Gap Length:	Lückenlänge:
 	Artboard {n} of {total}	Zeichenfläche {n} von {total}
+	File {n} of {total}	Datei {n} von {total}
 	Encoding and writing the file…	Datei wird codiert und geschrieben…
 @plural	{n} more export waiting|{n} more exports waiting	{n} weiterer Export wartet|{n} weitere Exporte warten
 	Continue in Background	Im Hintergrund fortsetzen

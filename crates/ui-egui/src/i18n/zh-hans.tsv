@@ -5200,6 +5200,7 @@ lighting	Light	光源
 @msg	{id} opens another app: only the person at the keyboard can run it	{id} 会打开其他应用程序：只有使用键盘的人才能运行它
 @msg	“{name}” is not a file	“{name}” 不是文件
 	Artboard {n} of {total}	画板 {n} / {total}
+	File {n} of {total}	文件 {n} / {total}
 	Encoding and writing the file…	正在编码并写入文件…
 @plural	{n} more export waiting|{n} more exports waiting	另有 {n} 个导出等待中
 	Continue in Background	在后台继续

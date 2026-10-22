@@ -5362,6 +5362,7 @@ mark-style	Japanese	Japonské
 @msg	unknown snap option `{key}` (use {options})	neznámá možnost přichytávání `{key}` (použijte {options})
 	Gap Length:	Délka mezery:
 	Artboard {n} of {total}	Pracovní plocha {n} z {total}
+	File {n} of {total}	Soubor {n} z {total}
 	Encoding and writing the file…	Kódování a zápis souboru…
 @plural	{n} more export waiting|{n} more exports waiting	Čeká ještě {n} export|Čekají ještě {n} exporty|Čeká ještě {n} exportů
 	Continue in Background	Pokračovat na pozadí

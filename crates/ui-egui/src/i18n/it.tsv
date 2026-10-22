@@ -4976,6 +4976,7 @@ lighting	Light	Luce
 @msg	unknown snap option `{key}` (use {options})	opzione di aggancio sconosciuta `{key}` (usare {options})
 	Gap Length:	Lunghezza lacuna:
 	Artboard {n} of {total}	Tavola da disegno {n} di {total}
+	File {n} of {total}	File {n} di {total}
 	Encoding and writing the file…	Codifica e scrittura del file…
 @plural	{n} more export waiting|{n} more exports waiting	{n} altra esportazione in attesa|{n} altre esportazioni in attesa
 	Continue in Background	Continua in background

@@ -4956,6 +4956,7 @@ lighting	Light	Світло
 @msg	unknown snap option `{key}` (use {options})	невідомий параметр прив’язки `{key}` (використовуйте {options})
 	Gap Length:	Довжина проміжку:
 	Artboard {n} of {total}	Монтажна область {n} з {total}
+	File {n} of {total}	Файл {n} з {total}
 	Encoding and writing the file…	Кодування та запис файлу…
 @plural	{n} more export waiting|{n} more exports waiting	Ще {n} експорт в очікуванні|Ще {n} експорти в очікуванні|Ще {n} експортів в очікуванні
 	Continue in Background	Продовжити у фоні
