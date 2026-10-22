@@ -1099,10 +1099,16 @@ pub fn popover<R>(resp: &Response, toggle: bool, content: impl FnOnce(&mut Ui) -
         !was_open
     } else {
         // Popups (this one and those it opened) are on foreground layers; a click anywhere
-        // else closes it.
-        let clicked_elsewhere = ctx
-            .input(|i| i.pointer.any_click().then(|| i.pointer.interact_pos()).flatten())
-            .is_some_and(|pos| ctx.layer_id_at(pos).is_none_or(|l| l.order != egui::Order::Foreground));
+        // else closes it. While the pointer is down or a panel paint drag is active, keep the
+        // popover open so a Fill/Stroke proxy drag can finish (#3440).
+        let pointer_down = ctx.input(|i| i.pointer.any_down());
+        let panel_drag = egui::DragAndDrop::payload::<PanelDrag>(ctx).is_some();
+        let click_pos = ctx.input(|i| i.pointer.any_click().then(|| i.pointer.interact_pos()).flatten());
+        let clicked_anchor = click_pos.is_some_and(|pos| resp.rect.contains(pos));
+        let clicked_elsewhere = !pointer_down
+            && !panel_drag
+            && !clicked_anchor
+            && click_pos.is_some_and(|pos| ctx.layer_id_at(pos).is_none_or(|l| l.order != egui::Order::Foreground));
         was_open && !clicked_elsewhere
     };
     let inner =

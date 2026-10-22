@@ -203,6 +203,40 @@ fn proxy_color(app: &VectorcraftApp, stroke: bool) -> Color {
     }
 }
 
+/// Fill/Stroke proxies in the picker: switch which side is edited and accept drags between them.
+fn proxy_row(app: &mut VectorcraftApp, ui: &mut Ui, d: &mut Dialog) -> Option<Picked> {
+    let (fill, stroke) = crate::panels::current_paints(app);
+    let mixed = crate::panels::mixed_paints(app, ui.ctx());
+    let editing_stroke = d.bool("stroke");
+    let mut switch: Option<bool> = None;
+    ui.push_id("cp-proxy", |ui| {
+        let c = widgets::fill_stroke_proxy(ui, &fill, &stroke, mixed, !editing_stroke, 36.0);
+        if c.fill && editing_stroke {
+            switch = Some(false);
+        } else if c.stroke && !editing_stroke {
+            switch = Some(true);
+        }
+        if c.swap {
+            let _ = app.run("paint.swap", json!({}));
+        }
+        if c.default {
+            let _ = app.run("paint.default", json!({}));
+        }
+        if let Some(p) = c.dropped_fill {
+            let _ = app.run("paint.setFill", p);
+        }
+        if let Some(p) = c.dropped_stroke {
+            let _ = app.run("paint.setStroke", p);
+        }
+    });
+    if let Some(stroke) = switch {
+        d.fields.insert("stroke".into(), json!(stroke));
+        d.fields.remove(PREVIEWED);
+        return Some(Picked::of(proxy_color(app, stroke)));
+    }
+    None
+}
+
 /// `ui.colorPicker {stroke?, artboard?, color?}`: open the picker for the fill (or stroke) proxy,
 /// or for artboard `artboard`'s background color, starting from `color`, else the proxy's color
 /// or the artboard's color (white when it has none).
@@ -313,6 +347,10 @@ fn body(app: &mut VectorcraftApp, ui: &mut Ui, d: &mut Dialog) -> DialogAction {
             ui.allocate_ui_with_layout(vec2(side, 24.0), egui::Layout::right_to_left(egui::Align::Center), |ui| {
                 sample = crate::screen_color::button(app, ui);
             });
+            if !d.fields.contains_key("artboard") {
+                ui.add_space(4.0);
+                pick = pick.or(proxy_row(app, ui, d));
+            }
             ui.add_space(4.0);
             ui.with_layout(layout, |ui| {
                 ui.spacing_mut().item_spacing.x = 0.0;
@@ -1272,5 +1310,32 @@ mod tests {
             draw(&ctx, &mut app, size, vec![key(egui::Key::Enter)]);
             assert!(app.ui.dialog.is_none());
         }
+    }
+
+    /// #3440: dragging the fill proxy onto the stroke proxy in the Color Picker applies the fill
+    /// colour to the stroke.
+    #[test]
+    fn color_picker_proxy_drag_applies_fill_to_stroke() {
+        use egui::{Event, Modifiers, PointerButton, Rect};
+        use vectorcraft_color::Paint;
+
+        use crate::widgets::PanelDrag;
+
+        let (ctx, mut app) = (context(), app());
+        app.run("paint.setFill", json!({"color": "#ff0000"})).unwrap();
+        app.run("paint.setStroke", json!({"color": "#0000ff"})).unwrap();
+        app.run("ui.colorPicker", json!({})).unwrap();
+        settled(&ctx, &mut app, screen());
+        let widget = |key: &'static str| -> Rect {
+            ctx.viewport(|vp| vp.prev_pass.widgets.layers().flat_map(|(_, w)| w.iter()).find(|w| w.id == w.parent_id.with(key)).map(|w| w.rect))
+                .expect(key)
+        };
+        let at = widget("stroke-proxy").center();
+        let red = PanelDrag::paint(Paint::solid(Color::from_hex("#ff0000").unwrap()));
+        egui::DragAndDrop::set_payload(&ctx, red);
+        let release = Event::PointerButton { pos: at, button: PointerButton::Primary, pressed: false, modifiers: Modifiers::NONE };
+        draw(&ctx, &mut app, screen(), vec![Event::PointerMoved(at), release]);
+        let stroke = app.session.shown_stroke().unwrap();
+        assert_eq!(stroke.paint.color().map(|c| c.to_hex()), Some("#ff0000".into()), "{}", app.ui.status);
     }
 }
