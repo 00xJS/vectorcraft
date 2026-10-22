@@ -5259,6 +5259,7 @@ theme	Appearance	Görünüm
 	Diffuse	Yayılma
 	Eyedropper: click the art to sample the key color	Damlalık: anahtar rengi örneklemek için çizime tıklayın
 	Highlight:	Vurgu:
+	In Merge Mode, Clicking Stroke Splits the Path	Birleştirme modunda kontura tıklamak yolu böler
 	Insert Kashidas	Keşide Ekle
 	Load Variable Library…	Değişken Kitaplığı Yükle…
 	Long	Uzun
@@ -5270,6 +5271,7 @@ theme	Appearance	Görünüm
 	Selection:	Seçim:
 	Standard	Standart
 	Straight Line	Düz Çizgi
+	Stroke When Editable	Düzenlenebilir olduğunda kontur
 	Stylistic	Biçimsel
 	The art keeps its own colors.	Çizim kendi renklerini korur.
 	The key color becomes the stroke color. The other colors shift their hue by the same amount and keep their saturation and brightness.	Anahtar renk kontur rengi olur. Diğer renkler aynı miktarda renk tonu kaydırır ve doygunluk ile parlaklıklarını korur.

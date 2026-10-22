@@ -1090,6 +1090,7 @@
 	Keep selected	Залишати вибраним
 	Merge only with selection	Об’єднувати лише з виділеним
 	Consider Open Filled Paths as Closed	Вважати відкриті контури із заливкою замкненими
+	In Merge Mode, Clicking Stroke Splits the Path	У режимі об’єднання клацання по обведенню розділяє контур
 	Pick Color From:	Джерело кольору:
 	Artwork	Графіка
 	Cursor Swatch Preview	Зразки біля вказівника
@@ -1097,6 +1098,7 @@
 	Freeform	Довільно
 	Straight Line	Пряма лінія
 	Highlight:	Підсвічування:
+	Stroke When Editable	Обведення, яке можна редагувати
 	Fill Color	Колір заливки
 	Fill New Type Objects With Placeholder Text	Заповнювати нові текстові об’єкти текстом-заповнювачем
 	Fill Rule	Правило заливки

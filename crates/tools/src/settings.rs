@@ -45,7 +45,18 @@ const ROWS: &[Row] = &[
     (
         &["shapeBuilder"],
         None,
-        &["openFilledAsClosed", "pickColorFrom", "cursorSwatchPreview", "selection", "highlightFill", "gapDetection", "gapLength"],
+        &[
+            "openFilledAsClosed",
+            "pickColorFrom",
+            "cursorSwatchPreview",
+            "selection",
+            "highlightFill",
+            "gapDetection",
+            "gapLength",
+            "clickStrokeSplitsPath",
+            "highlightStroke",
+            "highlightColor",
+        ],
     ),
     (&["artboard"], None, &["moveArt", "scaleArt"]),
     // Flare Tool Options (`extra::FLARE_OPTIONS` and the Rays and Rings checkboxes).

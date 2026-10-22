@@ -5153,12 +5153,14 @@ theme	Appearance	Utseende
 	Keep selected	Behåll markerad
 	Merge only with selection	Sammanfoga endast med markeringen
 	Consider Open Filled Paths as Closed	Behandla öppna fyllda banor som slutna
+	In Merge Mode, Clicking Stroke Splits the Path	I sammanfogningsläge delar ett klick på konturen banan
 	Pick Color From:	Hämta färg från:
 	Artwork	Bildmaterial
 	Cursor Swatch Preview	Förhandsvisning av färgprover vid pekaren
 	Selection:	Markering:
 	Straight Line	Rak linje
 	Highlight:	Framhävning:
+	Stroke When Editable	Kontur när den kan redigeras
 	Legacy (version 7)	Äldre (version 7)
 	Legacy .ai Options	Alternativ för äldre .ai
 	Linked Files	Länkade filer

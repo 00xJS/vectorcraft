@@ -1096,12 +1096,14 @@
 	Keep selected	Garder sélectionné
 	Merge only with selection	Fusionner uniquement avec la sélection
 	Consider Open Filled Paths as Closed	Traiter les tracés ouverts avec fond comme fermés
+	In Merge Mode, Clicking Stroke Splits the Path	En mode fusion, un clic sur le contour scinde le tracé
 	Pick Color From:	Prendre la couleur dans :
 	Artwork	Illustration
 	Cursor Swatch Preview	Aperçu des nuances près du pointeur
 	Selection:	Sélection :
 	Straight Line	Ligne droite
 	Highlight:	Mise en évidence :
+	Stroke When Editable	Contour quand il est modifiable
 	Fill Color	Couleur de fond
 	Fill New Type Objects With Placeholder Text	Remplir les nouveaux objets texte avec un texte de substitution
 	Fill Rule	Règle de remplissage

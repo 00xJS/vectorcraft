@@ -1096,12 +1096,14 @@
 	Keep selected	Mantener seleccionado
 	Merge only with selection	Combinar solo con la selección
 	Consider Open Filled Paths as Closed	Tratar los trazados abiertos con relleno como cerrados
+	In Merge Mode, Clicking Stroke Splits the Path	En modo de combinación, hacer clic en el trazo divide el trazado
 	Pick Color From:	Tomar el color de:
 	Artwork	Ilustración
 	Cursor Swatch Preview	Vista previa de muestras junto al cursor
 	Selection:	Selección:
 	Straight Line	Línea recta
 	Highlight:	Resaltado:
+	Stroke When Editable	Trazo si es editable
 	Fill Color	Color de relleno
 	Fill New Type Objects With Placeholder Text	Rellenar nuevos objetos de texto con texto de muestra
 	Fill Rule	Regla de relleno

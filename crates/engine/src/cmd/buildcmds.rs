@@ -24,6 +24,7 @@ use vectorcraft_tools::builder::{
 };
 use vectorcraft_trace as tr;
 
+use super::draw2::replace_with_pieces;
 use super::edit::{outermost, selected_roots};
 use super::paint::paint_from;
 use super::pathops::{Beside, shape_node};
@@ -39,7 +40,7 @@ pub fn specs() -> Vec<CommandSpec> {
             "Shape Builder",
             [],
             None,
-            "{ids?|id?: [id…] (default: selection), points: [[x,y]…] (drag path; one point = click), erase?: bool (erase mode, Alt: deletes the regions touched, and the pieces of open paths that cut regions and the edges (outline pieces between the points where paths meet; see shapeBuilder.regions) within tolerance; a deleted edge opens its path there, and edges bounding a deleted region go with it), tolerance?: pt (2, erase only), gap?: pt (0–72; 0: Gap Detection off), openFilledAsClosed?: true (Consider Open Filled Paths as Closed: a filled open path bounds a region as if an invisible edge closed it; false: it cuts the regions it crosses like an unfilled one), pickColorFrom?: \"artwork\" (default: the merged shape takes the look of the front-most object under the first point, else under the last point, else of the front-most object) | \"swatches\" (the current fill, with the rest of the look of the front-most object over the first region the drag touches that an object covers, else of the front-most object), fill?: \"#rrggbb\" | {color|swatch|gradient|none} (overrides pickColorFrom)} → {ids, merged, regions, lines, edges} (counts deleted or merged)",
+            "{ids?|id?: [id…] (default: selection), points: [[x,y]…] (drag path; one point = click), erase?: bool (erase mode, Alt: deletes the regions touched, and the pieces of open paths that cut regions and the edges (outline pieces between the points where paths meet; see shapeBuilder.regions) within tolerance; a deleted edge opens its path there, and edges bounding a deleted region go with it; what is left of each path keeps its look, name, opacity mask and attributes, and its fill rule unless merged regions shaped it), splitStroke?: false (In Merge Mode, Clicking Stroke Splits the Path; not with erase: when the one point of a click is within tolerance of a stroke, the path that stroke is on splits in two instead of a merge: the path keeps the rest of it, and a copy of the path holding the run of it from the anchor or crossing point before the click to the one after it goes directly above it; the other objects stay as they are; with pickColorFrom \"swatches\" or fill, the run's stroke takes that paint; a path in a Live Paint group or a Shaper Group does not split, and nor does a path the run is all of, such as a lone line), tolerance?: pt (2, erase or splitStroke), gap?: pt (0–72; 0: Gap Detection off), openFilledAsClosed?: true (Consider Open Filled Paths as Closed: a filled open path bounds a region as if an invisible edge closed it; false: it cuts the regions it crosses like an unfilled one), pickColorFrom?: \"artwork\" (default: the merged shape takes the look of the front-most object under the first point, else under the last point, else of the front-most object) | \"swatches\" (the current fill, with the rest of the look of the front-most object over the first region the drag touches that an object covers, else of the front-most object), fill?: \"#rrggbb\" | {color|swatch|gradient|none} (overrides pickColorFrom)} → {ids, merged, regions, lines, edges (counts deleted, merged or split), split?: id (the run split off, after a split)}; after a split, ids are the roots, with the rest and the run in place of the path when it was one",
             has_selection_or_ids,
             sb_merge
         ),
@@ -252,6 +253,8 @@ fn sb_merge(s: &mut Session, p: &Value) -> Result<Value> {
     check_numbers(p, &["tolerance", "gap"], C)?;
     // Line pieces and edges are only deleted (erase mode), never merged.
     let piece_tol = erase.then(|| f64_or(p, "tolerance", 2.0).clamp(0.0, 1000.0));
+    // In Merge Mode, Clicking Stroke Splits the Path: a click (one point) on a stroke splits it.
+    let split_tol = (switch_or(p, "splitStroke", false, C)? && !erase && pts.len() == 1).then(|| f64_or(p, "tolerance", 2.0).clamp(0.0, 1000.0));
     let open_filled_as_closed = switch_or(p, "openFilledAsClosed", true, C)?;
     let swatches = match p.get("pickColorFrom") {
         None | Some(Value::Null) => false,
@@ -267,13 +270,41 @@ fn sb_merge(s: &mut Session, p: &Value) -> Result<Value> {
     };
     let roots = root_ids(s, p)?;
     let label = if erase { "Shape Builder Delete" } else { "Shape Builder" };
-    let (ids, merged, touched) = s.edit(label, |d, sel| {
-        let (map, leaves) = BuilderMap::with_gap(d, &roots, erase, open_filled_as_closed, gap_param(p));
+    let (ids, merged, touched, split) = s.edit(label, |d, sel| {
+        let (map, leaves) = BuilderMap::with_gap(d, &roots, erase || split_tol.is_some(), open_filled_as_closed, gap_param(p));
+        let outlines = b::drawn_outlines(d, &leaves);
         let leaves: Vec<Node> = leaves.into_iter().cloned().collect();
         if map.shapes.is_empty() {
             return Err(EngineError::Other("Shape Builder: select paths or compound paths".into()));
         }
         let step = (d.bounds_of(&roots, false).map(|r| r.width().max(r.height())).unwrap_or(100.0) / 2000.0).max(0.25);
+        if let Some(tol) = split_tol
+            && let Some(&q) = pts.first()
+            && let Some((i, run)) = map.stroke_at(&outlines, q, tol)
+            && let (Some(leaf), Some(drawn)) = (leaves.get(i), outlines.get(i))
+            && let Some(rest) = po::cut_out(drawn, &run, open_filled_as_closed && !leaf.appearance.fill_paint().is_none(), b::outline_snap(drawn))
+            && !rest.is_empty()
+        {
+            // The path keeps the rest of it, and a copy of it with the run under the click goes
+            // directly above it; the other objects stay as they are.
+            let pieces = [rest, PathData::single(run)].into_iter().filter(|pd| !pd.is_empty()).collect();
+            let mut replaced = Beside::replacing(d, &[leaf.id]);
+            let new_ids = replace_with_pieces(d, &mut replaced, leaf.id, pieces)?;
+            replaced.finish(d)?;
+            let split = *new_ids.last().ok_or(EngineError::NoNode(leaf.id))?;
+            // Pick Color From Color Swatches (or `fill`): the stroke takes that paint.
+            if let Some(f) = &fill
+                && let Some(n) = d.node_mut(split)
+            {
+                n.appearance.set_stroke(f.clone());
+            }
+            // The roots stay selected, with the two paths in place of the path when it was one.
+            let ids: Vec<NodeId> = roots.iter().flat_map(|r| if *r == leaf.id { new_ids.clone() } else { vec![*r] }).collect();
+            sel.set(ids.iter().copied());
+            let mut touched = Touched::default();
+            touched.add(map.hit(q, Some(tol)));
+            return Ok((ids, None, touched, Some(split)));
+        }
         let mut touched = Touched::default();
         for q in sample_polyline(&pts, step) {
             touched.add(map.hit(q, piece_tol));
@@ -283,8 +314,6 @@ fn sb_merge(s: &mut Session, p: &Value) -> Result<Value> {
             return Err(EngineError::Other("Shape Builder: no region under the pointer".into()));
         }
         let cuts: Vec<&SubPath> = touched.edges.iter().filter_map(|&k| map.edges.get(k)?.0.path.subpaths.first()).collect();
-        // Edges come back from the planar map within a few hundredths of the outlines they follow.
-        let cut_tol = step * 0.2;
         let picked: Vec<&po::Region> = touched.regions.iter().filter_map(|&i| map.regions.get(i).map(|r| &r.0)).collect();
         let faces = po::FaceMerger::with_gap(&map.shapes, gap_param(p));
         let union = if picked.is_empty() { PathData::default() } else { faces.merge(&picked) };
@@ -309,7 +338,7 @@ fn sb_merge(s: &mut Session, p: &Value) -> Result<Value> {
                 } else {
                     for k in keep {
                         if let Some((l, _)) = map.lines.get(k) {
-                            new_nodes.push(shape_node(d, l.path.clone(), Some(leaf)));
+                            new_nodes.push(remnant(d, leaf, l.path.clone(), None));
                         }
                     }
                 }
@@ -333,6 +362,9 @@ fn sb_merge(s: &mut Session, p: &Value) -> Result<Value> {
                     b::node_outline(leaf).map_or_else(|| sh.path.clone(), |o| o.0)
                 };
                 let fill_closes = open_filled_as_closed && !leaf.appearance.fill_paint().is_none();
+                // Edges come back from the planar map within a few hundredths of the outlines they
+                // follow, whatever else is selected.
+                let cut_tol = b::outline_snap(&sh.path);
                 let mut cut = false;
                 for piece in &cuts {
                     if let Some(r) = po::cut_out(&rest, piece, fill_closes, cut_tol) {
@@ -343,7 +375,8 @@ fn sb_merge(s: &mut Session, p: &Value) -> Result<Value> {
                 if !in_union && !cut {
                     new_nodes.push(d.reid(leaf));
                 } else if !rest.is_empty() {
-                    new_nodes.push(shape_node(d, rest, Some(leaf)));
+                    // What is left of its own outline keeps its fill rule; united faces fill with non-zero.
+                    new_nodes.push(remnant(d, leaf, rest, in_union.then_some(FillRule::NonZero)));
                 }
             }
             if !erase && !union.is_empty() && Some(i) == style_src {
@@ -357,15 +390,19 @@ fn sb_merge(s: &mut Session, p: &Value) -> Result<Value> {
         }
         let new_ids = replace_roots(d, &roots, new_nodes)?;
         sel.set(new_ids.iter().copied());
-        Ok((new_ids, merged_id, touched))
+        Ok((new_ids, merged_id, touched, None))
     })?;
-    Ok(json!({
+    let mut out = json!({
         "ids": ids_json(&ids),
         "merged": merged.map(|m| m.0),
         "regions": touched.regions.len(),
         "lines": touched.lines.len(),
         "edges": touched.edges.len(),
-    }))
+    });
+    if let Some(e) = split {
+        out["split"] = json!(e.0);
+    }
+    Ok(out)
 }
 
 /// Remove the roots and insert `nodes` where the front-most root was. Returns the new ids.
@@ -382,6 +419,24 @@ fn replace_roots(d: &mut Document, roots: &[NodeId], nodes: Vec<Node>) -> Result
     replaced.put(d, top, nodes)?;
     replaced.finish(d)?;
     Ok(ids)
+}
+
+/// What is left of path or compound path `src`: a copy of it with a fresh id and the geometry `path`
+/// (a path for one subpath, else a compound path, as [`shape_node`] makes them). It keeps the rest
+/// of `src`: its look, name, opacity mask and attributes, and its fill rule unless `rule` is given.
+fn remnant(d: &mut Document, src: &Node, path: PathData, rule: Option<FillRule>) -> Node {
+    let own = match &src.kind {
+        NodeKind::Path { rule, .. } | NodeKind::Compound { rule, .. } => *rule,
+        _ => FillRule::NonZero,
+    };
+    let shaped = shape_node(d, path, None);
+    let mut n = src.clone();
+    n.id = shaped.id;
+    n.kind = shaped.kind;
+    if let NodeKind::Path { rule: r, .. } | NodeKind::Compound { rule: r, .. } = &mut n.kind {
+        *r = rule.unwrap_or(own);
+    }
+    n
 }
 
 fn sb_regions(s: &mut Session, p: &Value) -> Result<Value> {

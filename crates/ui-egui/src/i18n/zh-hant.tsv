@@ -1061,6 +1061,7 @@
 	Keep selected	保持選取狀態
 	Merge only with selection	僅與選取物件合併
 	Consider Open Filled Paths as Closed	將有填色的開放路徑視為封閉路徑
+	In Merge Mode, Clicking Stroke Splits the Path	在合併模式下，按一下筆畫可分割路徑
 	Pick Color From:	顏色來源：
 	Artwork	圖稿
 	Cursor Swatch Preview	在指標旁預覽色票
@@ -1068,6 +1069,7 @@
 	Freeform	自由
 	Straight Line	直線
 	Highlight:	強調顯示：
+	Stroke When Editable	可編輯時的筆畫
 	Fill New Type Objects With Placeholder Text	以預留位置文字填滿新文字物件
 	Fill Rule	填色規則
 	Fill with Placeholder Text	以預留位置文字填滿
