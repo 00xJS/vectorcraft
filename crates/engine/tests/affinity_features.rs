@@ -374,6 +374,23 @@ fn embedded_documents_nest_only_so_deep() {
     assert!(loaded.warnings.iter().any(|w| w.contains("nested more than four deep")), "{:?}", loaded.warnings);
 }
 
+/// An embedded document's master pages aren't kept, so its instances of them are left out: in the
+/// document it is embedded in they would show that document's masters.
+#[test]
+fn master_pages_of_embedded_documents_are_left_out() {
+    use vectorcraft_affinity::model::{Kind, Node as AfNode};
+    fn instances(nodes: &[AfNode]) -> usize {
+        nodes.iter().map(|n| usize::from(matches!(n.kind, Kind::MasterInstance { .. })) + instances(&n.children)).sum()
+    }
+    let outer = canvas_with(vec![embedded_node(20)], Some(&with_master(1)));
+    let d = vectorcraft_affinity::read(&outer, vectorcraft_affinity::Limits::default()).unwrap();
+    assert_eq!(instances(&d.spreads[0].nodes), 0);
+    assert!(d.warnings.iter().any(|w| w.contains("master pages of embedded documents")), "{:?}", d.warnings);
+    // Its own objects still come in.
+    let loaded = open("poster.af", &outer);
+    named(&loaded.doc, "Page box");
+}
+
 #[test]
 fn master_pages_show_on_the_pages_that_use_them() {
     let loaded = open("master.afpub", &with_master(1));

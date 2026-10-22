@@ -28,8 +28,8 @@ Affinity files.
 | Tables (`TxtT`): grid, cell text, merged cells, cell insets and vertical alignment, the line on every cell edge | a group of area type per cell and a stroked line per edge (VectorCraft has no tables) |
 | Placed images (`ImgN`): the original JPEG/PNG embedded in the file | embedded images |
 | Pixel layers (`Rstr`): RGBA 8/16-bit and CMYK 8-bit tiles, cropped to their content; source-backed RGBA8 JPEG/PNG tiles with matching dimensions and zero origin; the document's CMYK colour profile (`CMYP`) | embedded PNG images; CMYK layers through the document's profile (relative colorimetric, black-point compensation, as Affinity converts them), or, without one, CMYK images that keep their inks |
-| Embedded Affinity documents (`EmbN` with an `EmDc` entry), four deep at most | their first page's content, editable (their artboards only clip, they don't become artboards); other embedded documents and symbols as the picture Affinity cached of them |
-| Layer effects: drop shadows, outer glows, inner shadows; outlines; colour and gradient overlays in any blend mode | Stylize › Drop Shadow and Outer Glow, Inner Glow at the edge (approximated); one more stroke on shapes (around their own stroke), the characters' stroke on text; overlays baked into fill, stroke, text colours and pixels |
+| Embedded Affinity documents (`EmbN` with an `EmDc` entry), four deep at most | their first page's content, editable (their artboards only clip, they don't become artboards; their master pages are left out); other embedded documents and symbols as the picture Affinity cached of them |
+| Layer effects: drop shadows, outer glows, inner shadows; outlines; colour and gradient overlays in any blend mode | Stylize › Drop Shadow and Outer Glow, Inner Glow at the edge (approximated); one more stroke on shapes (around their own stroke), the characters' stroke on text; overlays baked into fill, stroke, text colours and pixels (a group's over its children's) |
 | Opacity, visibility, lock, names, the blend modes VectorCraft has | the same |
 
 Everything else is reported in the import warnings, one line per kind with a count, never
