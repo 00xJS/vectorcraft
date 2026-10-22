@@ -599,6 +599,21 @@ pub fn effect_catalog() -> Vec<EffectInfo> {
             json!({"detail": 4.0, "smoothness": 4.0}),
         ),
         r(
+            "sketch.conteCrayon",
+            "Conté Crayon…",
+            SKETCH,
+            "{foregroundLevel: 0..20 (12; how far the black crayon reaches from the shadows into the midtones), backgroundLevel: 0..20 (10; how far the white crayon reaches from the highlights into the midtones), texture: \"brick\"|\"burlap\"|\"canvas\"|\"sandstone\" (\"canvas\"; the paper's surface, made in code), scaling: % 50..200 (100), relief: 0..50 (4), lightDirection: \"bottom\"|\"bottomLeft\"|\"left\"|\"topLeft\"|\"top\"|\"topRight\"|\"right\"|\"bottomRight\" (\"top\"), invert: bool (false; turns the surface's heights over)} redraws the object in a dense black crayon in its dark areas and a pure white crayon in its light areas, on mid-grey paper whose texture breaks the strokes and stands in relief, keeping its coverage. Public help names Foreground Level, Background Level and the texture options but not slider ranges or dialog defaults; ranges and defaults here are unverified VectorCraft choices. Original visual approximation, not a proprietary reproduction.",
+            json!({
+                "foregroundLevel": 12.0,
+                "backgroundLevel": 10.0,
+                "texture": "canvas",
+                "scaling": 100.0,
+                "relief": 4.0,
+                "lightDirection": "top",
+                "invert": false
+            }),
+        ),
+        r(
             "sketch.graphicPen",
             "Graphic Pen…",
             SKETCH,

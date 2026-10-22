@@ -217,6 +217,8 @@ fn raster_filter_dialogs_preview_and_apply() {
         ("pixelate.pointillize", "cellSize", "12"),
         ("sketch.basRelief", "lightDirection", "left"),
         ("sketch.charcoal", "thickness", "5"),
+        ("sketch.conteCrayon", "texture", "brick"),
+        ("sketch.conteCrayon", "foregroundLevel", "16"),
         ("sketch.halftonePattern", "patternType", "line"),
         ("sketch.photocopy", "darkness", "40"),
         ("sketch.stamp", "lightDarkBalance", "10"),
