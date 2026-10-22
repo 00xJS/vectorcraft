@@ -1587,6 +1587,7 @@ impl Session {
         Self::refresh_text_bounds(&mut doc);
         // Guides from files saved before guides had layers go on a layer.
         doc.adopt_guides();
+        cmd::dimension::conform(&mut doc);
         self.reset_tool_for_doc_switch();
         let mut st = DocState::new(doc, path);
         st.history.limit = self.prefs.history_states as usize;
@@ -1604,6 +1605,7 @@ impl Session {
         doc.limit_depth();
         Self::refresh_text_bounds(&mut doc);
         doc.adopt_guides();
+        cmd::dimension::conform(&mut doc);
         if self.active == Some(index) {
             // Pending tool work (typing, a drag) belongs to the content being thrown away.
             self.reset_tool_for_doc_switch();

@@ -227,11 +227,43 @@ pub(crate) fn refresh(before: &Document, doc: &mut Document) -> Result<()> {
                 next.moved = None;
             }
         }
-        if next != old || before.node(id).and_then(|n| n.extras().dimension.as_deref()).is_some_and(|d| d != &next) {
+        // A new document colour mode (Document Color Mode) redraws every dimension in it.
+        if next != old
+            || before.color_mode != doc.color_mode
+            || before.node(id).and_then(|n| n.extras().dimension.as_deref()).is_some_and(|d| d != &next)
+        {
             replace(doc, id, next)?;
         }
     }
     Ok(())
+}
+
+/// Redraw the dimensions of an opened document whose art isn't in its colour mode: files saved
+/// before dimensions followed the colour mode have RGB dimensions in CMYK documents. A dimension
+/// that can't be redrawn keeps the art it has.
+pub(crate) fn conform(doc: &mut Document) {
+    if !doc.dimensions {
+        return;
+    }
+    let mode = doc.color_mode;
+    let off_mode = |c: &Color| match mode {
+        ColorMode::Rgb => matches!(c, Color::Cmyk { .. }),
+        ColorMode::Cmyk => matches!(c, Color::Rgb { .. }),
+    };
+    let mut stale = Vec::new();
+    doc.walk(|n| {
+        if let Some(d) = &n.extras().dimension {
+            let mut off = false;
+            n.walk(&mut |c| off |= [c.appearance.fill_paint(), c.appearance.stroke_paint()].iter().filter_map(|p| p.color()).any(|c| off_mode(&c)));
+            if off {
+                stale.push((n.id, (**d).clone()));
+            }
+        }
+    });
+    for (id, d) in stale {
+        // An error leaves this dimension as it was; the others are still redrawn.
+        let _ = replace(doc, id, d);
+    }
 }
 
 /// Option colour `c` as a paint in the document's colour model: in a CMYK document black is K
