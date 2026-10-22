@@ -73,6 +73,20 @@ impl Session {
         self.tool.id()
     }
 
+    /// How many times switching or closing documents, or replacing the active one (File › Revert),
+    /// has started the tool afresh, also inside a `command.batch` or `action.batch`. A frontend
+    /// compares it before and after a command.
+    pub fn tool_resets(&self) -> u64 {
+        self.tool_resets
+    }
+
+    /// Whether the tool's options were set ([`Self::set_tool_option`], `tool.setOption`) after
+    /// [`Self::tool_resets`] last counted, as a Paste or Cut with the Artboard tool sets them after a
+    /// batch's Revert step.
+    pub fn tool_set_since_reset(&self) -> bool {
+        self.tool_set_since_reset
+    }
+
     /// Choose a tool (the toolbar, its shortcut, MCP), finishing any pending tool work first.
     pub fn select_tool(&mut self, id: &str, view: ViewInfo) -> Result<()> {
         // Choosing a perspective tool shows the document's perspective grid; Hide Grid hides it
@@ -467,6 +481,7 @@ impl Session {
     }
     pub fn set_tool_option(&mut self, key: &str, v: &Value) {
         self.tool.set_option(key, v);
+        self.tool_set_since_reset = true;
         self.keep_tool_settings();
     }
 
@@ -480,6 +495,7 @@ impl Session {
     /// Liquify tools' Global Brush Dimensions). Returns the tool's options.
     pub fn set_tool_options(&mut self, id: Option<&str>, values: &Map<String, Value>) -> Value {
         let active = id.is_none_or(|id| id == self.tool.id());
+        self.tool_set_since_reset |= active;
         let mut other = (!active).then(|| self.make_tool(id.unwrap_or_default()));
         let t = other.as_deref_mut().unwrap_or(self.tool.as_mut());
         for (k, v) in values {
