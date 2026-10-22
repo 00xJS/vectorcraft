@@ -32,7 +32,15 @@ pub fn specs() -> Vec<CommandSpec> {
         ),
         cmd!("shape.line", "Line Segment", [], None, "{x1, y1, x2, y2} → {id}", has_doc, line),
         cmd!("shape.spiral", "Spiral", [], None, "{cx, cy, radius, decay=80 (%), segments=10, clockwise?} → {id}", has_doc, spiral),
-        cmd!("shape.arc", "Arc", [], None, "{x1, y1, x2, y2, closed?} → {id}", has_doc, arc),
+        cmd!(
+            "shape.arc",
+            "Arc",
+            [],
+            None,
+            "{x1, y1, x2, y2, closed?, slope?} or {x, y, lengthX, lengthY, reference?, baseAlong?: x|y, slope?, closed?, fillArc?} → {id}",
+            has_doc,
+            arc
+        ),
         cmd!(
             "shape.rectangularGrid",
             "Rectangular Grid",
@@ -393,9 +401,34 @@ fn spiral(s: &mut Session, p: &Value) -> Result<Value> {
 }
 
 fn arc(s: &mut Session, p: &Value) -> Result<Value> {
-    let a = Point::new(f64_req(p, "x1", "shape.arc")?, f64_req(p, "y1", "shape.arc")?);
-    let b = Point::new(f64_req(p, "x2", "shape.arc")?, f64_req(p, "y2", "shape.arc")?);
-    add_art(s, "Arc", path_kind(shapes::arc(a, b, 0.0, switch_or(p, "closed", false, "shape.arc")?), None), None)
+    let closed = switch_or(p, "closed", false, "shape.arc")?;
+    let fill_arc = switch_or(p, "fillArc", false, "shape.arc")?;
+    let base_x = !matches!(p.get("baseAlong").and_then(Value::as_str), Some("y" | "Y"));
+    let path = if p.get("lengthX").is_some() || p.get("lengthY").is_some() {
+        let anchor = Point::new(f64_req(p, "x", "shape.arc")?, f64_req(p, "y", "shape.arc")?);
+        let reference = p.get("reference").and_then(Value::as_u64).unwrap_or(0) as usize;
+        shapes::arc_segment(
+            anchor,
+            reference,
+            number_or(p, "lengthX", 100.0, "shape.arc")?,
+            number_or(p, "lengthY", 100.0, "shape.arc")?,
+            base_x,
+            number_or(p, "slope", 50.0, "shape.arc")?,
+            closed,
+        )
+    } else {
+        let a = Point::new(f64_req(p, "x1", "shape.arc")?, f64_req(p, "y1", "shape.arc")?);
+        let b = Point::new(f64_req(p, "x2", "shape.arc")?, f64_req(p, "y2", "shape.arc")?);
+        let slope = number_or(p, "slope", 100.0, "shape.arc")?;
+        shapes::arc(a, b, slope, closed, base_x)
+    };
+    let fill = if fill_arc { s.paint.fill.clone() } else { vectorcraft_color::Paint::None };
+    let look = s.new_art_look(
+        fill,
+        if s.paint.stroke.is_none() { vectorcraft_color::Paint::solid(vectorcraft_color::Color::BLACK) } else { s.paint.stroke.clone() },
+        s.paint.stroke_width.max(0.1),
+    );
+    add_look(s, "Arc", path_kind(path, None), look, None)
 }
 
 /// The grid `paths` (bottom first) as one selected group in the new-art stroke, filled with the

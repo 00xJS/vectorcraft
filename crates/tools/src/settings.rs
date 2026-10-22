@@ -26,7 +26,7 @@ const ROWS: &[Row] = &[
     (SYMBOLISM, Some("symbolism"), &["diameter", "intensity", "density"]),
     (&["mirrorCut"], None, &["axis", "keep"]),
     (&["puppetWarp"], None, &["showMesh", "expand"]),
-    (&["arc"], None, &["closed"]),
+    (&["arc"], None, &["closed", "lengthX", "lengthY", "reference", "baseAlong", "slope", "fillArc"]),
     (&["spiral"], None, &["decay", "segments", "clockwise"]),
     (&["rectangularGrid"], None, &["rows", "columns", "rowSkew", "columnSkew", "frame", "fill"]),
     (&["polarGrid"], None, &["concentric", "radial", "concentricSkew", "radialSkew", "compound", "fill"]),

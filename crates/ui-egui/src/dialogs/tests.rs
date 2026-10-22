@@ -1719,10 +1719,17 @@ fn arc_click_opens_options_and_ok_draws() {
     use vectorcraft_doc::NodeKind;
     let mut app = app();
     open_tool_dialog(&mut app, "arc", json!({"x": 100.0, "y": 50.0}));
-    assert_eq!(app.ui.dialog.as_ref().unwrap().kind, "arc");
+    let d = app.ui.dialog.as_ref().unwrap();
+    assert_eq!(d.kind, "arc");
+    assert!(d.fields.contains_key("lengthX") && d.fields.contains_key("lengthY"));
     super::confirm(&mut app).unwrap();
     let n = app.session.doc().unwrap().doc.layers[0].children().unwrap().last().unwrap();
     assert!(matches!(n.kind, NodeKind::Path { .. }));
+    let pd = n.path_data().unwrap();
+    let a0 = pd.subpaths[0].anchors[0].p;
+    let a1 = pd.subpaths[0].anchors[1].p;
+    assert!((a0.x - 100.0).abs() < 1e-6 && (a0.y - 50.0).abs() < 1e-6);
+    assert!((a1.x - 200.0).abs() < 1e-6 && (a1.y - 150.0).abs() < 1e-6);
 }
 
 /// #1377: Polar Grid's dialog has a skew slider under each divider count, Create Compound Path
