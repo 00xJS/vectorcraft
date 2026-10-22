@@ -11,6 +11,7 @@
 #![forbid(unsafe_code)]
 
 mod bitmap;
+mod colr;
 mod composer;
 pub mod craft_fonts;
 pub mod edit;
@@ -123,14 +124,24 @@ pub struct PositionedGlyph {
     /// included.
     pub scale: f64,
     /// A colour bitmap glyph (emoji), drawn through `xf` instead of an outline: its `outline` is
-    /// empty.
+    /// empty. Also a COLR glyph whose paints documents have no form for, drawn as an image.
     pub image: Option<Arc<GlyphImage>>,
+    /// A COLR colour glyph's layers, drawn through `xf` instead of an outline: art in font units
+    /// (y down), an isolated group. Its `outline` is empty.
+    pub colour: Option<Arc<vectorcraft_doc::Node>>,
 }
 
 impl PositionedGlyph {
     /// The glyph's colour bitmap, and the transform from its pixels to text space.
     pub fn placed_image(&self) -> Option<(&Arc<GlyphImage>, Affine)> {
         self.image.as_ref().map(|i| (i, self.xf * i.xf))
+    }
+    /// The glyph's COLR layers placed through `to_doc` (text space → where they go): a copy of
+    /// [`Self::colour`], transformed, its nodes without ids.
+    pub fn placed_colour(&self, to_doc: Affine) -> Option<vectorcraft_doc::Node> {
+        let mut art = (**self.colour.as_ref()?).clone();
+        art.transform(to_doc * self.xf, true);
+        Some(art)
     }
 }
 
@@ -611,6 +622,8 @@ mod tests_axes;
 mod tests_bidi;
 #[cfg(test)]
 mod tests_bitmaps;
+#[cfg(test)]
+mod tests_colr;
 #[cfg(test)]
 mod tests_combos;
 #[cfg(test)]

@@ -585,3 +585,94 @@ pub fn solid_png(side: u32, rgba: [u8; 4]) -> Vec<u8> {
     chunk(&mut out, b"IEND", &[]);
     out
 }
+
+/// The palette of [`colr_font`] (palette 0, RGBA): its indices 0, 1 and 2.
+pub const COLR_RED: [u8; 4] = [255, 0, 0, 255];
+pub const COLR_BLUE: [u8; 4] = [0, 0, 255, 255];
+pub const COLR_GREEN: [u8; 4] = [0, 255, 0, 255];
+
+/// The character whose glyph [`colr_font`]`(true)` paints with a sweep gradient.
+pub const COLR_SWEEP_CHAR: char = 'S';
+
+/// The family of [`colr_font`] (COLRv1, or v0).
+pub fn colr_family(v1: bool) -> &'static str {
+    if v1 { "Colrtest Paints" } else { "Colrtest Layers" }
+}
+
+/// The glyph ids of `chars` in the bundled Source Sans 3.
+fn source_sans_gids<const N: usize>(chars: [char; N]) -> Option<[u16; N]> {
+    let font = skrifa::FontRef::new(SOURCE_SANS).ok()?;
+    let mut gids = [0; N];
+    for (gid, ch) in gids.iter_mut().zip(chars) {
+        *gid = u16::try_from(font.charmap().map(ch)?.to_u32()).ok()?;
+    }
+    Some(gids)
+}
+
+const SOURCE_SANS: &[u8] = include_bytes!("../../../assets/fonts/SourceSans3-Regular.ttf");
+
+/// The bundled Source Sans 3 Regular as family [`colr_family`], with `COLR` and `CPAL` tables
+/// written from the OpenType specification, palette 0 [`COLR_RED`], [`COLR_BLUE`], [`COLR_GREEN`].
+/// v0: [`COLOUR_CHAR`] is the outline of `O` in red, then that of `I` in the foreground colour
+/// (palette index 0xFFFF). v1: [`COLOUR_CHAR`] is, in a clip box, `O` filled with a linear
+/// gradient red → blue, `I` scaled by a half about the origin with a radial gradient blue → green,
+/// and `-` in green composited with Multiply over `-` in red; [`COLR_SWEEP_CHAR`] is `O` with a
+/// sweep gradient red → blue. Their outlines stay. `None` when it can't be built.
+pub fn colr_font(v1: bool) -> Option<Vec<u8>> {
+    use write_fonts::tables::colr::{
+        BaseGlyph, BaseGlyphList, BaseGlyphPaint, Clip, ClipBox, ClipList, ColorLine, ColorStop, Colr, CompositeMode, Extend, Layer, LayerList, Paint,
+    };
+    use write_fonts::types::{FWord, GlyphId16, UfWord};
+    let [base, sweep, o, i, dash] = source_sans_gids([COLOUR_CHAR, COLR_SWEEP_CHAR, 'O', 'I', '-'])?;
+    let (base, sweep, o, i, dash) = (GlyphId16::new(base), GlyphId16::new(sweep), GlyphId16::new(o), GlyphId16::new(i), GlyphId16::new(dash));
+    let colr = if v1 {
+        let one = F2Dot14::from_f32(1.0);
+        let line = |from: u16, to: u16| {
+            ColorLine::new(Extend::Pad, 2, vec![ColorStop::new(F2Dot14::from_f32(0.0), from, one), ColorStop::new(one, to, one)])
+        };
+        let w = FWord::new;
+        let layers = vec![
+            Paint::glyph(Paint::linear_gradient(line(0, 1), w(0), w(0), w(500), w(0), w(0), w(500)), o),
+            Paint::scale_uniform(
+                Paint::glyph(Paint::radial_gradient(line(1, 2), w(250), w(300), UfWord::new(0), w(250), w(300), UfWord::new(300)), i),
+                F2Dot14::from_f32(0.5),
+            ),
+            Paint::composite(Paint::glyph(Paint::solid(2, one), dash), CompositeMode::Multiply, Paint::glyph(Paint::solid(0, one), dash)),
+        ];
+        let mut colr = Colr::new(0, None, None, 0);
+        colr.layer_list = Some(LayerList::new(layers.len() as u32, layers)).into();
+        let mut glyphs = vec![
+            BaseGlyphPaint::new(base, Paint::colr_layers(3, 0)),
+            BaseGlyphPaint::new(sweep, Paint::glyph(Paint::sweep_gradient(line(0, 1), w(250), w(300), F2Dot14::from_f32(0.0), one), o)),
+        ];
+        glyphs.sort_by_key(|g| g.glyph_id);
+        colr.base_glyph_list = Some(BaseGlyphList::new(glyphs.len() as u32, glyphs)).into();
+        let clip = ClipBox::format_1(w(-50), w(-250), w(750), w(800));
+        colr.clip_list = Some(ClipList::new(1, 1, vec![Clip::new(base, base, clip)])).into();
+        colr
+    } else {
+        Colr::new(1, Some(vec![BaseGlyph::new(base, 0, 2)]), Some(vec![Layer::new(o, 0), Layer::new(i, 0xFFFF)]), 2)
+    };
+    colr_font_with(colr_family(v1), &colr)
+}
+
+/// The bundled Source Sans 3 Regular as `family` with `colr` and [`colr_font`]'s palette.
+pub fn colr_font_with(family: &str, colr: &write_fonts::tables::colr::Colr) -> Option<Vec<u8>> {
+    use write_fonts::tables::cpal::{ColorRecord, Cpal};
+    let font = skrifa::FontRef::new(SOURCE_SANS).ok()?;
+    let ps = family.replace(' ', "");
+    let name = name_table(&[(1, family), (2, "Regular"), (4, &format!("{family} Regular")), (6, &format!("{ps}-Regular"))])?;
+    let records = [COLR_RED, COLR_BLUE, COLR_GREEN].map(|[r, g, b, a]| ColorRecord::new(b, g, r, a)).to_vec();
+    let cpal = Cpal::new(3, 1, 3, Some(records), vec![0]);
+    let mut builder = FontBuilder::new();
+    builder.add_raw(Tag::new(b"name"), name);
+    builder.add_table(colr).ok()?;
+    builder.add_table(&cpal).ok()?;
+    for r in font.table_directory.table_records() {
+        let tag = Tag::new(&r.tag().to_be_bytes());
+        if !builder.contains(tag) {
+            builder.add_raw(tag, font.table_data(r.tag())?.as_bytes());
+        }
+    }
+    Some(builder.build())
+}

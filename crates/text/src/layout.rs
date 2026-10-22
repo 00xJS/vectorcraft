@@ -106,9 +106,24 @@ impl Ctx<'_> {
     fn emit(&mut self, g: &SGlyph, pre: Affine, origin: Point, angle: f64, advance: f64, line: usize) {
         // Control characters (tabs) and soft hyphens draw nothing (fonts map them to .notdef).
         let blank = g.is_soft_hyphen() || g.ch.is_control();
-        // A colour bitmap glyph draws its image, not its outline.
-        let image = if g.inline.is_some() || blank { None } else { self.db.glyph_image(&g.face, g.gid) };
-        let src = if g.inline.is_some() || image.is_some() { std::sync::Arc::new(BezPath::new()) } else { self.db.outline(&g.face, g.gid) };
+        // A colour glyph draws its layers (COLR) or its image (a bitmap, or COLR paints documents
+        // have no form for), not its outline; COLR first. Layers in the foreground colour take
+        // the run's fill, or black when it isn't a colour.
+        let plain = g.inline.is_some() || blank;
+        let foreground = match &self.style_at(g.byte).fill {
+            vectorcraft_doc::color::Paint::Solid { color, .. } => *color,
+            _ => vectorcraft_doc::color::Color::BLACK,
+        };
+        let (colour, image) = match (!plain).then(|| self.db.glyph_colour(&g.face, g.gid, foreground)).flatten() {
+            Some(crate::colr::ColourContent::Art(art)) => (Some(art), None),
+            Some(crate::colr::ColourContent::Image(image)) => (None, Some(image)),
+            None => (None, (!plain).then(|| self.db.glyph_image(&g.face, g.gid)).flatten()),
+        };
+        let src = if g.inline.is_some() || image.is_some() || colour.is_some() {
+            std::sync::Arc::new(BezPath::new())
+        } else {
+            self.db.outline(&g.face, g.gid)
+        };
         // A glyph whose leading space was taken off (mojikumi) is drawn that much earlier: an
         // upright one in vertical type by moving it up the column once it stands upright.
         let upright = self.vertical && !self.on_path && g.tcy.is_none() && stands_upright(g);
@@ -173,6 +188,7 @@ impl Ctx<'_> {
             rtl: g.level.is_rtl() && !self.vertical,
             scale: 1.0,
             image,
+            colour,
         });
     }
 
@@ -729,6 +745,9 @@ fn finish_bounds(out: &mut TextLayout) {
         }
         if let Some((image, xf)) = g.placed_image() {
             add(xf.transform_rect_bbox(image.rect()));
+        }
+        if let Some(b) = g.colour.as_ref().and_then(|c| c.geometric_bounds()) {
+            add(g.xf.transform_rect_bbox(b));
         }
     }
     // Ruby: covered by its line's ascent, but its ink can overhang sideways past the line.
@@ -2944,5 +2963,6 @@ fn ruby_glyph(g: &PositionedGlyph, m: Affine, run: usize, byte: usize, line: usi
         scale: 1.0,
         // Ruby draws outlines only.
         image: None,
+        colour: None,
     }
 }

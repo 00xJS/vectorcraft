@@ -1817,6 +1817,10 @@ impl Renderer {
                 b.apply_affine(t.xf * *to_text);
                 self.hairline(ctx, f, &b, [0, 0, 0, 255]);
             }
+            // COLR glyphs: their layers' outlines.
+            for (_, art) in &g.colours {
+                self.draw_colour_glyph(ctx, f, art, t.xf);
+            }
             self.draw_inlines(ctx, f, t, g);
             return;
         }
@@ -1862,6 +1866,9 @@ impl Renderer {
             for (_, image, to_text) in g.images.iter().filter(|(r, ..)| *r == i) {
                 overprint(ctx, false);
                 self.draw_glyph_image(ctx, f, image, t.xf * *to_text);
+            }
+            for (_, art) in g.colours.iter().filter(|(r, _)| *r == i) {
+                self.draw_colour_glyph(ctx, f, art, t.xf);
             }
             let path = g.run(i);
             let path = path.as_ref();
@@ -1917,6 +1924,15 @@ impl Renderer {
                 AppearanceItem::Stroke(_) => {}
             }
         }
+    }
+
+    /// Draw COLR glyph `art` (its layers in text space) through `xf` (text space → document), as
+    /// art: kept between frames as symbol art is ([`Self::placed_art`]).
+    fn draw_colour_glyph(&mut self, ctx: &mut RenderContext, f: &Frame, art: &Arc<Node>, xf: Affine) {
+        let (node, kept) = self.placed_art(art, xf, true, None);
+        let outer = std::mem::replace(&mut self.made_again, !kept);
+        self.draw_node(ctx, f, &node, true);
+        self.made_again = outer;
     }
 
     /// Draw colour bitmap glyph `image` through `xf` (its pixels → document space), its pixels
@@ -2372,6 +2388,8 @@ struct TextGeom {
     inlines: Vec<vectorcraft_text::InlineGlyph>,
     /// Colour bitmap glyphs: (run, image, its pixels → text space), in text order.
     images: Vec<(usize, Arc<vectorcraft_text::GlyphImage>, Affine)>,
+    /// COLR colour glyphs: (run, their layers placed in text space), in text order.
+    colours: Vec<(usize, Arc<Node>)>,
 }
 
 impl TextGeom {
@@ -2421,6 +2439,7 @@ impl TextGeom {
             + self.spans.len() * size_of::<(usize, usize, usize)>()
             + self.inlines.len() * size_of::<vectorcraft_text::InlineGlyph>()
             + self.images.len() * size_of::<(usize, Arc<vectorcraft_text::GlyphImage>, Affine)>()
+            + self.colours.iter().map(|(_, art)| lru::node_bytes(art)).sum::<usize>()
     }
 }
 
@@ -2501,11 +2520,14 @@ fn text_geom_snapped(t: &TextObject, snap: Option<Affine>) -> TextGeom {
         .collect();
     let (mut substituted_fonts, mut substituted_glyphs, mut alternate_candidates) = (BezPath::new(), BezPath::new(), vec![]);
     let plain = t.plain_text();
-    let mut images = vec![];
+    let (mut images, mut colours) = (vec![], vec![]);
     for g in &layout.glyphs {
         push(&mut all, g.run, &g.outline);
         if let Some((image, xf)) = g.placed_image() {
             images.push((g.run, image.clone(), xf));
+        }
+        if let Some(art) = g.placed_colour(Affine::IDENTITY) {
+            colours.push((g.run, Arc::new(art)));
         }
         let Some(&(missing, face)) = faces.get(g.run) else { continue };
         let Some(line) = layout.lines.get(g.line) else { continue };
@@ -2546,6 +2568,7 @@ fn text_geom_snapped(t: &TextObject, snap: Option<Affine>) -> TextGeom {
         alternate_glyphs: std::sync::OnceLock::new(),
         inlines: layout.inlines,
         images,
+        colours,
     }
 }
 
@@ -2618,6 +2641,8 @@ mod tests_charstroke;
 mod tests_clip;
 #[cfg(test)]
 mod tests_cmykblend;
+#[cfg(test)]
+mod tests_colrglyphs;
 #[cfg(test)]
 mod tests_container;
 #[cfg(test)]

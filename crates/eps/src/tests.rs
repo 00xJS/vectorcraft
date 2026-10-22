@@ -518,3 +518,20 @@ fn colour_bitmap_glyphs_are_images() {
     // origin (2 px), in text space.
     assert!(ps.contains("[32 0 0 32 4 -24] cm"), "{ps}");
 }
+
+#[test]
+fn colr_glyphs_are_vector_art() {
+    use vectorcraft_doc::{CharStyle, TextObject};
+    use vectorcraft_text::test_fonts::{COLOUR_CHAR, colr_family, colr_font};
+    vectorcraft_text::FontDb::global().add_font(colr_font(false).unwrap());
+    let d = doc_with(|d| {
+        let fill = vectorcraft_color::Paint::solid(vectorcraft_color::Color::rgb(0.0, 0.0, 1.0));
+        let st = CharStyle { font_family: colr_family(false).into(), size: 32.0, fill, ..CharStyle::default() };
+        vec![Node::new(d.alloc_id(), NodeKind::Text(Box::new(TextObject::point(Point::new(20.0, 100.0), &COLOUR_CHAR.to_string(), st))))]
+    });
+    let ps = text(&export(&d, &opts(&d), None, None).unwrap());
+    checked_page(&ps);
+    assert!(!ps.contains("/Width"), "no image: {ps}");
+    assert!(ps.contains("1 0 0 rg"), "the red layer: {ps}");
+    assert!(ps.contains("0 0 1 rg"), "the foreground layer in the fill: {ps}");
+}

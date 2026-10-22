@@ -1293,6 +1293,10 @@ impl<'a> Writer<'a> {
             if let Some((image, to_text)) = g.placed_image() {
                 self.image(Some(&image.blob), image.width, image.height, t.xf * to_text);
             }
+            // COLR glyphs: their layers, as art.
+            if let Some(art) = g.placed_colour(t.xf) {
+                self.node(&art, false);
+            }
         }
         self.line("U");
     }
