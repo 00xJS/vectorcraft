@@ -4224,7 +4224,9 @@ axis	Both	Her İkisi
 @msg	automation filesystem access is not granted: read authority is absent: {path}	otomasyon dosya sistemine erişim izni verilmedi: okuma yetkisi yok: {path}
 @msg	automation filesystem access is not granted: write authority is absent: {path}	otomasyon dosya sistemine erişim izni verilmedi: yazma yetkisi yok: {path}
 @msg	automation path rejected: outside the read root {root}: {path}	otomasyon yolu reddedildi: okuma kökünün dışında {root}: {path}
+@msg	automation path rejected: outside the read roots {roots}: {path}	otomasyon yolu reddedildi: okuma köklerinin dışında {roots}: {path}
 @msg	automation path rejected: outside the write root {root}: {path}	otomasyon yolu reddedildi: yazma kökünün dışında {root}: {path}
+@msg	automation path rejected: outside the write roots {roots}: {path}	otomasyon yolu reddedildi: yazma köklerinin dışında {roots}: {path}
 @msg	automation path rejected: path is empty	otomasyon yolu reddedildi: yol boş
 @msg	automation path rejected: a link that leads nowhere: {path}	otomasyon yolu reddedildi: hiçbir yere gitmeyen bağlantı: {path}
 @msg	automation path rejected: cannot resolve {path}: {e}	otomasyon yolu reddedildi: {path} çözülemiyor: {e}

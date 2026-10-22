@@ -1,6 +1,6 @@
 //! VectorCraft desktop app.
 //!
-//! Usage: `vectorcraft [--control <port> [--automation-read-root <dir>] [--automation-write-root <dir>]]
+//! Usage: `vectorcraft [--control <port> [--automation-read-root <dir>]... [--automation-write-root <dir>]...]
 //! [--in-window-menus] [files…]`, `vectorcraft --version`, `vectorcraft --help` (or `-h`)
 //!
 //! `--in-window-menus` (or `VECTORCRAFT_IN_WINDOW_MENUS=1`) keeps the menus inside the window on
@@ -725,7 +725,9 @@ Options:
   --control <port>               Start the localhost JSON-lines control server on <port>
                                  (or VECTORCRAFT_CONTROL_PORT)
   --automation-read-root <dir>   Confine the files control requests read to <dir>
+                                 (may be given more than once)
   --automation-write-root <dir>  Confine the files control requests write to <dir>
+                                 (may be given more than once)
   --in-window-menus              Keep the menus inside the window on macOS
                                  (or VECTORCRAFT_IN_WINDOW_MENUS=1)
   --version                      Print the version and exit
@@ -774,7 +776,7 @@ fn main() -> std::process::ExitCode {
             _ => files.push(a),
         }
     }
-    let automation_args::AutomationArgs { read_root, write_root, .. } = roots_args;
+    let automation_args::AutomationArgs { read_roots, write_roots, .. } = roots_args;
     // After the arguments: `--control` and `--version` win over a bad environment value.
     let control_port = match control.port {
         Some(port) => Some(port),
@@ -813,12 +815,14 @@ fn main() -> std::process::ExitCode {
     // The roots confine the control channel: a bad one keeps the app from starting rather than
     // leaving agents unconfined. Without a control port there is nothing to confine.
     let roots = if control_port.is_none() {
-        if read_root.is_some() || write_root.is_some() {
+        if !read_roots.is_empty() || !write_roots.is_empty() {
             log::warn!("--automation-read-root and --automation-write-root confine the control channel: ignored without --control");
         }
         None
     } else {
-        match AutomationRoots::new(read_root.as_deref(), write_root.as_deref()) {
+        let read: Vec<&std::path::Path> = read_roots.iter().map(std::path::PathBuf::as_path).collect();
+        let write: Vec<&std::path::Path> = write_roots.iter().map(std::path::PathBuf::as_path).collect();
+        match AutomationRoots::new(&read, &write) {
             Ok(roots) => roots,
             Err(e) => {
                 log::error!("{e}");
@@ -1015,7 +1019,7 @@ fn main() -> std::process::ExitCode {
                         // Everywhere the app doesn't say whose work it is (worker threads), the
                         // roots hold: unconfined is only what the person at the keyboard does.
                         file_access::confine_process(roots.clone());
-                        log::info!("control channel confined to the automation roots: read {:?}, write {:?}", roots.read_root(), roots.write_root());
+                        log::info!("control channel confined to the automation roots: {}", roots.describe());
                     }
                 }
                 #[cfg(target_os = "macos")]

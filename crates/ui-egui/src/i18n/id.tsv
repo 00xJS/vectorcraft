@@ -4435,7 +4435,9 @@ imageTrace	Outline	Kontur
 @msg	automation filesystem access is not granted: read authority is absent: {path}	akses sistem berkas otomatisasi tidak diberikan: otoritas baca tidak ada: {path}
 @msg	automation filesystem access is not granted: write authority is absent: {path}	akses sistem berkas otomatisasi tidak diberikan: otoritas tulis tidak ada: {path}
 @msg	automation path rejected: outside the read root {root}: {path}	jalur otomatisasi ditolak: di luar akar baca {root}: {path}
+@msg	automation path rejected: outside the read roots {roots}: {path}	jalur otomatisasi ditolak: di luar akar-akar baca {roots}: {path}
 @msg	automation path rejected: outside the write root {root}: {path}	jalur otomatisasi ditolak: di luar akar tulis {root}: {path}
+@msg	automation path rejected: outside the write roots {roots}: {path}	jalur otomatisasi ditolak: di luar akar-akar tulis {roots}: {path}
 @msg	automation path rejected: path is empty	jalur otomatisasi ditolak: jalur kosong
 @msg	automation path rejected: a link that leads nowhere: {path}	jalur otomatisasi ditolak: tautan yang tidak mengarah ke mana pun: {path}
 @msg	automation path rejected: cannot resolve {path}: {e}	jalur otomatisasi ditolak: tidak dapat menyelesaikan {path}: {e}

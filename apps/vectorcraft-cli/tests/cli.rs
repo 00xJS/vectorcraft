@@ -244,6 +244,58 @@ fn mcp_automation_roots_in_a_folder_an_earlier_run_left() {
     automation_roots(&empty_dir(dir).join("roots"));
 }
 
+/// #3546: each root flag may be given more than once: a path inside any of the read roots opens,
+/// one inside any of the write roots is written, and everything else, a write root's sibling read
+/// root included, is refused.
+#[test]
+fn mcp_automation_roots_take_several_folders() {
+    let base = tmp("several-roots");
+    for d in ["in", "in2", "out", "out2", "outside"] {
+        std::fs::create_dir_all(base.join(d)).unwrap();
+    }
+    let svg = r#"<svg xmlns="http://www.w3.org/2000/svg" width="40" height="30"><rect width="20" height="10"/></svg>"#;
+    for f in ["in/a.svg", "in2/b.svg", "outside/c.svg"] {
+        std::fs::write(base.join(f), svg).unwrap();
+    }
+    let dir = |d: &str| base.join(d).to_string_lossy().into_owned();
+    let file = |d: &str, f: &str| base.join(d).join(f).to_string_lossy().into_owned();
+    let mut child = Command::new(BIN)
+        .args(["mcp", "--automation-read-root", &dir("in"), &format!("--automation-read-root={}", dir("in2"))])
+        .args(["--automation-write-root", &dir("out"), "--automation-write-root", &dir("out2")])
+        .stdin(Stdio::piped())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .spawn()
+        .unwrap();
+    let call = |id: u64, name: &str, args: Value| json!({"jsonrpc":"2.0","id":id,"method":"tools/call","params":{"name":name,"arguments":args}});
+    let calls = [
+        (call(1, "open_file", json!({"path": file("in", "a.svg")})), false),
+        (call(2, "open_file", json!({"path": file("in2", "b.svg")})), false),
+        (call(3, "open_file", json!({"path": file("outside", "c.svg")})), true),
+        (call(4, "export", json!({"path": file("out", "a.png")})), false),
+        (call(5, "export", json!({"path": file("out2", "b.png")})), false),
+        (call(6, "export", json!({"path": file("outside", "c.png")})), true),
+        (call(7, "export", json!({"path": file("in2", "d.png")})), true),
+        (call(8, "open_file", json!({"path": file("out2", "b.png")})), true),
+    ];
+    {
+        let mut stdin = child.stdin.take().unwrap();
+        for (m, _) in &calls {
+            writeln!(stdin, "{m}").unwrap();
+        }
+    }
+    let out = child.wait_with_output().unwrap();
+    assert!(out.status.success());
+    let stderr = String::from_utf8_lossy(&out.stderr);
+    assert!(stderr.contains("files confined: read ") && stderr.contains("; write "), "{stderr}");
+    let replies: Vec<Value> = String::from_utf8(out.stdout).unwrap().lines().map(|l| serde_json::from_str(l).unwrap()).collect();
+    let errors: Vec<bool> = replies.iter().map(|r| r["result"]["isError"] == true).collect();
+    assert_eq!(errors, calls.iter().map(|(_, e)| *e).collect::<Vec<_>>(), "{replies:?}");
+    assert!(replies[2]["result"]["content"][0]["text"].as_str().unwrap().contains("outside the read roots"), "{}", replies[2]);
+    assert!(base.join("out/a.png").is_file() && base.join("out2/b.png").is_file());
+    assert!(!base.join("outside/c.png").exists() && !base.join("in2/d.png").exists());
+}
+
 fn automation_roots(base: &std::path::Path) {
     for d in ["in", "out", "outside"] {
         std::fs::create_dir_all(base.join(d)).unwrap();
@@ -267,7 +319,7 @@ fn automation_roots(base: &std::path::Path) {
         assert!(!out.status.success() && err.contains(why), "{args:?}: {err}");
     };
     fails(&["mcp", "--automation-read-root", &dir("missing")], "cannot open the automation read root");
-    fails(&["mcp", "--automation-read-root", &dir("in"), "--automation-read-root", &dir("out")], "given twice");
+    fails(&["mcp", "--automation-read-root", &dir("in"), "--automation-read-root", &dir("missing")], "cannot open the automation read root");
     fails(&["mcp", "--automation-write-root"], "needs a folder");
     fails(&["mcp", "--connect", "127.0.0.1:1", &format!("--automation-write-root={}", dir("out"))], "a running app enforces its own roots");
 

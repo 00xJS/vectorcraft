@@ -4142,7 +4142,9 @@ theme	Appearance	Giao diện
 @msg	automation path rejected: a link that leads nowhere: {path}	đường dẫn tự động bị từ chối: liên kết không dẫn đến đâu: {path}
 @msg	automation path rejected: cannot resolve {path}: {e}	đường dẫn tự động bị từ chối: không thể phân giải {path}: {e}
 @msg	automation path rejected: outside the read root {root}: {path}	đường dẫn tự động bị từ chối: ngoài thư mục gốc đọc {root}: {path}
+@msg	automation path rejected: outside the read roots {roots}: {path}	đường dẫn tự động bị từ chối: ngoài các thư mục gốc đọc {roots}: {path}
 @msg	automation path rejected: outside the write root {root}: {path}	đường dẫn tự động bị từ chối: ngoài thư mục gốc ghi {root}: {path}
+@msg	automation path rejected: outside the write roots {roots}: {path}	đường dẫn tự động bị từ chối: ngoài các thư mục gốc ghi {roots}: {path}
 @msg	automation path rejected: parent traversal below a folder that doesn't exist: {path}	đường dẫn tự động bị từ chối: duyệt cha bên dưới thư mục không tồn tại: {path}
 @msg	automation path rejected: path is empty	đường dẫn tự động bị từ chối: đường dẫn trống
 @msg	automation path rejected: reserved device names are not allowed: {path}	đường dẫn tự động bị từ chối: tên thiết bị đặt trước không được phép: {path}

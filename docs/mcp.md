@@ -73,6 +73,8 @@ claude mcp add vectorcraft -- vectorcraft-cli mcp
 
 ```sh
 vectorcraft-cli mcp --automation-read-root /work/project --automation-write-root /work/project/out
+vectorcraft-cli mcp --automation-read-root /work/project --automation-read-root /work/shared-assets \
+  --automation-write-root /work/project/out --automation-write-root /tmp/scratch
 ```
 
 ```json
@@ -83,15 +85,19 @@ vectorcraft-cli mcp --automation-read-root /work/project --automation-write-root
 The two flags (PhotoCraft and the other Craft apps take the same ones, so one client config works across
 the suite) keep the agent to the folders you give it:
 
-- Every file a command reads must lie inside the **read root**: `open_file`, `file.place`, relinking and
+- Every file a command reads must lie inside a **read root**: `open_file`, `file.place`, relinking and
   updating links, the images an SVG links to, swatch library, graphic style library and colour-profile loads, plug-ins,
   `file.newFromTemplate`, preset imports, shortcut sets (`shortcutSet.read`), the folders `text.findFontFiles` and `links.findFiles` search, the
   scripts `script.check` reads and the files they include.
-- Every file a command writes must lie inside the **write root**: `save_file`, `export`, the save and
+- Every file a command writes must lie inside a **write root**: `save_file`, `export`, the save and
   export commands, Export for Screens, Package, Export for Web, print to file, `screenshot {path}`,
   library and preset saves to a path, the copies `links.relink {copy}` makes.
-- `file.list {path}` (through `run_command`) lists a folder's files and folders, held to the read root like any read, so an agent can see what it was given (#1163).
-- Read and write access are separate. Give the same folder twice for both; a root left out grants none
+- `file.list {path}` (through `run_command`) lists a folder's files and folders, held to the read roots like any read, so an agent can see what it was given (#1163).
+- Each flag may be given more than once (#3546): a path inside any of the read roots may be read, one inside any
+  of the write roots written, so one session can read a project folder and a shared assets folder, or write to an
+  output folder and a scratch folder, without widening a root to their common parent. A folder given twice
+  counts once.
+- Read and write access are separate. Give the same folder to both flags for both; a kind left out grants none
   of its access (with only `--automation-read-root`, nothing can be written to disk, though `export` and
   the save commands without a path still return the bytes). Without either flag nothing changes.
 - A path is made absolute against the server's working directory, then its links are followed: a file
@@ -102,15 +108,16 @@ the suite) keep the agent to the folders you give it:
   Windows case is ignored, UNC paths (`\\server\share\…`) are resolved like drive-letter ones, and
   device names (`CON`, `NUL`, `COM1`…) are refused.
 - A refused path is an ordinary tool error the agent can read and correct, for example
-  `automation path rejected: outside the write root /work/project/out: /etc/x.png` or
+  `automation path rejected: outside the write root /work/project/out: /etc/x.png` (with several,
+  `outside the write roots /work/project/out, /tmp/scratch: …`) or
   `automation filesystem access is not granted: write authority is absent: /work/project/out/x.png`.
-  Links in an opened document that point outside the read root show as missing.
+  Links in an opened document that point outside the read roots show as missing.
 - The preferences that move folders the app reads or writes on its own (`fontsFolder`,
   `pluginsFolder`, `recoveryFolder`, `templatesFolder`) can only be set inside the roots. The app's own folders
   (preferences, Data Recovery, the User Defined library folders, VectorCraft's Fonts folder) are not
   confined: no agent names a path there.
-- The roots must be existing folders; a missing one stops the server with an error. Each flag is
-  given once (`--flag <dir>` or `--flag=<dir>`).
+- The roots must be existing folders; a missing one stops the server with an error. Each flag takes one
+  folder per use (`--flag <dir>` or `--flag=<dir>`) and may be used again for more.
 
 The flags confine the headless server and imply `--headless`; `--connect` with them is an error, since
 the server would otherwise talk to an app that isn't confined. A running app confines itself: start it

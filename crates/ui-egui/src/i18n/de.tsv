@@ -4396,7 +4396,9 @@ theme	Appearance	Erscheinungsbild
 @msg	automation filesystem access is not granted: read authority is absent: {path}	Dateisystemzugriff für die Automatisierung ist nicht gewährt: Die Leseberechtigung fehlt: {path}
 @msg	automation filesystem access is not granted: write authority is absent: {path}	Dateisystemzugriff für die Automatisierung ist nicht gewährt: Die Schreibberechtigung fehlt: {path}
 @msg	automation path rejected: outside the read root {root}: {path}	Automatisierungspfad abgelehnt: außerhalb des Lesestammordners {root}: {path}
+@msg	automation path rejected: outside the read roots {roots}: {path}	Automatisierungspfad abgelehnt: außerhalb der Lesestammordner {roots}: {path}
 @msg	automation path rejected: outside the write root {root}: {path}	Automatisierungspfad abgelehnt: außerhalb des Schreibstammordners {root}: {path}
+@msg	automation path rejected: outside the write roots {roots}: {path}	Automatisierungspfad abgelehnt: außerhalb der Schreibstammordner {roots}: {path}
 @msg	automation path rejected: path is empty	Automatisierungspfad abgelehnt: Der Pfad ist leer
 @msg	automation path rejected: a link that leads nowhere: {path}	Automatisierungspfad abgelehnt: eine Verknüpfung, die nirgendwohin führt: {path}
 @msg	automation path rejected: cannot resolve {path}: {e}	Automatisierungspfad abgelehnt: {path} kann nicht aufgelöst werden: {e}

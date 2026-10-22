@@ -4646,7 +4646,9 @@ imageTrace	Outline	Ääriviiva
 @msg	automation filesystem access is not granted: read authority is absent: {path}	automaation tiedostojärjestelmäkäyttöä ei ole myönnetty: lukuoikeus puuttuu: {path}
 @msg	automation filesystem access is not granted: write authority is absent: {path}	automaation tiedostojärjestelmäkäyttöä ei ole myönnetty: kirjoitusoikeus puuttuu: {path}
 @msg	automation path rejected: outside the read root {root}: {path}	automaation polku hylättiin: lukujuuren {root} ulkopuolella: {path}
+@msg	automation path rejected: outside the read roots {roots}: {path}	automaation polku hylättiin: lukujuurten {roots} ulkopuolella: {path}
 @msg	automation path rejected: outside the write root {root}: {path}	automaation polku hylättiin: kirjoitusjuuren {root} ulkopuolella: {path}
+@msg	automation path rejected: outside the write roots {roots}: {path}	automaation polku hylättiin: kirjoitusjuurten {roots} ulkopuolella: {path}
 @msg	automation path rejected: path is empty	automaation polku hylättiin: polku on tyhjä
 @msg	automation path rejected: a link that leads nowhere: {path}	automaation polku hylättiin: linkki, joka ei johda mihinkään: {path}
 @msg	automation path rejected: cannot resolve {path}: {e}	automaation polku hylättiin: polkua {path} ei voi selvittää: {e}
