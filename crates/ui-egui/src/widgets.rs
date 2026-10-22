@@ -3043,4 +3043,34 @@ pub(crate) mod look_tests {
         assert!(widest > 0.0, "the scroll bar is drawn");
         assert!(widest <= 4.5, "the scroll bar is {widest} points wide");
     }
+    // Regression test for #900: a number field with a spinner and a preset list drew as three
+    // boxes side by side: its text box was a point taller than the 26-point row, and each joint had
+    // two borders.
+    #[test]
+    fn a_spinner_field_reads_as_one_box_in_three_parts() {
+        let ctx = themed(Default::default());
+        let mut add = |ui: &mut Ui| {
+            ui.horizontal(|ui| spin_field(ui, "weight", Some(4.0), Unit::Points, 100.0, 1.0, 0.0, &[1.0, 2.0]));
+        };
+        frame(&ctx, 0.0, vec![], &mut add);
+        let shapes = frame(&ctx, 0.1, vec![], &mut add);
+        // The boxes of the row: the spinner, the field and the preset chevron, left to right.
+        let mut boxes: Vec<Rect> = vec![];
+        for s in &shapes {
+            if let egui::Shape::Rect(r) = s
+                && r.rect.height() > 20.0
+                && !boxes.contains(&r.rect)
+            {
+                boxes.push(r.rect);
+            }
+        }
+        boxes.sort_by(|a, b| a.min.x.total_cmp(&b.min.x));
+        assert_eq!(boxes.len(), 3, "{boxes:?}");
+        for b in &boxes {
+            assert_eq!((b.min.y, b.height()), (boxes[0].min.y, 26.0), "all as tall as the row: {boxes:?}");
+        }
+        for pair in boxes.windows(2) {
+            assert!((pair[1].min.x - pair[0].max.x + 1.0).abs() < 0.01, "neighbours share one border: {boxes:?}");
+        }
+    }
 }
