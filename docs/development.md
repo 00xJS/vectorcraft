@@ -408,12 +408,16 @@ covers upstream brush-key sampling. Scores and estimates unchanged.
 Hold a Selection-tool move over another visible document tab for 400 ms to activate it,
 then release over its canvas to copy the selected artwork. The original grab point is kept
 across different zoom levels and view rotations. The source preview is rolled back before
-the switch; source artwork, source history and both clipboards are preserved. Returning
+the switch; source artwork, source history and the internal clipboard are preserved. Returning
 to the source tab resumes a move (Alt copies). Escape or release outside the canvas cancels.
 Changing the source revision or unexpectedly changing/closing the destination cancels a stale
 transfer; focus loss, touch cancellation and multitouch cancel too. Moving tabs under a stationary
-pointer do not activate further tabs until the pointer moves. The close icon does not activate a tab during a drag. Overflow-menu hover activation and
+pointer does not activate further tabs until the pointer moves. The close icon does not activate a tab during a drag. Overflow-menu hover activation and
 cross-window dragging remain outside this change.
+The cited regressions assert the internal clipboard; they do not exercise the native
+system-clipboard adapter. Tab activation resets the Selection tool through
+`Session::set_active`; gesture regressions verify it is idle after switching, dropping
+and cancelling a transfer.
 
 `edit.dropSelection {sourceDocument, ids, grab, at}` uses document-scoped ids
 (`sourceDocument` is `document.inspect`’s session-unique `uid`), validates 1–10000 ids
@@ -444,10 +448,11 @@ Scores and hour estimates are unchanged.
 | 2026-10-14 | minor | Document registration of every explicitly supplied craft-fonts face after the existing script-specific prefix; empty input and web selection remain unchanged. |
 | 2026-10-13 | minor | Document pinned PngSuite files, integrity checks and download budgets (#1729). |
 
-> **Tab-drag status (2026-10-22):** updated from upstream, including the Turkish catalog and all three tab-drag translations requested in #3479; drag lifecycle, insertion and regression contracts documented; behavior, scores and estimates unchanged.
+> **Tab-drag status (2026-10-22):** updated from upstream, including the Turkish catalog and all three tab-drag translations requested in #3479; Selection-tool reset regression-checked and clipboard evidence scoped to internal state; drag lifecycle, insertion and regression contracts documented; behavior, scores and estimates unchanged.
 
 | Date | Change | Tab-drag history |
 |---|---|---|
+| 2026-10-22 | minor | Verify Selection-tool reset after tab activation, drop and cancellation; narrow clipboard evidence to the tested internal clipboard and correct documentation grammar; behavior, scores and estimates unchanged. |
 | 2026-10-22 | minor | Merge current main and complete the Turkish tab-drag labels and validation messages requested by the maintainer; all 24 catalogs covered; scores and estimates unchanged. |
 | 2026-10-22 | minor | Tab-drag follow-up: reconcile upstream progress updates and document drag lifecycle, insertion behavior and regression contracts; behavior, scores and estimates unchanged. |
 | 2026-10-22 | minor | Artwork dragged with Selection switches visible document tabs after a 400 ms hover, then copies editable artwork on canvas release; source and clipboard stay intact; scores and hours unchanged |

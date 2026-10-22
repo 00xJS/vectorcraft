@@ -78,12 +78,14 @@ fn dragging_artwork_over_a_tab_switches_then_copies_on_drop() {
     frame(&mut app, &ctx, 0.05, vec![Event::PointerMoved(grab), button(grab, true)]);
     frame(&mut app, &ctx, 0.1, vec![Event::PointerMoved(grab + egui::vec2(20.0, 10.0))]);
     assert!(app.session.in_interaction());
+    assert!(app.session.tool_busy(), "the Selection tool owns the source drag");
     let tab = tabs[1].center();
     frame(&mut app, &ctx, 0.2, vec![Event::PointerMoved(tab)]);
     frame(&mut app, &ctx, 0.25, vec![]);
     assert_eq!(app.session.active_index(), Some(0), "crossing a tab briefly must not switch");
     frame(&mut app, &ctx, 0.8, vec![]);
     assert_eq!(app.session.active_index(), Some(1), "holding the artwork over the target tab activates it");
+    assert!(!app.session.tool_busy(), "document activation resets the source Selection tool before drop");
     assert_eq!(app.session.documents()[0].doc, source, "the source preview must be rolled back");
     let drop = canvas::Xf::new(app.canvas_rect.unwrap(), app.view().unwrap()).to_screen(Point::new(170.0, 120.0));
     frame(&mut app, &ctx, 0.9, vec![Event::PointerMoved(drop)]);
@@ -94,6 +96,7 @@ fn dragging_artwork_over_a_tab_switches_then_copies_on_drop() {
     assert!((placed.center().x - 170.0).abs() < 0.01 && (placed.center().y - 120.0).abs() < 0.01, "{placed:?}");
     assert_eq!(st.history.undo.len(), dest_undo + 1);
     assert_eq!(app.session.clipboard, clipboard, "a drag must preserve the user's clipboard");
+    assert!(!app.session.tool_busy(), "a completed tab transfer leaves the Selection tool idle");
     assert_eq!(app.session.documents()[0].doc, source);
     assert_eq!(app.session.documents()[0].history.undo.len(), source_undo);
     assert!(app.session.documents()[0].doc.node(vectorcraft_doc::NodeId(id)).is_some());
@@ -190,6 +193,7 @@ fn escape_or_release_over_tab_cancels_the_transfer_without_edits() {
         assert_eq!(app.session.active().unwrap().doc, target);
         assert_eq!(app.session.active().unwrap().history.undo.len(), undo);
         assert!(!app.session.in_interaction());
+        assert!(!app.session.tool_busy(), "Escape and outside release leave the Selection tool idle");
     }
 }
 
