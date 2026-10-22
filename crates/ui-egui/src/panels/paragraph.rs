@@ -179,6 +179,20 @@ fn shared_para_field(app: &VectorcraftApp, field: impl Fn(&ParaStyle) -> f64) ->
     acc.value().map(|m| m.0)
 }
 
+/// The composer every paragraph in scope shares, or `None` when they differ (neither menu item checked).
+fn shared_composer(app: &VectorcraftApp) -> Option<Composer> {
+    let mut acc = Shared::None;
+    let mut any = false;
+    visit_paragraphs(app, |p| {
+        any = true;
+        acc.add(p.composer);
+    });
+    if !any {
+        return text_style(app).map(|(_, p)| p.composer);
+    }
+    acc.value()
+}
+
 /// None means differing displayed alignments, following the other mixed-value controls.
 fn selected_alignment(app: &VectorcraftApp, fallback: &ParaStyle) -> Option<Justify> {
     let default = Some(shown_alignment(fallback.justify, fallback.direction == Some(ParaDirection::RightToLeft)));
@@ -387,7 +401,7 @@ pub fn menu(app: &mut VectorcraftApp, ui: &mut Ui) {
         });
     }
     ui.separator();
-    let composer = style.as_ref().map(|(_, p)| p.composer);
+    let composer = shared_composer(app);
     for (c, label, id) in
         [(Composer::SingleLine, tl!("Single-line Composer"), "singleLine"), (Composer::EveryLine, tl!("Every-line Composer"), "everyLine")]
     {
@@ -477,6 +491,17 @@ mod tests {
 
     fn select_range(app: &mut VectorcraftApp, start: usize, end: usize) {
         app.session.set_tool_option("select", &json!({"start": start, "end": end}));
+    }
+
+    #[test]
+    fn paragraph_mixed_composer_checks_neither_menu_item() {
+        let (mut app, id) = editing_text("A\nB\n");
+        app.run("text.setFormat", json!({"id": id, "composer": "singleLine"})).unwrap();
+        app.run("text.setFormat", json!({"id": id, "start": 2, "end": 3, "composer": "everyLine"})).unwrap();
+        app.session.set_tool_option("selectAll", &json!(true));
+        assert_eq!(shared_composer(&app), None);
+        app.run("text.setFormat", json!({"id": id, "composer": "everyLine"})).unwrap();
+        assert_eq!(shared_composer(&app), Some(Composer::EveryLine));
     }
 
     #[test]
