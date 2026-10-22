@@ -5303,6 +5303,10 @@ swatch	Bright Violet	Violet cerah
 	Persistent	Persisten
 	Locate Library…	Temukan pustaka…
 	Library Panel Options	Opsi panel pustaka
+	Snapping	Snap
+	Snap to Tangent	Snap ke garis singgung
+	Snap to Perpendicular	Snap tegak lurus
+@msg	unknown snap option `{key}` (use {options})	opsi snap `{key}` tidak dikenal (gunakan {options})
 	Gap Length:	Panjang celah:
 	Artboard {n} of {total}	Artboard {n} dari {total}
 	Encoding and writing the file…	Mengodekan dan menulis berkas…
@@ -5373,6 +5377,7 @@ swatch	Bright Violet	Violet cerah
 	Water Paper	Kertas Basah
 	Ruby…	Ruby…
 	Ruby	Ruby
+	Geometric Guides	Panduan Geometris
 	Ease In	Awal Lambat
 	Ease Out	Akhir Lambat
 	Ease In Out	Awal dan Akhir Lambat

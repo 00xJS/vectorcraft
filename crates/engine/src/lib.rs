@@ -969,6 +969,8 @@ pub struct Prefs {
     pub measurement_labels: bool,
     pub spacing_guides: bool,
     pub snapping_tolerance: f64,
+    pub snap_tangent: bool,
+    pub snap_perpendicular: bool,
     // Slices
     pub show_slice_numbers: bool,
     pub slice_line_color: String,
@@ -1218,6 +1220,8 @@ impl Default for Prefs {
             measurement_labels: true,
             spacing_guides: true,
             snapping_tolerance: 4.0,
+            snap_tangent: true,
+            snap_perpendicular: true,
             show_slice_numbers: true,
             slice_line_color: s("#ff3f3f"),
             hyphenation_language: s("English: USA"),

@@ -5399,4 +5399,8 @@ axis	Y Axis	Y ekseni
 @msg	`dither` applies to gradient fills (stroke: false)	`dither` degrade dolgulara uygulanır (stroke: false)
 @msg	`dither` applies to gradient fills (paint.setFill)	`dither` degrade dolgulara uygulanır (paint.setFill)
 @msg	`dither` must be true or false	"dither" doğru veya yanlış olmalıdır
+	Snapping	Yaslama
+	Snap to Tangent	Teğete Yasla
+	Snap to Perpendicular	Dikeye Yasla
+	Geometric Guides	Geometrik Kılavuzlar
 @msg	`method` must be classic or perceptual	`method` classic veya perceptual olmalıdır

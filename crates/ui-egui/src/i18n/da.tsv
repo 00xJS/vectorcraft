@@ -5303,6 +5303,10 @@ swatch	Bright Violet	Kraftig violet
 	Persistent	Vedvarende
 	Locate Library…	Lokalisér bibliotek…
 	Library Panel Options	Indstillinger for bibliotekspanel
+	Snapping	Fastgørelse
+	Snap to Tangent	Fastgør til tangent
+	Snap to Perpendicular	Fastgør vinkelret
+@msg	unknown snap option `{key}` (use {options})	ukendt fastgørelsesindstilling `{key}` (brug {options})
 	Gap Length:	Hullængde:
 	Artboard {n} of {total}	Tegneflade {n} af {total}
 	Encoding and writing the file…	Koder og skriver filen…
@@ -5373,6 +5377,7 @@ swatch	Bright Violet	Kraftig violet
 	Water Paper	Vådt papir
 	Ruby…	Ruby…
 	Ruby	Ruby
+	Geometric Guides	Geometriske hjælpelinjer
 	Ease In	Langsom start
 	Ease Out	Langsom slutning
 	Ease In Out	Langsom start og slutning
