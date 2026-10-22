@@ -4493,7 +4493,9 @@ imageTrace	Outline	Körvonal
 @msg	automation path rejected: a link that leads nowhere: {path}	az automatizálás útvonala elutasítva: a hivatkozás nem vezet sehova: {path}
 @msg	automation path rejected: cannot resolve {path}: {e}	az automatizálás útvonala elutasítva: nem oldható fel: {path}: {e}
 @msg	automation path rejected: outside the read root {root}: {path}	az automatizálás útvonala elutasítva: kívül esik az olvasási gyökéren ({root}): {path}
+@msg	automation path rejected: outside the read roots {roots}: {path}	az automatizálás útvonala elutasítva: kívül esik az olvasási gyökereken ({roots}): {path}
 @msg	automation path rejected: outside the write root {root}: {path}	az automatizálás útvonala elutasítva: kívül esik az írási gyökéren ({root}): {path}
+@msg	automation path rejected: outside the write roots {roots}: {path}	az automatizálás útvonala elutasítva: kívül esik az írási gyökereken ({roots}): {path}
 @msg	automation path rejected: parent traversal below a folder that doesn't exist: {path}	az automatizálás útvonala elutasítva: szülőmappára lépés egy nem létező mappa alatt: {path}
 @msg	automation path rejected: path is empty	az automatizálás útvonala elutasítva: az útvonal üres
 @msg	automation path rejected: reserved device names are not allowed: {path}	az automatizálás útvonala elutasítva: fenntartott eszköznév nem használható: {path}

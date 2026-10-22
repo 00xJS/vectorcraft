@@ -62,8 +62,8 @@ vectorcraft --control 7979 --automation-read-root /work/project --automation-wri
 `--automation-read-root <dir>` and `--automation-write-root <dir>` (or `VECTORCRAFT_AUTOMATION_READ_ROOT` /
 `VECTORCRAFT_AUTOMATION_WRITE_ROOT`; `--flag=<dir>` works too) confine what the control channel reads and
 writes, with the same flags as `vectorcraft-cli mcp` and the other Craft apps. Every path a request reads
-(open, place, relink, library and profile loads, plug-ins…) must lie inside the read root, every path it
-writes (save, export, package, captures, library saves…) inside the write root; anything else is an
+(open, place, relink, library and profile loads, plug-ins…) must lie inside a read root, every path it
+writes (save, export, package, captures, library saves…) inside a write root; anything else is an
 ordinary error reply. Paths are made absolute against the app's working directory, links are followed
 (for a file that doesn't exist yet, its folder's), and the comparison is by whole folder names (`/work2` is
 not inside `/work`), ignoring case on Windows; `..` below a folder that doesn't exist, a link that leads
@@ -71,9 +71,9 @@ nowhere and Windows device names are refused. A root left out grants none of its
 existing folders, or the app doesn't start; without `--control` they are ignored. See `docs/mcp.md`
 › Confining file access for the details.
 
-Each root flag may be given once; a command-line root overrides its environment default. Missing or
-empty values, another option used as a value, and duplicate flags stop the desktop before it starts
-any services, even without `--control`. For a folder name starting with `-`, use `--flag=-folder`
+Each root flag may be given more than once, a path inside any of its folders being allowed (#3546); the
+command line's folders of a kind replace its environment default. Missing or empty values and another
+option used as a value stop the desktop before it starts any services, even without `--control`. For a folder name starting with `-`, use `--flag=-folder`
 or the relative path `./-folder`.
 
 What is confined: the requests themselves, the frames that carry input they inject (`ui.click`, `ui.key`,

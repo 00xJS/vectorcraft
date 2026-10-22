@@ -4435,7 +4435,9 @@ imageTrace	Outline	Kontur
 @msg	automation filesystem access is not granted: read authority is absent: {path}	automatiseringens adgang til filsystemet er ikke tildelt: læserettighed mangler: {path}
 @msg	automation filesystem access is not granted: write authority is absent: {path}	automatiseringens adgang til filsystemet er ikke tildelt: skriverettighed mangler: {path}
 @msg	automation path rejected: outside the read root {root}: {path}	automatiseringssti afvist: uden for læseroden {root}: {path}
+@msg	automation path rejected: outside the read roots {roots}: {path}	automatiseringssti afvist: uden for læserødderne {roots}: {path}
 @msg	automation path rejected: outside the write root {root}: {path}	automatiseringssti afvist: uden for skriveroden {root}: {path}
+@msg	automation path rejected: outside the write roots {roots}: {path}	automatiseringssti afvist: uden for skriverødderne {roots}: {path}
 @msg	automation path rejected: path is empty	automatiseringssti afvist: stien er tom
 @msg	automation path rejected: a link that leads nowhere: {path}	automatiseringssti afvist: et link, der ikke fører nogen steder hen: {path}
 @msg	automation path rejected: cannot resolve {path}: {e}	automatiseringssti afvist: kan ikke finde frem til {path}: {e}

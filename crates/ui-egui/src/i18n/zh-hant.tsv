@@ -2240,7 +2240,9 @@ file-filter	Templates	範本
 @msg	automation filesystem access is not granted: read authority is absent: {path}	未授予自動化檔案系統存取權：沒有讀取權限：{path}
 @msg	automation filesystem access is not granted: write authority is absent: {path}	未授予自動化檔案系統存取權：沒有寫入權限：{path}
 @msg	automation path rejected: outside the read root {root}: {path}	已拒絕自動化路徑：位於讀取根目錄 {root} 之外：{path}
+@msg	automation path rejected: outside the read roots {roots}: {path}	已拒絕自動化路徑：位於所有讀取根目錄 {roots} 之外：{path}
 @msg	automation path rejected: outside the write root {root}: {path}	已拒絕自動化路徑：位於寫入根目錄 {root} 之外：{path}
+@msg	automation path rejected: outside the write roots {roots}: {path}	已拒絕自動化路徑：位於所有寫入根目錄 {roots} 之外：{path}
 @msg	automation path rejected: path is empty	已拒絕自動化路徑：路徑是空的
 @msg	automation path rejected: a link that leads nowhere: {path}	已拒絕自動化路徑：連結指向不存在的位置：{path}
 @msg	automation path rejected: cannot resolve {path}: {e}	已拒絕自動化路徑：無法解析 {path}：{e}
