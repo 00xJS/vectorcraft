@@ -34,6 +34,11 @@
 	Medium Light	Středně světlý
 	Light	Světlý
 	Quit VectorCraft	Ukončit VectorCraft
+# Artwork drag between document tabs.
+	Drop Artwork	Umístit grafiku
+@msg	{key} must be [x, y] with finite coordinates	{key} musí být [x, y] s konečnými souřadnicemi
+@msg	ids must contain 1–10000 object ids	ids musí obsahovat 1–10000 identifikátorů objektů
+
 	File	Soubor
 	New…	Nový…
 	New Without Dialog	Nový bez dialogového okna
@@ -5333,6 +5338,7 @@ mark-style	Japanese	Japonské
 @msg	Persistent libraries not found: {files}	Trvalé knihovny nebyly nalezeny: {files}
 @msg	`{given}` isn't a library panel (see window.swatchLibrary)	`{given}` není panel knihovny (viz window.swatchLibrary)
 @msg	library panel `{given}` isn't open	panel knihovny `{given}` není otevřený
+@msg	library panel `{given}` isn't missing its library	knihovna panelu knihovny `{given}` nechybí
 @msg	too many library panels were opened in this session	v této relaci bylo otevřeno příliš mnoho panelů knihoven
 @msg	The image is {_1} × {_2} pixels, more than {LARGE_TRACE_SIDE} on a side: it is traced, but more slowly. A lower-fidelity preset or a smaller copy of the image traces faster.	Obraz má {_1} × {_2} pixelů, na jedné straně více než {LARGE_TRACE_SIDE}: vektorizuje se, ale pomaleji. Rychleji se vektorizuje s předvolbou nižší věrnosti nebo menší kopie obrazu.
 @msg	The image was traced at {_1} × {_2} pixels, scaled down from {_3} × {_4} ({_5} megapixels at most).	Obraz byl vektorizován v rozlišení {_1} × {_2} pixelů, zmenšený z {_3} × {_4} (nejvýše {_5} megapixelů).
@@ -5353,6 +5359,14 @@ mark-style	Japanese	Japonské
 	Full Justify	Zarovnat do bloku
 	Minimum must not exceed Desired, nor Desired Maximum.	Minimum nesmí překročit požadovanou hodnotu ani požadovaná hodnota maximum.
 	Justification	Zarovnání do bloku
+	Add filters from the list above	Přidejte filtry ze seznamu výše
+	Add to Stack	Přidat na zásobník
+	Applied Filters	Použité filtry
+	Categories	Kategorie
+	Choose a filter	Vyberte filtr
+	Effect Gallery	Galerie efektů
+	Filters	Filtry
+	Select artwork to apply effects	Vyberte grafiku, na kterou chcete použít efekty
 @msg	the file's variables and data sets weren't read (variables: {variables}, data sets: {data_sets}): the Variables panel doesn't list them	proměnné a sady dat souboru nebyly načteny (proměnné: {variables}, sady dat: {data_sets}): panel Proměnné je nezobrazuje
 # Select by Color (select.color)
 	Select by Color	Vybrat podle barvy
@@ -5386,8 +5400,5 @@ mark-style	Japanese	Japonské
 	Shift:	Posun:
 	Fresco…	Freska…
 	Fresco	Freska
-
-# Artwork drag between document tabs.
-	Drop Artwork	Umístit grafiku
-@msg	{key} must be [x, y] with finite coordinates	{key} musí být [x, y] s konečnými souřadnicemi
-@msg	ids must contain 1–10000 object ids	ids musí obsahovat 1–10000 identifikátorů objektů
+	Effect Gallery…	Galerie efektů…
+	Effect Gallery Dialog	Dialog Galerie efektů

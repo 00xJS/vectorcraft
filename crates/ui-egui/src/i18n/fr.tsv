@@ -1069,6 +1069,11 @@
 	Fidelity:	Fidélité :
 	Figure Space	Espace numérique
 	Figure:	Chiffres :
+# Artwork drag between document tabs.
+	Drop Artwork	Déposer l’illustration
+@msg	{key} must be [x, y] with finite coordinates	{key} doit être [x, y] avec des coordonnées finies
+@msg	ids must contain 1–10000 object ids	ids doit contenir de 1 à 10000 identifiants d’objets
+
 	File	Fichier
 	File Dimensions	Dimensions du fichier
 	File Format:	Format de fichier :
@@ -5332,6 +5337,7 @@ theme	Appearance	Apparence
 @msg	Persistent libraries not found: {files}	Bibliothèques persistantes introuvables : {files}
 @msg	`{given}` isn't a library panel (see window.swatchLibrary)	`{given}` n’est pas un panneau de bibliothèque (voir window.swatchLibrary)
 @msg	library panel `{given}` isn't open	le panneau de bibliothèque `{given}` n’est pas ouvert
+@msg	library panel `{given}` isn't missing its library	la bibliothèque du panneau de bibliothèque `{given}` ne manque pas
 @msg	too many library panels were opened in this session	trop de panneaux de bibliothèque ont été ouverts dans cette session
 @msg	The image is {_1} × {_2} pixels, more than {LARGE_TRACE_SIDE} on a side: it is traced, but more slowly. A lower-fidelity preset or a smaller copy of the image traces faster.	L’image fait {_1} × {_2} pixels, plus de {LARGE_TRACE_SIDE} sur un côté : elle est vectorisée, mais plus lentement. Un paramètre prédéfini moins fidèle ou une copie plus petite de l’image se vectorise plus vite.
 @msg	The image was traced at {_1} × {_2} pixels, scaled down from {_3} × {_4} ({_5} megapixels at most).	L’image a été vectorisée à {_1} × {_2} pixels, réduite de {_3} × {_4} ({_5} mégapixels au plus).
@@ -5352,6 +5358,14 @@ theme	Appearance	Apparence
 	Full Justify	Justification complète
 	Minimum must not exceed Desired, nor Desired Maximum.	Le minimum ne doit pas dépasser la valeur optimale, ni la valeur optimale le maximum.
 	Justification	Justification
+	Add filters from the list above	Ajoutez des filtres à partir de la liste ci-dessus
+	Add to Stack	Ajouter à la pile
+	Applied Filters	Filtres appliqués
+	Categories	Catégories
+	Choose a filter	Choisir un filtre
+	Effect Gallery	Galerie d'effets
+	Filters	Filtres
+	Select artwork to apply effects	Sélectionnez des éléments graphiques pour appliquer des effets
 @msg	the file's variables and data sets weren't read (variables: {variables}, data sets: {data_sets}): the Variables panel doesn't list them	les variables et jeux de données du fichier n’ont pas été lus (variables : {variables}, jeux de données : {data_sets}) : le panneau Variables ne les affiche pas
 # Select by Color (select.color)
 	Select by Color	Sélectionner par couleur
@@ -5385,8 +5399,5 @@ theme	Appearance	Apparence
 	Shift:	Décalage :
 	Fresco…	Fresque…
 	Fresco	Fresque
-
-# Artwork drag between document tabs.
-	Drop Artwork	Déposer l’illustration
-@msg	{key} must be [x, y] with finite coordinates	{key} doit être [x, y] avec des coordonnées finies
-@msg	ids must contain 1–10000 object ids	ids doit contenir de 1 à 10000 identifiants d’objets
+	Effect Gallery…	Galerie d'effets…
+	Effect Gallery Dialog	Boîte de dialogue Galerie d'effets

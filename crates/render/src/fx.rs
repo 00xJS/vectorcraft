@@ -489,11 +489,12 @@ fn cull_bounds_in(symbols: &SymbolBoxes, n: &Node, after_reshape: bool) -> Optio
 }
 
 /// The box of type `t`'s glyphs as laid out (its layout bounds, else laid out now), grown by its
-/// characters' strokes and by `outset`: on a path they stand above it and run past its ends, in an
-/// area they can hang past its frame, where its own box ([`Node::visual_bounds_with`]) doesn't.
+/// characters' strokes, miter spikes included, and by `outset`: on a path they stand above it and
+/// run past its ends, in an area they can hang past its frame, where its own box
+/// ([`Node::visual_bounds_with`]) doesn't.
 fn glyphs_box(t: &vectorcraft_doc::TextObject, outset: f64) -> Option<Rect> {
     let b = t.cached_bounds.unwrap_or_else(|| vectorcraft_text::layout(vectorcraft_text::FontDb::global(), t).bounds);
-    let o = outset.max(t.char_stroke_outset());
+    let o = outset.max(t.char_stroke_reach());
     (b.width() > 0.0 || b.height() > 0.0).then(|| t.xf.transform_rect_bbox(b).inflate(o, o))
 }
 

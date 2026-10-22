@@ -1713,8 +1713,18 @@ impl TextObject {
     /// How far the characters' strokes paint past their glyphs, in document space: they scale
     /// with the type.
     pub fn char_stroke_outset(&self) -> f64 {
+        self.char_strokes(CharStyle::stroke_outset)
+    }
+    /// How far the characters' strokes can paint past their glyphs, their miter spikes and square
+    /// caps included ([`StrokeLayer::reach`]), in document space: what a change of the type must
+    /// redraw. The visual bounds take [`Self::char_stroke_outset`].
+    pub fn char_stroke_reach(&self) -> f64 {
+        self.char_strokes(|style| if style.has_stroke() { style.stroke_layer().reach() } else { 0.0 })
+    }
+    /// The farthest `outset` of the characters' styles, scaled with the type.
+    fn char_strokes(&self, outset: impl Fn(&CharStyle) -> f64) -> f64 {
         let k = crate::node::Scaling::factor(self.xf).unwrap_or(1.0);
-        self.runs.iter().map(|r| r.style.stroke_outset()).fold(0.0, f64::max) * k
+        self.runs.iter().map(|r| outset(&r.style)).fold(0.0, f64::max) * k
     }
     pub fn transform(&mut self, a: Affine) {
         self.xf = a * self.xf;

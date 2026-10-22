@@ -1063,6 +1063,11 @@
 	Fidelity:	Точність:
 	Figure Space	Цифрова шпація
 	Figure:	Цифри:
+# Artwork drag between document tabs.
+	Drop Artwork	Розмістити графіку
+@msg	{key} must be [x, y] with finite coordinates	{key} має бути [x, y] зі скінченними координатами
+@msg	ids must contain 1–10000 object ids	ids має містити від 1 до 10000 ідентифікаторів об’єктів
+
 	File	Файл
 	File Dimensions	Розміри файлу
 	File Format:	Формат файлу:
@@ -4927,6 +4932,7 @@ lighting	Light	Світло
 @msg	Persistent libraries not found: {files}	Постійні бібліотеки не знайдено: {files}
 @msg	`{given}` isn't a library panel (see window.swatchLibrary)	`{given}` — не панель бібліотеки (див. window.swatchLibrary)
 @msg	library panel `{given}` isn't open	панель бібліотеки `{given}` не відкрита
+@msg	library panel `{given}` isn't missing its library	бібліотека панелі бібліотеки `{given}` не відсутня
 @msg	too many library panels were opened in this session	у цьому сеансі відкрито забагато панелей бібліотек
 @msg	The image is {_1} × {_2} pixels, more than {LARGE_TRACE_SIDE} on a side: it is traced, but more slowly. A lower-fidelity preset or a smaller copy of the image traces faster.	Зображення {_1} × {_2} пікселів, понад {LARGE_TRACE_SIDE} з одного боку: трасування виконується, але повільніше. Стиль із нижчою точністю або менша копія зображення трасуються швидше.
 @msg	The image was traced at {_1} × {_2} pixels, scaled down from {_3} × {_4} ({_5} megapixels at most).	Зображення трасовано в розмірі {_1} × {_2} пікселів, зменшене з {_3} × {_4} (щонайбільше {_5} мегапікселів).
@@ -4948,6 +4954,14 @@ lighting	Light	Світло
 	Minimum must not exceed Desired, nor Desired Maximum.	Мінімум не може перевищувати бажане значення, а бажане — максимум.
 	Minimum	Мінімум
 	Justification	Вирівнювання за шириною
+	Add filters from the list above	Додайте фільтри зі списку вище
+	Add to Stack	Додати до стека
+	Applied Filters	Застосовані фільтри
+	Categories	Категорії
+	Choose a filter	Виберіть фільтр
+	Effect Gallery	Галерея ефектів
+	Filters	Фільтри
+	Select artwork to apply effects	Виберіть графіку, щоб застосувати ефекти
 @msg	the file's variables and data sets weren't read (variables: {variables}, data sets: {data_sets}): the Variables panel doesn't list them	змінні та набори даних файлу не прочитано (змінних: {variables}, наборів даних: {data_sets}): панель «Змінні» їх не показує
 # Select by Color (select.color)
 	Select by Color	Виділити за кольором
@@ -4981,8 +4995,5 @@ lighting	Light	Світло
 	Shift:	Зсув:
 	Fresco…	Фреска…
 	Fresco	Фреска
-
-# Artwork drag between document tabs.
-	Drop Artwork	Розмістити графіку
-@msg	{key} must be [x, y] with finite coordinates	{key} має бути [x, y] зі скінченними координатами
-@msg	ids must contain 1–10000 object ids	ids має містити від 1 до 10000 ідентифікаторів об’єктів
+	Effect Gallery…	Галерея ефектів…
+	Effect Gallery Dialog	Діалог «Галерея ефектів»

@@ -1232,6 +1232,11 @@
 	Fidelity:	Độ trung thực:
 	Figure Space	Khoảng trắng chữ số
 	Figure:	Chữ số:
+# Artwork drag between document tabs.
+	Drop Artwork	Thả hình đồ họa
+@msg	{key} must be [x, y] with finite coordinates	{key} phải là [x, y] với tọa độ hữu hạn
+@msg	ids must contain 1–10000 object ids	ids phải chứa từ 1 đến 10000 mã định danh đối tượng
+
 	File	Tệp
 	File Dimensions	Kích thước tệp
 	File Format:	Định dạng tệp:
@@ -4927,6 +4932,7 @@ theme	Appearance	Giao diện
 @msg	Persistent libraries not found: {files}	Không tìm thấy thư viện lưu giữ: {files}
 @msg	`{given}` isn't a library panel (see window.swatchLibrary)	`{given}` không phải là bảng thư viện (xem window.swatchLibrary)
 @msg	library panel `{given}` isn't open	bảng thư viện `{given}` chưa được mở
+@msg	library panel `{given}` isn't missing its library	thư viện của bảng thư viện `{given}` không bị thiếu
 @msg	too many library panels were opened in this session	đã mở quá nhiều bảng thư viện trong phiên này
 @msg	The image is {_1} × {_2} pixels, more than {LARGE_TRACE_SIDE} on a side: it is traced, but more slowly. A lower-fidelity preset or a smaller copy of the image traces faster.	Ảnh có kích thước {_1} × {_2} điểm ảnh, hơn {LARGE_TRACE_SIDE} ở một cạnh: ảnh vẫn được dò, nhưng chậm hơn. Một thiết lập sẵn có độ trung thực thấp hơn hoặc một bản sao nhỏ hơn của ảnh sẽ dò nhanh hơn.
 @msg	The image was traced at {_1} × {_2} pixels, scaled down from {_3} × {_4} ({_5} megapixels at most).	Ảnh đã được dò ở {_1} × {_2} điểm ảnh, thu nhỏ từ {_3} × {_4} (tối đa {_5} megapixel).
@@ -4948,6 +4954,14 @@ theme	Appearance	Giao diện
 	Minimum must not exceed Desired, nor Desired Maximum.	Giá trị tối thiểu không được vượt quá giá trị mong muốn, và giá trị mong muốn không được vượt quá tối đa.
 	Minimum	Tối thiểu
 	Justification	Căn đều
+	Add filters from the list above	Thêm bộ lọc từ danh sách phía trên
+	Add to Stack	Thêm vào ngăn xếp
+	Applied Filters	Bộ lọc đã áp dụng
+	Categories	Danh mục
+	Choose a filter	Chọn bộ lọc
+	Effect Gallery	Thư viện hiệu ứng
+	Filters	Bộ lọc
+	Select artwork to apply effects	Chọn đồ họa để áp dụng hiệu ứng
 @msg	the file's variables and data sets weren't read (variables: {variables}, data sets: {data_sets}): the Variables panel doesn't list them	các biến và tập dữ liệu của tệp chưa được đọc (biến: {variables}, tập dữ liệu: {data_sets}): bảng Biến không liệt kê chúng
 # Select by Color (select.color)
 	Select by Color	Chọn theo màu
@@ -4981,8 +4995,5 @@ theme	Appearance	Giao diện
 	Shift:	Dịch chuyển:
 	Fresco…	Bích họa…
 	Fresco	Bích họa
-
-# Artwork drag between document tabs.
-	Drop Artwork	Thả hình đồ họa
-@msg	{key} must be [x, y] with finite coordinates	{key} phải là [x, y] với tọa độ hữu hạn
-@msg	ids must contain 1–10000 object ids	ids phải chứa từ 1 đến 10000 mã định danh đối tượng
+	Effect Gallery…	Thư viện hiệu ứng…
+	Effect Gallery Dialog	Hộp thoại Thư viện hiệu ứng

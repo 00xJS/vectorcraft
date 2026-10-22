@@ -1069,6 +1069,11 @@
 	Fidelity:	Fidelidad:
 	Figure Space	Espacio de cifra
 	Figure:	Cifras:
+# Artwork drag between document tabs.
+	Drop Artwork	Soltar ilustración
+@msg	{key} must be [x, y] with finite coordinates	{key} debe ser [x, y] con coordenadas finitas
+@msg	ids must contain 1–10000 object ids	ids debe contener entre 1 y 10000 identificadores de objetos
+
 	File	Archivo
 	File Dimensions	Dimensiones del archivo
 	File Format:	Formato de archivo:
@@ -5275,6 +5280,7 @@ mark-style	Japanese	Japonesas
 @msg	Persistent libraries not found: {files}	No se encontraron bibliotecas persistentes: {files}
 @msg	`{given}` isn't a library panel (see window.swatchLibrary)	`{given}` no es un panel de biblioteca (consulte window.swatchLibrary)
 @msg	library panel `{given}` isn't open	el panel de biblioteca `{given}` no está abierto
+@msg	library panel `{given}` isn't missing its library	la biblioteca del panel de biblioteca `{given}` no falta
 @msg	too many library panels were opened in this session	se abrieron demasiados paneles de biblioteca en esta sesión
 @msg	The image is {_1} × {_2} pixels, more than {LARGE_TRACE_SIDE} on a side: it is traced, but more slowly. A lower-fidelity preset or a smaller copy of the image traces faster.	La imagen tiene {_1} × {_2} píxeles, más de {LARGE_TRACE_SIDE} en un lado: se calcará, pero más despacio. Un ajuste preestablecido de menor fidelidad o una copia más pequeña de la imagen se calcan más rápido.
 @msg	The image was traced at {_1} × {_2} pixels, scaled down from {_3} × {_4} ({_5} megapixels at most).	La imagen se calcó a {_1} × {_2} píxeles, reducida desde {_3} × {_4} ({_5} megapíxeles como máximo).
@@ -5295,6 +5301,14 @@ mark-style	Japanese	Japonesas
 	Full Justify	Justificar completamente
 	Minimum must not exceed Desired, nor Desired Maximum.	El mínimo no puede superar el deseado, ni el deseado el máximo.
 	Justification	Justificación
+	Add filters from the list above	Añada filtros de la lista de arriba
+	Add to Stack	Añadir a la pila
+	Applied Filters	Filtros aplicados
+	Categories	Categorías
+	Choose a filter	Elija un filtro
+	Effect Gallery	Galería de efectos
+	Filters	Filtros
+	Select artwork to apply effects	Seleccione gráficos para aplicar efectos
 @msg	the file's variables and data sets weren't read (variables: {variables}, data sets: {data_sets}): the Variables panel doesn't list them	no se leyeron las variables ni los conjuntos de datos del archivo (variables: {variables}, conjuntos de datos: {data_sets}): el panel Variables no los muestra
 # Select by Color (select.color)
 	Select by Color	Seleccionar por color
@@ -5328,8 +5342,5 @@ mark-style	Japanese	Japonesas
 	Shift:	Desplazamiento:
 	Fresco…	Fresco…
 	Fresco	Fresco
-
-# Artwork drag between document tabs.
-	Drop Artwork	Soltar ilustración
-@msg	{key} must be [x, y] with finite coordinates	{key} debe ser [x, y] con coordenadas finitas
-@msg	ids must contain 1–10000 object ids	ids debe contener entre 1 y 10000 identificadores de objetos
+	Effect Gallery…	Galería de efectos…
+	Effect Gallery Dialog	Cuadro de diálogo Galería de efectos

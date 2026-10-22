@@ -38,6 +38,11 @@
 	Medium Light	Średnio jasny
 	Light	Jasny
 	Quit VectorCraft	Zakończ VectorCraft
+# Artwork drag between document tabs.
+	Drop Artwork	Upuść kompozycję
+@msg	{key} must be [x, y] with finite coordinates	{key} musi mieć postać [x, y] ze skończonymi współrzędnymi
+@msg	ids must contain 1–10000 object ids	ids musi zawierać od 1 do 10000 identyfikatorów obiektów
+
 	File	Plik
 	New…	Nowy…
 	New Without Dialog	Nowy bez okna dialogowego
@@ -5185,6 +5190,7 @@ mark-style	Japanese	Japońskie
 @msg	Persistent libraries not found: {files}	Nie znaleziono trwałych bibliotek: {files}
 @msg	`{given}` isn't a library panel (see window.swatchLibrary)	`{given}` nie jest panelem biblioteki (zobacz window.swatchLibrary)
 @msg	library panel `{given}` isn't open	panel biblioteki `{given}` nie jest otwarty
+@msg	library panel `{given}` isn't missing its library	panelowi biblioteki `{given}` nie brakuje biblioteki
 @msg	too many library panels were opened in this session	w tej sesji otwarto zbyt wiele paneli bibliotek
 @msg	The image is {_1} × {_2} pixels, more than {LARGE_TRACE_SIDE} on a side: it is traced, but more slowly. A lower-fidelity preset or a smaller copy of the image traces faster.	Obraz ma {_1} × {_2} pikseli, ponad {LARGE_TRACE_SIDE} na jednym boku: zostanie obrysowany, ale wolniej. Ustawienie wstępne o niższej wierności lub mniejsza kopia obrazu obrysuje się szybciej.
 @msg	The image was traced at {_1} × {_2} pixels, scaled down from {_3} × {_4} ({_5} megapixels at most).	Obraz obrysowano w rozdzielczości {_1} × {_2} pikseli, po zmniejszeniu z {_3} × {_4} (najwyżej {_5} megapikseli).
@@ -5205,6 +5211,14 @@ mark-style	Japanese	Japońskie
 	Full Justify	Pełne justowanie
 	Minimum must not exceed Desired, nor Desired Maximum.	Minimum nie może przekraczać wartości optymalnej, a wartość optymalna maksimum.
 	Justification	Justowanie
+	Add filters from the list above	Dodaj filtry z listy powyżej
+	Add to Stack	Dodaj do stosu
+	Applied Filters	Zastosowane filtry
+	Categories	Kategorie
+	Choose a filter	Wybierz filtr
+	Effect Gallery	Galeria efektów
+	Filters	Filtry
+	Select artwork to apply effects	Wybierz grafikę, aby zastosować efekty
 @msg	the file's variables and data sets weren't read (variables: {variables}, data sets: {data_sets}): the Variables panel doesn't list them	zmienne i zestawy danych pliku nie zostały wczytane (zmienne: {variables}, zestawy danych: {data_sets}): panel Zmienne ich nie wyświetla
 # Select by Color (select.color)
 	Select by Color	Zaznacz według koloru
@@ -5238,8 +5252,5 @@ mark-style	Japanese	Japońskie
 	Shift:	Przesunięcie:
 	Fresco…	Fresk…
 	Fresco	Fresk
-
-# Artwork drag between document tabs.
-	Drop Artwork	Upuść kompozycję
-@msg	{key} must be [x, y] with finite coordinates	{key} musi mieć postać [x, y] ze skończonymi współrzędnymi
-@msg	ids must contain 1–10000 object ids	ids musi zawierać od 1 do 10000 identyfikatorów obiektów
+	Effect Gallery…	Galeria efektów…
+	Effect Gallery Dialog	Okno dialogowe Galeria efektów

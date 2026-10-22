@@ -20,6 +20,11 @@
 	Medium Light	Mellemlys
 	Light	Lys
 	Quit VectorCraft	Slut VectorCraft
+# Artwork drag between document tabs.
+	Drop Artwork	Slip illustration
+@msg	{key} must be [x, y] with finite coordinates	{key} skal være [x, y] med endelige koordinater
+@msg	ids must contain 1–10000 object ids	ids skal indeholde 1–10000 objekt-id’er
+
 	File	Filer
 	New…	Ny…
 	New Without Dialog	Ny uden dialog
@@ -5306,6 +5311,14 @@ swatch	Bright Violet	Kraftig violet
 	Full Justify	Lige margener
 	Minimum must not exceed Desired, nor Desired Maximum.	Minimum må ikke overstige Ønsket, og Ønsket ikke Maksimum.
 	Justification	Justering
+	Add filters from the list above	Tilføj filtre fra listen ovenfor
+	Add to Stack	Tilføj til stak
+	Applied Filters	Anvendte filtre
+	Categories	Kategorier
+	Choose a filter	Vælg et filter
+	Effect Gallery	Effektgalleri
+	Filters	Filtre
+	Select artwork to apply effects	Vælg grafik for at anvende effekter
 # Select by Color (select.color)
 	Select by Color	Markér efter farve
 	Smudge Stick…	Udtværingsstift…
@@ -5359,8 +5372,5 @@ swatch	Bright Violet	Kraftig violet
 	Shift:	Forskydning:
 	Fresco…	Fresko…
 	Fresco	Fresko
-
-# Artwork drag between document tabs.
-	Drop Artwork	Slip illustration
-@msg	{key} must be [x, y] with finite coordinates	{key} skal være [x, y] med endelige koordinater
-@msg	ids must contain 1–10000 object ids	ids skal indeholde 1–10000 objekt-id’er
+	Effect Gallery…	Effektgalleri…
+	Effect Gallery Dialog	Dialogboksen Effektgalleri

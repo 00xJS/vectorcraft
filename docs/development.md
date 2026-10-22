@@ -431,7 +431,7 @@ onto a flyer through the command API; its screenshot was inspected, source prese
 Undo/Redo checked. Physical mouse hover on the desktop is not covered by that native smoke test.
 Public behavior reference: [Illustrator public duplication documentation](https://helpx.adobe.com/illustrator/desktop/manage-objects/edit-objects/duplicate-objects.html).
 The tab-hover workflow follows the contributor’s requested behavior. All test artwork is original geometry/text generated locally.
-The new command and validation messages are translated in all 23 language catalogs.
+The new command and validation messages are translated in all 24 language catalogs, including Turkish.
 Scores and hour estimates are unchanged.
 
 ## Revision history
@@ -444,9 +444,10 @@ Scores and hour estimates are unchanged.
 | 2026-10-14 | minor | Document registration of every explicitly supplied craft-fonts face after the existing script-specific prefix; empty input and web selection remain unchanged. |
 | 2026-10-13 | minor | Document pinned PngSuite files, integrity checks and download budgets (#1729). |
 
-> **Tab-drag status (2026-10-22):** updated from upstream; drag lifecycle, insertion and regression contracts documented; behavior, scores and estimates unchanged.
+> **Tab-drag status (2026-10-22):** updated from upstream, including the Turkish catalog and all three tab-drag translations requested in #3479; drag lifecycle, insertion and regression contracts documented; behavior, scores and estimates unchanged.
 
 | Date | Change | Tab-drag history |
 |---|---|---|
+| 2026-10-22 | minor | Merge current main and complete the Turkish tab-drag labels and validation messages requested by the maintainer; all 24 catalogs covered; scores and estimates unchanged. |
 | 2026-10-22 | minor | Tab-drag follow-up: reconcile upstream progress updates and document drag lifecycle, insertion behavior and regression contracts; behavior, scores and estimates unchanged. |
 | 2026-10-22 | minor | Artwork dragged with Selection switches visible document tabs after a 400 ms hover, then copies editable artwork on canvas release; source and clipboard stay intact; scores and hours unchanged |

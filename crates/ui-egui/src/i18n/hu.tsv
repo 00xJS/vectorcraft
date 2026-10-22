@@ -1355,6 +1355,11 @@
 	Fidelity:	Pontosság:
 	Figure Space	Számjegyszóköz
 	Figure:	Számjegyek:
+# Artwork drag between document tabs.
+	Drop Artwork	Grafika elhelyezése
+@msg	{key} must be [x, y] with finite coordinates	A(z) {key} értékének [x, y] alakúnak kell lennie véges koordinátákkal
+@msg	ids must contain 1–10000 object ids	Az ids értékének 1–10000 objektumazonosítót kell tartalmaznia
+
 	File	Fájl
 	File Dimensions	Fájl méretei
 	File Format:	Fájlformátum:
@@ -5319,6 +5324,7 @@ imageTrace	Outline	Körvonal
 @msg	Persistent libraries not found: {files}	Nem találhatók állandó könyvtárak: {files}
 @msg	`{given}` isn't a library panel (see window.swatchLibrary)	A(z) `{given}` nem könyvtárpanel (lásd: window.swatchLibrary)
 @msg	library panel `{given}` isn't open	a(z) `{given}` könyvtárpanel nincs megnyitva
+@msg	library panel `{given}` isn't missing its library	a(z) `{given}` könyvtárpanel könyvtára nem hiányzik
 @msg	too many library panels were opened in this session	ebben a munkamenetben túl sok könyvtárpanel nyílt meg
 @msg	The image is {_1} × {_2} pixels, more than {LARGE_TRACE_SIDE} on a side: it is traced, but more slowly. A lower-fidelity preset or a smaller copy of the image traces faster.	A kép {_1} × {_2} képpont, egyik oldalán több mint {LARGE_TRACE_SIDE}: a vektorizálás megtörténik, de lassabban. Kisebb hűségű előbeállítással vagy a kép kisebb másolatával gyorsabb.
 @msg	The image was traced at {_1} × {_2} pixels, scaled down from {_3} × {_4} ({_5} megapixels at most).	A kép vektorizálása {_1} × {_2} képponton történt, {_3} × {_4} méretről kicsinyítve (legfeljebb {_5} megapixel).
@@ -5339,6 +5345,14 @@ imageTrace	Outline	Körvonal
 	Full Justify	Teljes sorkizárás
 	Minimum must not exceed Desired, nor Desired Maximum.	A minimum nem haladhatja meg a kívánt értéket, sem a kívánt érték a maximumot.
 	Justification	Sorkizárás
+	Add filters from the list above	Adjon hozzá szűrőket a fenti listából
+	Add to Stack	Hozzáadás a veremhez
+	Applied Filters	Alkalmazott szűrők
+	Categories	Kategóriák
+	Choose a filter	Válasszon szűrőt
+	Effect Gallery	Effektusgaléria
+	Filters	Szűrők
+	Select artwork to apply effects	Válasszon ki grafikát az effektusok alkalmazásához
 @msg	the file's variables and data sets weren't read (variables: {variables}, data sets: {data_sets}): the Variables panel doesn't list them	a fájl változói és adatkészletei nem lettek beolvasva (változók: {variables}, adatkészletek: {data_sets}): a Változók panel nem listázza őket
 # Select by Color (select.color)
 	Select by Color	Kijelölés szín szerint
@@ -5372,8 +5386,5 @@ imageTrace	Outline	Körvonal
 	Shift:	Eltolás:
 	Fresco…	Freskó…
 	Fresco	Freskó
-
-# Artwork drag between document tabs.
-	Drop Artwork	Grafika elhelyezése
-@msg	{key} must be [x, y] with finite coordinates	A(z) {key} értékének [x, y] alakúnak kell lennie véges koordinátákkal
-@msg	ids must contain 1–10000 object ids	Az ids értékének 1–10000 objektumazonosítót kell tartalmaznia
+	Effect Gallery…	Effektusgaléria…
+	Effect Gallery Dialog	Effektusgaléria párbeszédpanel

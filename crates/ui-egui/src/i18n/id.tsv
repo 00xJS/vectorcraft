@@ -20,6 +20,11 @@
 	Medium Light	Agak terang
 	Light	Terang
 	Quit VectorCraft	Keluar dari VectorCraft
+# Artwork drag between document tabs.
+	Drop Artwork	Letakkan karya
+@msg	{key} must be [x, y] with finite coordinates	{key} harus berupa [x, y] dengan koordinat berhingga
+@msg	ids must contain 1–10000 object ids	ids harus berisi 1–10000 ID objek
+
 	File	Berkas
 	New…	Baru…
 	New Without Dialog	Baru tanpa dialog
@@ -5306,6 +5311,14 @@ swatch	Bright Violet	Violet cerah
 	Full Justify	Rata Penuh
 	Minimum must not exceed Desired, nor Desired Maximum.	Minimum tidak boleh melebihi Diinginkan, dan Diinginkan tidak boleh melebihi Maksimum.
 	Justification	Justifikasi
+	Add filters from the list above	Tambahkan filter dari daftar di atas
+	Add to Stack	Tambahkan ke Tumpukan
+	Applied Filters	Filter yang Diterapkan
+	Categories	Kategori
+	Choose a filter	Pilih filter
+	Effect Gallery	Galeri Efek
+	Filters	Filter
+	Select artwork to apply effects	Pilih grafis untuk menerapkan efek
 # Select by Color (select.color)
 	Select by Color	Pilih berdasarkan warna
 	Smudge Stick…	Tongkat olesan…
@@ -5359,8 +5372,5 @@ swatch	Bright Violet	Violet cerah
 	Shift:	Pergeseran:
 	Fresco…	Fresko…
 	Fresco	Fresko
-
-# Artwork drag between document tabs.
-	Drop Artwork	Letakkan karya
-@msg	{key} must be [x, y] with finite coordinates	{key} harus berupa [x, y] dengan koordinat berhingga
-@msg	ids must contain 1–10000 object ids	ids harus berisi 1–10000 ID objek
+	Effect Gallery…	Galeri Efek…
+	Effect Gallery Dialog	Dialog Galeri Efek
