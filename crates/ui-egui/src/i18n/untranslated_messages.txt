@@ -702,7 +702,7 @@ no design named `{n}`
 no design named `{old}`
 no encoder for {_1} yet
 no export preset `{name}` (see document.exportPresets.list)
-no folder: pass `path` or set Preferences › Performance & Storage › Additional Plug-ins Folder
+no folder: pass `path` or set Preferences › Plug-ins & Scratch Disks › Additional Plug-ins Folder
 no fonts to look for: they are all available
 no formats to export
 no graphic style `{n}` in `{_1}`

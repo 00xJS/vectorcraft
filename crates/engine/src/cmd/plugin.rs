@@ -230,7 +230,7 @@ fn reload(s: &mut Session, p: &Value) -> Result<Value> {
         None => s.prefs.plugins_folder.trim().to_string(),
     };
     if folder.is_empty() {
-        return Err(bad(C, "no folder: pass `path` or set Preferences › Performance & Storage › Additional Plug-ins Folder"));
+        return Err(bad(C, "no folder: pass `path` or set Preferences › Plug-ins & Scratch Disks › Additional Plug-ins Folder"));
     }
     let report = load_folder(&folder);
     if let Some(e) = report.get("error").and_then(Value::as_str) {

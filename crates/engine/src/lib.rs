@@ -978,7 +978,7 @@ pub struct Prefs {
     /// Type › Options › Additional Fonts Folder: a folder (read with its subfolders) whose fonts
     /// are listed and used as if installed (#683); empty for none.
     pub fonts_folder: String,
-    // Performance & Storage (Plug-ins & Scratch Disks)
+    // Plug-ins & Scratch Disks
     pub plugins_folder: String,
     pub scratch_primary: String,
     pub scratch_secondary: String,
