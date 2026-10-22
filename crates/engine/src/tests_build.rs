@@ -716,6 +716,52 @@ fn live_paint_stroke_edge() {
     assert!(s.execute("livePaint.strokeEdge", &json!({"group": g.0, "point": [300, 300]})).is_err());
 }
 
+/// Shape Builder refuses an on/off option that is not true or false and a tolerance or gap that is
+/// not a number, given as text or as another value of the wrong kind, naming the key; the document
+/// and the undo history stay as they were. True, false and null still work.
+#[test]
+fn shape_builder_refuses_a_number_or_boolean_given_as_text() {
+    use super::tests::{not_a_number, not_a_switch, not_refused};
+    let mut s = session();
+    two(&mut s);
+    let merge = |extra: Value| {
+        let mut p = json!({"points": [[75, 50]]});
+        p.as_object_mut().unwrap().extend(extra.as_object().unwrap().clone());
+        p
+    };
+    let calls = [
+        not_a_switch("shapeBuilder.merge", merge(json!({"erase": "true"})), "erase"),
+        not_a_switch("shapeBuilder.merge", merge(json!({"openFilledAsClosed": "false"})), "openFilledAsClosed"),
+        not_a_number("shapeBuilder.merge", merge(json!({"erase": true, "tolerance": "2"})), "tolerance"),
+        not_a_number("shapeBuilder.merge", merge(json!({"gap": "5"})), "gap"),
+        not_a_switch("shapeBuilder.regions", json!({"openFilledAsClosed": 1}), "openFilledAsClosed"),
+        not_a_number("shapeBuilder.regions", json!({"gap": [5]}), "gap"),
+    ];
+    let wrong = not_refused(&mut s, &calls);
+    assert!(wrong.is_empty(), "not refused: {wrong:#?}");
+    s.execute("shapeBuilder.merge", &merge(json!({"erase": false, "openFilledAsClosed": null}))).unwrap();
+}
+
+/// Live Paint and Image Trace refuse an on/off option that is not true or false and a width or
+/// tolerance that is not a number, given as text or as another value of the wrong kind, naming the
+/// key; the document and the undo history stay as they were. Numbers and null still work.
+#[test]
+fn live_paint_and_image_trace_refuse_a_number_or_boolean_given_as_text() {
+    use super::tests::{not_a_number, not_a_switch, not_refused};
+    let mut s = session();
+    let g = live(&mut s);
+    let calls = [
+        not_a_switch("livePaint.gapOptions", json!({"closeGaps": "true"}), "closeGaps"),
+        not_a_number("livePaint.strokeEdge", json!({"group": g.0, "point": [100, 50], "width": "3"}), "width"),
+        not_a_number("livePaint.strokeEdge", json!({"group": g.0, "point": [100, 50], "tolerance": [4]}), "tolerance"),
+        not_a_switch("imageTrace.make", json!({"enhanced": "true"}), "enhanced"),
+    ];
+    let wrong = not_refused(&mut s, &calls);
+    assert!(wrong.is_empty(), "not refused: {wrong:#?}");
+    let r = s.execute("livePaint.strokeEdge", &json!({"group": g.0, "point": [100, 50], "width": 3, "tolerance": null})).unwrap();
+    assert_eq!(node(&s, NodeId(r["edge"].as_u64().unwrap())).appearance.stroke_width(), 3.0);
+}
+
 #[test]
 fn live_paint_stroke_edge_skips_hidden_edges() {
     let mut s = session();

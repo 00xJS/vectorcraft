@@ -426,6 +426,14 @@ pub(crate) fn settle(app: &mut VectorcraftApp) {
 /// until Enter has been let go.
 pub(crate) const AFTER_PANEL: &str = "__afterPanel";
 
+/// Marks the open dialog, if any, as one a save panel opened ([`AFTER_PANEL`]): the Enter that
+/// closed the panel, still held, doesn't confirm it.
+pub(crate) fn opened_by_panel(app: &mut VectorcraftApp) {
+    if let Some(d) = app.ui.dialog.as_mut() {
+        d.fields.insert(AFTER_PANEL.into(), json!(true));
+    }
+}
+
 /// Draws the active dialog and handles shared initial focus, keyboard shortcuts and actions.
 /// Inline actions and footer buttons use the same confirmation and preview rollback paths.
 pub fn show(app: &mut VectorcraftApp, ctx: &egui::Context) {

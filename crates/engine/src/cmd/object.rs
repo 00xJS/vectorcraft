@@ -1155,6 +1155,7 @@ fn data_param(m: &serde_json::Map<String, Value>) -> Result<Vec<(String, Option<
 
 fn set_props(s: &mut Session, p: &Value) -> Result<Value> {
     check_switches(p, &["visible", "locked", "isolate", "knockoutShape"], "object.setProps")?;
+    check_numbers(p, &["opacity"], "object.setProps")?;
     let ids = targets(s, p)?;
     let opacity = p.get("opacity").and_then(Value::as_f64).map(percent);
     let blend = match str_param(p, "blend") {
@@ -1424,6 +1425,7 @@ fn align(s: &mut Session, p: &Value) -> Result<Value> {
     let (h, v) = direction(p, "object.align")?;
     choice(p, "object.align", "to", &["selection", "artboard", "key"])?;
     check_switches(p, &["patterns"], "object.align")?;
+    check_numbers(p, &["artboard"], "object.align")?;
     if h.is_none() && v.is_none() {
         return Err(bad("object.align", "give horizontal or vertical"));
     }
@@ -1651,6 +1653,7 @@ fn distribute_anchors(s: &mut Session, label: &str, horiz: bool, gap: Option<f64
 
 fn distribute(s: &mut Session, p: &Value) -> Result<Value> {
     check_switches(p, &["patterns"], "object.distribute")?;
+    check_numbers(p, &["artboard"], "object.distribute")?;
     let ids = selected_roots(s)?;
     let preview = preview_bounds(s, p, "object.distribute")?;
     let board = distribute_to(s, p, &ids, preview, "object.distribute")?;
@@ -1725,6 +1728,7 @@ fn distribute(s: &mut Session, p: &Value) -> Result<Value> {
 
 fn distribute_spacing(s: &mut Session, p: &Value) -> Result<Value> {
     check_switches(p, &["patterns"], "object.distributeSpacing")?;
+    check_numbers(p, &["artboard"], "object.distributeSpacing")?;
     let ids = selected_roots(s)?;
     let horiz = choice(p, "object.distributeSpacing", "axis", &["horizontal", "vertical"])? != Some("vertical");
     let preview = preview_bounds(s, p, "object.distributeSpacing")?;
@@ -1811,7 +1815,7 @@ pub(crate) fn bounds_rewrite(s: &Session, cmd: &str, params: &Value) -> Option<(
 /// How `object.setBounds` with params `p` changes the objects `ids`. A scale that would leave the
 /// art with a width or height below `least` of the one it has keeps `least` of it.
 fn bounds_transform(s: &Session, p: &Value, ids: Vec<NodeId>, least: f64) -> Result<Bounds> {
-    check_numbers(p, &["x", "y", "width", "height"], "object.setBounds")?;
+    check_numbers(p, &["x", "y", "width", "height", "reference"], "object.setBounds")?;
     let st = s.doc()?;
     check_switches(p, &TRANSFORM_SWITCHES, "object.setBounds")?;
     check_switches(p, &["proportional"], "object.setBounds")?;
@@ -2346,7 +2350,8 @@ fn corners_param(p: &Value) -> Result<Option<BTreeSet<usize>>> {
 }
 
 fn set_live_shape(s: &mut Session, p: &Value) -> Result<Value> {
-    check_switches(p, &["invertPie", "makeSidesEqual"], "object.setLiveShape")?;
+    check_switches(p, &["invertPie", "makeSidesEqual", "relativeRadii"], "object.setLiveShape")?;
+    check_numbers(p, &["radius", "sides"], "object.setLiveShape")?;
     // `items`: objects each with its own `corners`; else `ids` (or the selection) sharing them.
     let items = match p.get("items").filter(|v| !v.is_null()) {
         None => None,

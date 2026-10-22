@@ -1,6 +1,5 @@
 # Development
 
-> **Last updated:** 2026-10-22 · **Change:** document-tab artwork dragging and lossless drop command.
 > **Last updated:** 2026-10-21 · **Change:** leaving out the bundled fonts with the egui panels (vectorcraft-ui-egui's and vectorcraft-mcp's `bundled-fonts` features).
 > **Last updated:** 2026-10-14 · **Change:** leaving out the bundled fonts (`bundled-fonts` feature).
 > **Last updated:** 2026-10-14 · **Change:** document-font registration for all explicitly supplied faces.
@@ -439,10 +438,15 @@ Scores and hour estimates are unchanged.
 
 | Date | Change | Summary |
 |---|---|---|
-| 2026-10-22 | minor | Tab-drag follow-up: reconcile upstream progress updates and document drag lifecycle, insertion behavior and regression contracts; behavior, scores and estimates unchanged. |
-| 2026-10-22 | minor | Artwork dragged with Selection switches visible document tabs after a 400 ms hover, then copies editable artwork on canvas release; source and clipboard stay intact; scores and hours unchanged |
 | 2026-10-21 | minor | M3: highlighted-text Eyedropper sampling preserves ranges and rejects unsupported source/target transparency atomically; regression-tested; scores and estimates unchanged. |
 | 2026-10-21 | minor | Fonts › Leaving out the bundled fonts: vectorcraft-ui-egui's and vectorcraft-mcp's `bundled-fonts` features, and the engine declared without default features. |
 | 2026-10-14 | minor | Document the `bundled-fonts` feature of vectorcraft-text and vectorcraft-engine (Fonts › Leaving out the bundled fonts). |
 | 2026-10-14 | minor | Document registration of every explicitly supplied craft-fonts face after the existing script-specific prefix; empty input and web selection remain unchanged. |
 | 2026-10-13 | minor | Document pinned PngSuite files, integrity checks and download budgets (#1729). |
+
+> **Tab-drag status (2026-10-22):** updated from upstream; drag lifecycle, insertion and regression contracts documented; behavior, scores and estimates unchanged.
+
+| Date | Change | Tab-drag history |
+|---|---|---|
+| 2026-10-22 | minor | Tab-drag follow-up: reconcile upstream progress updates and document drag lifecycle, insertion behavior and regression contracts; behavior, scores and estimates unchanged. |
+| 2026-10-22 | minor | Artwork dragged with Selection switches visible document tabs after a 400 ms hover, then copies editable artwork on canvas release; source and clipboard stay intact; scores and hours unchanged |

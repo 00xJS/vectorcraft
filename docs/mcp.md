@@ -945,11 +945,12 @@ missing one does.
 nothing.
 
 These Object menu commands refuse a string, a number or another value that is not true or false with
-`` `copy` must be true or false ``, naming the key, and change nothing: `reflectX`, `reflectY`, `random` and `copy` in
-`object.transformEach`; `gray` and `deleteRaster` in `object.createObjectMosaic`; `trim` in `object.cropImage`;
-`allArtboards` in `object.createTrimMarks`; and `byColumn` and `moveArtwork` in `artboard.rearrange`. A null is read as
-a key left out. `object.createTrimMarks` refuses a `style` that is not a string, such as `5`, with
-`` `style` must be roman or japanese ``, the message it gives for a string that names no style.
+`` `copy` must be true or false ``, naming the key, and change nothing: `reflectX`, `reflectY`, `random`, `copy`,
+`strokes`, `corners`, `objects` and `patterns` in `object.transformEach`; `gray` and `deleteRaster` in
+`object.createObjectMosaic`; `trim` in `object.cropImage`; `allArtboards` in `object.createTrimMarks`; and `byColumn`,
+`moveArtwork` and `patterns` in `artboard.rearrange`. A null is read as a key left out. `object.createTrimMarks`
+refuses a `style` that is not a string, such as `5`, with `` `style` must be roman or japanese ``, the message it gives
+for a string that names no style.
 
 A whole number that is larger than the build's `usize` can hold (4294967295 on a 32-bit build, such as the
 `wasm32-unknown-unknown` web build) counts as larger than any index, place, byte offset or count. An index, such as
@@ -975,7 +976,12 @@ undo history as they were: the options `copy`, `strokes`, `corners`, `patterns`,
 `object.transformAgain` and `object.setBounds`; `anchors` in `object.transform`; `big` in `object.nudge`;
 `absolute` in `object.rotate`; `proportional` in `object.setBounds`; `patterns` in `object.align`, `object.distribute`
 and `object.distributeSpacing`; `visible`, `locked`, `isolate` and `knockoutShape` in `object.setProps`; and
-`invertPie` and `makeSidesEqual` in `object.setLiveShape`. A null is read as a key left out.
+`invertPie`, `makeSidesEqual` and `relativeRadii` in `object.setLiveShape`. A null is read as a key left out.
+
+They also refuse a string or another value that is not a number with `` `opacity` must be a number, not "50" ``,
+naming the key, and leave the document and its undo history as they were: `opacity` in `object.setProps`; `radius` and
+`sides` in `object.setLiveShape`; `reference` in `object.setBounds`; and `artboard` in `object.align`,
+`object.distribute` and `object.distributeSpacing`. A null is read as a key left out.
 
 The blend and envelope commands refuse a string, a number or another value that is not true or false with
 `` `smooth` must be true or false ``, naming the key, and leave the document, its undo history and the options new
@@ -985,6 +991,36 @@ in `object.envelope.makeWithWarp`, `resetWithWarp` and `options`, also when an `
 in `object.envelope.resetWithMesh`; `antiAlias`, `distortAppearance`, `distortLinearGradients` and
 `distortPatternFills` in `object.envelope.options`; and `editing` in `object.envelope.editContents`. A null is read as
 a key left out.
+
+These commands refuse a string, a number or another value that is not true or false with
+`` `closed` must be true or false ``, naming the key, and leave the document and its undo history as they were:
+`clockwise` in `shape.spiral`; `closed` in `shape.arc` and `path.create`; `vertical` and `placeholder` in `text.create`
+and `text.createInPath`; `underline`, `strikethrough`, `allCaps`, `proportionalMetrics`, `tateChuYoko` and `noBreak`
+in `text.setRangeStyle`; `effective` in `text.getRange`; `on` in `type.opticalMarginAlignment`, `type.systemLayout`
+and `type.fractionalWidths`; `remove` and `overhang` in `type.ruby`; `expandInstances` in `symbol.delete`; `alt` in
+`symbol.spray` and `symbol.adjust`; `spot` and `global` in `swatch.new` and `swatch.edit`; `unlink` in
+`swatch.delete`; `fromArtwork`, `toGlobal` and `includeTints` in `swatch.newGroup`; `global` and `selection` in
+`swatch.addUsedColors`; `visible` in `appearance.setItem`; `copy` in `appearance.transfer`; `reverse` and `append` in
+`appearance.copyFrom`; `reverse` and `stroke` in `paint.editGradient`; `stroke` in `paint.setGradientGeom` and in
+`paint.freeform.addPoint`, `setPoint`, `deletePoint`, `addLine`, `splitLine` and `get`; `erase` and
+`openFilledAsClosed` in `shapeBuilder.merge`; `openFilledAsClosed` in `shapeBuilder.regions`; `closeGaps` in `livePaint.gapOptions`; and
+`enhanced` in `imageTrace.make` and `imageTrace.makeAndExpand`. A null is read as a key left out.
+
+These commands refuse a string or another value that is not a number with `` `radius` must be a number, not "2" ``,
+naming the key, and change nothing: `radius` in `shape.rectangle`; `sides` and `rotation` in `shape.polygon`;
+`radius2`, `points` and `rotation` in `shape.star`; `diameter`, `opacity`, `brightness`, `growth`, `fuzziness`,
+`rays`, `longest`, `rayFuzziness`, `rings`, `largest`, `x2`, `y2`, `direction`, `pathLength` and `seed` in
+`shape.flare`; `decay` and `segments` in `shape.spiral`; `size` and the `width`, `height` and `fitMinPercent` of
+`area` in `text.create`; `size` and `fitMinPercent` in `text.createInPath`; `start`, `end`, `size`, `tracking`,
+`baselineShift`, `hScale`, `vScale`, `rotation` and `strokeWidth` in `text.setRangeStyle`; `start` and `end` in
+`text.editRange` and `text.getRange`; `start`, `hScale`, `vScale` and `rotation` in `text.touchType`; `by`, `start` and
+`end` in `type.step`; `by` in `type.size.increase` and `type.size.decrease`; `size` in `type.ruby`; `width`, `height`
+and `fitMinPercent` in `text.areaOptions`; `x` and `y` in `symbol.place`; `radius`, `density` and `scale` in
+`symbol.spray`; `radius` and `intensity` in `symbol.adjust`; `to` in `swatch.move`; `weight` and `opacity` in
+`appearance.setItem`; `angle` in `paint.editGradient` and in the `gradient` of a command that takes a paint; `t` in
+`paint.freeform.splitLine`; `tolerance` and `gap` in `shapeBuilder.merge`; `gap` in `shapeBuilder.regions`; and
+`width` and `tolerance` in `livePaint.strokeEdge`. A null is read as a key left out. A gradient stop that names a
+swatch refuses a `tint` that is not a number with `` stop 0: `tint` must be a number ``.
 
 A step can use an earlier step's result, in `run` as in the `command_batch` tool. A parameter string that is exactly
 `$N` or `$N.path` takes that value from the result of step `N` (counting from 0, in the order they ran; `run --in`'s
@@ -2189,6 +2225,13 @@ string, with "x and y must both be numbers". All of them except `path.curvature`
 a number nor null with `` `pressure` must be a number, not "0.5" ``. `path.close` refuses an `in` that is not `[x, y]`
 with `` `in` must be [x, y] ``.
 
+These commands refuse a string, a number or another value that is not true or false with
+`` `closed` must be true or false ``, naming the key; the document does not change and no undo step is recorded:
+`independent` in `path.close` and `path.setHandle`; `patterns` in `path.moveAnchors`; `closed`, `keepSelected` and
+`fill` in `path.freehand` (and in `brush.freehand`); `closed` and the `corner` of a point in `path.curvature`; `corner`
+in `path.curvatureEdit`; `perpendicular` in `path.reshapeSegment`; and `keepSelected`, `mergeOnlySelection` and
+`merge` in `path.blob`. A null is read as a key left out.
+
 A `pointer_gesture` with `mods: {cmd: true}` held at the press, with any tool but the selection tools (Command on
 macOS, Ctrl elsewhere), drags with the selection tool chosen last (`select_tool`), or Direct Selection with the Pen,
 Curvature and anchor tools until one is chosen; the release gives the tool back as it was, so the Pen goes on drawing
@@ -2875,6 +2918,13 @@ also move the pattern tiles of the copies when `patterns` is true (default: pref
 Every artboard command that takes an `index` fails with `no such artboard` when the `index` is not the
 0-based index of an artboard (past the last one, negative, fractional, a string or null), and the document and the
 clipboard stay as they were.
+These artboard commands refuse a string, a number or another value that is not true or false with
+`` `art` must be true or false ``, naming the key, and leave the document, its undo history and the clipboard as they
+were: `moveArt`, `scaleArt`, `strokes`, `corners`, `patterns`, `lockedAndHidden` and an artboard's `locked` in
+`artboard.setProps`; `moveArt`, `copy` and `patterns` in `artboard.move`; `art` and `patterns` in `artboard.duplicate`;
+and `art` in `artboard.copy` and `artboard.cut`. `artboard.setProps` refuses an artboard's `x`, `y`, `width` or
+`height` that is not a number, and `artboard.move` refuses such a `dx` or `dy`, with
+`` `dx` must be a number, not "10" ``. A null is read as a key left out.
 
 Scale Artwork with Artboard (#602): `artboard.setProps {index, x?, y?, width?, height?, scaleArt: true}` resizes an
 artboard and scales the art fully inside it, and its artboard guides, from the old rectangle onto the new one, each side
