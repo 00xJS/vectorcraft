@@ -122,9 +122,10 @@ fn bake_node(d: &mut Document, n: &Node) -> Option<Node> {
         let m = reshape(n, symbol.as_deref())?;
         return Some(bake_node(d, &m).unwrap_or(m));
     }
-    // A path whose Transform effect copies it with a gradient: each copy an object of its own, so
-    // its gradient fits it rather than spanning every copy.
-    if crate::has_gradient_copies(n)
+    // A path whose Transform effect copies it with a gradient, or scales its strokes or moves its
+    // patterns: each copy an object of its own, so its gradient fits it rather than spanning
+    // every copy and its strokes and patterns can differ from the others'.
+    if crate::has_transform_art(n)
         && let Some(m) = reshape(n, None)
     {
         return Some(bake_pieces(d, m));

@@ -114,11 +114,16 @@ pub fn roughen(path: &PathData, b: Rect, p: &Value, max: usize) -> PathData {
 
 /// The move and the number of copies of a Transform effect with params `p` that only moves what
 /// it applies to, as [`transform_map`] reads them; `None` when it also scales, rotates or reflects,
-/// or moves by a random share.
+/// or moves by a random share, or moves pattern paints along (Transform Patterns), or scales
+/// strokes while leaving the geometry (Scale Strokes & Effects with Transform Objects off).
 pub(crate) fn transform_move(p: &Value) -> Option<(Vec2, usize)> {
     let (m, copies) = transform_map(Rect::ZERO, p, 0);
     let [a, b, c, d, x, y] = m.as_coeffs();
-    (!flag(p, "random", false) && [a, b, c, d] == [1.0, 0.0, 0.0, 1.0]).then_some((Vec2::new(x, y), copies))
+    // Transform Patterns moves the patterns along; with Transform Objects off, Scale Strokes &
+    // Effects still scales the strokes by the map the geometry doesn't take.
+    let o = TransformOptions::of(p);
+    let plain = !flag(p, "random", false) && !o.patterns && (o.objects || !o.strokes);
+    (plain && [a, b, c, d] == [1.0, 0.0, 0.0, 1.0]).then_some((Vec2::new(x, y), copies))
 }
 
 /// The offsets at which Transform effects with params `ps`, applied in order, place `path`, the
@@ -170,7 +175,9 @@ pub(crate) fn within_reach(r: Rect) -> bool {
 /// (the 9-point grid, 4 = centre), then move; `copies` more times, each from the last. With
 /// `random`, each scale goes a random share of the way from 100 % to its value and each move and
 /// the angle a share of theirs, drawn from `seed` (the object's), so an object keeps its result
-/// on every redraw while each object varies its own way.
+/// on every redraw while each object varies its own way. With Transform Objects off the path stays
+/// as it is; Transform Patterns and Scale Strokes & Effects reach the appearance through the
+/// object's art ([`crate::has_transform_art`]).
 pub fn transform(path: &PathData, b: Rect, p: &Value, seed: u64) -> PathData {
     transform_within(path, b, p, seed, MAX_COPY_ANCHORS)
 }
@@ -201,12 +208,49 @@ pub(crate) fn transform_within(path: &PathData, b: Rect, p: &Value, seed: u64, m
     out
 }
 
+/// The Transform effect's options beyond its geometry (#885).
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) struct TransformOptions {
+    /// Transform Objects (default on): the geometry transforms and is copied. Off, it stays where
+    /// it is and only the two options below apply, once.
+    pub objects: bool,
+    /// Transform Patterns (default off): pattern fills and strokes transform along.
+    pub patterns: bool,
+    /// Scale Strokes & Effects (default off): stroke weights and dashes, and the distances of the
+    /// effects on the fills and strokes, scale by the map's mean scale (`√|det|`).
+    pub strokes: bool,
+}
+
+impl TransformOptions {
+    /// The options of a Transform effect with params `p`. Missing keys take their defaults, so
+    /// effects saved before the options existed draw as they did.
+    pub fn of(p: &Value) -> Self {
+        Self { objects: flag(p, "objects", true), patterns: flag(p, "patterns", false), strokes: flag(p, "strokes", false) }
+    }
+
+    /// Do they reach past the geometry (Transform Patterns or Scale Strokes & Effects)?
+    pub fn reach_appearance(self) -> bool {
+        self.patterns || self.strokes
+    }
+}
+
 /// The Transform effect's map and how many copies of what it is applied to it makes, for bounds
 /// `b` (the reference point lies on them), params `p` and the object's `seed` for Random: the map
 /// applies to the object itself when `copies` is 0, and once more to each of `copies` copies
 /// otherwise (see [`transform_within`], and images, whose copies count nodes against
-/// [`MAX_COPY_OBJECTS`]).
+/// [`MAX_COPY_OBJECTS`]). With Transform Objects off the geometry stays: the identity and no
+/// copies ([`transform_affine`] is the map its other options still use).
 pub(crate) fn transform_map(b: Rect, p: &Value, seed: u64) -> (Affine, usize) {
+    if !TransformOptions::of(p).objects {
+        return (Affine::IDENTITY, 0);
+    }
+    (transform_affine(b, p, seed), num(p, "copies", 0.0).clamp(0.0, 1000.0) as usize)
+}
+
+/// The one transformation of the Transform effect with params `p` on an object of bounds `b`
+/// (the reference point lies on them; `seed` for Random), whatever Transform Objects says. Each
+/// copy applies it once more to the last.
+pub(crate) fn transform_affine(b: Rect, p: &Value, seed: u64) -> Affine {
     let random = flag(p, "random", false);
     // The share (0..1) of value `k` applied.
     let share = |k: u64| if random { (noise(seed, k, 0, 0) + 1.0) / 2.0 } else { 1.0 };
@@ -215,12 +259,10 @@ pub(crate) fn transform_map(b: Rect, p: &Value, seed: u64) -> (Affine, usize) {
     let reflect = |key: &str| if flag(p, key, false) { -1.0 } else { 1.0 };
     let o = vectorcraft_geom::reference_point(b, num(p, "reference", 4.0).clamp(0.0, 8.0) as usize).to_vec2();
     // Reflect X flips the x coordinates (left to right), Reflect Y the y coordinates.
-    let m = Affine::translate(Vec2::new(moved("moveH", 2), moved("moveV", 3)) + o)
+    Affine::translate(Vec2::new(moved("moveH", 2), moved("moveV", 3)) + o)
         * Affine::rotate(-(num(p, "rotate", 0.0) * share(4)).to_radians())
         * Affine::scale_non_uniform(scale("scaleH", 0) * reflect("reflectX"), scale("scaleV", 1) * reflect("reflectY"))
-        * Affine::translate(-o);
-    let copies = num(p, "copies", 0.0).clamp(0.0, 1000.0) as usize;
-    (m, copies)
+        * Affine::translate(-o)
 }
 
 /// Tweak: random displacement of anchors and/or control points.
