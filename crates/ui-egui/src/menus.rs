@@ -801,7 +801,7 @@ pub const UI_COMMANDS: &[(&str, &str, &str, &str)] = &[
         "ui.simplifyAuto",
         "Auto-Simplify",
         "",
-        "{} the open Simplify slider (Object › Path › Simplify opens it: dialog `simplifySlider` with field `level` 0..100, object.path.simplify's level, 50 as it opens, previewed on the canvas until ui.dialog.confirm keeps it as one undo step; after OK in the Simplify dialog with `retain` ticked, the menu item opens the dialog `simplify` with the fields of that OK instead) moves to the level object.path.simplify {auto: true} picks for the selection and previews it → {level}; an error when the slider isn't open",
+        "{} the open Simplify slider (Object › Path › Simplify opens it: dialog `simplifySlider` with field `level` 0..100, object.path.simplify's level, opening at the level object.path.simplify {auto: true} picks for the selection, previewed on the canvas until ui.dialog.confirm keeps it as one undo step; after OK in the Simplify dialog with `retain` ticked, the menu item opens the dialog `simplify` with the fields of that OK instead) moves to the level object.path.simplify {auto: true} picks for the selection and previews it → {level}; an error when the slider isn't open",
     ),
     (
         "ui.simplifyMoreOptions",
@@ -3569,7 +3569,7 @@ fn menu_dialog(app: &VectorcraftApp, id: &str) -> Option<(&'static str, Value)> 
         // Simplify opens its slider, or the dialog on the fields it was last confirmed with when
         // "Open this dialog with these settings next time" was ticked.
         "object.path.simplify" if app.ui.simplify.is_object() => ("simplify", app.ui.simplify.clone()),
-        "object.path.simplify" => (crate::dialogs::simplify_slider::KIND, crate::dialogs::simplify_slider::fields()),
+        "object.path.simplify" => (crate::dialogs::simplify_slider::KIND, crate::dialogs::simplify_slider::fields(app)),
         "object.path.splitIntoGrid" => {
             // The grid starts at the size of the selection.
             let size =

@@ -521,6 +521,8 @@ fn simplify_level_moves_the_anchor_count_monotonically() {
 fn auto_simplify_keeps_the_shape_within_a_400th_of_its_size() {
     let (mut s, id) = dense_wave(100, 15.0, 8.0, 0.2);
     let original = path_of(&s, id).0.clone();
+    // The level the Simplify slider opens at for this selection is the one auto uses.
+    assert_eq!(crate::auto_simplify_level(&s).unwrap(), 70.0);
     let out = s.execute("object.path.simplify", &json!({"auto": true})).unwrap();
     // 100 pt across: 0.25 pt at most, level 70 (0.25 pt).
     assert_eq!(out["level"], json!(70.0));

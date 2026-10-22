@@ -2318,9 +2318,10 @@ whose tolerance is at most 1/400 of the selection's longer side, or level 100 wh
 ```
 
 In the desktop app, Object › Path › Simplify opens the slider (`ui.menuDialog {command: "object.path.simplify"}`,
-dialog `simplifySlider` with field `level`) and previews the result until `ui.dialog.confirm`. `ui.simplifyAuto` moves
-the open slider to the Auto-Simplify level, and `ui.simplifyMoreOptions` opens the Simplify dialog at the slider's
-tolerance. When OK confirms the dialog with `retain` ticked, the menu item opens the dialog on those settings next time.
+dialog `simplifySlider` with field `level`) at the Auto-Simplify level for the selection and previews the result until
+`ui.dialog.confirm`. `ui.simplifyAuto` moves the open slider back to the Auto-Simplify level, and `ui.simplifyMoreOptions`
+opens the Simplify dialog at the slider's tolerance. When OK confirms the dialog with `retain` ticked, the menu item opens
+the dialog on those settings next time.
 
 ## Editing a path with the Curvature tool
 
