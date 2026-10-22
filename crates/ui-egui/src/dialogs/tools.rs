@@ -20,6 +20,20 @@ pub fn open_tool_dialog(app: &mut VectorcraftApp, kind: &str, p: Value) {
             Dialog::new(kind, json!({"x": x, "y": y, "radius1": "50 pt", "radius2": "25 pt", "points": app.session.tool_options_of(kind)["points"]}))
         }
         "lineSegment" => Dialog::new(kind, json!({"x": x, "y": y, "length": "100 pt", "angle": 0})),
+        "spiral" => {
+            let options = app.session.tool_options_of(kind);
+            Dialog::new(
+                kind,
+                json!({
+                    "x": x,
+                    "y": y,
+                    "radius": "50 pt",
+                    "decay": options.get("decay").cloned().unwrap_or(json!(80.0)),
+                    "segments": options.get("segments").cloned().unwrap_or(json!(10)),
+                    "clockwise": options.get("clockwise").cloned().unwrap_or(json!(true)),
+                }),
+            )
+        }
         "arc" => {
             let opts = app.session.tool_options_of(kind);
             let closed = opts.get("closed").and_then(Value::as_bool).unwrap_or(false);

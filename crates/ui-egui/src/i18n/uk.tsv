@@ -5023,6 +5023,7 @@ axis	Y Axis	Вісь Y
 	Packaged {n} file(s) in {folder}	Упаковано файли: {n} {folder}
 	Packaged {n} file(s) {note}	Упаковано файли: {n} {note}
 	{count} file(s) in {folder}. Show the package folder?	файлів: {count} {folder}. Показати папку пакета?
+	Clockwise	За годинниковою стрілкою
 	Dither	Дизеринг
 	Fine noise hides banding in the gradient fill	Дрібний шум приховує смуги в градієнтній заливці
 @msg	`dither` applies to gradient fills (stroke: false)	`dither` застосовується до градієнтних заливок (stroke: false)

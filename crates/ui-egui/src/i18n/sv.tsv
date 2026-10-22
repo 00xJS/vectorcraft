@@ -5383,6 +5383,7 @@ axis	Y Axis	Y-axel
 	Packaged {n} file(s) in {folder}	Paketerade {n} fil(er) i {folder}
 	Packaged {n} file(s) {note}	Paketerade {n} fil(er) {note}
 	{count} file(s) in {folder}. Show the package folder?	{count} fil(er) i {folder}. Visa paketmappen?
+	Clockwise	Medurs
 	Dither	Dithering
 	Fine noise hides banding in the gradient fill	Fint brus döljer bandningen i övertoningsfyllningen
 @msg	`dither` applies to gradient fills (stroke: false)	`dither` gäller övertoningsfyllningar (stroke: false)

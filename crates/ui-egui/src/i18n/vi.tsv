@@ -5023,6 +5023,7 @@ axis	Y Axis	Trục Y
 	Packaged {n} file(s) in {folder}	Đã đóng gói {n} tệp trong {folder}
 	Packaged {n} file(s) {note}	Đã đóng gói {n} tệp {note}
 	{count} file(s) in {folder}. Show the package folder?	{count} tệp trong {folder}. Hiện thư mục gói?
+	Clockwise	Theo chiều kim đồng hồ
 	Dither	Dither
 	Fine noise hides banding in the gradient fill	Nhiễu mịn che dải màu trong vùng tô chuyển sắc
 @msg	`dither` applies to gradient fills (stroke: false)	`dither` áp dụng cho vùng tô chuyển sắc (stroke: false)
