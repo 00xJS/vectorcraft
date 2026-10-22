@@ -116,19 +116,6 @@ fn confirm(app: &mut VectorcraftApp, d: &Dialog) -> Result<Value, String> {
     let missing = r["missingLinks"].as_array().map_or(0, Vec::len);
     // The fonts left out: their license doesn't allow it, or they aren't on this computer.
     let fonts = r["skippedFonts"].as_array().into_iter().flatten().filter_map(|f| f["font"].as_str()).collect::<Vec<_>>().join(", ");
-    let mut note = if missing > 0 { format!(" ({missing} linked file(s) not found)") } else { String::new() };
-    if !fonts.is_empty() {
-        note.push_str(&format!(" (fonts not copied: {fonts})"));
-    }
-    if web {
-        let (name, data) = (r["name"].as_str().unwrap_or("package.zip"), r["dataBase64"].as_str().unwrap_or_default());
-        let bytes = vectorcraft_format::base64_decode(data).ok_or("the package came back damaged")?;
-        io::write_named(app, None, name, &bytes)?;
-        app.status(format!("Packaged {n} file(s){note}"));
-        return Ok(r);
-    }
-    let folder = r["folder"].as_str().unwrap_or_default().to_string();
-    app.status(format!("Packaged {n} file(s) in {folder}{note}"));
     let mut shown_note = if missing > 0 {
         format!(" ({})", crate::i18n::fmt(tl!("{count} linked file(s) not found"), &[("count", &missing.to_string())]))
     } else {
@@ -137,9 +124,19 @@ fn confirm(app: &mut VectorcraftApp, d: &Dialog) -> Result<Value, String> {
     if !fonts.is_empty() {
         shown_note.push_str(&format!(" ({})", crate::i18n::fmt(tl!("fonts not copied: {fonts}"), &[("fonts", &fonts)])));
     }
+    let n_s = n.to_string();
+    if web {
+        let (name, data) = (r["name"].as_str().unwrap_or("package.zip"), r["dataBase64"].as_str().unwrap_or_default());
+        let bytes = vectorcraft_format::base64_decode(data).ok_or("the package came back damaged")?;
+        io::write_named(app, None, name, &bytes)?;
+        app.status(crate::i18n::fmt(tl!("Packaged {n} file(s){note}"), &[("n", &n_s), ("note", &shown_note)]));
+        return Ok(r);
+    }
+    let folder = r["folder"].as_str().unwrap_or_default().to_string();
+    app.status(crate::i18n::fmt(tl!("Packaged {n} file(s) in {folder} {note}"), &[("n", &n_s), ("folder", &folder), ("note", &shown_note)]));
     let detail = crate::i18n::fmt(
-        tl!("{count} file(s) in {folder}{note}. Show the package folder?"),
-        &[("count", &n.to_string()), ("folder", &folder), ("note", &shown_note)],
+        tl!("{count} file(s) in {folder} {note}. Show the package folder?"),
+        &[("count", &n_s), ("folder", &folder), ("note", &shown_note)],
     );
     ask(app, tl!("Package created"), &detail, "file.showPackage", json!({ "folder": folder }));
     Ok(r)

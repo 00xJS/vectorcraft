@@ -2168,7 +2168,7 @@
 	Package	Пакет
 	Package collects a saved document with its linked files and fonts.	Пакетът събира запазен документ заедно с неговите свързани файлове и шрифтове.
 	Package created	Пакетът е създаден
-	Packaged {n} file(s) in {folder}{note}	Пакетирани са {n} файла в {folder}{note}
+	Packaged {n} file(s) in {folder} {note}	Пакетирани са {n} файла в {folder}{note}
 	Packaged {n} file(s){note}	Пакетирани са {n} файла{note}
 	Package…	Пакет…
 	Page	Страница
@@ -3517,7 +3517,7 @@
 	Zoom Tool	Инструмент „Мащаб“
 	Zoom with Mouse Wheel	Мащабиране с колелцето на мишката
 	Scrub Numeric Fields by Dragging	Плъзгане на числени полета чрез влачене
-	{count} file(s) in {folder}{note}. Show the package folder?	{count} файл(а) в {folder}{note}. Показване на папката на пакета?
+	{count} file(s) in {folder} {note}. Show the package folder?	{count} файл(а) в {folder}{note}. Показване на папката на пакета?
 	{count} linked file(s) not found	{count} свързан(и) файл(а) не са намерени
 	fonts not copied: {fonts}	некопирани шрифтове: {fonts}
 	{count} linked image(s) changed since this document was saved. Show the new versions?	{count} свързано(и) изображение(я) е/са променено(и) след запазването на този документ. Показване на новите версии?
@@ -3741,7 +3741,7 @@ axis	Both	И двете
 @msg	Outline Stroke: no stroked paths selected	Преобразуване на щрих в контур: няма избрани пътища с щрих
 @msg	PDF settings are not an object	Настройките за PDF не са обект
 @msg	PDF writer error: {0}	Грешка на PDF записа: {0}
-@msg	Packaged {n} file(s) in {folder}{note}	Пакетирани са {n} файла в {folder}{note}
+@msg	Packaged {n} file(s) in {folder} {note}	Пакетирани са {n} файла в {folder}{note}
 @msg	Packaged {n} file(s){note}	Пакетирани са {n} файла{note}
 @msg	Preview in Browser needs the desktop app (the web downloads files instead)	Прегледът в браузър изисква настолното приложение (уеб версията изтегля файловете вместо това)
 @msg	Release Guides: no guides	Освобождаване на водачи: няма водачи

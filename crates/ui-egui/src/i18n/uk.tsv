@@ -2237,7 +2237,7 @@ file-filter	Templates	Шаблони
 	Package	Упакувати
 	Package collects a saved document with its linked files and fonts.	Упаковка збирає збережений документ із його пов’язаними файлами та шрифтами.
 	Package created	Пакет створено
-	Packaged {n} file(s) in {folder}{note}	Упаковано файли: {n} {folder}{note}
+	Packaged {n} file(s) in {folder} {note}	Упаковано файли: {n} {folder}{note}
 	Packaged {n} file(s){note}	Упаковано файли: {n}{note}
 	Package…	Упакувати…
 	Page	Сторінка
@@ -3611,7 +3611,7 @@ effect	Points	Точки
 	Zoom Tool	Інструмент «Масштаб»
 	Zoom with Mouse Wheel	Масштабувати колесом миші
 	Scrub Numeric Fields by Dragging	Змінювати числові поля перетягуванням
-	{count} file(s) in {folder}{note}. Show the package folder?	файлів: {count} {folder}{note}. Показати папку пакета?
+	{count} file(s) in {folder} {note}. Show the package folder?	файлів: {count} {folder}{note}. Показати папку пакета?
 	{count} linked file(s) not found	не знайдено пов’язаних файлів: {count}
 	fonts not copied: {fonts}	шрифти не скопійовано: {fonts}
 	{count} linked image(s) changed since this document was saved. Show the new versions?	пов’язані зображення ({count}) змінилися з моменту збереження цього документа. Показати нові версії?
@@ -3847,7 +3847,7 @@ axis	Both	Обидві
 @msg	Outline Stroke: no stroked paths selected	Обведення контуру: не виділено контури з обведенням
 @msg	PDF settings are not an object	Параметри PDF не є об’єктом
 @msg	PDF writer error: {0}	Помилка запису PDF: {0}
-@msg	Packaged {n} file(s) in {folder}{note}	Упаковано файли: {n} {folder}{note}
+@msg	Packaged {n} file(s) in {folder} {note}	Упаковано файли: {n} {folder}{note}
 @msg	Packaged {n} file(s){note}	Упаковано файли: {n}{note}
 @msg	Preview in Browser needs the desktop app (the web downloads files instead)	Перегляд у браузері вимагає настільної програми (web-версія завантажує файли)
 @msg	Release Guides: no guides	Звільнення напрямних: немає напрямних

@@ -2936,7 +2936,7 @@
 	the preset	o predefinido
 	tile {number}	bloco {number}
 	to	para
-	{count} file(s) in {folder}{note}. Show the package folder?	{count} arquivo(s) em {folder}{note}. Mostrar a pasta do pacote?
+	{count} file(s) in {folder} {note}. Show the package folder?	{count} arquivo(s) em {folder}{note}. Mostrar a pasta do pacote?
 	{count} linked file(s) not found	{count} arquivo(s) vinculado(s) não encontrado(s)
 	fonts not copied: {fonts}	fontes não copiadas: {fonts}
 	{count} linked image(s) changed since this document was saved. Show the new versions?	{count} imagem(ns) vinculada(s) alterada(s) desde que este documento foi salvo. Mostrar as novas versões?
@@ -3406,7 +3406,7 @@ axis	Both	Ambos
 @msg	Outline Stroke: no stroked paths selected	Contornar traço: nenhum traçado com traço selecionado
 @msg	PDF settings are not an object	as configurações de PDF não são um objeto
 @msg	PDF writer error: {0}	Erro do gravador de PDF: {0}
-@msg	Packaged {n} file(s) in {folder}{note}	{n} arquivo(s) empacotado(s) em {folder}{note}
+@msg	Packaged {n} file(s) in {folder} {note}	{n} arquivo(s) empacotado(s) em {folder}{note}
 @msg	Packaged {n} file(s){note}	{n} arquivo(s) empacotado(s){note}
 @msg	Preview in Browser needs the desktop app (the web downloads files instead)	Visualizar no navegador exige o aplicativo para desktop (na web, os arquivos são baixados)
 @msg	Release Guides: no guides	Liberar guias: não há guias
@@ -4434,7 +4434,7 @@ axis	Both	Ambos
 	Output Black	Preto de Saída
 	Output White	Branco de Saída
 	Output › Mode	Saída › Modo
-	Packaged {n} file(s) in {folder}{note}	{n} arquivo(s) empacotado(s) em {folder}{note}
+	Packaged {n} file(s) in {folder} {note}	{n} arquivo(s) empacotado(s) em {folder}{note}
 	Packaged {n} file(s){note}	{n} arquivo(s) empacotado(s){note}
 	Page information	Informações da página
 	Paragraph Style	Estilo de Parágrafo

@@ -2709,7 +2709,7 @@ file-filter	Templates	Sablonok
 	Package	Csomagolás
 	Package collects a saved document with its linked files and fonts.	A csomagolás egy mentett dokumentumot a csatolt fájljaival és betűtípusaival együtt gyűjt össze.
 	Package created	A csomag elkészült
-	Packaged {n} file(s) in {folder}{note}	Becsomagolt fájlok: {n}, mappa: {folder}{note}
+	Packaged {n} file(s) in {folder} {note}	Becsomagolt fájlok: {n}, mappa: {folder}{note}
 	Packaged {n} file(s){note}	Becsomagolt fájlok: {n}{note}
 	Package…	Csomagolás…
 	Page	Oldal
@@ -4311,7 +4311,7 @@ mark-style	Japanese	Japán
 	Zoom to Selection	Nagyítás a kijelölésre
 	Zoom Tool	Nagyító
 	Zoom with Mouse Wheel	Nagyítás egérgörgővel
-	{count} file(s) in {folder}{note}. Show the package folder?	Fájlok: {count}, mappa: {folder}{note}. Megnyitod a csomag mappáját?
+	{count} file(s) in {folder} {note}. Show the package folder?	Fájlok: {count}, mappa: {folder}{note}. Megnyitod a csomag mappáját?
 	{count} folder(s) or file(s) couldn't be read	Nem olvasható mappák vagy fájlok: {count}
 	{count} folder(s) skipped, such as other apps' and the system's folders and hidden ones	Kihagyott mappák: {count} (például más alkalmazások, a rendszer és a rejtett mappák)
 	{count} linked file(s) not found	Nem található csatolt fájlok: {count}
@@ -4823,7 +4823,7 @@ imageTrace	Outline	Körvonal
 @msg	Opened with {_1} note(s): {_2}	Megnyitva; megjegyzések: {_1}: {_2}
 @msg	Opened {url}	Megnyitva: {url}
 @msg	Outline Stroke: no stroked paths selected	Körvonal útvonallá alakítása: nincs kijelölt körvonalas útvonal
-@msg	Packaged {n} file(s) in {folder}{note}	Becsomagolt fájlok: {n}, mappa: {folder}{note}
+@msg	Packaged {n} file(s) in {folder} {note}	Becsomagolt fájlok: {n}, mappa: {folder}{note}
 @msg	Packaged {n} file(s){note}	Becsomagolt fájlok: {n}{note}
 @msg	page size {w} × {h}	oldalméret: {w} × {h}
 @msg	page {0} does not exist (the PDF has {1})	nincs ilyen oldal: {0} (a PDF oldalszáma: {1})

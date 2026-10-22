@@ -2180,7 +2180,7 @@ file-filter	Templates	Vorlagen
 	Package	Verpacken
 	Package collects a saved document with its linked files and fonts.	„Verpacken“ sammelt ein gespeichertes Dokument mit seinen verknüpften Dateien und Schriften.
 	Package created	Paket erstellt
-	Packaged {n} file(s) in {folder}{note}	{n} Datei(en) in {folder} verpackt{note}
+	Packaged {n} file(s) in {folder} {note}	{n} Datei(en) in {folder} verpackt{note}
 	Packaged {n} file(s){note}	{n} Datei(en) verpackt{note}
 	Package…	Verpacken…
 	Page	Seite
@@ -3502,7 +3502,7 @@ effect	Points	Punkte
 	Zoom Tool	Zoom-Werkzeug
 	Zoom with Mouse Wheel	Mit Mausrad zoomen
 	Scrub Numeric Fields by Dragging	Zahlenfelder durch Ziehen ändern
-	{count} file(s) in {folder}{note}. Show the package folder?	{count} Datei(en) in {folder}{note}. Paketordner anzeigen?
+	{count} file(s) in {folder} {note}. Show the package folder?	{count} Datei(en) in {folder} {note}. Paketordner anzeigen?
 	{count} linked file(s) not found	{count} verknüpfte Datei(en) nicht gefunden
 	fonts not copied: {fonts}	nicht kopierte Schriften: {fonts}
 	{count} linked image(s) changed since this document was saved. Show the new versions?	{count} verknüpfte(s) Bild(er) wurde(n) seit dem Speichern dieses Dokuments geändert. Die neuen Versionen anzeigen?
@@ -3747,7 +3747,7 @@ theme	Appearance	Erscheinungsbild
 @msg	Outline Stroke: no stroked paths selected	Konturlinie: keine Pfade mit Kontur ausgewählt
 @msg	PDF settings are not an object	die PDF-Einstellungen sind kein Objekt
 @msg	PDF writer error: {0}	Fehler beim Schreiben der PDF-Datei: {0}
-@msg	Packaged {n} file(s) in {folder}{note}	{n} Datei(en) in {folder} verpackt{note}
+@msg	Packaged {n} file(s) in {folder} {note}	{n} Datei(en) in {folder} verpackt{note}
 @msg	Packaged {n} file(s){note}	{n} Datei(en) verpackt{note}
 @msg	Preview in Browser needs the desktop app (the web downloads files instead)	„Vorschau im Browser“ erfordert die Desktop-App (im Web werden stattdessen Dateien heruntergeladen)
 @msg	Release Guides: no guides	Hilfslinien zurückwandeln: keine Hilfslinien

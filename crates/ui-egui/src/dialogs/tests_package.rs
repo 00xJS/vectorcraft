@@ -103,6 +103,7 @@ fn the_web_downloads_a_zip() {
     assert!(!frame(&mut app).contains("Location:"), "no folder to choose");
     confirm(&mut app).unwrap();
     assert!(app.ui.dialog.is_none());
+    assert!(app.ui.status.contains("Packaged") && app.ui.status.contains("file(s)"), "{}", app.ui.status);
     let got = got.borrow();
     assert_eq!(got.len(), 1);
     assert_eq!(got[0].0, "card Folder.zip");

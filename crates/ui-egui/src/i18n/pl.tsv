@@ -2296,11 +2296,11 @@ lighting	Light	Światło
 	Fonts whose licence doesn't allow embedding are not copied.	Czcionki, których licencja nie zezwala na osadzanie, nie są kopiowane.
 	Package collects a saved document with its linked files and fonts.	Pakowanie zbiera zapisany dokument wraz z połączonymi plikami i czcionkami.
 	Package created	Utworzono pakiet
-	Packaged {n} file(s) in {folder}{note}	Spakowane pliki: {n} w {folder}{note}
+	Packaged {n} file(s) in {folder} {note}	Spakowane pliki: {n} w {folder}{note}
 	Packaged {n} file(s){note}	Spakowane pliki: {n}{note}
 	Relink Linked Files to the Document	Połącz ponownie połączone pliki z dokumentem
 	Save the document first?	Najpierw zapisać dokument?
-	{count} file(s) in {folder}{note}. Show the package folder?	Pliki: {count} w {folder}{note}. Pokazać folder pakietu?
+	{count} file(s) in {folder} {note}. Show the package folder?	Pliki: {count} w {folder}{note}. Pokazać folder pakietu?
 	{count} linked file(s) not found	Nie znaleziono połączonych plików: {count}
 	fonts not copied: {fonts}	nieskopiowane czcionki: {fonts}
 	Built-in presets are read-only: New… starts an editable copy.	Wbudowane ustawienia są tylko do odczytu: Nowe… tworzy edytowalną kopię.
@@ -3949,7 +3949,7 @@ imageTrace	Outline	Kontur
 @msg	Outline Stroke: no stroked paths selected	Obrys konturu: nie zaznaczono ścieżek z obrysem
 @msg	PDF settings are not an object	Ustawienia PDF nie są obiektem
 @msg	PDF writer error: {0}	Błąd zapisu PDF: {0}
-@msg	Packaged {n} file(s) in {folder}{note}	Spakowane pliki: {n} w {folder}{note}
+@msg	Packaged {n} file(s) in {folder} {note}	Spakowane pliki: {n} w {folder}{note}
 @msg	Packaged {n} file(s){note}	Spakowane pliki: {n}{note}
 @msg	Preview in Browser needs the desktop app (the web downloads files instead)	Podgląd w przeglądarce wymaga aplikacji desktopowej (wersja webowa zamiast tego pobiera pliki)
 @msg	Release Guides: no guides	Uwolnij linie pomocnicze: brak linii pomocniczych

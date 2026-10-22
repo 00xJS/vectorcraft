@@ -2245,7 +2245,7 @@ file-filter	Templates	Modelli
 	Package	Crea pacchetto
 	Package collects a saved document with its linked files and fonts.	Il comando Crea pacchetto raccoglie un documento salvato insieme ai file collegati e ai font.
 	Package created	Pacchetto creato
-	Packaged {n} file(s) in {folder}{note}	Pacchetto creato con {n} file in {folder}{note}
+	Packaged {n} file(s) in {folder} {note}	Pacchetto creato con {n} file in {folder} {note}
 	Packaged {n} file(s){note}	Pacchetto creato con {n} file{note}
 	Package…	Crea pacchetto…
 	Page	Pagina
@@ -3618,7 +3618,7 @@ mark-style	Japanese	Giapponese
 	Zoom Tool	Strumento Zoom
 	Zoom with Mouse Wheel	Zoom con la rotellina del mouse
 	Scrub Numeric Fields by Dragging	Regola i campi numerici trascinando
-	{count} file(s) in {folder}{note}. Show the package folder?	{count} file in {folder}{note}. Vuoi mostrare la cartella del pacchetto?
+	{count} file(s) in {folder} {note}. Show the package folder?	{count} file in {folder} {note}. Vuoi mostrare la cartella del pacchetto?
 	{count} linked file(s) not found	File collegati non trovati: {count}
 	fonts not copied: {fonts}	font non copiati: {fonts}
 	{count} linked image(s) changed since this document was saved. Show the new versions?	Immagini collegate modificate dopo il salvataggio di questo documento: {count}. Vuoi mostrare le nuove versioni?
@@ -3863,7 +3863,7 @@ axis	Both	Entrambi
 @msg	Outline Stroke: no stroked paths selected	Contorna traccia: nessun tracciato con traccia selezionato
 @msg	PDF settings are not an object	Le impostazioni PDF non sono un oggetto
 @msg	PDF writer error: {0}	Errore del generatore PDF: {0}
-@msg	Packaged {n} file(s) in {folder}{note}	Pacchetto creato con {n} file in {folder}{note}
+@msg	Packaged {n} file(s) in {folder} {note}	Pacchetto creato con {n} file in {folder} {note}
 @msg	Packaged {n} file(s){note}	Pacchetto creato con {n} file{note}
 @msg	Preview in Browser needs the desktop app (the web downloads files instead)	Anteprima nel browser richiede l'app desktop (sul web i file vengono invece scaricati)
 @msg	Release Guides: no guides	Rilascia guide: nessuna guida

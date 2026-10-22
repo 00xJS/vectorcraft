@@ -2052,7 +2052,7 @@ file-filter	Templates	範本
 @msg	{_1} linked file(s) can't be read here: their previews show	此處無法讀取 {_1} 個連結檔案：顯示的是其預覽
 @msg	{_1} linked image(s) changed on disk: Update Links shows the new versions	有 {_1} 個連結影像已在磁碟上變更：「更新連結」可顯示新版本
 @msg	pick a colour, gradient or pattern to save as a swatch	請挑選要儲存為色票的顏色、漸層或圖樣
-@msg	Packaged {n} file(s) in {folder}{note}	已將 {n} 個檔案封裝到 {folder}{note}
+@msg	Packaged {n} file(s) in {folder} {note}	已將 {n} 個檔案封裝到 {folder}{note}
 @msg	Packaged {n} file(s){note}	已封裝 {n} 個檔案{note}
 @msg	choose a location for the package	請選擇封裝的位置
 @msg	missing `folder`	未提供 `folder`
@@ -2990,7 +2990,7 @@ file-filter	Templates	範本
 	Package	封裝
 	Package collects a saved document with its linked files and fonts.	封裝會將已儲存的文件連同其連結檔案與字體一併收集。
 	Package created	已建立封裝
-	Packaged {n} file(s) in {folder}{note}	已將 {n} 個檔案封裝於 {folder}{note}
+	Packaged {n} file(s) in {folder} {note}	已將 {n} 個檔案封裝於 {folder}{note}
 	Packaged {n} file(s){note}	已封裝 {n} 個檔案{note}
 	Package…	封裝…
 	Page	頁面
@@ -4377,7 +4377,7 @@ font-script	Japanese	漢字
 	Zoom Tool	縮放工具
 	Zoom with Mouse Wheel	使用滑鼠滾輪縮放
 	Scrub Numeric Fields by Dragging	拖曳以調整數值欄位
-	{count} file(s) in {folder}{note}. Show the package folder?	{folder} 中有 {count} 個檔案{note}。要顯示封裝資料夾嗎？
+	{count} file(s) in {folder} {note}. Show the package folder?	{folder} 中有 {count} 個檔案{note}。要顯示封裝資料夾嗎？
 	{count} linked file(s) not found	找不到 {count} 個連結檔案
 	fonts not copied: {fonts}	未複製的字體：{fonts}
 	{count} linked image(s) changed since this document was saved. Show the new versions?	自儲存此文件後，有 {count} 個連結影像已變更。要顯示新版本嗎？
