@@ -241,8 +241,11 @@ fn confirm(app: &mut VectorcraftApp, d: &Dialog) -> Result<Value, String> {
         }
     }
     entries.insert(0, p);
-    // Fitting changes the artboard around existing art; it must never move that art.
-    let common = json!({"moveArt": !d.bool("__fit") && crate::panels::artboards::move_art(app)});
+    // Fitting changes the artboard around existing art; it must neither move nor scale that art.
+    let common = json!({
+        "scaleArt": !d.bool("__fit") && crate::panels::artboards::scale_art(app),
+        "moveArt": !d.bool("__fit") && crate::panels::artboards::move_art(app),
+    });
     let p = crate::panels::artboards::set_props_params(common, entries).ok_or("no artboard")?;
     run_and_close(app, "artboard.setProps", p)
 }
