@@ -80,6 +80,22 @@ fn revert_asks_then_reloads_in_the_same_tab_keeping_every_zoom() {
     let _ = std::fs::remove_dir_all(d);
 }
 
+/// With the Artboard tool, Revert keeps the active artboard, and the tool starts on it.
+#[test]
+fn revert_with_the_artboard_tool_keeps_the_active_artboard() {
+    let d = dir("revert-artboard");
+    let path = d.join("a.vectorcraft").to_string_lossy().to_string();
+    let mut app = app();
+    app.run("file.new", json!({"width": 100, "height": 100, "artboards": 3})).unwrap();
+    app.run("file.saveAs", json!({"path": path})).unwrap();
+    app.select_tool("artboard");
+    crate::panels::artboards::select(&mut app, 2);
+    rect(&mut app);
+    app.run("file.revert", json!({"confirmed": true})).unwrap();
+    assert_eq!((app.view().unwrap().artboard, app.session.tool_options()["selected"].clone()), (2, json!([2])));
+    let _ = std::fs::remove_dir_all(d);
+}
+
 #[test]
 fn new_from_template_takes_bytes_from_agents() {
     let mut app = app();
