@@ -2247,18 +2247,18 @@ fn single_plain_fill(n: &Node) -> bool {
 
 /// Number of visible painted fill/stroke items (opacity folding is exact only for one). A dashed
 /// stroke is one paint: its dashes are outlined into one path and filled once, so overlapping
-/// dashes don't darken where they overlap. A dashed brush stroke isn't: its pieces are drawn one
-/// by one.
+/// dashes don't darken where they overlap. A dashed brush stroke draws its pieces one by one, so
+/// it takes the layered path, with or without other paints.
 fn painted_items(n: &Node) -> usize {
     n.appearance
         .items
         .iter()
         .filter(|i| match i {
             AppearanceItem::Fill(f) => f.visible && !f.paint.is_none() && matches!(f.paint, vectorcraft_color::Paint::Solid { .. }),
-            AppearanceItem::Stroke(s) => s.visible && !s.paint.is_none() && s.width > 0.0 && matches!(s.paint, vectorcraft_color::Paint::Solid { .. }) && (s.dash.is_none() || s.brush.is_none()),
+            AppearanceItem::Stroke(s) => s.visible && !s.paint.is_none() && s.width > 0.0 && matches!(s.paint, vectorcraft_color::Paint::Solid { .. }),
         })
         .count()
-        .max(if n.appearance.items.iter().any(|i| matches!(i, AppearanceItem::Fill(f) if f.visible && !matches!(f.paint, vectorcraft_color::Paint::Solid { .. } | vectorcraft_color::Paint::None)) || matches!(i, AppearanceItem::Stroke(s) if s.visible && !matches!(s.paint, vectorcraft_color::Paint::Solid { .. } | vectorcraft_color::Paint::None))) { 2 } else { 0 })
+        .max(if n.appearance.items.iter().any(|i| matches!(i, AppearanceItem::Fill(f) if f.visible && !matches!(f.paint, vectorcraft_color::Paint::Solid { .. } | vectorcraft_color::Paint::None)) || matches!(i, AppearanceItem::Stroke(s) if s.visible && (!matches!(s.paint, vectorcraft_color::Paint::Solid { .. } | vectorcraft_color::Paint::None) || (s.dash.is_some() && s.brush.is_some() && !s.paint.is_none())))) { 2 } else { 0 })
 }
 
 /// Whether `st` is one of `n`'s own strokes (the strokes of the brush art drawn for `n` are not).
