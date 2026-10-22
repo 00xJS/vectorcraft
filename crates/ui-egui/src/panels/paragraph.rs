@@ -193,6 +193,20 @@ fn shared_composer(app: &VectorcraftApp) -> Option<Composer> {
     acc.value()
 }
 
+/// Hyphenation shared by every paragraph in scope, or `None` when they differ (checkbox off).
+fn shared_hyphenate(app: &VectorcraftApp) -> Option<bool> {
+    let mut acc = Shared::None;
+    let mut any = false;
+    visit_paragraphs(app, |p| {
+        any = true;
+        acc.add(p.hyphenate);
+    });
+    if !any {
+        return text_style(app).map(|(_, p)| p.hyphenate);
+    }
+    acc.value()
+}
+
 /// None means differing displayed alignments, following the other mixed-value controls.
 fn selected_alignment(app: &VectorcraftApp, fallback: &ParaStyle) -> Option<Justify> {
     let default = Some(shown_alignment(fallback.justify, fallback.direction == Some(ParaDirection::RightToLeft)));
@@ -228,10 +242,11 @@ pub fn alignment_buttons(app: &mut VectorcraftApp, ui: &mut Ui, para: &ParaStyle
     }
 }
 
-/// The Hyphenate checkbox of `para`'s paragraphs.
-pub fn hyphenate_check(app: &mut VectorcraftApp, ui: &mut Ui, para: &ParaStyle) {
-    if widgets::check(ui, tl!("Hyphenate"), para.hyphenate, true) {
-        format(app, json!({"hyphenate": !para.hyphenate}));
+/// The Hyphenate checkbox for the paragraphs the panel acts on.
+pub fn hyphenate_check(app: &mut VectorcraftApp, ui: &mut Ui, _para: &ParaStyle) {
+    let hyphenate = shared_hyphenate(app);
+    if widgets::check(ui, tl!("Hyphenate"), hyphenate == Some(true), true) {
+        format(app, json!({"hyphenate": hyphenate != Some(true)}));
     }
 }
 
@@ -502,6 +517,17 @@ mod tests {
         assert_eq!(shared_composer(&app), None);
         app.run("text.setFormat", json!({"id": id, "composer": "everyLine"})).unwrap();
         assert_eq!(shared_composer(&app), Some(Composer::EveryLine));
+    }
+
+    #[test]
+    fn paragraph_mixed_hyphenate_checks_off() {
+        let (mut app, id) = editing_text("A\nB\n");
+        app.run("text.setFormat", json!({"id": id, "hyphenate": true})).unwrap();
+        app.run("text.setFormat", json!({"id": id, "start": 2, "end": 3, "hyphenate": false})).unwrap();
+        app.session.set_tool_option("selectAll", &json!(true));
+        assert_eq!(shared_hyphenate(&app), None);
+        app.run("text.setFormat", json!({"id": id, "hyphenate": true})).unwrap();
+        assert_eq!(shared_hyphenate(&app), Some(true));
     }
 
     #[test]
