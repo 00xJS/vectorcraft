@@ -676,3 +676,48 @@ pub fn colr_font_with(family: &str, colr: &write_fonts::tables::colr::Colr) -> O
     }
     Some(builder.build())
 }
+
+/// The character whose glyph [`svg_font`]'s first document draws.
+pub const SVG_CHAR: char = 'E';
+
+/// The glyph id of `ch` in the bundled Source Sans 3 (and the fonts made from it).
+pub fn source_sans_gid(ch: char) -> Option<u16> {
+    source_sans_gids([ch]).map(|[g]| g)
+}
+
+/// The bundled Source Sans 3 Regular as `family` with an `SVG ` table written from the OpenType
+/// specification: `documents` are (first glyph, last glyph, SVG document), in glyph order. Its
+/// outlines stay. `None` when it can't be built.
+pub fn svg_font(family: &str, documents: &[(u16, u16, &str)]) -> Option<Vec<u8>> {
+    let font = skrifa::FontRef::new(SOURCE_SANS).ok()?;
+    let ps = family.replace(' ', "");
+    let name = name_table(&[(1, family), (2, "Regular"), (4, &format!("{family} Regular")), (6, &format!("{ps}-Regular"))])?;
+    // The header (version, the document list's offset, reserved), then the document list: its
+    // records (first and last glyph, the document's offset from the list and length), then the
+    // documents.
+    let records = documents.len();
+    let mut list = (u16::try_from(records).ok()?).to_be_bytes().to_vec();
+    let mut offset = 2 + 12 * records;
+    for (first, last, doc) in documents {
+        list.extend(first.to_be_bytes());
+        list.extend(last.to_be_bytes());
+        list.extend((u32::try_from(offset).ok()?).to_be_bytes());
+        list.extend((u32::try_from(doc.len()).ok()?).to_be_bytes());
+        offset += doc.len();
+    }
+    for (_, _, doc) in documents {
+        list.extend(doc.as_bytes());
+    }
+    let mut svg = vec![0, 0, 0, 0, 0, 10, 0, 0, 0, 0];
+    svg.extend(list);
+    let mut builder = FontBuilder::new();
+    builder.add_raw(Tag::new(b"name"), name);
+    builder.add_raw(Tag::new(b"SVG "), svg);
+    for r in font.table_directory.table_records() {
+        let tag = Tag::new(&r.tag().to_be_bytes());
+        if !builder.contains(tag) {
+            builder.add_raw(tag, font.table_data(r.tag())?.as_bytes());
+        }
+    }
+    Some(builder.build())
+}

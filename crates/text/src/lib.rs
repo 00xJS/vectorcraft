@@ -26,6 +26,7 @@ mod layout;
 mod shape;
 #[cfg(not(target_arch = "wasm32"))]
 mod suitcase;
+mod svg_glyph;
 #[cfg(any(test, feature = "test-fonts"))]
 pub mod test_fonts;
 pub mod thread;
@@ -39,6 +40,7 @@ pub use fontdb::{
 };
 pub use hyphen::{hyphenation_exceptions, set_hyphenation_exceptions};
 use std::sync::Arc;
+pub use svg_glyph::{SvgGlyphReader, set_svg_glyph_reader};
 
 use kurbo::{Affine, BezPath, Point, Rect, Vec2};
 pub use layout::{decorations, fit_first_line, layout, layout_with, scaled};
@@ -126,8 +128,8 @@ pub struct PositionedGlyph {
     /// A colour bitmap glyph (emoji), drawn through `xf` instead of an outline: its `outline` is
     /// empty. Also a COLR glyph whose paints documents have no form for, drawn as an image.
     pub image: Option<Arc<GlyphImage>>,
-    /// A COLR colour glyph's layers, drawn through `xf` instead of an outline: art in font units
-    /// (y down), an isolated group. Its `outline` is empty.
+    /// A colour glyph's art (COLR layers, an SVG document's art), drawn through `xf` instead of an
+    /// outline: a group in font units (y down). Its `outline` is empty.
     pub colour: Option<Arc<vectorcraft_doc::Node>>,
 }
 
@@ -136,7 +138,7 @@ impl PositionedGlyph {
     pub fn placed_image(&self) -> Option<(&Arc<GlyphImage>, Affine)> {
         self.image.as_ref().map(|i| (i, self.xf * i.xf))
     }
-    /// The glyph's COLR layers placed through `to_doc` (text space → where they go): a copy of
+    /// The glyph's colour art placed through `to_doc` (text space → where they go): a copy of
     /// [`Self::colour`], transformed, its nodes without ids.
     pub fn placed_colour(&self, to_doc: Affine) -> Option<vectorcraft_doc::Node> {
         let mut art = (**self.colour.as_ref()?).clone();
@@ -646,6 +648,8 @@ mod tests_ruby;
 mod tests_scripts;
 #[cfg(test)]
 mod tests_snap;
+#[cfg(test)]
+mod tests_svg_glyphs;
 #[cfg(test)]
 mod tests_sysfonts;
 #[cfg(test)]

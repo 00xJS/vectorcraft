@@ -92,6 +92,7 @@
 
 mod css;
 mod export;
+mod glyph;
 mod import;
 
 pub use css::{CssOptions, CssRule, CssSheet, CssUnits, css_rules};
@@ -534,6 +535,7 @@ pub fn import_with_report(svg: &str) -> Result<(Document, Vec<String>), SvgError
     import_with(svg, &ImportOptions::default())
 }
 
+pub use glyph::glyph_art;
 pub use import::MAX_ELEMENT_DEPTH;
 
 /// Import an SVG document reading the files it links to as `opts` says, also returning warnings.

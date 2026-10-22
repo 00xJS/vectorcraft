@@ -294,6 +294,9 @@ impl Writer {
             no_device_cs: out.tagged,
             cmyk_profile,
             configuration,
+            // SVG glyphs, which krilla can't draw, are drawn as art where they sit (`glyph_text`):
+            // as text they draw nothing, rather than their fonts' plain outlines over the art.
+            render_svg_glyph_fn: |_, _, _, _, _| Some(()),
             ..Default::default()
         };
 
@@ -1688,8 +1691,8 @@ impl Exporter<'_> {
     /// the text selectable and searchable) → the outlines of the glyphs left to draw as paths:
     /// those of fonts that can't be embedded, and missing glyphs. Glyphs sharing a font, a frame
     /// (size, scale, rotation) and a baseline are written together. Colour glyphs (bitmap emoji,
-    /// COLR), with `images`, are written as text too, which draws their images or layers; the
-    /// indices of those it can't write are returned with the outlines.
+    /// COLR, SVG), with `images`, are written as text too, which draws their images or layers; the
+    /// indices of those it can't write or draw (SVG glyphs) are returned with the outlines.
     fn glyph_text(&mut self, s: &mut Surface, layout: &TextLayout, run: usize, text: &str, fill: &Paint, images: bool) -> (BezPath, Vec<usize>) {
         let (mut rest, mut unwritten) = (BezPath::new(), vec![]);
         let mut line: Option<GlyphLine> = None;
@@ -1719,6 +1722,15 @@ impl Exporter<'_> {
                 }
                 continue;
             };
+            // SVG glyphs are written as text that draws nothing (see the serialize settings): their
+            // art is drawn, or else their outline.
+            if is_svg_glyph(g) {
+                if coloured {
+                    unwritten.push(gi);
+                } else {
+                    rest.extend(g.outline.iter());
+                }
+            }
             let size = upem * sy;
             let frame = g.xf * Affine::scale(1.0 / sy);
             // Its pen position along the frame's baseline, when it continues the line.
@@ -1970,6 +1982,11 @@ fn embed(blob: &vectorcraft_doc::ImageBlob, interpolate: bool, sixteen_bit: bool
         let (w, h) = rgba.dimensions();
         Some(Image::from_rgba8(rgba.into_raw(), w, h))
     })
+}
+
+/// Is `g` drawn from its font's SVG document, which the PDF writer can't draw as a font's glyph?
+fn is_svg_glyph(g: &vectorcraft_text::PositionedGlyph) -> bool {
+    vectorcraft_text::FontDb::global().is_svg_glyph(g.font_id, g.gid)
 }
 
 #[cfg(test)]
