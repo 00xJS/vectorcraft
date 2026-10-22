@@ -5006,3 +5006,7 @@ axis	Y Axis	Y축
 	Packaged {n} file(s) in {folder}	{folder}에 파일 {n}개를 패키지했습니다
 	Packaged {n} file(s) {note}	파일 {n}개를 패키지했습니다 {note}
 	{count} file(s) in {folder}. Show the package folder?	{folder}에 파일 {count}개. 패키지 폴더를 표시하시겠습니까?
+	Dither	디더
+	Fine noise hides banding in the gradient fill	미세한 노이즈로 그레이디언트 칠의 띠를 감춥니다
+@msg	`dither` applies to gradient fills (stroke: false)	`dither`는 그레이디언트 칠에 적용됩니다 (stroke: false)
+@msg	`dither` must be true or false	`dither`은(는) true 또는 false여야 합니다

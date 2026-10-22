@@ -8,6 +8,7 @@
 
 mod brush_fx;
 mod changed;
+mod dither;
 pub mod encode;
 mod freeform;
 mod fx;
@@ -1518,7 +1519,7 @@ impl Renderer {
                         ctx.push_layer(None, Some(blend_mode(fl.blend)), Some(fl.opacity), None, None);
                     }
                     ctx.set_transform(f.view);
-                    if paint::set_paint(ctx, &fl.paint, bounds, f) {
+                    if paint::set_fill_paint(ctx, &fl.paint, bounds, f) {
                         self.fold_alpha(ctx, f.ink, &fl.paint);
                         ctx.set_fill_rule(fill_rule(rule));
                         ctx.fill_path(bp);
@@ -1858,7 +1859,7 @@ impl Renderer {
             }
             ctx.set_transform(xf);
             ctx.set_fill_rule(peniko::Fill::NonZero);
-            if paint::set_paint(ctx, &run.style.fill, g.bounds, f) {
+            if paint::set_fill_paint(ctx, &run.style.fill, g.bounds, f) {
                 self.fold_alpha(ctx, f.ink, &run.style.fill);
                 overprint(ctx, run.style.overprint_fill);
                 ctx.fill_path(path);
@@ -1889,7 +1890,7 @@ impl Renderer {
                         ctx.push_layer(None, Some(blend_mode(fl.blend)), Some(fl.opacity), None, None);
                     }
                     ctx.set_transform(f.view);
-                    if paint::set_paint(ctx, &fl.paint, tb, f) {
+                    if paint::set_fill_paint(ctx, &fl.paint, tb, f) {
                         ctx.set_fill_rule(peniko::Fill::NonZero);
                         ctx.fill_path(all);
                     }
@@ -2575,6 +2576,8 @@ mod tests_clip;
 mod tests_cmykblend;
 #[cfg(test)]
 mod tests_container;
+#[cfg(test)]
+mod tests_dither;
 #[cfg(test)]
 mod tests_fontchange;
 #[cfg(test)]

@@ -32,6 +32,11 @@
 //!   their colour field (sampled as the canvas samples it) clipped to the shape or the stroke's
 //!   outline; on characters they are written as linear gradients. Gradients along or across
 //!   strokes are written as slices of linear gradients clipped to the stroke.
+//! * **Dithered gradient fills** are written as an `<image>` of the gradient with its noise, at
+//!   the document's raster effects resolution, clipped to the shape: Illustrator's documentation
+//!   describes dither as the gradient converted to pixels with subtle noise
+//!   (<https://helpx.adobe.com/illustrator/desktop/paint-and-fill/create-and-edit-gradients/control-dither-in-gradients.html>).
+//!   On characters the gradient stays a vector gradient, without dither (with a warning).
 //! * **Symbol instances** the shared `<symbol>` would paint differently from the canvas (stained,
 //!   scaled with strokes, turned or scaled with effects, brushes or live objects, or holding
 //!   pattern paints or unlinked masks, which stay on the page) are written as their own art.

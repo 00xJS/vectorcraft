@@ -1034,7 +1034,7 @@ mod tests {
     fn gradient_copies(id: u64) -> Node {
         use vectorcraft_color::{Gradient, GradientKind, GradientPaint, GradientStop};
         let stops = vec![GradientStop::new(0.0, Color::rgb(1.0, 0.0, 0.0)), GradientStop::new(1.0, Color::rgb(0.0, 0.0, 1.0))];
-        let paint = Paint::Gradient(Box::new(GradientPaint::new(Gradient { kind: GradientKind::Linear, stops })));
+        let paint = Paint::Gradient(Box::new(GradientPaint::new(Gradient::new(GradientKind::Linear, stops))));
         let mut n = Node::path(NodeId(id), shapes::rectangle(Rect::new(0.0, 0.0, 10.0, 10.0)), Appearance::basic(paint, Paint::None, 0.0));
         n.appearance.effects.push(fx("distort.transform", json!({"moveH": 30, "copies": 2})));
         n

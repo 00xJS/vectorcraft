@@ -48,10 +48,10 @@ fn sample() -> Document {
     let clipped = shape(&mut doc, shapes::rectangle(Rect::new(150.0, 10.0, 190.0, 50.0)), Paint::solid(Color::gray(0.25)), Paint::None);
     let window = Node::new(doc.alloc_id(), NodeKind::Group { children: vec![Arc::new(clip), Arc::new(clipped)], clip: true });
     doc.insert(Some(back), usize::MAX, window).unwrap();
-    let g = Gradient {
-        kind: GradientKind::Linear,
-        stops: vec![GradientStop::new(0.0, Color::rgb(1.0, 1.0, 1.0)), GradientStop::new(1.0, Color::rgb(0.0, 0.0, 0.0))],
-    };
+    let g = Gradient::new(
+        GradientKind::Linear,
+        vec![GradientStop::new(0.0, Color::rgb(1.0, 1.0, 1.0)), GradientStop::new(1.0, Color::rgb(0.0, 0.0, 0.0))],
+    );
     let shaded = shape(&mut doc, shapes::rectangle(Rect::new(10.0, 60.0, 50.0, 90.0)), Paint::Gradient(Box::new(GradientPaint::new(g))), Paint::None);
     doc.insert(Some(back), usize::MAX, shaded).unwrap();
     let ellipse = shape(&mut doc, shapes::ellipse(Rect::new(100.0, 60.0, 160.0, 90.0)), red(), Paint::None);
@@ -407,10 +407,10 @@ fn empty_images_get_the_size_note_and_undecodable_ones_the_decode_note() {
 #[test]
 fn a_gradient_fill_and_its_stroke_are_one_object() {
     let mut doc = Document::new(100.0, 100.0);
-    let g = Gradient {
-        kind: GradientKind::Radial,
-        stops: vec![GradientStop::new(0.0, Color::rgb(1.0, 1.0, 1.0)), GradientStop::new(1.0, Color::cmyk(0.0, 0.0, 0.0, 1.0))],
-    };
+    let g = Gradient::new(
+        GradientKind::Radial,
+        vec![GradientStop::new(0.0, Color::rgb(1.0, 1.0, 1.0)), GradientStop::new(1.0, Color::cmyk(0.0, 0.0, 0.0, 1.0))],
+    );
     let mut paint = GradientPaint::new(g);
     paint.geom = Some(vectorcraft_color::GradientGeom {
         start: vectorcraft_geom::Point::new(30.0, 30.0),
@@ -435,7 +435,7 @@ fn a_gradient_fill_and_its_stroke_are_one_object() {
 /// to the object).
 fn white_to_navy(kind: GradientKind, geom: Option<vectorcraft_color::GradientGeom>) -> Paint {
     let navy = Color::rgb(27.0 / 255.0, 42.0 / 255.0, 107.0 / 255.0);
-    let g = Gradient { kind, stops: vec![GradientStop::new(0.0, Color::rgb(1.0, 1.0, 1.0)), GradientStop::new(1.0, navy)] };
+    let g = Gradient::new(kind, vec![GradientStop::new(0.0, Color::rgb(1.0, 1.0, 1.0)), GradientStop::new(1.0, navy)]);
     Paint::Gradient(Box::new(GradientPaint { geom, ..GradientPaint::new(g) }))
 }
 
@@ -576,7 +576,7 @@ fn radial_gradient_stops_are_listed_from_the_first() {
     let mut doc = Document::new(200.0, 100.0);
     let layer = doc.layers[0].id;
     for (kind, x) in [(GradientKind::Radial, 10.0), (GradientKind::Linear, 110.0)] {
-        let paint = Paint::Gradient(Box::new(GradientPaint::new(Gradient { kind, stops: stops.clone() })));
+        let paint = Paint::Gradient(Box::new(GradientPaint::new(Gradient::new(kind, stops.clone()))));
         let n = shape(&mut doc, shapes::rectangle(Rect::new(x, 10.0, x + 80.0, 90.0)), paint, Paint::None);
         doc.insert(Some(layer), usize::MAX, n).unwrap();
     }
@@ -715,7 +715,7 @@ fn spots_and_gradient(spots: &[&str], gradient: &str) -> Document {
     }
     let mut first = GradientStop::new(0.0, Color::cmyk(0.0, 0.5, 1.0, 0.0));
     first.swatch = Some(spots[0].into());
-    let g = Gradient { kind: GradientKind::Linear, stops: vec![first, GradientStop::new(1.0, Color::cmyk(0.0, 0.0, 0.0, 0.0))] };
+    let g = Gradient::new(GradientKind::Linear, vec![first, GradientStop::new(1.0, Color::cmyk(0.0, 0.0, 0.0, 0.0))]);
     let mut paint = GradientPaint::new(g);
     paint.swatch = Some(gradient.into());
     let n = shape(&mut doc, shapes::rectangle(Rect::new(10.0, 50.0, 50.0, 90.0)), Paint::Gradient(Box::new(paint)), Paint::None);
@@ -782,10 +782,10 @@ fn spot_gradient_and_title_names_are_written_in_windows_1252() {
 fn names_outside_windows_1252_are_replaced_and_kept_apart() {
     // 赤 and 青 (spot colors), 渐变 and グラ (gradients), 日本 (the title).
     let mut doc = spots_and_gradient(&["\u{8d64}", "\u{9752}"], "\u{6e10}\u{53d8}");
-    let g = Gradient {
-        kind: GradientKind::Linear,
-        stops: vec![GradientStop::new(0.0, Color::cmyk(1.0, 0.0, 0.0, 0.0)), GradientStop::new(1.0, Color::cmyk(0.0, 0.0, 0.0, 0.0))],
-    };
+    let g = Gradient::new(
+        GradientKind::Linear,
+        vec![GradientStop::new(0.0, Color::cmyk(1.0, 0.0, 0.0, 0.0)), GradientStop::new(1.0, Color::cmyk(0.0, 0.0, 0.0, 0.0))],
+    );
     let mut paint = GradientPaint::new(g);
     paint.swatch = Some("\u{30b0}\u{30e9}".into());
     let n = shape(&mut doc, shapes::rectangle(Rect::new(60.0, 50.0, 100.0, 90.0)), Paint::Gradient(Box::new(paint)), Paint::None);

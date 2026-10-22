@@ -4,7 +4,7 @@ use std::collections::{BTreeSet, HashMap, HashSet};
 use std::fmt::Write as _;
 use std::sync::Arc;
 
-use vectorcraft_color::{BlendMode, GradientKind, GradientPaint, Paint};
+use vectorcraft_color::{BlendMode, Color, GradientKind, GradientPaint, Paint};
 use vectorcraft_doc::{
     AppearanceItem, Document, FillLayer, LineCap, LineJoin, Node, NodeId, NodeKind, SVG_EVENTS, StrokeAlign, StrokeLayer, TextKind, TextObject,
 };
@@ -1047,7 +1047,7 @@ impl Writer<'_> {
             && strokes <= 1
             && !items.iter().any(|i| has_raster(i.effects()))
             && items.iter().all(|i| i.blend() == BlendMode::Normal)
-            && !items.iter().any(|i| freeform(i.paint()).is_some())
+            && !items.iter().any(|i| pixel_gradient(i.paint(), matches!(i, AppearanceItem::Fill(_))).is_some())
             && plans.iter().flatten().all(|p| matches!(p, StrokePlan::Written(Written { shape: WrittenShape::Stroke { .. }, side: None })));
         if simple {
             let mut p = Props::new();
@@ -1081,7 +1081,7 @@ impl Writer<'_> {
             match (it, plan) {
                 (AppearanceItem::Fill(f), _) => {
                     let blend = (f.blend != BlendMode::Normal).then(|| ("mix-blend-mode", blend_css(f.blend).to_string()));
-                    if let (Some(g), Some(b)) = (freeform(&f.paint), bounds) {
+                    if let (Some(g), Some(b)) = (pixel_gradient(&f.paint, true), bounds) {
                         p.extend((f.opacity < 1.0).then(|| ("opacity", fmt_num(f.opacity as f64, 3))));
                         p.extend(blend);
                         self.raster_paint(g, b, &[d.to_string()], rule, &p, "");
@@ -1113,7 +1113,7 @@ impl Writer<'_> {
                     let side = self.side_attr(w.side, d, rule, w.reach(s, bounds.unwrap_or_default()));
                     let blend = (s.blend != BlendMode::Normal).then(|| ("mix-blend-mode", blend_css(s.blend).to_string()));
                     let opacity = (s.opacity < 1.0).then(|| ("opacity", fmt_num(s.opacity as f64, 3)));
-                    match (&w.shape, freeform(&s.paint).zip(paint_bounds(s))) {
+                    match (&w.shape, pixel_gradient(&s.paint, false).zip(paint_bounds(s))) {
                         (WrittenShape::Stroke { width }, Some((g, b))) => {
                             // The stroke's outline clips the gradient's image.
                             let bp = bp.get_or_insert_with(|| doc_path(paths));
@@ -1534,24 +1534,38 @@ impl Writer<'_> {
         name
     }
 
-    /// A freeform gradient `g` painted over `bounds` (the space [`Self::xf`] maps into user
-    /// space), which SVG can't express: an `<image>` of the colour field over its painted box,
-    /// sampled as the canvas samples it (at twice the box's size in points) and clipped to
-    /// `clip` (outlines in user space filled by `rule`), in a group with `props` and the `side`
-    /// attribute. Nothing is written for an empty box.
+    /// A gradient `g` painted over `bounds` (the space [`Self::xf`] maps into user space) that is
+    /// drawn as pixels ([`GradientPaint::draws_as_pixels`]): an `<image>` over its painted box,
+    /// clipped to `clip` (outlines in user space filled by `rule`), in a group with `props` and
+    /// the `side` attribute. A freeform gradient's colour field, which SVG can't express, is
+    /// sampled as the canvas samples it (at twice the box's size in points); a linear or radial
+    /// gradient at the document's raster effects resolution (at most [`MAX_GRADIENT_PX`] a
+    /// side). Nothing is written for an empty box.
     fn raster_paint(&mut self, g: &GradientPaint, bounds: Rect, clip: &[String], rule: FillRule, props: &Props, side: &str) {
         use vectorcraft_color::freeform::{grid_size, painted_box, spread_scale};
         let Some(b) = painted_box(bounds) else { return };
-        let (cols, rows) = grid_size(b, 2.0 * b.width().max(b.height()));
-        let field = g.freeform_on(b).field(spread_scale(b));
-        let q = |v: f32| (v.clamp(0.0, 1.0) * 255.0).round() as u8;
-        let rgba: Vec<u8> = field.grid(b, cols, rows).flat_map(|([r, g, bl], a)| [q(r), q(g), q(bl), q(a)]).collect();
+        let freeform = g.gradient.kind == GradientKind::Freeform;
+        let (rgba, cols, rows): (Vec<u8>, u16, u16) = if freeform {
+            let (cols, rows) = grid_size(b, 2.0 * b.width().max(b.height()));
+            let field = g.freeform_on(b).field(spread_scale(b));
+            let q = |v: f32| (v.clamp(0.0, 1.0) * 255.0).round() as u8;
+            (field.grid(b, cols, rows).flat_map(|([r, g, bl], a)| [q(r), q(g), q(bl), q(a)]).collect(), cols, rows)
+        } else {
+            let k = self.doc.raster_effects_ppi / 72.0;
+            let along = |len: f64| (len * k).ceil().clamp(1.0, MAX_GRADIENT_PX) as u16;
+            let (cols, rows) = (along(b.width()), along(b.height()));
+            (g.pixels(b, b, cols, rows, &Color::to_rgb).flatten().collect(), cols, rows)
+        };
         let mut png = Vec::new();
         let Some(img) = image::RgbaImage::from_raw(u32::from(cols), u32::from(rows), rgba) else { return };
         if img.write_to(&mut std::io::Cursor::new(&mut png), image::ImageFormat::Png).is_err() {
             return;
         }
-        self.warn("freeform gradients are written as images clipped to their shapes");
+        self.warn(if freeform {
+            "freeform gradients are written as images clipped to their shapes"
+        } else {
+            "linear and radial gradients drawn as pixels are written as images clipped to their shapes"
+        });
         let href = self.blob_href(&ImageBlob::new("image/png", png));
         let cid = self.fresh_id("clip-path");
         let r = if rule == FillRule::EvenOdd { " clip-rule=\"evenodd\"" } else { "" };
@@ -1762,6 +1776,12 @@ impl Writer<'_> {
         // Character paints resolve in the text's space (`to_user` maps it into user space).
         let (bounds, to_user) = space;
         let saved = std::mem::replace(&mut self.xf, to_user);
+        if let Paint::Gradient(g) = &st.fill
+            && g.gradient.dither
+            && g.gradient.kind != GradientKind::Freeform
+        {
+            self.warn("dithered gradients on characters are written without dither");
+        }
         let fill = self.paint(&st.fill, Some(bounds));
         p.push(("fill", fill));
         // An inside or outside stroke is drawn on the glyph outlines instead
@@ -2252,10 +2272,14 @@ fn doc_path(paths: &[&PathData]) -> BezPath {
 /// How closely stroke outlines that clip an image follow the stroke (points).
 const OUTLINE_TOLERANCE: f64 = 0.01;
 
-/// The freeform gradient a paint is, if it is one (SVG has no freeform gradients).
-fn freeform(p: &Paint) -> Option<&GradientPaint> {
+/// Most pixels along a side of a linear or radial gradient's image.
+const MAX_GRADIENT_PX: f64 = 4096.0;
+
+/// The gradient a fill (`fill`) or stroke paint is, if it is drawn as pixels
+/// ([`GradientPaint::draws_as_pixels`]; SVG has no freeform gradients, for one).
+fn pixel_gradient(p: &Paint, fill: bool) -> Option<&GradientPaint> {
     match p {
-        Paint::Gradient(g) if g.gradient.kind == GradientKind::Freeform => Some(g),
+        Paint::Gradient(g) if g.draws_as_pixels(fill) => Some(g),
         _ => None,
     }
 }

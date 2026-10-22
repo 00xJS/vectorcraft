@@ -1322,7 +1322,7 @@ impl Importer {
             }
         }
         Paint::Gradient(Box::new(GradientPaint {
-            gradient: Gradient { kind, stops },
+            gradient: Gradient::new(kind, stops),
             geom: Some(geom),
             angle: geom.angle_deg(),
             swatch: None,

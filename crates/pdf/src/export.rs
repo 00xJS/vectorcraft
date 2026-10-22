@@ -675,6 +675,8 @@ struct GlyphLine {
 
 /// Most pixels along a side of a freeform gradient's image (its colour field is smooth).
 const MAX_FIELD_PX: f64 = 512.0;
+/// Most pixels along a side of a linear or radial gradient's image.
+const MAX_GRADIENT_PX: f64 = 4096.0;
 
 /// The largest magnitude a coordinate, length or transform entry may have in the content stream it
 /// is drawn into (for glyph spacing, in thousandths of an em). Art that would go beyond it is left
@@ -1275,20 +1277,22 @@ impl Exporter<'_> {
         }
     }
 
-    /// Is `p` a paint PDF has no paint for, which [`Self::area`] draws as art: a pattern swatch or
-    /// a freeform gradient?
-    fn area_paint(&self, p: &Paint) -> bool {
+    /// Is `p` a paint PDF has no paint for when it paints a fill (`fill`) or a stroke, which
+    /// [`Self::area`] draws as art: a pattern swatch or a gradient drawn as pixels
+    /// ([`vectorcraft_color::GradientPaint::draws_as_pixels`])?
+    fn area_paint(&self, p: &Paint, fill: bool) -> bool {
         match p {
             Paint::Pattern { pattern, .. } => self.doc.pattern(pattern).is_some(),
-            Paint::Gradient(g) => g.gradient.kind == GradientKind::Freeform,
+            Paint::Gradient(g) => g.draws_as_pixels(fill),
             _ => false,
         }
     }
 
     /// Paint the area `clip` (filled by `rule`; bounds `area`) with `p` at `transparency` (opacity,
-    /// blend mode) when it is an [area paint](Self::area_paint): a pattern's tile instances
-    /// covering it, or an image of a freeform gradient placed on `bounds` (the painted object's
-    /// box, as on the canvas), clipped to it. False (nothing drawn) for other paints.
+    /// blend mode) when it is an [area paint](Self::area_paint) of a fill (strokes check theirs
+    /// first): a pattern's tile instances
+    /// covering it, or an image of a gradient drawn as pixels placed on `bounds` (the painted
+    /// object's box, as on the canvas), clipped to it. False (nothing drawn) for other paints.
     #[allow(clippy::too_many_arguments)]
     fn area(
         &mut self,
@@ -1300,7 +1304,7 @@ impl Exporter<'_> {
         bounds: Rect,
         area: Rect,
     ) -> bool {
-        if !self.area_paint(p) {
+        if !self.area_paint(p, true) {
             return false;
         }
         let (opacity, mode) = transparency;
@@ -1331,8 +1335,9 @@ impl Exporter<'_> {
         true
     }
 
-    /// Draw freeform gradient `g`, placed on `bounds`, as an image of its colour field over `area`,
-    /// sampled at the document's raster effects resolution (at most [`MAX_FIELD_PX`] a side).
+    /// Draw gradient `g`, placed on `bounds`, as an image over `area`, sampled at the document's
+    /// raster effects resolution: a freeform gradient's colour field (at most [`MAX_FIELD_PX`] a
+    /// side), or a linear or radial gradient (at most [`MAX_GRADIENT_PX`] a side).
     fn field_image(&mut self, s: &mut Surface, g: &vectorcraft_color::GradientPaint, bounds: Rect, area: Rect) {
         use vectorcraft_color::freeform::{painted_box, spread_scale};
         let Some(b) = painted_box(bounds) else { return };
@@ -1341,11 +1346,18 @@ impl Exporter<'_> {
         if !(long > 1e-9 && long.is_finite()) {
             return;
         }
-        let k = (self.doc.raster_effects_ppi / 72.0).min(MAX_FIELD_PX / long);
-        let along = |len: f64| (len * k).ceil().clamp(1.0, MAX_FIELD_PX) as u16;
+        let freeform = g.gradient.kind == GradientKind::Freeform;
+        let max = if freeform { MAX_FIELD_PX } else { MAX_GRADIENT_PX };
+        let k = (self.doc.raster_effects_ppi / 72.0).min(max / long);
+        let along = |len: f64| (len * k).ceil().clamp(1.0, max) as u16;
         let (cols, rows) = (along(area.width()), along(area.height()));
-        let field = g.freeform_on(b).field_with(spread_scale(b), &|c| c.to_rgb());
-        let rgba: Vec<u8> = field.grid(area, cols, rows).flat_map(|(c, a)| [q(c[0]), q(c[1]), q(c[2]), q(a)]).collect();
+        let rgba: Vec<u8> = if freeform {
+            let field = g.freeform_on(b).field_with(spread_scale(b), &|c| c.to_rgb());
+            field.grid(area, cols, rows).flat_map(|(c, a)| [q(c[0]), q(c[1]), q(c[2]), q(a)]).collect()
+        } else {
+            self.warn("linear and radial gradients drawn as pixels are exported as images");
+            g.pixels(b, area, cols, rows, &|c| c.to_rgb()).flatten().collect()
+        };
         let pixels = if self.convert { self.out.pixels() } else { None };
         let (Some(img), Some(size)) = (
             crate::images::from_rgba_in(rgba, cols.into(), rows.into(), self.interpolate, pixels),
@@ -1365,7 +1377,7 @@ impl Exporter<'_> {
         if !stroke::is_plain(st) && self.brush_art(s, bp, st, page) {
             return;
         }
-        if self.area_paint(&st.paint) {
+        if self.area_paint(&st.paint, false) {
             // The area the stroke paints (dashes, caps, joins, profile, arrowheads, alignment), as
             // Outline Stroke makes it, painted with the pattern's tiles or the freeform's image.
             let region = stroke::outline_region(&vectorcraft_geom::PathData::from_bezpath(bp), r, st).to_bezpath();
@@ -1557,7 +1569,7 @@ impl Exporter<'_> {
             self.overprinting(s, run.style.overprint_fill, fill, |ex, s| {
                 s.push_transform(&text_space);
                 // The outlines left to fill as paths: all of them, or those real text leaves.
-                let outlines = match plain.as_deref().filter(|_| !fill.is_none() && !ex.area_paint(fill)) {
+                let outlines = match plain.as_deref().filter(|_| !fill.is_none() && !ex.area_paint(fill, true)) {
                     Some(text) => {
                         let mut left = ex.glyph_text(s, &layout, i, text, fill);
                         left.extend(run_bars.iter());

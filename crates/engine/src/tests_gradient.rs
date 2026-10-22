@@ -33,14 +33,14 @@ fn fill_gradient(s: &Session, id: NodeId) -> GradientPaint {
 /// A three-stop freeform gradient with a 0.3 midpoint, partial opacity and a placed vector.
 fn three_stops() -> GradientPaint {
     let stop = |offset, color, opacity, midpoint| GradientStop { opacity, midpoint, ..GradientStop::new(offset, color) };
-    let mut g = GradientPaint::new(Gradient {
-        kind: GradientKind::Freeform,
-        stops: vec![
+    let mut g = GradientPaint::new(Gradient::new(
+        GradientKind::Freeform,
+        vec![
             stop(0.0, Color::rgb(1.0, 0.0, 0.0), 1.0, 0.3),
             stop(0.4, Color::cmyk(0.1, 0.2, 0.3, 0.4), 0.5, 0.5),
             stop(1.0, Color::gray(0.25), 0.75, 0.5),
         ],
-    });
+    ));
     g.geom = Some(GradientGeom { start: Point::new(10.0, 20.0), end: Point::new(110.0, 70.0), aspect: 0.5, focal: None });
     g.angle = g.geom.unwrap().angle_deg();
     g
@@ -402,4 +402,45 @@ fn swatches_and_new_art_fit_a_placed_gradient_to_themselves() {
     let (_, doc) = node(&s, t).proxy_gradient(false, None).unwrap();
     let tb = node(&s, t).geometric_bounds().unwrap();
     assert!(doc.start.distance(tb.center()) < 1e-9 && (doc.aspect - 0.5).abs() < 1e-9, "{doc:?} on {tb:?}");
+}
+
+/// Dither (Illustrator 30's Gradient panel checkbox): set and cleared through the gradient
+/// commands, refused on strokes (it applies to fills), kept by swatches, the params and a native
+/// save and load.
+#[test]
+fn dither_is_a_fill_gradient_option_that_saves_and_loads() {
+    let mut s = session();
+    let id = rect(&mut s, 0.0, 0.0, 100.0, 100.0);
+    s.execute("paint.setFill", &json!({"gradient": {"kind": "linear"}})).unwrap();
+    assert!(!fill_gradient(&s, id).gradient.dither, "off by default");
+    let undo = s.doc().unwrap().history.undo.len();
+    s.execute("paint.editGradient", &json!({"dither": true})).unwrap();
+    assert!(fill_gradient(&s, id).gradient.dither);
+    assert_eq!(s.doc().unwrap().history.undo.len(), undo + 1, "one undo step");
+    // The params carry it, so a swatch and a copied paint keep it.
+    let g = fill_gradient(&s, id);
+    assert_eq!(vectorcraft_tools::params::gradient_params(&g)["dither"], json!(true));
+    let mut q = gradient_param(&g);
+    q["name"] = json!("Smooth");
+    s.execute("swatch.new", &q).unwrap();
+    let Some(Paint::Gradient(sw)) = s.doc().unwrap().doc.swatch("Smooth").map(|w| w.paint.clone()) else { panic!("a gradient swatch") };
+    assert!(sw.gradient.dither);
+    // Saved and opened again.
+    let back = vectorcraft_format::load(&vectorcraft_format::save(&s.doc().unwrap().doc, false)).unwrap();
+    let Paint::Gradient(saved) = back.node(id).unwrap().appearance.fill_paint() else { panic!("a gradient fill") };
+    assert!(saved.gradient.dither, "the native file keeps dither");
+    // Written only when on, so files without it (older ones) open with it off.
+    assert_eq!(serde_json::to_value(&saved.gradient).unwrap()["dither"], json!(true));
+    assert!(serde_json::to_value(Gradient::default()).unwrap().get("dither").is_none());
+    let old: Gradient = serde_json::from_value(json!({"kind": "Linear", "stops": []})).unwrap();
+    assert!(!old.dither);
+    s.execute("paint.editGradient", &json!({"dither": false})).unwrap();
+    assert!(!fill_gradient(&s, id).gradient.dither);
+    // Strokes: refused, nothing changed.
+    s.execute("paint.setStroke", &json!({"gradient": {}})).unwrap();
+    let before = node(&s, id).appearance.clone();
+    assert!(s.execute("paint.editGradient", &json!({"dither": true, "stroke": true})).is_err());
+    assert!(s.execute("paint.editGradient", &json!({"dither": "yes"})).is_err());
+    assert!(s.execute("paint.setFill", &json!({"gradient": {"dither": 1}})).is_err());
+    assert_eq!(node(&s, id).appearance, before);
 }

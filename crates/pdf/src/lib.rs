@@ -5,7 +5,8 @@
 //!   width profiles, fitted or dotted dashes as the canvas's filled outlines and brushed strokes
 //!   as their brush art), opacity and blend modes (transparency groups),
 //!   clip groups, linear/radial gradients (shadings), pattern fills and strokes as their tiles and
-//!   freeform gradients as images (clipped to what they paint), embedded images (resampled and
+//!   freeform gradients and dithered gradient fills as images at the raster effects resolution
+//!   (clipped to what they paint), embedded images (resampled and
 //!   compressed as the Compression settings say) and text as outlined glyph paths, or as real
 //!   text in embedded subset fonts (Advanced). Colours are converted, tagged with ICC profiles and
 //!   given an output intent as the Output settings say. Hidden objects,

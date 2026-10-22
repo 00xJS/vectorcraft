@@ -5391,3 +5391,7 @@ axis	Y Axis	Y ekseni
 	Packaged {n} file(s) in {folder}	{folder} biçiminde paketlenmiş {n} dosyası/dosyaları
 	Packaged {n} file(s) {note}	Paketlenmiş {n} dosyası/dosyaları {note}
 	{count} file(s) in {folder}. Show the package folder?	{folder} içindeki {count} dosyası/dosyaları. Paket klasörü gösterilsin mi?
+	Dither	Titreme
+	Fine noise hides banding in the gradient fill	İnce gürültü, degrade dolgudaki bantları gizler
+@msg	`dither` applies to gradient fills (stroke: false)	`dither` degrade dolgulara uygulanır (stroke: false)
+@msg	`dither` must be true or false	"dither" doğru veya yanlış olmalıdır

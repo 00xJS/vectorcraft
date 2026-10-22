@@ -20,7 +20,7 @@ pub fn specs() -> Vec<CommandSpec> {
             "Gradient",
             ["Window", "Gradient"],
             None,
-            "{stroke?: bool (default: the targeted item's kind, else the active proxy), kind?: linear|radial|freeform (freeform places points on each object, coloured along the stops), mode?: points|lines (freeform: how the Gradient tool adds points), stops?: [{offset 0..1, color? (needed without swatch), opacity? 0..1 (or 0..100), midpoint? 0.13..0.87, swatch?: colour swatch name (a global or spot colour or tint swatch links the stop, so swatch edits recolour it and a spot stop prints on its plate; a process colour just gives its colour), tint?: 0..100 (% of the linked swatch; default 100, or a tint swatch's own)}] (at least 2; a freeform gradient's points are recoloured along them), keepModel?: bool (as paint.setFill; a stop color the gradient already has keeps its model), angle?: deg, aspect?: %, reverse?: bool, item?: fill/stroke item index|null (omitted: the Appearance panel's active item when it is of the edited kind), ids?|id?, strokeMode?: within|along|across (strokes only: the gradient lies on the page and shows through the stroke, runs from the start of each subpath to its end, or runs from the stroke's left edge to its right all along it; with nothing selected, for the next object drawn; type characters' own strokes always paint within), target?: \"object\"|\"contents\"} edit the gradient in place (keeps its placement); solid/none paints become the default gradient",
+            "{stroke?: bool (default: the targeted item's kind, else the active proxy), kind?: linear|radial|freeform (freeform places points on each object, coloured along the stops), mode?: points|lines (freeform: how the Gradient tool adds points), stops?: [{offset 0..1, color? (needed without swatch), opacity? 0..1 (or 0..100), midpoint? 0.13..0.87, swatch?: colour swatch name (a global or spot colour or tint swatch links the stop, so swatch edits recolour it and a spot stop prints on its plate; a process colour just gives its colour), tint?: 0..100 (% of the linked swatch; default 100, or a tint swatch's own)}] (at least 2; a freeform gradient's points are recoloured along them), keepModel?: bool (as paint.setFill; a stop color the gradient already has keeps its model), angle?: deg, aspect?: %, reverse?: bool, dither?: bool (fills only: a linear or radial gradient fill is drawn with fine noise that hides banding, and as pixels in SVG and PDF exports), item?: fill/stroke item index|null (omitted: the Appearance panel's active item when it is of the edited kind), ids?|id?, strokeMode?: within|along|across (strokes only: the gradient lies on the page and shows through the stroke, runs from the start of each subpath to its end, or runs from the stroke's left edge to its right all along it; with nothing selected, for the next object drawn; type characters' own strokes always paint within), target?: \"object\"|\"contents\"} edit the gradient in place (keeps its placement); solid/none paints become the default gradient",
             has_doc,
             edit_gradient
         ),
@@ -224,7 +224,11 @@ pub(crate) fn parse_gradient(g: &Value) -> Parsed<GradientPaint> {
     }
     let kind = str_param(g, "kind").map(parse_kind).transpose()?.unwrap_or_default();
     let stops = g.get("stops").map(parse_stops).transpose()?.unwrap_or_else(|| Gradient::default().stops);
-    let mut gp = GradientPaint::new(Gradient { kind, stops });
+    let mut gp = GradientPaint::new(Gradient::new(kind, stops));
+    gp.gradient.dither = match g.get("dither") {
+        None | Some(Value::Null) => false,
+        Some(v) => v.as_bool().ok_or("`dither` must be true or false")?,
+    };
     gp.angle = f64_or(g, "angle", 0.0);
     gp.swatch = str_param(g, "swatch").map(str::to_string);
     let geom = GeomEdit::parse(g)?;
@@ -319,6 +323,9 @@ pub(crate) fn apply_gradient_edit_in(
         // Midpoints mirrored with their segments.
         gp.gradient.reverse();
     }
+    if let Some(d) = p.get("dither").and_then(Value::as_bool) {
+        gp.gradient.dither = d;
+    }
     // Angle and aspect edits keep the focal point in its place in the extent ellipse.
     let before = gp.geom;
     if let Some(a) = p.get("angle").and_then(Value::as_f64) {
@@ -378,7 +385,7 @@ fn edit_gradient(s: &mut Session, p: &Value) -> Result<Value> {
     const C: &str = "paint.editGradient";
     let item = item_target(s, p, C)?;
     let stroke = edits_stroke(s, p, item, !s.fill_active, C)?;
-    check_switches(p, &["reverse"], C)?;
+    check_switches(p, &["reverse", "dither"], C)?;
     check_numbers(p, &["angle"], C)?;
     let item = item.of_kind(s, !stroke);
     let ids = item.targets(s, p)?;
@@ -388,6 +395,9 @@ fn edit_gradient(s: &mut Session, p: &Value) -> Result<Value> {
         Some(_) if !stroke => return Err(bad(C, "`strokeMode` applies to strokes (stroke: true)")),
         Some(m) => Some(StrokeGradientMode::parse(m).ok_or_else(|| bad(C, format!("strokeMode must be within|along|across, got {m}")))?),
     };
+    if p.get("dither").and_then(Value::as_bool).is_some() && stroke {
+        return Err(bad(C, "`dither` applies to gradient fills (stroke: false)"));
+    }
     super::paint::check_keep_model(p, C)?;
     // New RGB stop colors take the document's model; those of the swatches the stops name don't.
     let stored = stop_colors(s, p, p);

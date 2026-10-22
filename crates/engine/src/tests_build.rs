@@ -1063,7 +1063,7 @@ fn a_gradient_face_split_by_a_closed_gap_keeps_one_gradient_across_both_halves()
     let mut s = session();
     let r = rect(&mut s, 0.0, 0.0, 100.0, 100.0);
     let stops = vec![GradientStop::new(0.0, Color::rgb(1.0, 0.0, 0.0)), GradientStop::new(1.0, Color::rgb(0.0, 0.0, 1.0))];
-    let gradient = Paint::Gradient(Box::new(GradientPaint::new(Gradient { kind: GradientKind::Linear, stops })));
+    let gradient = Paint::Gradient(Box::new(GradientPaint::new(Gradient::new(GradientKind::Linear, stops))));
     s.edit("t", |d, _| {
         d.node_mut(r).unwrap().appearance.set_fill(gradient);
         Ok(())

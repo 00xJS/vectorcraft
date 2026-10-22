@@ -5382,3 +5382,7 @@ axis	Y Axis	Y ос
 	Packaged {n} file(s) in {folder}	Пакетирани са {n} файла в {folder}
 	Packaged {n} file(s) {note}	Пакетирани са {n} файла {note}
 	{count} file(s) in {folder}. Show the package folder?	{count} файл(а) в {folder}. Показване на папката на пакета?
+	Dither	Дитъринг
+	Fine noise hides banding in the gradient fill	Фин шум скрива ивиците в градиентната запълка
+@msg	`dither` applies to gradient fills (stroke: false)	`dither` се прилага към градиентни запълки (stroke: false)
+@msg	`dither` must be true or false	`dither` трябва да бъде true или false
