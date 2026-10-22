@@ -171,7 +171,7 @@ fn group(name: &str, swatches: Vec<Swatch>) -> SwatchGroup {
 /// A gradient swatch through `stops` of (offset, colour, opacity).
 pub(crate) fn gradient(name: &str, kind: GradientKind, stops: &[(f32, Color, f32)]) -> Swatch {
     let stops = stops.iter().map(|&(offset, color, opacity)| GradientStop { opacity, ..GradientStop::new(offset, color) }).collect();
-    Swatch { name: name.into(), paint: Paint::Gradient(Box::new(GradientPaint::new(Gradient { kind, stops }))), global: false, spot: false }
+    Swatch { name: name.into(), paint: Paint::Gradient(Box::new(GradientPaint::new(Gradient::new(kind, stops)))), global: false, spot: false }
 }
 
 /// `n` steps of OKLCH lightness from `l0` to `l1`, chroma `c(t)` and hue `h(t)` (`t` in 0..=1),

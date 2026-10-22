@@ -1151,7 +1151,7 @@ mod tests {
         use vectorcraft_color::{Color, Gradient, GradientKind, GradientPaint, GradientStop, Paint};
         let (mut s, id) = session_with_rect();
         let stops = vec![GradientStop::new(0.0, Color::rgb(1.0, 0.0, 0.0)), GradientStop::new(1.0, Color::rgb(0.0, 0.0, 1.0))];
-        let ramp = Paint::Gradient(Box::new(GradientPaint::new(Gradient { kind: GradientKind::Linear, stops })));
+        let ramp = Paint::Gradient(Box::new(GradientPaint::new(Gradient::new(GradientKind::Linear, stops))));
         s.edit("gradient", |d, _| {
             let n = d.node_mut(id).unwrap();
             n.appearance.set_fill(ramp);

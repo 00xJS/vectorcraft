@@ -589,7 +589,7 @@ mod tests {
         }
         use vectorcraft_color::{Gradient, GradientGeom, GradientKind, GradientPaint, GradientStop};
         let stops = vec![GradientStop::new(0.0, Color::rgb(1.0, 0.0, 0.0)), GradientStop::new(1.0, Color::rgb(0.0, 0.0, 1.0))];
-        let ramp = GradientPaint::new(Gradient { kind: GradientKind::Linear, stops });
+        let ramp = GradientPaint::new(Gradient::new(GradientKind::Linear, stops));
         // The type's characters fit the gradient to its layout; the square has it placed across itself.
         let style = vectorcraft_doc::CharStyle { size: 40.0, fill: Paint::Gradient(Box::new(ramp.clone())), ..Default::default() };
         let text = vectorcraft_doc::TextObject::point(vectorcraft_geom::Point::new(5.0, 60.0), "IIII", style);
@@ -615,7 +615,7 @@ mod tests {
     fn a_transform_on_a_group_paints_each_copy_with_its_own_gradient() {
         use vectorcraft_color::{Gradient, GradientGeom, GradientKind, GradientPaint, GradientStop};
         let stops = vec![GradientStop::new(0.0, Color::rgb(1.0, 0.0, 0.0)), GradientStop::new(1.0, Color::rgb(0.0, 0.0, 1.0))];
-        let ramp = GradientPaint::new(Gradient { kind: GradientKind::Linear, stops });
+        let ramp = GradientPaint::new(Gradient::new(GradientKind::Linear, stops));
         let geom = GradientGeom { start: (0.0, 5.0).into(), end: (10.0, 5.0).into(), aspect: 1.0, focal: None };
         let paints = [Paint::Gradient(Box::new(ramp.clone())), Paint::Gradient(Box::new(GradientPaint { geom: Some(geom), ..ramp }))];
         for (k, paint) in paints.into_iter().enumerate() {

@@ -784,7 +784,7 @@ impl Builder {
                 }
                 let aspect = if u.hypot() > 0.0 { (v.hypot() / u.hypot()).clamp(0.01, 100.0) } else { 1.0 };
                 let geom = GradientGeom { start: o, end: x, aspect: if kind == GradientKind::Radial { aspect } else { 1.0 }, focal: None };
-                let mut gp = GradientPaint::new(Gradient { kind, stops });
+                let mut gp = GradientPaint::new(Gradient::new(kind, stops));
                 gp.angle = (-(u.y)).atan2(u.x).to_degrees();
                 gp.geom = Some(geom);
                 Some((Paint::Gradient(Box::new(gp)), 1.0))

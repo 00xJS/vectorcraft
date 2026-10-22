@@ -952,7 +952,7 @@ fn traced_shape(shape: tr::TracedShape, xf: vectorcraft_geom::Affine) -> LiveSha
 fn traced_gradient(g: &tr::TracedGradient, xf: vectorcraft_geom::Affine) -> Paint {
     use vectorcraft_color::{Gradient, GradientGeom, GradientKind, GradientPaint, GradientStop};
     let stops = g.stops.iter().map(|&(at, c)| GradientStop::new(at as f32, Color::rgb8(c[0], c[1], c[2]))).collect();
-    let mut paint = GradientPaint::new(Gradient { kind: GradientKind::Linear, stops });
+    let mut paint = GradientPaint::new(Gradient::new(GradientKind::Linear, stops));
     paint.geom = Some(GradientGeom { start: xf * g.start, end: xf * g.end, aspect: 1.0, focal: None });
     Paint::Gradient(Box::new(paint))
 }

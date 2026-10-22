@@ -224,7 +224,7 @@ pub(crate) fn parse_gradient(g: &Value) -> Parsed<GradientPaint> {
     }
     let kind = str_param(g, "kind").map(parse_kind).transpose()?.unwrap_or_default();
     let stops = g.get("stops").map(parse_stops).transpose()?.unwrap_or_else(|| Gradient::default().stops);
-    let mut gp = GradientPaint::new(Gradient { kind, stops });
+    let mut gp = GradientPaint::new(Gradient::new(kind, stops));
     gp.angle = f64_or(g, "angle", 0.0);
     gp.swatch = str_param(g, "swatch").map(str::to_string);
     let geom = GeomEdit::parse(g)?;

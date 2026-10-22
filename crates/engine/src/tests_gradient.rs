@@ -33,14 +33,14 @@ fn fill_gradient(s: &Session, id: NodeId) -> GradientPaint {
 /// A three-stop freeform gradient with a 0.3 midpoint, partial opacity and a placed vector.
 fn three_stops() -> GradientPaint {
     let stop = |offset, color, opacity, midpoint| GradientStop { opacity, midpoint, ..GradientStop::new(offset, color) };
-    let mut g = GradientPaint::new(Gradient {
-        kind: GradientKind::Freeform,
-        stops: vec![
+    let mut g = GradientPaint::new(Gradient::new(
+        GradientKind::Freeform,
+        vec![
             stop(0.0, Color::rgb(1.0, 0.0, 0.0), 1.0, 0.3),
             stop(0.4, Color::cmyk(0.1, 0.2, 0.3, 0.4), 0.5, 0.5),
             stop(1.0, Color::gray(0.25), 0.75, 0.5),
         ],
-    });
+    ));
     g.geom = Some(GradientGeom { start: Point::new(10.0, 20.0), end: Point::new(110.0, 70.0), aspect: 0.5, focal: None });
     g.angle = g.geom.unwrap().angle_deg();
     g

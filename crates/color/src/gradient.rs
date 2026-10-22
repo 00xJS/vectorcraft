@@ -80,11 +80,15 @@ pub struct Gradient {
 impl Default for Gradient {
     /// Illustrator's default "White, Black" gradient.
     fn default() -> Self {
-        Self { kind: GradientKind::Linear, stops: vec![GradientStop::new(0.0, Color::WHITE), GradientStop::new(1.0, Color::BLACK)] }
+        Self::new(GradientKind::Linear, vec![GradientStop::new(0.0, Color::WHITE), GradientStop::new(1.0, Color::BLACK)])
     }
 }
 
 impl Gradient {
+    /// A gradient of `kind` through `stops`, with the default options.
+    pub fn new(kind: GradientKind, stops: Vec<GradientStop>) -> Self {
+        Self { kind, stops }
+    }
     /// Colour and opacity at `t` (honours midpoints).
     pub fn sample(&self, t: f32) -> (Color, f32) {
         self.sample_with(t, Color::lerp)
@@ -172,7 +176,7 @@ impl Gradient {
             );
         }
         stops.push(stop(1.0, to));
-        Gradient { kind: GradientKind::Linear, stops }
+        Gradient::new(GradientKind::Linear, stops)
     }
 }
 
@@ -582,9 +586,8 @@ mod tests {
     #[test]
     fn reverse_mirrors_midpoints() {
         let stop = |offset, hex, midpoint| GradientStop { midpoint, ..GradientStop::new(offset, Color::from_hex(hex).unwrap()) };
-        let two = Gradient { kind: GradientKind::Linear, stops: vec![stop(0.0, "#ff0000", 0.2), stop(1.0, "#0000ff", 0.5)] };
-        let three =
-            Gradient { kind: GradientKind::Linear, stops: vec![stop(0.0, "#ff0000", 0.2), stop(0.3, "#00ff00", 0.8), stop(1.0, "#0000ff", 0.5)] };
+        let two = Gradient::new(GradientKind::Linear, vec![stop(0.0, "#ff0000", 0.2), stop(1.0, "#0000ff", 0.5)]);
+        let three = Gradient::new(GradientKind::Linear, vec![stop(0.0, "#ff0000", 0.2), stop(0.3, "#00ff00", 0.8), stop(1.0, "#0000ff", 0.5)]);
         for g in [two, three] {
             let mut r = g.clone();
             r.reverse();
