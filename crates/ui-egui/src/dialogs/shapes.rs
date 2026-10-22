@@ -1,5 +1,5 @@
 //! Shape size dialogs (a click with a shape tool): Rectangle, Rounded Rectangle, Ellipse, Polygon,
-//! Star, Line Segment Tool Options and the two grids (size, divider counts and skews, switches).
+//! Star, Line Segment and Arc tool options, and the two grids (size, divider counts and skews, switches).
 
 use serde_json::{Value, json};
 use vectorcraft_geom::{Point, Rect};
