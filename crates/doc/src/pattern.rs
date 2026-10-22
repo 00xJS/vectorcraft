@@ -279,7 +279,7 @@ impl PatternDef {
         out
     }
     /// Offsets of the pattern-editing preview copies (`copies`×`copies` around the tile, the
-    /// centre `(0, 0)` excluded).
+    /// centre `(0, 0)` excluded), in row-major order (not paint order).
     pub fn preview_offsets(&self) -> Vec<Vec2> {
         let k = (self.copies.clamp(1, 15) / 2) as i64;
         let mut out = vec![];
@@ -288,6 +288,21 @@ impl PatternDef {
                 if (i, j) != (0, 0) {
                     out.push(self.offset(i, j));
                 }
+            }
+        }
+        out
+    }
+    /// Offsets of every pattern-editing preview copy, including the centre tile, in the same paint
+    /// order [`offsets_covering`] uses for [`Overlap`].
+    pub fn preview_offsets_in_paint_order(&self) -> Vec<Vec2> {
+        let k = (self.copies.clamp(1, 15) / 2) as i64;
+        let (i0, i1, j0, j1) = (-k, k, -k, k);
+        let mut out = vec![];
+        let rows: Vec<i64> = if self.overlap.bottom_in_front { (j0..=j1).collect() } else { (j0..=j1).rev().collect() };
+        for &j in &rows {
+            let cols: Vec<i64> = if self.overlap.right_in_front { (i0..=i1).collect() } else { (i0..=i1).rev().collect() };
+            for i in cols {
+                out.push(self.offset(i, j));
             }
         }
         out
@@ -742,6 +757,17 @@ mod tests {
         for id in TileType::IDS {
             assert_eq!(TileType::parse(id, None).unwrap().id(), id);
         }
+    }
+
+    #[test]
+    fn preview_paint_order_respects_overlap() {
+        let mut def = PatternDef::new("p", vec![sq(0.0, 0.0, 10.0)]);
+        def.copies = 3;
+        assert!(close(*def.preview_offsets_in_paint_order().last().unwrap(), Vec2::new(-10.0, -10.0)));
+        let mut d2 = def.clone();
+        d2.overlap = Overlap { right_in_front: true, bottom_in_front: true };
+        assert!(close(*d2.preview_offsets_in_paint_order().last().unwrap(), Vec2::new(10.0, 10.0)));
+        assert_eq!(def.preview_offsets_in_paint_order().len(), 9);
     }
 
     #[test]

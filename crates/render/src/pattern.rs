@@ -308,17 +308,23 @@ impl Renderer {
         let children: Vec<Arc<Node>> = layer.children().cloned().unwrap_or_default();
         if layer.visible && !children.is_empty() {
             let dim = (def.dim_copies / 100.0).clamp(0.0, 1.0);
-            let comp = crate::group::Composite { opacity: dim, ..Default::default() };
-            self.group(ctx, f, comp, &mut |r, c, fr| {
-                for o in def.preview_offsets() {
-                    let frame = Frame { view: fr.view * Affine::translate(o), visible: fr.visible - o, ..*fr };
-                    for a in &children {
-                        r.draw_arc(c, &frame, a);
-                    }
+            for o in def.preview_offsets_in_paint_order() {
+                let is_center = o.x == 0.0 && o.y == 0.0;
+                if is_center {
+                    self.draw_arc(ctx, f, layer);
+                } else {
+                    let comp = crate::group::Composite { opacity: dim, ..Default::default() };
+                    self.group(ctx, f, comp, &mut |r, c, fr| {
+                        let frame = Frame { view: fr.view * Affine::translate(o), visible: fr.visible - o, ..*fr };
+                        for a in &children {
+                            r.draw_arc(c, &frame, a);
+                        }
+                    });
                 }
-            });
+            }
+        } else {
+            self.draw_arc(ctx, f, layer);
         }
-        self.draw_arc(ctx, f, layer);
         // The tile edge and swatch bounds are editing aids: exports and thumbnails leave them out,
         // as they do guides (#3261).
         if f.opts.skip_templates {
