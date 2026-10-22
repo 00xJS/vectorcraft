@@ -422,6 +422,7 @@ from G14 and the budget run of G15: **~170–270 h** one agent, ~50–80 h wall 
 
 - **Missing:** AccessKit is on by default, so egui widgets reach screen readers, but custom panels, the canvas and its objects aren't described and nothing has been tested with VoiceOver, Narrator or Orca; keyboard-only canvas operation; high
   contrast. Illustrator's own accessibility is limited, so this is mostly beyond parity.
+- **Done:** PDF export writes `/ViewerPreferences << /DisplayDocTitle true >>` when the exported document has a title, so viewers and accessibility checkers use the document title instead of the file name (#3646).
 - **Estimate:** 15–25 h.
 
 ## Highlighted-text Eyedropper (2026-10-21)

@@ -902,6 +902,7 @@ fn empty_and_populated_file_info_preserve_key_presence() {
     for key in ["/Title", "/Author", "/Keywords", "<dc:title>", "<dc:creator>", "<pdf:Keywords>"] {
         assert!(!s.contains(key), "unexpected empty metadata {key}");
     }
+    assert!(!s.contains("/DisplayDocTitle true"), "an untitled document has no title to display");
     d.title = "Synthetic title".into();
     d.metadata.author = " Test author ".into();
     d.metadata.keywords = vec!["test keyword".into()];
@@ -911,6 +912,7 @@ fn empty_and_populated_file_info_preserve_key_presence() {
         assert!(s.contains(key), "missing populated metadata {key}");
     }
     assert!(s.contains("Synthetic title") && s.contains("Test author") && s.contains("test keyword"));
+    assert!(s.contains("/ViewerPreferences<</DisplayDocTitle true>>"), "viewers should show the document title (#3646)");
 }
 
 /// A function or colour space built on itself is refused before the interpreter builds it (by

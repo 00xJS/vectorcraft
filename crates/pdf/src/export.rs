@@ -233,6 +233,8 @@ pub(crate) struct Writer {
     rgb_in_cmyk: RgbInCmyk,
     /// A PDF 1.3 file ([`crate::PdfSettings::pdf13`]): flat, without page groups.
     pdf13: bool,
+    /// The PDF has a document title, so viewers should display it instead of the file name.
+    display_doc_title: bool,
     /// The document's images the exporters wrote, by key, gathered from the exporters
     /// ([`Self::absorb`]): [`Self::finish`] finds the key of an image the writer couldn't decode.
     images: Vec<(String, Image)>,
@@ -317,6 +319,7 @@ impl Writer {
             warnings,
             rgb_in_cmyk: RgbInCmyk::default(),
             pdf13: set.pdf13(),
+            display_doc_title: !title.trim().is_empty(),
             images: vec![],
         })
     }
@@ -440,7 +443,7 @@ impl Writer {
         }
         let lab = !self.lab_spots.is_empty() && !self.out.standard.cmyk_only();
         let bytes = if lab { crate::lab_spot::lab_alternates(bytes, &self.lab_spots) } else { bytes };
-        let (bytes, more) = self.out.write_catalog(bytes)?;
+        let (bytes, more) = self.out.write_catalog(bytes, self.display_doc_title)?;
         self.warnings.extend(more);
         self.warnings.extend(self.rgb_in_cmyk.warning());
         Ok((crate::pdfx::finish(bytes, self.out.standard, self.pdf13)?, self.warnings))
