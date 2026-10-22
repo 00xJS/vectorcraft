@@ -352,6 +352,28 @@ fn duplicate_artboards_copies_every_selected_artboard_in_one_step() {
     }
 }
 
+/// #2103: with the Artboard tool, an arrow key moves the selected artboards and the art on them by
+/// the keyboard increment (Shift: ten times as far) in one undo step each; the selected art
+/// doesn't move on its own.
+#[test]
+fn artboard_tool_arrow_keys_move_the_selected_artboards_with_their_art() {
+    use vectorcraft_tools::{Mods, ToolKey};
+    let mut s = session();
+    let [a, b, c] = two_selected_artboards(&mut s);
+    s.execute("prefs.set", &json!({"key": "keyboardIncrement", "value": 4})).unwrap();
+    let v = ViewInfo::default();
+    assert!(s.tool_claims_key(ToolKey::Right, v));
+    let undo = s.doc().unwrap().history.undo.len();
+    s.tool_key(ToolKey::Right, Mods::default(), v).unwrap();
+    s.tool_key(ToolKey::Right, Mods { shift: true, ..Mods::default() }, v).unwrap();
+    let xs = |s: &Session| boards(s).into_iter().map(|(x, _)| x).collect::<Vec<_>>();
+    assert_eq!(xs(&s), [44.0, 1044.0, 0.0]);
+    assert_eq!([left(&s, a), left(&s, b), left(&s, c)], [54.0, 1054.0, 10.0], "the art moves with its artboard");
+    assert_eq!(s.doc().unwrap().history.undo.len(), undo + 2, "one step per press");
+    s.execute("edit.undo", &json!({})).unwrap();
+    assert_eq!((xs(&s), left(&s, a)), (vec![4.0, 1004.0, 0.0], 14.0));
+}
+
 /// With the Artboard tool, Copy takes every selected artboard and the art on each (the public Cut,
 /// copy, and paste artboards page). Paste adds a copy of each with its art in one undo step,
 /// together right of the last artboard; Paste in Place puts them where they were. The tool then
