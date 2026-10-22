@@ -643,8 +643,8 @@ fn appearance_section(app: &mut VectorcraftApp, ui: &mut Ui) {
     ui.horizontal(|ui| {
         widgets::field_label(ui, egui::RichText::new(tl!("Opacity")).size(12.0));
         ui.add_space(8.0);
-        if let Some(o) = widgets::plain_field(ui, "ap-op", n.opacity as f64 * 100.0, "%", 0, fw) {
-            app.run("object.setProps", json!({"opacity": o.clamp(0.0, 100.0)})).ok();
+        if let Some(o) = widgets::range_field(ui, "ap-op", n.opacity as f64 * 100.0, 0.0..=100.0, "%", 0, fw) {
+            app.run("object.setProps", json!({"opacity": o})).ok();
         }
         if widgets::icon_button(ui, "ellipsis", tl!("Transparency"), false, 22.0).clicked() {
             app.ui.open_panel = Some("transparency".into());

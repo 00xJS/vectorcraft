@@ -48,8 +48,10 @@ fn body(_app: &mut VectorcraftApp, ui: &mut egui::Ui, d: &mut Dialog) -> bool {
                 d.fields.insert("gapLength".into(), json!(lengths.get(i).copied().unwrap_or(9.0)));
             }
             ui.add_enabled_ui(current == 3, |ui| {
-                if let Some(n) = widgets::plain_field(ui, "shape-builder-gap-length", len, "pt", 1, 64.0) {
-                    d.fields.insert("gapLength".into(), json!(n.clamp(0.0, vectorcraft_tools::builder::SHAPE_BUILDER_MAX_GAP)));
+                if let Some(n) =
+                    widgets::range_field(ui, "shape-builder-gap-length", len, 0.0..=vectorcraft_tools::builder::SHAPE_BUILDER_MAX_GAP, "pt", 1, 64.0)
+                {
+                    d.fields.insert("gapLength".into(), json!(n));
                 }
             });
         });

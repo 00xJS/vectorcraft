@@ -1,5 +1,7 @@
 //! Shared widgets. Colours come from theme tokens.
 
+use std::ops::RangeInclusive;
+
 use egui::{Color32, CornerRadius, Pos2, Rect, Response, Sense, Stroke, StrokeKind, Ui, Vec2, pos2, vec2};
 use vectorcraft_color::{BlendMode, Color, Paint};
 use vectorcraft_doc::Unit;
@@ -242,11 +244,20 @@ pub(crate) fn typed_unit(ctx: &egui::Context, unit: Unit) -> Unit {
 /// Supports unit suffixes and arithmetic; a number without a unit is in `unit` ([`typed_unit`]: in
 /// points in a picas field with Numbers Without Units Are Points on).
 pub fn num_field(ui: &mut Ui, id: impl std::hash::Hash + std::fmt::Debug, value: Option<f64>, unit: Unit, width: f32) -> Option<f64> {
-    unit_field(ui, id, value, unit, width, false)
+    unit_field(ui, id, value, unit, width, false, ANY)
+}
+
+/// Any number: the bounds of a field that has none.
+const ANY: RangeInclusive<f64> = f64::NEG_INFINITY..=f64::INFINITY;
+
+/// `v` within `bounds` (bounds the wrong way round or not numbers don't panic, as `f64::clamp` would).
+fn within(v: f64, bounds: &RangeInclusive<f64>) -> f64 {
+    v.max(*bounds.start()).min(*bounds.end())
 }
 
 /// [`num_field`]; with `share_of_value` a percentage typed alone is that share of `value`
-/// ([`share_of`]).
+/// ([`share_of`]). ↑/↓, the wheel and a scrub stop at `bounds` (points), and the field shows where
+/// they stopped.
 fn unit_field(
     ui: &mut Ui,
     id: impl std::hash::Hash + std::fmt::Debug,
@@ -254,6 +265,7 @@ fn unit_field(
     unit: Unit,
     width: f32,
     share_of_value: bool,
+    bounds: RangeInclusive<f64>,
 ) -> Option<f64> {
     let id = ui.id().with(id);
     let shown = value.map(|v| unit.format(v)).unwrap_or_default();
@@ -262,8 +274,9 @@ fn unit_field(
     select_all_on_focus(ui, &resp, &buf);
     // ↑/↓ and the wheel step in the field's unit; a drag on its label scrubs it.
     let read = typed_unit(ui.ctx(), unit);
-    let stepped = step_value(ui, &resp, &mut buf, |b| Some(unit.from_pt(read.parse(b)?)), |v| unit.format(unit.to_pt(v)));
-    let scrubbed = scrub::field(ui, id, rect, &buf, value.map(|v| unit.from_pt(v)), STEP_DECIMALS);
+    let bounds = unit.from_pt(*bounds.start())..=unit.from_pt(*bounds.end());
+    let stepped = step_value(ui, &resp, &mut buf, &bounds, |b| Some(unit.from_pt(read.parse(b)?)), |v| unit.format(unit.to_pt(v)));
+    let scrubbed = scrub::field(ui, id, rect, &buf, value.map(|v| unit.from_pt(v)), STEP_DECIMALS, &bounds);
     let commit = commit && buf != shown;
     ui.data_mut(|d| d.insert_temp(id, buf.clone()));
     if commit {
@@ -310,12 +323,20 @@ fn step_to_multiple(v: f64, size: f64, n: f64) -> f64 {
 /// ↑/↓ in focused numeric field `resp`, or the mouse wheel turned over it, step the number `buf`
 /// shows (`read` parses it, `show` formats it) per press or wheel notch ([`STEPS`]): a plain step
 /// goes to the next whole number in its direction (5.1 up to 6, down to 5), a Ctrl/Cmd step goes to
-/// the next tenth, and a Shift step adds or takes ten. The new value is applied at once, as in
+/// the next tenth, and a Shift step adds or takes ten. Steps stop at the field's `bounds` (#3370:
+/// a weight stops at 0, a miter limit at 1). The new value is applied at once, as in
 /// Illustrator's panels and dialogs, and the new text replaces `buf`, all selected so typing
 /// replaces it. Returns the new number when a step was taken. While the pointer is over the focused
 /// field the wheel is the field's (the panel under it doesn't scroll); an unfocused field leaves the
 /// wheel to the panel and the canvas.
-fn step_value(ui: &Ui, resp: &Response, buf: &mut String, read: impl Fn(&str) -> Option<f64>, show: impl Fn(f64) -> String) -> Option<f64> {
+fn step_value(
+    ui: &Ui,
+    resp: &Response,
+    buf: &mut String,
+    bounds: &RangeInclusive<f64>,
+    read: impl Fn(&str) -> Option<f64>,
+    show: impl Fn(f64) -> String,
+) -> Option<f64> {
     // Memory focus, as the field's highlight and its typing use: `Response::has_focus` also needs the
     // window to report keyboard focus.
     if !ui.memory(|m| m.has_focus(resp.id)) {
@@ -369,9 +390,11 @@ fn step_value(ui: &Ui, resp: &Response, buf: &mut String, read: impl Fn(&str) ->
     let mut v = read(buf)?;
     for (mods, size, n) in steps {
         v = if mods == egui::Modifiers::SHIFT { v + size * n } else { step_to_multiple(v, size, n) };
+        // Each step stops at the bounds, so a step back in the same frame starts from there.
+        v = within(v, bounds);
     }
-    // Rounded as fields show it.
-    let v = round_to(v, STEP_DECIMALS);
+    // Rounded as fields show it, within the field's bounds.
+    let v = within(round_to(v, STEP_DECIMALS), bounds);
     *buf = show(v);
     ui.data_mut(|d| d.insert_temp(resp.id, buf.clone()));
     select_all(ui, resp.id, buf);
@@ -429,7 +452,7 @@ pub fn size_field(ui: &mut Ui, id: impl std::hash::Hash + std::fmt::Debug, value
             }
         });
     }
-    unit_field(ui, id, value, unit, width, true)
+    unit_field(ui, id, value, unit, width, true, ANY)
 }
 
 /// Select all of `text` in text field `id`.
@@ -650,20 +673,22 @@ pub fn plain_field(ui: &mut Ui, id: impl std::hash::Hash + std::fmt::Debug, valu
     mixed_field(ui, id, Some(value), suffix, decimals, width)
 }
 
-/// [`plain_field`] for a number kept within `range` (the values of dialogs and preferences): what is
-/// typed, stepped or scrubbed is clamped into it and rounded to `decimals` places (0: a count).
+/// [`plain_field`] for a number kept within `range` (the values of dialogs, preferences and panels
+/// such as the Stroke panel's Limit); `None` shows a blank field, as [`mixed_field`] does. What is
+/// typed, stepped or scrubbed is clamped into it and rounded to `decimals` places (0: a count), and
+/// ↑/↓, the wheel and a scrub stop at its ends in the field too (#3370).
 pub fn range_field(
     ui: &mut Ui,
     id: impl std::hash::Hash + std::fmt::Debug,
-    value: f64,
-    range: std::ops::RangeInclusive<f64>,
+    value: impl Into<Option<f64>>,
+    range: RangeInclusive<f64>,
     suffix: &str,
     decimals: usize,
     width: f32,
 ) -> Option<f64> {
-    let (lo, hi) = (*range.start(), *range.end());
     let places = decimals.min(6) as i32;
-    plain_field(ui, id, value.clamp(lo, hi), suffix, decimals, width).map(|v| round_to(v, places).clamp(lo, hi))
+    let value = value.into().map(|v| within(v, &range));
+    bounded_field(ui, id, value, suffix, decimals, width, &range).map(|v| within(round_to(v, places), &range))
 }
 
 /// [`plain_field`] for a value the selected objects may not share: `None` shows a blank field.
@@ -674,6 +699,19 @@ pub fn mixed_field(
     suffix: &str,
     decimals: usize,
     width: f32,
+) -> Option<f64> {
+    bounded_field(ui, id, value, suffix, decimals, width, &ANY)
+}
+
+/// [`mixed_field`] whose ↑/↓, wheel and scrub stop at `bounds`.
+fn bounded_field(
+    ui: &mut Ui,
+    id: impl std::hash::Hash + std::fmt::Debug,
+    value: Option<f64>,
+    suffix: &str,
+    decimals: usize,
+    width: f32,
+    bounds: &RangeInclusive<f64>,
 ) -> Option<f64> {
     let id = ui.id().with(id);
     let show = |value: f64| field_text(value, suffix, decimals);
@@ -690,8 +728,8 @@ pub fn mixed_field(
     // ↑/↓ and the wheel step at the field's precision (a count ignores Ctrl/Cmd's tenth); a drag on
     // its label scrubs it.
     let decimals = decimals.min(6) as i32;
-    let stepped = step_value(ui, &resp, &mut buf, read, show).map(|v| round_to(v, decimals));
-    let scrubbed = scrub::field(ui, id, rect, &buf, value, decimals);
+    let stepped = step_value(ui, &resp, &mut buf, bounds, read, show).map(|v| round_to(v, decimals));
+    let scrubbed = scrub::field(ui, id, rect, &buf, value, decimals, bounds);
     if commit && buf != shown { read(&buf) } else { stepped.or(scrubbed).filter(|&v| Some(v) != value) }
 }
 
@@ -1256,8 +1294,8 @@ pub fn opacity_blend(
         dim_label(ui, "Opacity:");
         ui.spacing_mut().item_spacing.x = 0.0;
         ui.add_enabled_ui(enabled, |ui| {
-            if let Some(o) = mixed_field(ui, (id, "opacity"), opacity.map(|o| o as f64 * 100.0), "%", 0, 50.0) {
-                edit = Some(TransparencyEdit::Opacity(o.clamp(0.0, 100.0), Live::Released));
+            if let Some(o) = range_field(ui, (id, "opacity"), opacity.map(|o| o as f64 * 100.0), 0.0..=100.0, "%", 0, 50.0) {
+                edit = Some(TransparencyEdit::Opacity(o, Live::Released));
             }
         });
         let (r, resp) = ui.allocate_exact_size(vec2(18.0, 26.0), if enabled { Sense::click() } else { Sense::hover() });
@@ -1527,8 +1565,9 @@ fn radio_row(ui: &mut Ui, text: &str, name: &str, selected: bool, enabled: bool)
 /// Numeric field with an up/down spinner on the left and a preset dropdown on the right
 /// (Stroke weight, font size…): an editable combo box whose field keeps typing, ↑/↓ stepping and
 /// label scrubbing. `value` (points) shows in `unit`, blank when `None` (the selection's values
-/// differ); `presets` (points) are listed in `unit` too, and empty = no dropdown. Returns the
-/// committed, stepped or picked value.
+/// differ); `presets` (points) are listed in `unit` too, and empty = no dropdown. The spinner, ↑/↓,
+/// the wheel and a scrub stop at `min` (#3370), and a typed value below it applies `min`. Returns
+/// the committed, stepped or picked value.
 #[allow(clippy::too_many_arguments)]
 pub fn spin_field(
     ui: &mut Ui,
@@ -1574,7 +1613,9 @@ pub fn spin_field_auto(
     min: f64,
     presets: &[f64],
 ) -> Option<SpinPick> {
-    spin_generic(ui, value, auto, width, step, min, presets, &|v| unit.format(v), &mut |ui, fw| num_field(ui, id, value, unit, fw))
+    spin_generic(ui, value, auto, width, step, min, presets, &|v| unit.format(v), &mut |ui, fw| {
+        unit_field(ui, id, value, unit, fw, false, min..=f64::INFINITY)
+    })
 }
 
 /// [`spin_field`] for unitless values (percent, degrees, 1/1000 em) with a display suffix; a
@@ -1593,8 +1634,10 @@ pub fn spin_plain(
 ) -> Option<f64> {
     let value = value.into();
     let fmt = |v: f64| format!("{v}{suffix}");
-    spin_generic(ui, value, None, width, step, min, presets, &fmt, &mut |ui, fw| mixed_field(ui, id, value, suffix, decimals, fw))
-        .and_then(SpinPick::value)
+    spin_generic(ui, value, None, width, step, min, presets, &fmt, &mut |ui, fw| {
+        bounded_field(ui, id, value, suffix, decimals, fw, &(min..=f64::INFINITY))
+    })
+    .and_then(SpinPick::value)
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -2144,7 +2187,8 @@ pub fn menu_item_name(ui: &mut Ui, label: &str, enabled: bool, checked: bool) ->
 /// A number field that may be empty (Stroke dash/gap): `value` (points) shows in `unit` without
 /// its suffix, to fit narrow fields. Returns `Some(new)` (points) on commit (Enter, Shift+Enter or
 /// focus loss, as in [`num_field`]), where `new` is `None` when the field was cleared; typed units
-/// and arithmetic work as in [`num_field`].
+/// and arithmetic work as in [`num_field`]. The value is a length: ↑/↓, the wheel and a scrub stop
+/// at 0.
 pub fn opt_field(ui: &mut Ui, id: impl std::hash::Hash + std::fmt::Debug, value: Option<f64>, unit: Unit, width: f32) -> Option<Option<f64>> {
     let t = Tokens::get(ui.ctx());
     let id = ui.id().with(id);
@@ -2181,8 +2225,9 @@ pub fn opt_field(ui: &mut Ui, id: impl std::hash::Hash + std::fmt::Debug, value:
     let resp = framed.inner;
     select_all_on_focus(ui, &resp, &buf);
     // ↑/↓ and the wheel step a value (an empty field stays empty); a drag on its label scrubs it.
-    let stepped = step_value(ui, &resp, &mut buf, |b| Some(unit.from_pt(unit.parse(b)?)), |v| unit.number(unit.to_pt(v)));
-    let scrubbed = scrub::field(ui, id, framed.response.rect, &buf, value.map(|v| unit.from_pt(v)), STEP_DECIMALS);
+    let lengths = 0.0..=f64::INFINITY;
+    let stepped = step_value(ui, &resp, &mut buf, &lengths, |b| Some(unit.from_pt(unit.parse(b)?)), |v| unit.number(unit.to_pt(v)));
+    let scrubbed = scrub::field(ui, id, framed.response.rect, &buf, value.map(|v| unit.from_pt(v)), STEP_DECIMALS, &lengths);
     let focused = ui.memory(|m| m.has_focus(id));
     ui.data_mut(|d| {
         d.insert_temp(id, buf.clone());

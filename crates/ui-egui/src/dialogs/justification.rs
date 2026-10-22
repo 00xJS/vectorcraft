@@ -126,8 +126,8 @@ fn body(app: &mut VectorcraftApp, ui: &mut egui::Ui, d: &mut Dialog) -> bool {
             for (suffix, _) in COLUMNS {
                 let key = format!("{prefix}{suffix}");
                 let value = d.fields.get(&key).and_then(|v| v.as_f64());
-                if let Some(v) = widgets::mixed_field(ui, ("justification", key.as_str()), value, "%", 0, 70.0) {
-                    d.fields.insert(key, json!(v.clamp(*lo, *hi)));
+                if let Some(v) = widgets::range_field(ui, ("justification", key.as_str()), value, *lo..=*hi, "%", 0, 70.0) {
+                    d.fields.insert(key, json!(v));
                 }
             }
             ui.end_row();
@@ -138,8 +138,8 @@ fn body(app: &mut VectorcraftApp, ui: &mut egui::Ui, d: &mut Dialog) -> bool {
         label(ui, tl!("Auto Leading:"));
         let (lo, hi) = JustificationOptions::AUTO_LEADING;
         let leading = d.fields.get("autoLeading").and_then(|v| v.as_f64());
-        if let Some(v) = widgets::mixed_field(ui, ("justification", "autoLeading"), leading, "%", 0, 64.0) {
-            d.fields.insert("autoLeading".into(), json!(v.clamp(lo, hi)));
+        if let Some(v) = widgets::range_field(ui, ("justification", "autoLeading"), leading, lo..=hi, "%", 0, 64.0) {
+            d.fields.insert("autoLeading".into(), json!(v));
         }
         ui.end_row();
         label(ui, tl!("Single Word Justification:"));
