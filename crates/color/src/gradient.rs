@@ -538,6 +538,64 @@ impl GradientPaint {
             f.transform(a);
         }
     }
+    /// Is this gradient drawn as pixels rather than as a vector gradient (SVG and PDF draw such
+    /// gradients as images): a freeform gradient.
+    pub fn draws_as_pixels(&self) -> bool {
+        self.gradient.kind == GradientKind::Freeform
+    }
+    /// A linear or radial gradient placed on box `bounds` as a `cols` × `rows` grid of
+    /// unpremultiplied RGBA8 pixels over `area`, row by row, each sampled at its centre (colours
+    /// as `rgb` gives them, mixed as the renderer mixes them: [`Ramp`]).
+    pub fn pixels(&self, bounds: Rect, area: Rect, cols: u16, rows: u16, rgb: &dyn Fn(&Color) -> [f32; 3]) -> impl Iterator<Item = [u8; 4]> + use<> {
+        let (kind, geom) = (self.gradient.kind, self.resolve(bounds));
+        let ramp = Ramp::new(&self.gradient, rgb);
+        let (cw, ch) = (area.width() / f64::from(cols.max(1)), area.height() / f64::from(rows.max(1)));
+        let (x0, y0) = (area.x0, area.y0);
+        (0..u32::from(rows)).flat_map(move |j| (0..u32::from(cols)).map(move |i| (i, j))).map(move |(i, j)| {
+            let p = Point::new(x0 + (f64::from(i) + 0.5) * cw, y0 + (f64::from(j) + 0.5) * ch);
+            let c = ramp.at(geom.param_at(kind, p) as f32);
+            let level = |k: usize| (c[k].clamp(0.0, 1.0) * 255.0).round() as u8;
+            [level(0), level(1), level(2), level(3)]
+        })
+    }
+}
+
+/// A gradient's colours ready to be sampled pixel by pixel, in a colour space of the caller's
+/// (display RGB, or an ink's coverage): its stops, midpoints as stops (as
+/// [`Gradient::expanded_stops`]), each turned into that space once, with colour and opacity
+/// mixed linearly between them, each on its own (as the renderer's vector gradients mix them).
+pub struct Ramp {
+    stops: Vec<(f32, [f32; 4])>,
+}
+
+impl Ramp {
+    pub fn new(g: &Gradient, rgb: &dyn Fn(&Color) -> [f32; 3]) -> Self {
+        let stops = g
+            .expanded()
+            .map(|(t, c, o, _)| {
+                let [r, gr, b] = rgb(&c);
+                (t, [r, gr, b, o])
+            })
+            .collect();
+        Self { stops }
+    }
+    /// Unpremultiplied colour and opacity at `t`, padded past the ends (transparent black
+    /// without stops).
+    pub fn at(&self, t: f32) -> [f32; 4] {
+        let Some(&(t0, first)) = self.stops.first() else { return [0.0; 4] };
+        // Not after the first stop (or not a number): its colour.
+        if t.partial_cmp(&t0) != Some(std::cmp::Ordering::Greater) {
+            return first;
+        }
+        for w in self.stops.windows(2) {
+            let ((a, ca), (b, cb)) = (w[0], w[1]);
+            if t <= b {
+                let u = if b - a > 1e-9 { (t - a) / (b - a) } else { 1.0 };
+                return std::array::from_fn(|k| ca[k] + (cb[k] - ca[k]) * u);
+            }
+        }
+        self.stops.last().map_or([0.0; 4], |s| s.1)
+    }
 }
 
 #[cfg(test)]
@@ -827,5 +885,27 @@ mod tests {
         let mut h = GradientGeom { start: Point::new(0.0, 0.0), end: Point::new(0.0, 50.0), aspect: 0.5, focal: None };
         h.keep_focal_from(&before);
         assert!(close(h.focal.unwrap(), Point::new(0.0, -20.0)), "{h:?}");
+    }
+
+    #[test]
+    fn pixels_sample_the_ramp_at_each_cell_centre() {
+        // White → black left to right over a 10 × 2 box, a midpoint at 30% and a half-opaque end.
+        let mut g = GradientPaint::new(Gradient::default());
+        g.gradient.stops[0].midpoint = 0.3;
+        g.gradient.stops[1].opacity = 0.5;
+        let b = Rect::new(0.0, 0.0, 10.0, 2.0);
+        let px: Vec<[u8; 4]> = g.pixels(b, b, 10, 2, &Color::to_rgb).collect();
+        assert_eq!(px.len(), 20);
+        let ramp = Ramp::new(&g.gradient, &Color::to_rgb);
+        for (i, p) in px.iter().take(10).enumerate() {
+            let c = ramp.at((i as f32 + 0.5) / 10.0).map(|v| (v * 255.0).round() as u8);
+            assert_eq!(*p, c, "pixel {i}");
+        }
+        assert_eq!(px[3], px[13], "rows alike");
+        // The midpoint stop: grey at 30%; padded past the ends.
+        assert!((ramp.at(0.3)[0] - 0.5).abs() < 0.02, "{:?}", ramp.at(0.3));
+        assert_eq!(ramp.at(-1.0), [1.0, 1.0, 1.0, 1.0]);
+        assert_eq!(ramp.at(2.0), [0.0, 0.0, 0.0, 0.5]);
+        assert_eq!(ramp.at(f32::NAN), [1.0, 1.0, 1.0, 1.0]);
     }
 }
