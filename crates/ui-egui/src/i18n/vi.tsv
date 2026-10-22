@@ -5029,3 +5029,5 @@ axis	Y Axis	Trục Y
 @msg	`dither` applies to gradient fills (stroke: false)	`dither` áp dụng cho vùng tô chuyển sắc (stroke: false)
 @msg	`dither` applies to gradient fills (paint.setFill)	`dither` áp dụng cho vùng tô chuyển sắc (paint.setFill)
 @msg	`dither` must be true or false	`dither` phải là true hoặc false
+	Perceptual	Theo cảm nhận
+@msg	`method` must be classic or perceptual	`method` phải là classic hoặc perceptual
