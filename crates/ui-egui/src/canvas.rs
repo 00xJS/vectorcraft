@@ -281,6 +281,12 @@ pub fn show(app: &mut VectorcraftApp, ui: &mut Ui) {
     }
     let v = *app.view().unwrap_or(&View::default());
     let xf = Xf::new(rect, &v);
+    // While the view pans, zooms or turns under the pointer, the art under it isn't hit-tested.
+    let wait = hover_wait(&mut app.canvas.view_moved, ViewKey { rect, zoom: v.zoom, center: v.center, rotation: v.rotation }, ui.input(|i| i.time));
+    if let Some(secs) = wait {
+        ui.ctx().request_repaint_after_secs(secs as f32);
+    }
+    let hover_still = wait.is_none();
     let origin_preview = if app.ui.view.rulers && app.ui.screen_mode < 3 { ruler_input(app, ui, full, rect, &xf) } else { None };
     crate::document_drag::drop_on_canvas(app, &resp, &xf);
     panel_drop(app, ui, &resp, &xf);
@@ -604,7 +610,9 @@ pub fn show(app: &mut VectorcraftApp, ui: &mut Ui) {
     // Gap Options' Preview shows the gaps it finds.
     overlays.extend(crate::dialogs::live_paint_gaps::overlays(app));
     if app.ui.view.edges && !revolve_edit {
-        hover_highlight(app, &painter, &xf);
+        if hover_still {
+            hover_highlight(app, &painter, &xf);
+        }
         selection_overlay(app, &painter, &xf, overlays.iter().any(|o| matches!(o, Overlay::CurvePoint { .. })));
         mirror_axis_overlay(app, &painter, &xf);
         if app.ui.view.text_threads {
@@ -674,8 +682,7 @@ pub fn show(app: &mut VectorcraftApp, ui: &mut Ui) {
             None
         };
         // In Presentation Mode the pointer is the default one, with no tool cursor.
-        let tool_cursor =
-            (app.ui.screen_mode < 3).then(|| view_cursor.or_else(|| app.hover_doc.map(|p| app.session.cursor(p, mods(m, space), view_info))));
+        let tool_cursor = (app.ui.screen_mode < 3).then(|| view_cursor.or_else(|| hover_cursor(app, mods(m, space), view_info, hover_still)));
         let cur = if let Some(c) = tool_cursor.flatten() {
             let painter = ui.ctx().layer_painter(egui::LayerId::new(egui::Order::Tooltip, egui::Id::new("tool-cursor")));
             // The loaded place cursor carries the file's thumbnail.
@@ -717,9 +724,54 @@ pub fn show(app: &mut VectorcraftApp, ui: &mut Ui) {
     }
 }
 
+/// The active tool's cursor at the pointer, as `mods` make it. While the view moves (`still`
+/// false), the cursor the tool last gave for the same tool and keys stays: asking the tool again
+/// would hit-test the art under the pointer at every frame of the move (#2452).
+fn hover_cursor(app: &mut VectorcraftApp, mods: Mods, view: vectorcraft_engine::ViewInfo, still: bool) -> Option<Cursor> {
+    let id = app.session.tool_id();
+    if !still
+        && let Some((was, with, c)) = app.canvas.hover_cursor
+        && (was, with) == (id, mods)
+    {
+        return Some(c);
+    }
+    let c = app.session.cursor(app.hover_doc?, mods, view);
+    app.canvas.hover_cursor = Some((id, mods, c));
+    Some(c)
+}
+
 /// How long (seconds) the view must stay still before a canvas with
 /// [`crate::CanvasCache::waits_for_still`] set renders a heavy document again.
 pub const STILL_SECS: f64 = 0.2;
+
+/// How long (seconds) the view must stay still before the canvas hit-tests the art under the
+/// pointer again, for Object Highlighting and the tool's cursor. While the view pans, zooms or
+/// turns under a resting pointer, the document point under it changes every frame, and hit-testing
+/// detailed art each time slowed every frame of the move (#2452).
+pub const HOVER_STILL_SECS: f64 = 0.15;
+
+/// The view [`hover_wait`] watches: the canvas's rectangle and the view's zoom, centre and rotation.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct ViewKey {
+    rect: egui::Rect,
+    zoom: f64,
+    center: Point,
+    rotation: f64,
+}
+
+/// Note the view `key` at time `now` (seconds, egui's input time) → how many more seconds the
+/// canvas leaves the art under the pointer alone: the view changed less than [`HOVER_STILL_SECS`]
+/// ago. The first view noted counts as still.
+fn hover_wait(moved: &mut Option<(ViewKey, f64)>, key: ViewKey, now: f64) -> Option<f64> {
+    match moved {
+        Some((k, at)) if *k != key => (*k, *at) = (key, now),
+        Some(_) => {}
+        None => *moved = Some((key, f64::NEG_INFINITY)),
+    }
+    let waited = moved.map_or(f64::INFINITY, |(_, at)| now - at);
+    // The clock went back (a new egui context): don't wait for it to catch up.
+    (0.0..HOVER_STILL_SECS).contains(&waited).then_some(HOVER_STILL_SECS - waited)
+}
 
 /// Note that the canvas asks for `key` at time `now` (seconds, egui's input time) → how many more
 /// seconds it draws the frame `shown` reprojected instead of rendering `key`: while the last
@@ -6138,6 +6190,76 @@ mod tests {
         assert_eq!(outlines(&mut app), 0, "Pixel Preview on");
         app.run("view.pixelPreview", json!({})).unwrap();
         assert!(outlines(&mut app) > 0, "Pixel Preview off again");
+    }
+
+    /// #2452: while the view scrolls under a resting pointer, the art under it isn't hit-tested:
+    /// no hover outline, and the tool's last cursor stays. Once the view has been still for
+    /// [`HOVER_STILL_SECS`], the outline comes back without the pointer moving.
+    #[test]
+    fn a_moving_view_leaves_the_art_under_the_pointer_unhighlighted_until_it_stops() {
+        fn flat(s: &Shape, out: &mut Vec<Shape>) {
+            match s {
+                Shape::Vec(v) => v.iter().for_each(|s| flat(s, out)),
+                s => out.push(s.clone()),
+            }
+        }
+        let mut app = VectorcraftApp::new(Session::new(), Default::default());
+        app.session.execute("file.new", &json!({"width": 400, "height": 300})).unwrap();
+        let id = app.session.execute("shape.rectangle", &json!({"x": 0, "y": 0, "width": 400, "height": 300})).unwrap()["id"].as_u64().unwrap();
+        app.session.execute("select.none", &json!({})).unwrap();
+        let layer = egui::epaint::ColorMode::Solid(c32(app.session.active().unwrap().doc.layer_color(vectorcraft_doc::NodeId(id))));
+        let ctx = egui::Context::default();
+        let screen = egui::Rect::from_min_size(Pos2::ZERO, vec2(800.0, 600.0));
+        let mut time = 0.0;
+        let mut outlines = |app: &mut VectorcraftApp, events: Vec<egui::Event>, dt: f64| {
+            time += dt;
+            let mut out =
+                ctx.run_ui(egui::RawInput { time: Some(time), screen_rect: Some(screen), events, ..Default::default() }, |ui| show(app, ui));
+            out.textures_delta.clear();
+            let mut shapes = vec![];
+            out.shapes.iter().for_each(|c| flat(&c.shape, &mut shapes));
+            shapes.iter().filter(|s| matches!(s, Shape::Path(ps) if ps.stroke.width == 1.5 && ps.stroke.color == layer)).count()
+        };
+        outlines(&mut app, vec![], 0.0);
+        let at = app.canvas_rect.unwrap().center();
+        assert!(outlines(&mut app, vec![egui::Event::PointerMoved(at)], 0.016) > 0, "the art under the resting pointer is highlighted");
+        let wheel = |dy: f32| egui::Event::MouseWheel {
+            unit: egui::MouseWheelUnit::Point,
+            delta: vec2(0.0, dy),
+            phase: egui::TouchPhase::Move,
+            modifiers: Default::default(),
+        };
+        for k in 0..12 {
+            let before = app.view().unwrap().center;
+            let shown = outlines(&mut app, vec![wheel(if k % 2 == 0 { 4.0 } else { -4.0 })], 0.016);
+            assert_ne!(app.view().unwrap().center, before, "frame {k}: the wheel scrolls the view");
+            assert_eq!(shown, 0, "frame {k}: no hover outline while the view moves");
+        }
+        assert_eq!(outlines(&mut app, vec![], HOVER_STILL_SECS / 2.0), 0, "the view has only just stopped");
+        assert!(outlines(&mut app, vec![], HOVER_STILL_SECS) > 0, "still again: the outline comes back");
+        // Selected, the rectangle gives the move cursor near its top edge. Scrolled up past the
+        // pointer, it stays the move cursor until the view stops, then the arrow.
+        app.session.execute("select.all", &json!({})).unwrap();
+        outlines(&mut app, vec![egui::Event::PointerMoved(at - vec2(0.0, 200.0))], 0.016);
+        let cursor = |app: &VectorcraftApp| app.canvas.hover_cursor.map(|(_, _, c)| c);
+        assert_eq!(cursor(&app), Some(Cursor::Move));
+        for k in 0..12 {
+            let before = app.view().unwrap().center;
+            outlines(&mut app, vec![wheel(-80.0)], 0.016);
+            assert_ne!(app.view().unwrap().center, before, "frame {k}: the wheel scrolls the view");
+            assert_eq!(cursor(&app), Some(Cursor::Move), "frame {k}: the cursor stays while the view moves");
+        }
+        // The wheel's smooth scrolling runs on for some frames; then the view rests.
+        for _ in 0..200 {
+            let before = app.view().unwrap().center;
+            outlines(&mut app, vec![], 0.016);
+            if app.view().unwrap().center == before {
+                break;
+            }
+        }
+        assert_eq!(cursor(&app), Some(Cursor::Move), "the view has only just stopped");
+        outlines(&mut app, vec![], HOVER_STILL_SECS + 0.01);
+        assert_eq!(cursor(&app), Some(Cursor::Arrow), "still again: the pointer at {:?} is past the rectangle", app.hover_doc);
     }
 
     /// View › Snap to Glyph toggles through the View menu command (#3124).
