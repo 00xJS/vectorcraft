@@ -818,13 +818,17 @@ fn polar_grid_options_compound_fill_and_skew() {
     assert!(tips(&inward)[1..].iter().all(|t| t.x < 50.0), "counterclockwise of the top: {:?}", tips(&inward));
 }
 
-/// The grid options are checked: a skew is a number and a switch true or false, or the command
-/// fails without an undo step.
+/// The grid options are checked: a divider count or a skew is a number and a switch true or false,
+/// or the command fails without an undo step.
 #[test]
 fn grid_commands_reject_options_of_the_wrong_type() {
     let mut s = session();
     let size = json!({"x": 0, "y": 0, "width": 10, "height": 10});
     for (cmd, key, value) in [
+        ("shape.rectangularGrid", "rows", json!("3")),
+        ("shape.rectangularGrid", "columns", json!([4])),
+        ("shape.polarGrid", "concentric", json!(true)),
+        ("shape.polarGrid", "radial", json!("6")),
         ("shape.rectangularGrid", "rowSkew", json!("50")),
         ("shape.rectangularGrid", "columnSkew", json!(true)),
         ("shape.rectangularGrid", "frame", json!(1)),

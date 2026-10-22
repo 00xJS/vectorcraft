@@ -1257,6 +1257,23 @@ fn shape_commands_refuse_a_number_or_boolean_given_as_text() {
     s.execute("shape.arc", &json!({"x1": 0, "y1": 0, "x2": 50, "y2": 50, "closed": false})).unwrap();
 }
 
+/// `path.create` given path data (`d`) refuses a `closed` other than true, false or null, as it does
+/// with `anchors`, and draws nothing; with true, false or null it draws the path data, which alone
+/// decides whether the path is closed.
+#[test]
+fn path_create_with_path_data_refuses_closed_given_as_text() {
+    let mut s = session();
+    let d = "M0 0 L10 0 L10 10";
+    let calls = [json!("true"), json!(1), json!([true])].map(|v| not_a_switch("path.create", json!({"d": d, "closed": v}), "closed"));
+    let wrong = not_refused(&mut s, &calls);
+    assert!(wrong.is_empty(), "not refused: {wrong:#?}");
+    for closed in [json!(true), json!(false), json!(null)] {
+        let id = NodeId(s.execute("path.create", &json!({"d": d, "closed": closed})).unwrap()["id"].as_u64().unwrap());
+        let NodeKind::Path { path, .. } = &s.doc().unwrap().doc.node(id).unwrap().kind else { panic!("a path") };
+        assert_eq!((path.subpaths.len(), path.anchor_count(), path.is_closed()), (1, 3, false), "closed: {closed}");
+    }
+}
+
 /// #1824: with anchors selected with Direct Selection, the Transform panel's X/Y/W/H
 /// (`object.setBounds`) are the box around those anchors, and only they move or scale.
 #[test]

@@ -428,9 +428,11 @@ fn grid_group(s: &mut Session, label: &str, paths: Vec<PathData>, fill: bool) ->
     Ok(json!({ "id": id.0 }))
 }
 
-/// A grid's divider count `count` with its skew `key` in percent (0 when absent, clamped to
-/// ±[`shapes::GRID_SKEW_MAX`]).
+/// A grid's divider count `count` (an error unless it is a number or null; 5 unless it is a JSON
+/// integer of 0 or more, so 4.0 and 2.5 give 5; at most 999) with its skew `key` in percent (0 when
+/// absent, clamped to ±[`shapes::GRID_SKEW_MAX`]).
 fn dividers(p: &Value, count: &str, key: &str, cmd: &str) -> Result<(u32, f64)> {
+    check_numbers(p, &[count], cmd)?;
     let n = p.get(count).and_then(Value::as_u64).unwrap_or(5).min(999) as u32;
     let skew = match p.get(key) {
         None | Some(Value::Null) => 0.0,
@@ -488,6 +490,8 @@ pub(crate) fn anchor_from_json(v: &Value, cmd: &str) -> Result<Anchor> {
 }
 
 fn path_create(s: &mut Session, p: &Value) -> Result<Value> {
+    // Checked with `d` too, where the path data alone decides whether the path is closed.
+    let closed = switch_or(p, "closed", false, "path.create")?;
     let path = if let Some(d) = str_param(p, "d") {
         let bp = vectorcraft_geom::BezPath::from_svg(d).map_err(|e| bad("path.create", format!("bad path data: {e}")))?;
         PathData::from_bezpath(&bp)
@@ -502,7 +506,7 @@ fn path_create(s: &mut Session, p: &Value) -> Result<Value> {
         if anchors.is_empty() {
             return Err(bad("path.create", "need at least one anchor"));
         }
-        PathData::single(SubPath::new(anchors, switch_or(p, "closed", false, "path.create")?))
+        PathData::single(SubPath::new(anchors, closed))
     };
     let mut look = s.new_art_look(s.paint.fill.clone(), s.paint.stroke.clone(), s.paint.stroke_width);
     // Open paths drawn with a stroke of None would be invisible: mimic Illustrator and keep what the user set.
