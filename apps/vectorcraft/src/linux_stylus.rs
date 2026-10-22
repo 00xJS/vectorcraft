@@ -77,8 +77,6 @@ pub(crate) fn map_tablet_button(code: u16) -> Option<winit::event::MouseButton> 
     match code {
         BTN_STYLUS | BTN_STYLUS2 => Some(MouseButton::Right),
         BTN_STYLUS3 => Some(MouseButton::Middle),
-        // XInput2 on X11 often numbers the first barrel button 10 or 11.
-        10 | 11 => Some(MouseButton::Right),
         _ => None,
     }
 }
