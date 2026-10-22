@@ -307,6 +307,23 @@ impl PatternDef {
         }
         out
     }
+    /// Preview copies drawn before and after the centre tile in [`Self::preview_offsets_in_paint_order`],
+    /// for one dimmed composite each (the centre tile is drawn at full strength between them).
+    pub fn preview_offsets_dimmed_sides(&self) -> (Vec<Vec2>, Vec<Vec2>) {
+        let mut before = vec![];
+        let mut after = vec![];
+        let mut past_center = false;
+        for o in self.preview_offsets_in_paint_order() {
+            if o.x == 0.0 && o.y == 0.0 {
+                past_center = true;
+            } else if past_center {
+                after.push(o);
+            } else {
+                before.push(o);
+            }
+        }
+        (before, after)
+    }
     /// Instances covering `region` (document space) as plain nodes for a pattern painted with
     /// `paint_xf` (pattern space → document), fresh-id-less (id 0). Used by exporters and Distort
     /// Pattern Fills; Expand uses [`Self::instances_in_with`].
@@ -768,6 +785,9 @@ mod tests {
         d2.overlap = Overlap { right_in_front: true, bottom_in_front: true };
         assert!(close(*d2.preview_offsets_in_paint_order().last().unwrap(), Vec2::new(10.0, 10.0)));
         assert_eq!(def.preview_offsets_in_paint_order().len(), 9);
+        let (before, after) = def.preview_offsets_dimmed_sides();
+        assert_eq!(before.len() + after.len(), 8);
+        assert!(before.iter().all(|o| *o != Vec2::ZERO) && after.iter().all(|o| *o != Vec2::ZERO));
     }
 
     #[test]
