@@ -258,7 +258,7 @@ The scores are self-assessed from our code against public documentation;
 - reliable exchange of .ai files (layer structure in real files; proprietary editing data isn't written);
 - an interaction-fidelity pass covering every tool's modifiers and small behaviours;
 - 3D and Materials beyond the initial live Revolve (Extrude & Bevel, Inflate, Rotate, materials);
-- the Effect Gallery (all 57 Photoshop-style raster filters are available, approximated, under Artistic, Blur, Brush Strokes, Distort, Pixelate, Sharpen, Sketch, Stylize, Texture and Video);
+- filter thumbnails and a preview area inside the Effect Gallery (the gallery itself and all 57 Photoshop-style raster filters, approximated, are in);
 - CJK composition for vertical type (vertical type itself has initial support, with a Japanese interface);
 - scripting, and the rest of Variables (image and graph kinds, dataset import);
 - generative AI features.
