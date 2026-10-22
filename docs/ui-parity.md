@@ -19,6 +19,7 @@ Artboard Options forwards the active Artboard tool's Scale Artwork with Artboard
 
 | Date | Change | Summary |
 |---|---|---|
+| 2026-10-22 | minor | Reconcile upstream documentation after review F-3; preserve every dated revision and the original scaleArt runtime evidence without repeating completed jobs. |
 | 2026-10-22 | minor | Reconcile upstream documentation after review F-2; preserve every dated revision and the original scaleArt runtime evidence without repeating completed jobs. |
 | 2026-10-22 | minor | Reconcile subsequent upstream progress updates without changing the runtime or repeating completed evidence; retain every dated upstream and feature revision. |
 | 2026-10-22 | minor | Resynchronize newer upstream progress documentation using the same owned source/build cache; preserve every feature revision and the original scaleArt runtime evidence. |

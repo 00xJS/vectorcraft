@@ -19,6 +19,7 @@ Artboard Options forwards the active Artboard tool's Scale Artwork with Artboard
 
 | Date | Change | Summary |
 |---|---|---|
+| 2026-10-22 | minor | Reconcile upstream documentation after review F-3; preserve every dated revision and the original scaleArt runtime evidence without repeating completed jobs. |
 | 2026-10-22 | minor | Reconcile upstream documentation after review F-2; preserve every dated revision and the original scaleArt runtime evidence without repeating completed jobs. |
 | 2026-10-22 | minor | Reconcile subsequent upstream progress updates without changing the runtime or repeating completed evidence; retain every dated upstream and feature revision. |
 | 2026-10-22 | minor | Resynchronize newer upstream progress documentation using the same owned source/build cache; preserve every feature revision and the original scaleArt runtime evidence. |
@@ -52,7 +53,7 @@ stage ([ROADMAP.md](../ROADMAP.md)).
 | 5 | [G11 Correctness bugs in core tools](#g11-correctness-bugs-in-core-tools) | 8–15 | yes | [target-app-parity.md](target-app-parity.md) |
 | 6 | [G4 Advanced type](#g4-advanced-type) | 34–47 | core part | [type-parity.md](type-parity.md) |
 | 7 | [G12 Preferences and panels that don't act yet](#g12-preferences-and-panels-that-dont-act-yet) | 13–20 | yes | [ui-parity.md](ui-parity.md) |
-| 8 | [G2 Photoshop-style raster effects and the Effect Gallery](#g2-photoshop-style-raster-effects-and-the-effect-gallery) | 4–6 | no | [effects-parity.md](effects-parity.md) |
+| 8 | [G2 Photoshop-style raster effects and the Effect Gallery](#g2-photoshop-style-raster-effects-and-the-effect-gallery) | 1–2 | no | [effects-parity.md](effects-parity.md) |
 | 9 | [G13 Illustrator 2026 (30.x) additions](#g13-illustrator-2026-30x-additions) | 13–23 | no | [target-app-parity.md](target-app-parity.md) |
 | 9 | [G13 Illustrator 2026 (30.x) additions](#g13-illustrator-2026-30x-additions) | 14–24 | no | [target-app-parity.md](target-app-parity.md) |
 | 9 | [G13 Illustrator 2026 (30.x) additions](#g13-illustrator-2026-30x-additions) | 15–25 | no | [target-app-parity.md](target-app-parity.md) |
@@ -305,17 +306,18 @@ from G14 and the budget run of G15: **~170–270 h** one agent, ~50–80 h wall 
 ## G2 Photoshop-style raster effects and the Effect Gallery
 
 - **Done:** Effect › Texture › Texturizer › Load Texture… (stored grayscale `textureImage`, Loaded Texture in the Texture menu), matching Glass.
-- **Missing:** the Effect Gallery dialog; all 57 Photoshop-style filters are in the catalogue. Measured in
 - **Missing:** the Effect Gallery's filter thumbnails and a preview area inside the dialog ([Filter Gallery overview](https://helpx.adobe.com/photoshop/desktop/effects-filters/get-started-with-filters/filter-gallery.html)); all 57 Photoshop-style filters are in the catalogue. Measured in
+- **Missing:** the Effect Gallery dialog; all 57 Photoshop-style filters are in the catalogue. Measured in
   [effects-parity.md](effects-parity.md).
+- **Done:** the Effect Gallery (#2883): Effect › Effect Gallery… browses the Artistic, Brush Strokes, Distort, Sketch, Stylize and Texture filters, edits each filter's settings, builds an ordered stack (add, reorder, hide, remove) with a live canvas preview, and OK applies it as separate appearance effects in one undo step (`dialogs::effect_gallery::tests::stack_ok_is_one_undo_step`, `stack_preview_is_one_interaction`).
 - **Done:** Effect › Sketch › Conté Crayon (`sketch.conteCrayon`: Foreground Level, Background Level, Texture, Scaling, Relief, Light Direction, Invert; original visual approximation, defaults unverified), the last missing filter.
 - **Done:** the Effect Gallery (#2883): Effect › Effect Gallery… browses the Artistic, Brush Strokes, Distort, Sketch, Stylize and Texture filters, edits each filter's settings, builds an ordered stack (add, reorder, hide, remove) with a live canvas preview, and OK applies it as separate appearance effects in one undo step (`dialogs::effect_gallery::tests::stack_ok_is_one_undo_step`, `stack_preview_is_one_interaction`).
 - **Done:** Effect › Artistic › Colored Pencil (`artistic.coloredPencil`, pencil width, stroke pressure, paper brightness; original visual approximation).
 - **Done:** the pixel-filter pipeline and all 57 Photoshop-style filters (Artistic, Blur, Brush Strokes, Distort, Pixelate,
   Sharpen, Sketch, Stylize, Texture, Video), with live preview and editable native settings. Smart Blur supports Edge Only and Overlay Edge
   modes. Per-filter detail: [effects-parity.md](effects-parity.md).
-- **Estimate:** 4–6 h (the Effect Gallery).
 - **Estimate:** 1–2 h (Effect Gallery thumbnails and in-dialog preview).
+- **Estimate:** 4–6 h (the Effect Gallery).
 
 ## G13 Illustrator 2026 (30.x) additions
 
@@ -352,6 +354,11 @@ from G14 and the budget run of G15: **~170–270 h** one agent, ~50–80 h wall 
   perceptual mix with dither's noise (an image with the noise in SVG and PDF); a stroke has no noise.
 - **Missing (asked for by users, from earlier versions):** radial gradients in Image Trace's
   Gradients option, which traces linear ones only (draft #1849). Inside the estimate below.
+- **Partial (#2530):** tangent snapping to curves and perpendicular snapping to straight target
+  segments for drawn lines. Controls are saved under Preferences › Smart Guides › Geometric Guides
+  and available from Control bar › Snapping; both default to on. Existing-line endpoint editing and
+  other tool cases remain unverified. [Public source](https://helpx.adobe.com/illustrator/desktop/measure-and-align/plot-and-measure/snap-to-perpendicular.html).
+- **Missing:** gradient perceptual blending and gradient presets (30.0); remaining tangent/perpendicular snapping cases and the consolidated snapping options (30.0); artboard locking, artboard colors in exports and print, and managing
 - **Missing:** gradient presets (30.0); tangent and perpendicular
 - **Missing:** gradient perceptual blending and gradient presets (30.0); tangent and perpendicular
 - **Partial (#2530):** tangent snapping to curves and perpendicular snapping to straight target
@@ -496,8 +503,10 @@ separate. Scores and hours unchanged. [Behavior and command details](development
 
 | Date | Change | Summary |
 |---|---|---|
+| 2026-10-22 | minor | G8: stacked geometry effects make at most 2 million anchors of a path and about 8 million lines to draw: Roughen, Zig Zag, Free Distort, Twist, the warps and Transform build within it, and an effect that would still pass it is left out (#3578). No entry closed, estimates unchanged. |
 | 2026-10-22 | minor | G13: gradient Method (30.0), Classic or Perceptual, in the Gradient panel, on the canvas, in raster exports and as images in SVG and PDF exports (with Dither, a Perceptual fill takes its noise); G13 estimate 14–24 h → 13–23 h. |
 | 2026-10-22 | minor | G8: SVG images in SVG images share the depth cap (any data URL type usvg reads as SVG) and SVGZ images one 512 MB unpacking cap; past either, an image is left out with a warning (#3562, #3563). No entry closed, estimates unchanged. |
+| 2026-10-22 | minor | G2: the Effect Gallery shipped (#2883): Effect › Effect Gallery… browses the Artistic, Brush Strokes, Distort, Sketch, Stylize and Texture filters, edits each filter's settings, builds an ordered stack (add, reorder, hide, remove) with a live canvas preview, and OK applies it as separate appearance effects in one undo step; remaining: filter thumbnails and a preview area inside the dialog; G2 estimate 4–6 → 1–2 h; Raster effects 82% → 85% (power-user view 49% → 52%), estimated, a modest move because the named missing dialog landed without thumbnails or an in-dialog preview. |
 | 2026-10-22 | minor | G19: PDF export asks viewers to display the document title only when File Info has a Document Title or an explicit export title is supplied; untitled documents keep the PDF file name in the viewer title bar (#3646); scores and estimates unchanged. |
 | 2026-10-22 | minor | G4: colour emoji fonts with bitmap glyphs (`sbix`: Apple Color Emoji; `CBDT`: Noto Color Emoji) draw on the canvas and export: PDF Type 3 glyphs or images, SVG images with outlined text, EPS and legacy `.ai` images, Create Outlines images; COLR and OpenType SVG fonts remain; estimate unchanged. |
 | 2026-10-22 | minor | G13: gradient Dither (30.0) in the Gradient panel, on the canvas, in raster exports and as images in SVG and PDF exports; G13 estimate 15–25 h → 14–24 h. |
@@ -535,8 +544,8 @@ separate. Scores and hours unchanged. [Behavior and command details](development
 | 2026-10-18 | minor | Mirror Repeat shows its axis when selected (#2877): drag the line or center handle to move it, drag an end handle to rotate it (Shift: 45°), Escape cancels and each drag is one undo step. Engine and headless canvas gesture regressions passed; native move, rotation and Escape screenshots reviewed. Formatting, Clippy, WASM and repository checks passed; the undo label reuses translated Repeat Options. (#2877) Scores and hours unchanged. |
 | 2026-10-18 | minor | Bounding-box handles take priority where a selected Mirror Repeat axis crosses them; a Top-handle regression confirms scaling of the default repeat. Center and end handles retain their move and rotation behavior. G1 scope and estimate unchanged. |
 | 2026-10-19 | minor | G13: blend easing (#1124): Ease In / Ease Out and separate Color Ease In / Out in Blend Options, saved with the blend; on-canvas handles and easing in the Blend panel remain. Estimate unchanged |
-| 2026-10-17 | minor | G11: #722 fixed (PDF text slid on open where the file spaced its glyphs other than the font's metrics: kerning, word and character spacing, `TJ` adjustments, text rise, narrow vertical glyphs; justified text boxes stayed lines); estimate unchanged |
 | 2026-10-19 | minor | G13: tangent and perpendicular snapping for lines drawn from an anchor (Pen, Curvature, Line Segment, with Smart Guides on), View › Snapping with every snap option, and the `view.snapping` command (#2530); estimate unchanged |
+| 2026-10-17 | minor | G11: #722 fixed (PDF text slid on open where the file spaced its glyphs other than the font's metrics: kerning, word and character spacing, `TJ` adjustments, text rise, narrow vertical glyphs; justified text boxes stayed lines); estimate unchanged |
 | 2026-10-17 | minor | Blend spine Anchor Point conversions, selection/stacking priority and Shift regression coverage (#2544); scores and hours unchanged. Windows native canvas checks and screenshots reviewed in PR #2643. |
 | 2026-10-17 | minor | G12: Background Export progress dialog with Cancel and Continue in Background (#2564); no entry closed, estimates unchanged |
 | 2026-10-16 | minor | Native documents restore transparency grid visibility (#1968); save/open regression covers on/off, old files and SVG; scores and hours unchanged (estimated) |

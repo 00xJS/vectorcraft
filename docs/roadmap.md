@@ -19,6 +19,7 @@ Artboard Options forwards the active Artboard tool's Scale Artwork with Artboard
 
 | Date | Change | Summary |
 |---|---|---|
+| 2026-10-22 | minor | Reconcile upstream documentation after review F-3; preserve every dated revision and the original scaleArt runtime evidence without repeating completed jobs. |
 | 2026-10-22 | minor | Reconcile upstream documentation after review F-2; preserve every dated revision and the original scaleArt runtime evidence without repeating completed jobs. |
 | 2026-10-22 | minor | Reconcile subsequent upstream progress updates without changing the runtime or repeating completed evidence; retain every dated upstream and feature revision. |
 | 2026-10-22 | minor | Resynchronize newer upstream progress documentation using the same owned source/build cache; preserve every feature revision and the original scaleArt runtime evidence. |
@@ -63,8 +64,8 @@ Checked 2026-10-10 from the code, tests and open issues; no workflow fails, so V
 2. **`.ai` files from real users** (G9): layer structure (#951), guides (#779). 10–20 h.
 3. **Launch and stability** (G10): the Windows and Linux start-up reports. 20–35 h.
 4. **Core-tool bugs** (G11): Shape Builder regions (#937). Asset Export ghost borders closed (#983 / #1037). 8–15 h.
-5. **Raster effects** (G2) alongside: the Effect Gallery (every Photoshop-style filter is in), 4–6 h.
 5. **Raster effects** (G2) alongside: the Effect Gallery's filter thumbnails and in-dialog preview area (the gallery and every Photoshop-style filter are in), 1–2 h.
+5. **Raster effects** (G2) alongside: the Effect Gallery (every Photoshop-style filter is in), 4–6 h.
 
 ## Next
 
@@ -134,6 +135,7 @@ separate. Scores and hours unchanged. [Behavior and command details](development
 
 | Date | Change | Summary |
 |---|---|---|
+| 2026-10-22 | minor | G2: the Effect Gallery shipped (#2883): Effect › Effect Gallery… browses the Artistic, Brush Strokes, Distort, Sketch, Stylize and Texture filters, edits each filter's settings, builds an ordered stack (add, reorder, hide, remove) with a live canvas preview, and OK applies it as separate appearance effects in one undo step; remaining: filter thumbnails and a preview area inside the dialog; G2 estimate 4–6 → 1–2 h; Raster effects 82% → 85% (power-user view 49% → 52%), estimated, a modest move because the named missing dialog landed without thumbnails or an in-dialog preview. |
 | 2026-10-22 | minor | G2: Effect › Sketch › Conté Crayon (Foreground Level, Background Level, Texture, Scaling, Relief, Light Direction, Invert; a black crayon in the dark areas and a white one in the light areas on textured mid-grey paper; ranges and defaults unverified VectorCraft choices); measured Photoshop-style filters 57/57, the Effect Gallery remains (4–6 h). |
 | 2026-10-22 | minor | Recolor Artwork Edit chips scroll within the available screen height (#3416); small palettes retain their tab height; scores and estimates unchanged. |
 | 2026-10-22 | minor | Artboard Options honors Scale Artwork with Artboard for preset, orientation and typed-size changes; both Fits keep artwork stationary; scores and estimates unchanged. |
