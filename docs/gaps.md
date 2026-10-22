@@ -19,6 +19,7 @@ Artboard Options forwards the active Artboard tool's Scale Artwork with Artboard
 
 | Date | Change | Summary |
 |---|---|---|
+| 2026-10-22 | minor | Retain the latest upstream shared assessment and complete revision history after newer documentation landed; scaleArt runtime and its original evidence remain unchanged. |
 | 2026-10-22 | minor | Correct the scaleArt follow-up evidence description to match current upstream shared status and revision history; runtime, evidence, scores and estimates unchanged. |
 | 2026-10-22 | minor | Artboard Options honors Scale Artwork with Artboard for preset, orientation and typed-size changes; both Fits keep artwork stationary; scores and estimates unchanged. |
 | 2026-10-21 | minor | Correct current global-all-art and document/revision cache descriptions; mark target-scoped fitting as superseded 2026-10-20 history. Runtime, tests, scores and estimates unchanged. |
@@ -48,6 +49,8 @@ stage ([ROADMAP.md](../ROADMAP.md)).
 | 5 | [G11 Correctness bugs in core tools](#g11-correctness-bugs-in-core-tools) | 8–15 | yes | [target-app-parity.md](target-app-parity.md) |
 | 6 | [G4 Advanced type](#g4-advanced-type) | 34–47 | core part | [type-parity.md](type-parity.md) |
 | 7 | [G12 Preferences and panels that don't act yet](#g12-preferences-and-panels-that-dont-act-yet) | 13–20 | yes | [ui-parity.md](ui-parity.md) |
+| 8 | [G2 Photoshop-style raster effects and the Effect Gallery](#g2-photoshop-style-raster-effects-and-the-effect-gallery) | 4–6 | no | [effects-parity.md](effects-parity.md) |
+| 9 | [G13 Illustrator 2026 (30.x) additions](#g13-illustrator-2026-30x-additions) | 15–25 | no | [target-app-parity.md](target-app-parity.md) |
 | 8 | [G2 Photoshop-style raster effects and the Effect Gallery](#g2-photoshop-style-raster-effects-and-the-effect-gallery) | 1–2 | no | [effects-parity.md](effects-parity.md) |
 | 9 | [G13 Illustrator 2026 (30.x) additions](#g13-illustrator-2026-30x-additions) | 13–23 | no | [target-app-parity.md](target-app-parity.md) |
 | 10 | [G14 Pen hardware beyond Windows pressure](#g14-pen-hardware-beyond-windows-pressure) | 8–16 | macOS pressure | [hardware-parity.md](hardware-parity.md) |
@@ -298,14 +301,16 @@ from G14 and the budget run of G15: **~170–270 h** one agent, ~50–80 h wall 
 ## G2 Photoshop-style raster effects and the Effect Gallery
 
 - **Done:** Effect › Texture › Texturizer › Load Texture… (stored grayscale `textureImage`, Loaded Texture in the Texture menu), matching Glass.
+- **Missing:** the Effect Gallery dialog; all 57 Photoshop-style filters are in the catalogue. Measured in
 - **Missing:** the Effect Gallery's filter thumbnails and a preview area inside the dialog ([Filter Gallery overview](https://helpx.adobe.com/photoshop/desktop/effects-filters/get-started-with-filters/filter-gallery.html)); all 57 Photoshop-style filters are in the catalogue. Measured in
   [effects-parity.md](effects-parity.md).
-- **Done:** the Effect Gallery (#2883): Effect › Effect Gallery… browses the Artistic, Brush Strokes, Distort, Sketch, Stylize and Texture filters, edits each filter's settings, builds an ordered stack (add, reorder, hide, remove) with a live canvas preview, and OK applies it as separate appearance effects in one undo step (`dialogs::effect_gallery::tests::stack_ok_is_one_undo_step`, `stack_preview_is_one_interaction`).
 - **Done:** Effect › Sketch › Conté Crayon (`sketch.conteCrayon`: Foreground Level, Background Level, Texture, Scaling, Relief, Light Direction, Invert; original visual approximation, defaults unverified), the last missing filter.
+- **Done:** the Effect Gallery (#2883): Effect › Effect Gallery… browses the Artistic, Brush Strokes, Distort, Sketch, Stylize and Texture filters, edits each filter's settings, builds an ordered stack (add, reorder, hide, remove) with a live canvas preview, and OK applies it as separate appearance effects in one undo step (`dialogs::effect_gallery::tests::stack_ok_is_one_undo_step`, `stack_preview_is_one_interaction`).
 - **Done:** Effect › Artistic › Colored Pencil (`artistic.coloredPencil`, pencil width, stroke pressure, paper brightness; original visual approximation).
 - **Done:** the pixel-filter pipeline and all 57 Photoshop-style filters (Artistic, Blur, Brush Strokes, Distort, Pixelate,
   Sharpen, Sketch, Stylize, Texture, Video), with live preview and editable native settings. Smart Blur supports Edge Only and Overlay Edge
   modes. Per-filter detail: [effects-parity.md](effects-parity.md).
+- **Estimate:** 4–6 h (the Effect Gallery).
 - **Estimate:** 1–2 h (Effect Gallery thumbnails and in-dialog preview).
 
 ## G13 Illustrator 2026 (30.x) additions
@@ -485,6 +490,7 @@ separate. Scores and hours unchanged. [Behavior and command details](development
 
 | Date | Change | Summary |
 |---|---|---|
+| 2026-10-22 | minor | G2: Effect › Sketch › Conté Crayon (Foreground Level, Background Level, Texture, Scaling, Relief, Light Direction, Invert; a black crayon in the dark areas and a white one in the light areas on textured mid-grey paper; ranges and defaults unverified VectorCraft choices); measured Photoshop-style filters 57/57, the Effect Gallery remains (4–6 h). |
 | 2026-10-22 | minor | Affinity import: master pages, tables, paragraph formats, text scale, shadows, glows, outlines, overlays, underlines, strikethrough, CMYK pixel layers through the document's profile and editable embedded documents, text placed as Affinity places it (AF.5, from storytold/designcraft#291). No entry closed, estimates unchanged. Hostile files stay bounded: one budget for the whole read (layers, pixels, characters, table cells, embedded documents included), a work budget for overlays, capped master page copies, objects past `MAX_COORD` left out; the import fuzzer and limit tests cover tables, paragraphs, effects, overlays, master pages, CMYK pixels and embedded documents. |
 | 2026-10-22 | minor | Recolor Artwork Edit chips scroll within the available screen height (#3416); small palettes retain their tab height; scores and estimates unchanged. |
 | 2026-10-22 | minor | Artboard Options honors Scale Artwork with Artboard for preset, orientation and typed-size changes; both Fits keep artwork stationary; scores and estimates unchanged. |
