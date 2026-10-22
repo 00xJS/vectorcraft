@@ -1,7 +1,8 @@
 //! Artboard Options (double-click with the Artboard tool, double-click the tool, or the Artboards
 //! panel's options icon or menu): the artboard's fields, sizes parsed with units, its position
 //! from a reference point, and its background color (`color`: a color as the paint commands take
-//! it, or null for none). A new size also goes to the other selected artboards.
+//! it, or null for none). Sizing choices also go to the other selected artboards; fitting
+//! changes only the active artboard around stationary artwork.
 
 use serde_json::{Value, json};
 use vectorcraft_color::Color;
@@ -12,6 +13,7 @@ use vectorcraft_geom::{Point, Rect};
 use super::{DialogSpec, form, run_and_close};
 use crate::VectorcraftApp;
 use crate::panels::artboards::{FILLS, fill_colors, fill_name};
+use crate::panels::properties::ArtboardSizeChoice;
 use crate::panels::transform::{artboard_rect, reference_index, reference_locator};
 use crate::state::Dialog;
 
@@ -34,8 +36,24 @@ fn placed(d: &Dialog) -> Rect {
 fn body(app: &mut VectorcraftApp, ui: &mut egui::Ui, d: &mut Dialog) -> bool {
     let (unit, origin, refi) = (app.session.general_unit(), app.ruler_origin(), reference_index(ui));
     let (was, w0, h0) = (placed(d), d.f64("width", 0.0), d.f64("height", 0.0));
+    let bounds = [fit_bounds(app, ui.ctx(), false), fit_bounds(app, ui.ctx(), true)];
+    let (choice, fit) = crate::panels::properties::artboard_size_controls_with_fit(app, ui, w0, h0, bounds.map(|b| b.is_some()));
+    let picked = choice.is_some();
+    if let Some(choice) = choice {
+        if let Some((w, h)) = choice.size_for(w0, h0) {
+            set_rect(d, artboard_rect(was, refi, None, None, Some(w), Some(h), false));
+        }
+        remember_size_choice(d, choice);
+        d.fields.insert("__refx".into(), json!(refi % 3));
+        d.fields.insert("__refy".into(), json!(refi / 3));
+        d.fields.remove("__fit");
+    }
+    ui.add_space(8.0);
     form::grid_then(ui, d, unit, |ui, d| {
         let (w, h) = (d.f64("width", 0.0), d.f64("height", 0.0));
+        if !picked && (w != w0 || h != h0) {
+            d.fields.remove("__sizeChoice");
+        }
         let n = artboard_rect(was, refi, None, None, Some(w), Some(h), false);
         // Only the side that changed moves, so an untouched coordinate stays exactly as it was. The
         // reference point's column or row is kept for the other selected artboards (`confirm`).
@@ -47,6 +65,15 @@ fn body(app: &mut VectorcraftApp, ui: &mut egui::Ui, d: &mut Dialog) -> bool {
         }
         position_rows(ui, d, refi, unit, origin);
     });
+    // Apply a Fit after the ordinary size/reference-point grid: that grid must not replace
+    // the chosen artwork's position with one derived from the previous artboard rectangle.
+    if let Some(selection) = fit
+        && let Some(bounds) = bounds[usize::from(selection)]
+    {
+        set_rect(d, bounds);
+        d.fields.insert("__fit".into(), json!(true));
+        d.fields.remove("__sizeChoice");
+    }
     ui.add_space(8.0);
     let color = d.fields.get("color").and_then(color_value);
     let fills = fill_colors(app);
@@ -66,6 +93,59 @@ fn body(app: &mut VectorcraftApp, ui: &mut egui::Ui, d: &mut Dialog) -> bool {
         d.fields.insert("color".into(), c.as_ref().map_or(Value::Null, crate::panels::color_json));
     }
     false
+}
+
+/// Store document-coordinate draft bounds, retaining an editable minimum for zero-area art.
+fn set_rect(d: &mut Dialog, r: Rect) {
+    for (key, value) in [("x", r.x0), ("y", r.y0), ("width", r.width().max(1.0)), ("height", r.height().max(1.0))] {
+        d.fields.insert(key.into(), json!(value));
+    }
+}
+
+/// Preserve preset/orientation intent separately from typed dimensions for the selected set.
+fn remember_size_choice(d: &mut Dialog, choice: ArtboardSizeChoice) {
+    let value = match choice {
+        ArtboardSizeChoice::Preset(w, h) => json!({"preset": [w, h]}),
+        ArtboardSizeChoice::Orientation(landscape) => json!({"landscape": landscape}),
+    };
+    d.fields.insert("__sizeChoice".into(), value);
+}
+
+/// Validate stored sizing intent before deriving the other selected artboards' dimensions.
+fn size_choice(d: &Dialog) -> Option<ArtboardSizeChoice> {
+    let value = d.fields.get("__sizeChoice")?;
+    if let Some(landscape) = value.get("landscape").and_then(Value::as_bool) {
+        return Some(ArtboardSizeChoice::Orientation(landscape));
+    }
+    let preset = value.get("preset")?.as_array()?;
+    let (w, h) = (preset.first()?.as_f64()?, preset.get(1)?.as_f64()?);
+    (w.is_finite() && h.is_finite() && w > 0.0 && h > 0.0).then_some(ArtboardSizeChoice::Preset(w, h))
+}
+
+#[derive(Clone)]
+struct ArtworkFitBounds {
+    key: (u64, u64),
+    bounds: Option<Rect>,
+}
+
+/// Artwork fitting includes all drawn artwork, even outside every artboard; selection uses
+/// the shared selection cache. Draft/target geometry never restricts membership. Global artwork
+/// bounds are cached only for the active document and its revision.
+fn fit_bounds(app: &mut VectorcraftApp, ctx: &egui::Context, selection: bool) -> Option<Rect> {
+    if selection {
+        return app.selection_bounds();
+    }
+    let st = app.session.active()?;
+    let key = (st.uid, st.revision);
+    let id = egui::Id::new("artboard-options-artwork-fit-bounds");
+    if let Some(cached) = ctx.data_mut(|data| data.get_temp::<ArtworkFitBounds>(id))
+        && cached.key == key
+    {
+        return cached.bounds;
+    }
+    let bounds = vectorcraft_render::encode::art_bounds(&st.doc);
+    ctx.data_mut(|data| data.insert_temp(id, ArtworkFitBounds { key, bounds }));
+    bounds
 }
 
 /// The X and Y rows: where reference point `refi` lies, counted from the ruler origin `origin`,
@@ -119,10 +199,12 @@ pub fn open(app: &mut VectorcraftApp) -> Result<Value, String> {
     Ok(json!({ "dialog": KIND }))
 }
 
-/// OK sets the artboard's fields. A Width or Height that differs from the artboard's also goes to
-/// the other selected artboards (when this one is among them), each resized about the reference
+/// OK sets the artboard's fields. A preset or orientation choice applies separately to each
+/// selected artboard; a typed Width or Height that differs also goes to the others (when this
+/// one is among them), each resized about the reference
 /// point the form's last Width or Height change used (fields `__refx` and `__refy`, its column and
-/// row; the top-left corner when the form set none), all in one undo step.
+/// row; the top-left corner when the form set none), all in one undo step. Fitting applies only
+/// to this artboard and never moves its artwork.
 fn confirm(app: &mut VectorcraftApp, d: &Dialog) -> Result<Value, String> {
     if d.bool("new") {
         return confirm_new(app, d);
@@ -142,17 +224,25 @@ fn confirm(app: &mut VectorcraftApp, d: &Dialog) -> Result<Value, String> {
     let (w, h) = (changed("width", was.map(|r| r.width())), changed("height", was.map(|r| r.height())));
     let part = |k: &str| d.fields.get(k).and_then(Value::as_u64).map_or(0, |v| v.min(2) as usize);
     let refi = part("__refy") * 3 + part("__refx");
+    let choice = size_choice(d);
     let mut entries = vec![];
-    if w.is_some() || h.is_some() {
+    if !d.bool("__fit") && (choice.is_some() || w.is_some() || h.is_some()) {
         for i in crate::panels::artboards::resized_with(app, index).into_iter().filter(|i| *i != index) {
             if let Some(r) = app.session.active().and_then(|st| st.doc.artboards.get(i)).map(|a| a.rect) {
+                let (w, h) = if let Some(choice) = choice {
+                    let Some((w, h)) = choice.size_for(r.width(), r.height()) else { continue };
+                    (Some(w), Some(h))
+                } else {
+                    (w, h)
+                };
                 let n = artboard_rect(r, refi, None, None, w, h, false);
                 entries.push(json!({"index": i, "x": n.x0, "y": n.y0, "width": n.width(), "height": n.height()}));
             }
         }
     }
     entries.insert(0, p);
-    let common = json!({"moveArt": crate::panels::artboards::move_art(app)});
+    // Fitting changes the artboard around existing art; it must never move that art.
+    let common = json!({"moveArt": !d.bool("__fit") && crate::panels::artboards::move_art(app)});
     let p = crate::panels::artboards::set_props_params(common, entries).ok_or("no artboard")?;
     run_and_close(app, "artboard.setProps", p)
 }

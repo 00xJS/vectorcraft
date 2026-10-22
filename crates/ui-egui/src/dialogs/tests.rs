@@ -1792,3 +1792,400 @@ fn polar_grid_shared_cancel_reopen_zero_counts_and_failed_creation() {
     assert_eq!(app.session.tool_options_of("polarGrid"), options);
     assert_eq!(app.session.doc().unwrap().doc, before);
 }
+
+/// Open the real Preset menu before choosing a Fit; these actions are no longer body buttons.
+fn artboard_fit_preset_at(frames: &mut Frames, app: &mut VectorcraftApp, label: &str) -> egui::Pos2 {
+    let texts = frames.texts(app);
+    assert!(texts.iter().all(|(t, _)| !matches!(t.as_str(), "Fit to Artwork Bounds" | "Fit to Selected Art")), "Fit lives only in Preset");
+    let row = texts.iter().find(|(t, _)| t == "Preset:").unwrap().1;
+    let combo = frames.ctx.viewport(|vp| {
+        vp.prev_pass
+            .widgets
+            .layers()
+            .flat_map(|(_, widgets)| widgets.iter())
+            .filter(|w| w.sense.senses_click() && w.rect.y_range().contains(row.center().y) && w.rect.left() > row.right())
+            .map(|w| w.rect)
+            .min_by(|a, b| a.left().total_cmp(&b.left()))
+            .unwrap()
+            .center()
+    });
+    frames.press(app, combo, true);
+    frames.press(app, combo, false);
+    frames.texts(app).into_iter().find(|(text, _)| text.trim() == label).unwrap().1.center()
+}
+
+#[test]
+fn artboard_options_fit_drafts_cancel_and_apply_without_moving_art() {
+    for selected in [false, true] {
+        let mut app = app();
+        app.run("shape.rectangle", json!({"x":30,"y":40,"width":80,"height":60})).unwrap();
+        app.run("paint.setStroke", json!({"none":true})).unwrap();
+        let before = app.session.doc().unwrap().doc.clone();
+        for apply in [false, true] {
+            artboard_options::open(&mut app).unwrap();
+            let mut frames = Frames::new();
+            let label = if selected { "Fit to Selected Art" } else { "Fit to Artwork Bounds" };
+            let at = artboard_fit_preset_at(&mut frames, &mut app, label);
+            frames.press(&mut app, at, true);
+            frames.press(&mut app, at, false);
+            assert_eq!(app.session.doc().unwrap().doc, before, "draft only");
+            if !apply {
+                cancel(&mut app);
+                continue;
+            }
+            confirm(&mut app).unwrap();
+            assert_eq!(app.session.doc().unwrap().doc.layers, before.layers, "art stays in place");
+            assert_eq!(app.session.doc().unwrap().doc.artboards[0].rect, vectorcraft_geom::Rect::new(30.0, 40.0, 110.0, 100.0));
+            app.run("edit.undo", json!({})).unwrap();
+            assert_eq!(app.session.doc().unwrap().doc, before);
+        }
+    }
+}
+
+#[test]
+fn artboard_options_shared_preset_drafts_and_resizes_selected_boards_in_their_orientations() {
+    let mut app = app();
+    app.run("file.new", json!({"width":200,"height":100,"artboards":3})).unwrap();
+    app.run("artboard.setProps", json!({"index":2,"width":150,"height":300})).unwrap();
+    app.select_tool("artboard");
+    crate::panels::artboards::select(&mut app, 0);
+    app.session.set_tool_option("selected", &json!([0, 2]));
+    let before = app.session.doc().unwrap().doc.clone();
+    for apply in [false, true] {
+        artboard_options::open(&mut app).unwrap();
+        let mut frames = Frames::new();
+        let at = |texts: &[(String, egui::Rect)], label: &str| {
+            texts.iter().find(|(t, _)| t.trim() == label).map(|(_, r)| r.center()).unwrap_or_else(|| panic!("no {label:?} in {texts:?}"))
+        };
+        let custom = at(&frames.texts(&mut app), "Custom");
+        frames.press(&mut app, custom, true);
+        frames.press(&mut app, custom, false);
+        let print = at(&frames.texts(&mut app), "Print");
+        frames.run(&mut app, vec![egui::Event::PointerMoved(print)]);
+        let letter = at(&frames.texts(&mut app), "Letter");
+        frames.press(&mut app, letter, true);
+        frames.press(&mut app, letter, false);
+        assert_eq!(app.session.doc().unwrap().doc, before, "preset is a draft until OK");
+        let d = app.ui.dialog.as_ref().unwrap();
+        assert_eq!((d.f64("width", 0.0), d.f64("height", 0.0)), (792.0, 612.0));
+        if !apply {
+            cancel(&mut app);
+            assert_eq!(app.session.doc().unwrap().doc, before);
+            continue;
+        }
+        let steps = app.session.doc().unwrap().history.undo.len();
+        confirm(&mut app).unwrap();
+        let doc = &app.session.doc().unwrap().doc;
+        assert_eq!((doc.artboards[0].rect.width(), doc.artboards[0].rect.height()), (792.0, 612.0));
+        assert_eq!((doc.artboards[2].rect.width(), doc.artboards[2].rect.height()), (612.0, 792.0));
+        assert_eq!(doc.artboards[1], before.artboards[1], "unselected board stays unchanged");
+        assert_eq!(app.session.doc().unwrap().history.undo.len(), steps + 1);
+        app.run("edit.undo", json!({})).unwrap();
+        assert_eq!(app.session.doc().unwrap().doc, before);
+    }
+}
+
+#[test]
+fn artboard_options_orientation_applies_to_other_selected_boards_when_active_is_already_portrait() {
+    let mut app = app();
+    app.run("file.new", json!({"width":100,"height":200,"artboards":3})).unwrap();
+    app.run("artboard.setProps", json!({"index":2,"width":300,"height":150})).unwrap();
+    app.select_tool("artboard");
+    crate::panels::artboards::select(&mut app, 0);
+    app.session.set_tool_option("selected", &json!([0, 2]));
+    let before = app.session.doc().unwrap().doc.clone();
+    artboard_options::open(&mut app).unwrap();
+    let mut frames = Frames::new();
+    let texts = frames.texts(&mut app);
+    let row = texts.iter().find(|(t, _)| t == "Preset:").unwrap().1;
+    let mut buttons: Vec<egui::Rect> = frames.ctx.viewport(|vp| {
+        vp.prev_pass
+            .widgets
+            .layers()
+            .flat_map(|(_, w)| w.iter())
+            .filter(|w| w.sense.senses_click() && w.rect.y_range().contains(row.center().y) && w.rect.left() > row.right())
+            .map(|w| w.rect)
+            .collect()
+    });
+    buttons.sort_by(|a, b| a.left().total_cmp(&b.left()));
+    let portrait = buttons[buttons.len() - 2].center();
+    frames.press(&mut app, portrait, true);
+    frames.press(&mut app, portrait, false);
+    assert_eq!(app.session.doc().unwrap().doc, before, "orientation remains a draft");
+    confirm(&mut app).unwrap();
+    let doc = &app.session.doc().unwrap().doc;
+    assert_eq!(doc.artboards[0], before.artboards[0], "active board was already portrait");
+    assert_eq!((doc.artboards[2].rect.width(), doc.artboards[2].rect.height()), (150.0, 300.0));
+    assert_eq!(doc.artboards[1], before.artboards[1]);
+    app.run("edit.undo", json!({})).unwrap();
+    assert_eq!(app.session.doc().unwrap().doc, before);
+}
+
+#[test]
+fn artboard_options_fit_changes_only_active_board_even_with_an_artboard_multiselection() {
+    let mut app = app();
+    app.run("file.new", json!({"width":200,"height":200,"artboards":3})).unwrap();
+    app.run("shape.rectangle", json!({"x":30,"y":40,"width":80,"height":60})).unwrap();
+    app.run("paint.setStroke", json!({"none":true})).unwrap();
+    app.select_tool("artboard");
+    crate::panels::artboards::select(&mut app, 0);
+    app.session.set_tool_option("selected", &json!([0, 2]));
+    let before = app.session.doc().unwrap().doc.clone();
+    artboard_options::open(&mut app).unwrap();
+    let mut frames = Frames::new();
+    let fit = artboard_fit_preset_at(&mut frames, &mut app, "Fit to Artwork Bounds");
+    frames.press(&mut app, fit, true);
+    frames.press(&mut app, fit, false);
+    assert_eq!(app.session.doc().unwrap().doc, before, "fit remains a draft");
+    confirm(&mut app).unwrap();
+    let doc = &app.session.doc().unwrap().doc;
+    assert_eq!(doc.artboards[0].rect, vectorcraft_geom::Rect::new(30.0, 40.0, 110.0, 100.0));
+    assert_eq!(&doc.artboards[1..], &before.artboards[1..]);
+    assert_eq!(doc.layers, before.layers, "fitting never moves artwork");
+    app.run("edit.undo", json!({})).unwrap();
+    assert_eq!(app.session.doc().unwrap().doc, before);
+}
+
+#[test]
+fn artboard_options_fit_artwork_ignores_draft_membership_and_invalidates_on_edits() {
+    let mut app = app();
+    app.run("file.new", json!({"width":400,"height":320})).unwrap();
+    app.run("shape.rectangle", json!({"x":30,"y":40,"width":80,"height":60})).unwrap();
+    app.run("paint.setStroke", json!({"none":true})).unwrap();
+    let boards = app.session.doc().unwrap().doc.artboards.clone();
+    artboard_options::open(&mut app).unwrap();
+    let dialog = app.ui.dialog.as_mut().unwrap();
+    dialog.fields.insert("width".into(), json!(1));
+    dialog.fields.insert("height".into(), json!(1));
+    let mut frames = Frames::new();
+    let at = artboard_fit_preset_at(&mut frames, &mut app, "Fit to Artwork Bounds");
+    frames.press(&mut app, at, true);
+    frames.press(&mut app, at, false);
+    let dialog = app.ui.dialog.as_ref().unwrap();
+    assert_eq!(
+        (dialog.f64("x", 0.0), dialog.f64("y", 0.0), dialog.f64("width", 0.0), dialog.f64("height", 0.0)),
+        (30.0, 40.0, 80.0, 60.0),
+        "Fit queries all artwork, not the shrunken draft"
+    );
+    assert_eq!(app.session.doc().unwrap().doc.artboards, boards);
+    // A remote command can edit the document while the modal remains open.
+    app.run("shape.rectangle", json!({"x":600,"y":120,"width":40,"height":30})).unwrap();
+    app.run("paint.setStroke", json!({"none":true})).unwrap();
+    let layers = app.session.doc().unwrap().doc.layers.clone();
+    let at = artboard_fit_preset_at(&mut frames, &mut app, "Fit to Artwork Bounds");
+    frames.press(&mut app, at, true);
+    frames.press(&mut app, at, false);
+    let dialog = app.ui.dialog.as_ref().unwrap();
+    assert_eq!(
+        (dialog.f64("x", 0.0), dialog.f64("y", 0.0), dialog.f64("width", 0.0), dialog.f64("height", 0.0)),
+        (30.0, 40.0, 610.0, 110.0),
+        "A document revision must invalidate cached fit bounds"
+    );
+    confirm(&mut app).unwrap();
+    assert_eq!(app.session.doc().unwrap().doc.layers, layers);
+    assert_eq!(app.session.doc().unwrap().doc.artboards[0].rect, vectorcraft_geom::Rect::new(30.0, 40.0, 640.0, 150.0));
+    app.run("edit.undo", json!({})).unwrap();
+    assert_eq!(app.session.doc().unwrap().doc.artboards, boards);
+    assert_eq!(app.session.doc().unwrap().doc.layers, layers);
+    app.run("edit.redo", json!({})).unwrap();
+    assert_eq!(app.session.doc().unwrap().doc.artboards[0].rect, vectorcraft_geom::Rect::new(30.0, 40.0, 640.0, 150.0));
+    assert_eq!(app.session.doc().unwrap().doc.layers, layers);
+}
+
+#[test]
+fn artboard_options_fit_artwork_includes_all_boards_and_is_independent_of_target() {
+    let mut app = app();
+    app.run("file.new", json!({"width":400,"height":320,"artboards":2})).unwrap();
+    let boards = app.session.doc().unwrap().doc.artboards.clone();
+    for (index, width, height) in [(0, 80.0, 60.0), (1, 40.0, 30.0)] {
+        let rect = boards[index].rect;
+        app.run("shape.rectangle", json!({"x":rect.x0+30.0,"y":rect.y0+40.0,"width":width,"height":height})).unwrap();
+        app.run("paint.setStroke", json!({"none":true})).unwrap();
+    }
+    let layers = app.session.doc().unwrap().doc.layers.clone();
+    let expected =
+        vectorcraft_geom::Rect::new(boards[0].rect.x0 + 30.0, boards[0].rect.y0 + 40.0, boards[0].rect.x0 + 110.0, boards[0].rect.y0 + 100.0).union(
+            vectorcraft_geom::Rect::new(boards[1].rect.x0 + 30.0, boards[1].rect.y0 + 40.0, boards[1].rect.x0 + 70.0, boards[1].rect.y0 + 70.0),
+        );
+    app.select_tool("artboard");
+    let mut frames = Frames::new();
+    for index in [0, 1, 0] {
+        crate::panels::artboards::select(&mut app, index);
+        artboard_options::open(&mut app).unwrap();
+        let at = artboard_fit_preset_at(&mut frames, &mut app, "Fit to Artwork Bounds");
+        frames.press(&mut app, at, true);
+        frames.press(&mut app, at, false);
+        let dialog = app.ui.dialog.as_ref().unwrap();
+        assert_eq!(
+            (dialog.f64("x", 0.0), dialog.f64("y", 0.0), dialog.f64("width", 0.0), dialog.f64("height", 0.0)),
+            (expected.x0, expected.y0, expected.width(), expected.height())
+        );
+        cancel(&mut app);
+        assert_eq!(app.session.doc().unwrap().doc.layers, layers);
+        assert_eq!(app.session.doc().unwrap().doc.artboards, boards);
+    }
+}
+
+#[test]
+fn artboard_options_fit_artwork_new_board_includes_art_outside_its_draft() {
+    let mut app = app();
+    app.run("file.new", json!({"width":400,"height":320})).unwrap();
+    app.run("shape.rectangle", json!({"x":450,"y":40,"width":80,"height":60})).unwrap();
+    app.run("paint.setStroke", json!({"none":true})).unwrap();
+    app.run("shape.rectangle", json!({"x":30,"y":170,"width":20,"height":20})).unwrap();
+    app.run("paint.setStroke", json!({"none":true})).unwrap();
+    let boards = app.session.doc().unwrap().doc.artboards.clone();
+    let layers = app.session.doc().unwrap().doc.layers.clone();
+    app.run("ui.newArtboard", json!({})).unwrap();
+    assert!(app.ui.dialog.as_ref().unwrap().bool("new"));
+    let mut frames = Frames::new();
+    let at = artboard_fit_preset_at(&mut frames, &mut app, "Fit to Artwork Bounds");
+    frames.press(&mut app, at, true);
+    frames.press(&mut app, at, false);
+    let dialog = app.ui.dialog.as_ref().unwrap();
+    assert_eq!((dialog.f64("x", 0.0), dialog.f64("y", 0.0), dialog.f64("width", 0.0), dialog.f64("height", 0.0)), (30.0, 40.0, 500.0, 150.0));
+    confirm(&mut app).unwrap();
+    let after = app.session.doc().unwrap().doc.artboards.clone();
+    assert_eq!(after.len(), 2);
+    assert_eq!(after[0], boards[0]);
+    assert_eq!(after[1].rect, vectorcraft_geom::Rect::new(30.0, 40.0, 530.0, 190.0));
+    assert_eq!(app.session.doc().unwrap().doc.layers, layers);
+    app.run("edit.undo", json!({})).unwrap();
+    assert_eq!(app.session.doc().unwrap().doc.artboards, boards);
+    assert_eq!(app.session.doc().unwrap().doc.layers, layers);
+    app.run("edit.redo", json!({})).unwrap();
+    assert_eq!(app.session.doc().unwrap().doc.artboards, after);
+    assert_eq!(app.session.doc().unwrap().doc.layers, layers);
+}
+
+/// Fit and background color share one draft and one undo step for existing and new boards.
+#[test]
+fn artboard_options_fit_and_background_color_coexist_through_cancel_undo_and_redo() {
+    for new in [false, true] {
+        for apply in [false, true] {
+            let mut app = app();
+            app.run("file.new", json!({"width":400,"height":320})).unwrap();
+            app.run("artboard.setProps", json!({"index":0,"color":"#336699"})).unwrap();
+            let x = if new { 450.0 } else { 30.0 };
+            app.run("shape.rectangle", json!({"x":x,"y":40,"width":80,"height":60})).unwrap();
+            app.run("paint.setStroke", json!({"none":true})).unwrap();
+            let before = app.session.doc().unwrap().doc.clone();
+            let steps = app.session.doc().unwrap().history.undo.len();
+            if new {
+                app.run("ui.newArtboard", json!({})).unwrap();
+            } else {
+                artboard_options::open(&mut app).unwrap();
+            }
+            let labels = crate::tests_labels::painted_text(&mut app, |app, ui| show(app, ui.ctx()));
+            assert!(labels.contains("Background Color:") && labels.contains("Preset:") && !labels.contains("Fit to Artwork Bounds"), "{labels}");
+            app.ui.dialog.as_mut().unwrap().fields.insert("color".into(), json!("#c05030"));
+            let mut frames = Frames::new();
+            let fit = artboard_fit_preset_at(&mut frames, &mut app, "Fit to Artwork Bounds");
+            frames.press(&mut app, fit, true);
+            frames.press(&mut app, fit, false);
+            assert_eq!(app.ui.dialog.as_ref().unwrap().fields["color"], json!("#c05030"));
+            assert_eq!(app.session.doc().unwrap().doc, before, "both changes remain a draft");
+            if !apply {
+                cancel(&mut app);
+                assert_eq!(app.session.doc().unwrap().doc, before);
+                assert_eq!(app.session.doc().unwrap().history.undo.len(), steps);
+                continue;
+            }
+            confirm(&mut app).unwrap();
+            let after = app.session.doc().unwrap().doc.clone();
+            let board = &after.artboards[usize::from(new)];
+            assert_eq!(board.rect, vectorcraft_geom::Rect::new(x, 40.0, x + 80.0, 100.0));
+            assert_eq!(board.color.map(|c| c.to_hex()).as_deref(), Some("#c05030"));
+            assert_eq!(after.layers, before.layers, "fitting never moves the art");
+            if new {
+                assert_eq!(after.artboards[0], before.artboards[0]);
+            }
+            assert_eq!(app.session.doc().unwrap().history.undo.len(), steps + 1);
+            app.run("edit.undo", json!({})).unwrap();
+            assert_eq!(app.session.doc().unwrap().doc, before);
+            app.run("edit.redo", json!({})).unwrap();
+            assert_eq!(app.session.doc().unwrap().doc, after);
+        }
+    }
+}
+
+/// Moving only the board, with no resize, must not translate its art even when Move Artwork is on.
+#[test]
+fn artboard_options_position_only_fit_keeps_art_with_move_art_enabled() {
+    let mut app = app();
+    app.run("file.new", json!({"width":80,"height":60})).unwrap();
+    app.run("shape.rectangle", json!({"x":10,"y":10,"width":20,"height":20})).unwrap();
+    app.run("paint.setStroke", json!({"none":true})).unwrap();
+    app.run("shape.rectangle", json!({"x":70,"y":50,"width":20,"height":20})).unwrap();
+    app.run("paint.setStroke", json!({"none":true})).unwrap();
+    app.run("tool.setOption", json!({"tool":"artboard", "values":{"moveArt":true}})).unwrap();
+    assert!(crate::panels::artboards::move_art(&app));
+    let before = app.session.doc().unwrap().doc.clone();
+    artboard_options::open(&mut app).unwrap();
+    let mut frames = Frames::new();
+    let at = artboard_fit_preset_at(&mut frames, &mut app, "Fit to Artwork Bounds");
+    frames.press(&mut app, at, true);
+    frames.press(&mut app, at, false);
+    confirm(&mut app).unwrap();
+    let after = app.session.doc().unwrap().doc.clone();
+    assert_eq!(after.artboards[0].rect, vectorcraft_geom::Rect::new(10.0, 10.0, 90.0, 70.0));
+    assert_eq!(after.layers, before.layers, "position-only fitting never moves art");
+    app.run("edit.undo", json!({})).unwrap();
+    assert_eq!(app.session.doc().unwrap().doc, before);
+    app.run("edit.redo", json!({})).unwrap();
+    assert_eq!(app.session.doc().unwrap().doc, after);
+}
+
+#[test]
+fn artboard_options_fit_preset_disabled_without_art_or_selection() {
+    for has_art in [false, true] {
+        for label in ["Fit to Artwork Bounds", "Fit to Selected Art"] {
+            if has_art && label == "Fit to Artwork Bounds" {
+                continue;
+            }
+            let mut app = app();
+            if has_art {
+                app.run("shape.rectangle", json!({"x":600,"y":40,"width":80,"height":60})).unwrap();
+                app.run("select.none", json!({})).unwrap();
+            }
+            let before = app.session.doc().unwrap().doc.clone();
+            artboard_options::open(&mut app).unwrap();
+            let mut frames = Frames::new();
+            let at = artboard_fit_preset_at(&mut frames, &mut app, label);
+            frames.press(&mut app, at, true);
+            frames.press(&mut app, at, false);
+            let draft = app.ui.dialog.as_ref().unwrap();
+            assert_ne!(draft.fields.get("__fit"), Some(&json!(true)), "disabled {label} must not become a fit draft");
+            assert_eq!(app.session.doc().unwrap().doc, before);
+            cancel(&mut app);
+            assert_eq!(app.session.doc().unwrap().doc, before);
+        }
+    }
+}
+
+#[test]
+fn artboard_options_selected_fit_spans_other_boards_and_off_board_art() {
+    let mut app = app();
+    app.run("file.new", json!({"width":200,"height":200,"artboards":3})).unwrap();
+    for (x, y, w, h) in [(30, 40, 80, 60), (1000, 500, 50, 40)] {
+        app.run("shape.rectangle", json!({"x":x,"y":y,"width":w,"height":h})).unwrap();
+        app.run("paint.setStroke", json!({"none":true})).unwrap();
+    }
+    app.run("select.all", json!({})).unwrap();
+    let before = app.session.doc().unwrap().doc.clone();
+    artboard_options::open(&mut app).unwrap();
+    let mut frames = Frames::new();
+    let at = artboard_fit_preset_at(&mut frames, &mut app, "Fit to Selected Art");
+    frames.press(&mut app, at, true);
+    frames.press(&mut app, at, false);
+    assert_eq!(app.session.doc().unwrap().doc, before, "selection fit is a draft");
+    confirm(&mut app).unwrap();
+    let after = app.session.doc().unwrap().doc.clone();
+    assert_eq!(after.artboards[0].rect, vectorcraft_geom::Rect::new(30.0, 40.0, 1050.0, 540.0));
+    assert_eq!(after.artboards[1..], before.artboards[1..]);
+    assert_eq!(after.layers, before.layers);
+    app.run("edit.undo", json!({})).unwrap();
+    assert_eq!(app.session.doc().unwrap().doc, before);
+    app.run("edit.redo", json!({})).unwrap();
+    assert_eq!(app.session.doc().unwrap().doc, after);
+}
