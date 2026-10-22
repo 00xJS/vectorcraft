@@ -2382,6 +2382,8 @@ lighting	Light	Valo
 	File Dimensions	Tiedoston mitat
 	Transforms	Muunnokset
 	Background Color:	Taustaväri:
+	Show Center Mark	Näytä keskimerkki
+	Show Cross Hairs	Näytä hiusristikko
 	Client-side (.html)	Asiakaspuoli (.html)
 	Color Reduction:	Värien vähennys:
 	Lossless (lossy WebP isn't available yet)	Häviötön (häviöllinen WebP ei ole vielä käytettävissä)

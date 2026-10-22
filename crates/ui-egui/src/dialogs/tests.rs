@@ -1102,6 +1102,56 @@ fn new_artboard_options_give_the_new_artboard_its_background_color() {
     }
 }
 
+/// Artboard Options shows Show Center Mark and Show Cross Hairs, ticked as the artboard has them
+/// whether it opens from the Artboards panel or from a double-click with the Artboard tool. OK
+/// sets them in one undo step, and a new artboard's Artboard Options gives it the ones ticked.
+#[test]
+fn artboard_options_show_center_mark_and_cross_hairs() {
+    use vectorcraft_tools::{PointerEvent, PointerKind};
+    let mut app = app();
+    let marks = |app: &VectorcraftApp, i: usize| {
+        let a = &app.session.doc().unwrap().doc.artboards[i];
+        (a.show_center_mark, a.show_cross_hairs)
+    };
+    crate::dialogs::artboard_options::open(&mut app).unwrap();
+    let text = crate::tests_labels::painted_text(&mut app, |app, ui| show(app, ui.ctx()));
+    assert!(text.contains("Show Center Mark") && text.contains("Show Cross Hairs"), "{text}");
+    let d = app.ui.dialog.as_mut().unwrap();
+    assert!(!d.bool("showCenterMark") && !d.bool("showCrossHairs"));
+    d.fields.insert("showCenterMark".into(), json!(true));
+    let undo = app.session.doc().unwrap().history.undo.len();
+    super::confirm(&mut app).unwrap();
+    assert_eq!(marks(&app, 0), (true, false));
+    assert_eq!(app.session.doc().unwrap().history.undo.len(), undo + 1);
+    // Opened again, it shows them; unticking one clears it.
+    crate::dialogs::artboard_options::open(&mut app).unwrap();
+    let d = app.ui.dialog.as_mut().unwrap();
+    assert!(d.bool("showCenterMark"));
+    d.fields.insert("showCenterMark".into(), json!(false));
+    d.fields.insert("showCrossHairs".into(), json!(true));
+    super::confirm(&mut app).unwrap();
+    assert_eq!(marks(&app, 0), (false, true));
+    // A double-click with the Artboard tool on the artboard's empty space.
+    app.select_tool("artboard");
+    let view = app.view_info();
+    for kind in [PointerKind::Down, PointerKind::Up, PointerKind::Down, PointerKind::Up, PointerKind::DoubleClick] {
+        crate::canvas::dispatch(&mut app, &PointerEvent::new(kind, 100.0, 100.0), view);
+    }
+    let d = app.ui.dialog.clone().expect("Artboard Options opened");
+    assert_eq!((d.kind.as_str(), d.bool("showCenterMark"), d.bool("showCrossHairs")), ("artboardOptions", false, true));
+    cancel(&mut app);
+    // A new artboard takes the ones ticked, and none when none is.
+    for (ticked, want) in [(Some("showCenterMark"), (true, false)), (None, (false, false))] {
+        app.run("ui.newArtboard", json!({})).unwrap();
+        if let Some(k) = ticked {
+            app.ui.dialog.as_mut().unwrap().fields.insert(k.into(), json!(true));
+        }
+        super::confirm(&mut app).unwrap();
+        let last = app.session.doc().unwrap().doc.artboards.len() - 1;
+        assert_eq!(marks(&app, last), want);
+    }
+}
+
 /// #1482: with Artboards 1 and 3 selected with the Artboard tool, a new Width in Artboard Options
 /// goes to both, each keeping its top-left corner and its height, in one undo step. The new name
 /// goes only to the artboard the dialog shows, and Artboard 2 keeps its size. A name alone resizes

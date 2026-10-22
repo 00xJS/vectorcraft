@@ -156,6 +156,9 @@ pub struct Tokens {
     pub highlight: Color32,
     /// The bleed outline around artboards (Document Setup → Bleed).
     pub bleed: Color32,
+    /// An artboard's Show Center Mark and Show Cross Hairs (Artboard Options), drawn over its
+    /// paper in every brightness.
+    pub artboard_mark: Color32,
     /// Error marks (a missing linked file).
     pub error: Color32,
     /// Warning marks (a modified linked file).
@@ -209,6 +212,7 @@ impl Tokens {
             caption_close_text: Color32::WHITE,
             highlight: hex(0xff3030),
             bleed: hex(0xf03030),
+            artboard_mark: hex(0x808080),
             error: hex(0xe34850),
             warning: hex(0xf0a330),
             axis_x: hex(0xef6058),
