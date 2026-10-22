@@ -72,6 +72,28 @@ fn opens_on_the_artboard_tools_active_artboard_and_exports_it() {
 }
 
 #[test]
+fn opens_on_the_active_artboard_with_the_selection_tool_and_exports_it() {
+    for (active, size, color) in [(1, (32, 24), [0, 0, 255, 255]), (0, (60, 40), [255, 0, 0, 255])] {
+        let dir = vectorcraft_testkit::temp_dir(&format!("sfw-selection-active-{active}"));
+        let mut app = two_artboards(&dir);
+        app.run("webExport.settings", json!({"artboard": 1 - active, "format": "png24", "quality": 73})).unwrap();
+        let saved = app.session.last_web_settings().to_json();
+        app.run("tool.select", json!({"tool": "selection"})).unwrap();
+        app.run("view.goToArtboard", json!({"index": active})).unwrap();
+        assert_eq!(app.session.tool_id(), "selection");
+        assert_eq!(app.view().unwrap().artboard, active);
+        app.run("file.saveForWeb", json!({})).unwrap();
+        assert_eq!(app.ui.dialog.as_ref().unwrap().fields["artboard"], json!(active));
+        assert_eq!(app.session.last_web_settings().to_json(), saved, "opening does not overwrite the remembered settings");
+        frame(&mut app);
+        let result = confirm(&mut app).unwrap();
+        let image = image::open(result["path"].as_str().unwrap()).unwrap().to_rgba8();
+        assert_eq!(image.dimensions(), size);
+        assert_eq!(image.get_pixel(8, 8).0, color);
+    }
+}
+
+#[test]
 fn explicit_artboard_changes_update_the_preview_and_saved_pixels() {
     let dir = vectorcraft_testkit::temp_dir("sfw-explicit-artboard");
     let mut app = two_artboards(&dir);
@@ -96,7 +118,7 @@ fn explicit_artboard_changes_update_the_preview_and_saved_pixels() {
             })
             .collect();
         assert_eq!(previews.len(), 2, "original and optimized, artboard {index}");
-        assert!(previews.iter().all(|p| p.chunks_exact(4).all(|pixel| pixel == color)));
+        assert!(previews.iter().all(|p| p.as_chunks::<4>().0.iter().all(|pixel| *pixel == color)));
         out.textures_delta.clear();
         // Save through the same dialog while keeping the egui context (and its cache) alive.
         let result = confirm(&mut app).unwrap();
@@ -161,9 +183,10 @@ fn opening_uses_the_active_artboard_in_a_multiselection_and_preserves_other_sett
     app.run("tool.select", json!({"tool": "selection"})).unwrap();
     assert_eq!(app.view().unwrap().artboard, 1);
     app.run("file.saveForWeb", json!({})).unwrap();
-    for (key, value) in saved.as_object().unwrap() {
+    for (key, value) in expected.as_object().unwrap() {
         assert_eq!(&app.ui.dialog.as_ref().unwrap().fields[key], value, "Selection tool keeps {key}");
     }
+    assert_eq!(app.session.last_web_settings().to_json(), saved, "opening still does not overwrite the remembered settings");
 }
 
 #[test]
@@ -175,7 +198,7 @@ fn a_remembered_artboard_missing_from_another_document_falls_back_to_its_first()
     app.run("shape.rectangle", json!({"x": 0, "y": 0, "width": 20, "height": 12})).unwrap();
     app.run("paint.setFill", json!({"color": "#00ff00"})).unwrap();
     app.run("file.saveForWeb", json!({})).unwrap();
-    assert_eq!(app.ui.dialog.as_ref().unwrap().fields["artboard"], serde_json::Value::Null);
+    assert_eq!(app.ui.dialog.as_ref().unwrap().fields["artboard"], json!(0));
     frame(&mut app);
     let result = confirm(&mut app).unwrap();
     let image = image::open(result["path"].as_str().unwrap()).unwrap().to_rgba8();
