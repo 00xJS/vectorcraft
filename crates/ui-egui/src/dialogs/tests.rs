@@ -41,6 +41,7 @@ fn kinds_map_to_their_dialogs() {
         ("newDocument", DialogKind::NewDocument),
         ("roundedRectangle", DialogKind::Shape),
         ("lineSegment", DialogKind::Shape),
+        ("arc", DialogKind::Shape),
         ("rectangularGrid", DialogKind::Shape),
         ("polarGrid", DialogKind::Shape),
         ("shear", DialogKind::Transform),
@@ -88,6 +89,7 @@ fn every_dialog_draws() {
         "polygon",
         "star",
         "lineSegment",
+        "arc",
         "rectangularGrid",
         "polarGrid",
         "rotate",
@@ -1709,6 +1711,18 @@ fn polar_grid_shared_canvas_click_defaults_units_counts_and_history() {
     assert_eq!(app.session.doc().unwrap().doc, before);
     app.run("edit.redo", json!({})).unwrap();
     assert_eq!(app.session.doc().unwrap().doc, made);
+}
+
+/// Part of gap G11: an Arc tool click opens its options at the pointer; OK draws an arc there.
+#[test]
+fn arc_click_opens_options_and_ok_draws() {
+    use vectorcraft_doc::NodeKind;
+    let mut app = app();
+    open_tool_dialog(&mut app, "arc", json!({"x": 100.0, "y": 50.0}));
+    assert_eq!(app.ui.dialog.as_ref().unwrap().kind, "arc");
+    super::confirm(&mut app).unwrap();
+    let n = app.session.doc().unwrap().doc.layers[0].children().unwrap().last().unwrap();
+    assert!(matches!(n.kind, NodeKind::Path { .. }));
 }
 
 /// #1377: Polar Grid's dialog has a skew slider under each divider count, Create Compound Path

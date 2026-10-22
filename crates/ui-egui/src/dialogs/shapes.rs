@@ -21,6 +21,7 @@ fn title(kind: &str) -> &'static str {
         "star" => tl!("Star"),
         "rectangularGrid" => tl!("Rectangular Grid"),
         "polarGrid" => tl!("Polar Grid"),
+        "arc" => tl!("Arc"),
         _ => tl!("Line Segment Tool Options"),
     }
 }
@@ -80,6 +81,10 @@ fn body(app: &mut VectorcraftApp, ui: &mut egui::Ui, d: &mut Dialog) -> bool {
         });
     } else {
         form::grid(ui, d, unit);
+        if d.kind == "arc" {
+            ui.add_space(8.0);
+            form::check(ui, d, "closed", tl!("Closed"));
+        }
     }
     let own = match d.kind.as_str() {
         "rectangularGrid" => ("frame", tl!("Use Outside Rectangle As Frame")),
@@ -109,11 +114,13 @@ fn confirm(app: &mut VectorcraftApp, d: &Dialog) -> Result<Value, String> {
         "star" => Some(("points", 5.0, 2.0)),
         _ => None,
     };
-    let options = count.map(|(key, default, min)| {
-        let mut values = json!({});
-        values[key] = json!(d.f64(key, default).clamp(min, 1000.0) as u64);
-        values
-    });
+    let options = count
+        .map(|(key, default, min)| {
+            let mut values = json!({});
+            values[key] = json!(d.f64(key, default).clamp(min, 1000.0) as u64);
+            values
+        })
+        .or_else(|| (d.kind == "arc").then(|| json!({"closed": d.bool("closed")})));
     let (x, y) = (d.f64("x", 0.0), d.f64("y", 0.0));
     let (bx, by) = box_origin(d);
     let (id, params) = match d.kind.as_str() {
@@ -139,6 +146,19 @@ fn confirm(app: &mut VectorcraftApp, d: &Dialog) -> Result<Value, String> {
         "lineSegment" => {
             let (l, a) = (d.f64("length", 100.0), d.f64("angle", 0.0).to_radians());
             ("shape.line", json!({"x1": x, "y1": y, "x2": x + l * a.cos(), "y2": y - l * a.sin()}))
+        }
+        "arc" => {
+            let (l, a) = (d.f64("length", 100.0), d.f64("angle", 0.0).to_radians());
+            (
+                "shape.arc",
+                json!({
+                    "x1": x,
+                    "y1": y,
+                    "x2": x + l * a.cos(),
+                    "y2": y - l * a.sin(),
+                    "closed": d.bool("closed"),
+                }),
+            )
         }
         _ => (
             "shape.rectangle",

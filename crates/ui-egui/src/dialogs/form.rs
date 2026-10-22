@@ -63,7 +63,7 @@ fn lengths(kind: &str) -> &'static [&'static str] {
         "roundedRectangle" => &["width", "height", "radius"],
         "polygon" => &["radius"],
         "star" => &["radius1", "radius2"],
-        "lineSegment" => &["length"],
+        "lineSegment" | "arc" => &["length"],
         "offsetPath" => &["offset"],
         _ => &[],
     }
@@ -73,7 +73,7 @@ fn lengths(kind: &str) -> &'static [&'static str] {
 /// number: fields that ↑/↓ step by one (Shift: ten) and that do math, as the distances do.
 fn suffix(kind: &str, key: &str) -> Option<&'static str> {
     match (kind, key) {
-        ("rotate" | "shear" | "reflect" | "move", "angle") => Some("°"),
+        ("rotate" | "shear" | "reflect" | "move" | "arc" | "lineSegment", "angle") => Some("°"),
         ("scale", "sx" | "sy") => Some("%"),
         _ => None,
     }
@@ -96,6 +96,7 @@ fn order(kind: &str) -> &'static [&'static str] {
         "rectangularGrid" => &["width", "height", "rows", "rowSkew", "columns", "columnSkew"],
         "polarGrid" => &["width", "height", "concentric", "concentricSkew", "radial", "radialSkew"],
         "artboardOptions" => &["name", "width", "height"],
+        "arc" | "lineSegment" => &["length", "angle"],
         _ => &[],
     }
 }
