@@ -4376,6 +4376,7 @@ swatch	Bright Violet	ビビッドバイオレット
 @msg	name the file	ファイル名を入力してください
 @msg	unknown format	不明な形式です
 @msg	PDF settings are not an object	PDF 設定がオブジェクト形式ではありません
+@msg	PDF security settings are not an object	PDF のセキュリティ設定がオブジェクト形式ではありません
 @msg	no saved PDF preset named `{name}` (built-in presets are read-only: start a new one from them)	`{name}` という名前の保存済み PDF プリセットが見つかりません (組み込みのプリセットは読み取り専用です: それを元に新しいプリセットを作成してください)
 @msg	Saved to User Defined: {_1}	「ユーザー定義」に保存しました: {_1}
 @msg	choose a direction to divide in	分割する方向を選択してください

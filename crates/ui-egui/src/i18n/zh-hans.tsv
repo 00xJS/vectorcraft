@@ -4103,6 +4103,7 @@ imageTrace	Outline	轮廓
 @msg	name the file	请为文件命名
 @msg	unknown format	未知格式
 @msg	PDF settings are not an object	PDF 设置不是对象
+@msg	PDF security settings are not an object	PDF 安全性设置不是对象
 @msg	no saved PDF preset named `{name}` (built-in presets are read-only: start a new one from them)	没有名为 `{name}` 的已保存 PDF 预设 (内置预设为只读：请以它们为基础新建一个)
 @msg	Saved to User Defined: {_1}	已保存到“用户定义”：{_1}
 @msg	choose a direction to divide in	请选择分割方向

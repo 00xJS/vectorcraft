@@ -4498,6 +4498,7 @@ theme	Appearance	Giao diện
 @msg	pattern missing	thiếu họa tiết
 @msg	patterns nested too deeply are filled with mid-grey	họa tiết lồng nhau quá sâu được tô bằng màu xám trung tính
 @msg	PDF settings are not an object	Cài đặt PDF không phải là đối tượng
+@msg	PDF security settings are not an object	Cài đặt bảo mật PDF không phải là đối tượng
 @msg	PDF writer error: {0}	Lỗi ghi PDF: {0}
 @msg	percent must be above 0 and at most 6400, not {p}	phần trăm phải lớn hơn 0 và tối đa 6400, không phải {p}
 @msg	pick a colour, gradient or pattern to save as a swatch	hãy chọn màu, chuyển sắc hoặc họa tiết để lưu làm mẫu màu

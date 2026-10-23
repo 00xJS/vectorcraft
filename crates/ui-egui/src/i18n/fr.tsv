@@ -3824,6 +3824,7 @@ axis	Both	Les deux
 @msg	Opened {url}	{url} ouvert
 @msg	Outline Stroke: no stroked paths selected	Vectoriser le contour : aucun tracé avec contour sélectionné
 @msg	PDF settings are not an object	Les paramètres PDF ne sont pas un objet
+@msg	PDF security settings are not an object	Les paramètres de sécurité PDF ne sont pas un objet
 @msg	PDF writer error: {0}	Erreur du générateur PDF : {0}
 @msg	Packaged {n} file(s) in {folder} {note}	{n} fichier(s) assemblé(s) dans {folder}{note}
 @msg	Packaged {n} file(s){note}	{n} fichier(s) assemblé(s){note}
