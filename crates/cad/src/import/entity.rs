@@ -536,7 +536,9 @@ fn boundary(c: &mut Cursor<'_, '_>) -> Option<BezPath> {
     // The boundary objects it was made from.
     if let Some(n) = c.count(97) {
         for _ in 0..n {
-            c.opt(330);
+            if c.opt(330).is_none() {
+                break;
+            }
         }
     }
     Some(bp)
