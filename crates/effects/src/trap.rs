@@ -35,7 +35,7 @@
 use serde_json::{Value, json};
 use vectorcraft_doc::color::{Color, Paint};
 use vectorcraft_doc::{Appearance, AppearanceItem, FillLayer, Node, NodeId};
-use vectorcraft_geom::{FillRule, PathData};
+use vectorcraft_geom::{FillRule, PathData, Rect};
 use vectorcraft_pathops as po;
 
 use crate::util::{flag, num};
@@ -215,6 +215,25 @@ fn visible(sources: &[TrapSource]) -> Vec<PathData> {
         .collect()
 }
 
+/// The pairs `(i, j)`, `i < j`, in ascending order, of `rects` (`None`: left out) that come within
+/// `reach_x` of each other across x and `reach_y` across y. A sweep over the rects sorted by their
+/// left edge, so shapes spread over the page cost about one check each rather than one per pair.
+fn near_pairs(rects: &[Option<Rect>], reach_x: f64, reach_y: f64) -> Vec<(usize, usize)> {
+    let mut order: Vec<(usize, Rect)> = rects.iter().enumerate().filter_map(|(i, r)| r.map(|r| (i, r))).collect();
+    order.sort_unstable_by(|a, b| a.1.x0.total_cmp(&b.1.x0).then(a.0.cmp(&b.0)));
+    let mut pairs = vec![];
+    for (k, &(i, a)) in order.iter().enumerate() {
+        // Later rects start at or right of `a`, so only how far right they start can rule them out.
+        for &(j, b) in order[k + 1..].iter().take_while(|(_, b)| b.x0 <= a.x1 + reach_x) {
+            if b.y0 <= a.y1 + reach_y && a.y0 <= b.y1 + reach_y {
+                pairs.push((i.min(j), i.max(j)));
+            }
+        }
+    }
+    pairs.sort_unstable();
+    pairs
+}
+
 /// The traps between `sources` (back to front) with options `o`: for each two sources of
 /// different solid colours whose visible parts meet, the strip of the darker one's visible part
 /// next to the lighter one's (the other way round with [`TrapOptions::reverse`]), painted per
@@ -224,28 +243,38 @@ pub fn traps(sources: &[TrapSource], o: &TrapOptions) -> Vec<TrapPiece> {
     if colors.iter().flatten().count() < 2 {
         return vec![];
     }
+    let (w, r) = (o.thickness, o.height_width);
+    if !(w.is_finite() && w > 0.0 && r.is_finite() && r > 0.0) {
+        return vec![]; // `trap_band` cuts nothing with these.
+    }
     let vis = visible(sources);
+    // Only pairs whose visible parts come within the trap's reach can trap (`trap_band` rejects
+    // the rest by the same bounds), so find those first instead of trying every pair. The hair
+    // keeps rounding from rejecting a pair `trap_band` would keep.
+    let rects: Vec<Option<Rect>> =
+        vis.iter().zip(&colors).map(|(p, c)| c.and(p.bounds()).filter(|b| [b.x0, b.y0, b.x1, b.y1].iter().all(|v| v.is_finite()))).collect();
+    let (w, r) = (w.clamp(po::TRAP_MIN_WIDTH, po::TRAP_MAX_WIDTH), r.clamp(po::TRAP_HEIGHT_WIDTH_RANGE.0, po::TRAP_HEIGHT_WIDTH_RANGE.1));
+    let extent = rects.iter().flatten().flat_map(|b| [b.x0, b.y0, b.x1, b.y1]).fold(0.0_f64, |m, v| m.max(v.abs()));
+    let hair = 1e-9 * (1.0 + extent + w * r.max(1.0));
     let mut out = vec![];
-    for i in 0..sources.len() {
-        for j in i + 1..sources.len() {
-            let (Some(ci), Some(cj)) = (colors[i], colors[j]) else { continue };
-            if vis[i].is_empty() || vis[j].is_empty() || same_color(&sources[i].fill, &sources[j].fill, ci, cj) {
-                continue;
-            }
-            let (mut from, mut into) = if lighter(ci, cj) { (i, j) } else { (j, i) };
-            if o.reverse && colors[into].is_some_and(|c| !rich_black(c)) {
-                (from, into) = (into, from);
-            }
-            let mut band = po::trap_band(&vis[from], FillRule::NonZero, &vis[into], FillRule::NonZero, o.thickness, o.height_width, o.precision);
-            if o.remove_redundant {
-                band = po::remove_redundant_points(&band, o.precision);
-            }
-            if band.is_empty() || po::area(&band, FillRule::NonZero) <= 1e-9 {
-                continue;
-            }
-            let Some(color) = colors[from] else { continue };
-            out.push(TrapPiece { path: band, paint: trap_paint(&sources[from].fill, color, o), from, into });
+    for (i, j) in near_pairs(&rects, w + hair, w * r + hair) {
+        let (Some(ci), Some(cj)) = (colors[i], colors[j]) else { continue };
+        if vis[i].is_empty() || vis[j].is_empty() || same_color(&sources[i].fill, &sources[j].fill, ci, cj) {
+            continue;
         }
+        let (mut from, mut into) = if lighter(ci, cj) { (i, j) } else { (j, i) };
+        if o.reverse && colors[into].is_some_and(|c| !rich_black(c)) {
+            (from, into) = (into, from);
+        }
+        let mut band = po::trap_band(&vis[from], FillRule::NonZero, &vis[into], FillRule::NonZero, o.thickness, o.height_width, o.precision);
+        if o.remove_redundant {
+            band = po::remove_redundant_points(&band, o.precision);
+        }
+        if band.is_empty() || po::area(&band, FillRule::NonZero) <= 1e-9 {
+            continue;
+        }
+        let Some(color) = colors[from] else { continue };
+        out.push(TrapPiece { path: band, paint: trap_paint(&sources[from].fill, color, o), from, into });
     }
     out
 }
@@ -383,5 +412,58 @@ mod tests {
         let mut s = abutting();
         s[1].path.subpaths[0].anchors[0].p.x = f64::NAN;
         assert!(traps(&s, &TrapOptions::default()).is_empty());
+    }
+
+    /// 2,000 separated 10 pt squares in alternating colours on a 20 pt grid, then a yellow square
+    /// abutting the first (blue) one's right edge.
+    fn many_apart_and_one_abutting() -> Vec<TrapSource> {
+        let mut s: Vec<TrapSource> = (0..2000)
+            .map(|k| {
+                let (x, y) = (f64::from(k % 50) * 20.0, f64::from(k / 50) * 20.0);
+                src(Rect::new(x, y, x + 10.0, y + 10.0), if (k + k / 50) % 2 == 0 { blue() } else { yellow() })
+            })
+            .collect();
+        s.push(src(Rect::new(10.0, 0.0, 15.0, 10.0), yellow()));
+        s
+    }
+
+    #[test]
+    fn only_shapes_within_reach_are_paired() {
+        let s = many_apart_and_one_abutting();
+        let rects: Vec<Option<Rect>> = s.iter().map(|t| t.path.bounds()).collect();
+        assert_eq!(near_pairs(&rects, 1.0, 1.0), vec![(0, 2000)], "the squares 10 pt apart are never paired");
+        // Reaching 10 pt, neighbours in a row pair, in ascending order; left-out rects never do.
+        let row: Vec<Option<Rect>> = [3, 1, 0, 2].iter().map(|&k| s[k].path.bounds()).chain([None]).collect();
+        assert_eq!(near_pairs(&row, 10.0, 10.0), vec![(0, 3), (1, 2), (1, 3)]);
+        let t = traps(&s, &TrapOptions { thickness: 1.0, ..Default::default() });
+        assert_eq!(t.len(), 1, "only the abutting pair traps");
+        assert_eq!((t[0].from, t[0].into), (2000, 0));
+        let b = t[0].path.bounds().unwrap();
+        assert!(near(b.x0, 9.0) && near(b.x1, 10.0) && near(b.y0, 0.0) && near(b.y1, 10.0), "{b:?}");
+    }
+
+    #[test]
+    fn pairing_by_bounds_keeps_every_trap_in_order() {
+        // Shapes abutting across x and y, overlapping, and half a point apart (within a 1 pt trap),
+        // none of them hiding another's edges: the traps are those of each pair alone.
+        let s = vec![
+            src(Rect::new(0.0, 0.0, 100.0, 100.0), blue()),
+            src(Rect::new(40.0, 40.0, 60.0, 60.0), yellow()),
+            src(Rect::new(100.0, 0.0, 120.0, 50.0), yellow()),
+            src(Rect::new(0.0, 100.5, 50.0, 120.0), yellow()),
+            src(Rect::new(55.0, 100.0, 80.0, 130.0), Color::cmyk(0.0, 1.0, 0.0, 0.0)),
+        ];
+        let o = TrapOptions { thickness: 1.0, ..Default::default() };
+        let got: Vec<(usize, usize)> = traps(&s, &o).iter().map(|t| (t.from, t.into)).collect();
+        let mut want = vec![];
+        for i in 0..s.len() {
+            for j in i + 1..s.len() {
+                if let Some(t) = traps(&[s[i].clone(), s[j].clone()], &o).first() {
+                    want.push(if t.from == 0 { (i, j) } else { (j, i) });
+                }
+            }
+        }
+        assert_eq!(want.len(), 4, "{want:?}");
+        assert_eq!(got, want);
     }
 }
