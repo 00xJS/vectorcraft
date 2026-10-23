@@ -589,6 +589,40 @@ fn widths_rounded_off_the_installed_fonts_advances_keep_one_tracking() {
     assert!(t[0].runs[1].style.tracking > 500.0, "the em's gap on the space: {:?}", t[0].runs);
 }
 
+/// A long line whose file widths are each a little off the font's advances (0.8% wider or
+/// narrower, within the 1% that still counts as the same font) opens with its glyphs where the
+/// file draws them, in one run: the differences add up along the line (with only the spacing the
+/// file set, none, the glyphs would end points away from the file's), so the line takes their
+/// share after every character. A line the font kerns (laid out without its kerning, as the file
+/// sets it) and one it doesn't (laid out as the type is). Source Sans 3 is embedded: what the file
+/// draws and what the type draws are the same outlines, so their contours tell where each glyph is.
+#[test]
+fn a_long_line_of_widths_a_little_off_the_fonts_advances_lands_in_one_run() {
+    let n = first_extra(1);
+    let resources = format!("/Font << /F1 {} 0 R >>", n + 2);
+    for scale in [1.008, 0.992] {
+        let widths: Vec<String> = (32u8..=126).map(|c| (width(c as char) * scale).round().to_string()).collect();
+        let font = format!(
+            "<< /Type /Font /Subtype /TrueType /BaseFont /SourceSans3-Regular /FirstChar 32 /LastChar 126 /Widths [{}] /FontDescriptor {} 0 R /Encoding /WinAnsiEncoding >>",
+            widths.join(" "),
+            n + 1
+        );
+        for line in [
+            "Gather the quick brown fox over the lazy dogs while the waves roll in",
+            "minimum minimum minimum minimum minimum minimum minimum minimum",
+        ] {
+            let content = format!("BT /F1 12 Tf 10 50 Td ({line}) Tj ET");
+            let page = PdfPage { resources: resources.clone(), ..PdfPage::new(600.0, 200.0, &content) };
+            let bytes = pdf_with(&[page], &[&font_file(), &descriptor(n), &font], None);
+            let t = texts(&open_as(&bytes, TextAs::Text));
+            assert_eq!(t.iter().map(TextObject::plain_text).collect::<Vec<_>>(), [line]);
+            assert_eq!(t[0].runs.len(), 1, "{scale} {line:?}: {:?}", t[0].runs);
+            let d = displacement(&bytes);
+            assert!(d < 12.0 * 0.02, "{scale} {line:?}: glyphs {d:.3} pt from where the file draws them");
+        }
+    }
+}
+
 /// A text-heavy page: `columns` columns of `rows` lines of 10 pt type, alternately plain lines and
 /// paragraphs wrapped in a frame (left aligned, and justified with word spacing).
 fn text_heavy(columns: usize, rows: usize) -> Vec<u8> {
