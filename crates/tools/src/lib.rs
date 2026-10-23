@@ -814,9 +814,16 @@ pub trait Tool: Send {
     }
     fn notify(&mut self, _cx: &ToolContext, _what: &str) {}
     /// The pointer stopped hovering for the tool while it holds no press: it left the canvas (for a
-    /// panel or out of the window), or a press started panning, zooming or turning the view. Drop
-    /// what shows only for the hover (the Selection tool's Distance Guides).
+    /// panel or out of the window), went under a floating panel, menu, popup or dialog, or a press
+    /// started panning, zooming or turning the view. Drop what shows only for the hover (the
+    /// Selection tool's Distance Guides).
     fn hover_ended(&mut self, _cx: &ToolContext) {}
+    /// Whether what the tool shows for the hover depends on what lies under a still pointer: then
+    /// the canvas hovers it again where the pointer is when the view, the document or the
+    /// selection changes (the Selection tool while Alt shows Distance Guides).
+    fn wants_rehover(&self) -> bool {
+        false
+    }
     /// Called when the user switches away (finish pending work).
     fn deactivate(&mut self, _cx: &ToolContext) -> Vec<Action> {
         vec![]

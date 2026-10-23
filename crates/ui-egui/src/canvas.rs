@@ -108,6 +108,10 @@ fn tool_holds(d: Drag) -> bool {
     matches!(d, Drag::Tool | Drag::Art)
 }
 
+/// What a hover depends on besides the pointer's screen position: the canvas, the view's centre,
+/// zoom and rotation, and the active document's id and revision (which moves with the selection).
+type HoverContext = (egui::Rect, Point, f64, f64, Option<(u64, u64)>);
+
 /// Clear canvas interaction state before a tab transfer takes ownership of the artwork drag.
 pub(crate) fn end_document_drag(ctx: &egui::Context) {
     ctx.data_mut(|d| {
@@ -961,13 +965,27 @@ fn handle_input(app: &mut VectorcraftApp, ui: &Ui, resp: &egui::Response, rect: 
         d.insert_temp(id, m);
         prev.is_some_and(|prev| prev != m)
     });
-    // Whether the pointer was over the canvas last frame: coming onto it re-hovers the tool, even
-    // after a single jump egui doesn't count as moving, and leaving it tells the tool (below).
+    // Where the tool hovers: the pointer over the canvas itself, not over a floating panel, a menu,
+    // a popup or a dialog drawn on top of it ([`on_canvas`]).
+    let hover_tool = hover.filter(|p| on_canvas(ui, resp, *p));
+    // Whether the tool hovered last frame: coming onto the canvas re-hovers it, even after a single
+    // jump egui doesn't count as moving, and leaving it ends the tool's hover (below).
     let was_over = ui.data_mut(|d| {
         let id = egui::Id::new("canvas-hovered");
         let prev = d.get_temp::<bool>(id).unwrap_or(false);
-        d.insert_temp(id, hover.is_some());
+        d.insert_temp(id, hover_tool.is_some());
         prev
+    });
+    // What a hover means besides where the pointer is on screen: the canvas, the view (scrolled,
+    // zoomed or turned by the wheel, a gesture, keys or a command) and the document and selection
+    // as they are (another tab, an edit, an undo). When it changes under a still pointer, a tool
+    // that asks for it ([`Session::tool_wants_rehover`]) is hovered again where the pointer is.
+    let context = (rect, v.center, v.zoom, v.rotation, app.session.active().map(|st| (st.uid, st.revision)));
+    let context_changed = ui.data_mut(|d| {
+        let id = egui::Id::new("canvas-hover-context");
+        let prev = d.get_temp::<HoverContext>(id);
+        d.insert_temp(id, context);
+        prev.is_some_and(|prev| prev != context)
     });
 
     // In Presentation Mode a click anywhere goes to the next artboard. The tool receives no press,
@@ -1208,16 +1226,16 @@ fn handle_input(app: &mut VectorcraftApp, ui: &Ui, resp: &egui::Response, rect: 
                 Drag::Pan { .. } | Drag::RotateView { .. } => {}
             }
         }
-    } else if let Some(p) = hover
-        && (pointer.is_moving() || mods_changed || !was_over)
+    } else if let Some(p) = hover_tool
+        && (pointer.is_moving() || mods_changed || !was_over || (context_changed && app.session.tool_wants_rehover()))
     {
         let ev = PointerEvent { kind: PointerKind::Move, pos: xf.to_doc(p), mods: mods(m, space), pressure: 1.0 };
         dispatch(app, &ev, view);
     }
-    // The pointer left the canvas (for a panel, or out of the window) with no press the tool holds:
-    // the tool drops what it showed for the hover, which no hover event would clear (Alt's
-    // Distance Guides).
-    if was_over && hover.is_none() && !drag.is_some_and(tool_holds) {
+    // The pointer left the canvas (for a panel, or out of the window) or went under a floating
+    // panel, menu, popup or dialog, with no press the tool holds: the tool's hover ends, which no
+    // hover event would clear (Alt's Distance Guides).
+    if was_over && hover_tool.is_none() && !drag.is_some_and(tool_holds) {
         app.session.tool_hover_ended(view);
         ui.ctx().request_repaint();
     }
@@ -9523,13 +9541,16 @@ mod tests {
     }
 
     /// Distance Guides on a canvas at 100%: a 400 × 300 pt document with a 50 pt square at (50, 50),
-    /// selected, and another 100 pt to its right, the Selection tool and Smart Guides on → the app,
-    /// its context, the view and the screen point over the middle of the other square.
-    fn distance_scene() -> (VectorcraftApp, egui::Context, Xf, Pos2) {
+    /// selected, and with `other` another 100 pt to its right, the Selection tool and Smart Guides
+    /// on → the app, its context, the view, the screen point over the middle of where the other
+    /// square is (or would be) and the selected square's id.
+    fn distance_scene(other: bool) -> (VectorcraftApp, egui::Context, Xf, Pos2, serde_json::Value) {
         let mut app = VectorcraftApp::new(Session::new(), Default::default());
         app.run("file.new", json!({"width": 400, "height": 300})).unwrap();
         let a = app.run("shape.rectangle", json!({"x": 50, "y": 50, "width": 50, "height": 50})).unwrap()["id"].clone();
-        app.run("shape.rectangle", json!({"x": 200, "y": 50, "width": 50, "height": 50})).unwrap();
+        if other {
+            app.run("shape.rectangle", json!({"x": 200, "y": 50, "width": 50, "height": 50})).unwrap();
+        }
         app.run("select.set", json!({"ids": [a]})).unwrap();
         app.ui.view.smart_guides = true;
         app.select_tool("selection");
@@ -9542,14 +9563,27 @@ mod tests {
         frame(&mut app, &ctx, vec![]);
         let xf = Xf::new(app.canvas_rect.unwrap(), app.view().unwrap());
         let over = xf.to_screen(Point::new(225.0, 75.0));
-        (app, ctx, xf, over)
+        (app, ctx, xf, over, a)
     }
 
     /// One frame with `events` → the shapes drawn, flattened. The modifiers held stay from one
     /// frame to the next until an `Event::ModifiersChanged`.
     fn distance_frame(app: &mut VectorcraftApp, ctx: &egui::Context, events: Vec<egui::Event>) -> Vec<Shape> {
+        distance_frame_covered(app, ctx, events, None)
+    }
+
+    /// [`distance_frame`] with a floating window over the canvas at `cover`, as a floating panel,
+    /// a menu or a dialog would be.
+    fn distance_frame_covered(app: &mut VectorcraftApp, ctx: &egui::Context, events: Vec<egui::Event>, cover: Option<egui::Rect>) -> Vec<Shape> {
         let raw = egui::RawInput { screen_rect: Some(WINDOW), events, ..Default::default() };
-        let mut out = ctx.run_ui(raw, |ui| show(app, ui));
+        let mut out = ctx.run_ui(raw, |ui| {
+            show(app, ui);
+            if let Some(r) = cover {
+                egui::Area::new(egui::Id::new("test-floating-panel")).order(egui::Order::Foreground).fixed_pos(r.min).show(ui.ctx(), |ui| {
+                    ui.allocate_space(r.size());
+                });
+            }
+        });
         out.textures_delta.clear();
         fn flat(s: Shape, out: &mut Vec<Shape>) {
             match s {
@@ -9560,6 +9594,11 @@ mod tests {
         let mut v = vec![];
         out.shapes.into_iter().for_each(|c| flat(c.shape, &mut v));
         v
+    }
+
+    /// The texts drawn in `s`.
+    fn texts(s: &[Shape]) -> Vec<String> {
+        s.iter().filter_map(|s| if let Shape::Text(t) = s { Some(t.galley.text().to_string()) } else { None }).collect()
     }
 
     /// The label "100.00 pt" drawn in `s` and the pill of the smart guide colour it sits in, if any.
@@ -9579,7 +9618,7 @@ mod tests {
     #[test]
     fn alt_over_another_object_draws_the_distance_guide_label() {
         use egui::{Event, Modifiers};
-        let (mut app, ctx, xf, over) = distance_scene();
+        let (mut app, ctx, xf, over, _) = distance_scene(true);
         let mut run = |events| distance_frame(&mut app, &ctx, events);
         run(vec![Event::PointerMoved(over)]);
         assert_eq!(gap_label(&run(vec![])), None, "without Alt");
@@ -9603,7 +9642,7 @@ mod tests {
     #[test]
     fn distance_guides_go_when_the_hover_ends() {
         use egui::{Event, Modifiers};
-        let (mut app, ctx, xf, over) = distance_scene();
+        let (mut app, ctx, xf, over, _) = distance_scene(true);
         let outside = pos2(xf.rect.max.x + 10.0, xf.rect.center().y);
         assert!(WINDOW.contains(outside) && !xf.rect.contains(outside), "a panel beside the canvas");
         let mut run = |events| distance_frame(&mut app, &ctx, events);
@@ -9628,6 +9667,46 @@ mod tests {
         run(vec![Event::PointerMoved(outside)]);
         assert_eq!(gap_label(&run(vec![])), None, "still gone after panning out over a panel");
         run(vec![button(outside, false), space(false)]);
+    }
+
+    /// With Alt held and the pointer still, the Distance Guides follow what lies under it: they go
+    /// under a floating panel (or menu, popup, dialog) and come back when it goes; scrolled so that
+    /// empty artboard lies under the pointer, they measure to the artboard; and when an edit puts
+    /// an object under the pointer, they measure to it.
+    #[test]
+    fn distance_guides_follow_what_lies_under_a_still_pointer() {
+        use egui::{Event, Modifiers};
+        let (mut app, ctx, _, over, _) = distance_scene(true);
+        let cover = Some(egui::Rect::from_center_size(over, vec2(120.0, 120.0)));
+        let mut run = |app: &mut VectorcraftApp, events, cover| distance_frame_covered(app, &ctx, events, cover);
+        run(&mut app, vec![Event::ModifiersChanged(Modifiers::ALT), Event::PointerMoved(over)], None);
+        assert!(gap_label(&run(&mut app, vec![], None)).is_some(), "shown over the other square");
+        // A floating panel opens under the still pointer.
+        run(&mut app, vec![], cover);
+        run(&mut app, vec![], cover);
+        assert_eq!(gap_label(&run(&mut app, vec![], cover)), None, "gone under a floating panel");
+        // A frame for egui to drop the closed panel's area, one for the hover to come back.
+        run(&mut app, vec![], None);
+        run(&mut app, vec![], None);
+        assert!(gap_label(&run(&mut app, vec![], None)).is_some(), "back once it closes");
+        // The view scrolls 150 pt (the wheel, a gesture, the keys): empty artboard is under the
+        // pointer, and the selected square is 300 pt from the artboard's right edge.
+        app.view_mut().unwrap().center.x += 150.0;
+        run(&mut app, vec![], None);
+        let s = run(&mut app, vec![], None);
+        assert_eq!(gap_label(&s), None, "no longer over the other square");
+        assert!(texts(&s).iter().any(|t| t == "300.00 pt"), "to the artboard: {:?}", texts(&s));
+
+        // A square made under the still pointer, the first selected again (an edit, an undo).
+        let (mut app, ctx, _, over, a) = distance_scene(false);
+        let mut run = |app: &mut VectorcraftApp, events| distance_frame(app, &ctx, events);
+        run(&mut app, vec![Event::ModifiersChanged(Modifiers::ALT), Event::PointerMoved(over)]);
+        let s = run(&mut app, vec![]);
+        assert!(gap_label(&s).is_none() && texts(&s).iter().any(|t| t == "300.00 pt"), "to the artboard: {:?}", texts(&s));
+        app.run("shape.rectangle", json!({"x": 200, "y": 50, "width": 50, "height": 50})).unwrap();
+        app.run("select.set", json!({"ids": [a]})).unwrap();
+        run(&mut app, vec![]);
+        assert!(gap_label(&run(&mut app, vec![])).is_some(), "to the new square");
     }
 
     /// The 800 × 600 window [`frame`] draws the canvas in.

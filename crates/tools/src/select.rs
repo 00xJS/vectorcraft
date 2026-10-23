@@ -113,6 +113,9 @@ pub struct SelectionTool {
     hover: Option<(Point, &'static str)>,
     /// Distance Guides: what Alt held over it measures the selection to ([`distance_target`]).
     distance: Option<DistanceTo>,
+    /// The last hover had Alt held: what it measures depends on what lies under the pointer
+    /// ([`Tool::wants_rehover`]).
+    alt_hover: bool,
 }
 
 /// What Distance Guides measure the selection to.
@@ -564,6 +567,11 @@ impl Tool for SelectionTool {
     fn hover_ended(&mut self, _cx: &ToolContext) {
         self.hover = None;
         self.distance = None;
+        self.alt_hover = false;
+    }
+
+    fn wants_rehover(&self) -> bool {
+        self.alt_hover
     }
 
     fn transforming(&self) -> bool {
@@ -578,7 +586,9 @@ impl Tool for SelectionTool {
     }
 
     fn pointer(&mut self, cx: &ToolContext, ev: &PointerEvent) -> Vec<Action> {
-        self.distance = (ev.kind == PointerKind::Move && matches!(self.state, State::Idle)).then(|| distance_target(cx, ev.pos, ev.mods)).flatten();
+        let hovering = ev.kind == PointerKind::Move && matches!(self.state, State::Idle);
+        self.alt_hover = hovering && ev.mods.alt;
+        self.distance = hovering.then(|| distance_target(cx, ev.pos, ev.mods)).flatten();
         if let State::Loaded { from, press } = self.state
             && let Some(out) = self.loaded(cx, ev, from, press)
         {
@@ -1305,8 +1315,12 @@ mod tests {
         // So does the hover ending (the pointer leaving the canvas) with Alt still held.
         t.pointer(&cx, &alt(PointerKind::Move, 350.0, 150.0));
         assert!(!distances(&t, &cx).0.is_empty());
+        assert!(t.wants_rehover(), "an Alt hover is hovered again when what lies under it changes");
         t.hover_ended(&cx);
         assert!(distances(&t, &cx).0.is_empty());
+        assert!(!t.wants_rehover());
+        t.pointer(&cx, &ev(PointerKind::Move, 350.0, 150.0));
+        assert!(!t.wants_rehover(), "nor without Alt");
         // A press ends them too.
         t.pointer(&cx, &alt(PointerKind::Move, 350.0, 150.0));
         t.pointer(&cx, &alt(PointerKind::Down, 350.0, 150.0));

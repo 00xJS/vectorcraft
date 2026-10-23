@@ -444,6 +444,12 @@ impl Session {
         self.with_tool_cx(view, |t, cx| t.hover_ended(cx));
     }
 
+    /// Whether the active tool's hover depends on what lies under a still pointer
+    /// ([`vectorcraft_tools::Tool::wants_rehover`]).
+    pub fn tool_wants_rehover(&self) -> bool {
+        self.tool.wants_rehover()
+    }
+
     pub fn tool_busy(&self) -> bool {
         self.tool.busy()
     }
