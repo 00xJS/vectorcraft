@@ -312,6 +312,13 @@ font-technology	Variable	バリアブル
 	Glyphs	字形
 	Insert Special Character	特殊文字を挿入
 	Bullet	箇条書き記号
+	Bullets	箇条書き
+	Bullets and Numbering	箇条書きと番号付け
+	Apply Bullets	箇条書きを適用
+	Filled Dot	黒丸
+	Dash	ダッシュ
+	Hollow Circle	白丸
+	Filled Square	黒四角
 	Copyright Symbol	著作権記号
 	Ellipsis	省略記号
 	Paragraph Symbol	段落記号

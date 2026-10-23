@@ -254,12 +254,13 @@ fn canvas_glyph_positions(d: &Document) -> (Vec<Drawn>, Vec<Arc<vectorcraft_text
     let mut out: Vec<Drawn> = vec![];
     let mut faces: Vec<Arc<vectorcraft_text::FontFace>> = vec![];
     let mut last = None;
-    for g in &lay.glyphs {
-        let text = if g.len == 0 { "-" } else { &plain[g.byte..g.byte + g.len] };
+    for (i, g) in lay.glyphs.iter().enumerate() {
+        let text = lay.marker_text(i).unwrap_or_else(|| if g.len == 0 { "-" } else { &plain[g.byte..g.byte + g.len] });
         if text.trim().is_empty() || (g.len > 0 && last == Some(g.byte)) {
             continue;
         }
-        last = Some(g.byte);
+        // A list marker's glyphs (length 0) start no cluster.
+        last = (g.len > 0).then_some(g.byte);
         if let Some(f) = db.face_by_id(g.font_id).filter(|f| !faces.iter().any(|o| o.id() == f.id())) {
             faces.push(f);
         }
@@ -280,6 +281,95 @@ fn assert_drawn_in_place(d: &Document) {
     for ((s, v, vs), (_, c, cs)) in viewer.iter().zip(&canvas) {
         assert!((v.x - c.x).abs() < 0.05 && (v.y - c.y).abs() < 0.05, "{s}: the viewer draws it at {v:?}, the canvas at {c:?}: {svg}");
         assert!((vs / cs - 1.0).abs() < 0.002, "{s}: the viewer scales it by {vs}, the canvas by {cs}: {svg}");
+    }
+}
+
+/// Bullets: live text writes each list paragraph's bullet as its character before the paragraph's
+/// text, not as a hyphen, and a viewer draws the bullet and the text where the canvas draws them.
+#[test]
+fn bullets_are_written_as_their_characters_where_they_are_drawn() {
+    use vectorcraft_doc::text::{Bullet, ParaList};
+    for (bullet, character) in [(Bullet::Dot, "\u{2022}"), (Bullet::Dash, "\u{2013}"), (Bullet::Square, "\u{25AA}")] {
+        let mut t = TextObject::point(Point::new(20.0, 20.0), "alpha beta gamma delta epsilon\nzeta", style(12.0));
+        t.kind = TextKind::Area { frame: shapes::rectangle(Rect::new(0.0, 0.0, 120.0, 160.0)) };
+        t.para.list = Some(ParaList::bulleted(bullet));
+        t.para.left_indent = 18.0;
+        t.para.first_line_indent = -18.0;
+        let mut d = Document::new(300.0, 200.0);
+        let n = Node::new(d.alloc_id(), NodeKind::Text(Box::new(t)));
+        let l = d.layers[0].id;
+        d.insert(Some(l), 0, n).unwrap();
+        let svg = export(&d, &ExportOptions::default());
+        assert_eq!(svg.matches(character).count(), 2, "one bullet before each paragraph: {svg}");
+        assert!(svg.find(character) < svg.find("alpha") && !svg.contains(">-<") && !svg.contains("-alpha"), "{svg}");
+        if bullet == Bullet::Dot {
+            assert_drawn_in_place(&d);
+        }
+    }
+    // A raised and rotated first character: the bullet is written on the baseline, upright.
+    let raised = CharStyle { baseline_shift: 4.0, rotation: 20.0, ..style(12.0) };
+    let mut t = TextObject::point(Point::new(20.0, 20.0), "", style(12.0));
+    t.runs = vec![run("R", raised), run("aised", style(12.0))];
+    t.para.list = Some(ParaList::bulleted(Bullet::Dot));
+    let mut d = Document::new(300.0, 200.0);
+    let n = Node::new(d.alloc_id(), NodeKind::Text(Box::new(t)));
+    let l = d.layers[0].id;
+    d.insert(Some(l), 0, n).unwrap();
+    let svg = export(&d, &ExportOptions::default());
+    // Each `<tspan …>` start tag with the text after it.
+    let pieces: Vec<(&str, &str)> = svg.split("<tspan").skip(1).filter_map(|p| p.split_once('>')).collect();
+    let (tag, _) = pieces.iter().find(|(_, text)| text.starts_with('\u{2022}')).expect("the bullet's tspan");
+    assert!(!tag.contains("dy=") && !tag.contains("rotate="), "{svg}");
+    assert!(
+        pieces.iter().any(|(tag, text)| text.starts_with('R') && tag.contains("dy=") && tag.contains("rotate=")),
+        "the R keeps its shift and rotation: {svg}"
+    );
+    // Horizontally scaled type: a viewer stretches the bullet to the bullet's own width, not to the
+    // gap after it.
+    let mut t = TextObject::point(Point::new(20.0, 20.0), "Narrow", CharStyle { h_scale: 50.0, ..style(12.0) });
+    t.para.list = Some(ParaList::bulleted(Bullet::Dot));
+    t.para.left_indent = 18.0;
+    t.para.first_line_indent = -18.0;
+    let lay = vectorcraft_text::layout(vectorcraft_text::FontDb::global(), &t);
+    let width = lay.glyphs[lay.markers[0].glyphs.start].advance;
+    let mut d = Document::new(300.0, 200.0);
+    let n = Node::new(d.alloc_id(), NodeKind::Text(Box::new(t)));
+    let l = d.layers[0].id;
+    d.insert(Some(l), 0, n).unwrap();
+    let svg = export(&d, &ExportOptions::default());
+    let pieces: Vec<(&str, &str)> = svg.split("<tspan").skip(1).filter_map(|p| p.split_once('>')).collect();
+    let (tag, text) = pieces.iter().find(|(_, text)| text.starts_with('\u{2022}')).expect("the bullet's tspan");
+    let length: f64 = tag.split("textLength=\"").nth(1).and_then(|r| r.split('"').next()).and_then(|v| v.parse().ok()).expect("a textLength");
+    assert!(text.starts_with("\u{2022}<") && (length - width).abs() < 0.01, "the bullet alone, {width} wide: {svg}");
+    // Underlined text: the underline is the text's, not the bullet's.
+    let mut t = TextObject::point(Point::new(20.0, 20.0), "Underlined", CharStyle { underline: true, ..style(12.0) });
+    t.para.list = Some(ParaList::bulleted(Bullet::Dot));
+    let mut d = Document::new(300.0, 200.0);
+    let n = Node::new(d.alloc_id(), NodeKind::Text(Box::new(t)));
+    let l = d.layers[0].id;
+    d.insert(Some(l), 0, n).unwrap();
+    let svg = export(&d, &ExportOptions::default());
+    let text_tag = svg.split("<text").nth(1).and_then(|p| p.split('>').next()).expect("a <text>");
+    let pieces: Vec<(&str, &str)> = svg.split("<tspan").skip(1).filter_map(|p| p.split_once('>')).collect();
+    let (bullet_tag, _) = pieces.iter().find(|(_, text)| text.starts_with('\u{2022}')).expect("the bullet's tspan");
+    assert!(!text_tag.contains("text-decoration") && !bullet_tag.contains("text-decoration"), "{svg}");
+    assert!(pieces.iter().any(|(tag, text)| text.starts_with("Underlined") && tag.contains("text-decoration=\"underline\"")), "{svg}");
+    // Type on a path with a bullet is written as outlines, with a warning: a `<textPath>` holds the
+    // characters of the text only.
+    for list in [None, Some(ParaList::bulleted(Bullet::Dot))] {
+        let mut line = BezPath::new();
+        line.move_to((0.0, 50.0));
+        line.line_to((250.0, 50.0));
+        let mut t = TextObject::point(Point::new(20.0, 20.0), "Path", style(12.0));
+        t.kind = TextKind::OnPath { path: PathData::from_bezpath(&line), start: 0.0, end: None };
+        t.para.list = list;
+        let mut d = Document::new(300.0, 200.0);
+        let n = Node::new(d.alloc_id(), NodeKind::Text(Box::new(t)));
+        let l = d.layers[0].id;
+        d.insert(Some(l), 0, n).unwrap();
+        let out = vectorcraft_svg::export_full(&d, &ExportOptions::default(), None);
+        let warned = out.warnings.iter().any(|w| w.contains("bullets"));
+        assert_eq!((out.svg.contains("<textPath"), warned), (list.is_none(), list.is_some()), "{:?}", out.warnings);
     }
 }
 
@@ -378,6 +468,15 @@ fn ragged_lines_keep_their_character_spacing() {
         }
         runs.push(run("end", style(12.0)));
         assert_drawn_in_place(&area_doc(runs, 280.0, justify));
+    }
+}
+
+/// Type scaled horizontally before a tab is stretched to its own width, not to the tab's gap.
+#[test]
+fn scaled_type_before_a_tab_keeps_its_width() {
+    for h_scale in [50.0, 150.0] {
+        let scaled = CharStyle { h_scale, ..style(12.0) };
+        assert_drawn_in_place(&area_doc(vec![run("ab\tcd ef\tgh", scaled)], 280.0, Justify::Left));
     }
 }
 

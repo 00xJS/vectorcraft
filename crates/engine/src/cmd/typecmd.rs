@@ -1441,6 +1441,92 @@ mod area_tests {
         assert_eq!(text(&s).para_at(1).kashida, Kashida::Stylistic);
     }
 
+    /// Paragraph panel › Bullets: `text.setFormat {list, bullet}` makes the paragraphs it touches a
+    /// bulleted list and refuses unknown values. A paragraph that joins a list with no left or
+    /// first-line indent gets 18 pt and -18 pt, unless the call sets an indent, and one with indents
+    /// keeps them. The list is saved only when set and opens with the file, Return continues it,
+    /// "none" turns it off, and paragraph styles set it and turn it off.
+    #[test]
+    fn bulleted_lists_are_set_per_paragraph_saved_and_continued() {
+        use vectorcraft_doc::text::{Bullet, ParaList};
+        let mut s = Session::new();
+        s.execute("file.new", &json!({"width": 400, "height": 400})).unwrap();
+        let id =
+            s.execute("text.create", &json!({"x": 10, "y": 10, "text": "One\nTwo\nThree", "area": {"width": 300, "height": 200}})).unwrap()["id"]
+                .as_u64()
+                .unwrap();
+        let text = |s: &Session| match &s.doc().unwrap().doc.node(NodeId(id)).unwrap().kind {
+            NodeKind::Text(t) => (**t).clone(),
+            _ => panic!("text"),
+        };
+        let list = |s: &Session, i: usize| text(s).para_at(i).list;
+        let indents = |s: &Session, i: usize| (text(s).para_at(i).left_indent, text(s).para_at(i).first_line_indent);
+        let dot = Some(ParaList::bulleted(Bullet::Dot));
+        assert_eq!(list(&s, 0), None);
+        assert!(serde_json::to_value(text(&s).para_at(0)).unwrap().get("list").is_none(), "no list is saved without one");
+        s.execute("select.set", &json!({"ids": [id]})).unwrap();
+        s.execute("text.setFormat", &json!({"start": 4, "end": 4, "leftIndent": 30, "firstLineIndent": 5})).unwrap();
+        // The first two paragraphs: the first gets the hanging indent, the second keeps its indents.
+        s.execute("text.setFormat", &json!({"list": "bullet", "start": 0, "end": 4})).unwrap();
+        assert_eq!((list(&s, 0), list(&s, 1), list(&s, 2)), (dot, dot, None));
+        assert_eq!((indents(&s, 0), indents(&s, 1), indents(&s, 2)), ((18.0, -18.0), (30.0, 5.0), (0.0, 0.0)));
+        // `bullet` picks the bullet, and `list: "bullet"` keeps it; the indents stay as they are.
+        s.execute("text.setFormat", &json!({"bullet": "square", "start": 0, "end": 0})).unwrap();
+        s.execute("text.setFormat", &json!({"list": "bullet", "start": 0, "end": 0})).unwrap();
+        let square = Some(ParaList::bulleted(Bullet::Square));
+        assert_eq!((list(&s, 0), indents(&s, 0)), (square, (18.0, -18.0)));
+        for bad in [json!({"list": "numbers"}), json!({"bullet": "star"}), json!({"list": 1}), json!({"bullet": true})] {
+            assert!(s.execute("text.setFormat", &bad).is_err(), "{bad}");
+        }
+        assert_eq!((list(&s, 0), list(&s, 2)), (square, None), "an unknown value changes nothing");
+        assert_eq!(serde_json::to_value(text(&s).para_at(0)).unwrap()["list"], json!({"bullet": "square"}));
+        // A saved list reads the fields it leaves out as their defaults and ignores those it doesn't know.
+        let read = |v: serde_json::Value| serde_json::from_value::<vectorcraft_doc::ParaStyle>(json!({ "list": v })).unwrap().list;
+        assert_eq!((read(json!({})), read(json!({"bullet": "dash", "level": 2}))), (dot, Some(ParaList::bulleted(Bullet::Dash))));
+        let reopened = vectorcraft_format::load(&vectorcraft_format::save(&s.doc().unwrap().doc, false)).unwrap();
+        let Some(NodeKind::Text(back)) = reopened.node(NodeId(id)).map(|n| &n.kind) else { panic!("text") };
+        assert_eq!((back.para_at(0).list, back.para_at(1).list, back.para_at(2).list), (square, dot, None));
+        // Return at the end of a list item starts another one.
+        s.execute("text.editRange", &json!({"id": id, "start": 3, "end": 3, "insert": "\nOne more"})).unwrap();
+        assert_eq!((list(&s, 1), indents(&s, 1)), (square, (18.0, -18.0)));
+        s.execute("edit.undo", &json!({})).unwrap();
+        // "none" turns the list off and leaves the indents.
+        s.execute("text.setFormat", &json!({"bullet": "none", "start": 0, "end": 0})).unwrap();
+        assert_eq!((list(&s, 0), indents(&s, 0)), (None, (18.0, -18.0)));
+        s.execute("text.setFormat", &json!({"list": "none", "start": 4, "end": 4})).unwrap();
+        assert_eq!(list(&s, 1), None);
+        // Indents the call sets win over the hanging indent.
+        s.execute("text.setFormat", &json!({"list": "bullet", "leftIndent": 0, "firstLineIndent": 0, "start": 8, "end": 8})).unwrap();
+        assert_eq!((list(&s, 2), indents(&s, 2)), (dot, (0.0, 0.0)));
+        // A style that holds a list sets it; a style captured from a paragraph without one turns it off.
+        s.execute("paraStyle.new", &json!({"name": "Listed", "attrs": {"list": {"bullet": "dash"}}})).unwrap();
+        s.execute("paraStyle.apply", &json!({"name": "Listed", "id": id})).unwrap();
+        let dash = Some(ParaList::bulleted(Bullet::Dash));
+        assert_eq!((list(&s, 0), list(&s, 1), list(&s, 2)), (dash, dash, dash));
+        let plain = s.execute("text.create", &json!({"x": 10, "y": 300, "text": "Plain"})).unwrap()["id"].as_u64().unwrap();
+        s.execute("paraStyle.new", &json!({"name": "Plain", "id": plain})).unwrap();
+        s.execute("paraStyle.apply", &json!({"name": "Plain", "id": id})).unwrap();
+        assert_eq!((list(&s, 0), list(&s, 1), list(&s, 2)), (None, None, None));
+    }
+
+    /// Type › Create Outlines makes a path of a list item's bullet as well as of its characters.
+    #[test]
+    fn create_outlines_makes_a_path_of_the_bullet() {
+        let mut s = Session::new();
+        s.execute("file.new", &json!({"width": 400, "height": 400})).unwrap();
+        let outlined = |s: &mut Session, list: bool| {
+            let id = s.execute("text.create", &json!({"x": 10, "y": 50, "text": "One"})).unwrap()["id"].as_u64().unwrap();
+            if list {
+                s.execute("text.setFormat", &json!({"ids": [id], "list": "bullet"})).unwrap();
+            }
+            s.execute("select.set", &json!({"ids": [id]})).unwrap();
+            let g = s.execute("type.createOutlines", &json!({})).unwrap()["ids"][0].as_u64().unwrap();
+            s.doc().unwrap().doc.node(NodeId(g)).unwrap().children().unwrap().len()
+        };
+        let plain = outlined(&mut s, false);
+        assert_eq!(outlined(&mut s, true), plain + 1, "one more path: the bullet");
+    }
+
     /// Paragraph panel menu › Justification…: `text.setFormat` sets each paragraph's word and
     /// letter spacing, glyph scaling, Auto Leading and Single Word Justification, clamped to their
     /// ranges, in one undo step; Minimum ≤ Desired ≤ Maximum must hold or nothing changes. They

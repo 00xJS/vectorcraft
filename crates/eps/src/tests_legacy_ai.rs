@@ -997,6 +997,21 @@ fn variable_font_settings_are_warned_as_left_out() {
     assert!(String::from_utf8(out.bytes).unwrap().contains("(H\\351llo \\2005\\r) Tx\n"), "still written as text");
 }
 
+/// A legacy `.ai` paragraph has no list: type with a bulleted list is written as its text, with the
+/// warning that the bullets are left out.
+#[test]
+fn bulleted_lists_are_warned_as_left_out() {
+    let mut doc = typed();
+    let id = texts(&doc)[0].0.id;
+    if let Some(NodeKind::Text(t)) = doc.node_mut(id).map(|n| &mut n.kind) {
+        t.para.list = Some(vectorcraft_doc::text::ParaList::bulleted(vectorcraft_doc::text::Bullet::Square));
+        t.normalize_paras();
+    }
+    let out = write(&doc);
+    assert!(out.warnings.iter().any(|w| w == TYPE_ATTRIBUTES && w.contains("bulleted lists")), "{:?}", out.warnings);
+    assert!(String::from_utf8(out.bytes).unwrap().contains("(H\\351llo \\2005\\r) Tx\n"), "still written as text");
+}
+
 #[test]
 fn type_reads_back_as_text() {
     use vectorcraft_doc::{Justify, TextKind};
