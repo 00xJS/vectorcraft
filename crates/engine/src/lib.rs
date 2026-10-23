@@ -348,6 +348,9 @@ pub struct DocState {
     pub variables_highlight: Option<String>,
     /// Isolation mode container.
     pub isolation: Option<NodeId>,
+    /// Select › Start Global Edit: the objects edited together until Stop Global Edit or Escape
+    /// ([`cmd::globaledit`]). Editing state: not saved, not undoable.
+    pub global_edit: Option<cmd::globaledit::GlobalEdit>,
     pub interaction: Option<Interaction>,
     /// Edits made while this is open are one undo step (a scrubbed numeric field).
     pub undo_group: Option<UndoGroup>,
@@ -551,6 +554,7 @@ impl DocState {
             layer_rows: vec![],
             variables_highlight: None,
             isolation: None,
+            global_edit: None,
             interaction: None,
             undo_group: None,
             last_transform: None,
@@ -644,6 +648,7 @@ impl DocState {
             self.doc = it.doc;
             self.selection = Arc::unwrap_or_clone(it.selection);
             self.sync_new_art();
+            cmd::globaledit::follow_history(self);
             self.active_layer = it.active_layer;
             self.layer_rows = it.layer_rows;
             self.variables_highlight = it.variables_highlight;
@@ -861,16 +866,22 @@ const _: () = assert!(vectorcraft_doc::MAX_DEPTH == 32, "TOO_DEEP (and its catal
 /// Cheap sanity check after an edit: artboards and the objects just touched (the selection) must
 /// have finite, in-range geometry, so saved files always reload and renderers never see NaN/∞.
 fn doc_sane(d: &Document, sel: &Selection) -> bool {
-    let ok = |r: vectorcraft_geom::Rect| [r.x0, r.y0, r.x1, r.y1].iter().all(|v| v.is_finite() && v.abs() <= MAX_COORD);
     d.ruler_origin.is_finite()
         && d.ruler_origin.x.abs() <= MAX_COORD
         && d.ruler_origin.y.abs() <= MAX_COORD
-        && d.artboards.iter().all(|a| ok(a.rect))
+        && d.artboards.iter().all(|a| rect_in_range(a.rect))
         && d.guides.iter().all(|g| g.pos.is_finite() && g.pos.abs() <= MAX_COORD)
-        && {
-            let paths = d.index_paths(sel.objects.iter().copied());
-            sel.objects.iter().all(|id| paths.get(id).and_then(|p| d.node_at(p)).and_then(|n| n.geometric_bounds()).is_none_or(ok))
-        }
+        && objects_in_range(d, &sel.objects)
+}
+
+fn rect_in_range(r: vectorcraft_geom::Rect) -> bool {
+    [r.x0, r.y0, r.x1, r.y1].iter().all(|v| v.is_finite() && v.abs() <= MAX_COORD)
+}
+
+/// Do the objects `ids` have finite geometry within [`MAX_COORD`] (the ones not there pass)?
+fn objects_in_range(d: &Document, ids: &[NodeId]) -> bool {
+    let paths = d.index_paths(ids.iter().copied());
+    ids.iter().all(|id| paths.get(id).and_then(|p| d.node_at(p)).and_then(|n| n.geometric_bounds()).is_none_or(rect_in_range))
 }
 
 /// Where new art goes (Illustrator's drawing modes, Shift+D cycles).
@@ -1456,6 +1467,9 @@ pub struct Session {
     pub link_stamps: std::collections::HashMap<(u64, String), link_watch::Stamp>,
     /// The stamps being taken on a worker thread ([`Session::start_link_scan`]).
     pub link_scan: Option<link_watch::LinkScan>,
+    /// The Global Edit Options Start Global Edit matches with (`select.globalEditOptions`); not
+    /// saved.
+    pub global_edit_options: cmd::globaledit::Options,
 }
 
 impl Default for Session {
@@ -1538,6 +1552,7 @@ impl Session {
             search_threads: None,
             link_stamps: Default::default(),
             link_scan: None,
+            global_edit_options: Default::default(),
         }
     }
 
@@ -1839,6 +1854,7 @@ impl Session {
                     st.doc = doc;
                     st.selection = selection;
                     st.interaction = interaction;
+                    cmd::globaledit::follow_history(st);
                     st.revision += 1;
                 }
                 if active.is_some_and(|i| i < self.docs.len()) {
@@ -1868,8 +1884,14 @@ impl Session {
         let before = st.doc.clone();
         let before_sel = st.selection.clone();
         let doc = Arc::make_mut(&mut st.doc);
+        // The Global Edit members the edit reached besides the selection.
+        let mut spread = vec![];
         // Objects attached to a path follow it, and dimensions follow the art they measure.
         let result = match f(doc, &mut st.selection).and_then(|v| {
+            // Global Edit: the other members take what the edit changed about the one it edited.
+            if let Some(ge) = &st.global_edit {
+                spread = cmd::globaledit::propagate(&before, doc, ge, [&before_sel.objects, &st.selection.objects]);
+            }
             cmd::objects_on_path::refresh(&before, doc);
             cmd::dimension::refresh(&before, doc)?;
             Ok(v)
@@ -1902,7 +1924,7 @@ impl Session {
                     if st.doc.too_deep(Some(&before)) {
                         // Deeper trees overflow the stack of what walks them.
                         Err(EngineError::Other(TOO_DEEP.into()))
-                    } else if doc_sane(&st.doc, &st.selection) {
+                    } else if doc_sane(&st.doc, &st.selection) && objects_in_range(&st.doc, &spread) {
                         Ok(v)
                     } else {
                         Err(EngineError::Other("result would exceed the canvas (coordinates out of range)".into()))
@@ -1934,6 +1956,7 @@ impl Session {
             Err(e) => {
                 st.doc = before;
                 st.selection = before_sel;
+                cmd::globaledit::follow_history(st);
                 Err(e)
             }
         }
@@ -2052,6 +2075,7 @@ impl Session {
             if selection_changed {
                 st.selection.clone_from(&it.selection);
             }
+            cmd::globaledit::follow_history(st);
         }
         // The previous preview's paint is undone with it.
         self.pending_paint = None;
@@ -2208,6 +2232,7 @@ impl Session {
                     deselect_guides(&st.doc, &mut st.selection);
                 }
                 st.sync_new_art();
+                cmd::globaledit::follow_history(st);
                 st.revision += 1;
                 // The journal drops only the canceled groups' own entries and keeps the ones made in other documents meanwhile.
                 journal.extend(g.journal);
@@ -2285,6 +2310,7 @@ impl Session {
         }
         st.doc = doc;
         st.selection = selection;
+        cmd::globaledit::follow_history(st);
         if guides_locked {
             deselect_guides(&st.doc, &mut st.selection);
         }
@@ -2428,6 +2454,8 @@ mod tests_fontfiles;
 mod tests_fontlist;
 #[cfg(test)]
 mod tests_freeform;
+#[cfg(test)]
+mod tests_globaledit;
 #[cfg(test)]
 mod tests_gradient;
 #[cfg(test)]

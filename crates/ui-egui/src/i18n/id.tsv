@@ -5446,6 +5446,13 @@ axis	Y Axis	Sumbu Y
 	The plug-in is computing…	Plug-in sedang menghitung…
 	Inspect Plug-in	Periksa plug-in
 	Cancel Plug-in Run	Batalkan jalannya plug-in
+	Stop Global Edit	Hentikan edit global
+	Global Edit Options	Opsi edit global
+	Match	Cocokkan
+	On Artboards	Di artboard
+	All Artboards	Semua artboard
+	Include Objects On Canvas	Sertakan objek di kanvas
+	Result(s): {count}	Hasil: {count}
 	Add to Symbols	Tambahkan ke simbol
 	Basic Shapes	Bentuk dasar
 	Open Symbol Library	Buka pustaka simbol

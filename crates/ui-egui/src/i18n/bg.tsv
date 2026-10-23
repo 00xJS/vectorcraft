@@ -5430,6 +5430,13 @@ axis	Y Axis	Y ос
 	The plug-in is computing…	Приставката изчислява…
 	Inspect Plug-in	Проверка на приставка
 	Cancel Plug-in Run	Отказ от изпълнението на приставката
+	Stop Global Edit	Край на глобалното редактиране
+	Global Edit Options	Опции за глобално редактиране
+	Match	Съвпадение
+	On Artboards	В работните области
+	All Artboards	Всички работни области
+	Include Objects On Canvas	Включване на обекти от платното
+	Result(s): {count}	Резултат(и): {count}
 	Add to Symbols	Добавяне към символи
 	Basic Shapes	Основни фигури
 	Open Symbol Library	Отваряне на библиотека със символи

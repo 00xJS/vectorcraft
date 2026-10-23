@@ -412,6 +412,7 @@ fn undo(s: &mut Session, _: &Value) -> Result<Value> {
     st.sync_new_art();
     super::maskedit::follow_history(st, editing);
     leave_isolation_if_gone(st);
+    super::globaledit::follow_history(st);
     Ok(json!({ "undone": label }))
 }
 
@@ -438,6 +439,7 @@ fn redo(s: &mut Session, _: &Value) -> Result<Value> {
     st.sync_new_art();
     super::maskedit::follow_history(st, editing);
     leave_isolation_if_gone(st);
+    super::globaledit::follow_history(st);
     Ok(json!({ "redone": label }))
 }
 

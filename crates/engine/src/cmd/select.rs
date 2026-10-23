@@ -559,7 +559,7 @@ fn anchors_many(s: &mut Session, p: &Value) -> Result<Value> {
 
 /// Select › Same › Fill/Stroke Color: is `a` the same colour as `b`? Tints of one global or spot
 /// swatch are, unless `tint` (General › Select Same Tint %) asks for the same tint too.
-fn same_paint(a: &Paint, b: &Paint, tint: bool) -> bool {
+pub(crate) fn same_paint(a: &Paint, b: &Paint, tint: bool) -> bool {
     match (a, b) {
         (Paint::Solid { swatch: Some(x), tint: ta, .. }, Paint::Solid { swatch: Some(y), tint: tb, .. }) if x == y => !tint || (ta - tb).abs() < 1e-4,
         _ => a == b,

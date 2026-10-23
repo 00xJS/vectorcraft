@@ -5160,6 +5160,17 @@ axis	Y Axis	Y 軸
 @msg	a live effect runs while the document is drawn, so it can't be `heavy`	ライブ効果はドキュメントの描画中に実行されるため、`heavy` にはできません
 @msg	an exporter always gets an export's budget: leave `budget` out	書き出しプラグインには常に書き出しの予算が割り当てられます。`budget` は省略してください
 @msg	“{_1}” asks for a heavy budget (each run up to {minutes} minutes and {times} times the usual instructions): install it with `allowHeavy: true` once the user agrees	「{_1}」は大きな計算予算を求めています (1 回の実行につき最大 {minutes} 分、通常の {times} 倍の命令)。ユーザーが同意したら `allowHeavy: true` を指定してインストールしてください
+	Stop Global Edit	グローバル編集を終了
+	Global Edit Options	グローバル編集オプション
+	Match	一致
+	On Artboards	アートボード上
+	All Artboards	すべてのアートボード
+	Include Objects On Canvas	カンバス上のオブジェクトを含める
+	Result(s): {count}	結果: {count}
+@msg	select one object	オブジェクトを 1 つ選択してください
+@msg	Global Edit works on paths, compound paths and symbol instances	グローバル編集はパス、複合パス、シンボルインスタンスに使用できます
+@msg	no similar objects found (rotated or reflected copies are not matched); change the Global Edit Options and try again	類似するオブジェクトが見つかりません（回転または反転したコピーは一致しません）。グローバル編集オプションを変更してもう一度試してください
+@msg	`artboards`: all or a range such as 1, 3-5, not {v}	`artboards`: all または 1, 3-5 のような範囲を指定してください ({v} ではなく)
 	Add to Symbols	シンボルに追加
 	Basic Shapes	基本シェイプ
 	Open Symbol Library	シンボルライブラリを開く

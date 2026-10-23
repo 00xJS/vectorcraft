@@ -5489,6 +5489,13 @@ axis	Y Axis	Y-as
 	The plug-in is computing…	De plug-in is aan het rekenen…
 	Inspect Plug-in	Plug-in inspecteren
 	Cancel Plug-in Run	Plug-in-run annuleren
+	Stop Global Edit	Globale bewerking stoppen
+	Global Edit Options	Opties voor globale bewerking
+	Match	Overeenkomst
+	On Artboards	Op tekengebieden
+	All Artboards	Alle tekengebieden
+	Include Objects On Canvas	Objecten op het canvas opnemen
+	Result(s): {count}	Resultaat/resultaten: {count}
 	Add to Symbols	Aan symbolen toevoegen
 	Basic Shapes	Basisvormen
 	Open Symbol Library	Symboolbibliotheek openen

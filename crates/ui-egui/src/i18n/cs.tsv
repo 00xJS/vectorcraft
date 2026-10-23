@@ -5481,6 +5481,17 @@ axis	Y Axis	osa Y
 @msg	a live effect runs while the document is drawn, so it can't be `heavy`	živý efekt běží během vykreslování dokumentu, takže nemůže být `heavy`
 @msg	an exporter always gets an export's budget: leave `budget` out	exportní zásuvný modul dostává vždy rozpočet exportu: klíč `budget` vynechte
 @msg	“{_1}” asks for a heavy budget (each run up to {minutes} minutes and {times} times the usual instructions): install it with `allowHeavy: true` once the user agrees	„{_1}“ žádá o velký výpočetní rozpočet (každé spuštění až {minutes} minut a {times}krát víc instrukcí než obvykle): nainstalujte ho s `allowHeavy: true`, jakmile uživatel souhlasí
+	Stop Global Edit	Ukončit globální úpravy
+	Global Edit Options	Možnosti globálních úprav
+	Match	Shoda
+	On Artboards	Na pracovních plochách
+	All Artboards	Všechny pracovní plochy
+	Include Objects On Canvas	Zahrnout objekty na plátně
+	Result(s): {count}	Výsledky: {count}
+@msg	select one object	vyberte jeden objekt
+@msg	Global Edit works on paths, compound paths and symbol instances	Globální úpravy pracují s cestami, složenými cestami a instancemi symbolů
+@msg	no similar objects found (rotated or reflected copies are not matched); change the Global Edit Options and try again	nebyly nalezeny žádné podobné objekty (otočené a zrcadlené kopie se nevyhledávají); změňte možnosti globálních úprav a zkuste to znovu
+@msg	`artboards`: all or a range such as 1, 3-5, not {v}	`artboards`: all nebo rozsah, například 1, 3-5, ne {v}
 	Add to Symbols	Přidat do symbolů
 	Basic Shapes	Základní tvary
 	Open Symbol Library	Otevřít knihovnu symbolů

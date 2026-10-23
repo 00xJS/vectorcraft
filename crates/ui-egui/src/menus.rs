@@ -2128,6 +2128,9 @@ pub fn dynamic_label(app: &VectorcraftApp, id: &str, label: &str) -> String {
             });
             if editing { "Edit Envelope" } else { "Edit Contents" }.into()
         }
+        "select.globalEdit" => {
+            if app.session.active().is_some_and(|d| d.global_edit.is_some()) { "Stop Global Edit" } else { "Start Global Edit" }.into()
+        }
         "edit.undo" => app.session.active().and_then(|d| d.history.undo.last()).map(|h| format!("Undo {}", h.label)).unwrap_or_else(|| "Undo".into()),
         "edit.redo" => app.session.active().and_then(|d| d.history.redo.last()).map(|h| format!("Redo {}", h.label)).unwrap_or_else(|| "Redo".into()),
         id if id.starts_with(crate::panels::swatches::USER_SLOT) => {
@@ -3062,7 +3065,7 @@ pub fn menu_tree_named(english_names: bool) -> Vec<(&'static str, Vec<Item>)> {
                         c("Area Text Objects", "select.object.areaText"),
                     ],
                 ),
-                todo("Start Global Edit"),
+                c("Start Global Edit", "select.globalEdit"),
                 Sep,
                 c("Save Selection…", "select.save"),
                 c("Update Selection", "select.update"),
@@ -4239,6 +4242,8 @@ pub const DYNAMIC_LABELS: &[&str] = &[
     "Show Print Tiling",
     "Edit Envelope",
     "Edit Contents",
+    "Start Global Edit",
+    "Stop Global Edit",
     "Undo",
     "Redo",
     "Unlock Grid",
