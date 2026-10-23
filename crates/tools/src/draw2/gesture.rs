@@ -258,7 +258,8 @@ impl GestureTool {
                 }
                 // Close Paths When Ends Are Within is off at 0 pixels.
                 let near = self.close_within > 0.0 && pts.len() > 2 && pts[0].distance(pts[pts.len() - 1]) <= cx.tol(self.close_within);
-                let closed = (m.alt && !self.alt_smooth) || (self.extend.is_none() && near);
+                // A straight line has two points: closing it would draw it back over itself.
+                let closed = !self.straight && ((m.alt && !self.alt_smooth) || (self.extend.is_none() && near));
                 vec![Action::Preview("path.freehand".into(), self.freehand_params(closed)), Action::Commit]
             }
             "blobBrush" => vec![Action::Exec(
@@ -330,6 +331,8 @@ impl Tool for GestureTool {
                     self.snap.drag(cx, p, None);
                 }
                 if self.straight {
+                    // The press's Smart Guides would stay on screen: the line's end doesn't snap.
+                    self.snap.clear();
                     // The line runs from the press point to the pointer, wherever the drag went.
                     if self.points.first().is_some_and(|s| s.distance(p) < cx.tol(1.0)) {
                         return vec![];
@@ -765,6 +768,25 @@ mod tests {
             let all = pts(&drag_held(&mut t, &cx, &[(0.0, 0.0), (30.0, -10.0), (50.0, -60.0)], m));
             assert_eq!(all.last().unwrap().len(), 3, "{id}: {all:?}");
         }
+    }
+
+    /// #3799: a Shift line leaves no Smart Guides of its press on screen while it is dragged
+    /// (its end doesn't snap), and Alt at its release leaves it open.
+    #[test]
+    fn pencil_shift_line_drops_the_press_guides_and_stays_open_with_alt() {
+        let (d, _) = doc_with_rect();
+        let s = Selection::default();
+        let p = paint();
+        let cx = cx(&d, &s, &p);
+        let shift = Mods { shift: true, ..Default::default() };
+        let mut t = GestureTool::new("pencil");
+        t.pointer(&cx, &PointerEvent::new(PointerKind::Down, 102.0, 98.0).with_mods(shift));
+        assert!(!t.overlays(&cx).is_empty(), "the press snaps to the corner and shows it");
+        t.pointer(&cx, &PointerEvent::new(PointerKind::Drag, 300.0, 140.0).with_mods(shift));
+        assert!(t.overlays(&cx).is_empty(), "{:?}", t.overlays(&cx));
+        let shift_alt = Mods { shift: true, alt: true, ..Default::default() };
+        let acts = t.pointer(&cx, &PointerEvent::new(PointerKind::Up, 300.0, 140.0).with_mods(shift_alt));
+        assert!(matches!(&acts[0], Action::Preview(_, v) if v["closed"] == false && v["points"].as_array().unwrap().len() == 2), "{acts:?}");
     }
 
     /// #3799: a Shift line started on an end of a selected open path continues the path from that
