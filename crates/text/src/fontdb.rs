@@ -394,7 +394,7 @@ struct CatalogFamily {
     /// Non-English family name from the name table, when the scan found one.
     native: Option<String>,
     faces: Vec<CatalogFace>,
-    /// The family's kind (from its first face found).
+    /// The family's kind (from its first face found); variable when any face found is.
     traits: Option<FontTraits>,
 }
 
@@ -754,17 +754,21 @@ impl FontClass {
         [FontClass::Serif, FontClass::Sans, FontClass::Rounded, FontClass::Script, FontClass::Monospaced, FontClass::Decorative];
 }
 
-/// What a font menu filters on: whether a family sets Japanese or Thai, and its kind.
+/// What a font menu filters on: whether a family sets Japanese or Thai, its kind, and whether it
+/// is a variable font.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub struct FontTraits {
     pub japanese: bool,
     /// Its character map has Thai (ก and า).
     pub thai: bool,
     pub class: FontClass,
+    /// The face has variation axes (an `fvar` table of at most 64 axes); for a family, one of
+    /// its faces has.
+    pub variable: bool,
 }
 
 impl FontTraits {
-    /// From a face's OS/2 table (when it has one) and names.
+    /// From a face's OS/2 and `fvar` tables (when it has them) and names.
     fn of(font: &skrifa::FontRef<'_>, keys: &FaceKeys) -> Self {
         use skrifa::raw::TableProvider;
         let os2 = font.os2().ok();
@@ -875,7 +879,8 @@ impl FontTraits {
         } else {
             FontClass::Other
         };
-        FontTraits { japanese, thai, class }
+        let variable = (1..=MAX_AXES).contains(&font.axes().len());
+        FontTraits { japanese, thai, class, variable }
     }
 }
 
@@ -2007,7 +2012,8 @@ impl FontDb {
                     postscript.insert(ps.clone(), (family.clone(), style.clone()));
                 }
                 let entry = catalog.entry(family.to_ascii_lowercase()).or_default();
-                entry.traits.get_or_insert(traits);
+                let kind = entry.traits.get_or_insert(traits);
+                kind.variable |= traits.variable;
                 if entry.name.is_empty() {
                     entry.name = family;
                 }
@@ -2114,12 +2120,24 @@ impl FontDb {
     }
 
     /// The kind of `family` (whether it sets Japanese, its class), for font menu filters: from a
-    /// loaded face, else from the system font scan. Cheap: no font file is read.
+    /// loaded face, else from the system font scan. Variable when any of its faces, loaded or
+    /// scanned, is: a family may install static files beside a variable one. Cheap: no font file
+    /// is read, and a loaded family doesn't start the scan.
     pub fn family_traits(&self, family: &str) -> FontTraits {
-        if let Some(f) = self.read_faces().iter().find(|f| f.family.eq_ignore_ascii_case(family)) {
-            return f.traits;
+        let loaded = {
+            let faces = self.read_faces();
+            let mut of_family = faces.iter().filter(|f| f.family.eq_ignore_ascii_case(family));
+            of_family.next().map(|first| FontTraits { variable: first.traits.variable || of_family.any(|f| f.traits.variable), ..first.traits })
+        };
+        let scanned = |catalog: &Catalog| catalog.get(&family.to_ascii_lowercase()).and_then(|c| c.traits);
+        match loaded {
+            None => scanned(&self.read_catalog()).unwrap_or_default(),
+            Some(traits) if traits.variable => traits,
+            Some(traits) => {
+                let variable = scanned(&self.catalog.read().unwrap_or_else(|e| e.into_inner())).is_some_and(|t| t.variable);
+                FontTraits { variable, ..traits }
+            }
         }
-        self.read_catalog().get(&family.to_ascii_lowercase()).and_then(|c| c.traits).unwrap_or_default()
     }
 
     /// [`face`](Self::face) by any of the family's names ([`canonical`](Self::canonical)), and how

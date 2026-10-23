@@ -3657,6 +3657,8 @@ effect	Regular	Normalny
 	Put back in the dock	Odłóż z powrotem do doku
 	All Scripts	Wszystkie skrypty
 	Any Kind	Dowolny rodzaj
+	Font Technology	Technologia czcionek
+font-technology	Variable	Zmienne
 	Decorative	Ozdobne
 	Favorites	Ulubione
 	Latin	Łacińskie

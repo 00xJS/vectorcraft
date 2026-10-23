@@ -4609,6 +4609,8 @@ imageTrace	Outline	轮廓
 # The Layers panel, the graphics processor preference and the font menu's filters.
 	All Scripts	所有文字系统
 	Any Kind	所有类型
+	Font Technology	字体技术
+font-technology	Variable	可变
 	Applies the next time VectorCraft starts.	下次启动 VectorCraft 时生效。
 	Collapse to Icons	折叠为图标
 	Decorative	装饰
