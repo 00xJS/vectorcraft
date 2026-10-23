@@ -300,10 +300,12 @@ pub fn show(app: &mut VectorcraftApp, ui: &mut Ui) {
             set(app, json!({"profile": id}));
         }
         let can_flip = st.as_ref().is_some_and(|s| s.profile.is_some());
-        if widgets::icon_button_enabled(ui, "flip-horizontal-2", tl!("Flip Along"), false, can_flip, 22.0).clicked() {
+        // Lucide names these icons for their mirror line: the vertical-line icon flips the
+        // profile along the path, while the horizontal-line icon flips it across the path.
+        if widgets::icon_button_enabled(ui, "flip-vertical-2", tl!("Flip Along"), false, can_flip, 22.0).clicked() {
             app.run("stroke.setAdvanced", json!({"flipProfile": "along"})).ok();
         }
-        if widgets::icon_button_enabled(ui, "flip-vertical-2", tl!("Flip Across"), false, can_flip, 22.0).clicked() {
+        if widgets::icon_button_enabled(ui, "flip-horizontal-2", tl!("Flip Across"), false, can_flip, 22.0).clicked() {
             app.run("stroke.setAdvanced", json!({"flipProfile": "across"})).ok();
         }
     });
