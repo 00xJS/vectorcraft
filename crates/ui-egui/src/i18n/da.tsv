@@ -3825,6 +3825,7 @@ imageTrace	Outline	Kontur
 @msg	Couldn't copy to the system clipboard: {e}	Kunne ikke kopiere til systemets udklipsholder: {e}
 @msg	Couldn't open {name}: {e}	Kunne ikke åbne {name}: {e}
 @msg	Couldn't place {name}: the document it was dropped on was closed	Kunne ikke placere {name}: dokumentet, den blev sluppet på, var lukket
+@msg	Couldn't place {name}: the document it was placed in was closed	Kunne ikke placere {name}: dokumentet, den blev placeret i, var lukket
 @msg	Couldn't read {name}: {e}	Kunne ikke læse {name}: {e}
 @msg	Couldn't save recovery data: {e}	Kunne ikke gemme gendannelsesdata: {e}
 @msg	Create Outlines: select text objects	Opret konturer: markér tekstobjekter
@@ -4168,6 +4169,7 @@ imageTrace	Outline	Kontur
 @msg	path is already closed	stien er allerede lukket
 @msg	paths contain invalid coordinates	stierne indeholder ugyldige koordinater
 @msg	paths: give at least one file	stier: angiv mindst én fil
+@msg	replace: the object to replace was changed or deleted	erstat: objektet, der skulle erstattes, er ændret eller slettet
 @msg	pattern missing	mønster mangler
 @msg	patterns nested too deeply are filled with mid-grey	mønstre, der er indlejret for dybt, udfyldes med mellemgrå
 @msg	percent must be above 0 and at most 6400, not {p}	procent skal være over 0 og højst 6400, ikke {p}
@@ -4353,6 +4355,7 @@ imageTrace	Outline	Kontur
 @msg	Saving {_1}	Gemmer {_1}
 @msg	Exporting {_1}	Eksporterer {_1}
 @msg	Packaging {_1}	Pakker {_1}
+@msg	Placing {_1}	Placerer {_1}
 @msg	Saving recovery data for {_1}	Gemmer gendannelsesdata for {_1}
 @msg	Discarded {_1} recovered document(s)	Forkastede {_1} gendannet(e) dokument(er)
 @msg	Restored {_1} recovered document(s): save them to keep them	Genvandt {_1} gendannet(e) dokument(er): gem dem for at beholde dem

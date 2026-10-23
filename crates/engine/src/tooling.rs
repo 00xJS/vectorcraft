@@ -68,6 +68,9 @@ pub enum UiRequest {
     /// A message for the status bar: the `warning` of a command the tool ran (Liquify skipping
     /// type under the brush).
     Status(String),
+    /// Place a file with these `file.place` params: a click or drag of the place cursor, when
+    /// [`Session::place_cursor_requests`] is set.
+    Place(Value),
 }
 
 impl Session {
@@ -619,6 +622,8 @@ impl Session {
                     self.liquify_stroke = None;
                     self.cancel_interaction()?
                 }
+                // The place cursor's file, placed by the frontend that asked for it.
+                Action::Exec(cmd, p) if cmd == "file.place" && self.place_cursor_requests => ui.push(UiRequest::Place(p)),
                 Action::Exec(cmd, p) => {
                     // A command's warning (Crop Image's when the image couldn't be decoded) goes to the
                     // status bar too.

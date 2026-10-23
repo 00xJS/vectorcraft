@@ -44,6 +44,7 @@ mod panel_docking;
 pub mod panels;
 pub mod picks;
 pub mod place;
+pub mod placing;
 pub mod plugin_runs;
 pub mod prefs_dialog;
 pub mod print;
@@ -519,6 +520,8 @@ pub struct VectorcraftApp {
     pub opening: opening::Opening,
     /// Heavy plug-in filters running off the UI thread ([`plugin_runs`]).
     pub plugin_runs: plugin_runs::PluginRuns,
+    /// Files being read off the UI thread for Place ([`placing`]).
+    pub placing: placing::Placing,
     /// Data Recovery's timer and startup question ([`recovery`]).
     pub recovery: recovery::Timer,
     /// Modifiers the keyboard holds (from the host's input), given back after synthetic input.
@@ -576,6 +579,9 @@ impl VectorcraftApp {
         if let Some(store) = &services.recovery_store {
             session.recovery.set_store(store.clone());
         }
+        // The place cursor's clicks and drags place their files through the app
+        // ([`place::place_from_cursor`]).
+        session.place_cursor_requests = true;
         let views = session.documents().iter().map(View::of).collect();
         Self {
             session,
@@ -644,6 +650,7 @@ impl VectorcraftApp {
             background: Default::default(),
             opening: Default::default(),
             plugin_runs: Default::default(),
+            placing: Default::default(),
             recovery: Default::default(),
             host_modifiers: Default::default(),
             synthetic_modifiers: false,
@@ -1340,9 +1347,14 @@ impl VectorcraftApp {
         screen_color::poll(self, ctx);
         opening::poll(self);
         plugin_runs::poll(self);
+        placing::poll(self);
         #[cfg(not(target_arch = "wasm32"))]
         self.tick_link_updates(ctx, now);
-        if !self.background.jobs.is_empty() || !self.opening.pending.is_empty() || !self.plugin_runs.running.is_empty() {
+        if !self.background.jobs.is_empty()
+            || !self.opening.pending.is_empty()
+            || !self.plugin_runs.running.is_empty()
+            || !self.placing.pending.is_empty()
+        {
             // Keep the status bar's progress moving and pick the result up when it arrives.
             ctx.request_repaint_after(std::time::Duration::from_millis(100));
         }

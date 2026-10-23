@@ -2054,6 +2054,7 @@ axis	Both	Και τα δύο
 @msg	Couldn't copy to the system clipboard: {e}	Δεν ήταν δυνατή η αντιγραφή στο πρόχειρο συστήματος: {e}
 @msg	Couldn't open {name}: {e}	Δεν ήταν δυνατό το άνοιγμα του {name}: {e}
 @msg	Couldn't place {name}: the document it was dropped on was closed	Δεν ήταν δυνατή η τοποθέτηση του {name}: το έγγραφο στο οποίο αποθέσατε το αρχείο έκλεισε
+@msg	Couldn't place {name}: the document it was placed in was closed	Δεν ήταν δυνατή η τοποθέτηση του {name}: το έγγραφο στο οποίο τοποθετούνταν το αρχείο έκλεισε
 @msg	Couldn't read {name}: {e}	Δεν ήταν δυνατή η ανάγνωση του {name}: {e}
 @msg	Couldn't save recovery data: {e}	Δεν ήταν δυνατή η αποθήκευση δεδομένων ανάκτησης: {e}
 @msg	Create Outlines: select text objects	Δημιουργία περιγραμμάτων: επιλέξτε αντικείμενα κειμένου
@@ -4134,6 +4135,7 @@ theme	Appearance	Εμφάνιση
 @msg	path is already closed	η διαδρομή είναι ήδη κλειστή
 @msg	paths contain invalid coordinates	οι διαδρομές περιέχουν μη έγκυρες συντεταγμένες
 @msg	paths: give at least one file	διαδρομές: δώστε τουλάχιστον ένα αρχείο
+@msg	replace: the object to replace was changed or deleted	αντικατάσταση: το αντικείμενο προς αντικατάσταση άλλαξε ή διαγράφηκε
 @msg	pattern missing	λείπει το μοτίβο
 @msg	patterns nested too deeply are filled with mid-grey	τα πολύ βαθιά ένθετα μοτίβα γεμίζονται με μέτριο γκρι
 @msg	percent must be above 0 and at most 6400, not {p}	το ποσοστό πρέπει να είναι μεγαλύτερο από 0 και έως 6400, όχι {p}
@@ -4329,6 +4331,7 @@ theme	Appearance	Εμφάνιση
 @msg	Saving {_1}	Αποθήκευση {_1}
 @msg	Exporting {_1}	Εξαγωγή {_1}
 @msg	Packaging {_1}	Συσκευασία {_1}
+@msg	Placing {_1}	Τοποθέτηση {_1}
 @msg	Saving recovery data for {_1}	Αποθήκευση δεδομένων ανάκτησης για {_1}
 @msg	Discarded {_1} recovered document(s)	Απορρίφθηκαν {_1} ανακτημένα έγγραφα
 @msg	Restored {_1} recovered document(s): save them to keep them	Επαναφέρθηκαν {_1} ανακτημένα έγγραφα: αποθηκεύστε τα για να διατηρηθούν

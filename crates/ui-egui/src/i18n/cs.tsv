@@ -4092,6 +4092,7 @@ imageTrace	Outline	Obrys
 @msg	Couldn't copy to the system clipboard: {e}	Nelze kopírovat do systémové schránky: {e}
 @msg	Couldn't open {name}: {e}	{name} nelze otevřít: {e}
 @msg	Couldn't place {name}: the document it was dropped on was closed	{name} nelze umístit: dokument, na který byl přetažen, byl zavřen
+@msg	Couldn't place {name}: the document it was placed in was closed	{name} nelze umístit: dokument, do kterého se umísťoval, byl zavřen
 @msg	Couldn't read {name}: {e}	{name} nelze přečíst: {e}
 @msg	Couldn't save recovery data: {e}	Data pro obnovení nelze uložit: {e}
 @msg	Create Outlines: select text objects	Převést na křivky: vyberte textové objekty
@@ -4457,6 +4458,7 @@ imageTrace	Outline	Obrys
 @msg	path is already closed	cesta už je uzavřená
 @msg	paths contain invalid coordinates	cesty obsahují neplatné souřadnice
 @msg	paths: give at least one file	paths: zadejte alespoň jeden soubor
+@msg	replace: the object to replace was changed or deleted	replace: objekt k nahrazení byl změněn nebo odstraněn
 @msg	pattern missing	chybí vzorek
 @msg	patterns nested too deeply are filled with mid-grey	příliš hluboko vnořené vzorky se vyplní středně šedou
 @msg	percent must be above 0 and at most 6400, not {p}	procento musí být větší než 0 a nejvýše 6400, ne {p}
@@ -4657,6 +4659,7 @@ imageTrace	Outline	Obrys
 @msg	Saving {_1}	Ukládání {_1}
 @msg	Exporting {_1}	Exportování {_1}
 @msg	Packaging {_1}	Balení {_1}
+@msg	Placing {_1}	Umísťování {_1}
 @msg	Saving recovery data for {_1}	Ukládání dat pro obnovení pro {_1}
 @msg	Discarded {_1} recovered document(s)	Zahozeno obnovených dokumentů: {_1}
 @msg	Restored {_1} recovered document(s): save them to keep them	Obnoveno dokumentů: {_1}; pokud je chcete zachovat, uložte je

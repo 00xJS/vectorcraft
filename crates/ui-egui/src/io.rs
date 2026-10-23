@@ -1046,9 +1046,10 @@ pub(crate) fn export_files(app: &mut VectorcraftApp, id: &str, params: Value) ->
     Ok(r)
 }
 
-/// Place a file's bytes (no path, so embedded) centred in the view: `file.place`.
+/// Place a file's bytes (no path, so embedded) centered in the view: `file.place`, read off the UI
+/// thread on the desktop ([`crate::place::run_for_user`]).
 pub fn place_bytes(app: &mut VectorcraftApp, name: &str, bytes: &[u8]) -> Result<(), String> {
-    crate::place::run(app, &serde_json::json!({ "name": name, "dataBase64": vectorcraft_format::base64_encode(bytes) })).map(|_| ())
+    crate::place::run_for_user(app, &serde_json::json!({ "name": name, "dataBase64": vectorcraft_format::base64_encode(bytes) })).map(|_| ())
 }
 
 #[cfg(test)]

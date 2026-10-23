@@ -3785,6 +3785,7 @@ axis	Both	Les deux
 @msg	Couldn't copy to the system clipboard: {e}	Impossible de copier dans le presse-papiers du système : {e}
 @msg	Couldn't open {name}: {e}	Impossible d’ouvrir {name} : {e}
 @msg	Couldn't place {name}: the document it was dropped on was closed	Impossible d’importer {name} : le document sur lequel il a été déposé a été fermé
+@msg	Couldn't place {name}: the document it was placed in was closed	Impossible d’importer {name} : le document dans lequel il était importé a été fermé
 @msg	Couldn't read {name}: {e}	Impossible de lire {name} : {e}
 @msg	Couldn't save recovery data: {e}	Impossible d’enregistrer les données de récupération : {e}
 @msg	Create Outlines: select text objects	Vectoriser : sélectionnez des objets texte
@@ -4152,6 +4153,7 @@ axis	Both	Les deux
 @msg	path is already closed	le tracé est déjà fermé
 @msg	paths contain invalid coordinates	les tracés contiennent des coordonnées non valides
 @msg	paths: give at least one file	paths : indiquez au moins un fichier
+@msg	replace: the object to replace was changed or deleted	replace : l’objet à remplacer a été modifié ou supprimé
 @msg	pattern missing	motif manquant
 @msg	patterns nested too deeply are filled with mid-grey	les motifs imbriqués trop profondément sont remplis de gris moyen
 @msg	percent must be above 0 and at most 6400, not {p}	le pourcentage doit être supérieur à 0 et au plus égal à 6400, pas {p}
@@ -4353,6 +4355,7 @@ axis	Both	Les deux
 @msg	Saving {_1}	Enregistrement de {_1}
 @msg	Exporting {_1}	Exportation de {_1}
 @msg	Packaging {_1}	Assemblage de {_1}
+@msg	Placing {_1}	Importation de {_1}
 @msg	Saving recovery data for {_1}	Enregistrement des données de récupération de {_1}
 @msg	Discarded {_1} recovered document(s)	{_1} document(s) récupéré(s) supprimé(s)
 @msg	Restored {_1} recovered document(s): save them to keep them	{_1} document(s) récupéré(s) restauré(s) : enregistrez-les pour les conserver

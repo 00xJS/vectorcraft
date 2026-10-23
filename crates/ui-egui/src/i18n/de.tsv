@@ -3712,6 +3712,7 @@ theme	Appearance	Erscheinungsbild
 @msg	Couldn't copy to the system clipboard: {e}	In die Systemzwischenablage konnte nicht kopiert werden: {e}
 @msg	Couldn't open {name}: {e}	{name} konnte nicht geöffnet werden: {e}
 @msg	Couldn't place {name}: the document it was dropped on was closed	{name} konnte nicht platziert werden: Das Dokument, auf das die Datei gezogen wurde, wurde geschlossen
+@msg	Couldn't place {name}: the document it was placed in was closed	{name} konnte nicht platziert werden: Das Dokument, in dem die Datei platziert wurde, wurde geschlossen
 @msg	Couldn't read {name}: {e}	{name} konnte nicht gelesen werden: {e}
 @msg	Couldn't save recovery data: {e}	Wiederherstellungsdaten konnten nicht gespeichert werden: {e}
 @msg	Create Outlines: select text objects	In Pfade umwandeln: Wählen Sie Textobjekte aus
@@ -4080,6 +4081,7 @@ theme	Appearance	Erscheinungsbild
 @msg	path is already closed	der Pfad ist bereits geschlossen
 @msg	paths contain invalid coordinates	die Pfade enthalten ungültige Koordinaten
 @msg	paths: give at least one file	paths: Geben Sie mindestens eine Datei an
+@msg	replace: the object to replace was changed or deleted	replace: Das zu ersetzende Objekt wurde geändert oder gelöscht
 @msg	pattern missing	das Muster fehlt
 @msg	patterns nested too deeply are filled with mid-grey	zu tief verschachtelte Muster werden mit mittlerem Grau gefüllt
 @msg	percent must be above 0 and at most 6400, not {p}	percent muss über 0 und höchstens 6400 sein, nicht {p}
@@ -4280,6 +4282,7 @@ theme	Appearance	Erscheinungsbild
 @msg	Saving {_1}	{_1} wird gespeichert
 @msg	Exporting {_1}	{_1} wird exportiert
 @msg	Packaging {_1}	{_1} wird verpackt
+@msg	Placing {_1}	{_1} wird platziert
 @msg	Saving recovery data for {_1}	Wiederherstellungsdaten für {_1} werden gespeichert
 @msg	Discarded {_1} recovered document(s)	{_1} wiederhergestellte(s) Dokument(e) verworfen
 @msg	Restored {_1} recovered document(s): save them to keep them	{_1} wiederhergestellte(s) Dokument(e) geöffnet: Speichern Sie sie, um sie zu behalten

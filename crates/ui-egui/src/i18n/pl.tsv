@@ -3914,6 +3914,7 @@ imageTrace	Outline	Kontur
 @msg	Couldn't copy to the system clipboard: {e}	Nie udało się skopiować do schowka systemowego: {e}
 @msg	Couldn't open {name}: {e}	Nie udało się otworzyć {name}: {e}
 @msg	Couldn't place {name}: the document it was dropped on was closed	Nie udało się umieścić {name}: dokument, na który go upuszczono, został zamknięty
+@msg	Couldn't place {name}: the document it was placed in was closed	Nie udało się umieścić {name}: dokument, w którym był umieszczany, został zamknięty
 @msg	Couldn't read {name}: {e}	Nie udało się odczytać {name}: {e}
 @msg	Couldn't save recovery data: {e}	Nie udało się zapisać danych odzyskiwania: {e}
 @msg	Create Outlines: select text objects	Utwórz kontury: zaznacz obiekty tekstowe
@@ -4281,6 +4282,7 @@ imageTrace	Outline	Kontur
 @msg	path is already closed	ścieżka jest już zamknięta
 @msg	paths contain invalid coordinates	ścieżki zawierają nieprawidłowe współrzędne
 @msg	paths: give at least one file	paths: podaj co najmniej jeden plik
+@msg	replace: the object to replace was changed or deleted	replace: obiekt do zastąpienia został zmieniony lub usunięty
 @msg	pattern missing	brak wzorka
 @msg	patterns nested too deeply are filled with mid-grey	zbyt głęboko zagnieżdżone wzorki są wypełniane średnią szarością
 @msg	percent must be above 0 and at most 6400, not {p}	procent musi być większy od 0 i nie większy niż 6400, nie {p}
@@ -4482,6 +4484,7 @@ imageTrace	Outline	Kontur
 @msg	Saving {_1}	Zapisywanie {_1}
 @msg	Exporting {_1}	Eksportowanie {_1}
 @msg	Packaging {_1}	Pakowanie {_1}
+@msg	Placing {_1}	Umieszczanie {_1}
 @msg	Saving recovery data for {_1}	Zapisywanie danych odzyskiwania dla {_1}
 @msg	Discarded {_1} recovered document(s)	Odrzucone odzyskane dokumenty: {_1}
 @msg	Restored {_1} recovered document(s): save them to keep them	Przywrócone odzyskane dokumenty: {_1} — zapisz je, aby je zachować

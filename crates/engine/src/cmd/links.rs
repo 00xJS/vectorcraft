@@ -392,11 +392,12 @@ pub(crate) fn files_to_find(st: &crate::DocState, ids: Option<&[NodeId]>) -> Vec
 // ---------- reading files into the document ----------
 
 /// Keep `full` (a file's pixels) as image `key` of `d`, unless pixels are there already; a
-/// preview there is kept, and a linked image gets one.
+/// preview there is kept, and a linked image gets one (the one `full` carries, when it has one).
 pub(crate) fn store_image(d: &mut Document, key: &str, full: ImageBlob, linked: bool) {
+    let made = full.proxy.clone().filter(|_| linked);
     let blob = match d.images.get(key) {
         Some(b) if !b.is_proxy() => b.clone(),
-        old => ImageBlob { proxy: old.and_then(|b| b.proxy.clone()), ..full },
+        old => ImageBlob { proxy: old.and_then(|b| b.proxy.clone()).or(made), ..full },
     };
     d.images.insert(key.to_string(), if linked { blob.with_proxy() } else { blob });
 }

@@ -1649,6 +1649,7 @@ pub fn apply_requests(app: &mut VectorcraftApp, r: vectorcraft_engine::Result<Ve
                     vectorcraft_engine::UiRequest::Dialog(kind, p) => crate::dialogs::open_tool_dialog(app, &kind, p),
                     vectorcraft_engine::UiRequest::SwitchTool(t) => app.select_tool(&t),
                     vectorcraft_engine::UiRequest::Status(msg) => app.status(msg),
+                    vectorcraft_engine::UiRequest::Place(p) => crate::place::place_from_cursor(app, &p),
                 }
             }
         }
