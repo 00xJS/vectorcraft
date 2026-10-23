@@ -4590,6 +4590,23 @@ With `pickColorFrom` `swatches`, the run takes the current fill as its stroke. T
 {"name":"run_command","arguments":{"command":"shapeBuilder.merge","params":{"points":[[50,-1]],"splitStroke":true}}}
 ```
 
+With Shift held at the press, a Shape Builder drag draws a rectangular marquee from where the drag started to the
+pointer, and the Selection option does not apply to it. The regions the marquee reaches are shaded while it is drawn
+and merge into one shape on release; with Alt also held at the press, they are deleted. The marquee reaches a region
+when the region's outline crosses the rectangle or has an anchor inside it, or when the region holds the whole
+rectangle. The tool sends the marquee to `shapeBuilder.merge` as `rect: [x, y, width, height]` in place of `points`:
+`x` and `y` are where the drag started, and the width and height are negative for a drag up or to the left. For Pick
+Color From Artwork, the corner where the drag started counts as the drag's first point, and the opposite corner counts
+as its last: the merged shape takes the look of the front-most selected object under the first corner, else of the one
+under the opposite corner, else of the front-most selected object. A Shift-click that does not move sends `points`
+as a click does, so with `clickStrokeSplitsPath` on, a Shift-click on a stroke splits it. A marquee splits no stroke,
+however little the pointer moves: the tool sends no `splitStroke` with `rect`, and `shapeBuilder.merge` does not split
+a stroke when it has `rect`. With both `rect` and `points`, the command also touches what the points touch.
+
+```json
+{"name":"run_command","arguments":{"command":"shapeBuilder.merge","params":{"rect":[50,50,200,200]}}}
+```
+
 ## Perspective grid
 
 The grid is document data (`perspective.grid.set` edits the model directly). `perspective.grid.get` reads it:

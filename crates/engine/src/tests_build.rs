@@ -5,7 +5,7 @@ use std::sync::Arc;
 use serde_json::{Value, json};
 use vectorcraft_color::{Color, Paint};
 use vectorcraft_doc::{AppearanceItem, ImageBlob, ImageObject, LineCap, LineJoin, Node, NodeKind};
-use vectorcraft_geom::{Affine, FillRule, PathData, Rect};
+use vectorcraft_geom::{Affine, FillRule, PathData, Point, Rect};
 use vectorcraft_testkit::pdf::{PdfPage, pdf};
 use vectorcraft_tools::{Mods, PointerEvent, PointerKind, ToolKey};
 
@@ -138,6 +138,131 @@ fn shape_builder_miss_is_an_error_and_undo_restores() {
     assert!(s.doc().unwrap().doc.node(a).is_some() && s.doc().unwrap().doc.node(b).is_some());
     assert!(s.execute("shapeBuilder.merge", &json!({"points": []})).is_err());
     assert!(s.execute("shapeBuilder.merge", &json!({})).is_err());
+}
+
+/// A 3×3 grid of touching 100 pt squares from (0, 0) to (300, 300), each in its own gray, selected.
+fn grid(s: &mut Session) -> Vec<NodeId> {
+    let ids: Vec<NodeId> = (0..9)
+        .map(|k| {
+            let id = rect(s, (k % 3) as f64 * 100.0, (k / 3) as f64 * 100.0, 100.0, 100.0);
+            let gray = k as f32 / 10.0;
+            set_fill(s, id, Color::rgb(gray, gray, gray));
+            id
+        })
+        .collect();
+    s.execute("select.set", &json!({"ids": ids.iter().map(|i| i.0).collect::<Vec<_>>()})).unwrap();
+    ids
+}
+
+/// `rect`: the regions a marquee reaches merge into one shape, which takes the look of the square
+/// where the marquee started, else of the square where it ended.
+#[test]
+fn shape_builder_rect_merges_every_region_the_marquee_reaches() {
+    let mut s = session();
+    let squares = grid(&mut s);
+    let r = s.execute("shapeBuilder.merge", &json!({"rect": [250, 250, -200, -200]})).unwrap();
+    assert_eq!(r["regions"], 9);
+    let out = ids(&r);
+    assert_eq!(out.len(), 1, "{r}");
+    assert!((area(&s, out[0]) - 90000.0).abs() < 1.0, "{}", area(&s, out[0]));
+    assert_eq!(outline(&node(&s, out[0])).0.subpaths.len(), 1, "one path, no seams");
+    assert_eq!(node(&s, out[0]).appearance.fill_paint(), Paint::solid(Color::rgb(0.8, 0.8, 0.8)), "the bottom-right square's look");
+    s.execute("edit.undo", &json!({})).unwrap();
+    s.execute("select.set", &json!({"ids": squares.iter().map(|i| i.0).collect::<Vec<_>>()})).unwrap();
+    let r = s.execute("shapeBuilder.merge", &json!({"rect": [50, 50, 200, 200]})).unwrap();
+    assert_eq!(node(&s, ids(&r)[0]).appearance.fill_paint(), Paint::solid(Color::rgb(0.0, 0.0, 0.0)), "the top-left square's look");
+    s.execute("edit.undo", &json!({})).unwrap();
+    // Started outside every square: the look of the middle square, where it ended.
+    s.execute("select.set", &json!({"ids": squares.iter().map(|i| i.0).collect::<Vec<_>>()})).unwrap();
+    let r = s.execute("shapeBuilder.merge", &json!({"rect": [-50, -50, 200, 200]})).unwrap();
+    assert_eq!(r["regions"], 4);
+    let merged = NodeId(r["merged"].as_u64().unwrap());
+    assert_eq!(node(&s, merged).appearance.fill_paint(), Paint::solid(Color::rgb(0.4, 0.4, 0.4)), "the middle square's look");
+    s.execute("edit.undo", &json!({})).unwrap();
+    // Points as well add the regions along them; the marquee touches the left column only.
+    s.execute("select.set", &json!({"ids": squares.iter().map(|i| i.0).collect::<Vec<_>>()})).unwrap();
+    let r = s.execute("shapeBuilder.merge", &json!({"rect": [40, 50, 20, 200], "points": [[150, 50], [250, 50]]})).unwrap();
+    assert_eq!(r["regions"], 5);
+    let merged = NodeId(r["merged"].as_u64().unwrap());
+    assert!((area(&s, merged) - 50000.0).abs() < 1.0, "{}", area(&s, merged));
+}
+
+/// `rect` with `erase`: the regions the marquee reaches are deleted.
+#[test]
+fn shape_builder_rect_with_erase_deletes_the_regions_the_marquee_reaches() {
+    let mut s = session();
+    grid(&mut s);
+    let r = s.execute("shapeBuilder.merge", &json!({"rect": [140, 50, 20, 200], "erase": true})).unwrap();
+    assert_eq!((&r["regions"], &r["merged"]), (&json!(3), &Value::Null));
+    let out = ids(&r);
+    assert_eq!(out.len(), 6, "{r}");
+    assert!(out.iter().all(|i| (area(&s, *i) - 10000.0).abs() < 1.0));
+    let outside_the_middle = |i: &NodeId| node(&s, *i).geometric_bounds().is_some_and(|b| b.x1 <= 100.0 + 1e-6 || b.x0 >= 200.0 - 1e-6);
+    assert!(out.iter().all(outside_the_middle), "the middle column is gone");
+}
+
+#[test]
+fn shape_builder_rect_must_be_four_finite_numbers() {
+    let mut s = session();
+    grid(&mut s);
+    let undo_before = s.doc().unwrap().history.undo.len();
+    for rect in [json!([0, 0, 10]), json!("big"), json!([0, 0, 10, f64::MAX]), json!([0, 0, "10", 10])] {
+        let e = s.execute("shapeBuilder.merge", &json!({"rect": rect})).unwrap_err().to_string();
+        assert!(e.contains("rect must be [x, y, width, height]"), "{rect}: {e}");
+    }
+    // Outside every region: nothing to merge.
+    assert!(s.execute("shapeBuilder.merge", &json!({"rect": [400, 400, 50, 50]})).is_err());
+    assert_eq!(s.doc().unwrap().history.undo.len(), undo_before);
+    // A null rect is left out, and points are needed again.
+    assert!(s.execute("shapeBuilder.merge", &json!({"rect": null})).is_err());
+}
+
+/// With `rect`, `splitStroke` splits nothing, even with one point on a stroke: the marquee's
+/// regions merge.
+#[test]
+fn shape_builder_rect_merges_and_does_not_split_a_stroke() {
+    let mut s = session();
+    let a = rect(&mut s, 0.0, 0.0, 100.0, 100.0);
+    s.execute("select.set", &json!({"ids": [a.0]})).unwrap();
+    let r = s.execute("shapeBuilder.merge", &json!({"rect": [40, -5, 20, 20], "points": [[50, -1]], "splitStroke": true})).unwrap();
+    assert_eq!((r.get("split"), r["regions"].as_u64(), r["edges"].as_u64()), (None, Some(1), Some(0)), "{r}");
+    let merged = NodeId(r["merged"].as_u64().unwrap());
+    assert_eq!(shapes_of(&s, &[merged]), vec![(true, 4, 400.0)]);
+}
+
+/// Past the segment limit only the filled areas count, so a stroke-only line along y = 150 cuts no
+/// square: a marquee above the line merges the three whole squares of the middle row, as a drag
+/// above it does. Under the limit the line cuts the middle row, and both merge only the halves
+/// above it.
+#[test]
+fn shape_builder_rect_past_the_segment_limit_merges_whole_regions_as_a_drag_does() {
+    let merged_area = |segments: usize, params: Value| {
+        let mut s = session();
+        let mut ids = grid(&mut s);
+        let pts: Vec<Point> = (0..=segments).map(|k| Point::new(-10.0 + 320.0 * k as f64 / segments as f64, 150.0)).collect();
+        let look = vectorcraft_doc::Appearance::basic(Paint::None, Paint::solid(Color::BLACK), 1.0);
+        let l = s
+            .edit("t", |d, _| {
+                let id = d.alloc_id();
+                let top = d.children(d.default_layer()).map_or(0, |c| c.len());
+                d.insert(d.default_layer(), top, Node::path(id, PathData::single(vectorcraft_geom::SubPath::polyline(&pts, false)), look))?;
+                Ok(id)
+            })
+            .unwrap();
+        ids.push(l);
+        s.execute("select.set", &json!({"ids": ids.iter().map(|i| i.0).collect::<Vec<_>>()})).unwrap();
+        let r = s.execute("shapeBuilder.merge", &params).unwrap();
+        area(&s, NodeId(r["merged"].as_u64().unwrap()))
+    };
+    let past = vectorcraft_pathops::SHAPE_BUILDER_MAX_SEGMENTS;
+    let marquee = json!({"rect": [20, 120, 260, 20]});
+    let drag = json!({"points": [[50, 130], [250, 130]]});
+    for (segments, want) in [(2, 15000.0), (past, 30000.0)] {
+        for params in [&marquee, &drag] {
+            let got = merged_area(segments, params.clone());
+            assert!((got - want).abs() < 1.0, "{segments} segments, {params}: {got}");
+        }
+    }
 }
 
 #[test]
@@ -600,6 +725,35 @@ fn shape_builder_tool_options_reach_the_command() {
         (&p["points"], &p["openFilledAsClosed"], &p["pickColorFrom"]),
         (&json!([[25.0, 50.0], [75.0, 50.0]]), &json!(false), &json!("swatches"))
     );
+}
+
+/// A Shift-drag with the tool across the grid merges all nine squares into one shape; a drag along
+/// the middle row without Shift merges the three squares it passes over.
+#[test]
+fn shape_builder_tool_shift_drag_merges_the_grid_into_one_shape() {
+    let v = ViewInfo::default();
+    let drag = |s: &mut Session, mods: Mods, pts: [(f64, f64); 3]| {
+        s.select_tool("shapeBuilder", v).unwrap();
+        for (kind, (x, y)) in [PointerKind::Down, PointerKind::Drag, PointerKind::Up].into_iter().zip(pts) {
+            s.pointer(&PointerEvent::new(kind, x, y).with_mods(mods), v).unwrap();
+        }
+        s.journal.last().unwrap().clone()
+    };
+    let mut s = session();
+    grid(&mut s);
+    let (cmd, p) = drag(&mut s, Mods { shift: true, ..Default::default() }, [(50.0, 50.0), (150.0, 150.0), (250.0, 250.0)]);
+    assert_eq!((cmd.as_str(), &p["rect"]), ("shapeBuilder.merge", &json!([50.0, 50.0, 200.0, 200.0])));
+    assert_eq!(layer_children(&s), 1);
+    let only = {
+        let d = &s.doc().unwrap().doc;
+        d.children(d.default_layer()).unwrap()[0].id
+    };
+    assert!((area(&s, only) - 90000.0).abs() < 1.0, "{}", area(&s, only));
+    let mut s = session();
+    grid(&mut s);
+    let (_, p) = drag(&mut s, Mods::default(), [(50.0, 150.0), (150.0, 150.0), (250.0, 150.0)]);
+    assert_eq!((p.get("rect"), &p["points"]), (None, &json!([[50.0, 150.0], [150.0, 150.0], [250.0, 150.0]])));
+    assert_eq!(layer_children(&s), 7, "the middle row merged, six squares left");
 }
 
 /// Highlight Fill off: hovering a region in merge mode highlights nothing; erase mode still shows
