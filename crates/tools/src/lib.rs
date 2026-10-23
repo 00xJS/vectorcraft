@@ -352,6 +352,10 @@ pub struct ToolContext<'a> {
     /// two other objects in its row or column, or evenly between its two neighbours, and the
     /// equal gaps show.
     pub spacing_guides: bool,
+    /// Smart Guides → Invoke Distance Guides: with the Selection tool, Alt/Option held over another
+    /// object shows how far the selection is from it, and over an empty part of an artboard how
+    /// far it is from the artboard's edges ([`guides::distance_guides`]).
+    pub distance_guides: bool,
     /// Smart Guides → Snapping Tolerance (screen pixels): how near a smart guide target pulls the
     /// pointer, a dragged edge or a drawn point.
     pub snapping_tolerance: f64,
@@ -455,6 +459,9 @@ pub enum Overlay {
     Label { p: Point, text: String, color: [u8; 3] },
     /// Measurement pill near the cursor (grey box with white text).
     Measure { p: Point, text: String },
+    /// A Distance Guides measurement: a line from `a` to `b` with a tick across each end, and
+    /// `text` (its length) in a pill of `color` on its middle.
+    Distance { a: Point, b: Point, text: String, color: [u8; 3] },
     /// Translucent filled quad (text selection highlight), RGBA.
     Highlight { quad: [Point; 4], color: [u8; 4] },
     /// A colour chip of fixed screen size (a gradient stop), RGBA; ringed when selected.
@@ -1047,6 +1054,7 @@ pub(crate) mod testutil {
             measurement_labels: true,
             transform_tools_guides: true,
             spacing_guides: true,
+            distance_guides: true,
             snapping_tolerance: 4.0,
             construction_angles: guides::construction_angles(guides::DEFAULT_CONSTRUCTION_ANGLES),
             screen: None,

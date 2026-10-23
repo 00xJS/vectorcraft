@@ -3183,6 +3183,7 @@ fn draw_overlays(p: &egui::Painter, xf: &Xf, overlays: &[Overlay], t: &Tokens, l
                 p.rect_filled(r, CornerRadius::same(3), t.measure_bg);
                 p.galley(sp + vec2(6.0, 4.0), galley, Color32::WHITE);
             }
+            Overlay::Distance { a, b, text, color } => distance_guide(p, xf.to_screen(*a), xf.to_screen(*b), text, c32(*color)),
             Overlay::GridLine { a, b, color } => {
                 let c = Color32::from_rgba_unmultiplied(color[0], color[1], color[2], color[3]);
                 p.line_segment([xf.to_screen(*a), xf.to_screen(*b)], Stroke::new(1.0, c));
@@ -3200,6 +3201,28 @@ fn draw_overlays(p: &egui::Painter, xf: &Xf, overlays: &[Overlay], t: &Tokens, l
             }
         }
     }
+}
+
+/// A Distance Guides measurement on screen ([`Overlay::Distance`]): the line from `a` to `b` in the
+/// smart guide colour `color` with a 4 px tick across each end, and `text` in a pill of that colour
+/// on its middle, in white or black, whichever reads on it.
+fn distance_guide(p: &egui::Painter, a: Pos2, b: Pos2, text: &str, color: Color32) {
+    let s = Stroke::new(1.0, color);
+    p.line_segment([a, b], s);
+    let along = b - a;
+    let len = along.length();
+    if len > 0.0 && len.is_finite() {
+        let across = vec2(-along.y, along.x) / len * 4.0;
+        for end in [a, b] {
+            p.line_segment([end - across, end + across], s);
+        }
+    }
+    let luma = 0.299 * f32::from(color.r()) + 0.587 * f32::from(color.g()) + 0.114 * f32::from(color.b());
+    let ink = if luma > 150.0 { Color32::BLACK } else { Color32::WHITE };
+    let galley = p.layout_no_wrap(text.to_owned(), egui::FontId::proportional(11.0), ink);
+    let r = egui::Rect::from_center_size(a + along / 2.0, galley.size() + vec2(8.0, 4.0));
+    p.rect_filled(r, CornerRadius::same(3), color);
+    p.galley(r.min + vec2(4.0, 2.0), galley, ink);
 }
 
 /// The Home screen (`app.home`; with no document open, unless its preference is off).
@@ -9471,6 +9494,70 @@ mod tests {
             app.run("edit.undo", json!({})).unwrap();
             assert_eq!(app.session.active().unwrap().doc, before);
         }
+    }
+
+    /// Distance Guides on screen: with a square selected and Alt held over another to its right,
+    /// the frame draws the measured line between their facing edges with the gap's length in a
+    /// pill of the smart guide colour on its middle; without Alt, or with Alt let go, nothing.
+    #[test]
+    fn alt_over_another_object_draws_the_distance_guide_label() {
+        use egui::{Event, Modifiers};
+        use vectorcraft_tools::guides::MAGENTA;
+        let mut app = VectorcraftApp::new(Session::new(), Default::default());
+        app.run("file.new", json!({"width": 400, "height": 300})).unwrap();
+        let a = app.run("shape.rectangle", json!({"x": 50, "y": 50, "width": 50, "height": 50})).unwrap()["id"].clone();
+        app.run("shape.rectangle", json!({"x": 200, "y": 50, "width": 50, "height": 50})).unwrap();
+        app.run("select.set", json!({"ids": [a]})).unwrap();
+        app.ui.view.smart_guides = true;
+        app.select_tool("selection");
+        let ctx = egui::Context::default();
+        frame(&mut app, &ctx, vec![]);
+        let view = app.view_mut().unwrap();
+        view.zoom = 1.0;
+        view.rotation = 0.0;
+        view.center = Point::new(200.0, 150.0);
+        frame(&mut app, &ctx, vec![]);
+        let xf = Xf::new(app.canvas_rect.unwrap(), app.view().unwrap());
+        let over = xf.to_screen(Point::new(225.0, 75.0));
+        // One frame with `events` → the shapes drawn, flattened. The modifiers held stay from one
+        // frame to the next until an `Event::ModifiersChanged`.
+        let run = |app: &mut VectorcraftApp, events: Vec<Event>| {
+            let raw = egui::RawInput { screen_rect: Some(WINDOW), events, ..Default::default() };
+            let mut out = ctx.run_ui(raw, |ui| show(app, ui));
+            out.textures_delta.clear();
+            fn flat(s: Shape, out: &mut Vec<Shape>) {
+                match s {
+                    Shape::Vec(v) => v.into_iter().for_each(|s| flat(s, out)),
+                    s => out.push(s),
+                }
+            }
+            let mut v = vec![];
+            out.shapes.into_iter().for_each(|c| flat(c.shape, &mut v));
+            v
+        };
+        // The label "100.00 pt" drawn and the pill it sits in, if any.
+        let label = |s: &[Shape]| {
+            let text = s
+                .iter()
+                .find_map(|s| if let Shape::Text(t) = s { (t.galley.text() == "100.00 pt").then(|| t.visual_bounding_rect()) } else { None })?;
+            let pill = s.iter().find_map(|s| {
+                if let Shape::Rect(r) = s { (r.fill == c32(MAGENTA) && r.rect.contains(text.center())).then_some(r.rect) } else { None }
+            });
+            Some((text, pill))
+        };
+        run(&mut app, vec![Event::PointerMoved(over)]);
+        assert_eq!(label(&run(&mut app, vec![])), None, "without Alt");
+        run(&mut app, vec![Event::ModifiersChanged(Modifiers::ALT)]);
+        let s = run(&mut app, vec![]);
+        let (text, pill) = label(&s).expect("the gap's length is drawn");
+        let pill = pill.expect("in a pill of the smart guide colour");
+        let mid = xf.to_screen(Point::new(150.0, 75.0));
+        assert!(pill.center().distance(mid) < 1.0 && pill.contains_rect(text), "{pill:?} on {mid:?}");
+        let (from, to) = (xf.to_screen(Point::new(100.0, 75.0)), xf.to_screen(Point::new(200.0, 75.0)));
+        let measured = s.iter().any(|s| matches!(s, Shape::LineSegment { points, stroke } if *points == [from, to] && stroke.color == c32(MAGENTA)));
+        assert!(measured, "the measured line between the facing edges");
+        run(&mut app, vec![Event::ModifiersChanged(Modifiers::NONE)]);
+        assert_eq!(label(&run(&mut app, vec![])), None, "Alt let go");
     }
 
     /// The 800 × 600 window [`frame`] draws the canvas in.

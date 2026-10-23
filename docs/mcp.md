@@ -2721,6 +2721,11 @@ Guides change where a snapped point lands:
 - `spacingGuides` (on by default): a moved selection (Selection tool / `pointer_gesture` with `selection`) snaps so
   the gap to a neighbour matches the equal spacing among other objects nearby; off, only alignment and construction
   guides pull.
+- `distanceGuides` (Invoke Distance Guides, on by default): with Smart Guides on, something selected and the Selection
+  tool hovering with `mods.alt` (a `pointer` event of kind `move`), the canvas measures the selection's bounds to the
+  object under the pointer (the gap between their facing edges on an axis on which they lie apart, else the offsets
+  of their two edges on it) or, over no object, to the left, right, top and bottom edges of the artboard under the
+  pointer: measured lines labelled in the General unit. Off, Alt-hovering shows none.
 
 With Smart Guides on, a bounding-box handle dragged with the Selection or Free Transform tool (`mods.shift`
 proportional, `mods.alt` from the centre) lands on another object's anchor or centre (labelled "anchor" or
