@@ -734,6 +734,7 @@ impl Renderer {
     /// Start a frame: cache entries used from now on are marked with its stamp.
     fn begin_frame(&mut self) {
         self.stamp += 1;
+        self.inline_depth = 0;
     }
 
     /// End a frame: drop cache entries not used for a few frames (every render, thumbnails too,
