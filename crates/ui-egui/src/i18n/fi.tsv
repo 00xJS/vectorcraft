@@ -4010,6 +4010,7 @@ imageTrace	Outline	Ääriviiva
 @msg	Couldn't copy to the system clipboard: {e}	Järjestelmän leikepöydälle ei voitu kopioida: {e}
 @msg	Couldn't open {name}: {e}	Tiedostoa {name} ei voitu avata: {e}
 @msg	Couldn't place {name}: the document it was dropped on was closed	Kohdetta {name} ei voitu sijoittaa: asiakirja, johon se pudotettiin, on suljettu
+@msg	Couldn't place {name}: the document it was placed in was closed	Kohdetta {name} ei voitu sijoittaa: asiakirja, johon sitä sijoitettiin, on suljettu
 @msg	Couldn't read {name}: {e}	Tiedostoa {name} ei voitu lukea: {e}
 @msg	Couldn't save recovery data: {e}	Palautustietoja ei voitu tallentaa: {e}
 @msg	Create Outlines: select text objects	Muunna ääriviivoiksi: valitse tekstiobjekteja
@@ -4370,6 +4371,7 @@ imageTrace	Outline	Ääriviiva
 @msg	path is already closed	polku on jo suljettu
 @msg	paths contain invalid coordinates	polut sisältävät virheellisiä koordinaatteja
 @msg	paths: give at least one file	paths: anna vähintään yksi tiedosto
+@msg	replace: the object to replace was changed or deleted	replace: korvattavaa objektia on muutettu tai se on poistettu
 @msg	pattern missing	kuvio puuttuu
 @msg	patterns nested too deeply are filled with mid-grey	liian syvälle sisäkkäiset kuviot täytetään keskiharmaalla
 @msg	percent must be above 0 and at most 6400, not {p}	prosenttiarvon on oltava yli 0 ja enintään 6400, ei {p}
@@ -4564,6 +4566,7 @@ imageTrace	Outline	Ääriviiva
 @msg	Saving {_1}	Tallennetaan {_1}
 @msg	Exporting {_1}	Viedään {_1}
 @msg	Packaging {_1}	Paketoidaan {_1}
+@msg	Placing {_1}	Sijoitetaan {_1}
 @msg	Saving recovery data for {_1}	Tallennetaan palautustietoja: {_1}
 @msg	Discarded {_1} recovered document(s)	Hylättiin {_1} palautettu(a) asiakirja(a)
 @msg	Restored {_1} recovered document(s): save them to keep them	Palautettiin {_1} asiakirja(a): tallenna ne säilyttääksesi ne

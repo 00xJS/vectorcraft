@@ -3824,6 +3824,7 @@ axis	Both	Оба
 @msg	Couldn't copy to the system clipboard: {e}	Не удалось скопировать в системный буфер обмена: {e}
 @msg	Couldn't open {name}: {e}	Не удалось открыть {name}: {e}
 @msg	Couldn't place {name}: the document it was dropped on was closed	Не удалось поместить {name}: документ, в который его перетащили, был закрыт
+@msg	Couldn't place {name}: the document it was placed in was closed	Не удалось поместить {name}: документ, в который его помещали, был закрыт
 @msg	Couldn't read {name}: {e}	Не удалось прочитать {name}: {e}
 @msg	Couldn't save recovery data: {e}	Не удалось сохранить данные восстановления: {e}
 @msg	Create Outlines: select text objects	Создание контуров: выделите текстовые объекты
@@ -4191,6 +4192,7 @@ axis	Both	Оба
 @msg	path is already closed	контур уже замкнут
 @msg	paths contain invalid coordinates	контуры содержат недопустимые координаты
 @msg	paths: give at least one file	paths: укажите как минимум один файл
+@msg	replace: the object to replace was changed or deleted	replace: заменяемый объект был изменён или удалён
 @msg	pattern missing	узор отсутствует
 @msg	patterns nested too deeply are filled with mid-grey	слишком глубоко вложенные узоры заполняются серым
 @msg	percent must be above 0 and at most 6400, not {p}	процент должен быть больше 0 и не более 6400, а не {p}
@@ -4392,6 +4394,7 @@ axis	Both	Оба
 @msg	Saving {_1}	Сохранение {_1}
 @msg	Exporting {_1}	Экспорт {_1}
 @msg	Packaging {_1}	Упаковка {_1}
+@msg	Placing {_1}	Размещение {_1}
 @msg	Saving recovery data for {_1}	Сохранение данных восстановления для {_1}
 @msg	Discarded {_1} recovered document(s)	Отменено восстановленных документов: {_1}
 @msg	Restored {_1} recovered document(s): save them to keep them	Восстановлено документов: {_1}: сохраните их, чтобы оставить

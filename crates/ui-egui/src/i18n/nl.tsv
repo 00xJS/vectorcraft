@@ -3839,6 +3839,7 @@ imageTrace	Outline	Contour
 @msg	Couldn't copy to the system clipboard: {e}	Kon niet naar het systeemklembord kopiëren: {e}
 @msg	Couldn't open {name}: {e}	Kon {name} niet openen: {e}
 @msg	Couldn't place {name}: the document it was dropped on was closed	Kon {name} niet plaatsen: het document waarop het werd neergezet, is gesloten
+@msg	Couldn't place {name}: the document it was placed in was closed	Kon {name} niet plaatsen: het document waarin het werd geplaatst, is gesloten
 @msg	Couldn't read {name}: {e}	Kon {name} niet lezen: {e}
 @msg	Couldn't save recovery data: {e}	Kon herstelgegevens niet opslaan: {e}
 @msg	Create Outlines: select text objects	Contouren maken: selecteer tekstobjecten
@@ -4180,6 +4181,7 @@ imageTrace	Outline	Contour
 @msg	path is already closed	pad is al gesloten
 @msg	paths contain invalid coordinates	paden bevatten ongeldige coördinaten
 @msg	paths: give at least one file	paden: geef minstens één bestand
+@msg	replace: the object to replace was changed or deleted	vervangen: het te vervangen object is gewijzigd of verwijderd
 @msg	pattern missing	patroon ontbreekt
 @msg	patterns nested too deeply are filled with mid-grey	patronen die te diep genest zijn, worden gevuld met middelgrijs
 @msg	percent must be above 0 and at most 6400, not {p}	procent moet boven 0 en maximaal 6400 zijn, niet {p}
@@ -4365,6 +4367,7 @@ imageTrace	Outline	Contour
 @msg	Saving {_1}	Bezig met opslaan van {_1}
 @msg	Exporting {_1}	Bezig met exporteren van {_1}
 @msg	Packaging {_1}	Bezig met verpakken van {_1}
+@msg	Placing {_1}	Bezig met plaatsen van {_1}
 @msg	Saving recovery data for {_1}	Bezig met opslaan van herstelgegevens voor {_1}
 @msg	Discarded {_1} recovered document(s)	{_1} hersteld(e) document(en) verworpen
 @msg	Restored {_1} recovered document(s): save them to keep them	{_1} hersteld(e) document(en) teruggezet: sla ze op om ze te behouden

@@ -59,7 +59,7 @@ mod pathops;
 mod patterncmds;
 pub mod pdfcmds;
 pub mod perspgrid;
-pub(crate) mod place;
+pub mod place;
 pub mod plugin;
 pub mod prefscmds;
 pub mod print;

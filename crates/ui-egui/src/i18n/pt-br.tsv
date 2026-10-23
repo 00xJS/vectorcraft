@@ -3371,6 +3371,7 @@ axis	Both	Ambos
 @msg	Couldn't copy to the system clipboard: {e}	Não foi possível copiar para a área de transferência do sistema: {e}
 @msg	Couldn't open {name}: {e}	Não foi possível abrir {name}: {e}
 @msg	Couldn't place {name}: the document it was dropped on was closed	Não foi possível inserir {name}: o documento em que foi solto foi fechado
+@msg	Couldn't place {name}: the document it was placed in was closed	Não foi possível inserir {name}: o documento em que estava sendo inserido foi fechado
 @msg	Couldn't read {name}: {e}	Não foi possível ler {name}: {e}
 @msg	Couldn't save recovery data: {e}	Não foi possível salvar os dados de recuperação: {e}
 @msg	Create Outlines: select text objects	Criar contornos: selecione objetos de texto
@@ -3728,6 +3729,7 @@ axis	Both	Ambos
 @msg	path is already closed	o traçado já está fechado
 @msg	paths contain invalid coordinates	os traçados contêm coordenadas inválidas
 @msg	paths: give at least one file	paths: informe pelo menos um arquivo
+@msg	replace: the object to replace was changed or deleted	replace: o objeto a ser substituído foi alterado ou excluído
 @msg	pattern missing	padrão ausente
 @msg	patterns nested too deeply are filled with mid-grey	padrões aninhados com profundidade excessiva são preenchidos com cinza médio
 @msg	percent must be above 0 and at most 6400, not {p}	a porcentagem deve ser maior que 0 e no máximo 6400, não {p}
@@ -3927,6 +3929,7 @@ axis	Both	Ambos
 @msg	Saving {_1}	Salvando {_1}
 @msg	Exporting {_1}	Exportando {_1}
 @msg	Packaging {_1}	Empacotando {_1}
+@msg	Placing {_1}	Inserindo {_1}
 @msg	Saving recovery data for {_1}	Salvando dados de recuperação de {_1}
 @msg	Discarded {_1} recovered document(s)	{_1} documento(s) recuperado(s) descartado(s)
 @msg	Restored {_1} recovered document(s): save them to keep them	{_1} documento(s) recuperado(s) restaurado(s): salve-os para mantê-los

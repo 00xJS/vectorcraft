@@ -1392,6 +1392,16 @@ pub struct Session {
     /// While `command.batch` runs: the documents its steps closed or replaced (Revert), which an
     /// error brings back; `None` otherwise.
     pub(crate) batch_stash: Option<Vec<DocState>>,
+    /// While [`Session::place_read`] runs `file.place`: the file read for it, which the command
+    /// places instead of reading the file; `None` otherwise.
+    pub(crate) place_hand_off: Option<cmd::place::PlaceRead>,
+    /// While [`Session::place_queue_read`] runs `file.place.queue`: the files read for it, which
+    /// the command loads the place cursor with instead of reading them; `None` otherwise.
+    pub(crate) queue_hand_off: Option<cmd::place::QueueRead>,
+    /// Whether a click or drag of the place cursor asks the frontend to place its file
+    /// ([`UiRequest::Place`]) instead of running `file.place`: the desktop app sets it to read the
+    /// file off the UI thread. False: the file is placed at once.
+    pub place_cursor_requests: bool,
     /// While [`Session::prepare_package`] runs `file.package`: the package the command prepared,
     /// which it leaves here instead of writing it; `None` otherwise.
     pub(crate) package_hand_off: Option<Option<cmd::package::Package>>,
@@ -1494,6 +1504,9 @@ impl Session {
             journal_note: Default::default(),
             note_depth: 1,
             batch_stash: None,
+            place_hand_off: None,
+            queue_hand_off: None,
+            place_cursor_requests: false,
             package_hand_off: None,
             recovery: Default::default(),
             in_tool_actions: false,

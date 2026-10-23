@@ -3825,6 +3825,7 @@ imageTrace	Outline	Kontur
 @msg	Couldn't copy to the system clipboard: {e}	Tidak dapat menyalin ke papan klip sistem: {e}
 @msg	Couldn't open {name}: {e}	Tidak dapat membuka {name}: {e}
 @msg	Couldn't place {name}: the document it was dropped on was closed	Tidak dapat menempatkan {name}: dokumen tempatnya dijatuhkan sudah ditutup
+@msg	Couldn't place {name}: the document it was placed in was closed	Tidak dapat menempatkan {name}: dokumen tempatnya ditempatkan sudah ditutup
 @msg	Couldn't read {name}: {e}	Tidak dapat membaca {name}: {e}
 @msg	Couldn't save recovery data: {e}	Tidak dapat menyimpan data pemulihan: {e}
 @msg	Create Outlines: select text objects	Buat kontur: pilih objek teks
@@ -4168,6 +4169,7 @@ imageTrace	Outline	Kontur
 @msg	path is already closed	jalur sudah tertutup
 @msg	paths contain invalid coordinates	jalur berisi koordinat yang tidak valid
 @msg	paths: give at least one file	jalur: berikan setidaknya satu berkas
+@msg	replace: the object to replace was changed or deleted	ganti: objek yang akan diganti telah diubah atau dihapus
 @msg	pattern missing	pola hilang
 @msg	patterns nested too deeply are filled with mid-grey	pola yang bersarang terlalu dalam diisi dengan abu-abu tengah
 @msg	percent must be above 0 and at most 6400, not {p}	persen harus di atas 0 dan paling banyak 6400, bukan {p}
@@ -4353,6 +4355,7 @@ imageTrace	Outline	Kontur
 @msg	Saving {_1}	Menyimpan {_1}
 @msg	Exporting {_1}	Mengekspor {_1}
 @msg	Packaging {_1}	Mengemas {_1}
+@msg	Placing {_1}	Menempatkan {_1}
 @msg	Saving recovery data for {_1}	Menyimpan data pemulihan untuk {_1}
 @msg	Discarded {_1} recovered document(s)	{_1} dokumen hasil pemulihan dibuang
 @msg	Restored {_1} recovered document(s): save them to keep them	{_1} dokumen hasil pemulihan dipulihkan: simpan agar tidak hilang

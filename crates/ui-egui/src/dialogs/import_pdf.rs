@@ -202,7 +202,7 @@ fn confirm(app: &mut VectorcraftApp, d: &Dialog) -> Result<Value, String> {
         if let Some(pw) = password(&d) {
             p["password"] = json!(pw);
         }
-        crate::place::run(app, &p).map(|_| ())
+        crate::place::run_for_user(app, &p).map(|_| ())
     } else {
         let mut p = json!({"cropTo": crop(&d).id(), "password": password(&d)});
         let range = d.str("range");

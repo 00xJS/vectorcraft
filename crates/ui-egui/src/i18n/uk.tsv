@@ -3812,6 +3812,7 @@ axis	Both	Обидві
 @msg	Couldn't copy to the system clipboard: {e}	Не вдалося скопіювати до системного буфера обміну: {e}
 @msg	Couldn't open {name}: {e}	Не вдалося відкрити {name}: {e}
 @msg	Couldn't place {name}: the document it was dropped on was closed	Не вдалося помістити {name}: документ, у який його перетягли, було закрито
+@msg	Couldn't place {name}: the document it was placed in was closed	Не вдалося помістити {name}: документ, у який його поміщали, було закрито
 @msg	Couldn't read {name}: {e}	Неможливо прочитати {name}: {e}
 @msg	Couldn't save recovery data: {e}	Не вдалося зберегти дані відновлення: {e}
 @msg	Create Outlines: select text objects	Створення контурів: виділіть текстові об’єкти
@@ -4179,6 +4180,7 @@ axis	Both	Обидві
 @msg	path is already closed	контур вже замкнутий
 @msg	paths contain invalid coordinates	контури містять неприпустимі координати
 @msg	paths: give at least one file	paths: вкажіть щонайменше один файл
+@msg	replace: the object to replace was changed or deleted	replace: об’єкт для заміни було змінено або видалено
 @msg	pattern missing	візерунок відсутній
 @msg	patterns nested too deeply are filled with mid-grey	надто глибоко вкладені візерунки заповнюються сірим
 @msg	percent must be above 0 and at most 6400, not {p}	відсоток має бути більше 0 і не більше 6400, а не {p}
@@ -4380,6 +4382,7 @@ axis	Both	Обидві
 @msg	Saving {_1}	Збереження {_1}
 @msg	Exporting {_1}	Експорт {_1}
 @msg	Packaging {_1}	Пакування {_1}
+@msg	Placing {_1}	Розміщення {_1}
 @msg	Saving recovery data for {_1}	Збереження даних відновлення для {_1}
 @msg	Discarded {_1} recovered document(s)	Скасовано відновлених документів: {_1}
 @msg	Restored {_1} recovered document(s): save them to keep them	Відновлено документів: {_1}: збережіть їх, щоб залишити

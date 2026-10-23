@@ -868,6 +868,7 @@ fn status_readouts(app: &VectorcraftApp, ui: &mut Ui, t: &Tokens) {
         .filter(|j| !j.label.is_empty() && !j.cancelled())
         .map(|j| j.label.as_str())
         .chain(app.opening.pending.iter().map(|p| p.label.as_str()))
+        .chain(app.placing.pending.iter().map(|p| p.label.as_str()))
         .collect();
     // Reserve the spinner's space while idle too: starting a background job changes the text,
     // not its origin. Messages take priority over optional readouts in a narrow window.

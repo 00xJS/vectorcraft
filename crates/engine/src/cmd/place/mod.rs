@@ -454,7 +454,89 @@ fn fit(natural: Rect, r: Rect) -> Affine {
     Affine::translate(r.center().to_vec2()) * Affine::scale(k) * Affine::translate(-natural.center().to_vec2())
 }
 
+/// What `file.place` takes from the session before it reads the file: the params, the object
+/// Replace swaps and the artboard under `at`, which a DXF drawing is laid out on
+/// ([`Session::prepare_place`]). [`PlaceJob::read`] reads and decodes the file without the session,
+/// on any thread.
+pub struct PlaceJob {
+    params: Value,
+    old: Option<NodeId>,
+    /// The object Replace swaps as it was when Place started.
+    replaced: Option<Node>,
+    target: Option<Rect>,
+}
+
+/// A file [`PlaceJob::read`] read, which [`Session::place_read`] places.
+pub struct PlaceRead {
+    job: PlaceJob,
+    loaded: Loaded,
+}
+
+impl PlaceJob {
+    /// The name of the file it places ("photo.tif").
+    pub fn name(&self) -> String {
+        str_param(&self.params, "path").or_else(|| str_param(&self.params, "name")).map(fileio::file_name).unwrap_or_else(|| "Untitled".into())
+    }
+
+    /// Read and decode the file, as `file.place` does, without the session. A linked image's
+    /// preview is made here too.
+    pub fn read(self) -> Result<PlaceRead> {
+        let mut loaded = load(&self.params, PLACE, self.target, true)?;
+        if loaded.link.is_some()
+            && bool_or(&self.params, "link", true)
+            && let Art::Image(img) = &mut loaded.art
+        {
+            img.blob = img.blob.clone().with_proxy();
+        }
+        Ok(PlaceRead { job: self, loaded })
+    }
+}
+
+impl Session {
+    /// `file.place`'s checks (with no document open, the error `file.place` gives) of `params`
+    /// against the active document as it is now → what reads the file ([`PlaceJob::read`]; on the
+    /// desktop File › Place does this off the UI thread). Replace swaps the object selected now;
+    /// the art is placed against the artboard under `at` as it is when [`Session::place_read`]
+    /// places it.
+    pub fn prepare_place(&self, params: &Value) -> Result<PlaceJob> {
+        has_doc(self).map_err(|why| EngineError::Disabled(PLACE.into(), why))?;
+        prepare(self, params)
+    }
+
+    /// Run `file.place` with the params of `read` as a command (checked and journaled as any
+    /// other) that places the file `read` holds instead of reading it again → `file.place`'s
+    /// reply. The object Replace swaps must still be in the document as it was when Place started;
+    /// when the selection changed meanwhile, `select.set` selects that object again first, so a
+    /// replay of the journal replaces the same object.
+    pub fn place_read(&mut self, read: PlaceRead) -> Result<Value> {
+        let params = read.job.params.clone();
+        if let Some(old) = read.job.old {
+            let st = self.doc()?;
+            // Deleted, changed, or another object with its id: an undo that removes the object frees
+            // its id for the next object made.
+            if st.doc.node(old) != read.job.replaced.as_ref() {
+                return Err(bad(PLACE, "replace: the object to replace was changed or deleted"));
+            }
+            if st.selection.objects != [old] {
+                self.execute("select.set", &json!({ "ids": [old.0] }))?;
+            }
+        }
+        self.place_hand_off = Some(read);
+        let r = self.execute(PLACE, &params);
+        self.place_hand_off = None;
+        r
+    }
+}
+
 fn place(s: &mut Session, p: &Value) -> Result<Value> {
+    let read = match s.place_hand_off.take() {
+        Some(read) => read,
+        None => prepare(s, p)?.read()?,
+    };
+    apply(s, read)
+}
+
+fn prepare(s: &Session, p: &Value) -> Result<PlaceJob> {
     let replace = bool_or(p, "replace", false);
     let template = bool_or(p, "template", false);
     let at = at_param(p)?;
@@ -472,16 +554,35 @@ fn place(s: &mut Session, p: &Value) -> Result<Value> {
         (true, [id]) => Some(*id),
         (true, _) => return Err(bad(PLACE, "replace: select the one object to replace")),
     };
+    let replaced = old.and_then(|id| st.doc.node(id)).cloned();
+    Ok(PlaceJob { params: p.clone(), old, replaced, target: board_at(&st.doc, at) })
+}
+
+/// Place the file `read` holds in the active document.
+fn apply(s: &mut Session, read: PlaceRead) -> Result<Value> {
+    let PlaceRead { job: PlaceJob { params, old, target: read_for, .. }, mut loaded } = read;
+    let p = &params;
+    let template = bool_or(p, "template", false);
+    let at = at_param(p)?;
+    let rect = rect_param(p)?;
+    let st = s.doc()?;
+    let old_node = match old {
+        Some(id) => Some(st.doc.node(id).ok_or_else(|| bad(PLACE, "replace: the object to replace was changed or deleted"))?),
+        None => None,
+    };
+    // The artboard under `at` as it is now, as a replay of the journal finds it: a DXF drawing laid
+    // out on the artboard it was read for is read again when that artboard changed meanwhile.
     let target = board_at(&st.doc, at);
-    let mut loaded = load(p, PLACE, target, true)?;
-    let old_node = old.and_then(|id| st.doc.node(id));
+    if loaded.board.is_some() && target != read_for {
+        loaded = load(p, PLACE, target, true)?;
+    }
     // Type reflows rather than scales: its frame takes the size it is placed at.
     let is_text = matches!(loaded.art, Art::Text(_));
     if is_text {
         let size = match (old_node.and_then(|o| o.geometric_bounds_with(&st.doc.symbol_boxes())), rect) {
             (Some(b), _) => b.size(),
             (None, Some(r)) => r.size(),
-            (None, None) => text_frame(&st.doc, at).size(),
+            (None, None) => text_frame(target).size(),
         };
         loaded.natural = Rect::from_origin_size(Point::ORIGIN, size);
     }
@@ -532,10 +633,10 @@ fn board_at(d: &Document, at: Option<Point>) -> Option<Rect> {
     at.and_then(|c| d.artboard_holding(c, false)).and_then(|i| d.artboards.get(i)).or(d.artboards.first()).map(|a| a.rect)
 }
 
-/// Placed type's frame without `rect` or Replace: the artboard under `at` (else the first) less a
-/// 36 pt margin.
-fn text_frame(d: &Document, at: Option<Point>) -> Rect {
-    let board = board_at(d, at).unwrap_or(TEXT_FRAME);
+/// Placed type's frame without `rect` or Replace: the artboard `board` (the one under `at`, else the
+/// first, [`board_at`]) less a 36 pt margin.
+fn text_frame(board: Option<Rect>) -> Rect {
+    let board = board.unwrap_or(TEXT_FRAME);
     Rect::from_center_size(board.center(), ((board.width() - 72.0).max(72.0), (board.height() - 72.0).max(72.0)))
 }
 
@@ -577,10 +678,41 @@ fn queued_files(p: &Value) -> Result<Vec<Value>> {
     }
 }
 
-fn queue(s: &mut Session, p: &Value) -> Result<Value> {
+/// The files `file.place.queue` loads the place cursor with, before they are read
+/// ([`Session::prepare_place_queue`]). [`QueueJob::read`] reads them without the session, on any
+/// thread.
+pub struct QueueJob {
+    params: Value,
+    files: Vec<Value>,
+}
+
+/// The files [`QueueJob::read`] read, which [`Session::place_queue_read`] loads the place cursor
+/// with.
+pub struct QueueRead {
+    params: Value,
+    entries: Vec<Value>,
+    files: Vec<Value>,
+    skipped: Vec<Value>,
+}
+
+impl QueueJob {
+    /// The names of the files it loads ("a.tif", "b.psd").
+    pub fn names(&self) -> Vec<String> {
+        self.files.iter().filter_map(|q| str_param(q, "path").or(str_param(q, "name"))).map(fileio::file_name).collect()
+    }
+
+    /// Read every file for its size and thumbnail, as `file.place.queue` does, without the session.
+    pub fn read(self) -> Result<QueueRead> {
+        read_queue(self.params, self.files)
+    }
+}
+
+/// Read each of `queued`, the files of `file.place.queue` with params `p`, for its size and
+/// thumbnail.
+fn read_queue(p: Value, queued: Vec<Value>) -> Result<QueueRead> {
     let thumbnail = p.get("thumbnail").and_then(Value::as_f64);
     let (mut entries, mut files, mut skipped) = (vec![], vec![], vec![]);
-    for mut q in queued_files(p)? {
+    for mut q in queued {
         for k in ["link", "template", "page", "crop", "text", "dxf"] {
             if let Some(v) = p.get(k) {
                 q[k] = v.clone();
@@ -603,6 +735,35 @@ fn queue(s: &mut Session, p: &Value) -> Result<Value> {
             }
         }
     }
+    Ok(QueueRead { params: p, entries, files, skipped })
+}
+
+impl Session {
+    /// `file.place.queue`'s checks (with no document open, the error `file.place.queue` gives) of
+    /// `params` → what reads the files ([`QueueJob::read`]; on the
+    /// desktop the Place dialog's OK with several files does this off the UI thread).
+    pub fn prepare_place_queue(&self, params: &Value) -> Result<QueueJob> {
+        has_doc(self).map_err(|why| EngineError::Disabled(QUEUE.into(), why))?;
+        Ok(QueueJob { params: params.clone(), files: queued_files(params)? })
+    }
+
+    /// Run `file.place.queue` with the params of `read` as a command that loads the place cursor
+    /// with the files `read` holds instead of reading them again → `file.place.queue`'s reply.
+    pub fn place_queue_read(&mut self, read: QueueRead) -> Result<Value> {
+        let params = read.params.clone();
+        self.queue_hand_off = Some(read);
+        let r = self.execute(QUEUE, &params);
+        self.queue_hand_off = None;
+        r
+    }
+}
+
+fn queue(s: &mut Session, p: &Value) -> Result<Value> {
+    let read = match s.queue_hand_off.take() {
+        Some(read) => read,
+        None => s.prepare_place_queue(p)?.read()?,
+    };
+    let QueueRead { entries, files, skipped, .. } = read;
     if entries.is_empty() {
         let why = skipped.first().and_then(|e| e["error"].as_str()).unwrap_or("nothing to place");
         return Err(bad(QUEUE, why));
@@ -645,6 +806,12 @@ fn thumbnail_png(l: Loaded, px: f64) -> Result<String> {
 }
 
 fn info(_: &mut Session, p: &Value) -> Result<Value> {
+    read_info(p)
+}
+
+/// `file.place.info` with `p`, without the session (on the desktop the Place dialog reads its
+/// files' lines this way off the UI thread).
+pub fn read_info(p: &Value) -> Result<Value> {
     // A PDF/.ai page linked or not has the same size and art.
     let mut l = load(p, "file.place.info", None, false)?;
     let natural = l.natural;

@@ -4296,6 +4296,7 @@ swatch	Bright Violet	ビビッドバイオレット
 @msg	decimals must be {_1}–{_2} (got {_3})	小数点以下の桁数は {_1} から {_2} までにしてください (指定値: {_3})
 @msg	Exporting {_1}	{_1} を書き出し中
 @msg	Packaging {_1}	{_1} をパッケージ中
+@msg	Placing {_1}	{_1} を配置中
 @msg	Exported {what}	{what} を書き出しました
 @msg	"{0}" is not a colour: write it as #rrggbb	「{0}」はカラーではありません: #rrggbb の形式で指定してください
 @msg	could not decode image: {0}	画像をデコードできませんでした: {0}
@@ -4465,9 +4466,11 @@ swatch	Bright Violet	ビビッドバイオレット
 @msg	no swatch library `{l}` (see swatch.library.list)	スウォッチライブラリ `{l}` が見つかりません (swatch.library.list を参照)
 @msg	no user library folder here	この環境にはユーザーライブラリフォルダーがありません
 @msg	Couldn't place {name}: the document it was dropped on was closed	{name} を配置できませんでした: ドロップ先のドキュメントは閉じられています
+@msg	Couldn't place {name}: the document it was placed in was closed	{name} を配置できませんでした: 配置先のドキュメントは閉じられています
 @msg	no files to place	配置するファイルがありません
 @msg	`{file}` isn't a VectorCraft document, a PDF or a PDF-compatible .ai file	`{file}` は VectorCraft ドキュメント、PDF、PDF 互換の .ai ファイルのいずれでもありません
 @msg	paths: give at least one file	paths: ファイルを 1 つ以上指定してください
+@msg	replace: the object to replace was changed or deleted	replace: 置き換えるオブジェクトは変更または削除されています
 @msg	Couldn't place {name}: {e}	{name} を配置できませんでした: {e}
 @msg	no print service	プリントサービスがありません
 @msg	the print job has no data	プリントジョブにデータがありません
