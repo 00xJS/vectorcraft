@@ -4608,6 +4608,7 @@ dependencies = [
  "winit",
  "winresource",
  "winsafe",
+ "x11rb",
  "zbus",
 ]
 
