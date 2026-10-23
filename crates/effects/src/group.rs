@@ -120,7 +120,7 @@ impl Counts {
         let mut i = slot + 1;
         while let Some(c) = self.0.get_mut(i) {
             *c += d;
-            i += i.isolate_lowest_one();
+            i += i & i.wrapping_neg();
         }
     }
 
@@ -129,7 +129,7 @@ impl Counts {
         let (mut i, mut s) = (end.min(self.0.len().saturating_sub(1)), 0);
         while i > 0 {
             s += self.0.get(i).copied().unwrap_or(0);
-            i -= i.isolate_lowest_one();
+            i -= i & i.wrapping_neg();
         }
         s
     }
