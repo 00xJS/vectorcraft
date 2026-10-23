@@ -622,7 +622,8 @@ fn restyled(t: &TextObject, kern: Option<f64>, own: &[f64]) -> Vec<TextRun> {
 /// The runs of `t` that put its glyphs where the file did (#722), and their layout: with the
 /// font's kerning or none, whichever the file's spacing follows, and tracking that is the same
 /// after every character when the file spaced them evenly, else each character's own (word
-/// spacing, `TJ` adjustments, character tightening, spaces read from gaps).
+/// spacing, `TJ` adjustments, character tightening, spaces read from gaps), measured from the
+/// file's widths (not the font's advances, which may be a hair off them).
 ///
 /// The file put the glyph of each character with a [`Slot`] at `baseline` (one origin per glyph),
 /// measured along `path` (type on a path: one curve per glyph) or along `line`'s baseline from its
@@ -735,14 +736,37 @@ fn place_each(
     if !same_font {
         return None;
     }
+    // Where the glyphs go on the file's own widths: each character's pen moved by how much wider
+    // the file says the characters before it are than the font's advances (a file gives widths to
+    // the thousandth of an em, so a font of 2048 units an em is a hair off), where the file gives
+    // a character's width and the layout sets it as a glyph of its own. Spacing measured from them
+    // is the file's (its `Tc`, `Tw`, `TJ`): measured from the installed font's advances, each
+    // character would also take its own hair of tracking (a run each), and keep it once a font
+    // rounded otherwise is installed.
+    let end = pen;
+    let mut wider = 0.0;
+    let mut drift = Vec::with_capacity(chars.len());
+    for (i, t) in target.iter().enumerate() {
+        drift.push(wider);
+        let (Some(Some((start, _))), Some((_, Some(width)))) = (unkerned_pens.get(i), t) else { continue };
+        let next = match unkerned_pens.get(i + 1) {
+            Some(n) => n.map(|(p, _)| p),
+            None => Some(end),
+        };
+        if let Some(next) = next {
+            wider += width - (next - start);
+        }
+    }
+    let by_file =
+        |pens: &[Option<(f64, f64)>]| -> Vec<Option<(f64, f64)>> { pens.iter().zip(&drift).map(|(p, d)| p.map(|(x, a)| (x + d, a))).collect() };
     // The font's kerning when the file followed it (or there is none to follow), else none.
-    let kerned = spacing(&pens(&auto, &chars))?;
+    let kerned = spacing(&by_file(&pens(&auto, &chars)))?;
     let (kern, own) = match even(&kerned) {
         Some(own) => (None, own),
         // Without kerning the line lays out the same.
         None if !kerned_any => (None, kerned),
         None => {
-            let unkerned = spacing(&unkerned_pens)?;
+            let unkerned = spacing(&by_file(&unkerned_pens))?;
             match even(&unkerned) {
                 Some(own) => (Some(0.0), own),
                 None if changes(&unkerned) < changes(&kerned) => (Some(0.0), unkerned),
