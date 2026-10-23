@@ -19,8 +19,9 @@ pub(crate) struct Composite<'a> {
     pub clip: Option<(&'a BezPath, FillRule)>,
     pub blend: Blend,
     pub opacity: f32,
-    /// Opacity mask (the context's size).
-    pub mask: Option<vello_cpu::Mask>,
+    /// Opacity mask: the coverage of each pixel (row-major) of the region `bounds` covers
+    /// ([`area`]). A masked group is drawn offscreen over that region only.
+    pub mask: Option<Vec<u8>>,
     /// The content starts from transparency instead of from the art below.
     pub isolated: bool,
     /// Blending inside reaches the group's backdrop ([`Node::blends_through`]).
@@ -41,11 +42,11 @@ pub(crate) type Content<'d> = dyn FnMut(&mut Renderer, &mut RenderContext, &Fram
 
 /// A pixel region of a context: origin and size.
 #[derive(Clone, Copy)]
-struct Region {
-    x: u16,
-    y: u16,
-    w: u16,
-    h: u16,
+pub(crate) struct Region {
+    pub x: u16,
+    pub y: u16,
+    pub w: u16,
+    pub h: u16,
 }
 
 impl Renderer {
@@ -75,11 +76,15 @@ impl Renderer {
         if c.blends && (c.isolated || self.nested == 0) {
             return self.group_offscreen(ctx, f, c, draw);
         }
+        if c.mask.is_some() {
+            // Its backdrop out of reach (or not needed), a masked group starts from transparency.
+            return self.group_offscreen(ctx, f, Composite { isolated: true, ..c }, draw);
+        }
         ctx.set_transform(f.view);
         if let Some((_, rule)) = c.clip {
             ctx.set_fill_rule(fill_rule(rule));
         }
-        ctx.push_layer(c.clip.map(|(p, _)| p), Some(blend_mode(c.blend)), Some(c.opacity), c.mask, None);
+        ctx.push_layer(c.clip.map(|(p, _)| p), Some(blend_mode(c.blend)), Some(c.opacity), None, None);
         self.nested += 1;
         // The layer starts from transparency: no backdrop for the content.
         let backdrop = self.backdrop.take();
@@ -91,42 +96,50 @@ impl Renderer {
 
     fn group_offscreen(&mut self, ctx: &mut RenderContext, f: &Frame, c: Composite, draw: &mut Content) {
         let Composite { clip, blend, opacity, mask, isolated, bounds, .. } = c;
-        let Some(r) = region(ctx, f, bounds) else { return };
-        let view = Affine::translate((-(r.x as f64), -(r.y as f64))) * f.view;
-        let visible = view.inverse().transform_rect_bbox(Rect::new(0.0, 0.0, r.w as f64, r.h as f64));
-        let sub = Frame { mt: false, view, visible, ..*f };
+        let Some((r, sub)) = area(ctx, f, bounds) else { return };
         let backdrop = (!isolated).then(|| self.flatten(ctx, r));
         let content = self.offscreen(r, &sub, backdrop.clone(), draw);
         let at = (r.x as f64, r.y as f64);
-        let push = |ctx: &mut RenderContext, mode: BlendMode, mask: Option<vello_cpu::Mask>| {
+        let push = |ctx: &mut RenderContext, mode: BlendMode| {
             ctx.set_transform(f.view);
             if let Some((_, rule)) = clip {
                 ctx.set_fill_rule(fill_rule(rule));
             }
-            ctx.push_layer(clip.map(|(p, _)| p), Some(mode), Some(opacity), mask, None);
+            ctx.push_layer(clip.map(|(p, _)| p), Some(mode), Some(opacity), None, None);
+        };
+        // The mask scales what the group draws, as a layer mask does.
+        let masked = |pm: Pixmap| match &mask {
+            Some(m) => apply_mask(pm, m),
+            None => pm,
         };
         match backdrop {
             // The backdrop under the content, mixed with it by opacity, mask and clip: take that
             // share of the backdrop out, then add the same share of the content.
             Some(_) if blend == Blend::Normal => {
-                push(ctx, BlendMode::new(Mix::Normal, Compose::DestOut), mask.clone());
-                ctx.set_transform(Affine::IDENTITY);
-                ctx.set_paint(peniko::Color::BLACK);
-                ctx.fill_rect(&Rect::new(at.0, at.1, at.0 + r.w as f64, at.1 + r.h as f64));
+                push(ctx, BlendMode::new(Mix::Normal, Compose::DestOut));
+                if mask.is_some() {
+                    let mut black = Pixmap::new(r.w, r.h);
+                    black.data_mut().iter_mut().for_each(|p| p.a = 255);
+                    draw_pixmap(ctx, Arc::new(masked(black)), at);
+                } else {
+                    ctx.set_transform(Affine::IDENTITY);
+                    ctx.set_paint(peniko::Color::BLACK);
+                    ctx.fill_rect(&Rect::new(at.0, at.1, at.0 + r.w as f64, at.1 + r.h as f64));
+                }
                 ctx.pop_layer();
-                push(ctx, BlendMode::new(Mix::Normal, Compose::Plus), mask);
-                draw_pixmap(ctx, Arc::new(content), at);
+                push(ctx, BlendMode::new(Mix::Normal, Compose::Plus));
+                draw_pixmap(ctx, Arc::new(masked(content)), at);
             }
             // A blend mode applies to the group as an object of its own: take the backdrop's share
             // out of the content (it needs the content's own coverage), then blend the rest.
             Some(b) => {
                 let alone = self.offscreen(r, &sub, None, draw);
-                push(ctx, blend_mode(blend), mask);
-                draw_pixmap(ctx, Arc::new(remove_backdrop(content, &alone, &b)), at);
+                push(ctx, blend_mode(blend));
+                draw_pixmap(ctx, Arc::new(masked(remove_backdrop(content, &alone, &b))), at);
             }
             None => {
-                push(ctx, blend_mode(blend), mask);
-                draw_pixmap(ctx, Arc::new(content), at);
+                push(ctx, blend_mode(blend));
+                draw_pixmap(ctx, Arc::new(masked(content)), at);
             }
         }
         ctx.pop_layer();
@@ -298,6 +311,24 @@ fn region(ctx: &RenderContext, f: &Frame, bounds: Option<Rect>) -> Option<Region
     };
     let (x0, y0, x1, y1) = (r.x0.floor().max(0.0), r.y0.floor().max(0.0), r.x1.ceil().min(full.x1), r.y1.ceil().min(full.y1));
     (x1 > x0 && y1 > y0).then_some(Region { x: x0 as u16, y: y0 as u16, w: (x1 - x0) as u16, h: (y1 - y0) as u16 })
+}
+
+/// The pixel region of `ctx` that `bounds` covers ([`region`]), and the frame that draws into a
+/// context of that region's size.
+pub(crate) fn area<'a>(ctx: &RenderContext, f: &Frame<'a>, bounds: Option<Rect>) -> Option<(Region, Frame<'a>)> {
+    let r = region(ctx, f, bounds)?;
+    let view = Affine::translate((-(r.x as f64), -(r.y as f64))) * f.view;
+    let visible = view.inverse().transform_rect_bbox(Rect::new(0.0, 0.0, r.w as f64, r.h as f64));
+    Some((r, Frame { mt: false, view, visible, ..*f }))
+}
+
+/// `pm` (premultiplied) with each pixel scaled by its coverage in `mask` (row-major, `pm`'s size).
+fn apply_mask(mut pm: Pixmap, mask: &[u8]) -> Pixmap {
+    let scale = |v: u8, m: u8| ((v as u32 * m as u32 + 127) / 255) as u8;
+    for (p, &m) in pm.data_mut().iter_mut().zip(mask) {
+        (p.r, p.g, p.b, p.a) = (scale(p.r, m), scale(p.g, m), scale(p.b, m), scale(p.a, m));
+    }
+    pm
 }
 
 /// The pixels of region `r` of `pm`.

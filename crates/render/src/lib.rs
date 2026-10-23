@@ -610,6 +610,8 @@ impl Frame<'_> {
     /// A render context for drawing this frame's art offscreen (on the calling thread), with its
     /// edge smoothing: hard edges must not depend on where the art is drawn.
     fn offscreen_context(&self, w: u16, h: u16) -> RenderContext {
+        #[cfg(test)]
+        OFFSCREEN_PIXELS.with(|n| n.set(n.get() + u64::from(w) * u64::from(h)));
         let mut ctx = single_threaded_context(w, h);
         ctx.set_aliasing_threshold(self.opts.anti_alias.threshold());
         ctx
@@ -1075,19 +1077,16 @@ impl Renderer {
             && !f.opts.outline
             && !self.is_shape(a)
         {
-            // A masked object is a non-isolated group of its own.
-            let mask = Some(self.opacity_mask(f, m, ctx.width(), ctx.height()));
+            // A masked object is a non-isolated group of its own, drawn over its own pixels: the
+            // mask is rendered over those only.
+            let bounds = self.bounds_of(f.symbols, a);
+            let Some((r, sub)) = group::area(ctx, f, bounds) else { return };
+            let mask = Some(self.mask_values(&sub, m, r.w, r.h));
             let blends = a.blend != vectorcraft_color::BlendMode::Normal || (!a.isolate && self.blends_through(a));
-            let bounds = if blends { self.bounds_of(f.symbols, a) } else { None };
             self.group(ctx, f, Composite { mask, blends, bounds, ..Default::default() }, &mut |r, c, fr| r.draw_arc_body(c, fr, a));
             return;
         }
         self.draw_arc_body(ctx, f, a);
-    }
-
-    /// Render an opacity mask's art offscreen and turn its luminance into a coverage mask.
-    fn opacity_mask(&mut self, f: &Frame, m: &vectorcraft_doc::OpacityMask, w: u16, h: u16) -> vello_cpu::Mask {
-        vello_cpu::Mask::from_parts(self.mask_values(f, m, w, h), w, h)
     }
 
     /// The coverage of opacity mask `m` per output pixel (row-major): its art rendered offscreen,
@@ -2622,6 +2621,12 @@ fn now() -> u64 {
 #[cfg(target_arch = "wasm32")]
 fn now() -> u64 {
     0
+}
+
+#[cfg(test)]
+thread_local! {
+    /// The pixels of the offscreen contexts [`Frame::offscreen_context`] has made on this thread.
+    static OFFSCREEN_PIXELS: std::cell::Cell<u64> = const { std::cell::Cell::new(0) };
 }
 
 #[cfg(test)]
