@@ -4065,7 +4065,9 @@ the middle of its bounding box's right side, hollow on point type and filled on 
 `type.convertToAreaType` (point type gets a frame around its text, which keeps its place and doesn't rewrap) or
 `type.convertToPointType` (soft line wraps become line breaks), the same commands as the Type menu's Convert To Area
 Type and Convert To Point Type. Either keeps the text and its styles and is one undo step; `ids` picks the objects
-(default: the selection).
+(default: the selection). A frame of threaded text that `type.convertToPointType` converts leaves its thread with the
+text it holds, and the story flows through the other frames without that text; a thread left with one frame is no
+longer a thread.
 
 ```json
 {"name":"run_command","arguments":{"command":"type.convertToAreaType","params":{"ids":[42]}}}
