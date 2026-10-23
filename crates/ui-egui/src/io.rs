@@ -26,10 +26,8 @@ pub fn open_bytes(app: &mut VectorcraftApp, name: &str, bytes: &[u8], path: Opti
     let opens = opens_as(name);
     // A WebAssembly plug-in is installed.
     if opens == Some(OpensAs::Plugin) {
-        let r =
-            app.run("plugin.install", json!({"dataBase64": vectorcraft_format::base64_encode(bytes), "name": path.as_deref().unwrap_or(name)}))?;
-        app.status(format!("Installed plug-in {}", r["name"].as_str().unwrap_or(name)));
-        return Ok(Value::Null);
+        let module = json!({"dataBase64": vectorcraft_format::base64_encode(bytes), "name": path.as_deref().unwrap_or(name)});
+        return install_module(app, module).map(|_| Value::Null);
     }
     if opens == Some(OpensAs::ShortcutSet) {
         return dialogs::shortcut_import::open(app, name, bytes).map(|_| Value::Null);
@@ -146,17 +144,47 @@ fn pick_open(app: &mut VectorcraftApp, pick: &FilePick) -> Result<String, String
     crate::picks::open(app, pick).ok_or_else(|| "cancelled".into())
 }
 
-/// Object › Plug-ins › Install Plug-in…: installs the `.wasm` at `path`, else a picked one (the
-/// web's file picker hands the file to [`open_bytes`], which installs it).
-pub fn install_plugin(app: &mut VectorcraftApp, path: Option<String>) -> Result<Value, String> {
-    let path = match path {
-        Some(p) => p,
-        None if app.services.open_async.is_some() => return open_dialog(app).map(|_| Value::Null),
-        None => {
-            pick_open(app, &FilePick { filters: vec![FilePick::filter("Plug-ins", vectorcraft_engine::cmd::plugin::EXTS)], ..Default::default() })?
+/// Object › Plug-ins › Install Plug-in…: installs the module `p` gives (`path`, or `dataBase64`
+/// with `name`), else a picked `.wasm` (the web's file picker hands the file to [`open_bytes`],
+/// which installs it) → [`install_module`]'s result.
+pub fn install_plugin(app: &mut VectorcraftApp, p: &Value) -> Result<Value, String> {
+    let given = |k: &str| p.get(k).and_then(Value::as_str).is_some_and(|v| !v.is_empty());
+    if given("path") || given("dataBase64") {
+        return install_module(app, p.clone());
+    }
+    if app.services.open_async.is_some() {
+        return open_dialog(app).map(|_| Value::Null);
+    }
+    let path =
+        pick_open(app, &FilePick { filters: vec![FilePick::filter("Plug-ins", vectorcraft_engine::cmd::plugin::EXTS)], ..Default::default() })?;
+    install_module(app, json!({ "path": path }))
+}
+
+/// Installs the plug-in module that `module` names (`plugin.install`'s `path`, or `dataBase64`
+/// with `name`) → `plugin.install`'s result. A filter that asks for a heavy budget the user hasn't
+/// allowed yet (`allowHeavy`) asks them first, and OK installs it → `{pending}` while it asks.
+pub fn install_module(app: &mut VectorcraftApp, module: Value) -> Result<Value, String> {
+    if module.get("allowHeavy").and_then(Value::as_bool) != Some(true) {
+        let given = |k: &str| module.get(k).map(|v| (k.to_string(), v.clone()));
+        let source = Value::Object(["path", "dataBase64", "name"].into_iter().filter_map(given).collect());
+        let info = app.run("plugin.inspect", source.clone())?;
+        if info["budget"] == "heavy" {
+            let name = info["name"].as_str().unwrap_or_default();
+            let (minutes, times) = vectorcraft_plugins::heavy_terms();
+            let message = crate::i18n::fmt(tl!("Install “{name}”, which asks for a heavy budget?"), &[("name", name)]);
+            let detail = crate::i18n::fmt(
+                tl!(
+                    "Each run may take up to {minutes} minutes and do {times} times the work other plug-ins may. It runs in the background, and you can cancel it."
+                ),
+                &[("minutes", &minutes.to_string()), ("times", &times.to_string())],
+            );
+            let mut allowed = source;
+            allowed["allowHeavy"] = json!(true);
+            dialogs::confirm::ask(app, &message, &detail, "ui.installPlugin", allowed);
+            return Ok(json!({ "pending": dialogs::confirm::KIND }));
         }
-    };
-    let r = app.run("plugin.install", json!({ "path": path }))?;
+    }
+    let r = app.run("plugin.install", module)?;
     app.status(format!("Installed plug-in {}", r["name"].as_str().unwrap_or_default()));
     Ok(r)
 }

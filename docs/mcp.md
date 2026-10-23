@@ -4412,7 +4412,9 @@ id `plugin.<id>`: `effect.apply`, `effect.setParams` and `effect.expandAppearanc
 `effect.list` lists it. An exporter adds a write-only file format `plugin.<id>` (listed by `document.formats`):
 `document.export {format: "plugin.<id>", params?, path?}` writes it, as does a `path` ending in one of its extensions
 that no built-in format has. A failing plug-in returns an error and leaves the document as it was (an export writes
-no file).
+no file). A filter whose manifest asks for a heavy budget (minutes rather than a minute, `budget: "heavy"` in its
+`plugin.inspect {path | dataBase64}` entry) installs only with `allowHeavy: true`: ask the user first. `plugin.run`
+runs it where it is called, so the call may take minutes; `notifications/cancelled` stops it.
 
 ```json
 {"name":"run_command","arguments":{"command":"plugin.install","params":{"path":"/plugins/desaturate.wasm"}}}

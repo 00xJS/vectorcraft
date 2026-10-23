@@ -41,6 +41,9 @@ fn shown(app: &VectorcraftApp, now: f64, ctx: &egui::Context) -> Option<(String,
     Some((first.label.clone(), done, total, frac, jobs.len() - 1))
 }
 
+/// Draws the window for the first export running in the background that wasn't hidden or
+/// cancelled, once it has run [`DELAY`] seconds and no other dialog is open, and runs the command
+/// of the button pressed.
 pub fn show(app: &mut VectorcraftApp, ctx: &egui::Context) {
     let now = ctx.input(|i| i.time);
     let Some((label, done, total, frac, more)) = shown(app, now, ctx) else { return };
@@ -49,11 +52,7 @@ pub fn show(app: &mut VectorcraftApp, ctx: &egui::Context) {
     }
     let t = Tokens::get(ctx);
     let heading = format!("{}…", crate::i18n::msg(&label));
-    let mut action = None;
-    modal::show(ctx, &heading, egui::Id::new("export-progress"), -40.0, 20, |ui| {
-        ui.set_width(360.0);
-        modal::heading(ui, &heading);
-        ui.add_space(12.0);
+    let pressed = window(ctx, "export-progress", &heading, |ui| {
         // One step says nothing a spinner doesn't: the bar would sit at 0 % until the file is written.
         if total > 1 {
             let step = crate::i18n::fmt(tl!("Artboard {n} of {total}"), &[("n", &(done + 1).min(total).to_string()), ("total", &total.to_string())]);
@@ -67,36 +66,69 @@ pub fn show(app: &mut VectorcraftApp, ctx: &egui::Context) {
             ui.add_space(4.0);
             ui.add(egui::ProgressBar::new(frac).desired_width(360.0).desired_height(6.0).fill(t.accent));
         } else {
-            ui.horizontal(|ui| {
-                ui.add(egui::Spinner::new().size(14.0).color(t.accent));
-                ui.label(egui::RichText::new(tl!("Encoding and writing the file…")).color(t.text_dim));
-            });
+            busy(ui, tl!("Encoding and writing the file…"));
         }
         if more > 0 {
             ui.add_space(6.0);
             let queued = crate::i18n::tn(more as u64, "{n} more export waiting", "{n} more exports waiting");
             ui.label(egui::RichText::new(queued).size(11.5).color(t.text_dim));
         }
+    });
+    let id = match pressed {
+        Some(Pressed::Cancel) => "file.cancelExport",
+        Some(Pressed::Hide) => "file.exportInBackground",
+        None => return,
+    };
+    if let Err(e) = app.run(id, json!({})) {
+        app.status(e);
+    }
+}
+
+/// A button of a progress [`window`].
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Pressed {
+    /// Cancel, or Esc: stop the work.
+    Cancel,
+    /// Continue in Background: close the window; the work goes on, shown in the status bar.
+    Hide,
+}
+
+/// A modal window (`id`) headed `heading`, in the UI language: `body` draws how far the work has
+/// got, then come Cancel (also Esc) and Continue in Background → the one pressed. Work that may
+/// take a while in the background shows it: exports, and heavy plug-in filters
+/// ([`crate::plugin_runs`]).
+pub fn window(ctx: &egui::Context, id: &str, heading: &str, body: impl FnOnce(&mut egui::Ui)) -> Option<Pressed> {
+    let mut pressed = None;
+    modal::show(ctx, heading, egui::Id::new(id), -40.0, 20, |ui| {
+        ui.set_width(360.0);
+        modal::heading(ui, heading);
+        ui.add_space(12.0);
+        body(ui);
         ui.add_space(16.0);
         let row = egui::vec2(ui.min_rect().width(), ui.spacing().interact_size.y);
         ui.allocate_ui_with_layout(row, egui::Layout::right_to_left(egui::Align::Center), |ui| {
             if widgets::secondary_button(ui, "Cancel").clicked() {
-                action = Some("file.cancelExport");
+                pressed = Some(Pressed::Cancel);
             }
             ui.add_space(8.0);
             if widgets::secondary_button(ui, "Continue in Background").clicked() {
-                action = Some("file.exportInBackground");
+                pressed = Some(Pressed::Hide);
             }
         });
     });
     if ctx.input(|i| i.key_pressed(egui::Key::Escape)) {
-        action = Some("file.cancelExport");
+        pressed = Some(Pressed::Cancel);
     }
-    if let Some(id) = action
-        && let Err(e) = app.run(id, json!({}))
-    {
-        app.status(e);
-    }
+    pressed
+}
+
+/// Work that counts no steps, in a [`window`]: a spinner and `what` it does, in the UI language.
+pub fn busy(ui: &mut egui::Ui, what: &str) {
+    let t = Tokens::get(ui.ctx());
+    ui.horizontal(|ui| {
+        ui.add(egui::Spinner::new().size(14.0).color(t.accent));
+        ui.label(egui::RichText::new(what).color(t.text_dim));
+    });
 }
 
 #[cfg(test)]

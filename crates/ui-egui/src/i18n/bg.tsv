@@ -5396,3 +5396,10 @@ axis	Y Axis	Y ос
 @msg	`dither` applies to gradient fills (paint.setFill)	`dither` се прилага към градиентни запълки (paint.setFill)
 @msg	`dither` must be true or false	`dither` трябва да бъде true или false
 @msg	`method` must be classic or perceptual	`method` трябва да е classic или perceptual
+# Heavy plug-in filters (plugin.inspect, plug-in runs)
+	Install “{name}”, which asks for a heavy budget?	Да се инсталира ли „{name}“, който иска голям изчислителен бюджет?
+	Each run may take up to {minutes} minutes and do {times} times the work other plug-ins may. It runs in the background, and you can cancel it.	Всяко изпълнение може да продължи до {minutes} минути и да свърши {times} пъти повече работа, отколкото е позволено на другите приставки. То се изпълнява във фонов режим и можете да го откажете.
+	It may take minutes, so it runs in the background, where you can cancel it.	Това може да отнеме минути, затова се изпълнява във фонов режим, където можете да го откажете.
+	The plug-in is computing…	Приставката изчислява…
+	Inspect Plug-in	Проверка на приставка
+	Cancel Plug-in Run	Отказ от изпълнението на приставката

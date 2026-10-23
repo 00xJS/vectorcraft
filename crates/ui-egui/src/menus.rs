@@ -1028,7 +1028,19 @@ pub const UI_COMMANDS: &[(&str, &str, &str, &str)] = &[
         "ui.installPlugin",
         "Install Plug-in…",
         "",
-        "{path?: a .wasm file} install a WebAssembly plug-in (plugin.install); without a path pick one (the web opens the browser's file picker; File › Open of a .wasm installs it too)",
+        "{path?: a .wasm file | dataBase64?: the module, name?: the file name shown as its source (with dataBase64), allowHeavy?: bool (the user agreed to its heavy budget)} install a WebAssembly plug-in (plugin.install); without a path pick one (the web opens the browser's file picker; File › Open of a .wasm installs it too). A filter that asks for a heavy budget asks the user first: OK installs it → plugin.install's result | {pending: \"confirm\"} while it asks",
+    ),
+    (
+        "plugin.cancelRuns",
+        "Cancel Plug-in Run",
+        "",
+        "{} stop every heavy filter running in the background (its progress window's Cancel): it stops at the next slice of its budget and changes nothing → {cancelled: n}",
+    ),
+    (
+        "plugin.hideRuns",
+        "Continue in Background",
+        "",
+        "{} close the progress window of the heavy filters running in the background; they go on, shown in the status bar → {hidden: n}",
     ),
     (
         "ui.checkScript",
@@ -1195,6 +1207,9 @@ pub fn check_params(session: &vectorcraft_engine::Session, id: &str, params: &Va
     session.check_params(id, params).map_err(|e| e.to_string())
 }
 
+/// Runs `id` when the UI runs it itself: one of [`UI_COMMANDS`], or an engine command the UI
+/// handles its own way (a Window menu panel item that toggles, …) → `None` to leave it to the
+/// engine.
 pub fn run_ui_command(app: &mut VectorcraftApp, id: &str, p: &Value) -> Option<Result<Value, String>> {
     // The Window menu's panel items toggle like its other checked items (#2361); the panel's
     // other ways in (shortcuts, Show Properties Panel, a tool's double-click) only show it.
@@ -1845,7 +1860,9 @@ pub fn run_ui_command(app: &mut VectorcraftApp, id: &str, p: &Value) -> Option<R
         }
         "ui.printPresetDialog" => crate::dialogs::print::open_preset(app, p),
         "plugin.dialog" => crate::dialogs::plugin::open(app, p),
-        "ui.installPlugin" => io::install_plugin(app, s("path")),
+        "ui.installPlugin" => io::install_plugin(app, p),
+        "plugin.cancelRuns" => Ok(crate::plugin_runs::cancel_all(app)),
+        "plugin.hideRuns" => Ok(crate::plugin_runs::hide_all(app)),
         "ui.checkScript" => crate::dialogs::script_check::command(app, p),
         "ui.perspectiveGridDialog" => crate::dialogs::perspective_grid::open(app),
         "ui.perspectivePresetsDialog" => {
@@ -2405,6 +2422,8 @@ pub(crate) fn waits_for_ime(app: &VectorcraftApp, id: &str) -> bool {
             || id.starts_with("edit.paste"))
 }
 
+/// Can command `id` run now? An engine command asks the engine, a UI command the app's state;
+/// none that would act on text an input method is still composing.
 pub fn enabled(app: &VectorcraftApp, id: &str) -> bool {
     if waits_for_ime(app, id) {
         return false;
@@ -2421,6 +2440,8 @@ pub fn enabled(app: &VectorcraftApp, id: &str) -> bool {
         id if let Some(b) = crate::panels::align::button(id) => enabled(app, b.command()),
         "file.reveal" => app.services.reveal.is_some() && app.session.active().is_some_and(|d| d.path.is_some()),
         "file.cancelExport" | "file.exportInBackground" => app.background.jobs.iter().any(|j| j.progress.is_some() && !j.cancelled()),
+        "plugin.cancelRuns" => crate::plugin_runs::any_running(app),
+        "plugin.hideRuns" => crate::plugin_runs::any_shown(app),
         "file.place"
         | "file.export.svg"
         | "file.export.png"

@@ -5428,3 +5428,15 @@ axis	Y Axis	Y tengely
 @msg	`dither` applies to gradient fills (paint.setFill)	A `dither` színátmenetes kitöltésekre vonatkozik (paint.setFill)
 @msg	`dither` must be true or false	`dither`: true vagy false kell
 @msg	`method` must be classic or perceptual	a `method` értéke classic vagy perceptual lehet
+# Heavy plug-in filters (plugin.inspect, plug-in runs)
+	Install “{name}”, which asks for a heavy budget?	Telepíted a(z) „{name}” bővítményt, amely nagy számítási keretet kér?
+	Each run may take up to {minutes} minutes and do {times} times the work other plug-ins may. It runs in the background, and you can cancel it.	Egy futás akár {minutes} percig tarthat, és {times}-szor annyi munkát végezhet, mint amennyit más bővítmények. A háttérben fut, és megszakíthatod.
+	It may take minutes, so it runs in the background, where you can cancel it.	Percekig is tarthat, ezért a háttérben fut, ahol megszakíthatod.
+	The plug-in is computing…	A bővítmény számol…
+	Inspect Plug-in	Bővítmény vizsgálata
+	Cancel Plug-in Run	Bővítmény futásának megszakítása
+@msg	{_1} finished, but the document or the plug-in changed meanwhile: run it again	{_1} lefutott, de közben megváltozott a dokumentum vagy a bővítmény: futtasd újra
+@msg	Running “{name}”…	Futtatás: „{name}”…
+@msg	a live effect runs while the document is drawn, so it can't be `heavy`	az élő effektus a dokumentum rajzolása közben fut, ezért nem lehet `heavy`
+@msg	an exporter always gets an export's budget: leave `budget` out	az exportáló bővítmény mindig az exportálás keretét kapja: hagyd ki a `budget` kulcsot
+@msg	“{_1}” asks for a heavy budget (each run up to {minutes} minutes and {times} times the usual instructions): install it with `allowHeavy: true` once the user agrees	a(z) „{_1}” nagy számítási keretet kér (futásonként legfeljebb {minutes} perc és a szokásos utasításszám {times}-szorosa): telepítsd az `allowHeavy: true` megadásával, miután a felhasználó beleegyezett

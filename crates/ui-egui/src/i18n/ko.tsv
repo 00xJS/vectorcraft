@@ -5022,3 +5022,15 @@ axis	Y Axis	Y축
 @msg	`dither` must be true or false	`dither`은(는) true 또는 false여야 합니다
 	Perceptual	지각적
 @msg	`method` must be classic or perceptual	`method`는 classic 또는 perceptual이어야 합니다
+# Heavy plug-in filters (plugin.inspect, plug-in runs)
+	Install “{name}”, which asks for a heavy budget?	큰 계산 예산을 요청하는 “{name}”을(를) 설치하시겠습니까?
+	Each run may take up to {minutes} minutes and do {times} times the work other plug-ins may. It runs in the background, and you can cancel it.	한 번 실행에 최대 {minutes}분이 걸리고 다른 플러그인에 허용되는 작업량의 {times}배를 수행할 수 있습니다. 백그라운드에서 실행되며 취소할 수 있습니다.
+	It may take minutes, so it runs in the background, where you can cancel it.	몇 분이 걸릴 수 있으므로 백그라운드에서 실행되며, 실행 중에 취소할 수 있습니다.
+	The plug-in is computing…	플러그인이 계산하는 중…
+	Inspect Plug-in	플러그인 검사
+	Cancel Plug-in Run	플러그인 실행 취소
+@msg	{_1} finished, but the document or the plug-in changed meanwhile: run it again	{_1}이(가) 끝났지만 그동안 문서나 플러그인이 변경되었습니다. 다시 실행하세요
+@msg	Running “{name}”…	“{name}” 실행 중…
+@msg	a live effect runs while the document is drawn, so it can't be `heavy`	라이브 효과는 문서를 그리는 동안 실행되므로 `heavy`일 수 없습니다
+@msg	an exporter always gets an export's budget: leave `budget` out	내보내기 플러그인은 항상 내보내기 예산을 받습니다. `budget`은 생략하세요
+@msg	“{_1}” asks for a heavy budget (each run up to {minutes} minutes and {times} times the usual instructions): install it with `allowHeavy: true` once the user agrees	“{_1}”은(는) 큰 계산 예산을 요청합니다(실행당 최대 {minutes}분, 평소의 {times}배 명령어). 사용자가 동의하면 `allowHeavy: true`로 설치하세요

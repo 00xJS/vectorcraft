@@ -5025,3 +5025,15 @@ axis	Y Axis	Y-Achse
 @msg	`dither` must be true or false	`dither` muss true oder false sein
 	Perceptual	Perzeptiv
 @msg	`method` must be classic or perceptual	`method` muss classic oder perceptual sein
+# Heavy plug-in filters (plugin.inspect, plug-in runs)
+	Install “{name}”, which asks for a heavy budget?	„{name}“ installieren, das ein großes Rechenbudget verlangt?
+	Each run may take up to {minutes} minutes and do {times} times the work other plug-ins may. It runs in the background, and you can cancel it.	Jede Ausführung kann bis zu {minutes} Minuten dauern und {times}-mal so viel Arbeit leisten, wie andere Plug-ins dürfen. Sie läuft im Hintergrund, und Sie können sie abbrechen.
+	It may take minutes, so it runs in the background, where you can cancel it.	Das kann Minuten dauern, daher läuft es im Hintergrund, wo Sie es abbrechen können.
+	The plug-in is computing…	Das Plug-in rechnet…
+	Inspect Plug-in	Plug-in prüfen
+	Cancel Plug-in Run	Plug-in-Ausführung abbrechen
+@msg	{_1} finished, but the document or the plug-in changed meanwhile: run it again	{_1} ist fertig, aber das Dokument oder das Plug-in hat sich inzwischen geändert: Führen Sie es erneut aus
+@msg	Running “{name}”…	„{name}“ wird ausgeführt…
+@msg	a live effect runs while the document is drawn, so it can't be `heavy`	ein Live-Effekt läuft, während das Dokument gezeichnet wird, daher kann er nicht `heavy` sein
+@msg	an exporter always gets an export's budget: leave `budget` out	ein Export-Plug-in erhält immer das Budget eines Exports: Lassen Sie `budget` weg
+@msg	“{_1}” asks for a heavy budget (each run up to {minutes} minutes and {times} times the usual instructions): install it with `allowHeavy: true` once the user agrees	„{_1}“ verlangt ein großes Rechenbudget (jede Ausführung bis zu {minutes} Minuten und {times}-mal so viele Anweisungen wie üblich): Installieren Sie es mit `allowHeavy: true`, sobald der Benutzer zustimmt

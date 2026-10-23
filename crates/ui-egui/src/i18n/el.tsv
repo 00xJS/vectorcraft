@@ -5394,3 +5394,15 @@ axis	Y Axis	Άξονας Y
 @msg	`dither` applies to gradient fills (paint.setFill)	Το `dither` ισχύει για γεμίσματα ντεγκραντέ (paint.setFill)
 @msg	`dither` must be true or false	Το `dither` πρέπει να είναι true ή false
 @msg	`method` must be classic or perceptual	Το `method` πρέπει να είναι classic ή perceptual
+# Heavy plug-in filters (plugin.inspect, plug-in runs)
+	Install “{name}”, which asks for a heavy budget?	Να εγκατασταθεί το «{name}», που ζητά μεγάλο υπολογιστικό προϋπολογισμό;
+	Each run may take up to {minutes} minutes and do {times} times the work other plug-ins may. It runs in the background, and you can cancel it.	Κάθε εκτέλεση μπορεί να διαρκέσει έως {minutes} λεπτά και να κάνει {times} φορές τη δουλειά που επιτρέπεται στα άλλα πρόσθετα. Εκτελείται στο παρασκήνιο και μπορείτε να την ακυρώσετε.
+	It may take minutes, so it runs in the background, where you can cancel it.	Μπορεί να διαρκέσει λεπτά, γι’ αυτό εκτελείται στο παρασκήνιο, όπου μπορείτε να το ακυρώσετε.
+	The plug-in is computing…	Το πρόσθετο υπολογίζει…
+	Inspect Plug-in	Επιθεώρηση προσθέτου
+	Cancel Plug-in Run	Ακύρωση εκτέλεσης προσθέτου
+@msg	{_1} finished, but the document or the plug-in changed meanwhile: run it again	Το {_1} ολοκληρώθηκε, αλλά το έγγραφο ή το πρόσθετο άλλαξε στο μεταξύ: εκτελέστε το ξανά
+@msg	Running “{name}”…	Εκτέλεση του «{name}»…
+@msg	a live effect runs while the document is drawn, so it can't be `heavy`	ένα δυναμικό εφέ εκτελείται κατά τη σχεδίαση του εγγράφου, οπότε δεν μπορεί να είναι `heavy`
+@msg	an exporter always gets an export's budget: leave `budget` out	ένα πρόσθετο εξαγωγής παίρνει πάντα τον προϋπολογισμό μιας εξαγωγής: παραλείψτε το `budget`
+@msg	“{_1}” asks for a heavy budget (each run up to {minutes} minutes and {times} times the usual instructions): install it with `allowHeavy: true` once the user agrees	το «{_1}» ζητά μεγάλο υπολογιστικό προϋπολογισμό (κάθε εκτέλεση έως {minutes} λεπτά και {times} φορές τις συνήθεις εντολές): εγκαταστήστε το με `allowHeavy: true` μόλις συμφωνήσει ο χρήστης
