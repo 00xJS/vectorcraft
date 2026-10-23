@@ -73,7 +73,7 @@ pub fn specs() -> Vec<CommandSpec> {
             "Drawing Mode",
             [],
             Some("Shift+D"),
-            "{mode?: normal|behind|inside} (inside needs one selected path, compound path or type; no param cycles normal → behind → inside → normal, going from behind back to normal when Draw Inside can't draw into the selection; art drawn or pasted inside the object isolation mode isolates takes isolation mode into the object's clip group)",
+            "{mode?: normal|behind|inside} (inside needs one selected path, compound path or type; no param cycles normal → behind → inside → normal, going from behind back to normal when Draw Inside can't draw into the selection; when the Draw Inside target is isolated, drawing or pasting into it moves isolation to its clip group)",
             has_doc,
             draw_mode
         ),
