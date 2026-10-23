@@ -15,7 +15,7 @@ use std::sync::Arc;
 
 use serde_json::Value;
 use vectorcraft_doc::color::{Color, Paint};
-use vectorcraft_doc::{Appearance, AppearanceItem, Node, NodeId, NodeKind, StrokeLayer};
+use vectorcraft_doc::{Appearance, AppearanceItem, Document, Node, NodeId, NodeKind, StrokeLayer};
 use vectorcraft_geom::{FillRule, PathData, Rect};
 use vectorcraft_pathops::{self as po, PathfinderOp};
 
@@ -346,9 +346,10 @@ pub fn has_container_appearance(n: &Node) -> bool {
 /// The regions a group's or layer's own fills and strokes paint, in document space, each with its
 /// fill rule: every visible member path and compound path, type as its glyph outlines and live
 /// objects evaluated; the members of a clip group or clipping layer without its clipping path.
-/// Images, symbol instances and guides add nothing.
-pub fn member_shapes(n: &Node) -> Vec<(PathData, FillRule)> {
-    fn push(n: &Node, out: &mut Vec<(PathData, FillRule)>) {
+/// Images, symbol instances and guides add nothing. A Repeat counts the Repeats in the art of
+/// `doc`'s symbols that its instances show toward its instance budget.
+pub fn member_shapes(doc: Option<&Document>, n: &Node) -> Vec<(PathData, FillRule)> {
+    fn push(doc: Option<&Document>, n: &Node, out: &mut Vec<(PathData, FillRule)>) {
         if !n.visible {
             return;
         }
@@ -360,19 +361,19 @@ pub fn member_shapes(n: &Node) -> Vec<(PathData, FillRule)> {
                     out.push((PathData::from_bezpath(&all).transformed(t.xf), FillRule::NonZero));
                 }
             }
-            NodeKind::Group { .. } | NodeKind::Layer { .. } => members(n, out),
-            _ if vectorcraft_doc::live::is_live(n) => members(&crate::reshape::outlined_members(n), out),
+            NodeKind::Group { .. } | NodeKind::Layer { .. } => members(doc, n, out),
+            _ if vectorcraft_doc::live::is_live(n) => members(doc, &crate::reshape::outlined_members(doc, n), out),
             _ => {}
         }
     }
-    fn members(n: &Node, out: &mut Vec<(PathData, FillRule)>) {
+    fn members(doc: Option<&Document>, n: &Node, out: &mut Vec<(PathData, FillRule)>) {
         let clip = usize::from(n.clips());
         for c in n.children().into_iter().flatten().skip(clip) {
-            push(c, out);
+            push(doc, c, out);
         }
     }
     let mut out = vec![];
-    members(n, &mut out);
+    members(doc, n, &mut out);
     out
 }
 
@@ -414,8 +415,9 @@ fn item_art(id: NodeId, item: &AppearanceItem, shapes: &[(PathData, FillRule)], 
 /// reshaping all its members as one piece (the whole art's bounds as their reference box), and its
 /// own fills and strokes turned into art painting the members' geometry ([`member_shapes`]) below
 /// the members (after a clipping path) or above them, as its contents slot says. Its
-/// transparency, opacity mask and raster effects stay. `None` when it has none of these.
-pub fn evaluate_container(n: &Node) -> Option<Node> {
+/// transparency, opacity mask and raster effects stay. `None` when it has none of these. Live
+/// objects among the members are evaluated with the symbols of `doc` (see [`member_shapes`]).
+pub fn evaluate_container(doc: Option<&Document>, n: &Node) -> Option<Node> {
     if !is_container(n) {
         return None;
     }
@@ -434,12 +436,12 @@ pub fn evaluate_container(n: &Node) -> Option<Node> {
         }
     }
     if !fx.is_empty() {
-        m = crate::reshape::outlined_members(&m);
+        m = crate::reshape::outlined_members(doc, &m);
         crate::reshape::reshape_leaves(&mut m, &fx);
     }
     m.appearance.effects.retain(|e| !is_pathfinder(&e.id) && !crate::is_geometry(&e.id));
     if paint {
-        let shapes = member_shapes(&m);
+        let shapes = member_shapes(doc, &m);
         let bounds = m.geometric_bounds();
         let art =
             |items: &[AppearanceItem]| -> Vec<Arc<Node>> { items.iter().filter_map(|i| item_art(n.id, i, &shapes, bounds)).map(Arc::new).collect() };
@@ -624,7 +626,7 @@ mod tests {
     fn a_random_transform_on_a_group_moves_its_members_together() {
         let mut g = group_with("distort.transform");
         g.appearance.effects[0].params = serde_json::json!({"moveH": 100, "moveV": 100, "random": true});
-        let art = evaluate_container(&g).unwrap();
+        let art = evaluate_container(None, &g).unwrap();
         let corner = |i: usize| art.children().and_then(|c| c.get(i)).and_then(|n| n.geometric_bounds()).map(|b| (b.x0, b.y0)).unwrap();
         let (a, b) = (corner(0), corner(1));
         assert!(a.0 > 0.0 && a.0 < 100.0, "moved by a share of the value: {a:?}");
@@ -640,7 +642,7 @@ mod tests {
         style(&mut t);
         let mut g = Node::group(NodeId(10), vec![sq(1, 0.0, Color::BLACK), Arc::new(t)]);
         g.appearance.effects.push(Effect { id: "path.offsetPath".into(), params: serde_json::json!({"offset": 0}), visible: true });
-        let art = evaluate_container(&g).unwrap();
+        let art = evaluate_container(None, &g).unwrap();
         (*art.children().unwrap()[1]).clone()
     }
 
@@ -698,7 +700,7 @@ mod tests {
         let before = start(&crate::outline_text(&t).unwrap().children().unwrap()[0]);
         let mut g = Node::group(NodeId(10), vec![square, t]);
         g.appearance.effects.push(Effect { id: "distort.transform".into(), params: serde_json::json!({"moveH": 30}), visible: true });
-        let art = evaluate_container(&g).unwrap();
+        let art = evaluate_container(None, &g).unwrap();
         let members = art.children().unwrap();
         let after = start(&members[1].children().unwrap()[0]);
         assert!((after - before - 30.0).abs() < 1e-6, "the type's gradient starts at {before}, then {after}");
@@ -718,7 +720,7 @@ mod tests {
             let mut g = Node::group(NodeId(10), vec![square]);
             let params = serde_json::json!({"moveH": 30, "copies": 2});
             g.appearance.effects.push(Effect { id: "distort.transform".into(), params, visible: true });
-            let art = evaluate_container(&g).unwrap();
+            let art = evaluate_container(None, &g).unwrap();
             let copies = art.children().unwrap()[0].children().expect("the object and its copies are objects of their own");
             assert_eq!(copies.len(), 3);
             for (i, c) in copies.iter().enumerate() {

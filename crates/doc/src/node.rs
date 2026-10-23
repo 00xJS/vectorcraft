@@ -1227,7 +1227,7 @@ impl Node {
             NodeKind::Mesh(m) => m.bounds(),
             // Each copy is measured where the repeat draws it: `RepeatSpec::transforms` lays the
             // copies out by the source's bounds measured without the document.
-            NodeKind::Repeat(r) => r.copies_bounds(union(&r.source)?),
+            NodeKind::Repeat(r) => r.copies_bounds(union(&r.source)?, symbols.map(|s| s.document())),
             NodeKind::PlacedDocument(p) => Some(p.bounds()),
             // The members drawn over the others are drawn where they are.
             NodeKind::Intertwine { children } => union(children),
