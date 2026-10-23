@@ -1216,3 +1216,33 @@ fn clicking_the_out_port_then_the_canvas_threads_the_text_into_a_new_frame() {
     assert_eq!(format!("{}{}", obj(&s, id).plain_text(), obj(&s, thread[1]).plain_text()), long);
     assert_eq!(&undo_labels(&s)[steps..], ["Thread Text"]);
 }
+
+/// #2572: with the Selection tool, area type whose text fits shows both ports, and a click on its
+/// in port then on empty canvas makes a new frame the story starts in, flowing on into the frame
+/// clicked, in one undo step; the ports then show the thread's arrows.
+#[test]
+fn clicking_the_in_port_then_the_canvas_threads_a_new_frame_before_it() {
+    let mut s = session();
+    let v = ViewInfo::default();
+    let words = "Words that fit. ";
+    let r = s.execute("text.create", &json!({"x": 50, "y": 50, "text": words, "size": 12, "area": {"width": 100, "height": 40}})).unwrap();
+    let id = NodeId(r["id"].as_u64().unwrap());
+    s.execute("select.set", &json!({"ids": [id.0]})).unwrap();
+    s.select_tool("selection", v).unwrap();
+    let boxes = |s: &mut Session| {
+        s.overlays(v).iter().filter(|o| matches!(o, vectorcraft_tools::Overlay::Highlight { color: [255, 255, 255, 255], .. })).count()
+    };
+    assert_eq!(boxes(&mut s), 2, "an in port and an out port");
+    let steps = undo_labels(&s).len();
+    click(&mut s, 50.0, 50.0 + vectorcraft_tools::text::PORT_RISE_PX);
+    assert_eq!(s.cursor(Point::new(400.0, 400.0), Mods::default(), v), vectorcraft_tools::Cursor::LoadedText);
+    click(&mut s, 400.0, 400.0);
+    let doc = &s.doc().unwrap().doc;
+    let [thread] = &doc.text_threads[..] else { panic!("one thread: {:?}", doc.text_threads) };
+    assert_eq!(thread[1], id, "the frame clicked comes second");
+    assert_eq!(format!("{}{}", obj(&s, thread[0]).plain_text(), obj(&s, id).plain_text()), words);
+    assert!(!obj(&s, thread[0]).plain_text().is_empty(), "the story starts in the new frame");
+    assert_eq!(&undo_labels(&s)[steps..], ["Thread Text"]);
+    let strokes = s.overlays(v).iter().filter(|o| matches!(o, vectorcraft_tools::Overlay::Line { .. })).count();
+    assert_eq!(strokes, 6, "both frames selected: the first one's out port and the second one's in port show arrows");
+}

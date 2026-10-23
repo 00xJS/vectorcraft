@@ -17,11 +17,13 @@
 //! scaling its type: the text reflows at its size.
 //! E pressed during a marquee drag makes the marquee take only the objects entirely inside it, and
 //! E pressed again makes it take the objects it touches.
-//! A click on the red out port of selected area type or type on a path whose text overflows loads
-//! the pointer with that text ([`Cursor::LoadedText`]): the next click threads it into the closed
-//! path, area type or type on a path under the pointer, or into a new frame of the same kind, shape
-//! and size at the click on empty canvas,
-//! and a drag draws a rectangle for the new frame (`text.thread.add`). Escape drops the loaded text.
+//! Selected area type and type on a path show an in port and an out port. A click on the out port
+//! loads the pointer with the text ([`Cursor::LoadedText`]): the next click threads it into the
+//! closed path, area type or type on a path under the pointer, or into a new frame of the same
+//! kind, shape and size at the click on empty canvas, and a drag draws a rectangle for the new
+//! frame (`text.thread.add`), which comes after the clicked one in its thread. A click on the in
+//! port does the same with the new frame put before it: the story then starts there and flows on
+//! into the clicked one. Escape drops the loaded text.
 //! With Smart Guides and Invoke Distance Guides on, Alt/Option held over another object shows how
 //! far the selection is from it, and over an empty part of an artboard how far it is from the
 //! artboard's edges ([`crate::guides::distance_guides`]).
@@ -90,10 +92,12 @@ enum State {
     Mirror(crate::mirror::MirrorDrag),
     /// Dragging a bracket of type on a path.
     Bracket(BracketDrag),
-    /// Loaded with the text of area type or type on a path `from` by a click on its out port;
+    /// Loaded with the text of area type or type on a path `from` by a click on its out port, or
+    /// on its in port (`before`: the frame it goes into comes before `from` in its thread);
     /// `press`: where the next press went down and where the pointer is now.
     Loaded {
         from: NodeId,
+        before: bool,
         press: Option<(Point, Point)>,
     },
 }
@@ -483,20 +487,25 @@ impl SelectionTool {
     }
 
     /// The pointer loaded with the text of area type or type on a path `from` ([`State::Loaded`]):
-    /// a press starts placing it, and its release threads it (`text.thread.add`). None when `from`
-    /// can no longer thread: the press is an ordinary one.
-    fn loaded(&mut self, cx: &ToolContext, ev: &PointerEvent, from: NodeId, press: Option<(Point, Point)>) -> Option<Vec<Action>> {
+    /// a press starts placing it, and its release threads it (`text.thread.add`), into a frame put
+    /// `before` `from` or after it. None when `from` can no longer thread: the press is an
+    /// ordinary one.
+    fn loaded(&mut self, cx: &ToolContext, ev: &PointerEvent, from: NodeId, before: bool, press: Option<(Point, Point)>) -> Option<Vec<Action>> {
         let p = ev.pos;
         match (ev.kind, press) {
             (PointerKind::Down, _) if !cx.doc.node(from).is_some_and(is_threadable) => {
                 self.state = State::Idle;
                 return None;
             }
-            (PointerKind::Down, _) => self.state = State::Loaded { from, press: Some((p, p)) },
-            (PointerKind::Drag, Some((start, _))) => self.state = State::Loaded { from, press: Some((start, p)) },
+            (PointerKind::Down, _) => self.state = State::Loaded { from, before, press: Some((p, p)) },
+            (PointerKind::Drag, Some((start, _))) => self.state = State::Loaded { from, before, press: Some((start, p)) },
             (PointerKind::Up, Some((start, _))) => {
                 self.state = State::Idle;
-                return Some(vec![Action::Exec("text.thread.add".into(), thread_params(cx, from, start, p))]);
+                let mut params = thread_params(cx, from, start, p);
+                if before {
+                    params["before"] = json!(true);
+                }
+                return Some(vec![Action::Exec("text.thread.add".into(), params)]);
             }
             _ => {}
         }
@@ -589,8 +598,8 @@ impl Tool for SelectionTool {
         let hovering = ev.kind == PointerKind::Move && matches!(self.state, State::Idle);
         self.alt_hover = hovering && ev.mods.alt;
         self.distance = hovering.then(|| distance_target(cx, ev.pos, ev.mods)).flatten();
-        if let State::Loaded { from, press } = self.state
-            && let Some(out) = self.loaded(cx, ev, from, press)
+        if let State::Loaded { from, before, press } = self.state
+            && let Some(out) = self.loaded(cx, ev, from, before, press)
         {
             return out;
         }
@@ -663,9 +672,10 @@ impl Tool for SelectionTool {
                 vec![]
             }
             (PointerKind::Down, _) => {
-                // 0. The out port of selected area type: the pointer takes its text.
-                if let Some(from) = crate::text::out_port_at(cx, p) {
-                    self.state = State::Loaded { from, press: None };
+                // 0. A port of selected area type or type on a path: the pointer takes its text,
+                // to thread on from the out port or back from the in port.
+                if let Some((from, port)) = crate::text::port_at(cx, p) {
+                    self.state = State::Loaded { from, before: port == crate::text::Port::In, press: None };
                     return vec![];
                 }
                 // 1. Live Corners widgets, pie widgets and type on a path's brackets, then the
@@ -2541,10 +2551,9 @@ mod tests {
         assert_eq!(a, vec![Action::Exec("view.guides.release".into(), json!({"ids": [id.0]}))]);
     }
 
-    /// Escape drops the loaded text, and the next click is an ordinary one; type that fits its
-    /// frame shows no out port to click.
+    /// Escape drops the loaded text, and the next click is an ordinary one.
     #[test]
-    fn escape_drops_the_loaded_text_and_type_that_fits_has_no_port() {
+    fn escape_drops_the_loaded_text() {
         let (d, id, _, port) = overflowing_area_type();
         let mut s = Selection::default();
         s.set([id]);
@@ -2559,15 +2568,86 @@ mod tests {
         assert_ne!(t.cursor(&cx, Point::new(30.0, 420.0), Mods::default()), Cursor::LoadedText);
         t.pointer(&cx, &ev(PointerKind::Down, 30.0, 420.0));
         assert_eq!(t.pointer(&cx, &ev(PointerKind::Up, 30.0, 420.0)), vec![Action::Exec("select.none".into(), json!({}))]);
+    }
 
+    /// [`doc_with_area_type`], its text fitting its frame; where its in and out ports are.
+    fn fitting_area_type() -> (vectorcraft_doc::Document, NodeId, Point, Point) {
         let (d, id) = doc_with_area_type();
+        let Some(vectorcraft_doc::NodeKind::Text(t)) = d.node(id).map(|n| &n.kind) else { panic!("not text") };
+        assert!(!vectorcraft_text::layout(vectorcraft_text::FontDb::global(), t).overflow, "the text fits");
+        // On the left side below the top-left corner, on the right side above the bottom-right one.
+        let (input, output) = (t.xf * Point::new(0.0, crate::text::PORT_RISE_PX), t.xf * Point::new(120.0, 40.0 - crate::text::PORT_RISE_PX));
+        (d, id, input, output)
+    }
+
+    /// #2572: selected area type has both ports to click whether its text fits or not; other
+    /// points of its frame, and type that isn't selected, have none.
+    #[test]
+    fn every_selected_area_type_has_an_in_and_an_out_port() {
+        use crate::text::{Port, port_at};
+        let (d, id, input, output) = fitting_area_type();
+        let p = paint();
+        let mut s = Selection::default();
+        assert_eq!(port_at(&cx(&d, &s, &p), output), None, "not selected");
+        s.set([id]);
+        let cx = cx(&d, &s, &p);
+        assert_eq!(port_at(&cx, output), Some((id, Port::Out)));
+        assert_eq!(port_at(&cx, input), Some((id, Port::In)));
+        assert_eq!(port_at(&cx, Point::new(input.x + 4.0, input.y + 4.0)), Some((id, Port::In)), "the box around it");
+        assert_eq!(port_at(&cx, Point::new(input.x + 12.0, input.y)), None);
+        assert_eq!(port_at(&cx, Point::new(output.x, output.y + crate::text::PORT_RISE_PX)), None, "the corner");
+    }
+
+    /// #2572: a click on the out port of type that fits loads its text as well; the next click
+    /// threads it into a new frame after it.
+    #[test]
+    fn a_click_on_the_out_port_of_type_that_fits_starts_threading() {
+        let (d, id, _, output) = fitting_area_type();
         let mut s = Selection::default();
         s.set([id]);
-        let cx = crate::testutil::cx(&d, &s, &p);
+        let p = paint();
+        let cx = cx(&d, &s, &p);
         let mut t = SelectionTool::default();
-        t.pointer(&cx, &ev(PointerKind::Down, port.x, port.y));
-        t.pointer(&cx, &ev(PointerKind::Up, port.x, port.y));
-        assert_ne!(t.cursor(&cx, Point::new(30.0, 420.0), Mods::default()), Cursor::LoadedText);
+        assert!(t.pointer(&cx, &ev(PointerKind::Down, output.x, output.y)).is_empty());
+        assert!(t.pointer(&cx, &ev(PointerKind::Up, output.x, output.y)).is_empty());
+        assert_eq!(t.cursor(&cx, Point::new(30.0, 420.0), Mods::default()), Cursor::LoadedText);
+        t.pointer(&cx, &ev(PointerKind::Down, 30.0, 420.0));
+        assert_eq!(
+            t.pointer(&cx, &ev(PointerKind::Up, 30.0, 420.0)),
+            vec![Action::Exec("text.thread.add".into(), json!({"from": id.0, "at": [30.0, 420.0]}))]
+        );
+    }
+
+    /// #2572: a click on the in port loads the text to thread backwards: the next click on empty
+    /// canvas, on a closed path or a drag makes the frame the story flows from into this one
+    /// (`before`). The corner handle above the in port still resizes the frame.
+    #[test]
+    fn a_click_on_the_in_port_threads_into_a_frame_before_it() {
+        let (d, id, input, _) = fitting_area_type();
+        let rect = d.children(Some(d.layers[0].id)).unwrap()[0].id;
+        let mut s = Selection::default();
+        s.set([id]);
+        let p = paint();
+        let cx = cx(&d, &s, &p);
+        let mut t = SelectionTool::default();
+        let thread = |params: Value| vec![Action::Exec("text.thread.add".into(), params)];
+        let load = |t: &mut SelectionTool| {
+            assert!(t.pointer(&cx, &ev(PointerKind::Down, input.x, input.y)).is_empty());
+            assert!(t.pointer(&cx, &ev(PointerKind::Up, input.x, input.y)).is_empty());
+            assert_eq!(t.cursor(&cx, Point::new(30.0, 420.0), Mods::default()), Cursor::LoadedText);
+        };
+        load(&mut t);
+        t.pointer(&cx, &ev(PointerKind::Down, 30.0, 420.0));
+        assert_eq!(t.pointer(&cx, &ev(PointerKind::Up, 30.0, 420.0)), thread(json!({"from": id.0, "at": [30.0, 420.0], "before": true})));
+        load(&mut t);
+        t.pointer(&cx, &ev(PointerKind::Down, 150.0, 150.0));
+        assert_eq!(t.pointer(&cx, &ev(PointerKind::Up, 150.0, 150.0)), thread(json!({"from": id.0, "to": rect.0, "before": true})));
+        load(&mut t);
+        t.pointer(&cx, &ev(PointerKind::Down, 20.0, 20.0));
+        t.pointer(&cx, &ev(PointerKind::Drag, 80.0, 90.0));
+        assert_eq!(t.pointer(&cx, &ev(PointerKind::Up, 80.0, 90.0)), thread(json!({"from": id.0, "rect": [20.0, 20.0, 60.0, 70.0], "before": true})));
+        let corner = Point::new(input.x, input.y - crate::text::PORT_RISE_PX);
+        assert_eq!(t.pointer(&cx, &ev(PointerKind::Down, corner.x, corner.y)), vec![Action::Begin("Resize Type Area".into())]);
     }
 
     /// The memo answers for the revision, the selected objects and Use Preview Bounds it measured
