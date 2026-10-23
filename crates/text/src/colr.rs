@@ -48,6 +48,11 @@ pub(crate) fn has_colour_layers(font: &skrifa::FontRef<'_>) -> bool {
     font.colr().is_ok()
 }
 
+/// Does glyph `gid` of `font` have COLR layers?
+pub(crate) fn has_colour_glyph(font: &skrifa::FontRef<'_>, gid: u32) -> bool {
+    ColorGlyphCollection::new(font).get(GlyphId::new(gid)).is_some()
+}
+
 /// Glyph `gid`'s colour content in `font` at `location`, palette 0's colours and `foreground` for
 /// palette index 0xFFFF, and whether it used `foreground`; `None` when it isn't a colour glyph, or
 /// its graph doesn't read (a cycle, too deep, too many layers).

@@ -140,6 +140,8 @@ pub struct FontFace {
     colour_bitmaps: bool,
     /// Has `COLR` colour glyphs ([`FontDb::glyph_colour`]).
     colour_layers: bool,
+    /// Has an `SVG ` table: OpenType SVG glyphs ([`FontDb::glyph_colour`]).
+    svg_glyphs: bool,
 }
 
 /// Where the ideographic character face (ICF) lies inside the ideographic em box: its distance
@@ -420,9 +422,11 @@ type CanonicalNames = HashMap<(String, String), (String, String)>;
 
 /// [`FontDb::glyph_image`]'s answers by face and glyph.
 type GlyphImages = GlyphCache<(u32, u32), Arc<GlyphImage>>;
-/// [`FontDb::glyph_colour`]'s answers by face and glyph, and the foreground colour for glyphs that
-/// paint with it.
-type GlyphColours = GlyphCache<(u32, u32, Option<[u8; 4]>), ColourContent>;
+/// [`FontDb::glyph_colour`]'s answers by face and glyph, and the text's fill and stroke colours for
+/// glyphs that paint with them.
+type GlyphColours = GlyphCache<(u32, u32, Option<TextColours>), ColourContent>;
+/// The text's fill and stroke colours, as a cache key.
+type TextColours = ([u8; 4], Option<[u8; 4]>);
 
 /// What a glyph's colour content (an image, layers) takes of memory, in bytes.
 trait Weight {
@@ -1598,6 +1602,7 @@ fn make_face(bytes: FontBytes, index: u32, spec: FaceStyle, path: Option<std::pa
     let strikeout = decoration(m.strikeout, (x_height * 0.5 + 0.025 * upem, 0.05 * upem));
     let colour_bitmaps = crate::bitmap::has_colour_bitmaps(&f);
     let colour_layers = crate::colr::has_colour_layers(&f);
+    let svg_glyphs = crate::svg_glyph::has_svg_glyphs(&f);
     Some(FontFace {
         keys,
         traits,
@@ -1626,6 +1631,7 @@ fn make_face(bytes: FontBytes, index: u32, spec: FaceStyle, path: Option<std::pa
         icf_margins: std::sync::OnceLock::new(),
         colour_bitmaps,
         colour_layers,
+        svg_glyphs,
     })
 }
 
@@ -2514,24 +2520,50 @@ impl FontDb {
         image
     }
 
-    /// Glyph `gid`'s COLR colour content in `face`, its foreground layers in `foreground`, cached
-    /// per (face, glyph), and per foreground colour for the glyphs that paint with it.
-    pub(crate) fn glyph_colour(&self, face: &FontFace, gid: u32, foreground: Color) -> Option<ColourContent> {
-        if !face.colour_layers {
+    /// Is glyph `gid` of face `face_id` drawn from its SVG document (it has one, and no COLR
+    /// layers, which come first)? Writers that draw a font's own glyphs can draw COLR and bitmap
+    /// glyphs, not always SVG ones.
+    pub fn is_svg_glyph(&self, face_id: u32, gid: u32) -> bool {
+        let Some(face) = self.face_by_id(face_id) else { return false };
+        face.skrifa().is_some_and(|f| svg_drawn(&face, &f, gid) && crate::svg_glyph::has_document(&f, gid))
+    }
+
+    /// Glyph `gid`'s colour content in `face`, from its COLR layers or else its SVG document, in
+    /// the text's `foreground` (fill) and `stroke` colours where it uses them; cached per (face,
+    /// glyph), and per text colours for the glyphs that paint with them.
+    pub(crate) fn glyph_colour(&self, face: &FontFace, gid: u32, foreground: Color, stroke: Option<Color>) -> Option<ColourContent> {
+        if !face.colour_layers && !face.svg_glyphs {
             return None;
         }
-        let keyed = Some(foreground.to_rgba8(1.0));
+        let f = face.skrifa()?;
+        // COLR first; SVG for glyphs without COLR layers (those whose layers don't read keep their
+        // outlines, as in fonts without SVG).
+        let svg = svg_drawn(face, &f, gid);
+        // Kept without colours, or by the text's colours it uses: the fill, and for SVG art the
+        // stroke too.
+        let coloured = Some((foreground.to_rgba8(1.0), stroke.filter(|_| svg).map(|c| c.to_rgba8(1.0))));
         {
             let cache = self.colours.lock().unwrap_or_else(|e| e.into_inner());
-            if let Some(c) = cache.kept.get(&(face.id, gid, None)).or_else(|| cache.kept.get(&(face.id, gid, keyed))) {
+            if let Some(c) = [None, coloured].iter().find_map(|k| cache.kept.get(&(face.id, gid, *k))) {
                 return c.clone();
             }
         }
-        let (content, used) = face.skrifa().map_or((None, false), |f| crate::colr::colour_glyph(&f, face.location(), face.upem, gid, foreground));
-        let key = (face.id, gid, if used { keyed } else { None });
+        let (content, used) = if svg {
+            let (art, used) = crate::svg_glyph::svg_glyph(&f, gid, face.upem, foreground, stroke);
+            (art.map(ColourContent::Art), used)
+        } else {
+            crate::colr::colour_glyph(&f, face.location(), face.upem, gid, foreground)
+        };
+        let key = (face.id, gid, if used { coloured } else { None });
         self.colours.lock().unwrap_or_else(|e| e.into_inner()).keep(key, content.clone());
         content
     }
+}
+
+/// Is glyph `gid` of `face` (as `font`) drawn from an SVG document, if it has one: the face has
+/// SVG glyphs, and the glyph no COLR layers, which come first.
+fn svg_drawn(face: &FontFace, font: &skrifa::FontRef<'_>, gid: u32) -> bool {
+    face.svg_glyphs && !crate::colr::has_colour_glyph(font, gid)
 }
 
 /// A pen drawing outlines y down, as text space has them.

@@ -106,15 +106,19 @@ impl Ctx<'_> {
     fn emit(&mut self, g: &SGlyph, pre: Affine, origin: Point, angle: f64, advance: f64, line: usize) {
         // Control characters (tabs) and soft hyphens draw nothing (fonts map them to .notdef).
         let blank = g.is_soft_hyphen() || g.ch.is_control();
-        // A colour glyph draws its layers (COLR) or its image (a bitmap, or COLR paints documents
-        // have no form for), not its outline; COLR first. Layers in the foreground colour take
-        // the run's fill, or black when it isn't a colour.
+        // A colour glyph draws its art (COLR layers, an SVG document) or its image (a bitmap, or
+        // COLR paints documents have no form for), not its outline; COLR, then SVG, then bitmaps.
+        // Art in the text's colours takes the run's fill (black when it isn't a colour) and
+        // stroke.
         let plain = g.inline.is_some() || blank;
-        let foreground = match &self.style_at(g.byte).fill {
-            vectorcraft_doc::color::Paint::Solid { color, .. } => *color,
-            _ => vectorcraft_doc::color::Color::BLACK,
+        let colour_of = |p: &vectorcraft_doc::color::Paint| match p {
+            vectorcraft_doc::color::Paint::Solid { color, .. } => Some(*color),
+            _ => None,
         };
-        let (colour, image) = match (!plain).then(|| self.db.glyph_colour(&g.face, g.gid, foreground)).flatten() {
+        let st = self.style_at(g.byte);
+        let foreground = colour_of(&st.fill).unwrap_or(vectorcraft_doc::color::Color::BLACK);
+        let stroke = colour_of(&st.stroke).filter(|_| st.has_stroke());
+        let (colour, image) = match (!plain).then(|| self.db.glyph_colour(&g.face, g.gid, foreground, stroke)).flatten() {
             Some(crate::colr::ColourContent::Art(art)) => (Some(art), None),
             Some(crate::colr::ColourContent::Image(image)) => (None, Some(image)),
             None => (None, (!plain).then(|| self.db.glyph_image(&g.face, g.gid)).flatten()),

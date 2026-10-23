@@ -1452,6 +1452,8 @@ impl Session {
         vectorcraft_doc::placed_document::set_file_reader(cmd::place::document::read_file_again);
         // Clicks find an image's own fills and strokes where their effects draw them.
         vectorcraft_doc::hit::set_image_paint(vectorcraft_render::effects::image_paint);
+        // OpenType SVG glyphs are drawn as the SVG importer reads their documents.
+        vectorcraft_text::set_svg_glyph_reader(vectorcraft_svg::glyph_art);
         Self {
             docs: vec![],
             active: None,
@@ -2330,6 +2332,8 @@ mod tests_colorguidelib;
 mod tests_colormgmt;
 #[cfg(test)]
 mod tests_colorthemes;
+#[cfg(test)]
+mod tests_colourfonts;
 #[cfg(test)]
 mod tests_compoundpaint;
 #[cfg(test)]
