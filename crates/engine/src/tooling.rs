@@ -169,13 +169,15 @@ impl Session {
     }
 
     /// The lent selection tool's gesture is over: the tool it was lent to is back as it was (the
-    /// Pen goes on drawing its path).
+    /// Pen goes on drawing its path), less the work the gesture ended as a command would: a
+    /// Cmd+click that takes the type being edited out of the selection ends its edit (#3779).
     pub(crate) fn give_back_tool(&mut self, view: ViewInfo) -> Result<()> {
         let Some(lender) = self.lender.take() else { return Ok(()) };
         let acts = self.with_tool_cx(view, |t, cx| t.deactivate(cx));
         let r = self.apply_actions(acts);
         self.keep_tool_settings();
         self.tool = lender;
+        self.after_command();
         r.map(drop)
     }
 
