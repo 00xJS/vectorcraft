@@ -1800,6 +1800,28 @@ pub struct ObjectAttributes {
     /// the element's event attributes; nothing in VectorCraft runs them.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub events: Vec<(String, String)>,
+    /// Attributes in other applications' XML namespaces, in order, kept from SVG import to SVG
+    /// export: what another tool notes on an object (a plotter's pen, a cutter's passes) survives
+    /// a round trip through VectorCraft. Nothing in VectorCraft reads them. They are the object's,
+    /// as `data` is, so copies, duplicates and pastes keep them and a deleted object takes them
+    /// with it.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub foreign: Vec<ForeignAttribute>,
+}
+
+/// An attribute in another application's XML namespace: `plotter:pen="2"` with `xmlns:plotter=
+/// "https://example.org/plotter"` is `{ns: "https://example.org/plotter", prefix: "plotter", name:
+/// "pen", value: "2"}`.
+#[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ForeignAttribute {
+    /// The namespace's URI, which names it.
+    pub ns: String,
+    /// The prefix the file gave the namespace, which export reuses where it can.
+    pub prefix: String,
+    /// The attribute's local name.
+    pub name: String,
+    /// The attribute's value, as the file had it.
+    pub value: String,
 }
 
 /// The events the SVG Interactivity panel attaches JavaScript to, by the names of the SVG event

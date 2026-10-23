@@ -513,7 +513,8 @@ scaled while it has effects, brushes or live objects; and every instance of a sy
 opacity masks (those stay on the page). `hiddenLayers: true` keeps hidden layers and objects, not displayed
 (`display="none"`); `document.save` and the CLI's `convert` keep them unless told otherwise, other exports leave
 them out, and they reopen hidden. An object's own data (`object.setProps {data: {pivot: "100,180"}}`) is written as
-`data-*` attributes (`data-pivot="100,180"`), and an SVG's `data-*` attributes come in as it. A `preserveEditing` SVG carries the native document (CDATA in `<metadata>`) and a hash of the
+`data-*` attributes (`data-pivot="100,180"`), and an SVG's `data-*` attributes come in as it. Attributes in other applications' XML namespaces
+(`plotter:pen="2"`) come in on their objects too and are written back, each namespace declared once on the root. A `preserveEditing` SVG carries the native document (CDATA in `<metadata>`) and a hash of the
 markup around it: if another app changed the SVG since, `document.open` reads it as plain SVG and says so in
 `warnings`.
 
