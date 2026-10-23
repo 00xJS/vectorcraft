@@ -1432,8 +1432,8 @@ pub struct Session {
     pub(crate) pointer_held: bool,
     /// A guide being dragged out of a ruler ([`Session::ruler_guide`]).
     pub(crate) ruler_guide: Option<vectorcraft_tools::rulerguide::NewGuide>,
-    /// Which selected type overflows its frame, for the markers every tool but the Type tools shows.
-    pub(crate) overflow_marks: vectorcraft_tools::text::OverflowMarks,
+    /// Which selected type overflows its frame, for the ports every tool but the Type tools shows.
+    pub(crate) port_marks: vectorcraft_tools::text::PortMarks,
     /// The last search for the files of missing fonts (`text.findFontFiles`), until another
     /// starts; dropping it stops it.
     pub(crate) font_search: Option<cmd::fontfiles::FontSearch>,
@@ -1527,7 +1527,7 @@ impl Session {
             plane_widget_press: false,
             pointer_held: false,
             ruler_guide: None,
-            overflow_marks: Default::default(),
+            port_marks: Default::default(),
             font_search: None,
             link_search: None,
             search_rules: None,

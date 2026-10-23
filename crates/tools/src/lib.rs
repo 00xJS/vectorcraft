@@ -561,8 +561,8 @@ pub enum Cursor {
     /// Over the type widget of selected type (a double-click converts point type to area type and
     /// back): the arrow with a type badge.
     TypeWidget,
-    /// The Selection tool loaded with the text of the out port of area type or type on a path (a
-    /// click threads it into a path or a new frame, a drag draws the new frame).
+    /// The Selection tool loaded with the text of area type or type on a path by a click on its out
+    /// or in port (a click threads it into a path or a new frame, a drag draws the new frame).
     LoadedText,
     /// The Shape Builder: a crosshair with a plus (merge mode)...
     ShapeBuilder,

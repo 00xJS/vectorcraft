@@ -4072,23 +4072,30 @@ chosen artboards draw all of them. A PDF leaves out the layers that don't print 
 {"name":"run_command","arguments":{"command":"text.areaOptions","params":{"fit":"shrinkText","fitMinPercent":60}}}
 ```
 
-## Threading text from the out port
+## Threading text from the in and out ports
 
-As in the reference app, a click with the Selection tool on the red "+" out port of selected area type whose text
-overflows loads the pointer with that text (the port sits on the frame's right side, just above the bottom-right
-corner, so the corner handle stays free). The next click threads the text into the closed path or area type under the
-pointer, which becomes the next frame; a click on empty canvas makes a new frame of the first one's shape and size
-with its top-left corner at the click, and a drag draws a rectangle for the new frame. Escape or another tool drops
-the loaded text. Each placement is one undo step (`text.thread.add`), which agents can run directly:
+As in the reference app, selected area type and type on a path show an in port and an out port: area type's on the
+frame's left side just below the top-left corner and on its right side just above the bottom-right corner (so the
+corner handles stay free), type on a path's just before its start bracket and just past its end bracket. A port is
+empty while the frame isn't threaded on that side, shows an arrow when it is, and the out port shows a red "+" when
+the text doesn't fit (with more than 1,000 such objects selected no ports are drawn). A click with the Selection tool
+on the out port loads the pointer with the text. The next click
+threads it into the closed path, area type or type on a path under the pointer, which becomes the next frame; a click
+on empty canvas makes a new frame of the first one's kind, shape and size with its top-left corner at the click, and a
+drag draws a rectangle for the new frame. A click on the in port works the same way, but the frame placed comes
+before the clicked one: the story starts there and flows on into it. Escape or another tool drops the loaded text.
+Each placement is one undo step (`text.thread.add`), which agents can run directly:
 
-`text.thread.add {from, to? | rect?: [x, y, width, height] | at?: [x, y]}` threads area type `from` into one more
-frame, put right after it in its thread (a new thread of the two when `from` has none): `to`, a closed path (converted
-to an empty frame) or area type that is not threaded yet; `rect`, a new rectangular frame (positive width and height);
-or `at`, a new frame of `from`'s shape and size whose top-left is at `at`. Give exactly one of the three. New frames
-take `from`'s type options, paint and first character and paragraph attributes, and go just above it. The story
-reflows through the thread, the two frames are selected, and it returns `{id}`, the frame threaded into. It refuses
-an `id` that doesn't exist, a `from` that isn't area type (type on a path doesn't thread), an open path, `from`
-itself, an object inside a compound path, a frame already in a thread, and coordinates that aren't finite numbers.
+`text.thread.add {from, to? | rect?: [x, y, width, height] | at?: [x, y], before?}` threads area type or type on a
+path `from` into one more frame, put right after it in its thread (a new thread of the two when `from` has none), or
+right before it with `before: true` (the in port): `to`, a closed path (converted to an empty frame), area type or
+type on a path that is not threaded yet; `rect`, a new rectangular frame (positive width and height); or `at`, a new
+frame of `from`'s kind, shape and size whose top-left is at `at`. Give exactly one of the three. New frames take
+`from`'s type options, paint and first character and paragraph attributes, and go just above it. The story reflows
+through the thread, the two frames are selected, and it returns `{id}`, the frame threaded into. It refuses an `id`
+that doesn't exist, a `from` that is point type, a `to` that is an open path, `from` itself, inside a compound path
+or already in a thread (`from` may be threaded already: the frame goes in beside it), coordinates that aren't finite
+numbers and a `before` that isn't true or false.
 
 ```json
 {"name":"run_command","arguments":{"command":"text.thread.add","params":{"from":42,"at":[300,120]}}}

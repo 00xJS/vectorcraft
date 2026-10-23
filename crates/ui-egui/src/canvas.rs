@@ -652,7 +652,10 @@ pub fn show(app: &mut VectorcraftApp, ui: &mut Ui) {
         selection_overlay(app, &painter, &xf, overlays.iter().any(|o| matches!(o, Overlay::CurvePoint { .. })));
         mirror_axis_overlay(app, &painter, &xf);
         if app.ui.view.text_threads {
-            thread_overlay(app, &painter, &xf);
+            // Under the tools' overlays: a selected frame's own ports are drawn over its thread's.
+            let mut threads = thread_overlays(app, xf.zoom);
+            threads.append(&mut overlays);
+            overlays = threads;
         }
         if app.ui.view.live_paint_gaps {
             overlays.extend(live_paint_gap_overlays(app));
@@ -2577,28 +2580,36 @@ impl HiddenMarks {
     }
 }
 
-/// Text threads of the selected frames: a line from each frame's out port (on its right side,
-/// just above the bottom right, where the tools draw the red one) to the next frame's in port (top
-/// left), like Illustrator's thread indicators.
-fn thread_overlay(app: &VectorcraftApp, p: &egui::Painter, xf: &Xf) {
-    let Some(st) = app.session.active() else { return };
+/// View › Show Text Threads: for each thread with a selected frame, a line in its first frame's
+/// layer colour from each frame's out port to the next frame's in port, both showing the arrow of a
+/// threaded port, where the tools draw the ports of selected type ([`vectorcraft_tools::text`]).
+/// Only frames with ports ([`vectorcraft_tools::text::ported`]) are joined: a link to or from a
+/// frame in perspective, which has none, gets no line. With more than
+/// [`vectorcraft_tools::text::PORTS_MAX`] such frames selected the tools draw no ports, and only
+/// the lines are drawn here. `zoom`: screen pixels to the document unit.
+fn thread_overlays(app: &VectorcraftApp, zoom: f64) -> Vec<Overlay> {
+    use vectorcraft_tools::text::{Port, PortState, port_centre, ported, ports_shown, push_port};
+    let Some(st) = app.session.active() else { return vec![] };
+    let px = 1.0 / zoom.max(1e-9);
+    let boxes = ports_shown(&st.doc, &st.selection.objects);
+    let mut o = vec![];
     for thread in &st.doc.text_threads {
         if !thread.iter().any(|id| st.selection.objects.contains(id)) {
             continue;
         }
-        let color = c32(st.doc.layer_color(thread[0]));
-        let frames: Vec<vectorcraft_geom::Rect> = thread.iter().filter_map(|id| st.doc.node(*id).and_then(|n| n.geometric_bounds())).collect();
-        for w in frames.windows(2) {
-            let rise = (vectorcraft_tools::text::PORT_RISE_PX / xf.zoom.max(1e-9)).min(w[0].height() / 2.0);
-            let (out, inp) = (xf.to_screen(Point::new(w[0].x1, w[0].y1 - rise)), xf.to_screen(Point::new(w[1].x0, w[1].y0)));
-            p.line_segment([out, inp], Stroke::new(1.0, color));
-            for port in [out, inp] {
-                p.rect_filled(egui::Rect::from_center_size(port, egui::vec2(7.0, 7.0)), 0.0, Color32::WHITE);
-                p.rect_stroke(egui::Rect::from_center_size(port, egui::vec2(7.0, 7.0)), 0.0, Stroke::new(1.0, color), egui::StrokeKind::Inside);
-                p.line_segment([port - egui::vec2(2.0, 0.0), port + egui::vec2(2.0, 0.0)], Stroke::new(1.0, color));
+        let color = st.doc.layer_color(thread[0]);
+        for w in thread.windows(2) {
+            let [a, b] = [w[0], w[1]];
+            let (Some(from), Some(to)) = (ported(&st.doc, a), ported(&st.doc, b)) else { continue };
+            let (Some(out), Some(input)) = (port_centre(from, Port::Out, px), port_centre(to, Port::In, px)) else { continue };
+            o.push(Overlay::Line { a: out, b: input, color, dashed: false });
+            if boxes {
+                push_port(&mut o, out, PortState::Threaded, st.doc.layer_color(a), px);
+                push_port(&mut o, input, PortState::Threaded, st.doc.layer_color(b), px);
             }
         }
     }
+    o
 }
 
 /// View → Show Live Paint Gaps: the gaps of the selected Live Paint groups in each group's Gap
@@ -9990,5 +10001,101 @@ mod tests {
             .filter(|s| matches!(s, Shape::LineSegment { points, stroke } if stroke.color == color && (points[0].y - y).abs() < 0.5))
             .collect();
         assert!(!baselines.is_empty(), "selected text shows baseline alongside bounding box");
+    }
+
+    /// #2572: Show Text Threads links a thread's frames from the out port of one to the in port of
+    /// the next, where the tools draw those ports, each with the arrow of a threaded port; nothing
+    /// is drawn while no frame of the thread is selected.
+    #[test]
+    fn text_threads_run_from_each_out_port_to_the_next_in_port() {
+        use vectorcraft_tools::text::{Port, port_centre};
+        let mut app = VectorcraftApp::new(Session::new(), Default::default());
+        app.run("file.new", json!({"width": 600, "height": 400})).unwrap();
+        let text = "Words that fill more than the frame holds. ".repeat(10);
+        let a = app.run("text.create", json!({"x": 20, "y": 20, "text": text, "area": {"width": 150, "height": 60}})).unwrap()["id"].clone();
+        let b = app.run("text.thread.add", json!({"from": a, "at": [300, 200]})).unwrap()["id"].clone();
+        let frame = |app: &VectorcraftApp, id: &serde_json::Value| match &app
+            .session
+            .active()
+            .unwrap()
+            .doc
+            .node(vectorcraft_doc::NodeId(id.as_u64().unwrap()))
+            .unwrap()
+            .kind
+        {
+            NodeKind::Text(t) => (**t).clone(),
+            _ => panic!("not text"),
+        };
+        let zoom = 2.0;
+        let (out, input) = (port_centre(&frame(&app, &a), Port::Out, 0.5).unwrap(), port_centre(&frame(&app, &b), Port::In, 0.5).unwrap());
+        let o = thread_overlays(&app, zoom);
+        assert!(o.iter().any(|x| matches!(x, Overlay::Line { a, b, .. } if *a == out && *b == input)), "the thread line: {o:?}");
+        let boxes: Vec<Point> =
+            o.iter().filter_map(|x| if let Overlay::Highlight { quad, .. } = x { Some(quad[0].midpoint(quad[2])) } else { None }).collect();
+        assert_eq!(boxes.len(), 2);
+        assert!(boxes[0].distance(out) < 1e-9 && boxes[1].distance(input) < 1e-9, "{boxes:?}");
+        // Two arrows: three strokes each, beside the thread line.
+        assert_eq!(o.iter().filter(|x| matches!(x, Overlay::Line { .. })).count(), 7);
+        app.run("select.none", json!({})).unwrap();
+        assert!(thread_overlays(&app, zoom).is_empty());
+    }
+
+    /// With more than `PORTS_MAX` type objects selected the tools draw no ports, and Show Text
+    /// Threads draws only its lines, no port boxes.
+    #[test]
+    fn text_threads_of_a_huge_selection_have_lines_but_no_ports() {
+        use vectorcraft_tools::text::PORTS_MAX;
+        let mut app = VectorcraftApp::new(Session::new(), Default::default());
+        app.run("file.new", json!({"width": 600, "height": 400})).unwrap();
+        let text = "Words that fill more than the frame holds. ".repeat(10);
+        let a = app.run("text.create", json!({"x": 20, "y": 20, "text": text, "area": {"width": 150, "height": 60}})).unwrap()["id"].clone();
+        app.run("text.thread.add", json!({"from": a, "at": [300, 200]})).unwrap();
+        app.run("text.create", json!({"x": 20, "y": 300, "text": "x", "area": {"width": 50, "height": 20}})).unwrap();
+        while app.session.active().unwrap().doc.layers[0].children().map_or(0, |c| c.len()) <= PORTS_MAX {
+            app.run("select.all", json!({})).unwrap();
+            app.run("edit.duplicate", json!({})).unwrap();
+        }
+        app.run("select.all", json!({})).unwrap();
+        let o = thread_overlays(&app, 1.0);
+        assert!(o.iter().any(|x| matches!(x, Overlay::Line { .. })), "the thread lines");
+        assert!(!o.iter().any(|x| matches!(x, Overlay::Highlight { .. } | Overlay::Path { .. })), "no port boxes");
+    }
+
+    /// A frame of a thread in perspective has no ports: Show Text Threads draws no port box on it
+    /// and no line to or from it; the links between frames with ports keep theirs.
+    #[test]
+    fn text_threads_skip_the_links_of_a_frame_in_perspective() {
+        use vectorcraft_tools::text::{Port, port_centre};
+        let mut app = VectorcraftApp::new(Session::new(), Default::default());
+        app.run("file.new", json!({"width": 600, "height": 400})).unwrap();
+        let text = "Words that fill more than the frame holds. ".repeat(20);
+        let id = |v: serde_json::Value| vectorcraft_doc::NodeId(v["id"].as_u64().unwrap());
+        let a = id(app.run("text.create", json!({"x": 20, "y": 20, "text": text, "area": {"width": 150, "height": 60}})).unwrap());
+        let b = id(app.run("text.thread.add", json!({"from": a.0, "at": [200, 20]})).unwrap());
+        let c = id(app.run("text.thread.add", json!({"from": b.0, "at": [20, 200]})).unwrap());
+        let d = id(app.run("text.thread.add", json!({"from": c.0, "at": [200, 200]})).unwrap());
+        app.session
+            .edit("Perspective", |doc, _| {
+                if let Some(n) = doc.node_mut(b) {
+                    n.extras_mut().perspective = Some(Box::new(vectorcraft_doc::PerspectiveAttachment::new("left", 0.0)));
+                }
+                Ok(())
+            })
+            .unwrap();
+        app.run("select.set", json!({"ids": [a.0, b.0, c.0, d.0]})).unwrap();
+        let st = app.session.active().unwrap();
+        assert_eq!(st.doc.text_threads, [vec![a, b, c, d]], "b is still threaded");
+        let frame = |id| match &st.doc.node(id).unwrap().kind {
+            NodeKind::Text(t) => (**t).clone(),
+            _ => panic!("not text"),
+        };
+        let (out, input) = (port_centre(&frame(c), Port::Out, 1.0).unwrap(), port_centre(&frame(d), Port::In, 1.0).unwrap());
+        let o = thread_overlays(&app, 1.0);
+        let boxes: Vec<Point> =
+            o.iter().filter_map(|x| if let Overlay::Highlight { quad, .. } = x { Some(quad[0].midpoint(quad[2])) } else { None }).collect();
+        assert_eq!(boxes.len(), 2, "only c's out port and d's in port: {boxes:?}");
+        assert!(boxes[0].distance(out) < 1e-9 && boxes[1].distance(input) < 1e-9, "{boxes:?}");
+        // One thread line (c to d) and its two arrows of three strokes each.
+        assert_eq!(o.iter().filter(|x| matches!(x, Overlay::Line { .. })).count(), 7);
     }
 }
