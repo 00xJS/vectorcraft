@@ -51,6 +51,7 @@ mod prefs_dir;
 mod printing;
 #[cfg(all(windows, not(target_vendor = "win7")))]
 mod system_fonts;
+mod tablet;
 mod window;
 mod window_frame;
 mod windows_stylus;
@@ -546,6 +547,12 @@ fn start_pick(request: PickRequest, parent: &Parent, ui: &egui::Context) -> Opti
 fn services(parent: Parent, ui: egui::Context) -> Services {
     use winit::raw_window_handle::{HasWindowHandle as _, RawWindowHandle};
     let wayland = parent.as_ref().and_then(|w| w.window_handle().ok()).is_some_and(|h| matches!(h.as_raw(), RawWindowHandle::Wayland(_)));
+    // A window on X11 (XWayland included) reads a tablet pen's pressure itself (#764).
+    #[cfg(target_os = "linux")]
+    let x11 = parent
+        .as_ref()
+        .and_then(|w| w.window_handle().ok())
+        .is_some_and(|h| matches!(h.as_raw(), RawWindowHandle::Xlib(_) | RawWindowHandle::Xcb(_)));
     let (p1, p2, p3, p4, p5) = (parent.clone(), parent.clone(), parent.clone(), parent.clone(), parent);
     #[cfg(target_os = "macos")]
     let sampled_ui = ui.clone();
@@ -559,6 +566,8 @@ fn services(parent: Parent, ui: egui::Context) -> Services {
         dialogs_are_sheets: cfg!(target_os = "macos"),
         wayland,
         no_cursor_theme: wayland && cursor_theme::theme_missing(),
+        #[cfg(target_os = "linux")]
+        stylus: if x11 { tablet::start() } else { None },
         read: Some(Box::new(|p: &str| std::fs::read(p).map_err(|e| e.to_string()))),
         write: Some(Box::new(write_file)),
         exists: Some(Box::new(|p: &str| std::path::Path::new(p).exists())),

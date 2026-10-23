@@ -55,6 +55,7 @@ mod scrub;
 pub mod shortcut_editor;
 pub mod shortcuts;
 pub mod state;
+pub mod stylus;
 pub mod sysclip;
 pub mod theme;
 pub mod thumb_worker;
@@ -321,6 +322,10 @@ pub struct Services {
     /// default one would never come back once the canvas hid it: the canvas keeps the system
     /// pointer visible next to the tool glyph ([`cursors::hide_system_pointer`], #2450).
     pub no_cursor_theme: bool,
+    /// The pen pressure the host reads from the system itself (desktop Linux under X11 and
+    /// XWayland). The canvas uses it when a frame's events carry no touch force. Without it, pen
+    /// pressure comes from touch events only ([`stylus`]).
+    pub stylus: Option<stylus::StylusFeed>,
 }
 
 /// Cached canvas raster.
