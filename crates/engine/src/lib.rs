@@ -1717,13 +1717,25 @@ impl Session {
             self.note_depth = 1;
             self.batch_stash = None;
         }
-        // A selection-only command given `ids` selects them first, in the same undo step (#2130).
+        // A selection-only command given `ids` selects them first, in the same undo step (#2130);
+        // when the command then fails, the selection (and the current layer selecting them made
+        // current) goes back to how it was, as when the ids are refused.
         let select_first = SELECTS_GIVEN_IDS.contains(&id).then(|| params.get("ids")).flatten();
+        let selected_before = select_first.and(self.active()).map(|d| (d.uid, d.selection.clone(), d.active_layer));
         let run = |s: &mut Session| {
             if let Some(ids) = select_first {
                 s.execute("select.set", &serde_json::json!({ "ids": ids }))?;
             }
-            (spec.run)(s, params)
+            let r = (spec.run)(s, params);
+            if r.is_err()
+                && let Some((uid, selection, layer)) = selected_before
+                && let Some(st) = s.docs.iter_mut().find(|d| d.uid == uid)
+            {
+                st.selection = selection;
+                st.active_layer = layer;
+                st.revision += 1;
+            }
+            r
         };
         // The entries the command journals belong to the undo groups of the documents it edits, and to
         // the group of the document it starts in when it ends there too.

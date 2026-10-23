@@ -125,6 +125,16 @@ fn no_adjoining_edges_is_a_clear_error_that_changes_nothing() {
     s.execute("select.set", &json!({"ids": [a.0]})).unwrap();
     let e = s.execute("object.pathfinder.trap", &json!({})).unwrap_err().to_string();
     assert!(e.contains("two or more objects"), "{e}");
+    // Given as ids, the objects are selected for the command, and its failure puts the
+    // selection back.
+    s.execute("select.none", &json!({})).unwrap();
+    let e = s.execute("object.pathfinder.trap", &json!({"ids": [a.0, b.0]})).unwrap_err().to_string();
+    assert!(e.contains("no edges of different colours meet"), "{e}");
+    assert!(s.doc().unwrap().selection.objects.is_empty(), "{:?}", s.doc().unwrap().selection.objects);
+    s.execute("select.set", &json!({"ids": [a.0]})).unwrap();
+    assert!(s.execute("object.pathfinder.trap", &json!({"ids": [a.0, b.0]})).is_err());
+    assert_eq!(s.doc().unwrap().selection.objects, vec![a]);
+    assert_eq!(s.doc().unwrap().doc, before);
 }
 
 #[test]
