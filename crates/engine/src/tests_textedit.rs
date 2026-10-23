@@ -546,6 +546,62 @@ fn a_cmd_drag_while_typing_moves_the_type_and_keeps_the_typing() {
     assert!((after.x0 - moved.x0).abs() < 1e-6, "and stays where it was moved: {after:?}");
 }
 
+fn cmd_click(s: &mut Session, x: f64, y: f64) {
+    let (v, cmd) = (ViewInfo::default(), Mods { cmd: true, ..Default::default() });
+    for k in [PointerKind::Down, PointerKind::Up] {
+        s.pointer(&PointerEvent::new(k, x, y).with_mods(cmd), v).unwrap();
+    }
+}
+
+/// #3779: a Cmd/Ctrl click on another object while typing selects it and ends the text edit, so
+/// the keys that follow are shortcuts again and not typing.
+#[test]
+fn a_cmd_click_on_another_object_while_typing_ends_the_text_edit() {
+    let mut s = session();
+    let v = ViewInfo::default();
+    let r = s.execute("shape.rectangle", &json!({"x": 500, "y": 400, "width": 50, "height": 50})).unwrap();
+    let rect = NodeId(r["id"].as_u64().unwrap());
+    s.select_tool("type", v).unwrap();
+    click(&mut s, 200.0, 200.0);
+    let id = s.doc().unwrap().selection.objects[0];
+    s.tool_text("Hello", v).unwrap();
+    cmd_click(&mut s, 525.0, 425.0);
+    assert_eq!(s.doc().unwrap().selection.objects, vec![rect], "the rectangle is selected");
+    assert!(!s.tool_wants_text(), "the text edit ended");
+    s.tool_text("v", v).unwrap();
+    assert_eq!(obj(&s, id).plain_text(), "Hello", "a later key is not typed into the text");
+    assert_eq!(s.tool_id(), "type", "the Type tool is back");
+}
+
+/// #3779: a Cmd/Ctrl click on empty canvas while typing deselects the text and ends its edit.
+#[test]
+fn a_cmd_click_on_empty_canvas_while_typing_ends_the_text_edit() {
+    let mut s = session();
+    let v = ViewInfo::default();
+    s.select_tool("type", v).unwrap();
+    click(&mut s, 200.0, 200.0);
+    let id = s.doc().unwrap().selection.objects[0];
+    s.tool_text("Hello", v).unwrap();
+    cmd_click(&mut s, 600.0, 450.0);
+    assert!(s.doc().unwrap().selection.objects.is_empty(), "nothing is selected");
+    assert!(!s.tool_wants_text(), "the text edit ended");
+    s.tool_text("v", v).unwrap();
+    assert_eq!(obj(&s, id).plain_text(), "Hello", "a later key is not typed into the text");
+}
+
+/// #3779: point type a click placed and nothing was typed into goes away on a Cmd/Ctrl click
+/// elsewhere, as it does on Escape.
+#[test]
+fn a_cmd_click_away_from_empty_point_type_discards_it() {
+    let mut s = session();
+    let v = ViewInfo::default();
+    s.select_tool("type", v).unwrap();
+    click(&mut s, 200.0, 200.0);
+    let id = s.doc().unwrap().selection.objects[0];
+    cmd_click(&mut s, 600.0, 450.0);
+    assert!(s.doc().unwrap().doc.node(id).is_none(), "the empty type is discarded");
+}
+
 #[test]
 fn undo_during_a_drag_takes_back_only_the_drag() {
     let mut s = session();
