@@ -560,6 +560,12 @@ impl Tool for SelectionTool {
         }
     }
 
+    /// Off the canvas the pointer hovers nothing: its Smart Guides label and its Distance Guides go.
+    fn pointer_left(&mut self, _cx: &ToolContext) {
+        self.hover = None;
+        self.distance = None;
+    }
+
     fn transforming(&self) -> bool {
         match &self.state {
             State::Moving { began: true, .. } | State::Scaling { .. } | State::Rotating { .. } => true,
@@ -1295,6 +1301,11 @@ mod tests {
         let mut t = SelectionTool::default();
         t.pointer(&cx, &alt(PointerKind::Move, 350.0, 150.0));
         t.pointer(&cx, &ev(PointerKind::Move, 350.0, 150.0));
+        assert!(distances(&t, &cx).0.is_empty());
+        // So does the pointer leaving the canvas with Alt still held.
+        t.pointer(&cx, &alt(PointerKind::Move, 350.0, 150.0));
+        assert!(!distances(&t, &cx).0.is_empty());
+        t.pointer_left(&cx);
         assert!(distances(&t, &cx).0.is_empty());
         // A press ends them too.
         t.pointer(&cx, &alt(PointerKind::Move, 350.0, 150.0));

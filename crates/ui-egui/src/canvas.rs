@@ -955,6 +955,14 @@ fn handle_input(app: &mut VectorcraftApp, ui: &Ui, resp: &egui::Response, rect: 
         d.insert_temp(id, m);
         prev.is_some_and(|prev| prev != m)
     });
+    // Whether the pointer was over the canvas last frame: coming onto it re-hovers the tool, even
+    // after a single jump egui doesn't count as moving, and leaving it tells the tool (below).
+    let was_over = ui.data_mut(|d| {
+        let id = egui::Id::new("canvas-hovered");
+        let prev = d.get_temp::<bool>(id).unwrap_or(false);
+        d.insert_temp(id, hover.is_some());
+        prev
+    });
 
     // In Presentation Mode a click anywhere goes to the next artboard. The tool receives no press,
     // drag or hover, and a drag does not pan the view. A drag that began before the mode was turned
@@ -1190,10 +1198,16 @@ fn handle_input(app: &mut VectorcraftApp, ui: &Ui, resp: &egui::Response, rect: 
             }
         }
     } else if let Some(p) = hover
-        && (pointer.is_moving() || mods_changed)
+        && (pointer.is_moving() || mods_changed || !was_over)
     {
         let ev = PointerEvent { kind: PointerKind::Move, pos: xf.to_doc(p), mods: mods(m, space), pressure: 1.0 };
         dispatch(app, &ev, view);
+    }
+    // The pointer left the canvas with no drag (for a panel, or out of the window): the tool drops
+    // what it showed for the hover, which no hover event would clear (Alt's Distance Guides).
+    if was_over && hover.is_none() && drag.is_none() {
+        app.session.tool_pointer_left(view);
+        ui.ctx().request_repaint();
     }
     if pointer.primary_released()
         && let Some(i) = ui.data_mut(|d| d.remove_temp::<usize>(name_press_id()))
@@ -9496,13 +9510,10 @@ mod tests {
         }
     }
 
-    /// Distance Guides on screen: with a square selected and Alt held over another to its right,
-    /// the frame draws the measured line between their facing edges with the gap's length in a
-    /// pill of the smart guide colour on its middle; without Alt, or with Alt let go, nothing.
-    #[test]
-    fn alt_over_another_object_draws_the_distance_guide_label() {
-        use egui::{Event, Modifiers};
-        use vectorcraft_tools::guides::MAGENTA;
+    /// Distance Guides on a canvas at 100%: a 400 × 300 pt document with a 50 pt square at (50, 50),
+    /// selected, and another 100 pt to its right, the Selection tool and Smart Guides on → the app,
+    /// its context, the view and the screen point over the middle of the other square.
+    fn distance_scene() -> (VectorcraftApp, egui::Context, Xf, Pos2) {
         let mut app = VectorcraftApp::new(Session::new(), Default::default());
         app.run("file.new", json!({"width": 400, "height": 300})).unwrap();
         let a = app.run("shape.rectangle", json!({"x": 50, "y": 50, "width": 50, "height": 50})).unwrap()["id"].clone();
@@ -9519,45 +9530,78 @@ mod tests {
         frame(&mut app, &ctx, vec![]);
         let xf = Xf::new(app.canvas_rect.unwrap(), app.view().unwrap());
         let over = xf.to_screen(Point::new(225.0, 75.0));
-        // One frame with `events` → the shapes drawn, flattened. The modifiers held stay from one
-        // frame to the next until an `Event::ModifiersChanged`.
-        let run = |app: &mut VectorcraftApp, events: Vec<Event>| {
-            let raw = egui::RawInput { screen_rect: Some(WINDOW), events, ..Default::default() };
-            let mut out = ctx.run_ui(raw, |ui| show(app, ui));
-            out.textures_delta.clear();
-            fn flat(s: Shape, out: &mut Vec<Shape>) {
-                match s {
-                    Shape::Vec(v) => v.into_iter().for_each(|s| flat(s, out)),
-                    s => out.push(s),
-                }
+        (app, ctx, xf, over)
+    }
+
+    /// One frame with `events` → the shapes drawn, flattened. The modifiers held stay from one
+    /// frame to the next until an `Event::ModifiersChanged`.
+    fn distance_frame(app: &mut VectorcraftApp, ctx: &egui::Context, events: Vec<egui::Event>) -> Vec<Shape> {
+        let raw = egui::RawInput { screen_rect: Some(WINDOW), events, ..Default::default() };
+        let mut out = ctx.run_ui(raw, |ui| show(app, ui));
+        out.textures_delta.clear();
+        fn flat(s: Shape, out: &mut Vec<Shape>) {
+            match s {
+                Shape::Vec(v) => v.into_iter().for_each(|s| flat(s, out)),
+                s => out.push(s),
             }
-            let mut v = vec![];
-            out.shapes.into_iter().for_each(|c| flat(c.shape, &mut v));
-            v
-        };
-        // The label "100.00 pt" drawn and the pill it sits in, if any.
-        let label = |s: &[Shape]| {
-            let text = s
-                .iter()
-                .find_map(|s| if let Shape::Text(t) = s { (t.galley.text() == "100.00 pt").then(|| t.visual_bounding_rect()) } else { None })?;
-            let pill = s.iter().find_map(|s| {
-                if let Shape::Rect(r) = s { (r.fill == c32(MAGENTA) && r.rect.contains(text.center())).then_some(r.rect) } else { None }
-            });
-            Some((text, pill))
-        };
-        run(&mut app, vec![Event::PointerMoved(over)]);
-        assert_eq!(label(&run(&mut app, vec![])), None, "without Alt");
-        run(&mut app, vec![Event::ModifiersChanged(Modifiers::ALT)]);
-        let s = run(&mut app, vec![]);
-        let (text, pill) = label(&s).expect("the gap's length is drawn");
+        }
+        let mut v = vec![];
+        out.shapes.into_iter().for_each(|c| flat(c.shape, &mut v));
+        v
+    }
+
+    /// The label "100.00 pt" drawn in `s` and the pill of the smart guide colour it sits in, if any.
+    fn gap_label(s: &[Shape]) -> Option<(egui::Rect, Option<egui::Rect>)> {
+        let magenta = c32(vectorcraft_tools::guides::MAGENTA);
+        let text =
+            s.iter().find_map(|s| if let Shape::Text(t) = s { (t.galley.text() == "100.00 pt").then(|| t.visual_bounding_rect()) } else { None })?;
+        let pill = s
+            .iter()
+            .find_map(|s| if let Shape::Rect(r) = s { (r.fill == magenta && r.rect.contains(text.center())).then_some(r.rect) } else { None });
+        Some((text, pill))
+    }
+
+    /// Distance Guides on screen: with a square selected and Alt held over another to its right,
+    /// the frame draws the measured line between their facing edges with the gap's length in a
+    /// pill of the smart guide colour on its middle; without Alt, or with Alt let go, nothing.
+    #[test]
+    fn alt_over_another_object_draws_the_distance_guide_label() {
+        use egui::{Event, Modifiers};
+        let (mut app, ctx, xf, over) = distance_scene();
+        let mut run = |events| distance_frame(&mut app, &ctx, events);
+        run(vec![Event::PointerMoved(over)]);
+        assert_eq!(gap_label(&run(vec![])), None, "without Alt");
+        run(vec![Event::ModifiersChanged(Modifiers::ALT)]);
+        let s = run(vec![]);
+        let (text, pill) = gap_label(&s).expect("the gap's length is drawn");
         let pill = pill.expect("in a pill of the smart guide colour");
         let mid = xf.to_screen(Point::new(150.0, 75.0));
         assert!(pill.center().distance(mid) < 1.0 && pill.contains_rect(text), "{pill:?} on {mid:?}");
         let (from, to) = (xf.to_screen(Point::new(100.0, 75.0)), xf.to_screen(Point::new(200.0, 75.0)));
-        let measured = s.iter().any(|s| matches!(s, Shape::LineSegment { points, stroke } if *points == [from, to] && stroke.color == c32(MAGENTA)));
+        let magenta = c32(vectorcraft_tools::guides::MAGENTA);
+        let measured = s.iter().any(|s| matches!(s, Shape::LineSegment { points, stroke } if *points == [from, to] && stroke.color == magenta));
         assert!(measured, "the measured line between the facing edges");
-        run(&mut app, vec![Event::ModifiersChanged(Modifiers::NONE)]);
-        assert_eq!(label(&run(&mut app, vec![])), None, "Alt let go");
+        run(vec![Event::ModifiersChanged(Modifiers::NONE)]);
+        assert_eq!(gap_label(&run(vec![])), None, "Alt let go");
+    }
+
+    /// The Distance Guides go when the pointer leaves the canvas with Alt still held, for a panel
+    /// or out of the window, and come back with it.
+    #[test]
+    fn distance_guides_go_when_the_pointer_leaves_the_canvas() {
+        use egui::{Event, Modifiers};
+        let (mut app, ctx, xf, over) = distance_scene();
+        let outside = pos2(xf.rect.max.x + 10.0, xf.rect.center().y);
+        assert!(WINDOW.contains(outside) && !xf.rect.contains(outside), "a panel beside the canvas");
+        let mut run = |events| distance_frame(&mut app, &ctx, events);
+        run(vec![Event::ModifiersChanged(Modifiers::ALT), Event::PointerMoved(over)]);
+        assert!(gap_label(&run(vec![])).is_some(), "shown over the other square");
+        run(vec![Event::PointerMoved(outside)]);
+        assert_eq!(gap_label(&run(vec![])), None, "gone over a panel, Alt still held");
+        run(vec![Event::PointerMoved(over)]);
+        assert!(gap_label(&run(vec![])).is_some(), "back over the other square");
+        run(vec![Event::PointerGone]);
+        assert_eq!(gap_label(&run(vec![])), None, "gone out of the window");
     }
 
     /// The 800 × 600 window [`frame`] draws the canvas in.
