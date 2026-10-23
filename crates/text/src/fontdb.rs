@@ -2085,6 +2085,20 @@ impl FontDb {
             found.extend(v.iter().cloned());
         }
         let ns = norm(style);
+        // A family and style split from a PostScript name by an importer that didn't have the font
+        // (`Honoka-Mincho` → Honoka, Mincho): once it is installed, the face of that PostScript
+        // name, which is its own family and style (ほのか明朝, Regular).
+        if found.is_empty() && !ns.is_empty() {
+            let joined = format!("{key}{ns}");
+            let face = |a: &Alias| a.paired.is_none() && a.style.is_some();
+            let ps =
+                self.read_faces().iter().flat_map(|f| Alias::of(&f.family, &f.style, &f.keys)).find(|(k, a)| *k == joined && face(a)).map(|(_, a)| a);
+            let ps =
+                ps.or_else(|| self.aliases.read().unwrap_or_else(|e| e.into_inner()).get(&joined).and_then(|v| v.iter().find(|a| face(a)).cloned()));
+            if let Some(a) = ps {
+                return (a.family, a.style.unwrap_or_else(|| style.to_string()));
+            }
+        }
         // A family name keeps the style asked for; a legacy pair names its face; a full or
         // PostScript name its face whatever style is asked for.
         if let Some(a) = found.iter().find(|a| a.style.is_none()) {
@@ -2712,6 +2726,23 @@ mod alias_tests {
         assert_eq!(semi.style, "Semibold");
         assert!(db.find_postscript("NoSuchFont-Regular").is_none());
         assert!(db.has_family("SourceSans3-Regular"));
+    }
+
+    /// A PDF names a font by PostScript name; when it isn't installed the importer splits the name
+    /// (`Honoka-Mincho` → Honoka, Mincho). Once a font of that PostScript name is installed, under
+    /// a family name of its own (ほのか明朝), the split pair finds it.
+    #[test]
+    fn a_family_and_style_split_from_a_postscript_name_find_its_face() {
+        let db = FontDb::with_font_dirs(vec![]);
+        db.ensure_catalog();
+        // An installed face whose family name shares nothing with its PostScript name.
+        let alias = Alias { family: "Source Sans 3".into(), style: Some("Semibold".into()), paired: None };
+        db.aliases.write().unwrap().insert(norm("Honoka-Mincho"), vec![alias]);
+        db.changed();
+        let m = db.resolve("Honoka", "Mincho").map(|(face, m)| (face.family.clone(), face.style.clone(), m)).unwrap();
+        assert_eq!(m, ("Source Sans 3".into(), "Semibold".into(), FontMatch::Exact));
+        // Unknown names still fall back.
+        assert_eq!(db.resolve("Honoka", "Gothic").unwrap().1, FontMatch::Missing);
     }
 
     /// The database keeps at most [`CANONICAL_CACHE_MAX`] answers, and names asked for past that
