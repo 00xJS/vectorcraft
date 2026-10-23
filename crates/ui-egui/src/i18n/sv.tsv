@@ -270,6 +270,9 @@ font-technology	Variable	Variabla
 	Background Color:	Bakgrundsfärg:
 	Show Center Mark	Visa mittmarkering
 	Show Cross Hairs	Visa hårkors
+	Show Video Safe Areas	Visa videosäkra områden
+	Video Ruler Pixel Aspect Ratio:	Pixelproportion för videolinjaler:
+	Hide Video Rulers	Dölj videolinjaler
 	Background Contents	Bakgrundsinnehåll
 	Background Contents:	Bakgrundsinnehåll:
 	Background:	Bakgrund:
@@ -3871,6 +3874,7 @@ axis	Both	Båda
 @msg	axis must be "vertical", "horizontal" or an angle in degrees, not `{v}`	axis måste vara "vertical", "horizontal" eller en vinkel i grader, inte `{v}`
 @msg	background {other}: transparent, white, black or a colour such as "#ff8800"	background {other}: transparent, white, black eller en färg som "#ff8800"
 @msg	bad color {v}	ogiltig färg {v}
+@msg	videoRulerPixelAspectRatio must be a number from 0.1 to 10	videoRulerPixelAspectRatio måste vara ett tal från 0,1 till 10
 @msg	bad colour `{hex}` (#rrggbb)	ogiltig färg `{hex}` (#rrggbb)
 @msg	bad page tree	ogiltigt sidträd
 @msg	bad shortcut	ogiltigt kortkommando

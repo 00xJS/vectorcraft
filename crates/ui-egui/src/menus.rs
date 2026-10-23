@@ -353,6 +353,12 @@ pub const UI_COMMANDS: &[(&str, &str, &str, &str)] = &[
         "{} template layers left off the canvas (Show Template draws them again, dimmed as before) → shown",
     ),
     ("view.rulers", "Show Rulers", "Cmd+R", "{}"),
+    (
+        "view.videoRulers",
+        "Show Video Rulers",
+        "",
+        "{} the rulers show (as Show Rulers shows them) and count the active artboard in video pixels from its top-left corner, a pixel as wide as its Video Ruler Pixel Aspect Ratio says (artboard.setProps videoRulerPixelAspectRatio) and one point tall; again (Hide Video Rulers), they count in the General unit from the ruler origin as before → whether video rulers show",
+    ),
     ("view.boundingBox", "Hide Bounding Box", "Cmd+Shift+B", "{}"),
     ("view.guides", "Hide Guides", "Cmd+;", "{}"),
     ("view.smartGuides", "Smart Guides", "Cmd+U", "{}"),
@@ -1401,6 +1407,13 @@ pub fn run_ui_command(app: &mut VectorcraftApp, id: &str, p: &Value) -> Option<R
         "view.artboards" => flag(&mut app.ui.view.artboards),
         "view.template" => flag(&mut app.ui.view.templates),
         "view.rulers" => flag(&mut app.ui.view.rulers),
+        "view.videoRulers" => {
+            let v = &mut app.ui.view;
+            let show = !(v.video_rulers && v.rulers);
+            v.video_rulers = show;
+            v.rulers |= show;
+            Ok(json!(show))
+        }
         "view.boundingBox" => flag(&mut app.ui.view.bounding_box),
         "view.guides" => {
             let r = flag(&mut app.ui.view.guides);
@@ -2040,6 +2053,7 @@ pub fn dynamic_label(app: &VectorcraftApp, id: &str, label: &str) -> String {
         id if saved_selection_slot(id).is_some() => saved_selection_name(app, id).unwrap_or_else(|| "—".into()),
         "view.artboards" => if v.artboards { "Hide Artboards" } else { "Show Artboards" }.into(),
         "view.rulers" => if v.rulers { "Hide Rulers" } else { "Show Rulers" }.into(),
+        "view.videoRulers" => if v.video_rulers && v.rulers { "Hide Video Rulers" } else { "Show Video Rulers" }.into(),
         "view.globalRulers" => if app.session.active().is_some_and(|d| d.doc.rulers == vectorcraft_doc::RulerMode::Global) {
             "Change to Artboard Rulers"
         } else {
@@ -3054,7 +3068,14 @@ pub fn menu_tree_named(english_names: bool) -> Vec<(&'static str, Vec<Item>)> {
                 c("Lock Slices", "view.slices.lock"),
                 c("Hide Template", "view.template"),
                 Sep,
-                sub("Rulers", vec![c("Show Rulers", "view.rulers"), c("Change to Global Rulers", "view.globalRulers"), todo("Show Video Rulers")]),
+                sub(
+                    "Rulers",
+                    vec![
+                        c("Show Rulers", "view.rulers"),
+                        c("Change to Global Rulers", "view.globalRulers"),
+                        c("Show Video Rulers", "view.videoRulers"),
+                    ],
+                ),
                 c("Hide Bounding Box", "view.boundingBox"),
                 c("Show Transparency Grid", "view.transparencyGrid"),
                 c("Hide Text Threads", "view.textThreads"),
@@ -4138,6 +4159,8 @@ pub const DYNAMIC_LABELS: &[&str] = &[
     "Show Artboards",
     "Hide Rulers",
     "Show Rulers",
+    "Hide Video Rulers",
+    "Show Video Rulers",
     "Change to Global Rulers",
     "Change to Artboard Rulers",
     "Hide Bounding Box",

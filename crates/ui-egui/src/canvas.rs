@@ -567,8 +567,8 @@ pub fn show(app: &mut VectorcraftApp, ui: &mut Ui) {
         if doc.setup.has_bleed() {
             painter.add(Shape::closed_line(xf.quad(doc.setup.bleed_rect(ab.rect)), Stroke::new(1.0, t.bleed)));
         }
-        // Show Center Mark and Show Cross Hairs (Artboard Options). Only the canvas draws them,
-        // as it does the edges: exports and print leave them out.
+        // Show Center Mark, Show Cross Hairs and Show Video Safe Areas (Artboard Options). Only the
+        // canvas draws them, as it does the edges: exports and print leave them out.
         artboard_marks(&painter, &xf, ab, t.artboard_mark);
         if editing_name != Some(i) && (artboard_tool || doc.artboards.len() > 1) && tool_labelled != u64::try_from(i).ok() {
             // At the artboard's own top-left corner, which a rotated view turns away from its
@@ -659,7 +659,13 @@ pub fn show(app: &mut VectorcraftApp, ui: &mut Ui) {
             painter.line_segment([pos2(at.x, rect.top()), pos2(at.x, rect.bottom())], Stroke::new(1.0, t.text_dim));
             painter.line_segment([pos2(rect.left(), at.y), pos2(rect.right(), at.y)], Stroke::new(1.0, t.text_dim));
         }
-        rulers(ui, full, &xf, app.hover_doc, app.session.general_unit(), origin_preview.unwrap_or_else(|| app.ruler_origin()), &t);
+        // View › Rulers › Show Video Rulers counts the active artboard in video pixels.
+        let video = app.ui.view.video_rulers.then(|| crate::dialogs::artboard_options::active_index(app));
+        let scale = match video.and_then(|i| app.session.active()?.doc.artboards.get(i)) {
+            Some(ab) => RulerScale::video(ab),
+            None => RulerScale::document(app.session.general_unit(), origin_preview.unwrap_or_else(|| app.ruler_origin())),
+        };
+        rulers(ui, full, &xf, app.hover_doc, scale, &t);
     }
     // The task bar is not drawn while the Simplify slider shows.
     if app.ui.task_bar && !revolve_edit && !app.session.tool_busy() && app.ui.screen_mode < 3 && !crate::dialogs::simplify_slider::showing(app) {
@@ -1931,7 +1937,46 @@ pub(crate) fn ruler_origin_dragging(ctx: &egui::Context) -> bool {
     ctx.data(|d| d.get_temp::<(Option<u64>, bool)>(ruler_origin_drag_id()).is_some())
 }
 
-fn rulers(ui: &Ui, full: egui::Rect, xf: &Xf, hover: Option<Point>, unit: Unit, origin: Point, t: &Tokens) {
+/// What the rulers count, and from where: `unit`, from `origin` (document points), with each
+/// unit stretched `stretch` times along the document's x and y, which a video ruler's pixel aspect
+/// ratio makes differ.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub(crate) struct RulerScale {
+    pub(crate) unit: Unit,
+    pub(crate) origin: Point,
+    pub(crate) stretch: [f64; 2],
+}
+
+impl RulerScale {
+    /// The rulers in `unit` (the General unit), from `origin` (the ruler origin).
+    pub(crate) fn document(unit: Unit, origin: Point) -> Self {
+        Self { unit, origin, stretch: [1.0, 1.0] }
+    }
+
+    /// View › Rulers › Show Video Rulers on artboard `ab`: pixels from its top-left corner, each
+    /// pixel as many points wide as its Video Ruler Pixel Aspect Ratio and one point tall, so the
+    /// rulers read the artboard's size in video pixels
+    /// (https://helpx.adobe.com/illustrator/desktop/create-manage-artboards/organize-manage-artboards/set-video-display-options-for-artboards.html).
+    pub(crate) fn video(ab: &vectorcraft_doc::Artboard) -> Self {
+        Self { unit: Unit::Pixels, origin: Point::new(ab.rect.x0, ab.rect.y0), stretch: [ab.video_ruler_pixel_aspect_ratio, 1.0] }
+    }
+
+    /// How far document point `p` lies from the origin along `axis` (a unit direction in the
+    /// document), in points of this scale: each document coordinate divided by its stretch.
+    /// Divided by the unit's points, it is the value the ruler reads there.
+    pub(crate) fn along(&self, p: Point, axis: vectorcraft_geom::Vec2) -> f64 {
+        let d = p - self.origin;
+        d.x / self.stretch[0] * axis.x + d.y / self.stretch[1] * axis.y
+    }
+
+    /// The screen points one point of this scale spans along `axis` at `zoom` (screen points per
+    /// document point): `zoom` itself when nothing is stretched.
+    pub(crate) fn zoom_along(&self, zoom: f64, axis: vectorcraft_geom::Vec2) -> f64 {
+        zoom / (axis.x * axis.x / self.stretch[0] + axis.y * axis.y / self.stretch[1])
+    }
+}
+
+fn rulers(ui: &Ui, full: egui::Rect, xf: &Xf, hover: Option<Point>, scale: RulerScale, t: &Tokens) {
     let p = ui.painter();
     let [top, left, corner] = ruler_rects(full);
     for r in [top, left, corner] {
@@ -1942,43 +1987,40 @@ fn rulers(ui: &Ui, full: egui::Rect, xf: &Xf, hover: Option<Point>, unit: Unit, 
     // Crosshair in the origin box.
     p.line_segment([corner.center() - vec2(4.0, 0.0), corner.center() + vec2(4.0, 0.0)], Stroke::new(1.0, t.ruler_tick));
     p.line_segment([corner.center() - vec2(0.0, 4.0), corner.center() + vec2(0.0, 4.0)], Stroke::new(1.0, t.ruler_tick));
-    // Pick a label step (in `unit`) that gives ≥ 50 px between labels; positions below are in `unit`
-    // (`per` points each).
-    let per = unit.points();
-    let step = unit.ruler_step(xf.zoom);
-    let minor = unit.ruler_minor(step);
     let font = egui::FontId::proportional(9.5);
-    let near = |v: f64, every: f64| ((v / every).round() * every - v).abs() < minor * 0.01;
-    // A tick's length: the labelled ones longest, the halves between them shorter.
-    let tick = |v: f64| {
-        if near(v, step) {
-            RULER
-        } else if near(v, step / 2.0) {
-            7.0
-        } else {
-            4.0
-        }
-    };
     // Each ruler measures along its own edge, in the canvas's coordinates turned with the view
     // (#826): at 0° the top one reads x and the left one y. `draw` gets each tick's distance
-    // (screen points) from `from` along the ruler, and its value in `unit`.
-    let ticks = |from: Pos2, to: Pos2, axis: vectorcraft_geom::Vec2, draw: &mut dyn FnMut(f32, f64)| {
-        let along = |s: Pos2| (xf.to_doc(s) - origin).dot(axis);
-        let (a, b) = (along(from), along(to));
+    // (screen points) from `from` along the ruler, its length, and the label of a labelled one.
+    let ticks = |from: Pos2, to: Pos2, axis: vectorcraft_geom::Vec2, draw: &mut dyn FnMut(f32, f32, Option<String>)| {
+        // Pick a label step (in the unit) that gives ≥ 50 px between labels on this ruler, at its
+        // own scale; positions below are in the unit (`per` points of the scale each).
+        let zoom = scale.zoom_along(xf.zoom, axis);
+        let (per, step) = (scale.unit.points(), scale.unit.ruler_step(zoom));
+        let minor = scale.unit.ruler_minor(step);
+        let near = |v: f64, every: f64| ((v / every).round() * every - v).abs() < minor * 0.01;
+        let (a, b) = (scale.along(xf.to_doc(from), axis), scale.along(xf.to_doc(to), axis));
         let mut v = (a / per / minor).floor() * minor;
         while v * per <= b {
-            draw(((v * per - a) * xf.zoom) as f32, v);
+            // A tick's length: the labelled ones longest, the halves between them shorter.
+            let (len, label) = if near(v, step) {
+                (RULER, Some(ruler_label(v, step)))
+            } else if near(v, step / 2.0) {
+                (7.0, None)
+            } else {
+                (4.0, None)
+            };
+            draw(((v * per - a) * zoom) as f32, len, label);
             v += minor;
         }
     };
     // The canvas's directions along the screen's x and y.
     let (sn, cs) = xf.rot.sin_cos();
     let clip_top = p.with_clip_rect(top);
-    ticks(top.left_top(), top.right_top(), vectorcraft_geom::Vec2::new(cs, -sn), &mut |d, x| {
+    ticks(top.left_top(), top.right_top(), vectorcraft_geom::Vec2::new(cs, -sn), &mut |d, len, label| {
         let sx = top.left() + d;
-        clip_top.line_segment([pos2(sx, top.bottom() - tick(x)), pos2(sx, top.bottom())], Stroke::new(1.0, t.ruler_tick));
-        if near(x, step) {
-            clip_top.text(pos2(sx + 2.0, top.top() + 1.0), egui::Align2::LEFT_TOP, ruler_label(x, step), font.clone(), t.ruler_tick);
+        clip_top.line_segment([pos2(sx, top.bottom() - len), pos2(sx, top.bottom())], Stroke::new(1.0, t.ruler_tick));
+        if let Some(text) = label {
+            clip_top.text(pos2(sx + 2.0, top.top() + 1.0), egui::Align2::LEFT_TOP, text, font.clone(), t.ruler_tick);
         }
     });
     let clip_left = p.with_clip_rect(left);
@@ -1986,12 +2028,11 @@ fn rulers(ui: &Ui, full: egui::Rect, xf: &Xf, hover: Option<Point>, unit: Unit, 
     // "-0.0625" is seven characters, 60 pt of ruler, where a sixteenth-inch step leaves 54 pt at
     // zoom 12. The ticks all stay; a label that would run into the one above it is left out.
     let mut filled_to = f32::NEG_INFINITY;
-    ticks(left.left_top(), left.left_bottom(), vectorcraft_geom::Vec2::new(sn, cs), &mut |d, y| {
+    ticks(left.left_top(), left.left_bottom(), vectorcraft_geom::Vec2::new(sn, cs), &mut |d, len, label| {
         let sy = left.top() + d;
-        clip_left.line_segment([pos2(left.right() - tick(y), sy), pos2(left.right(), sy)], Stroke::new(1.0, t.ruler_tick));
-        if near(y, step) {
+        clip_left.line_segment([pos2(left.right() - len, sy), pos2(left.right(), sy)], Stroke::new(1.0, t.ruler_tick));
+        if let Some(text) = label {
             // Vertical labels read top-to-bottom, one digit per line like Illustrator.
-            let text = ruler_label(y, step);
             let top = sy + 2.0;
             if top < filled_to {
                 return;
@@ -2930,7 +2971,10 @@ const CENTER_MARK_ARM: f32 = 6.0;
 /// turned with the view: with Show Cross Hairs, a line from the middle of each side through the
 /// center to the middle of the opposite side; with Show Center Mark, a cross at the center whose
 /// arms run along the artboard's sides, [`CENTER_MARK_ARM`] long on screen
-/// (https://helpx.adobe.com/illustrator/desktop/create-manage-artboards/organize-manage-artboards/modify-display-settings-of-artboards.html).
+/// (https://helpx.adobe.com/illustrator/desktop/create-manage-artboards/organize-manage-artboards/modify-display-settings-of-artboards.html);
+/// with Show Video Safe Areas, the outlines of its action-safe and title-safe areas
+/// ([`vectorcraft_doc::Artboard::video_safe_areas`],
+/// https://helpx.adobe.com/illustrator/desktop/create-manage-artboards/organize-manage-artboards/set-video-display-options-for-artboards.html).
 fn artboard_marks(painter: &egui::Painter, xf: &Xf, ab: &vectorcraft_doc::Artboard, color: Color32) {
     let (r, stroke) = (ab.rect, Stroke::new(1.0, color));
     let c = r.center();
@@ -2944,6 +2988,11 @@ fn artboard_marks(painter: &egui::Painter, xf: &Xf, ab: &vectorcraft_doc::Artboa
         for side in [at(c.x + 1.0, c.y), at(c.x, c.y + 1.0)] {
             let arm = (side - mid).normalized() * CENTER_MARK_ARM;
             painter.line_segment([mid - arm, mid + arm], stroke);
+        }
+    }
+    if ab.show_video_safe_areas {
+        for area in ab.video_safe_areas() {
+            painter.add(Shape::closed_line(xf.quad(area), stroke));
         }
     }
 }
@@ -3709,7 +3758,8 @@ mod tests {
         let [top, left, _] = ruler_rects(full);
         for deg in [0.0_f64, 30.0, 90.0, 135.0, 200.0] {
             let xf = Xf { rect: full, zoom: 1.0, center: Point::new(300.0, 200.0), rot: deg.to_radians() };
-            let mut out = ctx.run_ui(Default::default(), |ui| rulers(ui, full, &xf, None, Unit::Points, Point::ZERO, &Tokens::get(ui.ctx())));
+            let scale = RulerScale::document(Unit::Points, Point::ZERO);
+            let mut out = ctx.run_ui(Default::default(), |ui| rulers(ui, full, &xf, None, scale, &Tokens::get(ui.ctx())));
             out.textures_delta.clear();
             // The ticks' positions along each ruler.
             let along = |ruler: egui::Rect, x: bool| -> Vec<f32> {
@@ -3750,7 +3800,8 @@ mod tests {
         for deg in [0.0_f64, 30.0, 90.0, 200.0] {
             for unit in [Unit::Points, Unit::Millimeters] {
                 let xf = Xf { rect: full, zoom: 1.7, center: Point::new(300.0, 200.0), rot: deg.to_radians() };
-                let mut out = ctx.run_ui(Default::default(), |ui| rulers(ui, full, &xf, None, unit, origin, &Tokens::get(ui.ctx())));
+                let scale = RulerScale::document(unit, origin);
+                let mut out = ctx.run_ui(Default::default(), |ui| rulers(ui, full, &xf, None, scale, &Tokens::get(ui.ctx())));
                 out.textures_delta.clear();
                 let at = xf.to_screen(origin);
                 for (r, horizontal) in [(top, true), (left, false)] {
@@ -3774,6 +3825,66 @@ mod tests {
                 }
             }
         }
+    }
+
+    /// View › Rulers › Show Video Rulers counts the artboard in video pixels from its top-left
+    /// corner, a pixel as wide as the artboard's Video Ruler Pixel Aspect Ratio. At 0.9 a
+    /// 720 × 480 pt artboard is 800 pixels wide and 480 tall: the top ruler reads 0 at its left
+    /// edge and 800 at its right, labelled every 100 pixels (90 points on screen at 100%), and the
+    /// left ruler counts a pixel a point, from 0 at the top edge to a tick at the bottom one. At 1
+    /// (square pixels) the artboard is 720 pixels wide.
+    #[test]
+    fn video_rulers_count_the_artboard_in_pixels_of_its_aspect_ratio() {
+        let mut s = Session::new();
+        s.execute("file.new", &json!({"width": 720, "height": 480})).unwrap();
+        s.execute("artboard.setProps", &json!({"index": 0, "videoRulerPixelAspectRatio": 0.9})).unwrap();
+        let ab = s.active().unwrap().doc.artboards[0].clone();
+        let r = ab.rect;
+        let scale = RulerScale::video(&ab);
+        let (x, y) = (vectorcraft_geom::Vec2::new(1.0, 0.0), vectorcraft_geom::Vec2::new(0.0, 1.0));
+        let close = |a: f64, b: f64| (a - b).abs() < 1e-9;
+        assert_eq!((scale.unit, scale.origin), (Unit::Pixels, Point::new(r.x0, r.y0)));
+        assert!(close(scale.along(Point::new(r.x1, r.y1), x), 800.0) && close(scale.along(Point::new(r.x1, r.y1), y), 480.0));
+        assert!(close(scale.along(Point::new(r.x0 + 9.0, r.y0), x), 10.0), "a pixel is 0.9 pt wide");
+        assert!(close(scale.zoom_along(2.0, x), 1.8) && close(scale.zoom_along(2.0, y), 2.0));
+        let square = RulerScale { stretch: [1.0, 1.0], ..scale };
+        assert!(close(square.along(Point::new(r.x1, r.y0), x), 720.0));
+        // Drawn at 100%.
+        let ctx = egui::Context::default();
+        crate::theme::install_fonts(&ctx);
+        let full = egui::Rect::from_min_size(Pos2::ZERO, vec2(800.0, 600.0));
+        let [top, left, _] = ruler_rects(full);
+        let xf = Xf { rect: full, zoom: 1.0, center: r.center(), rot: 0.0 };
+        let mut out = ctx.run_ui(Default::default(), |ui| rulers(ui, full, &xf, None, scale, &Tokens::get(ui.ctx())));
+        out.textures_delta.clear();
+        let labels = |ruler: egui::Rect| -> Vec<(String, Pos2)> {
+            out.shapes
+                .iter()
+                .filter(|c| c.clip_rect == ruler)
+                .filter_map(|c| match &c.shape {
+                    Shape::Text(t) => Some((t.galley.text().to_string(), t.pos)),
+                    _ => None,
+                })
+                .collect()
+        };
+        let (l, rgt) = (xf.to_screen(Point::new(r.x0, r.y0)), xf.to_screen(Point::new(r.x1, r.y1)));
+        let at = |labels: &[(String, Pos2)], text: &str, x: f32| labels.iter().any(|(t, p)| t == text && (p.x - 2.0 - x).abs() < 0.02);
+        let tops = labels(top);
+        assert!(at(&tops, "0", l.x) && at(&tops, "800", rgt.x), "{tops:?} from {l:?} to {rgt:?}");
+        assert!(at(&tops, "100", l.x + 90.0) && !tops.iter().any(|(t, _)| t == "50"), "{tops:?}");
+        assert!(!tops.iter().any(|(t, _)| t == "720"), "points aren't pixels: {tops:?}");
+        let lefts = labels(left);
+        assert!(lefts.iter().any(|(t, p)| t == "0" && (p.y - 2.0 - l.y).abs() < 0.02), "{lefts:?}");
+        let ticks: Vec<f32> = out
+            .shapes
+            .iter()
+            .filter(|c| c.clip_rect == left)
+            .filter_map(|c| match &c.shape {
+                Shape::LineSegment { points: [a, b], .. } if a.y == b.y => Some(a.y),
+                _ => None,
+            })
+            .collect();
+        assert!(ticks.iter().any(|y| (y - rgt.y).abs() < 0.02), "a tick at 480 px: {ticks:?}");
     }
 
     #[test]
@@ -9570,15 +9681,11 @@ mod tests {
         let hover_shapes = shapes(&mut app, &ctx);
 
         // There should be a 1.5px path outline for the hover highlight.
-        let hover_outlines: Vec<_> = hover_shapes
-            .iter()
-            .filter(|s| matches!(s, Shape::Path(ps) if ps.stroke.width == 1.5 && ps.stroke.color == layer_mode))
-            .collect();
+        let hover_outlines: Vec<_> =
+            hover_shapes.iter().filter(|s| matches!(s, Shape::Path(ps) if ps.stroke.width == 1.5 && ps.stroke.color == layer_mode)).collect();
         assert!(!hover_outlines.is_empty(), "hover highlight shows baseline");
 
-        let is_handle = |s: &Shape| {
-            matches!(s, Shape::Rect(r) if (r.rect.width() - 6.0).abs() < 1.0 && (r.rect.height() - 6.0).abs() < 1.0 && r.fill == Color32::WHITE)
-        };
+        let is_handle = |s: &Shape| matches!(s, Shape::Rect(r) if (r.rect.width() - 6.0).abs() < 1.0 && (r.rect.height() - 6.0).abs() < 1.0 && r.fill == Color32::WHITE);
 
         // There should be NO bounding box resize handles (size 6x6 white squares) while just hovering.
         let handles: Vec<_> = hover_shapes.iter().filter(|s| is_handle(s)).collect();
@@ -9602,4 +9709,3 @@ mod tests {
         assert!(!baselines.is_empty(), "selected text shows baseline alongside bounding box");
     }
 }
-

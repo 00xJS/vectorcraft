@@ -240,6 +240,9 @@ font-technology	Variable	可變
 	Background Color:	背景顏色：
 	Show Center Mark	顯示中心標記
 	Show Cross Hairs	顯示十字線
+	Show Video Safe Areas	顯示視訊安全區域
+	Video Ruler Pixel Aspect Ratio:	視訊尺標像素長寬比：
+	Hide Video Rulers	隱藏視訊尺標
 	Background Contents	背景內容
 	Background Contents:	背景內容：
 	Background:	背景：
@@ -2031,6 +2034,7 @@ file-filter	Templates	範本
 @msg	{label}…	{label}…
 @msg	no blend options	沒有漸變選項
 @msg	bad color {v}	顏色 {v} 無效
+@msg	videoRulerPixelAspectRatio must be a number from 0.1 to 10	videoRulerPixelAspectRatio 必須是 0.1 到 10 之間的數字
 @msg	the Color Picker is not open	「顏色選擇器」未開啟
 @msg	the Simplify slider is not open	「簡化」滑桿未開啟
 @msg	the screen color sampler is already open	螢幕取色器已開啟

@@ -256,6 +256,9 @@ font-technology	Variable	Variabel
 	Background Color:	Hintergrundfarbe:
 	Show Center Mark	Mittelpunktmarke einblenden
 	Show Cross Hairs	Fadenkreuz einblenden
+	Show Video Safe Areas	Videosichere Bereiche einblenden
+	Video Ruler Pixel Aspect Ratio:	Pixel-Seitenverhältnis der Videolineale:
+	Hide Video Rulers	Videolineale ausblenden
 	Background Contents	Hintergrundinhalt
 	Background Contents:	Hintergrundinhalt:
 	Background:	Hintergrund:
@@ -3876,6 +3879,7 @@ theme	Appearance	Erscheinungsbild
 @msg	axis must be "vertical", "horizontal" or an angle in degrees, not `{v}`	axis muss "vertical", "horizontal" oder ein Winkel in Grad sein, nicht `{v}`
 @msg	background {other}: transparent, white, black or a colour such as "#ff8800"	background {other}: transparent, white, black oder eine Farbe wie "#ff8800"
 @msg	bad color {v}	ungültige Farbe {v}
+@msg	videoRulerPixelAspectRatio must be a number from 0.1 to 10	videoRulerPixelAspectRatio muss eine Zahl von 0,1 bis 10 sein
 @msg	the Color Picker is not open	der Farbwähler ist nicht geöffnet
 @msg	the Simplify slider is not open	der Regler „Vereinfachen“ ist nicht geöffnet
 @msg	the screen color sampler is already open	die Farbaufnahme vom Bildschirm ist bereits geöffnet

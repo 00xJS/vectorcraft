@@ -268,6 +268,9 @@ font-technology	Variable	Променливи
 	Background Color:	Цвят на фона:
 	Show Center Mark	Показване на централен знак
 	Show Cross Hairs	Показване на кръстосани линии
+	Show Video Safe Areas	Показване на безопасните видеозони
+	Video Ruler Pixel Aspect Ratio:	Пропорция на пиксела на видеолинийките:
+	Hide Video Rulers	Скриване на видеолинийките
 	Background Contents	Съдържание на фона
 	Background Contents:	Съдържание на фона:
 	Background:	Фон:
@@ -3866,6 +3869,7 @@ axis	Both	И двете
 @msg	axis must be "vertical", "horizontal" or an angle in degrees, not `{v}`	оста трябва да бъде "vertical", "horizontal" или ъгъл в градуси, а не `{v}`
 @msg	background {other}: transparent, white, black or a colour such as "#ff8800"	фон {other}: прозрачен, бял, черен или цвят като "#ff8800"
 @msg	bad color {v}	грешен цвят {v}
+@msg	videoRulerPixelAspectRatio must be a number from 0.1 to 10	videoRulerPixelAspectRatio трябва да бъде число от 0,1 до 10
 @msg	bad colour `{hex}` (#rrggbb)	грешен цвят `{hex}` (#rrggbb)
 @msg	bad page tree	повредено дърво на страниците
 @msg	bad shortcut	грешен клавишен бърз път

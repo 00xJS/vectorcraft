@@ -214,6 +214,10 @@ pub const ICON_PANEL_GROUPS: &[&[&str]] = &[
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct ViewFlags {
     pub rulers: bool,
+    /// View › Rulers › Show Video Rulers: while the rulers show, they count the active artboard in
+    /// video pixels, honouring its Video Ruler Pixel Aspect Ratio.
+    #[serde(default)]
+    pub video_rulers: bool,
     pub grid: bool,
     pub guides: bool,
     pub smart_guides: bool,
@@ -252,6 +256,7 @@ impl Default for ViewFlags {
     fn default() -> Self {
         Self {
             rulers: false,
+            video_rulers: false,
             grid: false,
             guides: true,
             smart_guides: true,

@@ -279,6 +279,9 @@ font-technology	Variable	Вариативные
 	Background Color:	Цвет фона:
 	Show Center Mark	Показать центральную метку
 	Show Cross Hairs	Показать перекрестие
+	Show Video Safe Areas	Показать безопасные зоны видео
+	Video Ruler Pixel Aspect Ratio:	Соотношение сторон пикселя видео-линеек:
+	Hide Video Rulers	Скрыть видео-линейки
 	Background Contents	Содержимое фона
 	Background Contents:	Содержимое фона:
 	Background:	Фон:
@@ -3988,6 +3991,7 @@ axis	Both	Оба
 @msg	axis must be "vertical", "horizontal" or an angle in degrees, not `{v}`	axis должно быть "vertical", "horizontal" или углом в градусах, а не `{v}`
 @msg	background {other}: transparent, white, black or a colour such as "#ff8800"	фон {other}: transparent, white, black или цвет, например "#ff8800"
 @msg	bad color {v}	недопустимый цвет {v}
+@msg	videoRulerPixelAspectRatio must be a number from 0.1 to 10	videoRulerPixelAspectRatio должно быть числом от 0,1 до 10
 @msg	the Color Picker is not open	палитра цветов не открыта
 @msg	the Simplify slider is not open	ползунок «Упростить» не открыт
 @msg	the screen color sampler is already open	средство выбора цвета с экрана уже открыто

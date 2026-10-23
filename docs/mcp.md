@@ -1203,6 +1203,12 @@ the document's (global rulers) or that artboard's (artboard rulers, kept relativ
 {"name":"run_command","arguments":{"command":"view.globalRulers","params":{"global":true}}}
 ```
 
+`view.videoRulers {}` (View → Rulers → Show / Hide Video Rulers) is a UI view flag, not saved with the document and not
+undoable. Show Video Rulers shows the rulers and has them count the active artboard in video pixels from its top-left
+corner, whatever the ruler origin: a pixel is as many points wide as the artboard's `videoRulerPixelAspectRatio`
+(`artboard.setProps`) and one point tall, so a 720 × 480 pt artboard at 0.9 reads 800 × 480. Hide Video Rulers puts the
+rulers back in the General unit from the ruler origin; they stay shown. It returns whether video rulers show.
+
 ## Clipping masks
 
 `object.clippingMask.make` clips the selected objects by the topmost one, which may be a path, a compound path or a
@@ -3020,7 +3026,7 @@ value: true}`; the Control bar's and Properties' Scale Artwork with Artboard che
 Artboard) makes its handle drags proportional and passes `scaleArt`, as do Properties' and the Transform panel's
 artboard size fields while the tool is in use.
 
-`artboard.setProps {artboards: [{index, name?, color?, locked?, showCenterMark?, showCrossHairs?, x?, y?, width?, height?}…], scaleArt?, moveArt?, …}` sets several
+`artboard.setProps {artboards: [{index, name?, color?, locked?, showCenterMark?, showCrossHairs?, showVideoSafeAreas?, videoRulerPixelAspectRatio?, x?, y?, width?, height?}…], scaleArt?, moveArt?, …}` sets several
 artboards in one undo step, each with its own fields; the other params apply to all of them. The art that moves or
 scales with each artboard is the art inside it before any of them changes, and an object inside several of them goes
 with the first one listed that moves or scales its art. An empty list and a list that names an artboard twice are
@@ -3078,6 +3084,16 @@ showCrossHairs?: bool}` (or each entry of `artboards`) turns them on or off for 
 hairs as lines from the middle of each side through the center, 1 point wide on screen at any zoom; exports and print
 leave them out. Duplicates, copies and the native format keep them, and `inspect_document` adds `showCenterMark: true`
 and `showCrossHairs: true` to an artboard that shows them.
+
+Artboard Options' video display options: `artboard.setProps {index, showVideoSafeAreas?: bool,
+videoRulerPixelAspectRatio?: number}` (or each entry of `artboards`) sets them for that artboard in one undo step, and
+`artboard.new` takes them too. Show Video Safe Areas outlines the artboard's action-safe area 3.5% and its title-safe
+area 5% in from each edge, as EBU R 95 sets them (https://tech.ebu.ch/docs/r/r095.pdf), 1 point wide on screen and only
+on the canvas. The Video Ruler Pixel Aspect Ratio, from 0.1 to 10 (default 1, square pixels; the commands refuse anything
+else, and a file's outside the range opens brought into it),
+is the width of one video pixel over its height, which `view.videoRulers` counts the artboard in. Duplicates, copies and
+the native format keep both (written only when on or not 1), and `inspect_document` adds `showVideoSafeAreas: true` and
+`videoRulerPixelAspectRatio` to an artboard that has them.
 
 ```json
 {"name":"run_command","arguments":{"command":"artboard.copy","params":{"index":0}}}
