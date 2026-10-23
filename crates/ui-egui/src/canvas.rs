@@ -2062,13 +2062,22 @@ fn node_outline(n: &Node, symbols: &SymbolBoxes) -> BezPath {
     walk_drawn(n, &mut |c| match &c.kind {
         NodeKind::Path { path, .. } => bp.extend(path.to_bezpath()),
         // Area type shows its frame: the type area Direct Selection reshapes; type on a path its
-        // path, which the selection tools' brackets sit on.
-        NodeKind::Text(t) if c.extras().perspective.is_none() && !matches!(t.kind, vectorcraft_doc::TextKind::Point) => {
-            if let Some(path) = t.area_frame().or_else(|| t.type_path()) {
-                bp.extend(path.to_bezpath());
+        // path, which the selection tools' brackets sit on; point type shows its baseline(s).
+        NodeKind::Text(t) => {
+            if c.extras().perspective.is_none() {
+                if let Some(path) = t.area_frame().or_else(|| t.type_path()) {
+                    bp.extend(path.to_bezpath());
+                } else if matches!(t.kind, vectorcraft_doc::TextKind::Point) {
+                    for (a, b) in t.baselines() {
+                        bp.move_to(t.xf * a);
+                        bp.line_to(t.xf * b);
+                    }
+                }
+            } else if let Some(b) = c.geometric_bounds_with(symbols) {
+                bp.extend(vectorcraft_geom::shapes::rectangle(b).to_bezpath());
             }
         }
-        NodeKind::Text(_) | NodeKind::Image(_) | NodeKind::SymbolInstance { .. } => {
+        NodeKind::Image(_) | NodeKind::SymbolInstance { .. } => {
             if let Some(b) = c.geometric_bounds_with(symbols) {
                 bp.extend(vectorcraft_geom::shapes::rectangle(b).to_bezpath());
             }
@@ -2703,8 +2712,11 @@ fn selection_overlay(app: &mut VectorcraftApp, p: &egui::Painter, xf: &Xf, curve
         let Some(n) = st.doc.node(*id) else { continue };
         let color = c32(st.doc.layer_color(*id));
         let partial = st.selection.partial(*id);
-        // Path outlines.
-        stroke_path(p, &node_outline(n, &symbols), xf, Stroke::new(1.0, color));
+        // Path outlines (and area type / placed document / image / mesh / symbol outlines;
+        // point type baselines and origin are drawn below).
+        if !matches!(n.kind, NodeKind::Text(ref tx) if matches!(tx.kind, vectorcraft_doc::TextKind::Point)) {
+            stroke_path(p, &node_outline(n, &symbols), xf, Stroke::new(1.0, color));
+        }
         // Anchors (and handles for selected anchors in direct mode); a gradient mesh's or a mesh
         // envelope's points.
         walk_drawn(n, &mut |c| {
@@ -9532,4 +9544,62 @@ mod tests {
         group.extras_mut().trace = None;
         assert_eq!(node_outline(&group, &symbols).bounding_box(), vectorcraft_geom::Rect::new(0.0, 0.0, 200.0, 200.0));
     }
+
+    /// Hovering over point type shows only its baseline (not the transform bounding box), while
+    /// selecting it shows both the bounding box with handles and the baseline.
+    #[test]
+    fn point_type_hover_shows_baseline_only_and_selection_shows_both_box_and_baseline() {
+        let mut app = VectorcraftApp::new(Session::new(), Default::default());
+        app.run("file.new", json!({"width": 600, "height": 300})).unwrap();
+        app.ui.task_bar = false;
+        app.ui.view.rulers = false;
+        let made = app.run("text.create", json!({"x": 200, "y": 150, "text": "Lorem ipsum", "size": 36})).unwrap();
+        let id = vectorcraft_doc::NodeId(made["id"].as_u64().unwrap());
+        app.run("select.none", json!({})).unwrap();
+        app.select_tool("selection");
+
+        let ctx = egui::Context::default();
+        frame(&mut app, &ctx, vec![]);
+        let xf = Xf::new(app.canvas_rect.unwrap(), app.view().unwrap());
+        let color = c32(app.session.active().unwrap().doc.layer_color(id));
+        let layer_mode = egui::epaint::ColorMode::Solid(color);
+
+        // Hover over the text: hover highlight shows the baseline (1.5 px stroke), NOT a bounding box.
+        let over = xf.to_screen(Point::new(220.0, 140.0));
+        frame(&mut app, &ctx, vec![egui::Event::PointerMoved(over)]);
+        let hover_shapes = shapes(&mut app, &ctx);
+
+        // There should be a 1.5px path outline for the hover highlight.
+        let hover_outlines: Vec<_> = hover_shapes
+            .iter()
+            .filter(|s| matches!(s, Shape::Path(ps) if ps.stroke.width == 1.5 && ps.stroke.color == layer_mode))
+            .collect();
+        assert!(!hover_outlines.is_empty(), "hover highlight shows baseline");
+
+        let is_handle = |s: &Shape| {
+            matches!(s, Shape::Rect(r) if (r.rect.width() - 6.0).abs() < 1.0 && (r.rect.height() - 6.0).abs() < 1.0 && r.fill == Color32::WHITE)
+        };
+
+        // There should be NO bounding box resize handles (size 6x6 white squares) while just hovering.
+        let handles: Vec<_> = hover_shapes.iter().filter(|s| is_handle(s)).collect();
+        assert!(handles.is_empty(), "hovering does not show bounding box handles: {handles:?}");
+
+        // Now select the text (click): both the bounding box (with handles) and the baseline are shown.
+        app.run("select.set", json!({"ids": [id.0]})).unwrap();
+        frame(&mut app, &ctx, vec![]);
+        let sel_shapes = shapes(&mut app, &ctx);
+
+        // Bounding box handles (8 handles around the text) should now be present.
+        let handles: Vec<_> = sel_shapes.iter().filter(|s| is_handle(s)).collect();
+        assert_eq!(handles.len(), 8, "selected text shows 8 bounding box handles");
+
+        // Baseline (Shape::LineSegment at y=150) should also be present.
+        let y = xf.to_screen(Point::new(0.0, 150.0)).y;
+        let baselines: Vec<_> = sel_shapes
+            .iter()
+            .filter(|s| matches!(s, Shape::LineSegment { points, stroke } if stroke.color == color && (points[0].y - y).abs() < 0.5))
+            .collect();
+        assert!(!baselines.is_empty(), "selected text shows baseline alongside bounding box");
+    }
 }
+
