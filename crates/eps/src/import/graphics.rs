@@ -1330,11 +1330,13 @@ impl Interp<'_> {
             }
             GStateNew => {
                 self.spend_elements(self.g.path.elements().len())?;
+                self.alloc(std::mem::size_of_val(self.g.path.elements()))?;
                 self.push(Obj::GState(Rc::new(self.g.clone())))?;
             }
             CurrentGState => {
                 self.pop()?;
                 self.spend_elements(self.g.path.elements().len())?;
+                self.alloc(std::mem::size_of_val(self.g.path.elements()))?;
                 self.push(Obj::GState(Rc::new(self.g.clone())))?;
             }
             SetGState => match self.pop()? {
