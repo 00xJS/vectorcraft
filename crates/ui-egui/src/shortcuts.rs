@@ -628,31 +628,24 @@ pub fn handle(app: &mut VectorcraftApp, ctx: &egui::Context) {
         }
         return;
     }
-    // Alt+arrows on selected type objects use the same spacing increments as the Type tool:
-    // ←/→ tracking, ↑/↓ leading, Shift+↑/↓ baseline shift; Cmd/Ctrl multiplies by five. Keep
-    // Alt+arrow's normal copy-and-nudge behaviour for every other kind of selection.
-    let selected_type = app.session.active().is_some_and(|st| {
-        st.selection.guides.is_empty()
-            && !st.selection.objects.is_empty()
-            && st.selection.objects.iter().all(|id| matches!(st.doc.node(*id).map(|n| &n.kind), Some(vectorcraft_doc::NodeKind::Text(_))))
-    });
-    if selected_type {
-        let m = ctx.input(|i| i.modifiers);
-        if m.alt {
-            let steps = [
-                (Key::ArrowLeft, (!m.shift).then_some(("tracking", -1.0))),
-                (Key::ArrowRight, (!m.shift).then_some(("tracking", 1.0))),
-                (Key::ArrowUp, Some((if m.shift { "baselineShift" } else { "leading" }, if m.shift { 1.0 } else { -1.0 }))),
-                (Key::ArrowDown, Some((if m.shift { "baselineShift" } else { "leading" }, if m.shift { -1.0 } else { 1.0 }))),
-            ];
-            for (key, step) in steps {
-                if ctx.input_mut(|i| i.consume_key(m, key)) {
-                    if let Some((attribute, by)) = step {
-                        let by = if m.command { by * 5.0 } else { by };
-                        let _ = app.run("type.step", json!({"attribute": attribute, "by": by}));
-                    }
-                    return;
+    // Alt+arrows on selected type objects step their spacing as the Type tool does (Cmd/Ctrl:
+    // five steps); Alt+arrow copies and nudges every other selection.
+    let m = ctx.input(|i| i.modifiers);
+    if m.alt
+        && app.session.active().is_some_and(|st| {
+            st.selection.guides.is_empty()
+                && !st.selection.objects.is_empty()
+                && st.selection.objects.iter().all(|id| matches!(st.doc.node(*id).map(|n| &n.kind), Some(vectorcraft_doc::NodeKind::Text(_))))
+        })
+    {
+        let keys = [(Key::ArrowLeft, ToolKey::Left), (Key::ArrowRight, ToolKey::Right), (Key::ArrowUp, ToolKey::Up), (Key::ArrowDown, ToolKey::Down)];
+        for (key, tool_key) in keys {
+            if ctx.input_mut(|i| i.consume_key(m, key)) {
+                if let Some((attribute, by)) = vectorcraft_tools::text::step_key(tool_key, m.shift, false) {
+                    let by = if m.command { by * 5.0 } else { by };
+                    let _ = app.run("type.step", json!({"attribute": attribute, "by": by}));
                 }
+                return;
             }
         }
     }

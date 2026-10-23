@@ -427,7 +427,7 @@ pub fn overflow_markers(marks: &mut OverflowMarks, cx: &ToolContext) -> Vec<Over
 /// `None` when `r` runs past the end of `s` or backwards.
 /// The `type.step` an Alt+arrow asks for, by one step: ←/→ kerning at a `caret`, else tracking;
 /// ↑/↓ leading (down opens it up); Shift+↑/↓ baseline shift.
-fn step_key(key: ToolKey, shift: bool, caret: bool) -> Option<(&'static str, f64)> {
+pub fn step_key(key: ToolKey, shift: bool, caret: bool) -> Option<(&'static str, f64)> {
     let sign = |up: bool| if up { 1.0 } else { -1.0 };
     Some(match (key, shift) {
         (ToolKey::Left | ToolKey::Right, false) => (if caret { "kerning" } else { "tracking" }, sign(key == ToolKey::Right)),
