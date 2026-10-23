@@ -731,6 +731,12 @@ impl Interp<'_> {
         self.push_interval(Obj::Str(s), 0, got.len())
     }
 
+    /// Count `n` decoded bytes against the memory budget, and the time to decode them.
+    fn charge_decoded(&mut self, n: usize) -> Res {
+        self.alloc(n)?;
+        self.spend((n / 4096) as u64)
+    }
+
     /// `filter`: a file that decodes its source. Over the program's own data it decodes when
     /// first read (the data follows the operator that reads it); over other data, at once.
     fn filter(&mut self) -> Res {
@@ -775,6 +781,7 @@ impl Interp<'_> {
                         let mut b = f.borrow_mut();
                         let Stream::Buf { data, pos, .. } = &mut *b else { return io("filter") };
                         let (out, used, rgb) = decode(&spec, data.get(*pos..).unwrap_or_default())?;
+                        self.charge_decoded(out.len())?;
                         *pos = pos.saturating_add(used);
                         Stream::Buf { data: out, pos: 0, rgb }
                     }
@@ -783,11 +790,13 @@ impl Interp<'_> {
             Obj::Str(s) => {
                 self.alloc(s.borrow().len())?;
                 let (data, _, rgb) = decode(&spec, &s.borrow())?;
+                self.charge_decoded(data.len())?;
                 Stream::Buf { data, pos: 0, rgb }
             }
             p @ Obj::Array { .. } => {
                 let raw = self.gather(&p, MAX_DATA)?;
                 let (data, _, rgb) = decode(&spec, &raw)?;
+                self.charge_decoded(data.len())?;
                 Stream::Buf { data, pos: 0, rgb }
             }
             _ => return ps_err("typecheck", "filter"),
@@ -830,13 +839,13 @@ impl Interp<'_> {
                 None => {
                     let raw = self.lex.data();
                     let (data, used, rgb) = decode(spec, raw)?;
-                    self.alloc(data.len())?;
+                    self.charge_decoded(data.len())?;
                     self.lex.advance(used);
                     (data, rgb)
                 }
                 Some((prev, was)) => {
                     let (data, _, rgb) = decode(spec, &prev)?;
-                    self.alloc(data.len())?;
+                    self.charge_decoded(data.len())?;
                     (data, rgb.or(was))
                 }
             });
