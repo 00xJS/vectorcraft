@@ -818,6 +818,30 @@ fn nested_array_inserts_of_nothing_stop_at_the_work_budget() {
 }
 
 #[test]
+fn an_array_of_a_large_anonymous_block_stops_at_the_path_element_budget() {
+    // A 2,000-vertex polyline in *U1, placed in a 100 × 10 array: 2,000,000 path elements when
+    // every cell is copied, twice the budget tests import with.
+    let mut owned: Vec<(i32, String)> = vec![(0, "BLOCK".into()), (2, "*U1".into()), (70, "1".into()), (10, "0".into()), (20, "0".into())];
+    owned.extend([(0, "LWPOLYLINE".into()), (90, "2000".into()), (70, "0".into())]);
+    for i in 0..2000 {
+        owned.extend([(10, i.to_string()), (20, (i % 2).to_string())]);
+    }
+    owned.push((0, "ENDBLK".into()));
+    let blocks: Vec<(i32, &str)> = owned.iter().map(|(c, v)| (*c, v.as_str())).collect();
+    let inserts = [(0, "INSERT"), (2, "*U1"), (10, "0"), (20, "0"), (70, "100"), (71, "10"), (44, "2000"), (45, "2")];
+    let r = open(&drawing(&[], &[], &blocks, &inserts), &points());
+    let mut elements = 0;
+    r.document.walk(|n| {
+        if let NodeKind::Path { path, .. } = &n.kind {
+            elements += path.to_bezpath().elements().len();
+        }
+    });
+    assert!(elements > 0);
+    assert!(elements <= 1_000_000, "{elements} path elements");
+    assert!(r.warnings.iter().any(|w| w.contains("path points")), "{:?}", r.warnings);
+}
+
+#[test]
 fn blocks_inside_themselves_are_left_out_without_hanging() {
     let blocks = [
         (0, "BLOCK"),
