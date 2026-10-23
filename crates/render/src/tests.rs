@@ -664,6 +664,34 @@ fn opacity_mask_without_clip_and_inverted() {
     assert_eq!(img.pixel(80, 50), [255, 0, 0, 255], "inverted clip background → visible");
 }
 
+/// #3580: each opacity mask is rendered over its object's pixels, not over the whole frame. 300
+/// masked 4 × 4 pt squares on a 1000 × 1000 page draw offscreen in proportion to their bounds, and
+/// still draw where their masks show them.
+#[test]
+fn small_masks_render_over_their_objects_only() {
+    let mut d = Document::new(1000.0, 1000.0);
+    let l = d.layers[0].id;
+    for i in 0..300 {
+        let (x, y) = (10.0 + (i % 30) as f64 * 30.0, 10.0 + (i / 30) as f64 * 30.0);
+        let square = Rect::new(x, y, x + 4.0, y + 4.0);
+        let mut n = rect_node(&mut d, square, Paint::solid(Color::rgb(1.0, 0.0, 0.0)), Paint::None, 0.0);
+        let white = rect_node(&mut d, square, Paint::solid(Color::WHITE), Paint::None, 0.0);
+        n.extras_mut().mask = Some(Box::new(vectorcraft_doc::OpacityMask::new(white, true)));
+        d.insert(Some(l), usize::MAX, n).unwrap();
+    }
+    let mut r = Renderer::new();
+    r.threads = 0;
+    let opts = RenderOptions { background: Some([255, 255, 255, 255]), ..Default::default() };
+    OFFSCREEN_PIXELS.with(|n| n.set(0));
+    let img = r.render(&d, 1000, 1000, Affine::IDENTITY, &opts);
+    let px = OFFSCREEN_PIXELS.with(|n| n.get());
+    // Each square's region is at most 4 + 2 × 2 margin + 1 rounding pixels a side, mask and content.
+    assert!(px <= 300 * 2 * 9 * 9, "{px} offscreen pixels for 300 masked 4 × 4 squares");
+    assert_eq!(img.pixel(12, 12), [255, 0, 0, 255]);
+    assert_eq!(img.pixel(12 + 29 * 30, 12 + 9 * 30), [255, 0, 0, 255]);
+    assert_eq!(img.pixel(20, 20), [255, 255, 255, 255]);
+}
+
 #[test]
 fn disabled_or_outline_mask_draws_unmasked() {
     let mut d = masked_doc(true, false);
