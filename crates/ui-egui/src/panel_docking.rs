@@ -896,7 +896,8 @@ fn root_groups(ctx: &egui::Context, layout: &Layout<String>, content: egui::Rect
 /// and left of its panel menu, from which Illustrator also collapses the group
 /// (<https://helpx.adobe.com/illustrator/using/customizing-workspace.html>). Most of it has no
 /// widget of its own, so the press is read from the input; `layer` is the dock's, so a press on a
-/// floating group or a menu over the strip doesn't count. Accordions are left out.
+/// floating group or a menu over the strip doesn't count. Accordions, and groups beside another
+/// (which don't collapse), are left out.
 fn tab_area_double_clicked(
     ctx: &egui::Context,
     layer: egui::LayerId,
@@ -909,7 +910,9 @@ fn tab_area_double_clicked(
         return None;
     }
     let group = groups.iter().find(|g| g.strip.contains(at))?;
-    tab_group_shortens(layout, group.shown)?;
+    if tab_group_shortens(layout, group.shown) != Some(true) {
+        return None;
+    }
     let area = egui::Id::new("vectorcraft-panel-docking");
     let right = |id: egui::Id| ctx.read_response(id).map(|r| r.rect.right());
     let tabs = group

@@ -1200,3 +1200,23 @@ fn a_group_beside_another_does_not_collapse() {
     crate::panel_docking::prune_collapsed(&mut app.ui);
     assert!(app.ui.docking_collapsed.is_empty());
 }
+
+/// A double-click on the strip of a group beside another does nothing, and leaves no error in the
+/// status bar.
+#[test]
+fn a_double_click_on_the_strip_of_a_group_beside_another_does_nothing() {
+    let mut app = app();
+    app.run("file.new", json!({"width": 400, "height": 300})).unwrap();
+    app.run("window.panel.move", json!({"panel":"swatches", "anchor":"layers", "zone":"left"})).unwrap();
+    let saved = app.ui.docking.clone();
+    let mut h = harness(app, vec2(1280.0, 800.0));
+    let status = h.state().ui.status.clone();
+    let strip = root_groups(&h).into_iter().find(|g| g.shown == "swatches").unwrap().strip;
+    let tab = h.ctx.read_response(egui::Id::new("vectorcraft-panel-docking").with(("tab", &"swatches".to_string()))).unwrap().rect;
+    let gap = pos2(tab.right() + 4.0, strip.center().y);
+    assert!(gap.x < strip.right() - 24.0, "{tab:?} {strip:?}");
+    double_click(&mut h, gap);
+    assert_eq!(h.state().ui.status, status, "no error");
+    assert!(h.state().ui.docking_collapsed.is_empty());
+    assert_eq!(h.state().ui.docking, saved);
+}
