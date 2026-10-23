@@ -13,7 +13,8 @@
 
 use std::sync::Arc;
 
-use vectorcraft_doc::{Appearance, AppearanceItem, Effect, Node, NodeId, NodeKind};
+use vectorcraft_doc::live::Hooks;
+use vectorcraft_doc::{Appearance, AppearanceItem, Document, Effect, Node, NodeId, NodeKind};
 use vectorcraft_geom::{Affine, BezPath, FillRule, PathData, Rect, Shape, shapes};
 
 use crate::{Budget, GeomContext, apply_one, is_geometry, merged_params};
@@ -118,7 +119,7 @@ pub fn image_paint(n: &Node) -> Vec<(BezPath, FillRule, AppearanceItem)> {
     if !matches!(n.kind, NodeKind::Image(_)) || !has_item_geometry(n) {
         return vec![];
     }
-    let Some(art) = reshape(n, None) else { return vec![] };
+    let Some(art) = reshape(None, n, None) else { return vec![] };
     let mut out = vec![];
     art.walk(&mut |c| {
         let (NodeKind::Path { rule, .. } | NodeKind::Compound { rule, .. }) = &c.kind else { return };
@@ -228,9 +229,9 @@ fn with_id(art: &Node, id: NodeId) -> Node {
 /// `n` as plain art that geometry effects can reshape, without its transparency and object
 /// effects: type outlined ([`outline_text`]), live objects evaluated (type inside them outlined),
 /// a symbol instance as `symbol_art` (the symbol's art, stained as the caller draws it) placed by
-/// the instance's transform. `None` for other kinds (images, paths, containers).
-pub fn outline_art(n: &Node, symbol_art: Option<&Node>) -> Option<Node> {
-    let hook: &dyn Fn(&Node) -> Option<Node> = &outline_text;
+/// the instance's transform. `None` for other kinds (images, paths, containers). A Repeat counts
+/// the Repeats in the art of `doc`'s symbols that its instances show toward its instance budget.
+pub fn outline_art(doc: Option<&Document>, n: &Node, symbol_art: Option<&Node>) -> Option<Node> {
     let mut art = match &n.kind {
         NodeKind::Text(_) => outline_text(n)?,
         NodeKind::SymbolInstance { xf, .. } => {
@@ -248,7 +249,7 @@ pub fn outline_art(n: &Node, symbol_art: Option<&Node>) -> Option<Node> {
             one.appearance.effects.clear();
             Node::group(n.id, vec![Arc::new(one)])
         }
-        _ if vectorcraft_doc::live::is_live(n) => vectorcraft_doc::live::expand_deep(n, Some(hook)),
+        _ if vectorcraft_doc::live::is_live(n) => evaluated(doc, n),
         _ => return None,
     };
     outline_nested_text(&mut art, false);
@@ -262,6 +263,14 @@ pub fn outline_art(n: &Node, symbol_art: Option<&Node>) -> Option<Node> {
     Some(art)
 }
 
+/// `n` with every live object in it evaluated, type inside them outlined ([`outline_text`]). The
+/// Repeats among them count the Repeats in the art of `doc`'s symbols that their instances show
+/// toward their instance budget ([`vectorcraft_doc::RepeatSpec::expand`]).
+pub(crate) fn evaluated(doc: Option<&Document>, n: &Node) -> Node {
+    let hook: &dyn Fn(&Node) -> Option<Node> = &outline_text;
+    vectorcraft_doc::live::expand_deep_hooks(n, Hooks { outline: Some(hook), symbols: doc, ..Default::default() })
+}
+
 /// Replace type anywhere inside `n` by its outlines, as art that keeps the type's look
 /// ([`as_art`]). Type in a clip group's clipping path (all of `n` when `clipping` is set) becomes
 /// its plain outlines ([`outline_text`]) with its visibility, which is what
@@ -273,7 +282,7 @@ pub(crate) fn outline_nested_text(n: &mut Node, clipping: bool) {
         let clipping = clipping || (clips && i == 0);
         let art = match &c.kind {
             NodeKind::Text(_) if clipping => outline_text(c).map(|o| Node { visible: c.visible, ..o }),
-            NodeKind::Text(_) => as_art(c, None),
+            NodeKind::Text(_) => as_art(None, c, None),
             _ => None,
         };
         if let Some(o) = art {
@@ -293,22 +302,22 @@ pub(crate) fn outline_nested_text(n: &mut Node, clipping: bool) {
 /// and remaining (raster) effects; `None` when `n` has no visible geometry effect, no perspective
 /// and is not type or an image with a fill or stroke of its own that [`has_item_geometry`] counts,
 /// or has no art (a symbol instance without `symbol_art`).
-pub fn reshape(n: &Node, symbol_art: Option<&Node>) -> Option<Node> {
+pub fn reshape(doc: Option<&Document>, n: &Node, symbol_art: Option<&Node>) -> Option<Node> {
     if (geometry_effects(n).is_empty() && n.projection().is_none() && !has_item_geometry(n)) || !(needs_outline(n) || has_transform_art(n)) {
         return None;
     }
-    as_art(n, symbol_art)
+    as_art(doc, n, symbol_art)
 }
 
 /// `n` (see [`needs_outline`], or a path with [`has_transform_art`]) as plain art for Expand
 /// Appearance: [`reshape`]d when it has
 /// geometry effects, else type with fills or strokes of its own outlined, or an image with fills
 /// or strokes of its own that paint a shape, in the same form. `None` when it has none of these.
-pub fn expand_outlined(n: &Node, symbol_art: Option<&Node>) -> Option<Node> {
+pub fn expand_outlined(doc: Option<&Document>, n: &Node, symbol_art: Option<&Node>) -> Option<Node> {
     // A path whose Transform effect copies it with a gradient, or scales its strokes or moves its
     // patterns: each copy an object of its own.
     if has_transform_art(n) {
-        return as_art(n, symbol_art);
+        return as_art(doc, n, symbol_art);
     }
     let own_paint = match n.kind {
         NodeKind::Text(_) => !n.appearance.items.is_empty(),
@@ -317,11 +326,11 @@ pub fn expand_outlined(n: &Node, symbol_art: Option<&Node>) -> Option<Node> {
     if !needs_outline(n) || (geometry_effects(n).is_empty() && !own_paint) {
         return None;
     }
-    as_art(n, symbol_art)
+    as_art(doc, n, symbol_art)
 }
 
 /// [`reshape`] without its checks (no geometry effects: just the art).
-pub(crate) fn as_art(n: &Node, symbol_art: Option<&Node>) -> Option<Node> {
+pub(crate) fn as_art(doc: Option<&Document>, n: &Node, symbol_art: Option<&Node>) -> Option<Node> {
     let fx = geometry_effects(n);
     let mut art = match &n.kind {
         NodeKind::Image(im) => {
@@ -349,7 +358,7 @@ pub(crate) fn as_art(n: &Node, symbol_art: Option<&Node>) -> Option<Node> {
                 Node::group(n.id, rows(below).into_iter().chain([Arc::new(image)]).chain(rows(above)).collect())
             }
         }
-        _ => outline_art(n, symbol_art)?,
+        _ => outline_art(doc, n, symbol_art)?,
     };
     reshape_leaves(&mut art, &fx);
     // Type and symbols in perspective: the art projected onto their plane.
@@ -693,9 +702,8 @@ fn placed_count(n: &Node) -> usize {
 
 /// `n` with type anywhere inside it outlined and live objects evaluated, so geometry effects on
 /// it reach every member.
-pub(crate) fn outlined_members(n: &Node) -> Node {
-    let hook: &dyn Fn(&Node) -> Option<Node> = &outline_text;
-    let mut art = vectorcraft_doc::live::expand_deep(n, Some(hook));
+pub(crate) fn outlined_members(doc: Option<&Document>, n: &Node) -> Node {
+    let mut art = evaluated(doc, n);
     outline_nested_text(&mut art, false);
     art
 }
