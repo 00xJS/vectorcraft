@@ -5,23 +5,45 @@
 //! (XWayland included), winit reports a pen as a mouse, so the desktop app reads the pressure
 //! from XInput2 on a connection of its own and writes it into a [`StylusFeed`]
 //! ([`crate::Services::stylus`]). The canvas uses it when a frame's events carry no touch force.
+//!
+//! The feed also says which end of the pen moved. Turning the pen to its eraser end selects the
+//! Eraser tool, and turning it back to the tip selects the tool used before
+//! ([`sync_eraser_tool`]), as the reference app's help describes under "Erase parts of a path
+//! using a stylus pen":
+//! <https://helpx.adobe.com/illustrator/desktop/draw-shapes-and-paths/modify-paths/erase-parts-of-a-path.html>
 
 use std::sync::{Arc, Condvar, Mutex, MutexGuard};
 use std::time::Duration;
 
+use crate::VectorcraftApp;
+
+/// The tool the pen's eraser end selects.
+const ERASER: &str = "eraser";
+
 /// How long a press waits for the touch of a pen that hovers ([`StylusFeed::press`]).
 const PRESS_WAIT: Duration = Duration::from_millis(5);
+
+/// What a pen reports as it moves.
+#[derive(Clone, Copy, Debug, Default, PartialEq)]
+pub struct PenSample {
+    /// 0..1; 0 while the pen hovers.
+    pub pressure: f32,
+    /// The pen is turned to its eraser end.
+    pub eraser: bool,
+}
 
 /// What the feed holds.
 #[derive(Clone, Copy, Debug, Default)]
 struct Pen {
     /// The pressure of the pen when a pen was the last pointer to move.
     latest: Option<f32>,
+    /// The pen that moved last is turned to its eraser end.
+    eraser: bool,
     /// The highest pressure set since the UI last read the feed, counted from the latest sample
     /// whose pressure rose above 0.
     peak: Option<f32>,
-    /// The last pressure above 0 set since a pen was the last pointer to move (0 when it has not
-    /// touched).
+    /// The last pressure above 0 set since a pen was the last pointer to move, with the same end
+    /// (0 when that end has not touched).
     touched: f32,
 }
 
@@ -35,12 +57,12 @@ impl Pen {
 #[derive(Default)]
 struct Shared {
     pen: Mutex<Pen>,
-    /// Signaled on every [`StylusFeed::set`].
+    /// Signaled on every [`StylusFeed::set_sample`] ([`StylusFeed::set`] included).
     set: Condvar,
 }
 
-/// The pen pressure the host last read, written from any thread and read on the UI thread. Cheap
-/// to clone; the clones share the value.
+/// The pen pressure and pen end the host last read, written from any thread and read on the UI
+/// thread. Cheap to clone; the clones share the value.
 #[derive(Clone, Default)]
 pub struct StylusFeed(Arc<Shared>);
 
@@ -49,12 +71,24 @@ impl StylusFeed {
         self.0.pen.lock().unwrap_or_else(|e| e.into_inner())
     }
 
-    /// A pen moved with `pressure` (0..1; 0 while it hovers), or `None`: another pointer, such as
-    /// a mouse, moved. A pressure outside 0..1 is clamped, and one that is not a number is a
-    /// mouse's, 1.
+    /// A pen turned to its tip moved with `pressure`, or `None`: another pointer moved
+    /// ([`Self::set_sample`]).
     pub fn set(&self, pressure: Option<f32>) {
-        let pressure = pressure.map(|p| if p.is_finite() { p.clamp(0.0, 1.0) } else { 1.0 });
+        self.set_sample(pressure.map(|pressure| PenSample { pressure, eraser: false }));
+    }
+
+    /// A pen moved with `sample`'s pressure (0..1; 0 while it hovers) and end, or `None`: another
+    /// pointer, such as a mouse, moved. A pressure outside 0..1 is clamped, and one that is not a
+    /// number is a mouse's, 1. A sample of the other end starts afresh: the touches of the end
+    /// before it don't count for its presses.
+    pub fn set_sample(&self, sample: Option<PenSample>) {
+        let pressure = sample.map(|s| if s.pressure.is_finite() { s.pressure.clamp(0.0, 1.0) } else { 1.0 });
+        let eraser = sample.is_some_and(|s| s.eraser);
         let mut pen = self.lock();
+        if eraser != pen.eraser {
+            *pen = Pen::default();
+        }
+        pen.eraser = eraser;
         match pressure {
             Some(p) if p > 0.0 => {
                 let touching = pen.latest.is_some_and(|l| l > 0.0);
@@ -103,6 +137,13 @@ impl StylusFeed {
         pen.latest.map(|l| peak.unwrap_or(l))
     }
 
+    /// Whether the pen is turned to its eraser end when a pen was the last pointer to move,
+    /// otherwise `None`.
+    pub fn eraser(&self) -> Option<bool> {
+        let pen = self.lock();
+        pen.latest.map(|_| pen.eraser)
+    }
+
     #[cfg(not(target_arch = "wasm32"))]
     fn wait_for_touch<'a>(&'a self, pen: MutexGuard<'a, Pen>, wait: Duration) -> MutexGuard<'a, Pen> {
         match self.0.set.wait_timeout_while(pen, wait, |p| p.hovering()) {
@@ -115,6 +156,63 @@ impl StylusFeed {
     #[cfg(target_arch = "wasm32")]
     fn wait_for_touch<'a>(&'a self, pen: MutexGuard<'a, Pen>, _wait: Duration) -> MutexGuard<'a, Pen> {
         pen
+    }
+}
+
+/// The end of the pen the canvas saw last, and the tool the eraser end stands in for
+/// ([`sync_eraser_tool`]).
+#[derive(Clone, Debug, Default)]
+pub(crate) struct PenEnd {
+    /// `Some(true)`: the eraser end; `Some(false)`: the tip; `None`: no pen seen yet.
+    end: Option<bool>,
+    /// The tool that was active when the eraser end selected the Eraser.
+    before: Option<&'static str>,
+}
+
+impl PenEnd {
+    /// A tool was chosen (the toolbar, a shortcut, a menu, `tool.select`): the tip no longer
+    /// brings back the tool from before the eraser end.
+    pub(crate) fn forget_tool(&mut self) {
+        self.before = None;
+    }
+
+    /// The end the pen turned to since the last call (`Some(true)`: the eraser end), or `None`
+    /// when it has not turned, or when another pointer moved last. Each turn is reported once.
+    fn take_flip(&mut self, feed: Option<&StylusFeed>) -> Option<bool> {
+        let eraser = feed?.eraser()?;
+        let flipped = self.end.map_or(eraser, |e| e != eraser);
+        self.end = Some(eraser);
+        flipped.then_some(eraser)
+    }
+}
+
+/// Select the Eraser tool when the pen turns to its eraser end, and select the tool active before
+/// it when the pen turns back to its tip while the Eraser is still active. The Eraser chosen
+/// before the eraser end came in stays when the tip comes back. Returns whether the tool changed.
+///
+/// The canvas calls this once a frame while no press is held and the pointer is in the window, so
+/// a turn during a press takes effect after the release, and a turn over another window takes
+/// effect when the pointer comes in.
+pub(crate) fn sync_eraser_tool(app: &mut VectorcraftApp) -> bool {
+    let Some(eraser) = app.pen_end.take_flip(app.services.stylus.as_ref()) else { return false };
+    let tool = app.session.tool_id();
+    if eraser {
+        if tool == ERASER {
+            return false;
+        }
+        app.select_tool(ERASER);
+        // After `select_tool`, which forgets the tool before.
+        let selected = app.session.tool_id() == ERASER;
+        app.pen_end.before = selected.then_some(tool);
+        selected
+    } else {
+        match app.pen_end.before.take() {
+            Some(before) if tool == ERASER => {
+                app.return_to_tool(before);
+                app.session.tool_id() == before
+            }
+            _ => false,
+        }
     }
 }
 
@@ -141,6 +239,22 @@ mod tests {
     }
 
     #[test]
+    fn the_feed_keeps_the_eraser_end() {
+        let feed = StylusFeed::default();
+        assert_eq!(feed.eraser(), None, "no pen until one moves");
+        feed.set_sample(Some(PenSample { pressure: 1.5, eraser: true }));
+        assert_eq!((feed.eraser(), feed.held()), (Some(true), Some(1.0)), "clamped, and the eraser end kept");
+        feed.set_sample(Some(PenSample { pressure: f32::NAN, eraser: true }));
+        assert_eq!((feed.eraser(), feed.held()), (Some(true), Some(1.0)));
+        feed.set(Some(0.25));
+        assert_eq!((feed.eraser(), feed.held()), (Some(false), Some(0.25)), "the tip");
+        feed.set_sample(Some(PenSample { pressure: 0.0, eraser: true }));
+        assert_eq!(feed.eraser(), Some(true), "the eraser end hovering");
+        feed.set_sample(None);
+        assert_eq!(feed.eraser(), None, "a mouse moved");
+    }
+
+    #[test]
     fn a_held_press_keeps_the_last_touch_when_the_lift_comes_first() {
         let feed = StylusFeed::default();
         feed.set(Some(0.0));
@@ -156,6 +270,22 @@ mod tests {
         assert_eq!(feed.held(), None, "a mouse moved");
         feed.set(Some(0.0));
         assert_eq!(feed.held(), Some(0.0), "the pen's touch before the mouse doesn't count");
+    }
+
+    #[test]
+    fn a_turned_pen_presses_without_the_touches_of_the_other_end() {
+        let feed = StylusFeed::default();
+        // The tip touches and lifts where the UI holds no press, so the UI does not read the feed.
+        for p in [0.0, 0.8, 0.0] {
+            feed.set(Some(p));
+        }
+        feed.set_sample(Some(PenSample { pressure: 0.0, eraser: true }));
+        assert_eq!(feed.held(), Some(0.0), "the eraser end has not touched");
+        assert_eq!(feed.press_within(Duration::ZERO), Some(0.0), "nor pressed");
+        feed.set_sample(Some(PenSample { pressure: 0.4, eraser: true }));
+        feed.set_sample(Some(PenSample { pressure: 0.0, eraser: true }));
+        feed.set(Some(0.0));
+        assert_eq!((feed.held(), feed.press_within(Duration::ZERO)), (Some(0.0), Some(0.0)), "back to the tip");
     }
 
     #[test]

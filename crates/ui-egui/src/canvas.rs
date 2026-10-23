@@ -971,6 +971,13 @@ fn handle_input(app: &mut VectorcraftApp, ui: &Ui, resp: &egui::Response, rect: 
         return;
     }
 
+    // A pen turned to its eraser end selects the Eraser, and a pen turned back to its tip selects
+    // the tool before it. The switch runs only while the pointer is in this window. It runs before
+    // this frame's press, which then uses the new tool; while a press is held, it waits for the
+    // release. A turn made over another window takes effect when the pointer comes in.
+    if drag.is_none() && ui.input(|i| i.pointer.has_pointer()) {
+        crate::stylus::sync_eraser_tool(app);
+    }
     let tool = app.session.tool_id();
     // Held, Space is the Hand tool for the moment, Space+Shift is the Rotate View tool and
     // Cmd+Space is the Zoom tool (with Alt, zooming out), whatever the tool.
@@ -8613,6 +8620,199 @@ mod tests {
         let (cmd, p) = app.session.journal.last().unwrap().clone();
         assert_eq!(cmd, "object.liquify");
         assert_eq!(pressures(&p).first(), Some(&0.7), "{p}");
+    }
+
+    /// An app with an 800 × 600 document whose host reads the pen itself (`Services::stylus`),
+    /// after its first frame, with the pointer in the window.
+    fn pen_app() -> (VectorcraftApp, StylusFeed, egui::Context) {
+        let mut app = VectorcraftApp::new(Session::new(), Default::default());
+        let feed = StylusFeed::default();
+        app.services.stylus = Some(feed.clone());
+        app.session.execute("file.new", &json!({"width": 800, "height": 600})).unwrap();
+        let ctx = egui::Context::default();
+        frame(&mut app, &ctx, vec![egui::Event::PointerMoved(Pos2::new(400.0, 300.0))]);
+        (app, feed, ctx)
+    }
+
+    /// The pen turned to its eraser end, with `pressure`.
+    fn eraser_end(pressure: f32) -> Option<crate::stylus::PenSample> {
+        Some(crate::stylus::PenSample { pressure, eraser: true })
+    }
+
+    /// #764: turning the pen to its eraser end selects the Eraser, and turning it back to the tip
+    /// selects the tool before it, as the reference app's help describes ("Erase parts of a path
+    /// using a stylus pen"). Each turn acts once.
+    #[test]
+    fn the_eraser_end_selects_the_eraser_and_the_tip_brings_back_the_tool() {
+        let (mut app, feed, ctx) = pen_app();
+        app.select_tool("paintbrush");
+        feed.set(Some(0.0));
+        frame(&mut app, &ctx, vec![]);
+        assert_eq!(app.session.tool_id(), "paintbrush", "the tip hovers");
+        feed.set_sample(eraser_end(0.0));
+        frame(&mut app, &ctx, vec![]);
+        assert_eq!(app.session.tool_id(), "eraser", "the eraser end hovers");
+        frame(&mut app, &ctx, vec![]);
+        assert_eq!(app.session.tool_id(), "eraser");
+        feed.set(Some(0.0));
+        frame(&mut app, &ctx, vec![]);
+        assert_eq!(app.session.tool_id(), "paintbrush", "the tip brings back the tool before");
+        assert_eq!(app.ui.group_tool.get(vectorcraft_tools::catalog::group_of("paintbrush").unwrap()).map(String::as_str), Some("paintbrush"));
+
+        // A turn acts once: a tool that becomes active while the eraser end stays in stays, and
+        // the tip doesn't replace a tool other than the Eraser.
+        feed.set_sample(eraser_end(0.0));
+        frame(&mut app, &ctx, vec![]);
+        assert_eq!(app.session.tool_id(), "eraser");
+        app.session.select_tool("pencil", app.view_info()).unwrap();
+        frame(&mut app, &ctx, vec![]);
+        assert_eq!(app.session.tool_id(), "pencil");
+        feed.set(Some(0.0));
+        frame(&mut app, &ctx, vec![]);
+        assert_eq!(app.session.tool_id(), "pencil");
+    }
+
+    /// #764: the eraser end erases what it crosses, also when it comes in and presses in one
+    /// frame; the tool before it does not paint a stroke.
+    #[test]
+    fn the_eraser_end_erases() {
+        let (mut app, feed, ctx) = pen_app();
+        app.session.execute("shape.rectangle", &json!({"x": 300, "y": 200, "width": 100, "height": 100})).unwrap();
+        app.select_tool("paintbrush");
+        let steps = app.session.journal.len();
+        let xf = Xf::new(app.canvas_rect.unwrap(), app.view().unwrap());
+        let button = |pos, pressed| egui::Event::PointerButton { pos, button: egui::PointerButton::Primary, pressed, modifiers: Default::default() };
+        let [a, b, c] = [280.0, 350.0, 420.0].map(|x| xf.to_screen(Point::new(x, 250.0)));
+        feed.set_sample(eraser_end(0.6));
+        frame(&mut app, &ctx, vec![egui::Event::PointerMoved(a), button(a, true)]);
+        frame(&mut app, &ctx, vec![egui::Event::PointerMoved(b)]);
+        frame(&mut app, &ctx, vec![egui::Event::PointerMoved(c)]);
+        frame(&mut app, &ctx, vec![button(c, false)]);
+        let cmds: Vec<&str> = app.session.journal.since(steps).iter().map(|(c, _)| c.as_str()).collect();
+        assert_eq!(cmds, ["path.eraseRegion"], "one Eraser step, no Paintbrush stroke");
+        assert_eq!(app.session.active().unwrap().doc.layers[0].children().unwrap().len(), 2, "the rectangle cut in two");
+    }
+
+    /// #764: a turn of the pen while a press is held takes effect after the release.
+    #[test]
+    fn a_flip_during_a_press_waits_for_the_release() {
+        let (mut app, feed, ctx) = pen_app();
+        app.select_tool("paintbrush");
+        let xf = Xf::new(app.canvas_rect.unwrap(), app.view().unwrap());
+        let button = |pos, pressed| egui::Event::PointerButton { pos, button: egui::PointerButton::Primary, pressed, modifiers: Default::default() };
+        let [a, b, c] = [100.0, 150.0, 200.0].map(|x| xf.to_screen(Point::new(x, 100.0)));
+        feed.set(Some(0.5));
+        frame(&mut app, &ctx, vec![egui::Event::PointerMoved(a), button(a, true)]);
+        feed.set_sample(eraser_end(0.5));
+        frame(&mut app, &ctx, vec![egui::Event::PointerMoved(b)]);
+        assert_eq!(app.session.tool_id(), "paintbrush");
+        frame(&mut app, &ctx, vec![egui::Event::PointerMoved(c), button(c, false)]);
+        assert_eq!(app.session.tool_id(), "paintbrush");
+        assert_eq!(app.session.journal.last().unwrap().0, "path.freehand", "the stroke ends with the Paintbrush");
+        frame(&mut app, &ctx, vec![]);
+        assert_eq!(app.session.tool_id(), "eraser", "the frame after the release");
+    }
+
+    /// #764: a tool chosen while the eraser end stands in (the toolbar and shortcuts call
+    /// `select_tool`; menus and MCP run `tool.select`) stays when the tip comes back.
+    #[test]
+    fn a_tool_chosen_while_the_eraser_end_stands_in_stays() {
+        let (mut app, feed, ctx) = pen_app();
+        app.select_tool("paintbrush");
+        feed.set_sample(eraser_end(0.0));
+        frame(&mut app, &ctx, vec![]);
+        assert_eq!(app.session.tool_id(), "eraser");
+        app.select_tool("rectangle");
+        feed.set(Some(0.0));
+        frame(&mut app, &ctx, vec![]);
+        assert_eq!(app.session.tool_id(), "rectangle");
+
+        feed.set_sample(eraser_end(0.0));
+        frame(&mut app, &ctx, vec![]);
+        assert_eq!(app.session.tool_id(), "eraser");
+        app.run("tool.select", json!({"tool": "eraser"})).unwrap();
+        feed.set(Some(0.0));
+        frame(&mut app, &ctx, vec![]);
+        assert_eq!(app.session.tool_id(), "eraser", "the Eraser chosen again stays too");
+    }
+
+    /// #764: a mouse moving while the eraser end stands in does not change the tool, and an Eraser
+    /// chosen before the eraser end comes in stays when the tip comes back.
+    #[test]
+    fn a_mouse_and_an_explicit_eraser_change_nothing() {
+        let (mut app, feed, ctx) = pen_app();
+        app.select_tool("paintbrush");
+        feed.set(None);
+        frame(&mut app, &ctx, vec![]);
+        assert_eq!(app.session.tool_id(), "paintbrush", "a mouse");
+        feed.set_sample(eraser_end(0.0));
+        frame(&mut app, &ctx, vec![]);
+        feed.set(None);
+        frame(&mut app, &ctx, vec![]);
+        assert_eq!(app.session.tool_id(), "eraser", "a mouse between the turns");
+        feed.set(Some(0.0));
+        frame(&mut app, &ctx, vec![]);
+        assert_eq!(app.session.tool_id(), "paintbrush");
+
+        app.select_tool("eraser");
+        feed.set_sample(eraser_end(0.0));
+        frame(&mut app, &ctx, vec![]);
+        feed.set(Some(0.0));
+        frame(&mut app, &ctx, vec![]);
+        assert_eq!(app.session.tool_id(), "eraser", "chosen before the eraser end came in");
+    }
+
+    /// #764: the host reads the pen over every window. A turn made while the pointer is outside
+    /// this window takes effect when the pointer comes in, and a turn there and back does not
+    /// change the tool.
+    #[test]
+    fn a_turn_over_another_window_waits_for_the_pointer() {
+        let (mut app, feed, ctx) = pen_app();
+        app.select_tool("paintbrush");
+        feed.set(Some(0.0));
+        frame(&mut app, &ctx, vec![]);
+        let inside = egui::Event::PointerMoved(Pos2::new(400.0, 300.0));
+        frame(&mut app, &ctx, vec![egui::Event::PointerGone]);
+        feed.set_sample(eraser_end(0.0));
+        frame(&mut app, &ctx, vec![]);
+        assert_eq!(app.session.tool_id(), "paintbrush", "the pointer is in another window");
+        frame(&mut app, &ctx, vec![inside.clone()]);
+        assert_eq!(app.session.tool_id(), "eraser", "the pointer came in");
+
+        frame(&mut app, &ctx, vec![egui::Event::PointerGone]);
+        feed.set(Some(0.0));
+        frame(&mut app, &ctx, vec![]);
+        assert_eq!(app.session.tool_id(), "eraser");
+        frame(&mut app, &ctx, vec![inside.clone()]);
+        assert_eq!(app.session.tool_id(), "paintbrush");
+
+        frame(&mut app, &ctx, vec![egui::Event::PointerGone]);
+        feed.set_sample(eraser_end(0.0));
+        frame(&mut app, &ctx, vec![]);
+        feed.set(Some(0.0));
+        frame(&mut app, &ctx, vec![inside]);
+        assert_eq!(app.session.tool_id(), "paintbrush", "turned there and back outside");
+    }
+
+    /// #764: the tip brings back the Perspective Grid tool as it was, with a grid hidden by Hide
+    /// Grid still hidden (choosing the tool afresh shows the grid).
+    #[test]
+    fn the_tip_brings_back_the_perspective_grid_tool_without_showing_the_grid() {
+        let (mut app, feed, ctx) = pen_app();
+        let visible =
+            |app: &VectorcraftApp| vectorcraft_tools::distort::perspective::PerspectiveGrid::current(&app.session.active().unwrap().doc).visible;
+        app.select_tool("perspectiveGrid");
+        assert!(visible(&app));
+        app.session.execute("perspective.grid.show", &json!({"visible": false})).unwrap();
+        feed.set(Some(0.0));
+        frame(&mut app, &ctx, vec![]);
+        feed.set_sample(eraser_end(0.0));
+        frame(&mut app, &ctx, vec![]);
+        assert_eq!(app.session.tool_id(), "eraser");
+        feed.set(Some(0.0));
+        frame(&mut app, &ctx, vec![]);
+        assert_eq!(app.session.tool_id(), "perspectiveGrid");
+        assert!(!visible(&app), "the grid stays hidden");
     }
 
     /// #491: a pen tap whose press and lift come in one frame selects what it tapped, and the

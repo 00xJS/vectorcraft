@@ -431,7 +431,8 @@ from G14 and the budget run of G15: **~170–270 h** one agent, ~50–80 h wall 
 ## G14 Pen hardware beyond Windows pressure
 
 - **Missing:** pen pressure on macOS (#852) and Wayland (#491, #764) — winit 0.30 reports none there; tilt,
-  bearing and barrel rotation for brushes (6D Art Pen, #372); the eraser end.
+  bearing and barrel rotation for brushes (6D Art Pen, #372); the eraser end on macOS, Windows, native Wayland and
+  the web.
 - **Estimate:** 8–16 h, partly waiting on winit 0.31; needs pen hardware to verify.
 
 ## G5 Brushes, symbols and libraries
