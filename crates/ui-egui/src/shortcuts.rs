@@ -646,11 +646,11 @@ pub fn handle(app: &mut VectorcraftApp, ctx: &egui::Context) {
                 (Key::ArrowDown, Some((if m.shift { "baselineShift" } else { "leading" }, if m.shift { -1.0 } else { 1.0 }))),
             ];
             for (key, step) in steps {
-                if let Some((attribute, by)) = step
-                    && ctx.input_mut(|i| i.consume_key(m, key))
-                {
-                    let by = if m.command { by * 5.0 } else { by };
-                    let _ = app.run("type.step", json!({"attribute": attribute, "by": by}));
+                if ctx.input_mut(|i| i.consume_key(m, key)) {
+                    if let Some((attribute, by)) = step {
+                        let by = if m.command { by * 5.0 } else { by };
+                        let _ = app.run("type.step", json!({"attribute": attribute, "by": by}));
+                    }
                     return;
                 }
             }
@@ -1675,6 +1675,13 @@ mod tests {
         frame(&mut app, vec![egui::Event::ModifiersChanged(alt_shift), press(Key::ArrowUp, alt_shift)]);
         let r = app.session.execute("text.getRange", &json!({"id": id})).unwrap();
         assert_eq!(r["runs"][0]["style"]["baseline_shift"], json!(2.0));
+
+        // Shift+Alt+Left/Right have no text-spacing action; they must still be consumed instead of
+        // falling through to Alt+arrow's copy-and-nudge behaviour.
+        for key in [Key::ArrowLeft, Key::ArrowRight] {
+            frame(&mut app, vec![egui::Event::ModifiersChanged(alt_shift), press(key, alt_shift)]);
+            assert_eq!(app.session.active().unwrap().selection.objects, [vectorcraft_doc::NodeId(id)]);
+        }
 
         // Other objects keep Alt+arrow's copy-and-nudge shortcut.
         let rect = app.session.execute("shape.rectangle", &json!({"x": 0, "y": 0, "width": 10, "height": 10})).unwrap()["id"].as_u64().unwrap();
