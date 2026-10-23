@@ -439,9 +439,9 @@ impl Session {
         self.with_tool_cx(view, |t, cx| t.ime_caret(cx))
     }
 
-    /// The pointer left the canvas while the tool holds no press ([`vectorcraft_tools::Tool::pointer_left`]).
-    pub fn tool_pointer_left(&mut self, view: ViewInfo) {
-        self.with_tool_cx(view, |t, cx| t.pointer_left(cx));
+    /// The pointer stopped hovering for the active tool ([`vectorcraft_tools::Tool::hover_ended`]).
+    pub fn tool_hover_ended(&mut self, view: ViewInfo) {
+        self.with_tool_cx(view, |t, cx| t.hover_ended(cx));
     }
 
     pub fn tool_busy(&self) -> bool {

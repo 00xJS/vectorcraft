@@ -102,6 +102,12 @@ enum Drag {
     Present,
 }
 
+/// Whether drag `d` is a press the tool holds. Every other drag (panning, zooming, turning the
+/// view, a touch gesture, Presentation Mode) never reaches the tool, so its hover ends with it.
+fn tool_holds(d: Drag) -> bool {
+    matches!(d, Drag::Tool | Drag::Art)
+}
+
 /// Clear canvas interaction state before a tab transfer takes ownership of the artwork drag.
 pub(crate) fn end_document_drag(ctx: &egui::Context) {
     ctx.data_mut(|d| {
@@ -1030,6 +1036,10 @@ fn handle_input(app: &mut VectorcraftApp, ui: &Ui, resp: &egui::Response, rect: 
                 crate::document_drag::begin(app, ui.ctx(), ev.pos);
                 Drag::Tool
             };
+            // Panning, zooming or turning the view takes the pointer from the tool's hover.
+            if !tool_holds(d) {
+                app.session.tool_hover_ended(view);
+            }
             ui.data_mut(|dd| {
                 dd.insert_temp(drag_id(), d);
                 dd.insert_temp(drag_pos_id(), p);
@@ -1046,6 +1056,7 @@ fn handle_input(app: &mut VectorcraftApp, ui: &Ui, resp: &egui::Response, rect: 
     {
         // Middle-button drag pans the view whatever the tool.
         ui.data_mut(|dd| dd.insert_temp(drag_id(), Drag::Pan { start, center: v.center, middle: true }));
+        app.session.tool_hover_ended(view);
     } else if let Some(d) = drag {
         // The pointer gone (a pen lifted with its press), the drag ends where it was last seen.
         let p = pointer.interact_pos().or_else(|| ui.data(|dd| dd.get_temp(drag_pos_id()))).unwrap_or(rect.center());
@@ -1205,9 +1216,9 @@ fn handle_input(app: &mut VectorcraftApp, ui: &Ui, resp: &egui::Response, rect: 
     }
     // The pointer left the canvas (for a panel, or out of the window) with no press the tool holds:
     // the tool drops what it showed for the hover, which no hover event would clear (Alt's
-    // Distance Guides). A pan, zoom or view-rotation drag never reaches the tool, so it counts too.
-    if was_over && hover.is_none() && !matches!(drag, Some(Drag::Tool | Drag::Art)) {
-        app.session.tool_pointer_left(view);
+    // Distance Guides).
+    if was_over && hover.is_none() && !drag.is_some_and(tool_holds) {
+        app.session.tool_hover_ended(view);
         ui.ctx().request_repaint();
     }
     if pointer.primary_released()
@@ -9586,10 +9597,11 @@ mod tests {
         assert_eq!(gap_label(&run(vec![])), None, "Alt let go");
     }
 
-    /// The Distance Guides go when the pointer leaves the canvas with Alt still held, for a panel
-    /// or out of the window, and come back with it; also when it leaves panning (Alt+Space drag).
+    /// The Distance Guides go when the pointer stops hovering for the tool with Alt still held: it
+    /// leaves the canvas for a panel or out of the window, or a press pans (Alt+Space) and takes it
+    /// over the panels; they come back when it hovers the other square again.
     #[test]
-    fn distance_guides_go_when_the_pointer_leaves_the_canvas() {
+    fn distance_guides_go_when_the_hover_ends() {
         use egui::{Event, Modifiers};
         let (mut app, ctx, xf, over) = distance_scene();
         let outside = pos2(xf.rect.max.x + 10.0, xf.rect.center().y);
@@ -9603,16 +9615,18 @@ mod tests {
         assert!(gap_label(&run(vec![])).is_some(), "back over the other square");
         run(vec![Event::PointerGone]);
         assert_eq!(gap_label(&run(vec![])), None, "gone out of the window");
-        // Back over the square, Space held with Alt pans: dragged out over a panel, they go.
+        // Back over the square, Space held with Alt pans: they go at the press, and stay gone while
+        // the pan takes the pointer out over a panel.
         let space = |pressed| Event::Key { key: egui::Key::Space, physical_key: None, pressed, repeat: false, modifiers: Modifiers::ALT };
         let button = |pos, pressed| Event::PointerButton { pos, button: egui::PointerButton::Primary, pressed, modifiers: Modifiers::ALT };
         run(vec![Event::PointerMoved(over)]);
         run(vec![space(true)]);
         assert!(gap_label(&run(vec![])).is_some(), "Space held: still shown");
         run(vec![button(over, true)]);
+        assert_eq!(gap_label(&run(vec![])), None, "gone at the pan's press");
         run(vec![Event::PointerMoved(over + vec2(20.0, 0.0))]);
         run(vec![Event::PointerMoved(outside)]);
-        assert_eq!(gap_label(&run(vec![])), None, "gone after panning out over a panel");
+        assert_eq!(gap_label(&run(vec![])), None, "still gone after panning out over a panel");
         run(vec![button(outside, false), space(false)]);
     }
 
