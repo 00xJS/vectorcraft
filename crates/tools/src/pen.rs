@@ -305,7 +305,7 @@ impl Tool for PenTool {
                 if let Some((id, si, ai, a)) = self.handle {
                     let mut h = ev.pos;
                     if ev.mods.shift {
-                        h = a + vectorcraft_geom::constrain_angle(ev.pos - a, 45.0);
+                        h = a + vectorcraft_geom::constrain_angle_from(ev.pos - a, 45.0, cx.constrain_angle);
                     }
                     return vec![set_out_handle(id, si, ai, h)];
                 }
@@ -320,7 +320,7 @@ impl Tool for PenTool {
                 self.last = ev.pos;
                 let mut out_h = ev.pos;
                 if ev.mods.shift {
-                    out_h = a + vectorcraft_geom::constrain_angle(ev.pos - a, 45.0);
+                    out_h = a + vectorcraft_geom::constrain_angle_from(ev.pos - a, 45.0, cx.constrain_angle);
                 }
                 let alt = ev.mods.alt;
                 let Some(id) = path else {

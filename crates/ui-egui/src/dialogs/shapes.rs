@@ -256,11 +256,21 @@ fn confirm(app: &mut VectorcraftApp, d: &Dialog) -> Result<Value, String> {
             json!({"x": bx, "y": by, "width": d.f64("width", 100.0), "height": d.f64("height", 100.0), "radius": d.f64("radius", 0.0)}),
         ),
     };
-    // On the active plane while the perspective grid shows, sized in plane units from the click.
+    // On the active plane while the perspective grid shows, sized in plane units from the click;
+    // else along General › Constrain Angle, turned about the point the dialog places at the click
+    // (a grid's reference point, the other shapes' top-left corner or centre).
     let options = options.or_else(|| matches!(d.kind.as_str(), "spiral" | "rectangularGrid" | "polarGrid").then(|| params.clone()));
     let result = match vectorcraft_engine::perspective_click(&app.session, id, &params, vectorcraft_geom::Point::new(x, y)) {
         Some((id, params)) => run_and_close(app, &id, params),
-        None => run_and_close(app, id, params),
+        None => {
+            let pivot = if matches!(d.kind.as_str(), "rectangularGrid" | "polarGrid") {
+                vectorcraft_geom::reference_point(grid_placed(d), grid_reference(d))
+            } else {
+                vectorcraft_geom::Point::new(x, y)
+            };
+            let params = vectorcraft_engine::constrain_click(&app.session, id, params, pivot);
+            run_and_close(app, id, params)
+        }
     }?;
     if let Some(options) = options {
         app.run("tool.setOption", json!({"tool": d.kind, "values": options}))?;
