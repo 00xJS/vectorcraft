@@ -1093,6 +1093,11 @@ impl Interp<'_> {
         let row = row_bits.div_ceil(8);
         // Several sources are read in turn, a row at a time each (zeros past their ends).
         let sources = if multi { &s.sources[..] } else { s.sources.get(..1).ok_or(PsError::Ps("undefined", "DataSource".into()))? };
+        if sources.len() > n {
+            return ps_err("rangecheck", "DataSource");
+        }
+        let plane = row.checked_mul(s.h).filter(|p| *p <= MAX_DATA).ok_or(PsError::Limit("decoded data is too large"))?;
+        self.alloc(plane.saturating_mul(sources.len()))?;
         let mut planes = self.read_sources(sources, row * s.h, if multi { row } else { row * s.h })?;
         for p in &mut planes {
             p.resize(row * s.h, 0);
