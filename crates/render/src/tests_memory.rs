@@ -807,9 +807,8 @@ fn art_with_raster_effects_draws_pattern_and_resolution_edits() {
     });
 }
 
-/// Symbol art with a live object (an envelope that distorts a pattern fill) is placed again in
-/// every frame: when the pattern's tile type changes, the next frame draws what a new renderer
-/// draws.
+/// Symbol art with a live object (an envelope that distorts a pattern fill) is kept between
+/// frames: when the pattern's tile type changes, the next frame draws what a new renderer draws.
 #[test]
 fn art_with_live_objects_draws_pattern_layout_edits() {
     let _fonts = fonts_steady();
@@ -843,6 +842,128 @@ fn art_with_live_objects_draws_pattern_layout_edits() {
             def.tile_type = TileType::BrickByRow { offset: 0.5 };
         }
     });
+}
+
+/// Instances of four symbols whose art shows a live object (a group holding an envelope, an
+/// envelope, a blend and a grid repeat), and an inline graphic of the envelope's symbol: the second
+/// frame draws the evaluations the first made, and draws what a new renderer draws.
+#[test]
+fn live_objects_in_symbol_art_keep_their_evaluations_between_frames() {
+    let _fonts = fonts_steady();
+    use vectorcraft_doc::text::{CharStyle, InlineArt, TextObject, TextRun};
+    use vectorcraft_geom::shapes::rectangle;
+    let mut d = Document::new(200.0, 100.0);
+    let band = |d: &mut Document| filled(d, rectangle(Rect::new(-15.0, -8.0, 15.0, 8.0)), Paint::solid(Color::rgb(0.0, 0.5, 0.0)), vec![]);
+    let b = band(&mut d);
+    let bent = arc_envelope(&mut d, vec![b], false);
+    let bent = Node::group(d.alloc_id(), vec![Arc::new(bent)]);
+    let b = band(&mut d);
+    let envelope = arc_envelope(&mut d, vec![b], false);
+    let square = |d: &mut Document, x: f64, c: Color| Arc::new(filled(d, rectangle(Rect::new(x, -4.0, x + 8.0, 4.0)), Paint::solid(c), vec![]));
+    let ends = vec![square(&mut d, -16.0, Color::rgb(1.0, 0.0, 0.0)), square(&mut d, 8.0, Color::rgb(0.0, 0.0, 1.0))];
+    let spec = vectorcraft_doc::live::BlendSpec { spacing: vectorcraft_doc::live::BlendSpacing::Steps(4), ..Default::default() };
+    let blend = Node::new(d.alloc_id(), NodeKind::Blend { children: ends, spec: Box::new(spec) });
+    let source = symbol_art(&mut d);
+    let grid = Node::new(d.alloc_id(), NodeKind::Repeat(vectorcraft_doc::pattern::RepeatSpec::grid(vec![Arc::new(source)], 4.0, 4.0)));
+    let l = d.layers[0].id;
+    for (name, art, at) in
+        [("Bent", bent, (40.0, 25.0)), ("Envelope", envelope, (100.0, 25.0)), ("Blend", blend, (160.0, 25.0)), ("Grid", grid, (20.0, 60.0))]
+    {
+        d.symbols.push(vectorcraft_doc::Symbol { name: name.into(), art: Arc::new(art) });
+        let id = d.alloc_id();
+        d.insert(Some(l), usize::MAX, Node::new(id, NodeKind::SymbolInstance { symbol: name.into(), xf: Affine::translate(at) })).unwrap();
+    }
+    let style = CharStyle { size: 24.0, ..Default::default() };
+    let mut t = TextObject::point(vectorcraft_geom::Point::new(120.0, 85.0), "A", style.clone());
+    t.runs.push(TextRun::inline(InlineArt::new("Envelope"), style));
+    let id = d.alloc_id();
+    d.insert(Some(l), usize::MAX, Node::new(id, NodeKind::Text(Box::new(t)))).unwrap();
+    let opts = RenderOptions { background: Some([255, 255, 255, 255]), ..Default::default() };
+    let mut r = Renderer::new();
+    let first = r.render(&d, 200, 100, Affine::IDENTITY, &opts).pixels;
+    let evaluated = r.live.evaluated;
+    assert!(evaluated >= 5, "the first frame evaluates the four live objects and the inline graphic's envelope: {evaluated}");
+    let second = r.render(&d, 200, 100, Affine::IDENTITY, &opts).pixels;
+    assert_eq!(r.live.evaluated, evaluated, "the second frame evaluates none of them again");
+    assert!(second == first, "the second frame draws the same");
+    assert!(second == Renderer::new().render(&d, 200, 100, Affine::IDENTITY, &opts).pixels, "a new renderer draws the same");
+}
+
+/// A rectangle whose opacity mask is an envelope, drawn in Preview, and an envelope in a clip
+/// group, drawn in Outline view: the second frame of each draws the evaluation the first made, and
+/// draws what a new renderer draws.
+#[test]
+fn live_mask_art_and_live_clip_group_members_keep_their_evaluations_between_frames() {
+    let _fonts = fonts_steady();
+    use vectorcraft_geom::shapes::rectangle;
+    let mut d = Document::new(200.0, 100.0);
+    let white = filled(&mut d, rectangle(Rect::new(20.0, 20.0, 80.0, 80.0)), Paint::solid(Color::WHITE), vec![]);
+    let mask = arc_envelope(&mut d, vec![white], false);
+    let mut masked = filled(&mut d, rectangle(Rect::new(10.0, 10.0, 90.0, 90.0)), Paint::solid(Color::BLACK), vec![]);
+    masked.extras_mut().mask = Some(Box::new(vectorcraft_doc::OpacityMask::new(mask, true)));
+    let clip = filled(&mut d, rectangle(Rect::new(110.0, 10.0, 190.0, 90.0)), Paint::None, vec![]);
+    let band = filled(&mut d, rectangle(Rect::new(100.0, 30.0, 200.0, 70.0)), Paint::solid(Color::rgb(0.0, 0.5, 0.0)), vec![]);
+    let bent = arc_envelope(&mut d, vec![band], false);
+    let clipped = Node::new(d.alloc_id(), NodeKind::Group { children: vec![Arc::new(clip), Arc::new(bent)], clip: true });
+    let d = with_art(d, vec![masked, clipped]);
+    let preview = RenderOptions { background: Some([255, 255, 255, 255]), ..Default::default() };
+    let outline = RenderOptions { outline: true, ..preview.clone() };
+    for (view, opts) in [("Preview", &preview), ("Outline", &outline)] {
+        let mut r = Renderer::new();
+        let first = r.render(&d, 200, 100, Affine::IDENTITY, opts).pixels;
+        let evaluated = r.live.evaluated;
+        assert!(evaluated >= 1, "{view}: the first frame evaluates the envelope: {evaluated}");
+        let second = r.render(&d, 200, 100, Affine::IDENTITY, opts).pixels;
+        assert_eq!(r.live.evaluated, evaluated, "{view}: the second frame evaluates nothing again");
+        assert!(second == first, "{view}: the second frame draws the same");
+        assert!(second == Renderer::new().render(&d, 200, 100, Affine::IDENTITY, opts).pixels, "{view}: a new renderer draws the same");
+    }
+}
+
+/// Symbol art that is an envelope, or a group holding one, bends a band filled with pattern `Dots`
+/// (an instance of `S` at half size in each 20 × 20 tile). After two frames of its instance, the
+/// next frame draws an edit of `S`'s art (a red bar) and a change of `Dots` to bricks as a new
+/// renderer draws them.
+#[test]
+fn live_objects_in_symbol_art_draw_symbol_and_pattern_edits() {
+    let _fonts = fonts_steady();
+    use vectorcraft_doc::pattern::{PatternDef, TileType, pattern_paint};
+    use vectorcraft_geom::shapes::rectangle;
+    for grouped in [false, true] {
+        for bricks in [false, true] {
+            let mut d = Document::new(200.0, 100.0);
+            let art = symbol_art(&mut d);
+            d.symbols.push(vectorcraft_doc::Symbol { name: "S".into(), art: Arc::new(art) });
+            let xf = Affine::translate((10.0, 10.0)) * Affine::scale(0.5);
+            let dot = Node::new(d.alloc_id(), NodeKind::SymbolInstance { symbol: "S".into(), xf });
+            let mut dots = PatternDef::new("Dots", vec![Arc::new(dot)]);
+            dots.tile = Rect::new(0.0, 0.0, 20.0, 20.0);
+            d.patterns.push(dots);
+            let band = filled(&mut d, rectangle(Rect::new(-80.0, -30.0, 80.0, 30.0)), pattern_paint("Dots"), vec![]);
+            let envelope = arc_envelope(&mut d, vec![band], true);
+            let art = if grouped { Node::group(d.alloc_id(), vec![Arc::new(envelope)]) } else { envelope };
+            d.symbols.push(vectorcraft_doc::Symbol { name: "Bent".into(), art: Arc::new(art) });
+            let (l, id) = (d.layers[0].id, d.alloc_id());
+            d.insert(Some(l), 0, Node::new(id, NodeKind::SymbolInstance { symbol: "Bent".into(), xf: Affine::translate((100.0, 50.0)) })).unwrap();
+            let opts = RenderOptions { background: Some([255, 255, 255, 255]), ..Default::default() };
+            let mut r = Renderer::new();
+            r.render(&d, 200, 100, Affine::IDENTITY, &opts);
+            let before = r.render(&d, 200, 100, Affine::IDENTITY, &opts).pixels;
+            if bricks {
+                if let Some(def) = d.pattern_mut("Dots") {
+                    def.tile_type = TileType::BrickByRow { offset: 0.5 };
+                }
+            } else {
+                let bar = rectangle(Rect::new(-20.0, -4.0, 20.0, 4.0));
+                let red = vectorcraft_doc::Appearance::basic(Paint::solid(Color::rgb(1.0, 0.0, 0.0)), Paint::None, 0.0);
+                d.symbols[0].art = Arc::new(Node::path(d.alloc_id(), bar, red));
+            }
+            let after = r.render(&d, 200, 100, Affine::IDENTITY, &opts).pixels;
+            assert!(after != before, "grouped {grouped}, bricks {bricks}: the edit changes the frame");
+            let fresh = Renderer::new().render(&d, 200, 100, Affine::IDENTITY, &opts).pixels;
+            assert!(after == fresh, "grouped {grouped}, bricks {bricks}: a new renderer draws the same");
+        }
+    }
 }
 
 /// An envelope of `d` bending `content` with an arc warp (30%); with `patterns`, Distort

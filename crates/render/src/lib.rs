@@ -477,6 +477,10 @@ pub struct Renderer {
     /// [`Self::draw_outline_member`] sets it to each member of a clip group or shape of an Image
     /// Trace object that it draws.
     fx_owner: Option<Arc<Node>>,
+    /// The live object [`Self::draw_kept_node`] is drawing (kept symbol art, an opacity mask's art,
+    /// a member of a clip group in Outline view): [`Self::draw_content`] draws its evaluation from
+    /// the live cache.
+    live_root: Option<Arc<Node>>,
     /// Live-effect geometry per node ([`fx::FxGeom`]), keyed by `Arc` identity like `geom`.
     fx_geom: PtrMap<usize, fx::FxGeom>,
     stamp: u64,
@@ -637,6 +641,7 @@ impl Renderer {
             cur: None,
             made_again: false,
             fx_owner: None,
+            live_root: None,
             fx_geom: PtrMap::default(),
             stamp: 0,
             alpha: 1.0,
@@ -1111,7 +1116,7 @@ impl Renderer {
             std::mem::take(&mut self.clip_paths),
             self.picture.take(),
         );
-        self.draw_node(&mut mctx, &Frame { mt: false, ink: Ink::Display, ..*f }, &m.art, true);
+        self.draw_kept_node(&mut mctx, &Frame { mt: false, ink: Ink::Display, ..*f }, &m.art);
         let pm = self.finish(&mut mctx, self.raster);
         (self.knockout, self.nested, self.backdrop, self.clip_paths, self.picture) = outer;
         pm.data().iter().map(|p| mask_value(p.r, p.g, p.b, p.a, m.clip, m.invert)).collect()
@@ -1365,9 +1370,7 @@ impl Renderer {
             NodeKind::SymbolInstance { symbol, xf } => {
                 if let Some(sym) = f.doc.symbols.iter().find(|s| &s.name == symbol) {
                     let (art, kept) = self.placed_art(&sym.art, *xf, false, Some(n));
-                    let outer = std::mem::replace(&mut self.made_again, !kept);
-                    self.draw_node(ctx, f, &art, true);
-                    self.made_again = outer;
+                    self.draw_placed_art(ctx, f, &art, kept);
                 }
             }
             NodeKind::Blend { .. }
@@ -1375,8 +1378,33 @@ impl Renderer {
             | NodeKind::Mesh(_)
             | NodeKind::Repeat(_)
             | NodeKind::PlacedDocument(_)
-            | NodeKind::Intertwine { .. } => self.draw_live_node(ctx, f, n),
+            | NodeKind::Intertwine { .. } => match self.live_root.clone().filter(|a| std::ptr::eq(&**a, n)) {
+                Some(a) => self.draw_live_body(ctx, f, &a, true),
+                None => self.draw_live_node(ctx, f, n),
+            },
         }
+    }
+
+    /// Draw symbol art `art` as [`Self::placed_art`] placed it for an instance or an inline graphic
+    /// (`kept`: kept between frames, see [`Self::draw_kept_node`]).
+    fn draw_placed_art(&mut self, ctx: &mut RenderContext, f: &Frame, art: &Arc<Node>, kept: bool) {
+        let outer = std::mem::replace(&mut self.made_again, !kept);
+        if kept {
+            self.draw_kept_node(ctx, f, art);
+        } else {
+            self.draw_node(ctx, f, art, true);
+        }
+        self.made_again = outer;
+    }
+
+    /// [`Self::draw_node`] of `a` (drawn whatever its visibility and bounds), whose `Arc` stays the
+    /// same from frame to frame while the art does. When `a` is a live object,
+    /// [`Self::draw_content`] draws its evaluation from the live cache ([`Self::live_root`]).
+    fn draw_kept_node(&mut self, ctx: &mut RenderContext, f: &Frame, a: &Arc<Node>) {
+        let live = vectorcraft_doc::live::is_live(a).then(|| a.clone());
+        let outer = std::mem::replace(&mut self.live_root, live);
+        self.draw_node(ctx, f, a, true);
+        self.live_root = outer;
     }
 
     /// An Image Trace object's `children` (the hidden source image, then the traced shapes) as
@@ -1400,7 +1428,8 @@ impl Renderer {
 
     /// [`Self::draw_node`] for `c`, a member of a clip group or a shape of an Image Trace object in
     /// Outline view, culled by its cached bounds ([`Self::bounds_of`]) and drawn with `c` as
-    /// `fx_owner`, so its path and live-effect geometry come from the caches.
+    /// `fx_owner`, so its path, its live-effect geometry and, through [`Self::draw_kept_node`], a
+    /// live object's evaluation come from the caches.
     fn draw_outline_member(&mut self, ctx: &mut RenderContext, f: &Frame, c: &Arc<Node>) {
         if !c.visible || f.opts.hidden.contains(&c.id) || f.opts.hide_guides && matches!(c.kind, NodeKind::Path { guide: true, .. }) {
             return;
@@ -1417,7 +1446,7 @@ impl Renderer {
             None => {}
         }
         let outer = self.fx_owner.replace(c.clone());
-        self.draw_node(ctx, f, c, true);
+        self.draw_kept_node(ctx, f, c);
         self.fx_owner = outer;
     }
 
@@ -1746,24 +1775,23 @@ impl Renderer {
             let Some(sym) = f.doc.symbols.iter().find(|s| s.name == art.symbol) else { continue };
             // Strokes scale with the art (it is sized to the type, as in the SVG `<use>`).
             let (node, kept) = self.placed_art(&sym.art, t.xf * ig.xf * f.doc.symbol_natural_xf(&art.symbol), true, None);
-            let outer = std::mem::replace(&mut self.made_again, !kept);
-            self.draw_node(ctx, f, &node, true);
-            self.made_again = outer;
+            self.draw_placed_art(ctx, f, &node, kept);
         }
         self.inline_depth -= 1;
     }
 
     /// Symbol art `art` as an instance or an inline graphic draws it ([`place`]), and whether it is
-    /// kept. Art that is a group or a layer without an appearance of its own is kept between frames
-    /// under the art's `Arc`, `xf`, `scale_strokes` and the stain of instance `inst`: its members
-    /// keep their `Arc`s from frame to frame, and the caches keyed by a node's address (geometry,
-    /// stroke outlines, glyphs, live-effect geometry) hit for them. Other art is placed again in
-    /// every frame, and so is art that holds symbol instances, type with inline graphics, images,
-    /// placed documents, live blends, envelopes or repeats, or raster effects
+    /// kept. Art that is a group, a layer or a live object without an appearance of its own is kept
+    /// between frames under the art's `Arc`, `xf`, `scale_strokes` and the stain of instance
+    /// `inst`: it and its members keep their `Arc`s from frame to frame, and the caches keyed by a
+    /// node's address (geometry, stroke outlines, glyphs, live-effect geometry, evaluated live
+    /// objects) hit for them. Other art is placed again in every frame, and so is art that holds
+    /// symbol instances, type with inline graphics, images, placed documents or raster effects
     /// ([`depends_on_document`]), and art that the cache has no room for. Art that holds type is
     /// placed again when the fonts change.
     fn placed_art(&mut self, art: &Arc<Node>, xf: Affine, scale_strokes: bool, inst: Option<&Node>) -> (Arc<Node>, bool) {
-        if !matches!(art.kind, NodeKind::Group { .. } | NodeKind::Layer { .. }) || fx::has_object_fx(art) {
+        let kept_kind = matches!(art.kind, NodeKind::Group { .. } | NodeKind::Layer { .. }) || vectorcraft_doc::live::is_live(art);
+        if !kept_kind || fx::has_object_fx(art) {
             return (place(art, xf, scale_strokes, inst), false);
         }
         let stain = stain_bits(inst.and_then(vectorcraft_brush::stain));
@@ -2287,19 +2315,14 @@ fn place(art: &Node, xf: Affine, scale_strokes: bool, inst: Option<&Node>) -> Ar
 }
 
 /// Does `n` hold, in it or in the opacity masks of the objects in it, a symbol instance, type
-/// with an inline graphic, an image, a placed document, a blend, an envelope, a repeat, or an
-/// object or a fill or stroke with a visible raster effect?
+/// with an inline graphic, an image, a placed document, or an object or a fill or stroke with a
+/// visible raster effect?
 fn depends_on_document(n: &Node) -> bool {
     let raster = |fx: &[vectorcraft_doc::Effect]| fx.iter().any(|e| e.visible && effects::is_raster(&e.id));
     let mut depends = false;
     n.walk(&mut |c| {
         depends |= match &c.kind {
-            NodeKind::SymbolInstance { .. }
-            | NodeKind::Image(_)
-            | NodeKind::PlacedDocument(_)
-            | NodeKind::Blend { .. }
-            | NodeKind::Envelope { .. }
-            | NodeKind::Repeat(_) => true,
+            NodeKind::SymbolInstance { .. } | NodeKind::Image(_) | NodeKind::PlacedDocument(_) => true,
             NodeKind::Text(t) => t.runs.iter().any(|r| r.inline.is_some()),
             _ => false,
         } || raster(&c.appearance.effects)
