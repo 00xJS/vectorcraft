@@ -1425,6 +1425,9 @@ pub struct Session {
     pub(crate) liquify_stroke: Option<Box<cmd::distortcmds::LiquifyStroke>>,
     /// A press on the Plane Switching Widget is under way: its drag and release are the widget's.
     pub(crate) plane_widget_press: bool,
+    /// The pointer button is held: the last pointer event was a press or a drag, not a release or
+    /// a move ([`Session::pointer_held`]).
+    pub(crate) pointer_held: bool,
     /// A guide being dragged out of a ruler ([`Session::ruler_guide`]).
     pub(crate) ruler_guide: Option<vectorcraft_tools::rulerguide::NewGuide>,
     /// Which selected type overflows its frame, for the markers every tool but the Type tools shows.
@@ -1520,6 +1523,7 @@ impl Session {
             envelope_defaults: None,
             liquify_stroke: None,
             plane_widget_press: false,
+            pointer_held: false,
             ruler_guide: None,
             overflow_marks: Default::default(),
             font_search: None,

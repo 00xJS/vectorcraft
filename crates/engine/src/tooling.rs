@@ -313,6 +313,11 @@ impl Session {
     /// Feed a pointer event to the active tool. Returns requests for the UI.
     pub fn pointer(&mut self, ev: &PointerEvent, view: ViewInfo) -> Result<Vec<UiRequest>> {
         self.last_view = view;
+        match ev.kind {
+            PointerKind::Down | PointerKind::Drag => self.pointer_held = true,
+            PointerKind::Up | PointerKind::Move => self.pointer_held = false,
+            PointerKind::DoubleClick => {}
+        }
         // The Plane Switching Widget takes its clicks whatever the tool.
         if let Some(r) = self.plane_widget_pointer(ev, view) {
             return r;
@@ -435,6 +440,13 @@ impl Session {
 
     pub fn tool_busy(&self) -> bool {
         self.tool.busy()
+    }
+
+    /// Is the pointer button held: was the last pointer event a press or a drag, not a release or a
+    /// move? A tool that is busy while the button is not held is waiting between its clicks (the
+    /// Dimension tool after its first point).
+    pub fn pointer_held(&self) -> bool {
+        self.pointer_held
     }
 
     /// Is the active tool moving, scaling or rotating the selection with a drag?
