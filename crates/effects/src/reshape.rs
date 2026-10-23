@@ -13,7 +13,7 @@
 
 use std::sync::Arc;
 
-use vectorcraft_doc::{Appearance, AppearanceItem, Effect, Node, NodeKind};
+use vectorcraft_doc::{Appearance, AppearanceItem, Effect, Node, NodeId, NodeKind};
 use vectorcraft_geom::{Affine, BezPath, FillRule, PathData, Rect, Shape, shapes};
 
 use crate::{Budget, GeomContext, apply_one, is_geometry, merged_params};
@@ -140,12 +140,13 @@ pub fn image_paint(n: &Node) -> Vec<(BezPath, FillRule, AppearanceItem)> {
 /// The glyph outlines of type `t` in text space with its underline and strikethrough bars: one
 /// path per run, and all of them as one.
 pub(crate) fn glyph_outlines(t: &vectorcraft_doc::TextObject) -> (Vec<kurbo::BezPath>, kurbo::BezPath) {
-    let (runs, all, _) = laid_out(t);
+    let (runs, all, ..) = laid_out(t);
     (runs, all)
 }
 
-/// [`glyph_outlines`] and the bounds of `t`'s layout in text space.
-fn laid_out(t: &vectorcraft_doc::TextObject) -> (Vec<kurbo::BezPath>, kurbo::BezPath, Rect) {
+/// [`glyph_outlines`], the bounds of `t`'s layout in text space, and the art of its colour glyphs
+/// (COLR layers, SVG documents), which have no outlines, placed in the document, with their runs.
+fn laid_out(t: &vectorcraft_doc::TextObject) -> (Vec<kurbo::BezPath>, kurbo::BezPath, Rect, Vec<(usize, Node)>) {
     let db = vectorcraft_text::FontDb::global();
     let layout = vectorcraft_text::layout(db, t);
     let mut runs = vec![kurbo::BezPath::new(); t.runs.len()];
@@ -163,34 +164,36 @@ fn laid_out(t: &vectorcraft_doc::TextObject) -> (Vec<kurbo::BezPath>, kurbo::Bez
         }
         all.extend(bar.iter());
     }
-    (runs, all, layout.bounds)
+    let colours = layout.glyphs.iter().filter_map(|g| Some((g.run, g.placed_colour(t.xf)?))).collect();
+    (runs, all, layout.bounds, colours)
 }
 
 /// Type as glyph outlines in document space: one path per run with the run's fill and stroke,
-/// and (when the object has its own fills/strokes) the whole outline with the object's items below
-/// the characters under them and the others over them, as the renderer paints them. Each run's
-/// path is placed by the type's transform, which also scales its stroke weights and dashes and
-/// transforms its pattern tiles; its unplaced gradients are first fixed to the layout's bounds in
-/// text space. The object's own unplaced gradients are fixed to the bounding box of those bounds
-/// in the document. The group is marked as type's outlines
+/// its colour glyphs' art, and (when the object has its own fills/strokes) the whole outline with
+/// the object's items below the characters under them and the others over them, as the renderer
+/// paints them. Each run's path is placed by the type's transform, which also scales its stroke
+/// weights and dashes and transforms its pattern tiles; its unplaced gradients are first fixed to
+/// the layout's bounds in text space. The object's own unplaced gradients are fixed to the
+/// bounding box of those bounds in the document. The group is marked as type's outlines
 /// ([`vectorcraft_doc::NodeExtras::type_outlines`]).
 pub fn outline_text(n: &Node) -> Option<Node> {
     let NodeKind::Text(t) = &n.kind else { return None };
-    let (runs, all, bounds) = laid_out(t);
+    let (runs, all, bounds, colours) = laid_out(t);
     let path = |bp: &kurbo::BezPath| PathData::from_bezpath(bp).transformed(t.xf);
     let scaling = vectorcraft_doc::Scaling { strokes: true, patterns: true, ..Default::default() };
-    let mut children: Vec<Arc<Node>> = runs
-        .iter()
-        .zip(&t.runs)
-        .filter(|(bp, _)| !bp.elements().is_empty())
-        .map(|(bp, run)| {
-            let mut ap = run.style.appearance();
-            ap.pin_gradients(bounds);
-            let mut piece = Node::path(n.id, PathData::from_bezpath(bp), ap);
-            piece.transform(t.xf, scaling);
-            Arc::new(piece)
-        })
-        .collect();
+    let mut children: Vec<Arc<Node>> = vec![];
+    for (i, (bp, run)) in runs.iter().zip(&t.runs).enumerate() {
+        // Colour glyphs paint themselves, under their run's fill, as the renderer paints them.
+        children.extend(colours.iter().filter(|(r, _)| *r == i).map(|(_, art)| Arc::new(with_id(art, n.id))));
+        if bp.elements().is_empty() {
+            continue;
+        }
+        let mut ap = run.style.appearance();
+        ap.pin_gradients(bounds);
+        let mut piece = Node::path(n.id, PathData::from_bezpath(bp), ap);
+        piece.transform(t.xf, scaling);
+        children.push(Arc::new(piece));
+    }
     if !n.appearance.items.is_empty() && !all.elements().is_empty() {
         let (below, above) = n.appearance.split_contents();
         let tb = t.xf.transform_rect_bbox(bounds);
@@ -209,6 +212,17 @@ pub fn outline_text(n: &Node) -> Option<Node> {
     let mut g = Node::group(n.id, children);
     g.extras_mut().type_outlines = true;
     Some(g)
+}
+
+/// `art` with `id` for it and all its members, as the other pieces of outlined type have the type's
+/// (Expand Appearance gives them ids of their own).
+fn with_id(art: &Node, id: NodeId) -> Node {
+    let mut art = art.clone();
+    art.id = id;
+    for c in art.children_mut().into_iter().flatten() {
+        *c = Arc::new(with_id(c, id));
+    }
+    art
 }
 
 /// `n` as plain art that geometry effects can reshape, without its transparency and object
