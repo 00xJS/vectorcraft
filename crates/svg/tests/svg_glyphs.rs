@@ -139,3 +139,49 @@ fn event_attributes_are_left_out() {
     art.walk(&mut |n| events.extend(n.extras().attrs.as_ref().map(|a| a.events.clone()).unwrap_or_default()));
     assert!(events.is_empty(), "{events:?}");
 }
+
+/// A size on the root without a `viewBox` sets up the em square as a `viewBox` would.
+#[test]
+fn a_root_size_is_the_em_square_without_a_view_box() {
+    let doc = r##"<svg xmlns="http://www.w3.org/2000/svg" width="2000" height="2000">
+      <g id="glyph2"><path fill="#000" d="M500 500h500v500h-500z"/></g></svg>"##;
+    let b = art(doc, 2).unwrap().geometric_bounds().unwrap();
+    assert!((b.x0 - 250.0).abs() < 1e-6 && (b.width() - 250.0).abs() < 1e-6, "{b:?}");
+}
+
+/// A `viewBox` that isn't square fits the em square by its larger side, centred along the other.
+#[test]
+fn a_view_box_that_isnt_square_is_centred_in_the_em_square() {
+    // 2000 wide, 1000 high: half a unit per unit, the box 500 high centred in the em's 1000.
+    let doc = r##"<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 2000 1000">
+      <g id="glyph2"><path fill="#000" d="M0 0h2000v1000h-2000z"/></g></svg>"##;
+    let b = art(doc, 2).unwrap().geometric_bounds().unwrap();
+    assert!(b.x0.abs() < 1e-6 && (b.y0 - 250.0).abs() < 1e-6 && (b.height() - 500.0).abs() < 1e-6, "{b:?}");
+}
+
+/// A glyph element inside others is drawn on its own, as if used: what its parents apply doesn't
+/// reach it, and what it refers to still does.
+#[test]
+fn a_nested_glyph_is_drawn_on_its_own() {
+    let doc = r##"<svg xmlns="http://www.w3.org/2000/svg">
+      <defs><linearGradient id="g"><stop offset="0" stop-color="#f00"/><stop offset="1" stop-color="#00f"/></linearGradient></defs>
+      <g transform="translate(1000 0)" opacity="0.5"><g id="glyph3"><path fill="url(#g)" d="M0 0h500v-500z"/></g></g>
+    </svg>"##;
+    let art = art(doc, 3).unwrap();
+    let b = art.geometric_bounds().unwrap();
+    assert!(b.x0.abs() < 1e-6 && (b.x1 - 500.0).abs() < 1e-6, "not moved by its parent: {b:?}");
+    let mut opacities = vec![];
+    art.walk(&mut |n| opacities.push(n.opacity));
+    assert!(opacities.iter().all(|o| *o == 1.0), "not faded by its parent: {opacities:?}");
+    assert!(fills(&art).iter().any(|p| matches!(p, Paint::Gradient(_))), "its gradient");
+}
+
+/// A namespace the glyph's parents declare still binds it when it is drawn on its own.
+#[test]
+fn a_nested_glyph_keeps_the_namespaces_its_parents_declare() {
+    let doc = r##"<svg xmlns="http://www.w3.org/2000/svg">
+      <g xmlns:l="http://www.w3.org/1999/xlink"><defs><path id="a" d="M0 0h500v-500z"/></defs>
+        <g id="glyph3"><use fill="#f00" l:href="#a"/></g></g>
+    </svg>"##;
+    assert!(art(doc, 3).is_some_and(|a| fills(&a).contains(&Paint::solid(Color::rgb8(255, 0, 0)))));
+}
