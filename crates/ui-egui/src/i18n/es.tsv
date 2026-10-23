@@ -5304,6 +5304,7 @@ mark-style	Japanese	Japonesas
 @msg	unknown snap option `{key}` (use {options})	opción de ajuste desconocida `{key}` (use {options})
 	Gap Length:	Longitud del hueco:
 	Artboard {n} of {total}	Mesa de trabajo {n} de {total}
+	File {n} of {total}	Archivo {n} de {total}
 	Encoding and writing the file…	Codificando y escribiendo el archivo…
 @plural	{n} more export waiting|{n} more exports waiting	{n} exportación más en espera|{n} exportaciones más en espera
 	Continue in Background	Continuar en segundo plano

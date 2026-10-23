@@ -5318,6 +5318,7 @@ theme	Appearance	Utseende
 @msg	unknown snap option `{key}` (use {options})	okänt fästalternativ `{key}` (använd {options})
 	Gap Length:	Lucklängd:
 	Artboard {n} of {total}	Rityta {n} av {total}
+	File {n} of {total}	Fil {n} av {total}
 	Encoding and writing the file…	Kodar och skriver filen…
 @plural	{n} more export waiting|{n} more exports waiting	{n} export till väntar|{n} exporter till väntar
 	Continue in Background	Fortsätt i bakgrunden

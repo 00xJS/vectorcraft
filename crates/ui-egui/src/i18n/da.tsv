@@ -5312,6 +5312,7 @@ swatch	Bright Violet	Kraftig violet
 @msg	unknown snap option `{key}` (use {options})	ukendt fastgørelsesindstilling `{key}` (brug {options})
 	Gap Length:	Hullængde:
 	Artboard {n} of {total}	Tegneflade {n} af {total}
+	File {n} of {total}	Fil {n} af {total}
 	Encoding and writing the file…	Koder og skriver filen…
 @plural	{n} more export waiting|{n} more exports waiting	{n} eksport mere venter|{n} eksporter mere venter
 	Continue in Background	Fortsæt i baggrunden

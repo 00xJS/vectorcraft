@@ -4990,6 +4990,7 @@ lighting	Light	光源
 @msg	unknown snap option `{key}` (use {options})	未知的靠齊選項 `{key}`（可用：{options}）
 	Gap Length:	間隙長度：
 	Artboard {n} of {total}	工作區域 {n} / {total}
+	File {n} of {total}	檔案 {n} / {total}
 	Encoding and writing the file…	正在編碼並寫入檔案…
 @plural	{n} more export waiting|{n} more exports waiting	另有 {n} 個匯出等待中
 	Continue in Background	在背景繼續

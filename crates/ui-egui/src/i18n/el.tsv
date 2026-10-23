@@ -5314,6 +5314,7 @@ effect	Points	Σημεία
 @msg	unknown snap option `{key}` (use {options})	άγνωστη επιλογή προσκόλλησης `{key}` (χρησιμοποιήστε {options})
 	Gap Length:	Μήκος κενού:
 	Artboard {n} of {total}	Πίνακας σχεδίασης {n} από {total}
+	File {n} of {total}	Αρχείο {n} από {total}
 	Encoding and writing the file…	Κωδικοποίηση και εγγραφή του αρχείου…
 @plural	{n} more export waiting|{n} more exports waiting	{n} ακόμη εξαγωγή σε αναμονή|{n} ακόμη εξαγωγές σε αναμονή
 	Continue in Background	Συνέχεια στο παρασκήνιο

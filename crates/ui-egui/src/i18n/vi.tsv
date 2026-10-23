@@ -4956,6 +4956,7 @@ theme	Appearance	Giao diện
 @msg	unknown snap option `{key}` (use {options})	tùy chọn hút không hợp lệ `{key}` (dùng {options})
 	Gap Length:	Độ dài khoảng hở:
 	Artboard {n} of {total}	Bảng vẽ {n} / {total}
+	File {n} of {total}	Tệp {n} / {total}
 	Encoding and writing the file…	Đang mã hóa và ghi tệp…
 @plural	{n} more export waiting|{n} more exports waiting	Còn {n} lượt xuất đang chờ
 	Continue in Background	Tiếp tục trong nền

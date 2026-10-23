@@ -5016,6 +5016,7 @@ lighting	Light	ライト
 @msg	unknown snap option `{key}` (use {options})	不明なスナップオプション `{key}` ({options} を使用してください)
 	Gap Length:	ギャップの長さ:
 	Artboard {n} of {total}	アートボード {n} / {total}
+	File {n} of {total}	ファイル {n} / {total}
 	Encoding and writing the file…	ファイルをエンコードして書き込み中…
 @plural	{n} more export waiting|{n} more exports waiting	待機中の書き出し: あと {n} 件
 	Continue in Background	バックグラウンドで続行

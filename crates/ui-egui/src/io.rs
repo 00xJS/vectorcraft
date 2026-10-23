@@ -1003,10 +1003,47 @@ pub fn export_for_screens(app: &mut VectorcraftApp, params: Value) -> Result<Val
 }
 
 /// [`export_for_screens`] through command `id` (`document.exportForScreens` or `assets.export`).
+/// On the desktop with Background Export on, an export into a folder is checked, journaled and
+/// prepared from the document as it is now, and the files are encoded and written on the
+/// background thread ([`background`]): this returns `{background: true, status}` at once, with the
+/// progress dialog's Cancel, and the status bar reports the files once they are written.
 pub(crate) fn export_files(app: &mut VectorcraftApp, id: &str, params: Value) -> Result<Value, String> {
     let open_location = params.get("openLocation").and_then(Value::as_bool).unwrap_or(false);
     let folder = params.get("folder").and_then(Value::as_str).unwrap_or_default().to_string();
-    let r = app.run(id, params)?;
+    // Without a folder the files come back in the reply, which the caller waits for.
+    let in_background = app.session.prefs.background_export && app.services.write_shared.is_some() && !is_web(app) && !folder.is_empty();
+    if !in_background {
+        // Made at once, after the exports and saves started before it.
+        background::wait_all(app);
+        let r = app.run(id, params)?;
+        return report_exported(app, r, &folder, open_location);
+    }
+    let export = app.session.prepare_screen_export(id, &params).map_err(|e| e.to_string()).inspect_err(|e| app.ui.status = e.clone())?;
+    let label = format!("Exporting {}", fileio::file_name(&folder));
+    // The progress dialog counts the files, and its Cancel stops the export before the next one.
+    let progress = Progress::of_files();
+    let (reporting, asked) = (progress.clone(), progress.clone());
+    let work = move |write: Writer| {
+        progress::scope(&reporting, || {
+            let mut write = |path: &str, bytes: &[u8]| write(path, bytes).map_err(|e| EngineError::Other(format!("{path}: {e}")));
+            export.write(&mut write).map_err(|e| e.to_string())
+        })
+    };
+    background::run_with_progress(app, true, label, None, Some(progress), work, move |app, r| {
+        // Files written before the Cancel arrived stay in the folder.
+        if r.is_err() && asked.cancelled() {
+            app.status(EXPORT_CANCELLED);
+            return Ok(json!({ "cancelled": true }));
+        }
+        let r = r.inspect_err(|e| report_write_error(app, true, &folder, e))?;
+        report_exported(app, r, &folder, open_location)
+    })
+}
+
+/// Report the files `r` (the reply of `document.exportForScreens`) in the status bar: the count
+/// written into `folder`, else the ZIP or the files downloaded (the web); with `open_location`,
+/// the file manager shows the first file written.
+fn report_exported(app: &mut VectorcraftApp, r: Value, folder: &str, open_location: bool) -> Result<Value, String> {
     let count = r["files"].as_array().map_or(0, Vec::len);
     let warned = r["warnings"].as_array().is_some_and(|w| !w.is_empty());
     // Files that came back as bytes: (name, base64).
@@ -1020,7 +1057,7 @@ pub(crate) fn export_files(app: &mut VectorcraftApp, id: &str, params: Value) ->
         let first = r["path"].as_str().or_else(|| r["files"][0].as_str());
         let mut status = format!("Exported {count} file(s) to {folder}");
         if warned {
-            status = saved_status(r["path"].as_str().unwrap_or(&folder), &r);
+            status = saved_status(r["path"].as_str().unwrap_or(folder), &r);
         }
         if open_location
             && let Some(first) = first

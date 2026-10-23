@@ -5348,6 +5348,7 @@ imageTrace	Outline	Körvonal
 @msg	unknown snap option `{key}` (use {options})	ismeretlen illesztési beállítás: `{key}` (használható: {options})
 	Gap Length:	Rés hossza:
 	Artboard {n} of {total}	Rajztábla: {n} / {total}
+	File {n} of {total}	Fájl: {n} / {total}
 	Encoding and writing the file…	A fájl kódolása és írása…
 @plural	{n} more export waiting|{n} more exports waiting	Még {n} exportálás várakozik
 	Continue in Background	Folytatás a háttérben

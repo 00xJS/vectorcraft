@@ -5361,6 +5361,7 @@ theme	Appearance	Apparence
 @msg	unknown snap option `{key}` (use {options})	option de magnétisme inconnue `{key}` (utilisez {options})
 	Gap Length:	Longueur de lacune :
 	Artboard {n} of {total}	Plan de travail {n} sur {total}
+	File {n} of {total}	Fichier {n} sur {total}
 	Encoding and writing the file…	Encodage et écriture du fichier…
 @plural	{n} more export waiting|{n} more exports waiting	{n} autre exportation en attente|{n} autres exportations en attente
 	Continue in Background	Continuer en arrière-plan

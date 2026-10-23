@@ -5312,6 +5312,7 @@ swatch	Bright Violet	Violet cerah
 @msg	unknown snap option `{key}` (use {options})	opsi snap `{key}` tidak dikenal (gunakan {options})
 	Gap Length:	Panjang celah:
 	Artboard {n} of {total}	Artboard {n} dari {total}
+	File {n} of {total}	Berkas {n} dari {total}
 	Encoding and writing the file…	Mengodekan dan menulis berkas…
 @plural	{n} more export waiting|{n} more exports waiting	{n} ekspor lagi menunggu
 	Continue in Background	Lanjutkan di latar belakang

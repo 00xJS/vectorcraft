@@ -5355,6 +5355,7 @@ swatch	Bright Violet	Felviolet
 @msg	The image is {_1} × {_2} pixels, more than {LARGE_TRACE_SIDE} on a side: it is traced, but more slowly. A lower-fidelity preset or a smaller copy of the image traces faster.	De afbeelding is {_1} × {_2} pixels, meer dan {LARGE_TRACE_SIDE} aan één zijde: ze wordt getraceerd, maar langzamer. Een voorinstelling met minder detail of een kleinere kopie van de afbeelding traceert sneller.
 @msg	The image was traced at {_1} × {_2} pixels, scaled down from {_3} × {_4} ({_5} megapixels at most).	De afbeelding is getraceerd op {_1} × {_2} pixels, verkleind van {_3} × {_4} (maximaal {_5} megapixels).
 	Artboard {n} of {total}	Tekengebied {n} van {total}
+	File {n} of {total}	Bestand {n} van {total}
 	Encoding and writing the file…	Bestand coderen en schrijven…
 @plural	{n} more export waiting|{n} more exports waiting	Nog {n} export in de wachtrij|Nog {n} exports in de wachtrij
 	Continue in Background	Doorgaan op achtergrond
