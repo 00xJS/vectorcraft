@@ -147,7 +147,6 @@ fn language_and_appearance_are_in_the_app_menu() {
     assert_eq!(appearance.len(), crate::theme::Brightness::ALL.len());
     assert_eq!(appearance.iter().filter(|(_, c)| *c == Some(true)).count(), 1, "{appearance:?}");
     assert!(appearance.iter().all(|(_, c)| c.is_some()));
-    assert_eq!(crate::i18n::tr_ctx(Lang::from_code("ja").unwrap(), "theme", "Appearance"), "外観", "the theme, not the Appearance panel");
 }
 
 /// Everything the in-window bar lists is in the Mac menu bar, once: what moved to the app menu

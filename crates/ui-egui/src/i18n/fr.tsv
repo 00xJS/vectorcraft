@@ -10,7 +10,7 @@
 # « », the typographic apostrophe ’. Shortcut keys use their French key-cap names (Maj, Ctrl, Alt, Échap).
 #
 # Coverage: the whole interface — every menu string and every `tl!` literal (`complete_menus`,
-# tested). Left in English on purpose (`MENU_KEEP_AS_IS` in the tests): the product name, language
+# `untranslated_report` lists gaps). Left in English on purpose (`MENU_KEEP_AS_IS` in the tests): the product name, language
 # names, OpenType, the built-in workspace names and the bracketed perspective grid preset names.
 # Photoshop-style raster effects (Effect menu, their dialogs).
 	Glowing Edges…	Contour lumineux…
@@ -1384,7 +1384,7 @@ font-technology	Variable	Variables
 	Clear History	Effacer l’historique
 	Set History Limit…	Définir la limite de l’historique…
 	History States	États de l’historique
-# History panel: the names of undo steps (`every_undo_label_is_translated`).
+# History panel: the names of undo steps (`untranslated_report` lists any that are missing).
 	Apply Data Set	Appliquer le jeu de données
 	Cancel Pattern Editing	Annuler la modification du motif
 	Copy Appearance	Copier l’aspect
@@ -3751,7 +3751,7 @@ axis	Both	Les deux
 
 # Status and error messages (`@msg`), translated where the status bar shows them; the message itself
 # stays English for agents and tests. `{_1}`, `{_2}` … stand for the `{}` of the format string, in order
-# (`complete_languages_translate_every_message` lists any that are missing). Command ids, parameter
+# (`untranslated_report` lists any that are missing). Command ids, parameter
 # names and values in backticks or code (`colorModel rgb`, `document.export`) stay as they are.
 @msg	no library `{id}`	aucune bibliothèque `{id}`
 @msg	select some type first	sélectionnez d’abord du texte

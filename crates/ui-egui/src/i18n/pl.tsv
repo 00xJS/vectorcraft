@@ -17,7 +17,7 @@
 #
 # Plurals: one (1), few (2–4, 22–24, … but not 12–14), many (0, 5–21, 25–31, …).
 #
-# Coverage: every menu string, tl! literal, plural, status and error message (enforced in tests:
+# Coverage: every menu string, tl! literal, plural, status and error message (`untranslated_report` lists gaps:
 # `complete_menus` and `COMPLETE_MESSAGES`). Left in English on purpose (`MENU_KEEP_AS_IS` in the
 # tests): the product name, language names, OpenType, the built-in workspace names and the
 # bracketed perspective grid preset names. Keep placeholders, ellipses and the leading/trailing
@@ -1451,7 +1451,7 @@ lighting	Light	Światło
 	Clear History	Wyczyść historię
 	Set History Limit…	Ustaw limit historii…
 	Open a document to see its history.	Otwórz dokument, aby zobaczyć jego historię.
-# History panel: the names of undo steps (`every_undo_label_is_translated`).
+# History panel: the names of undo steps (`untranslated_report` lists any that are missing).
 	Apply Data Set	Zastosuj zestaw danych
 	Area Type	Tekst akapitowy
 	Cancel Pattern Editing	Anuluj edycję wzorka

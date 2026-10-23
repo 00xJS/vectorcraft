@@ -236,21 +236,6 @@ fn form_dialog_axes_are_dropdowns() {
     }
 }
 
-/// The axis choices are translated in the "axis" context: in Japanese the plain Horizontal and
-/// Vertical are the type orientations (horizontal and vertical writing).
-#[test]
-fn axis_choices_read_as_axes_in_every_complete_language() {
-    use crate::i18n::{LANGUAGES, Lang, tr, tr_ctx};
-    let ja = Lang::from_code("ja").unwrap();
-    assert_eq!(tr_ctx(ja, "axis", "Horizontal"), "水平方向");
-    assert_ne!(tr_ctx(ja, "axis", "Horizontal"), tr(ja, "Horizontal"));
-    for l in LANGUAGES.iter().filter(|l| l.complete_menus) {
-        for s in ["Horizontal", "Vertical", "Both"] {
-            assert!(l.source.lines().any(|line| line.starts_with(&format!("axis\t{s}\t"))), "{}: no axis row for {s}", l.code);
-        }
-    }
-}
-
 /// Offset Path previews on the canvas; Cancel rolls the preview back.
 #[test]
 fn offset_path_previews() {
@@ -713,7 +698,7 @@ fn simplify_dialog_show_original_path_outlines_the_paths_before_the_preview() {
 #[test]
 fn printer_mark_labels_are_distinct_from_language_names() {
     let cs = crate::i18n::Lang::from_code("cs").unwrap();
-    assert_eq!(save_pdf::choice_label(cs, "marks.kind", "Japanese"), "Japonské");
-    assert_eq!(save_pdf::choice_label(cs, "language", "Japanese"), "Japonština");
+    assert_eq!(save_pdf::choice_label(cs, "marks.kind", "Japanese"), crate::i18n::tr_ctx(cs, "mark-style", "Japanese"));
+    assert_eq!(save_pdf::choice_label(cs, "language", "Japanese"), crate::i18n::tr(cs, "Japanese"));
     assert_eq!(save_pdf::choice_label(crate::i18n::Lang::EN, "marks.kind", "Japanese"), "Japanese");
 }

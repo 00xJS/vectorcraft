@@ -1313,7 +1313,7 @@ font-technology	Variable	Μεταβλητές
 	Clear History	Εκκαθάριση ιστορικού
 	Set History Limit…	Ορισμός ορίου ιστορικού…
 	History States	Καταστάσεις ιστορικού
-# History panel: the names of undo steps (`every_undo_label_is_translated`).
+# History panel: the names of undo steps (`untranslated_report` lists any that are missing).
 	Apply Data Set	Εφαρμογή συνόλου δεδομένων
 	Cancel Pattern Editing	Ακύρωση επεξεργασίας μοτίβου
 	Copy Appearance	Αντιγραφή εμφάνισης

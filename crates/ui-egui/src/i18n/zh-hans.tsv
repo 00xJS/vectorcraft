@@ -1328,7 +1328,7 @@ file-filter	Templates	模板
 	Clear History	清除历史记录
 	Set History Limit…	设置历史记录上限…
 	History States	历史记录步数
-# History panel: the names of undo steps (`every_undo_label_is_translated`).
+# History panel: the names of undo steps (`untranslated_report` lists any that are missing).
 	Apply Data Set	应用数据集
 	Bloat	膨胀
 	Cancel Pattern Editing	取消图案编辑
@@ -3595,7 +3595,7 @@ imageTrace	Outline	轮廓
 	Use Default	使用默认值
 # Status and error messages (`@msg`), translated where the status bar shows them; the message itself
 # stays English for agents and tests. `{_1}`, `{_2}` … stand for the `{}` of the format string, in order
-# (`complete_languages_translate_every_message` lists any that are missing). Command ids, parameter
+# (`untranslated_report` lists any that are missing). Command ids, parameter
 # names and values in backticks or code (`colorModel rgb`, `document.export`) stay as they are.
 # Simplified Chinese: no final 。 unless the English ends with a period; a space between Chinese text and
 # an adjacent Latin word, number or {placeholder}; 、 between the items of a list.

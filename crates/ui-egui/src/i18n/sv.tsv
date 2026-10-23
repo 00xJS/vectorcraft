@@ -1352,7 +1352,7 @@ font-technology	Variable	Variabla
 	Clear History	Rensa historik
 	Set History Limit…	Ange historikgräns…
 	History States	Historiktillstånd
-# History panel: the names of undo steps (`every_undo_label_is_translated`).
+# History panel: the names of undo steps (`untranslated_report` lists any that are missing).
 	Apply Data Set	Använd datauppsättning
 	Cancel Pattern Editing	Avbryt mönsterredigering
 	Copy Appearance	Kopiera utseende

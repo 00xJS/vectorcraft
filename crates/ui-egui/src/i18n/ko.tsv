@@ -1634,7 +1634,7 @@ font-technology	Variable	가변
 	Clear History	히스토리 지우기
 	Set History Limit…	히스토리 한도 설정…
 	History States	히스토리 상태
-# History panel: the names of undo steps (`every_undo_label_is_translated`).
+# History panel: the names of undo steps (`untranslated_report` lists any that are missing).
 	Apply Data Set	데이터 세트 적용
 	Area Type	영역 문자
 	Bloat	부풀리기

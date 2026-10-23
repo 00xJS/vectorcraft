@@ -18,7 +18,7 @@
 # English first word, as they are often shown after "…: ".
 #
 # Coverage: the whole interface (every menu string and `tl!` literal, `complete_menus`) and the
-# status and error messages (`COMPLETE_MESSAGES`), enforced by the tests. Left in English on
+# status and error messages (`COMPLETE_MESSAGES`), gaps listed by `untranslated_report`. Left in English on
 # purpose (`MENU_KEEP_AS_IS`): the product name, language names, OpenType, the built-in workspace
 # names and the bracketed perspective grid preset names; `hu-HU` and every other `hu-*` locale
 # resolve here.
@@ -1777,7 +1777,7 @@ file-filter	Templates	Sablonok
 	Clear History	Előzmények törlése
 	Set History Limit…	Előzménykorlát beállítása…
 	History States	Előzmények lépésszáma
-# History panel: the names of undo steps (`every_undo_label_is_translated`).
+# History panel: the names of undo steps (`untranslated_report` lists any that are missing).
 	Apply Data Set	Adatkészlet alkalmazása
 	Cancel Pattern Editing	Mintázatszerkesztés megszakítása
 	Copy Appearance	Megjelenés másolása

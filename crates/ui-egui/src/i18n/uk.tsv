@@ -7,7 +7,7 @@
 # монтажна область, шар, обведення, заливка, контур, опорна точка, зразки, пензель, виділення.
 # Shortcut key names (Shift, Alt, Ctrl, Esc), command ids and placeholders remain unchanged.
 #
-# Coverage: every menu string, tl! literal, plural, status and error message (enforced in tests).
+# Coverage: every menu string, tl! literal, plural, status and error message (`untranslated_report` lists gaps).
 # Product, language, built-in workspace and perspective preset names follow MENU_KEEP_AS_IS.
 # Keep placeholders, ellipses and leading/trailing spaces of fragments when editing.
 	Glowing Edges…	Сяйливі краї…
@@ -1389,7 +1389,7 @@ file-filter	Templates	Шаблони
 	Clear History	Очистити історію
 	Set History Limit…	Задати межу історії…
 	History States	Стан історії
-# History panel: the names of undo steps (`every_undo_label_is_translated`).
+# History panel: the names of undo steps (`untranslated_report` lists any that are missing).
 	Apply Data Set	Застосувати набір даних
 	Area Type	Текст в області
 	Bloat	Роздування

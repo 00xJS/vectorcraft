@@ -9,7 +9,7 @@
 # sentences address the user as "tú". Shortcut keys keep their key-cap names (Shift, Alt, Ctrl, Esc).
 #
 # Coverage: the whole interface — every menu string and every `tl!` literal (`complete_menus`,
-# tested). Left in English on purpose (`MENU_KEEP_AS_IS` in the tests): the product name, language
+# `untranslated_report` lists gaps). Left in English on purpose (`MENU_KEEP_AS_IS` in the tests): the product name, language
 # names, OpenType, the built-in workspace names and the bracketed perspective grid preset names.
 # Photoshop-style raster effects (Effect menu, their dialogs).
 	Glowing Edges…	Bordes resplandecientes…
@@ -1385,7 +1385,7 @@ font-technology	Variable	Variables
 	Clear History	Borrar historial
 	Set History Limit…	Definir límite de historial…
 	History States	Estados de historial
-# History panel: the names of undo steps (`every_undo_label_is_translated`).
+# History panel: the names of undo steps (`untranslated_report` lists any that are missing).
 	Apply Data Set	Aplicar conjunto de datos
 	Cancel Pattern Editing	Cancelar edición de motivo
 	Copy Appearance	Copiar apariencia
@@ -3754,7 +3754,7 @@ axis	Both	Ambos
 
 # Status and error messages (`@msg`), translated where the status bar shows them; the message itself
 # stays English for agents and tests. `{_1}`, `{_2}` … stand for the `{}` of the format string, in order
-# (`complete_languages_translate_every_message` lists any that are missing). Command ids, parameter
+# (`untranslated_report` lists any that are missing). Command ids, parameter
 # names and values in backticks or code (`colorModel rgb`, `document.export`) stay as they are.
 @msg	no library `{id}`	no hay ninguna biblioteca `{id}`
 @msg	select some type first	selecciona primero algún texto

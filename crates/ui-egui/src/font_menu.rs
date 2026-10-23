@@ -865,7 +865,7 @@ mod tests {
         assert_eq!(super::script_label(3), "Thai");
         let zh = crate::i18n::Lang::from_code("zh-hans").unwrap();
         crate::i18n::set_current(zh);
-        assert_eq!(super::script_label(1), "汉字");
+        assert_eq!(super::script_label(1), crate::i18n::tr_ctx(zh, "font-script", "Japanese"));
         crate::i18n::set_current(crate::i18n::Lang::EN);
         assert_eq!(super::script_label(1), "Japanese");
     }

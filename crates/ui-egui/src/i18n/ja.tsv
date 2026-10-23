@@ -11,7 +11,7 @@
 	Smoothness	滑らかさ
 #
 # Coverage: the whole interface — every menu string and every `tl!` literal (`complete_menus`,
-# tested) — and the status and error messages (`@msg` rows at the end, `COMPLETE_MESSAGES`, tested).
+# `untranslated_report` lists gaps) — and the status and error messages (`@msg` rows at the end, `COMPLETE_MESSAGES`, `untranslated_report` lists gaps).
 # Left in English on purpose (`MENU_KEEP_AS_IS` in the tests): the product name, language
 # names, OpenType, the built-in workspace names and the bracketed perspective grid preset names.
 	About VectorCraft	VectorCraft について
@@ -1639,7 +1639,7 @@ font-technology	Variable	バリアブル
 	Clear History	ヒストリーを消去
 	Set History Limit…	ヒストリーの上限を設定…
 	History States	ヒストリー数
-# History panel: the names of undo steps (`every_undo_label_is_translated`).
+# History panel: the names of undo steps (`untranslated_report` lists any that are missing).
 	Apply Data Set	データセットを適用
 	Area Type	エリア内文字
 	Bloat	膨張
@@ -3807,7 +3807,7 @@ theme	Appearance	外観
 
 # Status and error messages (`@msg`), translated where the status bar shows them; the message itself
 # stays English for agents and tests. `{_1}`, `{_2}` … stand for the `{}` of the format string, in order
-# (`complete_languages_translate_every_message` lists any that are missing). Command ids, parameter
+# (`untranslated_report` lists any that are missing). Command ids, parameter
 # names and values in backticks or code (`colorModel rgb`, `document.export`) stay as they are.
 # Japanese: no final 。 (these are status lines, and reasons that follow a colon), unless the English ends
 # with a period; a space between Japanese text and an adjacent Latin word, number or {placeholder}.
@@ -4654,7 +4654,7 @@ effect	Vertical	垂直
 	Define a variable first	先に変数を定義してください
 	Text	テキスト
 	Visibility	表示状態
-# tested). Left in English on purpose (`MENU_KEEP_AS_IS` in the tests): the product name, language
+# `untranslated_report` lists gaps). Left in English on purpose (`MENU_KEEP_AS_IS` in the tests): the product name, language
 # Shared panel docking
 	Activate Panel	パネルをアクティブにする
 	Change Panel Layout	パネルの配置を変更

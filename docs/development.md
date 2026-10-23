@@ -258,24 +258,30 @@ other `sv-*` locale resolve to it), Georgian (`ka`, complete; `ka-GE` and `ka_GE
   rule). The Language menu, the dropdown, locale matching and the catalog tests (well-formed, no duplicates,
   placeholders and ellipses agree, command ids exist, every row of a partial catalog is a string the UI
   shows, the UI fonts have every glyph, no Simplified characters in `zh-hant`) pick it up. Set `complete_menus`
-  once every menu string and `tl!` literal is translated; `i18n::tests` then enforce it
-  (`VECTORCRAFT_I18N_DUMP=strings.txt cargo test -p vectorcraft-ui-egui dump_source_strings` lists them).
+  once the menus and `tl!` literals are translated; the untranslated report then lists what the catalog lacks
+  (`VECTORCRAFT_I18N_DUMP=strings.txt cargo test -p vectorcraft-ui-egui dump_source_strings` lists every
+  English string).
+- A missing translation never fails a test or a build: the interface shows the English text until a translator
+  adds the row. `cargo xtask i18n-report` prints, per language, the strings its catalog lacks (menu strings,
+  `tl!` literals, undo step names, menu labels, render-site labels, status and error messages, PostScript
+  error meanings, default swatch names), and `cargo xtask ci` prints the same list in its `i18n-report` step.
+  The report is the test `i18n::tests::untranslated_report`, run with `--nocapture`; it fails only when a
+  scan finds too few strings to be working. Tests don't check one language's exact wording: a test that needs a
+  translation compares with the catalog lookup (`tr(lang, "English")`).
 - Translations are clean-room: written from the meaning of the English text in ordinary vocabulary, never
   from another product's localisation resources. Product and technology names stay in Latin letters.
 - Status-bar messages and errors stay English where they are made (`app.ui.status`, `EngineError`: the
   control channel, MCP and tests read them) and are translated only where the status bar draws them
   (`i18n::msg`). `@msg` catalog rows hold a whole message or a template such as
   `Couldn't open {name}: {e}`; `{_1}`, `{_2}` … stand for the format string's `{}`, and the values in the
-  placeholders are translated in turn (the reason after `: {e}` is often a message too). Czech, German, Greek, Spanish, French, Georgian, Hungarian, Italian, Japanese, Korean, Polish, Brazilian Portuguese, Russian, Simplified Chinese, Traditional Chinese, Swedish, Ukrainian, Vietnamese and Finnish cover every
-  message literal the test scan finds (`complete_languages_translate_every_message`, languages listed in
-  `COMPLETE_MESSAGES`), except the messages listed in `crates/ui-egui/src/i18n/untranslated_messages.txt`.
-  A new `Err("…")`, `Other(…)`, `#[error(…)]` or `status(…)` message needs a row in each of those catalogs, and so
-  does a new message given to an error enum's variant (`PsError::Limit(…)`), to the engine's `bad(cmd, …)`, `err(…)` or
-  `error(…)`, or to the PDF writer's `bad(…)` or `failed(…)` (`VECTORCRAFT_I18N_DUMP_MESSAGES=messages.txt cargo test -p vectorcraft-ui-egui
-  complete_languages_translate_every_message` lists them all). The list also holds the messages that open pull
-  requests add without those rows. A change that adds the rows for a listed message removes its line from the list
-  (`VECTORCRAFT_I18N_DUMP_UNTRANSLATED=<file>` writes the messages in the sources that lack a row). Other languages
-  show messages in English until they add `@msg` rows.
+  placeholders are translated in turn (the reason after `: {e}` is often a message too). Czech, German, Greek, Spanish, French, Georgian, Hungarian, Italian, Japanese, Korean, Polish, Brazilian Portuguese, Russian, Simplified Chinese, Traditional Chinese, Swedish, Ukrainian, Vietnamese, Finnish and Turkish
+  translate status and error messages (`COMPLETE_MESSAGES` in `i18n::tests`); the untranslated report lists the
+  message literals the scan finds that one of them has no row for. The scan reads `Err("…")`, `Other(…)`,
+  `#[error(…)]` and `status(…)` messages, messages given to an error enum's variant (`PsError::Limit(…)`), to the
+  engine's `bad(cmd, …)`, `err(…)` or `error(…)`, and to the PDF writer's `bad(…)` or `failed(…)`
+  (`VECTORCRAFT_I18N_DUMP_MESSAGES=messages.txt cargo test -p vectorcraft-ui-egui dump_source_strings` lists them
+  all). A missing row shows the English message. Other languages show messages in English until they add `@msg`
+  rows.
 - Not translated on purpose: names that are user data (layers, swatches, fonts, documents), the tab
   title's colour mode, command ids and parameter names inside messages. Not done yet: locale-aware number
   and date formats, right-to-left layout. Chinese and Japanese UI text

@@ -19,7 +19,7 @@
 # commands is kept.
 #
 # Coverage: the whole interface (every menu string and every `tl!` literal, `complete_menus`,
-# tested) and the status and error messages (`@msg` rows, `COMPLETE_MESSAGES`, tested). Left in
+# `untranslated_report` lists gaps) and the status and error messages (`@msg` rows, `COMPLETE_MESSAGES`, `untranslated_report` lists gaps). Left in
 # English on purpose (`MENU_KEEP_AS_IS` in the tests): the product name, language names, OpenType,
 # the built-in workspace names and the bracketed perspective grid preset names.
 #
@@ -1191,7 +1191,7 @@
 	Clear History	Limpar Histórico
 	Set History Limit…	Definir Limite do Histórico…
 	History States	Estados do Histórico
-# History panel: the names of undo steps (`every_undo_label_is_translated`).
+# History panel: the names of undo steps (`untranslated_report` lists any that are missing).
 	Apply Data Set	Aplicar Conjunto de Dados
 	Cancel Pattern Editing	Cancelar Edição de Padrão
 	Copy Appearance	Copiar Aparência

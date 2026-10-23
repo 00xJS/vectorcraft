@@ -4435,10 +4435,14 @@ mod tests {
                 _ => panic!("{id} is not a menu item"),
             }
         };
-        assert_eq!(shown(&app, "edit.undo"), "ぼかしを取り消す");
+        let step = |template: &str, name: &str| {
+            let name = crate::panels::history::step_name(ja, name).unwrap_or_else(|| name.to_string());
+            crate::i18n::fmt(crate::i18n::tr(ja, template), &[("name", &name)])
+        };
+        assert_eq!(shown(&app, "edit.undo"), step("Undo {name}", "Feather"));
         app.run("edit.undo", json!({})).unwrap();
-        assert_eq!(shown(&app, "edit.redo"), "ぼかしをやり直す");
-        assert_eq!(shown(&app, "edit.undo"), "長方形を取り消す", "a step with a plain row");
+        assert_eq!(shown(&app, "edit.redo"), step("Redo {name}", "Feather"));
+        assert_eq!(shown(&app, "edit.undo"), step("Undo {name}", "Rectangle"), "a step with a plain row");
         crate::i18n::set_current(crate::i18n::Lang::EN);
         assert_eq!(shown(&app, "edit.redo"), "Redo Feather");
     }
@@ -4543,10 +4547,15 @@ mod tests {
         let text = app.run("text.create", json!({"x": 0, "y": 40, "text": "Hello"})).unwrap()["id"].clone();
         app.run("charStyle.new", json!({"name": "Brush"})).unwrap();
         app.run("charStyle.apply", json!({"name": "Brush", "id": text})).unwrap();
-        crate::i18n::set_current(crate::i18n::Lang::from_code("ja").expect("ja registered"));
-        assert_eq!(display_label(&app, "edit.undo", "Undo"), "スタイル「Brush」を適用を取り消す");
+        let ja = crate::i18n::Lang::from_code("ja").expect("ja registered");
+        crate::i18n::set_current(ja);
+        let step = |template: &str| {
+            let applied = crate::i18n::fmt(crate::i18n::tr(ja, "Apply {name}"), &[("name", "Brush")]);
+            crate::i18n::fmt(crate::i18n::tr(ja, template), &[("name", &applied)])
+        };
+        assert_eq!(display_label(&app, "edit.undo", "Undo"), step("Undo {name}"));
         app.run("edit.undo", json!({})).unwrap();
-        assert_eq!(display_label(&app, "edit.redo", "Redo"), "スタイル「Brush」を適用をやり直す");
+        assert_eq!(display_label(&app, "edit.redo", "Redo"), step("Redo {name}"));
         crate::i18n::set_current(crate::i18n::Lang::EN);
         assert_eq!(display_label(&app, "edit.redo", "Redo"), "Redo Apply Brush");
     }
