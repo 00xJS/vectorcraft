@@ -9678,7 +9678,7 @@ mod tests {
         use egui::{Event, Modifiers};
         let (mut app, ctx, _, over, _) = distance_scene(true);
         let cover = Some(egui::Rect::from_center_size(over, vec2(120.0, 120.0)));
-        let mut run = |app: &mut VectorcraftApp, events, cover| distance_frame_covered(app, &ctx, events, cover);
+        let run = |app: &mut VectorcraftApp, events, cover| distance_frame_covered(app, &ctx, events, cover);
         run(&mut app, vec![Event::ModifiersChanged(Modifiers::ALT), Event::PointerMoved(over)], None);
         assert!(gap_label(&run(&mut app, vec![], None)).is_some(), "shown over the other square");
         // A floating panel opens under the still pointer.
@@ -9699,7 +9699,7 @@ mod tests {
 
         // A square made under the still pointer, the first selected again (an edit, an undo).
         let (mut app, ctx, _, over, a) = distance_scene(false);
-        let mut run = |app: &mut VectorcraftApp, events| distance_frame(app, &ctx, events);
+        let run = |app: &mut VectorcraftApp, events| distance_frame(app, &ctx, events);
         run(&mut app, vec![Event::ModifiersChanged(Modifiers::ALT), Event::PointerMoved(over)]);
         let s = run(&mut app, vec![]);
         assert!(gap_label(&s).is_none() && texts(&s).iter().any(|t| t == "300.00 pt"), "to the artboard: {:?}", texts(&s));
