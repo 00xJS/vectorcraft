@@ -1061,3 +1061,32 @@ fn entities_extruded_along_minus_z_are_mirrored() {
     let b = bounds(&leaves(&doc)[0]);
     assert!((b.center().x + 50.0).abs() < 1e-6, "the centre's x is mirrored: {b:?}");
 }
+
+/// A drawing with one paper block record (handle `A`) and a LAYOUT object per name.
+fn with_layouts(names: &[String]) -> Vec<u8> {
+    let mut s = String::from(
+        "  0\nSECTION\n  2\nTABLES\n  0\nTABLE\n  2\nBLOCK_RECORD\n  0\nBLOCK_RECORD\n  5\nA\n  2\n*Paper_Space\n  0\nENDTAB\n  0\nENDSEC\n  0\nSECTION\n  2\nOBJECTS\n",
+    );
+    for n in names {
+        s.push_str(&format!("  0\nLAYOUT\n100\nAcDbLayout\n  1\n{n}\n330\nA\n"));
+    }
+    s.push_str("  0\nENDSEC\n  0\nEOF\n");
+    s.into_bytes()
+}
+
+#[test]
+fn many_paper_layouts_are_read_in_linear_time() {
+    let names: Vec<String> = (0..100_000).map(|i| format!("L{i}")).collect();
+    let bytes = with_layouts(&names);
+    let t = std::time::Instant::now();
+    let info = info(&bytes).unwrap();
+    assert_eq!(info.layouts.len(), names.len() + 1);
+    assert!(t.elapsed() < std::time::Duration::from_secs(5), "layout de-duplication is quadratic: {:?}", t.elapsed());
+}
+
+#[test]
+fn paper_layout_names_are_unique_ignoring_case() {
+    let names = ["Layout1", "LAYOUT1", "Other"].map(String::from);
+    let info = info(&with_layouts(&names)).unwrap();
+    assert_eq!(info.layouts, ["Model", "Layout1", "Other"]);
+}
