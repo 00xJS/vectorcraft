@@ -1090,3 +1090,20 @@ fn paper_layout_names_are_unique_ignoring_case() {
     let info = info(&with_layouts(&names)).unwrap();
     assert_eq!(info.layouts, ["Model", "Layout1", "Other"]);
 }
+
+#[test]
+fn many_array_inserts_of_a_missing_block_stay_bounded() {
+    let one = [(0, "INSERT"), (8, "0"), (2, "NOPE"), (10, "0"), (20, "0"), (70, "100"), (71, "100"), (44, "1"), (45, "1")];
+    let e: Vec<(i32, &str)> = (0..3000).flat_map(|_| one).collect();
+    let bytes = entities(&e);
+    let text = reader::decode(&bytes);
+    let (pairs, _) = reader::pairs(&text).unwrap();
+    let d = reader::Drawing::read(&pairs);
+    let model = d.layout("Model").or(d.layouts.first()).unwrap();
+    let mut conv = entity::Converter::default();
+    let items = conv.items(&d.layout_records(model));
+    assert_eq!(items.len(), 3000);
+    let total: usize = items.iter().map(|i| if let entity::Geom::Insert(ins) = &i.geom { ins.cells.len() } else { 0 }).sum();
+    assert!(total <= 2_000_000 + 3000, "total cells materialised: {total}");
+    assert!(conv.warnings.iter().any(|w| w.contains("array inserts")), "{:?}", conv.warnings);
+}
