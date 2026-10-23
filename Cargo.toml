@@ -91,6 +91,8 @@ ruzstd = { version = "0.9.1", default-features = false, features = ["std"] }
 # CCITT Group 3 and Group 4 decoder (ITU-T T.4 and T.6): EPS images read through
 # `CCITTFaxDecode`. The PDF reader's hayro-syntax uses the same version.
 hayro-ccitt = "0.3"
+# Substring search for the EPS reader's PostScript `search`.
+memchr = "2"
 jpeg-encoder = { version = "0.6", default-features = false, features = ["std"] }
 gif = { version = "0.14", default-features = false, features = ["std", "raii_no_panic"] }
 # CMYK image samples (vectorcraft-doc's cmyk module): the image crate's own TIFF and JPEG
