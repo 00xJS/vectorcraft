@@ -61,7 +61,10 @@ pub(crate) fn open_options(app: &mut VectorcraftApp, tool: &str) -> Result<Value
 /// switches as they are, its typed fields as numbers, its Default Size and Reference Point.
 fn tool_options(d: &Dialog) -> Value {
     match d.kind.as_str() {
-        "lineSegment" => json!({"length": d.f64("length", 100.0).abs(), "angle": d.f64("angle", 0.0), "fillLine": d.bool("fillLine")}),
+        "lineSegment" => {
+            let (length, angle) = line_length_angle(d);
+            json!({"length": length, "angle": angle, "fillLine": d.bool("fillLine")})
+        }
         "arc" => arc_options(d),
         kind => {
             let (mut o, (counts, skews)) = (form::params(d), grid_keys(kind));
@@ -79,6 +82,14 @@ fn tool_options(d: &Dialog) -> Value {
             o
         }
     }
+}
+
+/// The Line Segment dialog's length and angle (degrees), a negative length turned into the same
+/// line drawn the other way: -80 pt at 0° is 80 pt at 180°. The line a click draws and the options
+/// OK keeps both use it, so the next line goes the way this one went.
+fn line_length_angle(d: &Dialog) -> (f64, f64) {
+    let (length, angle) = (d.f64("length", 100.0), d.f64("angle", 0.0));
+    if length < 0.0 { (-length, (angle + 180.0).rem_euclid(360.0)) } else { (length, angle) }
 }
 
 /// The Arc tool's options from its dialog's fields.
@@ -296,7 +307,8 @@ fn confirm(app: &mut VectorcraftApp, d: &Dialog) -> Result<Value, String> {
             (if kind == "polarGrid" { "shape.polarGrid" } else { "shape.rectangularGrid" }, p)
         }
         "lineSegment" => {
-            let (l, a) = (d.f64("length", 100.0), d.f64("angle", 0.0).to_radians());
+            let (l, a) = line_length_angle(d);
+            let a = a.to_radians();
             let mut p = json!({"x1": x, "y1": y, "x2": x + l * a.cos(), "y2": y - l * a.sin()});
             if d.bool("fillLine") {
                 p["fill"] = json!(true);
@@ -382,5 +394,33 @@ mod tests {
         let fields = |alt: bool| Dialog::new("rectangle", json!({"x": 100.0, "y": 50.0, "alt": alt, "width": "40 pt", "height": "20 pt"}));
         assert_eq!(box_origin(&fields(false)), (100.0, 50.0));
         assert_eq!(box_origin(&fields(true)), (80.0, 40.0));
+    }
+
+    #[test]
+    fn a_negative_line_length_draws_and_keeps_the_same_direction() {
+        let mut app = VectorcraftApp::new(Session::new(), Default::default());
+        app.run("file.new", json!({"width": 300, "height": 200})).unwrap();
+        app.run("tool.select", json!({"tool": "lineSegment"})).unwrap();
+        let line_bounds = |app: &VectorcraftApp, i: usize| {
+            let doc = &app.session.doc().unwrap().doc;
+            let n = &doc.layers[0].children().unwrap()[i];
+            n.path_data().and_then(|p| p.bounds()).expect("line bounds")
+        };
+
+        super::super::open_tool_dialog(&mut app, "lineSegment", json!({"x": 100.0, "y": 60.0}));
+        let d = app.ui.dialog.as_mut().expect("Line Segment dialog");
+        d.fields.insert("length".into(), json!(-80.0));
+        d.fields.insert("angle".into(), json!(0.0));
+        super::super::confirm(&mut app).unwrap();
+        let first = line_bounds(&app, 0);
+        assert!((first.x0 - 20.0).abs() < 1e-6 && (first.x1 - 100.0).abs() < 1e-6, "{first:?}");
+        let kept = app.session.tool_options_of("lineSegment");
+        assert_eq!((kept["length"].as_f64(), kept["angle"].as_f64()), (Some(80.0), Some(180.0)));
+
+        // The next click opens at what was kept and draws the same way.
+        super::super::open_tool_dialog(&mut app, "lineSegment", json!({"x": 100.0, "y": 120.0}));
+        super::super::confirm(&mut app).unwrap();
+        let second = line_bounds(&app, 1);
+        assert!((second.x0 - 20.0).abs() < 1e-6 && (second.x1 - 100.0).abs() < 1e-6, "{second:?}");
     }
 }
