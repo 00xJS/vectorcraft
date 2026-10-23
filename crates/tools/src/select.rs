@@ -22,6 +22,9 @@
 //! path, area type or type on a path under the pointer, or into a new frame of the same kind, shape
 //! and size at the click on empty canvas,
 //! and a drag draws a rectangle for the new frame (`text.thread.add`). Escape drops the loaded text.
+//! With Smart Guides and Invoke Distance Guides on, Alt/Option held over another object shows how
+//! far the selection is from it, and over an empty part of an artboard how far it is from the
+//! artboard's edges ([`crate::guides::distance_guides`]).
 
 use std::cell::RefCell;
 use std::collections::HashMap;
@@ -33,7 +36,7 @@ use vectorcraft_geom::{Affine, Point, Rect, Vec2};
 
 use crate::bbox::{Handle, hit_handle, in_rotate_zone, move_delta, rotate_for_drag, scale_for_drag};
 use crate::corners::{self, CornerDrag, over_widget};
-use crate::guides::{PointSnap, Targets, hold_on_path};
+use crate::guides::{PointSnap, Targets, distance_guides, hold_on_path};
 use crate::pathtype::{self, BracketDrag, over_bracket};
 use crate::pie::{self, PieDrag};
 use crate::rulerguide::GuideEdit;
@@ -108,6 +111,43 @@ pub struct SelectionTool {
     guide: GuideEdit,
     /// Smart Guides: the centre or anchor under the pointer, and its label ([`Self::hover_point`]).
     hover: Option<(Point, &'static str)>,
+    /// Distance Guides: what Alt held over it measures the selection to ([`distance_target`]).
+    distance: Option<DistanceTo>,
+    /// The last hover had Alt held: what it measures depends on what lies under the pointer
+    /// ([`Tool::wants_rehover`]).
+    alt_hover: bool,
+}
+
+/// What Distance Guides measure the selection to.
+#[derive(Clone, Copy, Debug, PartialEq)]
+enum DistanceTo {
+    Object(NodeId),
+    /// The artboard at this index.
+    Artboard(usize),
+}
+
+/// Distance Guides: with Smart Guides and Smart Guides → Invoke Distance Guides on, something
+/// selected and Alt held (`m`), the object under `p` unless it is selected, or over no object the
+/// artboard `p` is on.
+fn distance_target(cx: &ToolContext, p: Point, m: Mods) -> Option<DistanceTo> {
+    if !(cx.smart_guides && cx.distance_guides && m.alt) || cx.selection.objects.is_empty() {
+        return None;
+    }
+    match hit_test(cx.doc, p, cx.selection_hit_options()).map(|h| h.top_object(cx.isolation)) {
+        Some(id) => (!cx.selection.contains(id)).then_some(DistanceTo::Object(id)),
+        None => cx.doc.artboard_at(p).map(DistanceTo::Artboard),
+    }
+}
+
+/// The Distance Guides from the selection to `to` ([`distance_guides`]); none once either is gone.
+fn distance_overlays(cx: &ToolContext, to: DistanceTo) -> Vec<Overlay> {
+    let Some(from) = selection_bounds(cx) else { return vec![] };
+    match to {
+        DistanceTo::Object(id) if !cx.selection.contains(id) => object_bounds(cx, id).map(|r| distance_guides(cx, from, r, false)),
+        DistanceTo::Object(_) => None,
+        DistanceTo::Artboard(i) => cx.doc.artboards.get(i).map(|a| distance_guides(cx, from, a.rect, true)),
+    }
+    .unwrap_or_default()
 }
 
 /// Snapping for the selection moved as a whole, its targets gathered when the move begins: View →
@@ -523,6 +563,17 @@ impl Tool for SelectionTool {
         }
     }
 
+    /// The pointer hovers nothing for the tool: its Smart Guides label and its Distance Guides go.
+    fn hover_ended(&mut self, _cx: &ToolContext) {
+        self.hover = None;
+        self.distance = None;
+        self.alt_hover = false;
+    }
+
+    fn wants_rehover(&self) -> bool {
+        self.alt_hover
+    }
+
     fn transforming(&self) -> bool {
         match &self.state {
             State::Moving { began: true, .. } | State::Scaling { .. } | State::Rotating { .. } => true,
@@ -535,6 +586,9 @@ impl Tool for SelectionTool {
     }
 
     fn pointer(&mut self, cx: &ToolContext, ev: &PointerEvent) -> Vec<Action> {
+        let hovering = ev.kind == PointerKind::Move && matches!(self.state, State::Idle);
+        self.alt_hover = hovering && ev.mods.alt;
+        self.distance = hovering.then(|| distance_target(cx, ev.pos, ev.mods)).flatten();
         if let State::Loaded { from, press } = self.state
             && let Some(out) = self.loaded(cx, ev, from, press)
         {
@@ -845,6 +899,9 @@ impl Tool for SelectionTool {
                 o.push(Overlay::Label { p: q, text: label.into(), color: style.color });
             }
         }
+        if let (Some(to), State::Idle, true, true) = (self.distance, &self.state, cx.smart_guides, cx.distance_guides) {
+            o.extend(distance_overlays(cx, to));
+        }
         if let Some((p, t)) = &self.measure {
             o.push(Overlay::Measure { p: *p, text: t.clone() });
         }
@@ -1115,6 +1172,159 @@ mod tests {
         let mut t = SelectionTool::default();
         t.pointer(&off, &ev(PointerKind::Move, 152.0, 151.0));
         assert!(!t.overlays(&off).iter().any(|o| matches!(o, Overlay::Label { .. })));
+    }
+
+    /// [`doc_with_rect`] (100, 100)–(200, 200), selected, and a second rectangle `other`.
+    fn two_rects(other: Rect) -> (vectorcraft_doc::Document, NodeId, NodeId) {
+        let (mut d, a) = doc_with_rect();
+        let l = d.layers[0].id;
+        let b = d.alloc_id();
+        let path = vectorcraft_geom::shapes::rectangle(other);
+        d.insert(Some(l), 1, vectorcraft_doc::Node::path(b, path, vectorcraft_doc::Appearance::default_art())).unwrap();
+        (d, a, b)
+    }
+
+    fn alt(kind: PointerKind, x: f64, y: f64) -> PointerEvent {
+        ev(kind, x, y).with_mods(Mods { alt: true, ..Mods::default() })
+    }
+
+    /// A Distance Guides measured line: its ends and its label.
+    type DistanceLine = (Point, Point, String);
+
+    /// The Distance Guides overlays: each measured line, and the dashed lines out to it, in order.
+    fn distances(t: &SelectionTool, cx: &ToolContext) -> (Vec<DistanceLine>, Vec<(Point, Point)>) {
+        let o = t.overlays(cx);
+        let lines = o.iter().filter_map(|o| if let Overlay::Distance { a, b, text, .. } = o { Some((*a, *b, text.clone())) } else { None });
+        let dashed = o.iter().filter_map(|o| if let Overlay::Line { a, b, dashed: true, .. } = o { Some((*a, *b)) } else { None });
+        (lines.collect(), dashed.collect())
+    }
+
+    fn line(a: (f64, f64), b: (f64, f64), text: &str) -> DistanceLine {
+        (Point::new(a.0, a.1), Point::new(b.0, b.1), text.to_string())
+    }
+
+    /// Alt held over an object beside the selection shows the horizontal gap between their
+    /// facing edges across the middle of where they overlap, and the vertical offsets of their
+    /// top and bottom edges across the selection's middle, with dashed lines out to the other
+    /// object's edges (helpx: Use Distance Guides for accurate placement).
+    #[test]
+    fn alt_over_an_object_beside_the_selection_measures_the_gap_and_the_edges() {
+        let (d, a, _) = two_rects(Rect::new(300.0, 120.0, 400.0, 180.0));
+        let s = Selection { objects: vec![a], ..Default::default() };
+        let p = paint();
+        let cx = cx(&d, &s, &p);
+        let mut t = SelectionTool::default();
+        t.pointer(&cx, &alt(PointerKind::Move, 350.0, 150.0));
+        let (lines, dashed) = distances(&t, &cx);
+        assert_eq!(
+            lines,
+            vec![
+                line((200.0, 150.0), (300.0, 150.0), "100.00 pt"),
+                line((150.0, 100.0), (150.0, 120.0), "20.00 pt"),
+                line((150.0, 200.0), (150.0, 180.0), "20.00 pt"),
+            ]
+        );
+        let p = Point::new;
+        assert_eq!(dashed, vec![(p(300.0, 120.0), p(150.0, 120.0)), (p(300.0, 180.0), p(150.0, 180.0))]);
+        assert!(t.overlays(&cx).iter().all(|o| !matches!(o, Overlay::Distance { color, .. } if *color != cx.smart_guide_color)));
+    }
+
+    /// Below the selection: the vertical gap, and the left and right edges' offsets.
+    #[test]
+    fn alt_over_an_object_below_the_selection_measures_the_vertical_gap() {
+        let (d, a, _) = two_rects(Rect::new(120.0, 300.0, 180.0, 400.0));
+        let s = Selection { objects: vec![a], ..Default::default() };
+        let p = paint();
+        let cx = cx(&d, &s, &p);
+        let mut t = SelectionTool::default();
+        t.pointer(&cx, &alt(PointerKind::Move, 150.0, 350.0));
+        let (lines, dashed) = distances(&t, &cx);
+        assert_eq!(
+            lines,
+            vec![
+                line((100.0, 150.0), (120.0, 150.0), "20.00 pt"),
+                line((200.0, 150.0), (180.0, 150.0), "20.00 pt"),
+                line((150.0, 200.0), (150.0, 300.0), "100.00 pt"),
+            ]
+        );
+        assert_eq!(dashed.len(), 2, "out to the left and right edges of the object below");
+    }
+
+    /// Alt held over an empty part of the artboard: the selection's distance from the artboard's
+    /// left, right, top and bottom edges, in the General unit.
+    #[test]
+    fn alt_over_the_artboard_measures_to_its_four_edges_in_the_general_unit() {
+        let (d, a, _) = two_rects(Rect::new(300.0, 120.0, 400.0, 180.0));
+        let s = Selection { objects: vec![a], ..Default::default() };
+        let p = paint();
+        let cx = cx(&d, &s, &p);
+        let mut t = SelectionTool::default();
+        t.pointer(&cx, &alt(PointerKind::Move, 50.0, 450.0));
+        let (lines, dashed) = distances(&t, &cx);
+        assert_eq!(
+            lines,
+            vec![
+                line((100.0, 150.0), (0.0, 150.0), "100.00 pt"),
+                line((200.0, 150.0), (500.0, 150.0), "300.00 pt"),
+                line((150.0, 100.0), (150.0, 0.0), "100.00 pt"),
+                line((150.0, 200.0), (150.0, 500.0), "300.00 pt"),
+            ]
+        );
+        assert!(dashed.is_empty());
+        let mm = ToolContext { unit: vectorcraft_doc::Unit::Millimeters, ..cx };
+        t.pointer(&mm, &alt(PointerKind::Move, 50.0, 450.0));
+        let texts: Vec<String> = distances(&t, &mm).0.into_iter().map(|l| l.2).collect();
+        assert_eq!(texts, ["35.28 mm", "105.83 mm", "35.28 mm", "105.83 mm"]);
+        // Off the artboard, over nothing: no distances.
+        t.pointer(&cx, &alt(PointerKind::Move, 600.0, 600.0));
+        assert!(distances(&t, &cx).0.is_empty());
+    }
+
+    /// No Distance Guides without Alt, with nothing selected, over the selection itself, with
+    /// Smart Guides or Invoke Distance Guides off, or once Alt is let go.
+    #[test]
+    fn distance_guides_need_alt_a_selection_and_smart_guides() {
+        let (d, a, _) = two_rects(Rect::new(300.0, 120.0, 400.0, 180.0));
+        let s = Selection { objects: vec![a], ..Default::default() };
+        let none = Selection::default();
+        let p = paint();
+        let cx = cx(&d, &s, &p);
+        let shown = |cx: &ToolContext, e: PointerEvent| {
+            let mut t = SelectionTool::default();
+            t.pointer(cx, &e);
+            !distances(&t, cx).0.is_empty()
+        };
+        assert!(shown(&cx, alt(PointerKind::Move, 350.0, 150.0)));
+        assert!(!shown(&cx, ev(PointerKind::Move, 350.0, 150.0)), "without Alt");
+        assert!(!shown(&cx, ev(PointerKind::Move, 50.0, 450.0)), "without Alt, over the artboard");
+        assert!(!shown(&crate::testutil::cx(&d, &none, &p), alt(PointerKind::Move, 350.0, 150.0)), "nothing selected");
+        assert!(!shown(&cx, alt(PointerKind::Move, 150.0, 150.0)), "over the selection");
+        assert!(
+            !shown(&ToolContext { smart_guides: false, ..crate::testutil::cx(&d, &s, &p) }, alt(PointerKind::Move, 350.0, 150.0)),
+            "View › Smart Guides off"
+        );
+        assert!(
+            !shown(&ToolContext { distance_guides: false, ..crate::testutil::cx(&d, &s, &p) }, alt(PointerKind::Move, 350.0, 150.0)),
+            "the preference off"
+        );
+        // Letting Alt go (the canvas sends a hover with the new modifiers) takes them away.
+        let mut t = SelectionTool::default();
+        t.pointer(&cx, &alt(PointerKind::Move, 350.0, 150.0));
+        t.pointer(&cx, &ev(PointerKind::Move, 350.0, 150.0));
+        assert!(distances(&t, &cx).0.is_empty());
+        // So does the hover ending (the pointer leaving the canvas) with Alt still held.
+        t.pointer(&cx, &alt(PointerKind::Move, 350.0, 150.0));
+        assert!(!distances(&t, &cx).0.is_empty());
+        assert!(t.wants_rehover(), "an Alt hover is hovered again when what lies under it changes");
+        t.hover_ended(&cx);
+        assert!(distances(&t, &cx).0.is_empty());
+        assert!(!t.wants_rehover());
+        t.pointer(&cx, &ev(PointerKind::Move, 350.0, 150.0));
+        assert!(!t.wants_rehover(), "nor without Alt");
+        // A press ends them too.
+        t.pointer(&cx, &alt(PointerKind::Move, 350.0, 150.0));
+        t.pointer(&cx, &alt(PointerKind::Down, 350.0, 150.0));
+        assert!(distances(&t, &cx).0.is_empty());
     }
 
     #[test]

@@ -282,6 +282,7 @@ impl Session {
             measurement_labels: self.prefs.measurement_labels,
             transform_tools_guides: self.prefs.transform_tools_guides,
             spacing_guides: self.prefs.spacing_guides,
+            distance_guides: self.prefs.distance_guides,
             snapping_tolerance: self.prefs.snapping_tolerance,
             construction_angles: if self.prefs.construction_guides {
                 vectorcraft_tools::guides::construction_angles(&self.prefs.construction_angles)
@@ -436,6 +437,17 @@ impl Session {
     /// The caret line (document space) the IME candidate window follows.
     pub fn tool_ime_caret(&mut self, view: ViewInfo) -> Option<(Point, Point)> {
         self.with_tool_cx(view, |t, cx| t.ime_caret(cx))
+    }
+
+    /// The pointer stopped hovering for the active tool ([`vectorcraft_tools::Tool::hover_ended`]).
+    pub fn tool_hover_ended(&mut self, view: ViewInfo) {
+        self.with_tool_cx(view, |t, cx| t.hover_ended(cx));
+    }
+
+    /// Whether the active tool's hover depends on what lies under a still pointer
+    /// ([`vectorcraft_tools::Tool::wants_rehover`]).
+    pub fn tool_wants_rehover(&self) -> bool {
+        self.tool.wants_rehover()
     }
 
     pub fn tool_busy(&self) -> bool {
