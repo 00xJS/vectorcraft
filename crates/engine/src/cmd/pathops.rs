@@ -2,12 +2,13 @@
 //! `vectorcraft-pathops`: Offset Path, Outline Stroke, Simplify, Add Anchor Points, Split Into Grid,
 //! Clean Up and Divide Objects Below.
 
+use std::collections::BTreeSet;
 use std::sync::Arc;
 
 use serde_json::{Value, json};
 use vectorcraft_color::BlendMode;
 use vectorcraft_doc::appearance::{AppearanceItem, StrokeLayer};
-use vectorcraft_doc::{Appearance, Document, Node, NodeId, NodeKind, TextObject};
+use vectorcraft_doc::{AnchorRef, Appearance, Document, Node, NodeId, NodeKind, SegmentRef, TextObject};
 use vectorcraft_geom::{FillRule, PathData};
 use vectorcraft_pathops as po;
 use vectorcraft_pathops::{BoolOp, PathfinderOp};
@@ -130,7 +131,7 @@ pub fn specs() -> Vec<CommandSpec> {
             "Simplify…",
             ["Object", "Path"],
             None,
-            "{tolerance?: pt (1), level?: 0..100 (the Simplify slider, in place of tolerance: 0 fewest anchor points, 50 is 1 pt, every 10 levels halves or doubles it), auto?: bool (Auto-Simplify: the lowest level whose tolerance is at most 1/400 of the selection's longer side, or 100 when that side is under 12.5 pt), cornerAngle?: deg (30), straightLines?: bool} → {ids, before, after} anchor counts, and the level used with level or auto",
+            "{tolerance?: pt (1), level?: 0..100 (the Simplify slider, in place of tolerance: 0 fewest anchor points, 50 is 1 pt, every 10 levels halves or doubles it), auto?: bool (Auto-Simplify: the lowest level whose tolerance is at most 1/400 of the selection's longer side, or 100 when that side is under 12.5 pt), cornerAngle?: deg (30), straightLines?: bool, wholePaths?: bool (false: a path with segments direct-selected, or between direct-selected anchors, simplifies only each run of them between its end anchors, which stay as they are, and keeps the runs selected; true simplifies those paths whole)} → {ids, before, after} anchor counts, and the level used with level or auto",
             has_selection,
             simplify
         ),
@@ -761,12 +762,23 @@ fn path_ids(d: &Document, roots: &[NodeId]) -> Vec<NodeId> {
     out
 }
 
-/// Replace each path under the selection ([`path_ids`]) by what `f` makes of it: → (their ids, how
+/// The direct selection a path keeps after an edit of part of it: (its selected anchors, and its
+/// selected segments when they were picked as segments). `None` selects the path whole.
+type PartSelection = Option<(BTreeSet<AnchorRef>, Option<BTreeSet<SegmentRef>>)>;
+
+/// Replace each path under the selection ([`path_ids`]) by what `f` makes of it, given its
+/// direct-selected anchors and picked segments (none when it is selected whole): → (their ids, how
 /// many anchors they have before and after). A path that `f` would empty or returns unchanged is
-/// left as it is, with its live shape and its direct-selected anchors; a replaced path loses both.
-fn edit_paths(s: &mut Session, label: &str, f: impl Fn(&PathData) -> PathData) -> Result<(Vec<NodeId>, usize, usize)> {
+/// left as it is, with its live shape and its direct selection; a replaced path loses its live
+/// shape and has the direct selection `f` gives it.
+fn edit_paths(
+    s: &mut Session,
+    label: &str,
+    f: impl Fn(&PathData, Option<&BTreeSet<AnchorRef>>, Option<&BTreeSet<SegmentRef>>) -> (PathData, PartSelection),
+) -> Result<(Vec<NodeId>, usize, usize)> {
     let roots = selected_roots(s)?;
-    let d = &s.doc()?.doc;
+    let st = s.doc()?;
+    let (d, sel) = (&st.doc, &st.selection);
     let ids = path_ids(d, &roots);
     if ids.is_empty() {
         return Err(EngineError::Other(format!("{label}: select paths")));
@@ -775,22 +787,29 @@ fn edit_paths(s: &mut Session, label: &str, f: impl Fn(&PathData) -> PathData) -
     for id in &ids {
         let Some(NodeKind::Path { path, .. }) = d.node(*id).map(|n| &n.kind) else { continue };
         before += path.anchor_count();
-        let np = f(path);
+        let (np, part) = f(path, sel.anchors.get(id), sel.segments.get(id));
         if (np.is_empty() && !path.is_empty()) || np == *path {
             after += path.anchor_count();
             continue;
         }
         after += np.anchor_count();
-        changed.push((*id, np));
+        changed.push((*id, np, part));
     }
     // When no path changes, the document and its undo history stay as they are.
     if !changed.is_empty() {
         s.edit(label, |d, sel| {
-            for (id, np) in changed {
+            for (id, np, part) in changed {
                 if let Some(NodeKind::Path { path, live, .. }) = d.node_mut(id).map(|n| &mut n.kind) {
-                    // Refit and subdivision change what the old component indexes refer to.
-                    // Keep the object selected whole so its new points remain editable.
+                    // Refit and subdivision change what the old component indexes refer to: the
+                    // path is selected whole, or with the part `f` says.
                     sel.anchors.remove(&id);
+                    sel.segments.remove(&id);
+                    if let Some((anchors, segments)) = part.filter(|(a, _)| a.len() < np.anchor_count()) {
+                        sel.anchors.insert(id, anchors);
+                        if let Some(segments) = segments {
+                            sel.segments.insert(id, segments);
+                        }
+                    }
                     *path = np;
                     *live = None;
                 }
@@ -799,6 +818,31 @@ fn edit_paths(s: &mut Session, label: &str, f: impl Fn(&PathData) -> PathData) -
         })?;
     }
     Ok((ids, before, after))
+}
+
+/// The segments of `path` a direct selection picks: the `segments` picked as such, or else every
+/// segment with both its anchors among `anchors`. `None` when the path is selected whole, or when
+/// no segment of it is selected.
+fn selected_segments(
+    path: &PathData,
+    anchors: Option<&BTreeSet<AnchorRef>>,
+    segments: Option<&BTreeSet<SegmentRef>>,
+) -> Option<BTreeSet<SegmentRef>> {
+    let anchors = anchors?;
+    let picked: BTreeSet<SegmentRef> = match segments {
+        Some(segs) => segs.iter().copied().filter(|&(si, i)| path.subpaths.get(si).is_some_and(|sp| i < sp.segment_count())).collect(),
+        None => path
+            .subpaths
+            .iter()
+            .enumerate()
+            .flat_map(|(si, sp)| {
+                (0..sp.segment_count())
+                    .filter(move |&i| anchors.contains(&(si, i)) && anchors.contains(&(si, (i + 1) % sp.anchors.len())))
+                    .map(move |i| (si, i))
+            })
+            .collect(),
+    };
+    (!picked.is_empty()).then_some(picked)
 }
 
 /// Auto-Simplify's level for the selection: [`po::auto_simplify_level`] for the longer side of the
@@ -826,7 +870,22 @@ fn simplify(s: &mut Session, p: &Value) -> Result<Value> {
         corner_angle_deg: num_param(p, "cornerAngle").unwrap_or(30.0).clamp(0.0, 180.0),
         straight_lines: bool_or(p, "straightLines", false),
     };
-    let (ids, before, after) = edit_paths(s, "Simplify", |path| po::simplify_with(path, &opts))?;
+    let whole = bool_or(p, "wholePaths", false);
+    // A path with segments direct-selected simplifies only their runs, and keeps those runs (and the
+    // other anchors it had selected) direct-selected.
+    let (ids, before, after) = edit_paths(s, "Simplify", |path, anchors, segments| {
+        let Some(picked) = selected_segments(path, anchors, segments).filter(|_| !whole) else {
+            return (po::simplify_with(path, &opts), None);
+        };
+        let part = po::simplify_part(path, &picked, &opts);
+        let mut kept: BTreeSet<AnchorRef> = anchors.into_iter().flatten().filter_map(|a| part.anchors.get(a).copied()).collect();
+        for &(si, i) in &part.segments {
+            let m = part.path.subpaths.get(si).map_or(1, |sp| sp.anchors.len().max(1));
+            kept.extend([(si, i), (si, (i + 1) % m)]);
+        }
+        let segs = segments.map(|_| part.segments.clone());
+        (part.path, Some((kept, segs)))
+    })?;
     let mut out = json!({ "ids": ids.iter().map(|i| i.0).collect::<Vec<_>>(), "before": before, "after": after });
     if let Some(l) = level {
         out["level"] = json!(l);
@@ -835,7 +894,7 @@ fn simplify(s: &mut Session, p: &Value) -> Result<Value> {
 }
 
 fn add_anchor_points(s: &mut Session, _: &Value) -> Result<Value> {
-    let (ids, before, after) = edit_paths(s, "Add Anchor Points", po::add_anchor_points)?;
+    let (ids, before, after) = edit_paths(s, "Add Anchor Points", |path, _, _| (po::add_anchor_points(path), None))?;
     Ok(json!({ "ids": ids.iter().map(|i| i.0).collect::<Vec<_>>(), "before": before, "after": after }))
 }
 

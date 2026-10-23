@@ -2572,6 +2572,8 @@ mod tests_shaper;
 #[cfg(test)]
 mod tests_shortcutset;
 #[cfg(test)]
+mod tests_simplify_part;
+#[cfg(test)]
 mod tests_slices;
 #[cfg(test)]
 mod tests_smartguides;

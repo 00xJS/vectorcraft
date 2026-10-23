@@ -2318,6 +2318,18 @@ whose tolerance is at most 1/400 of the selection's longer side, or level 100 wh
 {"name":"run_command","arguments":{"command":"object.path.simplify","params":{"auto":true}}}
 ```
 
+With segments of a path direct-selected (`select.segments`, or `select.anchors` with both anchors of a segment), Simplify
+refits only each run of consecutive selected segments, between the run's end anchors: they stay where they are, with
+their handles on the side away from the run, and every other anchor and segment of the path stays exactly as it was. A
+closed path's run may cross its start point; the path then starts at the run's end anchor. Separate runs on one path
+simplify independently, in one undo step, and the runs stay direct-selected (as segments when segments were picked).
+A path with only lone anchors selected, and every path with `wholePaths: true`, simplifies whole:
+
+```json
+{"name":"run_command","arguments":{"command":"select.anchors","params":{"id":12,"anchors":[[0,20],[0,21],[0,22],[0,23]]}}}
+{"name":"run_command","arguments":{"command":"object.path.simplify","params":{"auto":true}}}
+```
+
 In the desktop app, Object › Path › Simplify opens the slider (`ui.menuDialog {command: "object.path.simplify"}`,
 dialog `simplifySlider` with field `level`) at the Auto-Simplify level for the selection and previews the result until
 `ui.dialog.confirm`. `ui.simplifyAuto` moves the open slider back to the Auto-Simplify level, and `ui.simplifyMoreOptions`
