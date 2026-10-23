@@ -3187,6 +3187,13 @@ font-technology	Variable	Değişken
 	Transparent Background	Şeffaf Arka Plan
 	Transverse (the page a quarter turn on the paper)	Enine (kağıt üzerinde çeyrek tur dönüş yapan sayfa)
 	Trap…	Tuzak…
+	Trap	Tuzak
+	Height/Width	Yükseklik/Genişlik
+	Tint Reduction	Ton Azaltma
+	Traps with Process Color	Proses Renkli Tuzaklar
+	Reverse Traps	Tuzakları Tersine Çevir
+	Precision	Hassasiyet
+	Remove Redundant Points	Gereksiz Noktaları Kaldır
 	Trim	Kırpma
 	Trim mark weight:	Trim işareti ağırlığı:
 	Trim marks	Kırpma işaretleri
@@ -5430,6 +5437,11 @@ axis	Y Axis	Y ekseni
 @msg	a live effect runs while the document is drawn, so it can't be `heavy`	canlı efekt belge çizilirken çalışır, bu yüzden `heavy` olamaz
 @msg	an exporter always gets an export's budget: leave `budget` out	dışa aktarma eklentisi her zaman bir dışa aktarmanın bütçesini alır: `budget` anahtarını çıkarın
 @msg	“{_1}” asks for a heavy budget (each run up to {minutes} minutes and {times} times the usual instructions): install it with `allowHeavy: true` once the user agrees	“{_1}” büyük bir hesaplama bütçesi istiyor (her çalıştırma en fazla {minutes} dakika ve olağan komutların {times} katı): kullanıcı onayladıktan sonra `allowHeavy: true` ile yükleyin
+@msg	Trap: select two or more objects filled with solid colours	Tuzak: düz renkle doldurulmuş iki veya daha fazla nesne seçin
+@msg	Trap: no edges of different colours meet among the selected objects	Tuzak: seçili nesneler arasında farklı renkli kenarlar birleşmiyor
+@msg	thickness must be from 0.01 to 5000 pt	thickness 0,01 ile 5000 pt arasında olmalıdır
+@msg	heightWidth must be from 1 to 1000 %	heightWidth 1 ile 1000 % arasında olmalıdır
+@msg	tintReduction must be from 0 to 100 %	tintReduction 0 ile 100 % arasında olmalıdır
 	Rectangular Grid Tool Options	Dikdörtgen Izgara Aracı Seçenekleri
 	Polar Grid Tool Options	Yuvarlak Izgara Aracı Seçenekleri
 	Fill Line	Çizgiyi doldur

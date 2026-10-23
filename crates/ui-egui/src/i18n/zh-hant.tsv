@@ -4156,6 +4156,13 @@ font-script	Japanese	漢字
 	Transparent Background	透明背景
 	Transverse (the page a quarter turn on the paper)	橫向轉置 (頁面在紙張上轉四分之一圈)
 	Trap…	補漏白…
+	Trap	補漏白
+	Height/Width	高度/寬度
+	Tint Reduction	色調減淡
+	Traps with Process Color	使用印刷色補漏白
+	Reverse Traps	反向補漏白
+	Precision	精確度
+	Remove Redundant Points	移除多餘的點
 	Trim	剪裁
 	Trim mark weight:	剪裁標記寬度：
 	Trim marks	剪裁標記
@@ -5103,6 +5110,11 @@ axis	Y Axis	Y 軸
 @msg	a live effect runs while the document is drawn, so it can't be `heavy`	即時效果會在繪製文件時執行，因此不能是 `heavy`
 @msg	an exporter always gets an export's budget: leave `budget` out	匯出增效模組一律使用匯出的預算：請移除 `budget`
 @msg	“{_1}” asks for a heavy budget (each run up to {minutes} minutes and {times} times the usual instructions): install it with `allowHeavy: true` once the user agrees	「{_1}」需要大量運算預算（每次執行最多 {minutes} 分鐘，指令數為一般的 {times} 倍）：請在使用者同意後以 `allowHeavy: true` 安裝
+@msg	Trap: select two or more objects filled with solid colours	補漏白：請選取兩個或更多以實色填色的物件
+@msg	Trap: no edges of different colours meet among the selected objects	補漏白：所選物件中沒有不同顏色相接的邊緣
+@msg	thickness must be from 0.01 to 5000 pt	thickness 必須介於 0.01 到 5000 pt 之間
+@msg	heightWidth must be from 1 to 1000 %	heightWidth 必須介於 1 到 1000 % 之間
+@msg	tintReduction must be from 0 to 100 %	tintReduction 必須介於 0 到 100 % 之間
 	Rectangular Grid Tool Options	矩形格線工具選項
 	Polar Grid Tool Options	極座標格點工具選項
 	Fill Line	填色線段

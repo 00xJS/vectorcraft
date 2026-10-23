@@ -4,7 +4,8 @@
 //! children are the Pathfinder stack (back → front). In the shape modes (Add, Subtract, Intersect,
 //! Exclude, Minus Back) a child group acts as one shape — the union of its leaves, styled like its
 //! top leaf — as in the Pathfinder panel. The result replaces the children at render time; each
-//! result keeps the appearance of the object whose paint it takes.
+//! result keeps the appearance of the object whose paint it takes. Trap ([`crate::trap`]) keeps the
+//! children and adds its traps above them.
 //!
 //! **Container appearance** ([`evaluate_container`]): a group's or layer's own fills and strokes
 //! paint every member's geometry, below or above the members as its contents slot says
@@ -197,6 +198,25 @@ pub fn pathfinder_children(group: &Node, hook: Option<OutlineHook>) -> Option<Ve
     let source: &[Arc<Node>] = group.children()?;
     let mut stack: Vec<Arc<Node>> = source.to_vec();
     for e in group.appearance.effects.iter().filter(|e| e.visible) {
+        if e.id == crate::trap::TRAP {
+            let mut lv = vec![];
+            for c in &stack {
+                leaves(c, hook, &mut lv);
+            }
+            if !within_budget(&lv) {
+                return Some(source.to_vec());
+            }
+            let (ids, srcs): (Vec<NodeId>, Vec<crate::trap::TrapSource>) = lv
+                .iter()
+                .filter_map(|l| {
+                    let (path, rule) = geometry(l)?;
+                    Some((l.id, crate::trap::TrapSource { path, rule, fill: l.appearance.fill_paint() }))
+                })
+                .unzip();
+            let made = crate::trap::traps(&srcs, &crate::trap::TrapOptions::from_params(&e.params));
+            stack.extend(made.into_iter().map(|p| Arc::new(crate::trap::trap_node(ids.get(p.from).copied().unwrap_or(NodeId(0)), p))));
+            continue;
+        }
         let Some(op) = op_of(&e.id) else { continue };
         let shape_mode =
             matches!(op, PathfinderOp::Unite | PathfinderOp::MinusFront | PathfinderOp::Intersect | PathfinderOp::Exclude | PathfinderOp::MinusBack);
@@ -517,6 +537,25 @@ mod tests {
                 Arc::new(Node::path(NodeId(2), shapes::rectangle(Rect::new(5.0, 0.0, 15.0, 10.0)), b)),
             ],
         )
+    }
+
+    /// Effect › Pathfinder › Trap keeps the members and adds an overprinting strip of the lighter
+    /// colour inside the darker one along the edge where they meet.
+    #[test]
+    fn trap_effect_adds_an_overprinting_strip_above_the_members() {
+        let yellow = Color::cmyk(0.0, 0.0, 1.0, 0.0);
+        let blue = Color::cmyk(1.0, 0.6, 0.0, 0.0);
+        let mut g = Node::group(NodeId(10), vec![sq(1, 0.0, yellow), sq(2, 10.0, blue)]);
+        let params = serde_json::json!({"thickness": 1.0, "tintReduction": 100});
+        g.appearance.effects.push(Effect { id: crate::trap::TRAP.into(), params, visible: true });
+        let out = pathfinder_children(&g, None).unwrap();
+        assert_eq!(out.len(), 3, "both squares and one trap");
+        assert_eq!((out[0].id, out[1].id), (NodeId(1), NodeId(2)));
+        let b = out[2].geometric_bounds().unwrap();
+        assert!((b.x0 - 10.0).abs() < 0.02 && (b.x1 - 11.0).abs() < 0.02 && b.y0.abs() < 0.02 && (b.y1 - 10.0).abs() < 0.02, "{b:?}");
+        let fill = out[2].appearance.fill().unwrap();
+        assert!(fill.overprint);
+        assert_eq!(fill.paint.color(), Some(yellow));
     }
 
     #[test]

@@ -3392,6 +3392,13 @@ mark-style	Japanese	Японский
 	Transparent Background	Прозрачный фон
 	Transverse (the page a quarter turn on the paper)	Поперечная (страница повёрнута на четверть оборота на листе)
 	Trap…	Треппинг…
+	Trap	Треппинг
+	Height/Width	Высота/ширина
+	Tint Reduction	Снижение оттенка
+	Traps with Process Color	Треппинг триадными цветами
+	Reverse Traps	Обратный треппинг
+	Precision	Точность
+	Remove Redundant Points	Удалить лишние точки
 	Trim	Подрезать
 	Trim mark weight:	Толщина меток подрезки:
 	Trim marks	Метки подрезки
@@ -5080,6 +5087,11 @@ axis	Y Axis	Ось Y
 @msg	a live effect runs while the document is drawn, so it can't be `heavy`	динамический эффект выполняется во время отрисовки документа, поэтому он не может быть `heavy`
 @msg	an exporter always gets an export's budget: leave `budget` out	модуль экспорта всегда получает бюджет экспорта: не указывайте `budget`
 @msg	“{_1}” asks for a heavy budget (each run up to {minutes} minutes and {times} times the usual instructions): install it with `allowHeavy: true` once the user agrees	«{_1}» запрашивает большой вычислительный бюджет (каждый запуск до {minutes} минут и в {times} раз больше инструкций, чем обычно): установите его с `allowHeavy: true`, когда пользователь согласится
+@msg	Trap: select two or more objects filled with solid colours	Треппинг: выберите два или более объекта со сплошной заливкой
+@msg	Trap: no edges of different colours meet among the selected objects	Треппинг: среди выбранных объектов нет соприкасающихся краёв разных цветов
+@msg	thickness must be from 0.01 to 5000 pt	thickness должно быть от 0,01 до 5000 pt
+@msg	heightWidth must be from 1 to 1000 %	heightWidth должно быть от 1 до 1000 %
+@msg	tintReduction must be from 0 to 100 %	tintReduction должно быть от 0 до 100 %
 	Rectangular Grid Tool Options	Параметры инструмента «Прямоугольная сетка»
 	Polar Grid Tool Options	Параметры инструмента «Полярная сетка»
 	Fill Line	Заливка отрезка

@@ -3293,6 +3293,13 @@ font-technology	Variable	Променливи
 	Transparent Background	Прозрачен фон
 	Transverse (the page a quarter turn on the paper)	Напречно (страницата е завъртена на четвърт оборот върху хартията)
 	Trap…	Застъпване…
+	Trap	Застъпване
+	Height/Width	Височина/ширина
+	Tint Reduction	Намаляване на тона
+	Traps with Process Color	Застъпвания с триадни цветове
+	Reverse Traps	Обратни застъпвания
+	Precision	Точност
+	Remove Redundant Points	Премахване на излишните точки
 	Trim	Изрязване
 	Trim mark weight:	Дебелина на маркировките за изрязване:
 	Trim marks	Маркировки за изрязване
@@ -5416,6 +5423,11 @@ axis	Y Axis	Y ос
 	The plug-in is computing…	Приставката изчислява…
 	Inspect Plug-in	Проверка на приставка
 	Cancel Plug-in Run	Отказ от изпълнението на приставката
+@msg	Trap: select two or more objects filled with solid colours	Застъпване: изберете два или повече обекта, запълнени с плътни цветове
+@msg	Trap: no edges of different colours meet among the selected objects	Застъпване: сред избраните обекти няма допиращи се ръбове с различни цветове
+@msg	thickness must be from 0.01 to 5000 pt	thickness трябва да е от 0,01 до 5000 pt
+@msg	heightWidth must be from 1 to 1000 %	heightWidth трябва да е от 1 до 1000 %
+@msg	tintReduction must be from 0 to 100 %	tintReduction трябва да е от 0 до 100 %
 	Rectangular Grid Tool Options	Опции на инструмента „Правоъгълна мрежа“
 	Polar Grid Tool Options	Опции на инструмента „Полярна мрежа“
 	Fill Line	Запълване на линия

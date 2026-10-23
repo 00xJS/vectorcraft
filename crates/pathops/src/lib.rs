@@ -12,6 +12,7 @@ mod fit;
 mod offset;
 mod pathfinder;
 mod planar;
+mod trap;
 
 pub use boolean::{BoolOp, DEFAULT_PRECISION, area, boolean, boolean_n, normalize, try_boolean, try_normalize, unite_all};
 pub use edit::{
@@ -24,6 +25,7 @@ pub use planar::{
     BuilderArrangement, SHAPE_BUILDER_MAX_GAP, SHAPE_BUILDER_MAX_SEGMENTS, cut_out, encloses_area, find_gaps, has_open_path, interior_point,
     live_paint, live_paint_with_gaps, run_around, shape_builder, shape_builder_with_gap,
 };
+pub use trap::{TRAP_HEIGHT_WIDTH_RANGE, TRAP_MAX_WIDTH, TRAP_MIN_WIDTH, trap_band};
 
 /// Errors from fallible operations.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, thiserror::Error)]

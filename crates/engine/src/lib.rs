@@ -2620,6 +2620,8 @@ mod tests_transformfx;
 #[cfg(test)]
 mod tests_transparencygrid;
 #[cfg(test)]
+mod tests_trap;
+#[cfg(test)]
 mod tests_typearea;
 #[cfg(test)]
 mod tests_typescale;
@@ -2664,6 +2666,7 @@ pub(crate) const SELECTS_GIVEN_IDS: &[&str] = &[
     "object.pathfinder.minusBack",
     "object.pathfinder.minusFront",
     "object.pathfinder.outline",
+    "object.pathfinder.trap",
     "object.pathfinder.trim",
     "object.pathfinder.unite",
     "object.reflect",

@@ -2738,6 +2738,13 @@
 	Transparent Background	Fundo Transparente
 	Transverse (the page a quarter turn on the paper)	Transversal (a página um quarto de volta no papel)
 	Trap…	Armadilha…
+	Trap	Armadilha
+	Height/Width	Altura/largura
+	Tint Reduction	Redução de matiz
+	Traps with Process Color	Armadilhas com cores de escala
+	Reverse Traps	Inverter armadilhas
+	Precision	Precisão
+	Remove Redundant Points	Remover pontos redundantes
 	Trim	Aparar
 	Trim View	Modo de Aparar
 	Trim mark weight:	Peso da marca de corte:
@@ -5384,6 +5391,11 @@ axis	Y Axis	Eixo Y
 @msg	a live effect runs while the document is drawn, so it can't be `heavy`	um efeito dinâmico é executado enquanto o documento é desenhado, então não pode ser `heavy`
 @msg	an exporter always gets an export's budget: leave `budget` out	um plug-in de exportação sempre recebe o orçamento de uma exportação: omita `budget`
 @msg	“{_1}” asks for a heavy budget (each run up to {minutes} minutes and {times} times the usual instructions): install it with `allowHeavy: true` once the user agrees	“{_1}” pede um orçamento de processamento grande (cada execução até {minutes} minutos e {times} vezes as instruções habituais): instale-o com `allowHeavy: true` depois que o usuário concordar
+@msg	Trap: select two or more objects filled with solid colours	Armadilha: selecione dois ou mais objetos preenchidos com cores sólidas
+@msg	Trap: no edges of different colours meet among the selected objects	Armadilha: nenhuma borda de cores diferentes se encontra entre os objetos selecionados
+@msg	thickness must be from 0.01 to 5000 pt	thickness deve estar entre 0,01 e 5000 pt
+@msg	heightWidth must be from 1 to 1000 %	heightWidth deve estar entre 1 e 1000 %
+@msg	tintReduction must be from 0 to 100 %	tintReduction deve estar entre 0 e 100 %
 	Rectangular Grid Tool Options	Opções da Ferramenta Grade Retangular
 	Polar Grid Tool Options	Opções da Ferramenta Grade Polar
 	Fill Line	Preencher linha

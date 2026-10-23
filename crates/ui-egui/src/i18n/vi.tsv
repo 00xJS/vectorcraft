@@ -3757,6 +3757,13 @@ mark-style	Japanese	Kiểu Nhật
 	Transpose	Chuyển vị
 	Transverse (the page a quarter turn on the paper)	Ngang (trang xoay 1/4 vòng trên giấy)
 	Trap…	Chồng màu…
+	Trap	Chồng màu
+	Height/Width	Cao/Rộng
+	Tint Reduction	Giảm sắc độ
+	Traps with Process Color	Chồng màu bằng màu process
+	Reverse Traps	Đảo chiều chồng màu
+	Precision	Độ chính xác
+	Remove Redundant Points	Xóa điểm thừa
 	Trim	Cắt xén
 	Trim covered geometry on Expand Appearance. Live preview keeps the full surface. Transparent paints and surfaces exceeding visibility limits retain all faces.	Cắt bỏ hình học bị che khi Mở rộng diện mạo. Xem trước trực tiếp giữ toàn bộ bề mặt. Sơn trong suốt và bề mặt vượt quá giới hạn hiển thị giữ nguyên tất cả các mặt.
 	Trim mark weight:	Độ dày dấu cắt:
@@ -5064,6 +5071,11 @@ axis	Y Axis	Trục Y
 @msg	a live effect runs while the document is drawn, so it can't be `heavy`	hiệu ứng trực tiếp chạy trong lúc tài liệu được vẽ nên không thể là `heavy`
 @msg	an exporter always gets an export's budget: leave `budget` out	plug-in xuất luôn nhận ngân sách của một lần xuất: hãy bỏ `budget`
 @msg	“{_1}” asks for a heavy budget (each run up to {minutes} minutes and {times} times the usual instructions): install it with `allowHeavy: true` once the user agrees	“{_1}” yêu cầu ngân sách tính toán lớn (mỗi lần chạy tới {minutes} phút và gấp {times} lần số lệnh thông thường): hãy cài đặt với `allowHeavy: true` khi người dùng đồng ý
+@msg	Trap: select two or more objects filled with solid colours	Chồng màu: hãy chọn hai đối tượng trở lên được tô màu đặc
+@msg	Trap: no edges of different colours meet among the selected objects	Chồng màu: không có cạnh khác màu nào tiếp giáp giữa các đối tượng đã chọn
+@msg	thickness must be from 0.01 to 5000 pt	thickness phải từ 0,01 đến 5000 pt
+@msg	heightWidth must be from 1 to 1000 %	heightWidth phải từ 1 đến 1000 %
+@msg	tintReduction must be from 0 to 100 %	tintReduction phải từ 0 đến 100 %
 	Rectangular Grid Tool Options	Tùy chọn công cụ Lưới chữ nhật
 	Polar Grid Tool Options	Tùy chọn công cụ Lưới cực
 	Fill Line	Tô đoạn thẳng

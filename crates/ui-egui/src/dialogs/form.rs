@@ -591,6 +591,8 @@ pub(crate) fn humanize(k: &str) -> String {
         "Align To Path" => "Align to Path:".into(),
         "Overlap Variation" | "Curviness Variation" | "Spacing Variation" => "Variation:".into(),
         "Create" => "Create New Fields by:".into(),
+        "Height Width" => "Height/Width:".into(),
+        "Traps With Process Color" => "Traps with Process Color:".into(),
         _ => format!("{s}:"),
     }
 }
