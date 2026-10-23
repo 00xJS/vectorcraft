@@ -2065,9 +2065,23 @@ fn flow(cx: &mut Ctx<'_>, paras: &[Range<usize>], t: &TextObject, regions: Optio
                 None => 0.0,
             };
             let w: f64 = set_width(&sg, i, trimmed, &para.tabs, ind_l) + hyphen.as_ref().map_or(0.0, |h| h.adv) - end_trim;
+            let line_start = sg.get(i).map_or(pr.start, |g| g.byte);
+            let line_end = sg.get(end).map_or(pr.end, |g| g.byte);
+            let order = visual_order(bidi.as_ref().filter(|_| !cx.vertical), pr.start, line_start..line_end, &sg[i..end]);
+            // Optical Margin Alignment or Roman Hanging Punctuation: the share of a glyph that hangs.
+            let share: Option<fn(&SGlyph) -> f64> =
+                (t.optical_margin || para.roman_hanging).then_some(if t.optical_margin { optical_share } else { roman_share });
+            // The glyphs before `stop` in visual order, each with the advance it is set with.
+            let visible = |stop: usize| -> (Vec<usize>, Vec<(&SGlyph, f64)>) {
+                let at: Vec<usize> = order.iter().map(|&offset| i + offset).filter(|&j| j < stop).collect();
+                let glyphs = at.iter().filter_map(|&j| sg.get(j).map(|g| (g, if j + 1 == trimmed { g.adv - end_trim } else { g.adv }))).collect();
+                (at, glyphs)
+            };
             // Burasagari: a comma or full stop ending an area type line hangs outside it (Standard:
-            // when it doesn't fit; Forced: always). The rest of the line is aligned and justified
-            // without it, and it follows the line's last character.
+            // when it doesn't fit, counting what hangs at the line's start as room; Forced:
+            // always). The rest of the line is aligned and justified without it, and it follows
+            // the line's last character.
+            let room_at_start = || share.map_or(0.0, |share| optical_hangs(&visible(trimmed).1, share).0);
             let hang = (regions.is_some() && !rtl && hyphen.is_none() && trimmed > i + 1)
                 .then(|| sg.get(trimmed - 1))
                 .flatten()
@@ -2075,17 +2089,14 @@ fn flow(cx: &mut Ctx<'_>, paras: &[Range<usize>], t: &TextObject, regions: Optio
                 .map(|g| g.adv - end_trim)
                 .filter(|_| match para.burasagari {
                     Burasagari::None => false,
-                    Burasagari::Standard => w > width + EPS,
+                    Burasagari::Standard => w > width + room_at_start() + EPS,
                     Burasagari::Forced => true,
                 });
             let body = if hang.is_some() { trimmed - 1 } else { trimmed };
             let w = w - hang.unwrap_or(0.0);
-            let line_start = sg.get(i).map_or(pr.start, |g| g.byte);
-            let line_end = sg.get(end).map_or(pr.end, |g| g.byte);
-            let order = visual_order(bidi.as_ref().filter(|_| !cx.vertical), pr.start, line_start..line_end, &sg[i..end]);
             // The glyphs before the line's trailing spaces (and its burasagari mark), in the order
             // they are drawn.
-            let drawn: Vec<usize> = order.iter().map(|&offset| i + offset).filter(|&j| j < body).collect();
+            let (drawn, mut visible) = visible(body);
             // Optical Margin Alignment: the glyphs at the ends of a line hang outside its margins
             // by `opt_l` and `opt_r`. The line is aligned and justified in a measure that much
             // wider at each end. A left-aligned line then hangs only at its left, a right-aligned
@@ -2094,13 +2105,11 @@ fn flow(cx: &mut Ctx<'_>, paras: &[Range<usize>], t: &TextObject, regions: Optio
             // left ([`optical_hangs_rtl`]). A line that ends in a burasagari mark hangs only at its
             // left. Justification adds no space after a punctuation mark hanging at the left, nor
             // before one hanging at the right (`held`). A letter that hangs by part of its width
-            // keeps its gaps. Roman Hanging Punctuation (a paragraph attribute) hangs the same
-            // punctuation by the same amounts, and no letters; with Optical Margin Alignment on as
-            // well, the letters hang too.
-            let (opt_l, opt_r, held) = if t.optical_margin || para.roman_hanging {
-                let share: fn(&SGlyph) -> f64 = if t.optical_margin { optical_share } else { roman_share };
-                let mut visible: Vec<(&SGlyph, f64)> =
-                    drawn.iter().filter_map(|&j| sg.get(j).map(|g| (g, if j + 1 == trimmed { g.adv - end_trim } else { g.adv }))).collect();
+            // keeps its gaps. Glyph Scaling leaves the glyphs that hang (`hung`) at their width, so
+            // they hang exactly by their published share. Roman Hanging Punctuation (a paragraph
+            // attribute) hangs the same punctuation by the same amounts, and no letters; with
+            // Optical Margin Alignment on as well, the letters hang too.
+            let (opt_l, opt_r, held, hung) = if let Some(share) = share {
                 if let Some(h) = &hyphen {
                     visible.push((h, h.adv));
                 }
@@ -2115,9 +2124,27 @@ fn flow(cx: &mut Ctx<'_>, paras: &[Range<usize>], t: &TextObject, regions: Optio
                     .filter(|&(k, _)| (k < left_glyphs && punct(k)) || (right_glyphs > 0 && k + 1 + right_glyphs >= n_visible && punct(k + 1)))
                     .map(|(_, &j)| j)
                     .collect();
-                (l, r, held)
+                let hung: Vec<usize> = drawn
+                    .iter()
+                    .enumerate()
+                    .filter(|&(k, _)| k < left_glyphs || (right_glyphs > 0 && k + right_glyphs >= n_visible))
+                    .map(|(_, &j)| j)
+                    .collect();
+                (l, r, held, hung)
             } else {
-                (0.0, 0.0, vec![])
+                (0.0, 0.0, vec![], vec![])
+            };
+            // What justification may change of glyph `j`: nothing of a `held` glyph, and no glyph
+            // scaling of a `hung` one.
+            let line_flex = |j: usize| {
+                if held.contains(&j) {
+                    return Flex::default();
+                }
+                let mut f = flex.get(j).copied().unwrap_or_default();
+                if hung.contains(&j) {
+                    f.glyph = (0.0, 0.0);
+                }
+                f
             };
             let room = width + opt_l + opt_r;
             let (align, justify) = match para.justify {
@@ -2168,7 +2195,6 @@ fn flow(cx: &mut Ctx<'_>, paras: &[Range<usize>], t: &TextObject, regions: Optio
                 if justify && !cx.vertical && room > w + EPS { kashida::plan(cx.text, &sg, i..body, para.kashida, room - w) } else { vec![] };
             let w = w + kashidas.iter().map(|k| k.1).sum::<f64>();
             if justify && (room - w).abs() > EPS {
-                let line_flex = |j: usize| if held.contains(&j) { Flex::default() } else { flex.get(j).copied().unwrap_or_default() };
                 if cjk_gaps > 0 && room > w {
                     // Spread over the CJK gaps and the word spaces alike.
                     let per = (room - w) / (cjk_gaps + spaces) as f64;
@@ -2236,7 +2262,7 @@ fn flow(cx: &mut Ctx<'_>, paras: &[Range<usize>], t: &TextObject, regions: Optio
                 if g.ch == '\t' {
                     (adv, leader) = tab_advance(&para.tabs, tab_origin, x - tab_shift, &sg[j + 1..trimmed.max(j + 1)]);
                 } else if j < body {
-                    let f = if held.contains(&j) { Flex::default() } else { flex.get(j).copied().unwrap_or_default() };
+                    let f = line_flex(j);
                     if is_word_space(g) {
                         adv += fit.space(&f);
                     } else {
