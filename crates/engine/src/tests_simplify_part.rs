@@ -1,6 +1,6 @@
 //! Simplify of the direct-selected part of a path: with anchors or segments of a path
 //! direct-selected, `object.path.simplify` refits only each run of selected segments between its end
-//! anchors, as the Simplify help page describes for "a specific path region"
+//! anchors, as the Simplify help page describes for part of a path picked with Direct Selection
 //! (https://helpx.adobe.com/illustrator/desktop/draw-shapes-and-paths/modify-paths/manually-simplify-paths.html).
 
 use std::collections::BTreeSet;
