@@ -1067,10 +1067,12 @@ pub(crate) fn show(app: &mut VectorcraftApp, ui: &mut egui::Ui) -> bool {
             None => dock(ui),
         };
         // A double-click on a tab of the dock's tree collapses its group to its tabs, or expands it.
+        // A group beside another doesn't collapse, so its tabs ignore it rather than report an error.
         if let Some(root) = &drawn.root {
             let tabs = Layout { root: Some(root.clone()), floating: Vec::new() };
             if let Some(panel) =
                 tabs.panels().into_iter().find(|p| ui.ctx().read_response(area.with(("tab", *p))).is_some_and(|r| r.double_clicked()))
+                && tab_group_shortens(&tabs, panel) == Some(true)
             {
                 content.commands.push(("window.panel.collapse", json!({"panel": panel})));
             }
