@@ -323,7 +323,7 @@ impl Tool for GestureTool {
                     return vec![];
                 }
                 let p = self.constrained(cx, p, ev.mods);
-                if !self.began && self.id == "pencil" && self.alt_smooth && ev.mods.alt {
+                if !self.began && !self.straight && self.id == "pencil" && self.alt_smooth && ev.mods.alt {
                     self.smoothing = true;
                 }
                 if self.snaps() && !self.smoothing && !self.straight {
@@ -335,7 +335,9 @@ impl Tool for GestureTool {
                     self.snap.clear();
                     // The line runs from the press point to the pointer, wherever the drag went.
                     if self.points.first().is_some_and(|s| s.distance(p) < cx.tol(1.0)) {
-                        return vec![];
+                        // Back at the press point there is no line: the one shown goes.
+                        self.points.truncate(1);
+                        return if std::mem::take(&mut self.began) { vec![Action::Cancel] } else { vec![] };
                     }
                     self.points.truncate(1);
                 } else if self.points.last().is_some_and(|l| l.distance(p) < cx.tol(1.0)) {
@@ -360,10 +362,13 @@ impl Tool for GestureTool {
                 let p = self.constrained(cx, p, ev.mods);
                 let end = if self.snaps() && !self.smoothing && !self.straight { self.snap.drag(cx, p, None) } else { p };
                 self.snap.clear();
+                let mut cancel = false;
                 if self.straight {
+                    self.points.truncate(1);
                     if self.points.first().is_some_and(|s| s.distance(p) >= cx.tol(1.0)) {
-                        self.points.truncate(1);
                         self.push(end, ev.pressure);
+                    } else {
+                        cancel = self.began;
                     }
                 } else if self.points.last().is_some_and(|l| l.distance(p) >= cx.tol(1.0)) {
                     self.push(end, ev.pressure);
@@ -375,7 +380,7 @@ impl Tool for GestureTool {
                     // The last step was where the button went up: it moves where that snaps.
                     *last = end;
                 }
-                let out = self.finish(cx, ev.mods);
+                let out = if cancel { vec![Action::Cancel] } else { self.finish(cx, ev.mods) };
                 self.active = false;
                 self.began = false;
                 self.smoothing = false;
@@ -444,7 +449,8 @@ impl Tool for GestureTool {
             return Cursor::Smooth;
         }
         // Alt held at the release closes the path (`finish`).
-        if self.draws_path() && !self.alt_smooth && m.alt {
+        // A straight line stays open, so its release has nothing to close.
+        if self.draws_path() && !self.alt_smooth && m.alt && !self.straight {
             return if self.id == "paintbrush" { Cursor::PaintbrushClose } else { Cursor::PencilClose };
         }
         match self.id {
@@ -812,6 +818,59 @@ mod tests {
         let Some(Action::Preview(_, v)) = acts.last().and_then(|a| a.first()) else { panic!("{acts:?}") };
         assert_eq!(v["extend"], json!({"id": id.0, "end": "end"}));
         assert_eq!(v["points"], json!([[400.0, 300.0], [400.0 + 100f64.hypot(4.0), 300.0]]));
+    }
+
+    /// #3846: Alt during a Shift line doesn't promise a close the release can't do, and with Alt
+    /// Toggles to Smooth, Alt pressed after the press doesn't turn the line into a smoothing drag.
+    #[test]
+    fn pencil_shift_line_ignores_alt_for_cursor_and_smoothing() {
+        let (d, _) = doc_with_rect();
+        let s = Selection::default();
+        let p = paint();
+        let mut cx = cx(&d, &s, &p);
+        cx.smart_guides = false;
+        let shift = Mods { shift: true, ..Default::default() };
+        let shift_alt = Mods { shift: true, alt: true, ..Default::default() };
+        let mut t = GestureTool::new("pencil");
+        t.pointer(&cx, &PointerEvent::new(PointerKind::Down, 0.0, 0.0).with_mods(shift));
+        assert_eq!(t.cursor(&cx, Point::new(0.0, 0.0), shift_alt), Cursor::Pencil);
+        t.pointer(&cx, &PointerEvent::new(PointerKind::Up, 0.0, 0.0).with_mods(shift));
+
+        let mut t = GestureTool::new("pencil");
+        t.alt_smooth = true;
+        t.pointer(&cx, &PointerEvent::new(PointerKind::Down, 0.0, 0.0).with_mods(shift));
+        let acts = t.pointer(&cx, &PointerEvent::new(PointerKind::Drag, 80.0, 0.0).with_mods(shift_alt));
+        assert!(matches!(acts.as_slice(), [Action::Begin(_), Action::Preview(..)]), "{acts:?}");
+        let acts = t.pointer(&cx, &PointerEvent::new(PointerKind::Up, 80.0, 0.0).with_mods(shift_alt));
+        assert!(matches!(&acts[0], Action::Preview(_, v) if v["points"].as_array().unwrap().len() == 2), "{acts:?}");
+    }
+
+    /// #3846: a Shift line dragged back to its press point has no line: the preview is cancelled
+    /// and the release commits nothing (not the previous end of the line).
+    #[test]
+    fn pencil_shift_line_back_at_the_press_point_draws_nothing() {
+        let (d, _) = doc_with_rect();
+        let s = Selection::default();
+        let p = paint();
+        let mut cx = cx(&d, &s, &p);
+        cx.smart_guides = false;
+        let shift = Mods { shift: true, ..Default::default() };
+        // Released back at the press point, and dragged back there first.
+        for back_in_drag in [false, true] {
+            let mut t = GestureTool::new("pencil");
+            t.pointer(&cx, &PointerEvent::new(PointerKind::Down, 0.0, 0.0).with_mods(shift));
+            t.pointer(&cx, &PointerEvent::new(PointerKind::Drag, 80.0, 0.0).with_mods(shift));
+            let mut acts = vec![];
+            if back_in_drag {
+                // The shown line goes as soon as the pointer is back, not only at the release.
+                let back = t.pointer(&cx, &PointerEvent::new(PointerKind::Drag, 0.2, 0.0).with_mods(shift));
+                assert_eq!(back, vec![Action::Cancel]);
+                acts.extend(back);
+            }
+            acts.extend(t.pointer(&cx, &PointerEvent::new(PointerKind::Up, 0.2, 0.0).with_mods(shift)));
+            assert!(acts.contains(&Action::Cancel), "{back_in_drag}: {acts:?}");
+            assert!(!acts.contains(&Action::Commit) && !acts.iter().any(|a| matches!(a, Action::Preview(..))), "{back_in_drag}: {acts:?}");
+        }
     }
 
     #[test]
