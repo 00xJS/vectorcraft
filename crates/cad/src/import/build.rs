@@ -3,7 +3,7 @@
 //! dimensions, as groups), and colours, lineweights, linetypes and transparency resolved through
 //! layers and blocks.
 
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::rc::Rc;
 use std::sync::Arc;
 
@@ -52,6 +52,9 @@ pub(crate) struct Build<'d, 'a> {
     sensitive: HashMap<String, bool>,
     /// Symbol names by block and what it inherits (`None`: the block has no art).
     symbols: HashMap<(String, Inherit), Option<String>>,
+    /// Names of the symbols made so far, and the next suffix to try for each label.
+    symbol_names: HashSet<String>,
+    next_suffix: HashMap<String, usize>,
     /// Blocks being drawn, outermost first.
     stack: Vec<String>,
     /// Document space per drawing unit, and its symbols' (no translation).
@@ -108,6 +111,8 @@ impl<'d, 'a> Build<'d, 'a> {
             bounds: HashMap::new(),
             sensitive: HashMap::new(),
             symbols: HashMap::new(),
+            symbol_names: HashSet::new(),
+            next_suffix: HashMap::new(),
             stack: vec![],
             map: Affine::IDENTITY,
             symbol_map: Affine::IDENTITY,
@@ -584,7 +589,8 @@ impl<'d, 'a> Build<'d, 'a> {
         let art = self.art(name, map, &key.1, depth);
         let made = art.map(|art| {
             let label = self.d.blocks.get(name).map_or(name, |b| b.name.as_str());
-            let symbol = unique(label, |n| self.doc.symbols.iter().any(|s| s.name == n));
+            let symbol = unique(label, &mut self.next_suffix, &self.symbol_names);
+            self.symbol_names.insert(symbol.clone());
             self.doc.symbols.push(Symbol { name: symbol.clone(), art: Arc::new(art) });
             symbol
         });
@@ -611,10 +617,17 @@ fn rgb_color([r, g, b]: [u8; 3]) -> Color {
     Color::rgb8(r, g, b)
 }
 
-/// `base`, or `base 2`, `base 3`… when taken.
-fn unique(base: &str, taken: impl Fn(&str) -> bool) -> String {
-    if !taken(base) {
+/// `base`, or `base 2`, `base 3`… when taken; `next` remembers where each base left off.
+fn unique(base: &str, next: &mut HashMap<String, usize>, taken: &HashSet<String>) -> String {
+    if !taken.contains(base) {
         return base.to_string();
     }
-    (2..).map(|i| format!("{base} {i}")).find(|n| !taken(n)).unwrap_or_else(|| base.to_string())
+    let i = next.entry(base.to_string()).or_insert(2);
+    loop {
+        let name = format!("{base} {i}");
+        *i += 1;
+        if !taken.contains(&name) {
+            return name;
+        }
+    }
 }
