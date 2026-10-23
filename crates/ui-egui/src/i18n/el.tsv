@@ -1935,6 +1935,13 @@ font-technology	Variable	Μεταβλητές
 	Transparency	Διαφάνεια
 	Transparent	Διαφανές
 	Trap…	Παγίδευση χρωμάτων…
+	Trap	Παγίδευση χρωμάτων
+	Height/Width	Ύψος/Πλάτος
+	Tint Reduction	Μείωση απόχρωσης
+	Traps with Process Color	Παγιδεύσεις με χρώματα τετραχρωμίας
+	Reverse Traps	Αντίστροφες παγιδεύσεις
+	Precision	Ακρίβεια
+	Remove Redundant Points	Αφαίρεση περιττών σημείων
 	Trim	Περικοπή περιθωρίων
 	Twist…	Συστροφή…
 	Type	Κείμενο
@@ -5419,6 +5426,11 @@ axis	Y Axis	Άξονας Y
 @msg	a live effect runs while the document is drawn, so it can't be `heavy`	ένα δυναμικό εφέ εκτελείται κατά τη σχεδίαση του εγγράφου, οπότε δεν μπορεί να είναι `heavy`
 @msg	an exporter always gets an export's budget: leave `budget` out	ένα πρόσθετο εξαγωγής παίρνει πάντα τον προϋπολογισμό μιας εξαγωγής: παραλείψτε το `budget`
 @msg	“{_1}” asks for a heavy budget (each run up to {minutes} minutes and {times} times the usual instructions): install it with `allowHeavy: true` once the user agrees	το «{_1}» ζητά μεγάλο υπολογιστικό προϋπολογισμό (κάθε εκτέλεση έως {minutes} λεπτά και {times} φορές τις συνήθεις εντολές): εγκαταστήστε το με `allowHeavy: true` μόλις συμφωνήσει ο χρήστης
+@msg	Trap: select two or more objects filled with solid colours	Παγίδευση χρωμάτων: επιλέξτε δύο ή περισσότερα αντικείμενα με συμπαγές χρώμα γεμίσματος
+@msg	Trap: no edges of different colours meet among the selected objects	Παγίδευση χρωμάτων: δεν συναντώνται άκρες διαφορετικών χρωμάτων στα επιλεγμένα αντικείμενα
+@msg	thickness must be from 0.01 to 5000 pt	το thickness πρέπει να είναι από 0,01 έως 5000 pt
+@msg	heightWidth must be from 1 to 1000 %	το heightWidth πρέπει να είναι από 1 έως 1000 %
+@msg	tintReduction must be from 0 to 100 %	το tintReduction πρέπει να είναι από 0 έως 100 %
 	Rectangular Grid Tool Options	Επιλογές εργαλείου ορθογώνιου πλέγματος
 	Polar Grid Tool Options	Επιλογές εργαλείου πολικού πλέγματος
 	Fill Line	Γέμισμα γραμμής

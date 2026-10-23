@@ -1755,6 +1755,13 @@ lighting	Light	Valo
 	Repeat Pathfinder	Toista polunetsin
 	Repeat {name}	Toista {name}
 	Trap…	Ylitäyttö…
+	Trap	Ylitäyttö
+	Height/Width	Korkeus/leveys
+	Tint Reduction	Sävyn vähennys
+	Traps with Process Color	Ylitäytöt prosessiväreillä
+	Reverse Traps	Käänteiset ylitäytöt
+	Precision	Tarkkuus
+	Remove Redundant Points	Poista tarpeettomat pisteet
 	Bottom in Front	Alin edessä
 	Brick by Column	Tiili sarakkeittain
 	Brick by Row	Tiili riveittäin
@@ -5498,6 +5505,11 @@ axis	Y Axis	Y-akseli
 @msg	a live effect runs while the document is drawn, so it can't be `heavy`	live-tehoste suoritetaan asiakirjaa piirrettäessä, joten se ei voi olla `heavy`
 @msg	an exporter always gets an export's budget: leave `budget` out	vientilaajennus saa aina viennin budjetin: jätä `budget` pois
 @msg	“{_1}” asks for a heavy budget (each run up to {minutes} minutes and {times} times the usual instructions): install it with `allowHeavy: true` once the user agrees	”{_1}” pyytää suurta laskentabudjettia (jokainen ajo enintään {minutes} minuuttia ja {times} kertaa tavallinen määrä käskyjä): asenna se asetuksella `allowHeavy: true`, kun käyttäjä hyväksyy
+@msg	Trap: select two or more objects filled with solid colours	Ylitäyttö: valitse vähintään kaksi tasaisella värillä täytettyä objektia
+@msg	Trap: no edges of different colours meet among the selected objects	Ylitäyttö: valituissa objekteissa eriväriset reunat eivät kohtaa
+@msg	thickness must be from 0.01 to 5000 pt	thickness-arvon on oltava 0,01–5000 pt
+@msg	heightWidth must be from 1 to 1000 %	heightWidth-arvon on oltava 1–1000 %
+@msg	tintReduction must be from 0 to 100 %	tintReduction-arvon on oltava 0–100 %
 	Rectangular Grid Tool Options	Suorakulmaisen ruudukon työkalun asetukset
 	Polar Grid Tool Options	Napakoordinaattiruudukon työkalun asetukset
 	Fill Line	Täytä viiva

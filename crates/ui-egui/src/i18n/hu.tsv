@@ -4055,6 +4055,13 @@ mark-style	Japanese	Japán
 	Transparent Objects	Átlátszó objektumok
 	Transverse (the page a quarter turn on the paper)	Keresztirányú (az oldal negyed fordulattal elforgatva a papíron)
 	Trap…	Csapdázás…
+	Trap	Csapdázás
+	Height/Width	Magasság/szélesség
+	Tint Reduction	Tónuscsökkentés
+	Traps with Process Color	Csapdázás négyszínnyomó színekkel
+	Reverse Traps	Fordított csapdázás
+	Precision	Pontosság
+	Remove Redundant Points	Felesleges pontok eltávolítása
 	Triad	Triád
 	Triad 2	Triád 2
 	Triad 3	Triád 3
@@ -5453,6 +5460,11 @@ axis	Y Axis	Y tengely
 @msg	a live effect runs while the document is drawn, so it can't be `heavy`	az élő effektus a dokumentum rajzolása közben fut, ezért nem lehet `heavy`
 @msg	an exporter always gets an export's budget: leave `budget` out	az exportáló bővítmény mindig az exportálás keretét kapja: hagyd ki a `budget` kulcsot
 @msg	“{_1}” asks for a heavy budget (each run up to {minutes} minutes and {times} times the usual instructions): install it with `allowHeavy: true` once the user agrees	a(z) „{_1}” nagy számítási keretet kér (futásonként legfeljebb {minutes} perc és a szokásos utasításszám {times}-szorosa): telepítsd az `allowHeavy: true` megadásával, miután a felhasználó beleegyezett
+@msg	Trap: select two or more objects filled with solid colours	Csapdázás: jelöljön ki legalább két, egyszínű kitöltésű objektumot
+@msg	Trap: no edges of different colours meet among the selected objects	Csapdázás: a kijelölt objektumok között nem érintkeznek különböző színű élek
+@msg	thickness must be from 0.01 to 5000 pt	a thickness értéke 0,01 és 5000 pt között lehet
+@msg	heightWidth must be from 1 to 1000 %	a heightWidth értéke 1 és 1000 % között lehet
+@msg	tintReduction must be from 0 to 100 %	a tintReduction értéke 0 és 100 % között lehet
 	Rectangular Grid Tool Options	Téglalaprács beállításai
 	Polar Grid Tool Options	Polárrács beállításai
 	Fill Line	Szakasz kitöltése

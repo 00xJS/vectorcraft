@@ -3358,6 +3358,13 @@ font-technology	Variable	Variables
 	Transparent Background	Arrière-plan transparent
 	Transverse (the page a quarter turn on the paper)	Transversal (la page tournée d’un quart de tour sur le papier)
 	Trap…	Recouvrement…
+	Trap	Recouvrement
+	Height/Width	Hauteur/largeur
+	Tint Reduction	Réduction de la teinte
+	Traps with Process Color	Recouvrements en couleurs quadri
+	Reverse Traps	Inverser les recouvrements
+	Precision	Précision
+	Remove Redundant Points	Supprimer les points superflus
 	Trim	Détourage
 	Trim mark weight:	Épaisseur des traits de coupe :
 	Trim marks	Traits de coupe
@@ -5466,6 +5473,11 @@ axis	Y Axis	Axe Y
 @msg	a live effect runs while the document is drawn, so it can't be `heavy`	un effet dynamique s’exécute pendant le tracé du document, il ne peut donc pas être `heavy`
 @msg	an exporter always gets an export's budget: leave `budget` out	un module externe d’exportation reçoit toujours le budget d’une exportation : omettez `budget`
 @msg	“{_1}” asks for a heavy budget (each run up to {minutes} minutes and {times} times the usual instructions): install it with `allowHeavy: true` once the user agrees	« {_1} » demande un budget de calcul important (chaque exécution jusqu’à {minutes} minutes et {times} fois les instructions habituelles) : installez-le avec `allowHeavy: true` une fois que l’utilisateur l’accepte
+@msg	Trap: select two or more objects filled with solid colours	Recouvrement : sélectionnez au moins deux objets remplis de couleurs unies
+@msg	Trap: no edges of different colours meet among the selected objects	Recouvrement : aucun bord de couleurs différentes ne se touche parmi les objets sélectionnés
+@msg	thickness must be from 0.01 to 5000 pt	thickness doit être compris entre 0,01 et 5000 pt
+@msg	heightWidth must be from 1 to 1000 %	heightWidth doit être compris entre 1 et 1000 %
+@msg	tintReduction must be from 0 to 100 %	tintReduction doit être compris entre 0 et 100 %
 	Rectangular Grid Tool Options	Options de l’outil Grille rectangulaire
 	Polar Grid Tool Options	Options de l’outil Grille à coordonnées polaires
 	Fill Line	Remplir le trait

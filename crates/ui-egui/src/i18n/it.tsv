@@ -3396,6 +3396,13 @@ mark-style	Japanese	Giapponese
 	Transparent Background	Sfondo trasparente
 	Transverse (the page a quarter turn on the paper)	Trasversale (la pagina ruotata di un quarto di giro sul foglio)
 	Trap…	Trapping…
+	Trap	Trapping
+	Height/Width	Altezza/larghezza
+	Tint Reduction	Riduzione tinta
+	Traps with Process Color	Trapping con colori di quadricromia
+	Reverse Traps	Trapping inverso
+	Precision	Precisione
+	Remove Redundant Points	Rimuovi punti ridondanti
 	Trim	Rifila
 	Trim mark weight:	Spessore segni di taglio:
 	Trim marks	Segni di taglio
@@ -5084,6 +5091,11 @@ axis	Y Axis	Asse Y
 @msg	a live effect runs while the document is drawn, so it can't be `heavy`	un effetto dinamico viene eseguito mentre il documento viene disegnato, quindi non può essere `heavy`
 @msg	an exporter always gets an export's budget: leave `budget` out	un plug-in di esportazione riceve sempre il budget di un’esportazione: ometti `budget`
 @msg	“{_1}” asks for a heavy budget (each run up to {minutes} minutes and {times} times the usual instructions): install it with `allowHeavy: true` once the user agrees	“{_1}” chiede un budget di calcolo elevato (ogni esecuzione fino a {minutes} minuti e {times} volte le istruzioni consuete): installalo con `allowHeavy: true` quando l’utente acconsente
+@msg	Trap: select two or more objects filled with solid colours	Trapping: selezionate due o più oggetti con riempimento in tinta unita
+@msg	Trap: no edges of different colours meet among the selected objects	Trapping: tra gli oggetti selezionati non si incontrano bordi di colori diversi
+@msg	thickness must be from 0.01 to 5000 pt	thickness deve essere compreso tra 0,01 e 5000 pt
+@msg	heightWidth must be from 1 to 1000 %	heightWidth deve essere compreso tra 1 e 1000 %
+@msg	tintReduction must be from 0 to 100 %	tintReduction deve essere compreso tra 0 e 100 %
 	Rectangular Grid Tool Options	Opzioni strumento Griglia rettangolare
 	Polar Grid Tool Options	Opzioni strumento Griglia polare
 	Fill Line	Riempi linea

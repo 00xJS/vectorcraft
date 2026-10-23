@@ -1609,6 +1609,13 @@ lighting	Light	Cahaya
 	Repeat Pathfinder	Ulangi Pathfinder
 	Repeat {name}	Ulangi {name}
 	Trap…	Trap…
+	Trap	Trap
+	Height/Width	Tinggi/Lebar
+	Tint Reduction	Pengurangan Tint
+	Traps with Process Color	Trap dengan Warna Proses
+	Reverse Traps	Balikkan Trap
+	Precision	Presisi
+	Remove Redundant Points	Hapus Titik Berlebih
 	Bottom in Front	Bawah di depan
 	Brick by Column	Bata per kolom
 	Brick by Row	Bata per baris
@@ -5432,6 +5439,11 @@ axis	Y Axis	Sumbu Y
 	The plug-in is computing…	Plug-in sedang menghitung…
 	Inspect Plug-in	Periksa plug-in
 	Cancel Plug-in Run	Batalkan jalannya plug-in
+@msg	Trap: select two or more objects filled with solid colours	Trap: pilih dua objek atau lebih yang diisi warna solid
+@msg	Trap: no edges of different colours meet among the selected objects	Trap: tidak ada tepi berwarna berbeda yang bertemu di antara objek yang dipilih
+@msg	thickness must be from 0.01 to 5000 pt	thickness harus dari 0,01 sampai 5000 pt
+@msg	heightWidth must be from 1 to 1000 %	heightWidth harus dari 1 sampai 1000 %
+@msg	tintReduction must be from 0 to 100 %	tintReduction harus dari 0 sampai 100 %
 	Rectangular Grid Tool Options	Opsi alat kisi persegi panjang
 	Polar Grid Tool Options	Opsi alat kisi polar
 	Fill Line	Isi garis

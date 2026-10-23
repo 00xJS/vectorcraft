@@ -1623,6 +1623,13 @@ lighting	Light	Licht
 	Repeat Pathfinder	Pathfinder herhalen
 	Repeat {name}	{name} herhalen
 	Trap…	Overbrugging…
+	Trap	Overbrugging
+	Height/Width	Hoogte/breedte
+	Tint Reduction	Tintvermindering
+	Traps with Process Color	Overbruggingen met proceskleuren
+	Reverse Traps	Overbruggingen omkeren
+	Precision	Precisie
+	Remove Redundant Points	Overbodige punten verwijderen
 	Bottom in Front	Onderkant vooraan
 	Brick by Column	Baksteen per kolom
 	Brick by Row	Baksteen per rij
@@ -5475,6 +5482,11 @@ axis	Y Axis	Y-as
 	The plug-in is computing…	De plug-in is aan het rekenen…
 	Inspect Plug-in	Plug-in inspecteren
 	Cancel Plug-in Run	Plug-in-run annuleren
+@msg	Trap: select two or more objects filled with solid colours	Overbrugging: selecteer twee of meer objecten met een egale vulkleur
+@msg	Trap: no edges of different colours meet among the selected objects	Overbrugging: tussen de geselecteerde objecten raken geen randen van verschillende kleuren elkaar
+@msg	thickness must be from 0.01 to 5000 pt	thickness moet tussen 0,01 en 5000 pt liggen
+@msg	heightWidth must be from 1 to 1000 %	heightWidth moet tussen 1 en 1000 % liggen
+@msg	tintReduction must be from 0 to 100 %	tintReduction moet tussen 0 en 100 % liggen
 	Rectangular Grid Tool Options	Opties rechthoekig-rastergereedschap
 	Polar Grid Tool Options	Opties polair-rastergereedschap
 	Fill Line	Lijn vullen

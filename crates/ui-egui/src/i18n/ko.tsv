@@ -3068,6 +3068,13 @@ mark-style	Japanese	일본식
 	Transparent Background	투명 배경
 	Transverse (the page a quarter turn on the paper)	가로 방향(용지에서 페이지를 90도 돌림)
 	Trap…	트랩…
+	Trap	트랩
+	Height/Width	높이/폭
+	Tint Reduction	색조 감소
+	Traps with Process Color	프로세스 색상으로 트랩
+	Reverse Traps	트랩 반전
+	Precision	정밀도
+	Remove Redundant Points	불필요한 점 제거
 	Trim mark weight:	재단선 두께:
 	True colour needs version 2004 or later: the nearest of 256 colours is written.	트루 컬러는 2004 이상 버전이 필요합니다. 256색 중 가장 가까운 색으로 기록됩니다.
 	Turn off Data Recovery for complex documents	복잡한 문서는 데이터 복구 끄기
@@ -5047,6 +5054,11 @@ axis	Y Axis	Y축
 @msg	a live effect runs while the document is drawn, so it can't be `heavy`	라이브 효과는 문서를 그리는 동안 실행되므로 `heavy`일 수 없습니다
 @msg	an exporter always gets an export's budget: leave `budget` out	내보내기 플러그인은 항상 내보내기 예산을 받습니다. `budget`은 생략하세요
 @msg	“{_1}” asks for a heavy budget (each run up to {minutes} minutes and {times} times the usual instructions): install it with `allowHeavy: true` once the user agrees	“{_1}”은(는) 큰 계산 예산을 요청합니다(실행당 최대 {minutes}분, 평소의 {times}배 명령어). 사용자가 동의하면 `allowHeavy: true`로 설치하세요
+@msg	Trap: select two or more objects filled with solid colours	트랩: 단색으로 칠한 개체를 두 개 이상 선택하십시오
+@msg	Trap: no edges of different colours meet among the selected objects	트랩: 선택한 개체 사이에 서로 다른 색상이 맞닿는 가장자리가 없습니다
+@msg	thickness must be from 0.01 to 5000 pt	thickness는 0.01~5000pt여야 합니다
+@msg	heightWidth must be from 1 to 1000 %	heightWidth는 1~1000%여야 합니다
+@msg	tintReduction must be from 0 to 100 %	tintReduction은 0~100%여야 합니다
 	Rectangular Grid Tool Options	사각형 격자 도구 옵션
 	Polar Grid Tool Options	극좌표 격자 도구 옵션
 	Fill Line	선 채우기

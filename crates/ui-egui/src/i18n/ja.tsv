@@ -3074,6 +3074,13 @@ mark-style	Japanese	日本式
 	Transparent Background	背景を透明にする
 	Transverse (the page a quarter turn on the paper)	横向き回転 (用紙上でページを 90 度回転)
 	Trap…	トラップ…
+	Trap	トラップ
+	Height/Width	高さ/幅
+	Tint Reduction	色合いの軽減
+	Traps with Process Color	プロセスカラーでトラップ
+	Reverse Traps	トラップを反転
+	Precision	精度
+	Remove Redundant Points	余分なポイントを削除
 	Trim mark weight:	トリムマークの線幅:
 	True colour needs version 2004 or later: the nearest of 256 colours is written.	True Color にはバージョン 2004 以降が必要です。256 色のうち最も近い色で書き出します。
 	Turn off Data Recovery for complex documents	複雑なドキュメントではデータ復帰をオフにする
@@ -5146,6 +5153,11 @@ axis	Y Axis	Y 軸
 @msg	a live effect runs while the document is drawn, so it can't be `heavy`	ライブ効果はドキュメントの描画中に実行されるため、`heavy` にはできません
 @msg	an exporter always gets an export's budget: leave `budget` out	書き出しプラグインには常に書き出しの予算が割り当てられます。`budget` は省略してください
 @msg	“{_1}” asks for a heavy budget (each run up to {minutes} minutes and {times} times the usual instructions): install it with `allowHeavy: true` once the user agrees	「{_1}」は大きな計算予算を求めています (1 回の実行につき最大 {minutes} 分、通常の {times} 倍の命令)。ユーザーが同意したら `allowHeavy: true` を指定してインストールしてください
+@msg	Trap: select two or more objects filled with solid colours	トラップ: 単色で塗りつぶした 2 つ以上のオブジェクトを選択してください
+@msg	Trap: no edges of different colours meet among the selected objects	トラップ: 選択したオブジェクトに異なる色が接する辺がありません
+@msg	thickness must be from 0.01 to 5000 pt	thickness は 0.01～5000 pt にしてください
+@msg	heightWidth must be from 1 to 1000 %	heightWidth は 1～1000 % にしてください
+@msg	tintReduction must be from 0 to 100 %	tintReduction は 0～100 % にしてください
 	Rectangular Grid Tool Options	長方形グリッドツールオプション
 	Polar Grid Tool Options	同心円グリッドツールオプション
 	Fill Line	線を塗りつぶす

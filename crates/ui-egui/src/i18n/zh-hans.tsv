@@ -3229,6 +3229,13 @@ font-script	Japanese	汉字
 	Transparent Background	透明背景
 	Transverse (the page a quarter turn on the paper)	横向 (页面在纸张上转四分之一圈)
 	Trap…	陷印…
+	Trap	陷印
+	Height/Width	高度/宽度
+	Tint Reduction	色调减淡
+	Traps with Process Color	使用印刷色陷印
+	Reverse Traps	反向陷印
+	Precision	精度
+	Remove Redundant Points	删除冗余点
 	Trim	修边
 	Trim mark weight:	剪裁标记宽度：
 	Trim marks	剪裁标记
@@ -5307,6 +5314,11 @@ axis	Y Axis	Y 轴
 @msg	a live effect runs while the document is drawn, so it can't be `heavy`	实时效果在绘制文档时运行，因此不能为 `heavy`
 @msg	an exporter always gets an export's budget: leave `budget` out	导出增效工具始终使用导出的预算：请省略 `budget`
 @msg	“{_1}” asks for a heavy budget (each run up to {minutes} minutes and {times} times the usual instructions): install it with `allowHeavy: true` once the user agrees	“{_1}”需要大量计算预算（每次运行最多 {minutes} 分钟，指令数为通常的 {times} 倍）：请在用户同意后使用 `allowHeavy: true` 安装
+@msg	Trap: select two or more objects filled with solid colours	陷印：请选择两个或更多用实色填充的对象
+@msg	Trap: no edges of different colours meet among the selected objects	陷印：所选对象中没有不同颜色相接的边缘
+@msg	thickness must be from 0.01 to 5000 pt	thickness 必须介于 0.01 到 5000 pt 之间
+@msg	heightWidth must be from 1 to 1000 %	heightWidth 必须介于 1 到 1000 % 之间
+@msg	tintReduction must be from 0 to 100 %	tintReduction 必须介于 0 到 100 % 之间
 	Rectangular Grid Tool Options	矩形网格工具选项
 	Polar Grid Tool Options	极坐标网格工具选项
 	Fill Line	填充线段

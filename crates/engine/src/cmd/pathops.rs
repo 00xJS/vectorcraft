@@ -109,6 +109,15 @@ pub fn specs() -> Vec<CommandSpec> {
             |s, _| run_pf(s, PathfinderOp::MinusBack)
         ),
         cmd!(
+            "object.pathfinder.trap",
+            "Trap…",
+            ["Window", "Pathfinder"],
+            None,
+            "{ids?: [id…] (selected first; default: the selection), thickness?: pt 0.01..5000 (0.25; how far the lighter colour reaches into the darker one across vertical edges), heightWidth?: % 1..1000 (100; the reach across horizontal edges as a percentage of the vertical one), tintReduction?: % 0..100 (40; the trap paints the lighter colour at this percentage of its tint), trapsWithProcessColor?: bool (false; a swatch (spot) colour's trap is painted with its CMYK process equivalent), reverseTraps?: bool (false; the darker colour spreads into the lighter one, except a rich black)} adds overprinting traps where the selected objects' visible areas of different solid colours meet, grouped directly above the topmost selected object and selected; the objects stay as they are → {ids}",
+            has_selection,
+            trap
+        ),
+        cmd!(
             "object.path.outlineStroke",
             "Outline Stroke",
             ["Object", "Path"],
@@ -496,6 +505,68 @@ fn run_pf(s: &mut Session, op: PathfinderOp) -> Result<Value> {
         let nid = d.wrap(&roots, |_| new_node)?;
         sel.set([nid]);
         Ok(vec![nid])
+    })?;
+    Ok(ids_json(&ids))
+}
+
+// ---------- Trap ----------
+
+/// Pathfinder panel › Trap ([`vectorcraft_render::effects::trap`]): the traps between the selected
+/// objects' leaf shapes, as one group of overprinting paths above the topmost selected object.
+fn trap(s: &mut Session, p: &Value) -> Result<Value> {
+    use vectorcraft_render::effects::trap::{TRAP_LABEL, TrapOptions, TrapSource, trap_appearance, traps};
+    const ID: &str = "object.pathfinder.trap";
+    let mut q = p.clone();
+    if let Some(t) = len_param(p, "thickness") {
+        if !(po::TRAP_MIN_WIDTH..=po::TRAP_MAX_WIDTH).contains(&t) {
+            return Err(bad(ID, "thickness must be from 0.01 to 5000 pt"));
+        }
+        q["thickness"] = json!(t);
+    }
+    if num_param(p, "heightWidth").is_some_and(|v| !(1.0..=1000.0).contains(&v)) {
+        return Err(bad(ID, "heightWidth must be from 1 to 1000 %"));
+    }
+    if num_param(p, "tintReduction").is_some_and(|v| !(0.0..=100.0).contains(&v)) {
+        return Err(bad(ID, "tintReduction must be from 0 to 100 %"));
+    }
+    // The effect-only settings stay at their defaults.
+    if let Some(o) = q.as_object_mut() {
+        o.remove("precision");
+        o.remove("removeRedundantPoints");
+    }
+    let options = TrapOptions::from_params(&q);
+    let roots = selected_roots(s)?;
+    if roots.is_empty() {
+        return Err(EngineError::Other("nothing selected".into()));
+    }
+    let ids = s.edit(TRAP_LABEL, |d, sel| {
+        let mut sources = vec![];
+        for id in &roots {
+            let n = d.node(*id).ok_or(EngineError::NoNode(*id))?;
+            each_leaf(n, &mut |l| {
+                if let Some((path, rule)) = node_path(l) {
+                    sources.push(TrapSource { path, rule, fill: style_of(l).appearance.fill_paint() });
+                }
+            });
+        }
+        if sources.iter().filter(|s| s.fill.color().is_some()).count() < 2 {
+            return Err(EngineError::Other("Trap: select two or more objects filled with solid colours".into()));
+        }
+        let made = traps(&sources, &options);
+        if made.is_empty() {
+            return Err(EngineError::Other("Trap: no edges of different colours meet among the selected objects".into()));
+        }
+        let mut children = Vec::with_capacity(made.len());
+        for piece in made {
+            let mut n = shape_node(d, piece.path, None);
+            n.appearance = trap_appearance(piece.paint).into();
+            children.push(Arc::new(n));
+        }
+        let gid = d.alloc_id();
+        let top = *roots.last().ok_or_else(|| EngineError::Other("nothing selected".into()))?;
+        d.insert_beside(vec![(top, vec![Node::group(gid, children)])], false)?;
+        sel.set([gid]);
+        Ok(vec![gid])
     })?;
     Ok(ids_json(&ids))
 }
