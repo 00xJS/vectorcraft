@@ -324,6 +324,36 @@ fn shadings_become_gradients() {
     assert!(near(stops[1].1.to_rgb(), blue.to_rgb()), "{stops:?}");
 }
 
+/// #3585: arithmetic that overflows to infinity or NaN is an `undefinedresult` error, so a
+/// non-finite number never reaches a shading function's `Domain` (where it used to panic).
+#[test]
+fn non_finite_arithmetic_is_undefinedresult() {
+    let errs = |body: &str| {
+        let r = read(&format!("0 0 10 10 rectfill {body}"));
+        assert_eq!(objects(&r.document).len(), 1, "{body}: {:?}", r.warnings);
+        r.warnings.iter().any(|w| w.contains("undefinedresult"))
+    };
+    for body in [
+        "1.7e308 1.7e308 add pop",
+        "-1.7e308 1.7e308 sub pop",
+        "1e300 1e300 mul pop",
+        "-1 ln pop",
+        "0 ln pop",
+        "-1 log pop",
+        "-1 sqrt pop",
+        "10 400 exp pop",
+    ] {
+        assert!(errs(body), "{body}");
+    }
+    let axial =
+        "<< /ShadingType 2 /ColorSpace /DeviceRGB /Coords [0 0 100 0] /Function << /FunctionType 2 /Domain [n n] /C0 [1 0 0] /C1 [0 0 1] /N 1 >> >>";
+    assert!(errs(&format!("/n 1e300 1e300 mul dup sub def 0 0 100 100 rectclip {axial} shfill")));
+    // A sampled function with a Size below 1 is a rangecheck, not a panic.
+    let sampled = "<< /ShadingType 2 /ColorSpace /DeviceRGB /Coords [0 0 100 0] /Function << /FunctionType 0 /Domain [0 1] /Range [0 1 0 1 0 1] /Size [0.5] /BitsPerSample 8 /DataSource (abc) >> >>";
+    let r = read(&format!("0 0 10 10 rectfill gsave 0 0 100 100 rectclip {sampled} shfill grestore"));
+    assert!(!objects(&r.document).is_empty(), "{:?}", r.warnings);
+}
+
 /// Tiling patterns and spot inks are found again through a hash of what tells them apart, so a
 /// program that makes 200,000 patterns and 200,001 inks reads within [`read_soon`]'s 20 seconds.
 /// Patterns are named Pattern 1, Pattern 2 and so on in the order they are made. A pattern made

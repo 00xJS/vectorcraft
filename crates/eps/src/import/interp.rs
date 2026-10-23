@@ -567,11 +567,15 @@ impl<'a> Interp<'a> {
                     None => {
                         let (x, y) =
                             (a.as_num().ok_or(PsError::Ps("typecheck", String::new()))?, b.as_num().ok_or(PsError::Ps("typecheck", String::new()))?);
-                        Obj::Real(match op {
+                        let r = match op {
                             Add => x + y,
                             Sub => x - y,
                             _ => x * y,
-                        })
+                        };
+                        if !r.is_finite() {
+                            return ps_err("undefinedresult", "");
+                        }
+                        Obj::Real(r)
                     }
                 };
                 self.push(r)?;
