@@ -1172,16 +1172,18 @@ mod tests {
         ev(kind, x, y).with_mods(Mods { alt: true, ..Mods::default() })
     }
 
-    /// The Distance Guides overlays: each measured line (its ends and label), and the dashed
-    /// lines out to it, in order.
-    fn distances(t: &SelectionTool, cx: &ToolContext) -> (Vec<(Point, Point, String)>, Vec<(Point, Point)>) {
+    /// A Distance Guides measured line: its ends and its label.
+    type DistanceLine = (Point, Point, String);
+
+    /// The Distance Guides overlays: each measured line, and the dashed lines out to it, in order.
+    fn distances(t: &SelectionTool, cx: &ToolContext) -> (Vec<DistanceLine>, Vec<(Point, Point)>) {
         let o = t.overlays(cx);
         let lines = o.iter().filter_map(|o| if let Overlay::Distance { a, b, text, .. } = o { Some((*a, *b, text.clone())) } else { None });
         let dashed = o.iter().filter_map(|o| if let Overlay::Line { a, b, dashed: true, .. } = o { Some((*a, *b)) } else { None });
         (lines.collect(), dashed.collect())
     }
 
-    fn line(a: (f64, f64), b: (f64, f64), text: &str) -> (Point, Point, String) {
+    fn line(a: (f64, f64), b: (f64, f64), text: &str) -> DistanceLine {
         (Point::new(a.0, a.1), Point::new(b.0, b.1), text.to_string())
     }
 
