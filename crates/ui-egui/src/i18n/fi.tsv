@@ -3742,6 +3742,8 @@ effect	Regular	Normaali
 	Put back in the dock	Palauta telakkaan
 	All Scripts	Kaikki kirjoitusjärjestelmät
 	Any Kind	Mikä tahansa laji
+	Font Technology	Fonttitekniikka
+font-technology	Variable	Muuttuvat
 	Decorative	Koristeelliset
 	Favorites	Suosikit
 	Latin	Latinalainen

@@ -3346,6 +3346,8 @@ effect	Regular	ჩვეულებრივი
 	Put back in the dock	დოკში დაბრუნება
 	All Scripts	ყველა დამწერლობა
 	Any Kind	ნებისმიერი ტიპი
+	Font Technology	შრიფტის ტექნოლოგია
+font-technology	Variable	ცვლადი
 	Decorative	დეკორატიული
 	Favorites	რჩეულები
 	Latin	ლათინური

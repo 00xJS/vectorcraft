@@ -3563,6 +3563,8 @@ effect	Regular	Regular
 	Put back in the dock	Sæt tilbage i dokken
 	All Scripts	Alle scripts
 	Any Kind	Enhver type
+	Font Technology	Skrifttypeteknologi
+font-technology	Variable	Variable
 	Decorative	Dekorative
 	Favorites	Favoritter
 	Latin	Latinsk

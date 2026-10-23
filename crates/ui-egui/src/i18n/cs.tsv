@@ -3818,6 +3818,8 @@ effect	Regular	Pravidelný
 	Put back in the dock	Vrátit do doku
 	All Scripts	Všechny systémy písma
 	Any Kind	Libovolný druh
+	Font Technology	Technologie písma
+font-technology	Variable	Variabilní
 	Decorative	Dekorativní
 	Favorites	Oblíbené
 	Latin	Latinka

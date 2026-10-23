@@ -192,6 +192,8 @@
 	Anti-aliased Artwork	Сглаженный рисунок
 	Anti-aliasing:	Сглаживание:
 	Any Kind	Любой тип
+	Font Technology	Технология шрифта
+font-technology	Variable	Вариативные
 	Appearance	Оформление
 	Appearance Attribute	Атрибут оформления
 	Appearance Item	Элемент оформления

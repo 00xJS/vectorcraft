@@ -277,6 +277,8 @@
 	Anti-aliasing:	Élsimítás:
 	Any except extracting pages	Bármi, kivéve az oldalak kinyerését
 	Any Kind	Bármilyen típus
+	Font Technology	Betűtípus-technológia
+font-technology	Variable	Változó
 	Appearance	Megjelenés
 	Appearance Attribute	Megjelenési attribútum
 	Appearance Item	Megjelenési elem
