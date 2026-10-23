@@ -899,7 +899,7 @@ fn paths_made_in_a_loop_run_out_of_the_budget() {
 /// A loop of operators that read or copy the whole current path or clip path runs out of the
 /// operation budget (PLRM 3rd ed., chapter 8): `pathbbox`, `clip`, `clippath`, `shfill` (which
 /// reads the clip path for the area it paints), `pathforall` (which copies the path before it runs
-/// a procedure), `gstate`, `currentgstate` and `setgstate`.
+/// a procedure) and `setgstate`. `gstate` and `currentgstate` run out of memory first.
 #[test]
 fn paths_read_or_copied_in_a_loop_run_out_of_the_budget() {
     // 10,001 elements reaching 10,000,000 points to the right: what `shfill` paints in a clip of
@@ -913,8 +913,6 @@ fn paths_read_or_copied_in_a_loop_run_out_of_the_budget() {
         "clip newpath { clippath } loop",
         "clip newpath { sh shfill } loop",
         "{ { pop pop exit } { } { } { } pathforall } loop",
-        "{ gstate pop } loop",
-        "/g gstate def { g currentgstate pop } loop",
         "/g gstate def { g setgstate } loop",
     ] {
         runs_out_of_budget(&format!("{sh} {path} {body}"));
@@ -1161,4 +1159,15 @@ fn an_oversized_image_plane_is_refused() {
          /ImageMatrix [8192 0 0 8192 0 0] /DataSource <80> >> image"))
     .unwrap_err();
     assert!(e.contains("too large"), "{e}");
+}
+
+/// Graphics states kept with `gstate` or `currentgstate` each hold a copy of the current path, and
+/// the copies count against the memory budget as `gsave` does.
+#[test]
+fn stored_graphics_states_use_up_the_memory_budget() {
+    let path = "newpath 0 0 moveto 0 1 1000000 { pop 1 0 rlineto } for";
+    for body in ["30 { gstate } repeat", "30 { 0 currentgstate } repeat"] {
+        let r = read_soon(&format!("0 0 10 10 rectfill {path} {body}"));
+        assert!(r.warnings.iter().any(|w| w.contains("uses too much memory")), "{body}: {:?}", r.warnings);
+    }
 }
