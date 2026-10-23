@@ -24,6 +24,7 @@ pub mod dxf_import;
 pub mod dxf_options;
 pub mod edit_selection;
 mod effect;
+pub mod effect_gallery;
 pub mod envelope;
 pub mod eps_options;
 pub mod expand;
@@ -55,6 +56,7 @@ pub mod live_paint_selection;
 pub mod missing_fonts;
 pub mod missing_links;
 pub(crate) mod modal;
+pub mod new_brush;
 pub mod new_color_group;
 mod new_document;
 pub mod new_swatch;
@@ -86,9 +88,12 @@ pub(crate) mod save_options;
 mod save_pdf;
 pub mod save_style_library;
 pub mod save_swatch_library;
+pub mod save_symbol_library;
 pub mod script_check;
-mod shapes;
+pub mod shape_builder_options;
+pub(crate) mod shapes;
 pub mod shortcut_import;
+pub(crate) mod simplify_slider;
 pub mod slices;
 pub mod spot_colors;
 pub(crate) mod svg_options;
@@ -112,16 +117,16 @@ use serde_json::{Value, json};
 pub use color_picker::open as open_color_picker;
 pub use document_setup::open as open_document_setup;
 pub use effect::open as open_effect_dialog;
-pub(crate) use effect::{FILM_GRAIN_FIELDS, SHADES, shown_choices};
+pub(crate) use effect::{FILM_GRAIN_FIELDS, PAINT_DAUB_BRUSH_TYPE_LABELS, SHADES, shown_choices};
 pub use export_as::open as open_export_as;
 pub use export_for_screens::open as open_export_for_screens;
 pub(crate) use export_for_screens::{
     KIND as EXPORT_FOR_SCREENS, formats as screen_formats, open_assets as open_export_for_screens_assets, saved_options as screen_saved_options,
     saved_rows as screen_saved_rows,
 };
-pub(crate) use form::humanize;
+pub(crate) use form::{humanize, number_list_text, read_number_list, unit_suffix};
 pub(crate) use new_document::preset_name;
-pub use new_document::{open as open_new_document, preset_card};
+pub use new_document::{create_without_dialog as new_document_without_dialog, open as open_new_document, preset_card};
 pub use png_options::open as open_raster_options;
 pub use save_pdf::{open as open_save_pdf, open_preset as open_pdf_preset};
 pub use tools::open_tool_dialog;
@@ -242,7 +247,7 @@ macro_rules! registry {
 registry! {
     DimensionOptions: [dimension::KIND] => dimension::SPEC,
     NewDocument: [new_document::KIND] => new_document::SPEC,
-    Shape: ["rectangle", "roundedRectangle", "ellipse", "polygon", "star", "lineSegment", "rectangularGrid", "polarGrid"] => shapes::SPEC,
+    Shape: ["rectangle", "roundedRectangle", "ellipse", "polygon", "star", "lineSegment", "arc", "spiral", "rectangularGrid", "polarGrid"] => shapes::SPEC,
     Transform: ["move", "rotate", "scale", "reflect", "shear"] => transform::SPEC,
     PathOp: ["average", "offsetPath", "simplify", "splitIntoGrid"] => path_ops::SPEC,
     DocumentSetup: ["documentSetup"] => document_setup::SPEC,
@@ -280,6 +285,7 @@ registry! {
     FlattenTransparency: [flatten::KIND] => flatten::SPEC,
     FlattenerPresets: [flattener_presets::KIND] => flattener_presets::SPEC,
     SaveStyleLibrary: [save_style_library::KIND] => save_style_library::SPEC,
+    SaveSymbolLibrary: [save_symbol_library::KIND] => save_symbol_library::SPEC,
     Expand: [expand::KIND] => expand::SPEC,
     SpotColors: [spot_colors::KIND] => spot_colors::SPEC,
     TransformEach: [transform_each::KIND] => transform_each::SPEC,
@@ -298,6 +304,7 @@ registry! {
     SwatchConflict: [swatch_conflict::KIND] => swatch_conflict::SPEC,
     FileInfo: [file_info::KIND] => file_info::SPEC,
     RasterEffectsSettings: [raster_effects::KIND] => raster_effects::SPEC,
+    EffectGallery: [effect_gallery::KIND] => effect_gallery::SPEC,
     MissingLinks: [missing_links::KIND] => missing_links::SPEC,
     MissingFonts: [missing_fonts::KIND] => missing_fonts::SPEC,
     FindLinks: [find_links::KIND] => find_links::SPEC,
@@ -323,12 +330,15 @@ registry! {
     PrintPreset: [print::PRESET_KIND] => print::PRESET_SPEC,
     PrintPresets: [print_presets::KIND] => print_presets::SPEC,
     Plugin: [plugin::KIND] => plugin::SPEC,
+    PluginExport: [plugin::EXPORT_KIND] => plugin::EXPORT_SPEC,
     ScriptCheck: [script_check::KIND] => script_check::SPEC,
     VectorHalftone: [halftone::KIND] => halftone::SPEC,
+    SimplifySlider: [simplify_slider::KIND] => simplify_slider::SPEC,
     PerspectiveGrid: [perspective_grid::KIND] => perspective_grid::SPEC,
     Envelope: [envelope::WARP, envelope::MESH, envelope::OPTIONS] => envelope::SPEC,
     LiquifyOptions: [liquify::KIND] => liquify::SPEC,
     FreehandOptions: [freehand::KIND] => freehand::SPEC,
+    ShapeBuilderOptions: [shape_builder_options::KIND] => shape_builder_options::SPEC,
     FlareOptions: [flare_options::KIND] => flare_options::SPEC,
     SymbolOptions: [symbol_options::KIND] => symbol_options::SPEC,
     SymbolismOptions: [symbolism_options::KIND] => symbolism_options::SPEC,
@@ -338,6 +348,7 @@ registry! {
     LivePaintGaps: [live_paint_gaps::KIND] => live_paint_gaps::SPEC,
     LivePaintSelectionOptions: [live_paint_selection::KIND] => live_paint_selection::SPEC,
     BrushOptions: [brush_options::KIND] => brush_options::SPEC,
+    NewBrush: [new_brush::KIND] => new_brush::SPEC,
     EditSelection: [edit_selection::KIND] => edit_selection::SPEC,
     PerspectivePlane: [perspective_plane::KIND] => perspective_plane::SPEC,
     LayerOptions: [layer_options::KIND] => layer_options::SPEC,
@@ -418,6 +429,14 @@ pub(crate) fn settle(app: &mut VectorcraftApp) {
 /// The field of a dialog that a save panel opened (its format's options): Enter doesn't confirm it
 /// until Enter has been let go.
 pub(crate) const AFTER_PANEL: &str = "__afterPanel";
+
+/// Marks the open dialog, if any, as one a save panel opened ([`AFTER_PANEL`]): the Enter that
+/// closed the panel, still held, doesn't confirm it.
+pub(crate) fn opened_by_panel(app: &mut VectorcraftApp) {
+    if let Some(d) = app.ui.dialog.as_mut() {
+        d.fields.insert(AFTER_PANEL.into(), json!(true));
+    }
+}
 
 /// Draws the active dialog and handles shared initial focus, keyboard shortcuts and actions.
 /// Inline actions and footer buttons use the same confirmation and preview rollback paths.
@@ -574,6 +593,10 @@ mod tests_export;
 mod tests_import_pdf;
 #[cfg(test)]
 mod tests_package;
+#[cfg(test)]
+mod tests_plugin_export;
+#[cfg(test)]
+mod tests_plugin_fields;
 #[cfg(test)]
 mod tests_raster_formats;
 #[cfg(test)]

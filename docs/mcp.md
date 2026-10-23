@@ -14,21 +14,41 @@ It has two backends:
 With no flag, the server tries `127.0.0.1:7979` and falls back to headless. Logs go to stderr; stdout carries
 only protocol messages.
 
-## Build and register
+## Install and register
+
+From the repository root, with Rust 1.95+ and the platform's source-build prerequisites installed:
 
 ```sh
-cargo build --release -p vectorcraft-cli
-claude mcp add vectorcraft -- "$PWD/target/release/vectorcraft-cli" mcp
+cargo install --path apps/vectorcraft-cli --locked
+# POSIX shells, for Cargo's default install location:
+export PATH="${CARGO_HOME:-$HOME/.cargo}/bin:$PATH"
+vectorcraft-cli --help
+claude mcp add vectorcraft -- vectorcraft-cli mcp
 # or pin a mode:
-claude mcp add vectorcraft-headless -- "$PWD/target/release/vectorcraft-cli" mcp --headless
-claude mcp add vectorcraft-app -- "$PWD/target/release/vectorcraft-cli" mcp --connect 127.0.0.1:7979
+claude mcp add vectorcraft-headless -- vectorcraft-cli mcp --headless
+claude mcp add vectorcraft-app -- vectorcraft-cli mcp --connect 127.0.0.1:7979
 ```
+
+Cargo installs a binary, not a symlink into `target/`, so it survives `cargo clean`.
+Re-run the install command after updating the checkout.
+By default the executable goes in `$CARGO_HOME/bin` (`~/.cargo/bin` when unset), or
+`%USERPROFILE%\.cargo\bin` on Windows. If you set `--root`, `CARGO_INSTALL_ROOT`, or
+Cargo's `install.root`, use that installation root's `bin` directory instead. Add it
+to the `PATH` inherited by the MCP client, not just an interactive shell, and restart
+the client after changing its environment. Installing does not start or register a server.
 
 Other clients use the same command in their JSON config:
 
 ```json
-{"mcpServers": {"vectorcraft": {"command": "/abs/path/target/release/vectorcraft-cli", "args": ["mcp"]}}}
+{"mcpServers": {"vectorcraft": {"command": "vectorcraft-cli", "args": ["mcp"]}}}
 ```
+
+If a client reports `ENOENT` or "Executable not found in $PATH", verify the install with
+`command -v vectorcraft-cli` (PowerShell: `Get-Command vectorcraft-cli`) in the client's
+environment. If that environment cannot be changed, set JSON `command` to the absolute
+installed binary path, not a literal `~` or `$HOME` expression. Avoid symlinks into
+`target/release`: cleaning the build directory breaks them. A source build alone does
+not put the CLI on `PATH`.
 
 For a live session, start the app first: `cargo run --release -p vectorcraft -- --control 7979`.
 
@@ -53,25 +73,31 @@ claude mcp add vectorcraft -- vectorcraft-cli mcp
 
 ```sh
 vectorcraft-cli mcp --automation-read-root /work/project --automation-write-root /work/project/out
+vectorcraft-cli mcp --automation-read-root /work/project --automation-read-root /work/shared-assets \
+  --automation-write-root /work/project/out --automation-write-root /tmp/scratch
 ```
 
 ```json
-{"mcpServers": {"vectorcraft": {"command": "/abs/path/target/release/vectorcraft-cli",
+{"mcpServers": {"vectorcraft": {"command": "vectorcraft-cli",
   "args": ["mcp", "--automation-read-root", "/work/project", "--automation-write-root", "/work/project/out"]}}}
 ```
 
 The two flags (PhotoCraft and the other Craft apps take the same ones, so one client config works across
 the suite) keep the agent to the folders you give it:
 
-- Every file a command reads must lie inside the **read root**: `open_file`, `file.place`, relinking and
-  updating links, the images an SVG links to, swatch library, graphic style library and colour-profile loads, plug-ins,
+- Every file a command reads must lie inside a **read root**: `open_file`, `file.place`, relinking and
+  updating links, the images an SVG links to, swatch library, graphic style library, symbol library and colour-profile loads, plug-ins,
   `file.newFromTemplate`, preset imports, shortcut sets (`shortcutSet.read`), the folders `text.findFontFiles` and `links.findFiles` search, the
   scripts `script.check` reads and the files they include.
-- Every file a command writes must lie inside the **write root**: `save_file`, `export`, the save and
+- Every file a command writes must lie inside a **write root**: `save_file`, `export`, the save and
   export commands, Export for Screens, Package, Export for Web, print to file, `screenshot {path}`,
   library and preset saves to a path, the copies `links.relink {copy}` makes.
-- `file.list {path}` (through `run_command`) lists a folder's files and folders, held to the read root like any read, so an agent can see what it was given (#1163).
-- Read and write access are separate. Give the same folder twice for both; a root left out grants none
+- `file.list {path}` (through `run_command`) lists a folder's files and folders, held to the read roots like any read, so an agent can see what it was given (#1163).
+- Each flag may be given more than once (#3546): a path inside any of the read roots may be read, one inside any
+  of the write roots written, so one session can read a project folder and a shared assets folder, or write to an
+  output folder and a scratch folder, without widening a root to their common parent. A folder given twice
+  counts once.
+- Read and write access are separate. Give the same folder to both flags for both; a kind left out grants none
   of its access (with only `--automation-read-root`, nothing can be written to disk, though `export` and
   the save commands without a path still return the bytes). Without either flag nothing changes.
 - A path is made absolute against the server's working directory, then its links are followed: a file
@@ -82,15 +108,16 @@ the suite) keep the agent to the folders you give it:
   Windows case is ignored, UNC paths (`\\server\share\…`) are resolved like drive-letter ones, and
   device names (`CON`, `NUL`, `COM1`…) are refused.
 - A refused path is an ordinary tool error the agent can read and correct, for example
-  `automation path rejected: outside the write root /work/project/out: /etc/x.png` or
+  `automation path rejected: outside the write root /work/project/out: /etc/x.png` (with several,
+  `outside the write roots /work/project/out, /tmp/scratch: …`) or
   `automation filesystem access is not granted: write authority is absent: /work/project/out/x.png`.
-  Links in an opened document that point outside the read root show as missing.
+  Links in an opened document that point outside the read roots show as missing.
 - The preferences that move folders the app reads or writes on its own (`fontsFolder`,
   `pluginsFolder`, `recoveryFolder`, `templatesFolder`) can only be set inside the roots. The app's own folders
   (preferences, Data Recovery, the User Defined library folders, VectorCraft's Fonts folder) are not
   confined: no agent names a path there.
-- The roots must be existing folders; a missing one stops the server with an error. Each flag is
-  given once (`--flag <dir>` or `--flag=<dir>`).
+- The roots must be existing folders; a missing one stops the server with an error. Each flag takes one
+  folder per use (`--flag <dir>` or `--flag=<dir>`) and may be used again for more.
 
 The flags confine the headless server and imply `--headless`; `--connect` with them is an error, since
 the server would otherwise talk to an app that isn't confined. A running app confines itself: start it
@@ -244,7 +271,8 @@ while an export runs (#2165, #2171, #2172):
 - **Progress.** A request with `_meta.progressToken` gets `notifications/progress`
   ([spec](https://modelcontextprotocol.io/specification/2025-06-18/basic/utilities/progress)) before
   its reply: the PDF writer reports "Writing page 2 of 5" with `progress` 2 and `total` 5, raster
-  export reports each artboard, and the PDF flattening stage reports a message without a total. `progress` only grows, updates come at most every 200 ms (the last page always),
+  export reports each artboard, `document.exportForScreens` and `assets.export` report each file
+  ("Exporting file 3 of 250", in place of their encoders' steps), and the PDF flattening stage reports a message without a total. `progress` only grows, updates come at most every 200 ms (the last page always),
   and none follows the reply. A client that does not read fast enough misses updates, never the reply.
 - **A busy engine.** `ping`, `tools/list`, `resources/list`, `resources/templates/list`,
   `prompts/list` and `prompts/get` need no engine and are answered at once, whatever is running.
@@ -312,7 +340,9 @@ also style the new object in the same call: `dash` (lengths, or null for solid),
 (butt|round|square) and `join` (miter|round|bevel) go to `stroke.set` with `strokeWidth`; `opacity` (0–100 %)
 and `name` to `object.setProps`; `effects: [{effect, params?}]` are applied in order as `apply_effect`
 does, to the whole object. They are checked before anything is drawn (effect ids against `effect.list`),
-so a bad one draws nothing. The reply adds `name`, `opacity` and `effects` (each `effect.apply` result)
+so a bad one draws nothing. The object and its styling are one `command.batch`, so the call is one undo step
+(named as the drawing command names its own, e.g. Pen or Rectangle) and a paint the engine refuses (a colour
+it can't read, a swatch the document lacks) fails the call and leaves the document as it was. The reply adds `name`, `opacity` and `effects` (each `effect.apply` result)
 when given; `paint` lists the stroke options applied.
 A gradient given to several objects fits each one's own bounds; `paint.setFill` / `paint.setStroke` with
 `span: "selection"` place a linear or radial gradient once on the union of the targets' bounds instead, so one
@@ -330,7 +360,7 @@ objects' fills or strokes differ (`fillMixed` / `strokeMixed`, drawn as a "?" pr
 |---|---|---|
 | `list_commands` | `{filter?, query?, menu?, enabledOnly?, brief?}` | The command catalogue: id, label, menu, shortcut, params doc (left out with `brief`), enablement. |
 | `run_command` | `{command, params?}` | Runs any command. Use it for everything without a dedicated tool. |
-| `inspect_document` | `{depth?, childLimit?, ids?, kind?, limit?, offset?}` | Artboards, layer tree (ids, kinds, bounds, paint), selection, history, tool. A type node's `fill`, `stroke` and `strokeWidth` are the paint its characters show (its first run's); fills and strokes of the type object itself come as `objectFill`, `objectStroke` and `objectStrokeWidth`. Paint comes as a label (`"#ff0000"`, `"None"`, `"G1 40% (#ff9999)"` for a swatch at a tint); `paint.proxies` gives it as an object. |
+| `inspect_document` | `{depth?, childLimit?, ids?, kind?, limit?, offset?}` | Artboards (with `color`, `#rrggbb`, for one with a background color), layer tree (ids, kinds, bounds, paint), selection, history, tool. A type node's `fill`, `stroke` and `strokeWidth` are the paint its characters show (its first run's); fills and strokes of the type object itself come as `objectFill`, `objectStroke` and `objectStrokeWidth`. Paint comes as a label (`"#ff0000"`, `"None"`, `"G1 40% (#ff9999)"` for a swatch at a tint); `paint.proxies` gives it as an object. |
 | `inspect_ui` | `{}` | UI state. Remote mode only. |
 | `select_tool` | `{tool}` | `selection`, `directSelection`, `pen`, `rectangle`, `ellipse`, `polygon`, `star`, `lineSegment`, … |
 | `pointer_gesture` | `{events:[{kind,x,y,mods?}], tool?, mods?}` | `kind` is one of `down`, `drag`, `up`, `move`, `doubleclick`. Events go through the same path as the mouse. |
@@ -351,7 +381,7 @@ objects' fills or strokes differ (`fillMixed` / `strokeMixed`, drawn as a "?" pr
 | `apply_effect` | `{effect?, params?, ids?}` | Appends a live effect. Without `effect`, returns the effect catalogue with parameters and defaults. |
 | `pathfinder` | `{operation, ids?}` | `unite`, `minusFront`, `intersect`, `exclude`, `divide`, `trim`, `merge`, `crop`, `outline`, `minusBack`. For a live version, apply the `pathfinder.*` effect to a group (`effect.apply` groups several loose selected objects first). |
 | `transform` | `{ids?, dx?, dy?, rotate?, scale?, scaleX?, scaleY?, reflect?, shear?, origin?, copy?}` | Runs move, rotate, scale, reflect, shear in that order. With `copy`, the first step duplicates. |
-| `create_graph` | `{type?, x, y, width, height, csv? \| series?, categories?, rows?}` | The nine Illustrator graph types: column, stacked column, bar, stacked bar, line, area, scatter, pie and radar. An empty CSV cell or a `null` in `rows` is a blank value; a number in straight quotes is a label. Edit later with `graph.setData` / `graph.setType` via `run_command`. `graph.column {design, columnType: vertical\|uniform\|repeating\|sliding, each, fractions: chop\|scale}` draws the columns or bars of the series picked with Group Selection (or `seriesIndexes`, or all of them) with a graph design saved by `graph.design`; with no `design` it returns the series' current design and options. |
+| `create_graph` | `{type?, x, y, width, height, csv? \| series?, categories?, rows?}` | The nine Illustrator graph types: column, stacked column, bar, stacked bar, line, area, scatter, pie and radar. An empty CSV cell or a `null` in `rows` is a blank value; a number in straight quotes is a label. Edit later with `graph.setData` / `graph.setType` via `run_command`. `graph.column {design, columnType: vertical\|uniform\|repeating\|sliding, each, fractions: chop\|scale}` draws the columns or bars of the series picked with Group Selection (or `seriesIndexes`, or all of them) with a graph design saved by `graph.design`; with no `design` it returns the series' current design and options. Type in the design that holds a `%` followed by two digits shows each column's value, with at least the first digit's places before the decimal point and the second digit's places after it. |
 | `text_wrap` | `{ids?, offset?, invert?, release?}` | Area type below the objects (same layer) flows around them. |
 | `undo` / `redo` | `{}` | Many calls that change nothing record no undo step, for example `object.align` with nothing to move, `object.move` by 0 without `copy` and `object.showAll` with nothing hidden. `undo` (`edit.undo`) after such a call undoes the step before it. `inspect_document` lists the undo steps as `history`. `run_command` with `edit.clearHistory` removes every undo and redo step of the active document and returns `{cleared}`, the number of steps removed; the document stays as it is, and the command records no undo step. |
 
@@ -395,7 +425,8 @@ mode. To press the key during a drag, end one
 With nothing being dragged, `e` chooses the tool bound to E.
 
 Appearance stacks: an object can carry several fills and strokes (`appearance.addFill`, `appearance.addStroke`), indexed
-in paint order (0 is painted first, the bottom row of the Appearance panel). `paint.setFill`, `paint.setStroke`,
+in paint order (0 is painted first, the bottom row of the Appearance panel). Cmd+/ runs `appearance.addFill` and
+Cmd+Alt+/ runs `appearance.addStroke` (`press_key {key: "/", mods: {cmd: true, alt: true}}`). `paint.setFill`, `paint.setStroke`,
 `stroke.set`, `stroke.setAdvanced`, `paint.editGradient`, `paint.setGradientGeom` and `transparency.set` take
 `item` to edit one of them; `run_command appearance.setActiveItem {"index": n}` makes that row the target of later
 calls that omit `item` (as clicking the row in the Appearance panel does) until the selection changes; the proxy of
@@ -425,6 +456,11 @@ in the app runs `paint.setFill` (or `paint.setStroke`, the active proxy) with `i
 The Swatches panel menu's commands: `swatch.addUsedColors {selection?, global?}`, `swatch.unused` (a query: the
 names Select All Unused selects), `swatch.merge {names}` (the first is kept), `swatch.ungroup {name}` and
 `swatch.sortByKind`.
+`brush.move {name | names, to?, type?}` reorders brushes among the brushes of their type, as dragging one onto
+another of its type in the Brushes panel does. `to` is an index among the brushes of that type in `brush.list`
+order: the brushes go before the first brush of that type at or after `to` that is not moving, and after the last
+brush of that type when there is none or `to` is left out. A move that keeps the order records no undo step.
+Brushes of different types, or a `type` other than theirs, are refused with "brushes move only within their type".
 Document colour mode: `file.new {colorMode: "cmyk"}` starts a CMYK document with CMYK default swatches, and RGB
 colors applied to it (`paint.setFill`/`setStroke` colors, gradient stops and freeform points, `paint.editGradient`
 stops, `paint.freeform.addPoint`/`setPoint`, `paint.sampleColor`, `object.mesh.setPointColor`/`addLine`, the
@@ -477,7 +513,8 @@ scaled while it has effects, brushes or live objects; and every instance of a sy
 opacity masks (those stay on the page). `hiddenLayers: true` keeps hidden layers and objects, not displayed
 (`display="none"`); `document.save` and the CLI's `convert` keep them unless told otherwise, other exports leave
 them out, and they reopen hidden. An object's own data (`object.setProps {data: {pivot: "100,180"}}`) is written as
-`data-*` attributes (`data-pivot="100,180"`), and an SVG's `data-*` attributes come in as it. A `preserveEditing` SVG carries the native document (CDATA in `<metadata>`) and a hash of the
+`data-*` attributes (`data-pivot="100,180"`), and an SVG's `data-*` attributes come in as it. Attributes in other applications' XML namespaces
+(`plotter:pen="2"`) come in on their objects too and are written back, each namespace declared once on the root. A `preserveEditing` SVG carries the native document (CDATA in `<metadata>`) and a hash of the
 markup around it: if another app changed the SVG since, `document.open` reads it as plain SVG and says so in
 `warnings`.
 
@@ -589,6 +626,8 @@ Images follow the `compression` settings of their kind (`color`, `gray`, or `mon
 `abovePpi` as placed they are resampled (`downsample`: `average`, `subsample` or `bicubic`) to `ppi`, and compressed
 with `zip`, `jpeg` (at `quality`; images with transparency stay lossless) or `auto` (JPEGs stay JPEG, the others
 lossless). `none`, `jpeg2000`, CCITT and `runLength` are written as ZIP, with a warning when an image needs them.
+A 16-bit PNG that is not resampled, recompressed or converted keeps its 16 bits a sample in PDF 1.5 and later files,
+and is written at 8 bits in PDF 1.3 and 1.4 files.
 CMYK images stay CMYK (DeviceCMYK, or ICC-based with the CMYK profile when colours are tagged, as in PDF/X-3 and
 PDF/X-4): a CMYK JPEG neither resampled nor recompressed is written unchanged, and the others' ink amounts are
 resampled and compressed again (CMYK JPEG or ZIP). `output.conversion` converts them like CMYK colours: `destination`
@@ -666,8 +705,11 @@ page) opens from its editing data alone: its type is made from the file's text d
 area type and type on a path), and what can't be is left out with a warning. Non-native art (the content of a placed
 PDF, which Illustrator shows but doesn't edit and keeps as a PDF inside the editing data) is drawn by the PDF importer,
 as a group named "Non-native art" fitted to the object's box; one whose PDF can't be read is left out with a warning.
-Without editing data it says it can't be opened. `pages` that name every page of such a file also open it from its
+Without editing data it says it can't be opened. `pages` that name every page of a file saved without PDF compatibility also open it from its
 editing data.
+Without editing data it says it can't be opened. `pages` that name every page of such a file also open it from its
+editing data. `file.place` reads it from its editing data too and places the art of the layers that show on artboard
+`page`, clipped to that artboard unless `crop` is `bounding`. `clipboard.importPdf` takes every object of its editing
 
 What a PDF holds comes in as editable art: soft masks become opacity masks (an alpha mask as a white copy of its art;
 the backdrop colour gives Clip, an inverting transfer function Invert), transparency groups keep isolation and knockout,
@@ -703,9 +745,9 @@ PostScript form, which keeps layers, groups, compound paths and clipping groups 
 of `range` (default all; `{name}-{artboard}.ai` when several, listed in the result's `files`), with
 `transparentImages: "flatten"` (default) or `"omit"` for images with see-through pixels, opacity or a blending mode,
 `hiddenObjects: "layer"` (default: a hidden layer of each layer's hidden objects), `"omit"` or `"visible"`, and
-`outlineText: true` to write type as outlines instead of text objects. When an image in art that is flattened or whose
-raster effects are expanded can't be decoded, the result does not show it, and `warnings` carries "an image couldn't
-be decoded and is missing from the picture" once. From the CLI: `vectorcraft-cli convert in.svg
+`outlineText: true` to write type as outlines instead of text objects. An image that can't be decoded is left out of
+the file and does not show in art that is flattened or whose raster effects are expanded; `warnings` carries "an image
+couldn't be decoded and is missing from the picture" once for all such images. From the CLI: `vectorcraft-cli convert in.svg
 out.ai --ai-version 7 [--hidden-objects layer|omit|visible] [--transparent-images flatten|omit] [--outline-text]
 [--range R]`. `document.export`, `serialize`, `exportSelection` and `exportForScreens` refuse a `.ait` path or
 `format: "ait"` with an error that names `file.saveAsTemplate`, which writes it. The CLI's `run --export x.ait` and
@@ -740,6 +782,23 @@ radial shadings:
 
 ```json
 {"name":"run_command","arguments":{"command":"paint.setGradientGeom","params":{"aspect":60,"focal":[130,140]}}}
+```
+
+Dither (the Gradient panel's box) draws a linear or radial gradient fill with fine noise that hides banding;
+SVG and PDF exports write such a fill as an image at the Document Raster Effects resolution. It applies to fills
+(`stroke: true` is refused):
+
+```json
+{"name":"run_command","arguments":{"command":"paint.editGradient","params":{"dither":true}}}
+```
+
+Method (the Gradient panel's menu): `classic` (the default) mixes the colours between stops in display RGB,
+`perceptual` mixes a linear or radial gradient's colours in OKLab so the steps look even. SVG and PDF exports write a
+Perceptual gradient as an image at the Document Raster Effects resolution (a dithered Perceptual fill with its noise).
+`paint.setFill`/`paint.setStroke` take it in `gradient` too:
+
+```json
+{"name":"run_command","arguments":{"command":"paint.editGradient","params":{"method":"perceptual"}}}
 ```
 
 Freeform gradients: `paint.editGradient {kind: "freeform"}` places four or more colour points inside each selected
@@ -795,10 +854,35 @@ vectorcraft-cli run --cmd file.new --params '{"width":800,"height":600}' \
   --export star.vectorcraft
 ```
 
-`run` prints one JSON line per step (`open`, `cmd`, `export`) and exits non-zero on the first failure. `--params`
-applies to the `--cmd` just before it. `run` also accepts the host commands `file.open`, `file.save`, `file.export`,
-`file.exportForScreens` and `tool.select`. `run --in`, `convert` and `info` read every format `document.open` reads
-(`vectorcraft-cli --help` lists them).
+`run` prints one JSON line per step (`open`, `cmd`, `export`) and exits non-zero on the first failure, naming the step
+(counting from 0, as `"$N"` references do) and its command. `--params` applies to the `--cmd` just before it. `run`
+also accepts the host commands `file.open`, `file.save`, `file.export`, `file.exportForScreens` and `tool.select`.
+`run --in`, `convert` and `info` read every format `document.open` reads (`vectorcraft-cli --help` lists them).
+
+### Steps from a file or standard input
+
+A command line has a length limit (32,767 characters on Windows), which long parameters such as a placed file's
+`dataBase64` or a long list of ids soon reach (#3147). `--commands FILE` reads the steps from a file instead, and
+`--commands -` from standard input:
+
+```sh
+vectorcraft-cli run --in sheet.vectorcraft --commands steps.json --export out.pdf
+```
+
+```json
+[
+  {"command": "file.place", "params": {"name": "code.svg", "dataBase64": "PHN2ZyB4bWxucz0i…", "rect": [20, 40, 16, 57]}},
+  {"command": "object.setProps", "params": {"id": "$0.ids.0", "name": "barcode"}}
+]
+```
+
+The text is a JSON array of steps, or one step per line (JSON Lines; blank lines are skipped). A step is an object
+with `command`, the command id (or `id`, as `command_batch` names it), and optional `params`, a JSON object; any
+other key is refused. The steps run where `--commands` stands among the `--cmd` and `--export` options, in order,
+and count with them for `"$N"`, so a file can refer to the ids an earlier `--cmd` made and a later `--cmd` to the
+file's results. `--commands` may be given more than once (standard input once). The text is untrusted input: it
+must be UTF-8 (a byte order mark is skipped), at most 64 MiB and 100,000 steps, and a malformed step stops the run
+before anything runs, with the step's number and its entry (`entry 3`) or line (`line 3`) in the message.
 
 ### What a headless session remembers
 
@@ -913,6 +997,23 @@ missing one does.
 `` `columns` must be a number, not "4" ``. Each message names the key that was given, and the command then changes
 nothing.
 
+These Object menu commands refuse a string, a number or another value that is not true or false with
+`` `copy` must be true or false ``, naming the key, and change nothing: `reflectX`, `reflectY`, `random`, `copy`,
+`strokes`, `corners`, `objects` and `patterns` in `object.transformEach`; `gray` and `deleteRaster` in
+`object.createObjectMosaic`; `trim` in `object.cropImage`; `allArtboards` in `object.createTrimMarks`; and `byColumn`,
+`moveArtwork` and `patterns` in `artboard.rearrange`. A null is read as a key left out. `object.createTrimMarks`
+refuses a `style` that is not a string, such as `5`, with `` `style` must be roman or japanese ``, the message it gives
+for a string that names no style.
+
+A whole number that is larger than the build's `usize` can hold (4294967295 on a 32-bit build, such as the
+`wasm32-unknown-unknown` web build) counts as larger than any index, place, byte offset or count. An index, such as
+a `subpath`, `anchor`, `segment`, document `index`, `artboard`, appearance `item` or `index`, gradient `stop` or
+freeform point `index`, names nothing, and the command does what it does for any other index past the end: most
+commands fail and change nothing, and `appearance.removeItem` removes nothing. A place (`to` in `swatch.move`,
+`artboard.reorder`, `graphicStyle.move`, `appearance.moveItem`, `appearance.duplicateItem` and `effect.move`) puts
+the item last. A text `start` or `end` is past the end of the text. `object.slice.divide` refuses such a `rows` or
+`columns`, `recolor.reduce` keeps each color in its own row for such a `colors`, and `layer.setProps` refuses such a
+`color`. `object.setBounds` reads a `reference` past 8 as 8, as `object.transformEach` does.
 The blend, envelope and gradient mesh commands refuse a string or another value that is not a number with the same
 message, as in `` `steps` must be a number, not "8" ``, and change nothing: `steps`, `distance` and `value` in
 `object.blend.make` and `object.blend.options`; `bend`, `h`, `v`, `horizontalDistortion` and `verticalDistortion` in
@@ -920,6 +1021,60 @@ message, as in `` `steps` must be a number, not "8" ``, and change nothing: `ste
 `object.envelope.makeWithMesh`, `resetWithMesh` and `object.mesh.create`; `fidelity` in `object.envelope.options`;
 `highlight` in `object.mesh.create`; and `opacity` in `object.mesh.setPointColor`. A null is read as a key left out.
 `object.mesh.create` refuses an `at` that is not two numbers with `` `at` must be [x, y] ``.
+
+The transform, Align, Object Properties and Live Shape Properties commands refuse a string, a number or another value
+that is not true or false with `` `strokes` must be true or false ``, naming the key, and leave the document and its
+undo history as they were: the options `copy`, `strokes`, `corners`, `patterns`, `objects` and `typeAreas` in
+`object.transform`, `object.move`, `object.nudge`, `object.rotate`, `object.scale`, `object.reflect`, `object.shear`,
+`object.transformAgain` and `object.setBounds`; `anchors` in `object.transform`; `big` in `object.nudge`;
+`absolute` in `object.rotate`; `proportional` in `object.setBounds`; `patterns` in `object.align`, `object.distribute`
+and `object.distributeSpacing`; `visible`, `locked`, `isolate` and `knockoutShape` in `object.setProps`; and
+`invertPie`, `makeSidesEqual` and `relativeRadii` in `object.setLiveShape`. A null is read as a key left out.
+
+They also refuse a string or another value that is not a number with `` `opacity` must be a number, not "50" ``,
+naming the key, and leave the document and its undo history as they were: `opacity` in `object.setProps`; `radius` and
+`sides` in `object.setLiveShape`; `reference` in `object.setBounds`; and `artboard` in `object.align`,
+`object.distribute` and `object.distributeSpacing`. A null is read as a key left out.
+
+The blend and envelope commands refuse a string, a number or another value that is not true or false with
+`` `smooth` must be true or false ``, naming the key, and leave the document, its undo history and the options new
+blends and envelopes start with as they were: `smooth` in `object.blend.make` and `object.blend.options`;
+`independent` in `object.blend.spine.moveAnchor`; `perpendicular` in `object.blend.spine.reshapeSegment`; `horizontal`
+in `object.envelope.makeWithWarp`, `resetWithWarp` and `options`, also when an `orientation` is given; `maintainShape`
+in `object.envelope.resetWithMesh`; `antiAlias`, `distortAppearance`, `distortLinearGradients` and
+`distortPatternFills` in `object.envelope.options`; and `editing` in `object.envelope.editContents`. A null is read as
+a key left out.
+
+These commands refuse a string, a number or another value that is not true or false with
+`` `closed` must be true or false ``, naming the key, and leave the document and its undo history as they were:
+`clockwise` in `shape.spiral`; `closed` in `shape.arc` and `path.create`; `vertical` and `placeholder` in `text.create`
+and `text.createInPath`; `underline`, `strikethrough`, `allCaps`, `proportionalMetrics`, `tateChuYoko` and `noBreak`
+in `text.setRangeStyle`; `effective` in `text.getRange`; `on` in `type.opticalMarginAlignment`, `type.systemLayout`
+and `type.fractionalWidths`; `remove` and `overhang` in `type.ruby`; `expandInstances` in `symbol.delete`; `alt` in
+`symbol.spray` and `symbol.adjust`; `spot` and `global` in `swatch.new` and `swatch.edit`; `unlink` in
+`swatch.delete`; `fromArtwork`, `toGlobal` and `includeTints` in `swatch.newGroup`; `global` and `selection` in
+`swatch.addUsedColors`; `visible` in `appearance.setItem`; `copy` in `appearance.transfer`; `reverse` and `append` in
+`appearance.copyFrom`; `reverse` and `stroke` in `paint.editGradient`; `stroke` in `paint.setGradientGeom` and in
+`paint.freeform.addPoint`, `setPoint`, `deletePoint`, `addLine`, `splitLine` and `get`; `erase`,
+`openFilledAsClosed` and `splitStroke` in `shapeBuilder.merge`; `openFilledAsClosed` in `shapeBuilder.regions`; `closeGaps` in `livePaint.gapOptions`; and
+`enhanced` in `imageTrace.make` and `imageTrace.makeAndExpand`. A null is read as a key left out.
+
+These commands refuse a string or another value that is not a number with `` `radius` must be a number, not "2" ``,
+naming the key, and change nothing: `radius` in `shape.rectangle`; `sides` and `rotation` in `shape.polygon`;
+`radius2`, `points` and `rotation` in `shape.star`; `diameter`, `opacity`, `brightness`, `growth`, `fuzziness`,
+`rays`, `longest`, `rayFuzziness`, `rings`, `largest`, `x2`, `y2`, `direction`, `pathLength` and `seed` in
+`shape.flare`; `decay` and `segments` in `shape.spiral`; `rows` and `columns` in `shape.rectangularGrid`; `concentric`
+and `radial` in `shape.polarGrid`; `size` and the `width`, `height` and `fitMinPercent` of `area` in `text.create`;
+`size` and `fitMinPercent` in `text.createInPath`; `start`, `end`, `size`, `tracking`,
+`baselineShift`, `hScale`, `vScale`, `rotation` and `strokeWidth` in `text.setRangeStyle`; `start` and `end` in
+`text.editRange` and `text.getRange`; `start`, `hScale`, `vScale` and `rotation` in `text.touchType`; `by`, `start` and
+`end` in `type.step`; `by` in `type.size.increase` and `type.size.decrease`; `size` in `type.ruby`; `width`, `height`
+and `fitMinPercent` in `text.areaOptions`; `x` and `y` in `symbol.place`; `radius`, `density` and `scale` in
+`symbol.spray`; `radius` and `intensity` in `symbol.adjust`; `to` in `swatch.move`; `weight` and `opacity` in
+`appearance.setItem`; `angle` in `paint.editGradient` and in the `gradient` of a command that takes a paint; `t` in
+`paint.freeform.splitLine`; `tolerance` and `gap` in `shapeBuilder.merge`; `gap` in `shapeBuilder.regions`; and
+`width` and `tolerance` in `livePaint.strokeEdge`. A null is read as a key left out. A gradient stop that names a
+swatch refuses a `tint` that is not a number with `` stop 0: `tint` must be a number ``.
 
 A step can use an earlier step's result, in `run` as in the `command_batch` tool. A parameter string that is exactly
 `$N` or `$N.path` takes that value from the result of step `N` (counting from 0, in the order they ran; `run --in`'s
@@ -1048,6 +1203,12 @@ the document's (global rulers) or that artboard's (artboard rulers, kept relativ
 {"name":"run_command","arguments":{"command":"view.globalRulers","params":{"global":true}}}
 ```
 
+`view.videoRulers {}` (View → Rulers → Show / Hide Video Rulers) is a UI view flag, not saved with the document and not
+undoable. Show Video Rulers shows the rulers and has them count the active artboard in video pixels from its top-left
+corner, whatever the ruler origin: a pixel is as many points wide as the artboard's `videoRulerPixelAspectRatio`
+(`artboard.setProps`) and one point tall, so a 720 × 480 pt artboard at 0.9 reads 800 × 480. Hide Video Rulers puts the
+rulers back in the General unit from the ruler origin; they stay shown. It returns whether video rulers show.
+
 ## Clipping masks
 
 `object.clippingMask.make` clips the selected objects by the topmost one, which may be a path, a compound path or a
@@ -1082,10 +1243,17 @@ The id must name a selected top-level object.
 Layers, compound-path members and objects inside another selected object are not top-level objects.
 Any other id is an error naming that value, and the key is left unchanged.
 A null `id` is an error too.
-A click with the Selection tool on a selected top-level object, while two or more objects are selected, runs `select.key {id}`, and a click on the key object again runs `select.key {}`.
-On a single selected object, or on a group selected with only its own members, `select.key` sets no key.
-It returns `{key}`, the key object's id or null.
-`document.inspect` (the `inspect_document` tool) reports the key object as `key`, null without one.
+A click with the Selection tool on a selected top-level object, while two or more objects are selected or ruler guides are selected with it, runs `select.key {id}`, and a click on the key object again runs `select.key {}`.
+On a single selected object with no ruler guide selected, or on a group selected with only its own members, `select.key` sets no key.
+With a key object (or a key guide), `object.align` moves the other selected ruler guides too: a vertical guide goes to the key's left edge, centre or right edge, a horizontal one to its top, centre or bottom (#2143).
+Aligning to the selection or the artboard leaves guides where they are.
+`select.key {guide}` makes a selected ruler guide (its `guide.list` index) the key instead, while one or more objects are selected (#2143).
+`object.align` then lines the objects up on the guide and the guide stays put: a vertical guide sets where their left edges, centres or right edges go and vertical alignment leaves them where they are, a horizontal guide the other way round.
+Selected anchor points align to it the same way. `object.distribute {spacing}` and `object.distributeSpacing {spacing}` space the objects from it (see [Align to Artboard](#align-to-artboard)).
+A click with the Selection tool on a guide selected with objects runs `select.key {guide}`, and a click on the key guide again runs `select.key {}`.
+The key guide goes when it leaves the selection or no object is left selected, and an object key replaces it (and the other way round).
+It returns `{key}`, the key object's id or null, with `guide`, the key guide's index, when a guide is the key.
+`document.inspect` (the `inspect_document` tool) reports the key object as `key`, null without one, and the key guide as `keyGuide`.
 The `ui.pointer` and `pointer_gesture` replies list it as `key` beside `selection`.
 The command palette lists `select.key` as Cancel Key Object and runs it without an id.
 
@@ -1114,9 +1282,32 @@ and `select.recall`. They leave out hidden and locked objects with the objects i
 locked or template layers and sublayers and, in isolation mode, everything outside the isolated group or layer. When
 the isolated group or layer, or a group or layer it is in, is hidden, locked or a template layer, they also leave out
 everything in it, and `select.all`, `select.allOnArtboard` and `select.inverse` select nothing.
+`select.object.bristleBrushStrokes` selects the objects whose topmost stroke has a bristle brush (type `bristle` in
+`brush.list`), whatever the brush is named; a brush of another type with "Bristle" in its name does not count.
 `select.nextAbove` and `select.nextBelow` select the nearest such object above or below the first selected object
 among the objects beside it in its group or layer, passing over hidden and locked objects and sublayers. When there
 is no such object, the selection stays as it is.
+
+## Global Edit
+
+Select › Start Global Edit is `select.globalEdit {appearance?, size?, artboards?, includeCanvas?}`. With one path,
+compound path or symbol instance selected, it finds the objects of the same shape (moved or scaled copies; not rotated
+ones), among those `select.all` would take and the objects in their groups, and returns
+`{active: true, count, ids}`, the selected object first. `appearance` also asks for the same fill and stroke, `size`
+for the same width and height; `artboards` is `"all"` or a range such as `"1, 3-5"`, and `includeCanvas: false`
+leaves out the objects on no artboard. Missing params come from `select.globalEditOptions` (the Global Edit Options,
+kept for the session; it returns them with `count`, the objects a start would take now). The selection stays the
+one object. Until the next `select.globalEdit` (Stop Global Edit, `{active: false}`), what an edit of a selected match
+changed is given to the other matches, in the same undo step, and nothing else. A changed outline or anchors go to
+each match in proportion to its size. A changed opacity or blending, and each changed setting of a fill or stroke
+(paint, weight, opacity, blending, effects…), are copied as they are to the match's fill or stroke of the same kind
+and rank; its other fills and strokes, and their unchanged settings, stay its own (a stroke weight change leaves the
+fills). A stroke weight set on the selected match is given as it is, and resizing the outline in proportion never
+scales a match's stroke weight. Hidden or locked matches are left as they are. A fill or stroke added or removed is
+added or removed on the matches whose fills and strokes lay in the same order; the others, and any other change to the
+list, take the whole list. Whenever the document is put back (Undo, Redo, a cancelled drag or scrub), the matches it no
+longer has leave the Global Edit, which ends when fewer than two are left. An edit that would take any match past the
+canvas fails with the coordinates-out-of-range error and changes nothing. Nothing of it is saved.
 
 ## Saved selections
 
@@ -1193,20 +1384,33 @@ already walks Image Trace. Short agent entry points:
   `symbol.place {name?, x?, y?}`, `symbol.breakLink {ids?}`, `symbol.replace`, `symbol.edit`, `symbol.duplicate`,
   `symbol.selectInstances {name}`. `symbol.new` and `symbol.duplicate {name, newName?}` trim the white space around the
   name they are given, as `symbol.options` trims `newName`; a blank one gives "New Symbol" or "<name> copy".
+- The Brushes panel menu's Select All Unused: `brush.unused` (a query) lists the brushes no stroke paints with, in
+  library order, and the panel selects them. Strokes in the art (opacity masks included), symbols, graph designs,
+  pattern tiles and graphic styles count, and so do the strokes in the art of a brush that is used. The art of a brush
+  that is not used does not count, so a brush whose own art is the only art that paints with it is listed.
 - Brushes: `brush.list`, `brush.get {name}`, `brush.apply {name, ids?}`, `brush.new {type, name?, params?, ids?}`,
-  `brush.setCurrent {name}`, `brush.options {name, params?}`, `brush.delete {name} | {names}`,
+  `brush.setCurrent {name}`, `brush.options {name, params?, newName?}`, `brush.delete {name} | {names}`,
   `brush.duplicate {name, newName?} | {names}`, `brush.freehand`, `object.expandBrush {ids?}`. `brush.new`,
   `brush.duplicate` and `brush.options` trim the white space around the name they are given. A blank `name` gives
   the type's default name ("New Calligraphic Brush" for a calligraphic brush), and a blank `newName` gives
-  "`<name>` copy" in `brush.duplicate` and keeps the name in `brush.options`.
+  "`<name>` copy" in `brush.duplicate` and keeps the name in `brush.options`. A Hue Shift `colorization` given to
+  `brush.new` or `brush.options` without a `key` takes the color that the art's fills and strokes use most (on a tie,
+  the one found first), or black when they use no solid color. `brush.options` changes only the fields of
+  `colorization` and of an art brush's `scale` that `params` gives, so `{colorization: {method: "hueShift"}}` keeps a
+  Hue Shift brush's key. `brush.new` and `brush.options` take a bristle brush name of at most 31 characters:
+  `brush.new` refuses a longer one, counting the number it adds to a taken name, and `brush.options` refuses a
+  longer `newName`. `brush.duplicate` does not check the length. A bristle brush that already has a longer name
+  keeps it, and `brush.options` without a new name, or with a `newName` that only trims the white space around the
+  name, does not refuse. Other brush types take a name of any length.
 - Variables: `variable.list`, `variable.define {name, kind: text|visibility|image|graph}`, `variable.bind {variable, ids?}`,
   `variable.makeTextDynamic`, `variable.makeVisibilityDynamic`, `variable.makeImageDynamic`, `variable.makeGraphDynamic`,
   `variable.unbind`, `variable.rename`, `variable.delete`, `variable.highlight` (image values are file paths, graph
   values CSV as `graph.setData`). `variable.lock {locked?}` (Lock Variables) locks or unlocks the variables;
   without `locked` it toggles, and the lock is saved with the document. While the variables are locked,
-  `variable.define`, `variable.delete`, `variable.rename` and the four `variable.make…Dynamic` commands fail with
-  "variables are locked"; `variable.bind`, `variable.unbind` and the `dataset.*` commands still run (except a
-  `dataset.import` whose header would define a variable, below), and `variable.list` reports `locked`.
+  `variable.define`, `variable.delete`, `variable.rename`, the four `variable.make…Dynamic` commands and a
+  `variable.loadLibrary` that would delete or define a variable (below) fail with "variables are locked";
+  `variable.bind`, `variable.unbind` and the `dataset.*` commands still run (except a `dataset.import` whose header
+  would define a variable, below), and `variable.list` reports `locked`.
 - Data sets: `dataset.list`, `dataset.new {name, values?}`, `dataset.set {name, values?}`, `dataset.rename`,
   `dataset.delete`, `dataset.capture`, `dataset.update`, `dataset.select {name}`, `dataset.next` /
   `dataset.prev` (each `dataset.select` / next / prev is one undo step over every bound object), `dataset.import {path|data|dataBase64|csv}` /
@@ -1219,6 +1423,22 @@ already walks Image Trace. Short agent entry points:
   one whose name is a variable of another kind fails the import. A `%` cell that isn't a variable's exact name (graph
   data files) is refused. The reply's `defined` lists the variables the import defined. While the variables are
   locked, an import whose header would define a variable fails with "variables are locked".
+- Variable libraries: `variable.loadLibrary {path|xml|dataBase64}` (the Variables panel menu's Load Variable
+  Library…) replaces the document's variables and data sets with a variable library's in one undo step. The library
+  is XML whose `variableSets` element holds `variableSet` elements, each with a `variables` element of `variable`
+  elements (`varName`, `trait`) and a `sampleDataSets` element of `sampleDataSet` elements (`dataSetName`). Every
+  variable of the document is deleted with its bindings and values, and every data set is deleted. Then the library's
+  variables whose `trait` is `textcontent` are defined as text variables, unbound. In each data set, the element named
+  after a text variable gives its value: the text of its `p` elements, one paragraph each. An element without a `p`
+  element gives no value. Variables of other kinds are left out with their values: the reply lists them in `skipped`
+  (`name`, `trait`), and its `warning` names each `trait` with its count. The reply's `deleted` and `deletedDataSets`
+  list the variables and data sets the load deleted. While the variables are locked, a library that would delete or
+  define a variable fails with "variables are locked". The reply is `{variables, deleted, deletedDataSets, names,
+  skipped, warning?}`. A library larger than 8 MiB, one whose elements nest more than 256 deep, and one with more
+  than 256 variables or 1,000 data sets are refused. Its document type declaration may hold an external identifier,
+  comments, processing instructions and up to 64 entity declarations whose values are plain text (no `<`, `&` or
+  `%`). A declaration that holds anything else, and entity references that expand the library past 8 MiB, are
+  refused. So are a variable or data set declared twice and a value for a variable the library doesn't declare.
 - Batch: `action.batch {commands, source?: folder|datasets, folder?, destination?: none|saveAndClose|folder,
   destinationFolder?, overrideOpen?, overrideSave?, overrideExport?, includeSubdirs?, stopOnError?}` plays an
   action on every file in a folder or every data set (the Actions panel menu's Batch…). Override Save and Override
@@ -1236,12 +1456,29 @@ already walks Image Trace. Short agent entry points:
   and `livePaint.info` list the gaps up to `size` wide that no path closes, as `[x0, y0, x1, y1]`. `livePaint.merge`
   keeps the bottom group's options when its Gap Detection is on, and otherwise turns Gap Detection on with `small`
   when another merged group has it on. When Gap Detection is off in every merged group, it stays off.
+  `view.livePaintGaps` (View › Show Live Paint Gaps, or Hide Live Paint Gaps while it is on) turns the drawing of
+  those gaps on or off. While it is on and edges show, the canvas draws the gaps of each selected Live Paint group in
+  that group's Gap Preview Color. The reply is the new state (`true` when on).
   The Live Paint Selection tool's options (`tool.setOption {tool: "livePaintSelection", values}`; double-clicking the
   tool opens them, dialog `livePaintSelectionOptions`) are `selectFills` and `selectStrokes` (both on), `color` (the
   highlight color, `#rrggbb` or a layer color's name; `#ff2a2a`) and `width` (the highlight's width, 1 to 20 screen
   pixels; 4). With `selectStrokes` off, Alt-click selects the face under the pointer as a click does; with
   `selectFills` off, a click selects the edge nearest the pointer as Alt-click does; with both off, a click selects
   no face or edge.
+  `livePaint.merge` keeps the bottom Live Paint group's id, name, lock, visibility, transparency, appearance, opacity
+  mask and graphic style link. With a Live Paint group among the objects, `livePaint.make` adds the others to it as
+  `livePaint.merge` does, and so does `livePaint.fill {ids}` when `point` is outside that group's faces.
+  `livePaint.fill` does not fill a face that is hidden on its own. With `group`, a point on a hidden face is an
+  error. With `ids`, at a point on a hidden face it fills the face there of another Live Paint group among the
+  objects; otherwise it returns an error and does not merge the objects.
+
+`brush.selectionArt {ids?|id?}` (a query) replies `{art}`: the object that `brush.new` given the same `ids` or `id`,
+or the same selection, takes as a new scatter or art brush's art and as a new pattern brush's side tile. Several
+objects become one group, and `art` is `null` when nothing is selected or `ids` name no object. In the app, the
+Brushes panel's New Brush button, its menu's New Brush… and art dropped on the panel open New Brush
+(`ui.newBrush {ids?}`, dialog `newBrush`, field `type`). Scatter, art and pattern need art. OK opens that type's
+Brush Options for the new brush; for a scatter, art or pattern brush they preview the art from `brush.selectionArt`.
+Their OK runs `brush.new {type, name, params, ids?}`, and Cancel adds no brush.
 
 `dataset.select`, `dataset.next` and `dataset.prev` reply `{name, applied, skipped}`. They add `overflow: [id…]`
 when area type or type on a path whose text they rewrote doesn't fit, as `text.setText` does (see
@@ -1366,6 +1603,24 @@ See [Revolve](revolve.md) for the scope and limitations.
 {"name":"run_command","arguments":{"command":"effect.expandAppearance","params":{}}}
 ```
 
+## 3D lighting presets
+
+`effect.lightingPreset {index: int, preset: "standard" | "diffuse" | "topLeft" | "right", item?, ids?, target?}`
+replaces the lighting rig and ambient of an existing Revolve, Extrude & Bevel, Inflate or Rotate
+effect. `item: null` addresses object-level effects; an item index addresses a fill/stroke's
+effects. All targets must have a 3D effect at `index`, otherwise nothing changes. The operation
+is one undo step and preserves Shading, geometry, source paint and the view.
+
+The four original rigs use one white front light at 80% intensity. Standard keeps the existing
+default; Diffuse uses 100% Softness and 35% Ambient Light, Top Left uses Rotation 135 and Height
+45, and Right uses Rotation 0 and Height 30. Full values and the public behavior reference are in
+[3D lighting presets](three-d.md#presets). These are original settings, not imported preset files.
+The document stores their numeric settings; manual edits remain possible through `effect.setParams`.
+
+```json
+{"name":"run_command","arguments":{"command":"effect.lightingPreset","params":{"index":0,"item":null,"preset":"topLeft"}}}
+```
+
 ## Extrude & Bevel, Inflate and Rotate
 
 `effect.apply {effect: "threeD.extrude" | "threeD.inflate" | "threeD.rotate", params: {...}, ids?, item?}` applies
@@ -1402,7 +1657,13 @@ Recolor Artwork keys colours by identity, not hex: `recolor.colors` lists each c
 Lab and RGB colours that look alike stay apart, and every colour parameter also accepts a key.
 `recolor.reduce {colors?, method?, preserve?, limitTo?}` groups the selection's colours into rows of similar colours (k-means in Lab, weighted by use;
 tints of a global swatch share its row; White and Black are preserved by default) and returns a map of rows
-`[{from: [keys], to: key}]` to edit and pass to `recolor.apply {map, method?, limitTo?, group?, groupColors?, rename?}`.
+`[{from: [keys], to: key}]` to edit and pass to `recolor.apply {map, method?, model?, limitTo?, group?, groupColors?, rename?}`.
+For scripts and MCP, `model` selects the replacement color model: `keep` (default) retains each
+original color's model, `new` takes the replacement's model, and `document` converts replacements
+and edited color groups to the document's model. Invalid values fail before editing. This parameter
+is not a control in the Recolor Artwork dialog. A returned `note` reports a model conversion in
+`keep` mode.
+
 `method` says how a row's colours take its new colour: `exact`, `preserveTints` (tints of the row's darkest colour
 stay tints), `scaleTints` (every colour becomes a tint as light, relative to the darkest), `tintsShades` (lighter and
 darker than the row's average become tints and shades) or `hueShift` (the most saturated colour takes the new colour,
@@ -1423,7 +1684,8 @@ group together.
 Groups and layers carry fills, strokes and effects of their own, as in the reference app: their fills and strokes
 paint every member's geometry, and their effects apply to the members as one piece (one combined drop shadow; a
 Transform or Warp moves or bends the whole group). Their Contents row (type: Characters) is a slot in the stack:
-fills and strokes above it paint over the members (characters), those below under them; new items go above it.
+fills and strokes above it paint over the members (characters), those below under them; new items go above it
+(on an image, below it).
 `appearance.moveItem {"from": "contents", "to": n}` puts the row above the bottom `n` items, and an item move takes
 `contents` to say where the row ends up in the same undo step; `document.node` shows the slot as
 `appearance.contents_index`. The `appearance.*`, `effect.*` and `graphicStyle.apply` commands edit the selected
@@ -1435,6 +1697,13 @@ A geometry effect on one of type's own fills or strokes (`effect.apply` with `it
 the fill or stroke paints, and SVG, PDF, EPS and the other vector exports write such type as paths. On type that
 holds inline graphics, those effects are drawn and exported only when the type has a geometry effect or perspective
 of its own.
+An image's own fills and strokes draw only when they carry a visible Convert to Shape or Outline Object effect: Convert
+to Shape sizes its shape from the image's box, Outline Object gives the image's frame, the effects after it reshape
+that shape, and the effects before it are left out. Its Contents row stands for the image; `appearance.addFill` and
+`appearance.addStroke` put a new item right below that row, so it paints under the image. SVG, PDF, EPS and the other
+vector exports write those items as paths, and `effect.expandAppearance` turns them into objects in a group with the
+image.
+Use Preview Bounds measures an image by its frame.
 
 ```json
 {"name":"run_command","arguments":{"command":"appearance.addFill","params":{"ids":[7]}}}
@@ -1502,10 +1771,33 @@ with); without `path` it returns `{data}`, and `user: true` saves into the user 
 file, or another document's graphic styles, as a library to add from; a file in the user library folder, or a file
 with the same extension and bytes as one there, loads as that User Defined library.
 
+## Symbol libraries
+
+Symbol libraries are read-only sets of symbols: one generated in code (Basic Shapes), the `.vectorcraft` files in
+the user library folder of the desktop app (User Defined) and the symbols of any document loaded with
+`symbol.loadLibrary`. `symbol.libraries` lists them (`id`, `name`, `category`: `builtIn`, `user` or `loaded`, `count`)
+and `symbol.library {library}` returns one's symbols (`name`, `size`, `registration`, `exportType`; `library` is an
+id or a name). `symbol.addFromLibrary {library, name? | names?}` copies symbols into the document's Symbols as one
+undo step (no names: the whole library), with their Symbol Options and the resources they use: the symbols they nest,
+patterns, swatches (`swatchConflict` as for `edit.paste`), brushes, graphic styles and images. Symbols the document
+already has (same name and art) are reported under `existing`; a name another symbol has gets a number, and `names`
+gives each one's name in the document. The first one becomes the current symbol. `place: true` also places an
+instance of it with its registration point at `x`, `y` (default: the first artboard's centre) in the same step:
+what dragging a symbol out of the library panel onto the canvas does.
+
+```json
+{"name":"run_command","arguments":{"command":"symbol.addFromLibrary","params":{"library":"basic-shapes","name":"Star","place":true,"x":120,"y":80}}}
+```
+`symbol.saveLibrary {path?, names?, name?, user?}` writes the document's symbols as a symbol library: a `.vectorcraft`
+document holding only them and what they use; without `path` it returns `{dataBase64}`, and `user: true` saves into
+the user library folder (category `user`, User Defined). `symbol.loadLibrary {path? | data? | dataBase64?, name?}`
+loads the symbols of any document VectorCraft opens as a library to add from; a file it can't read is an error.
+
 ## Library panels
 
-Each swatch or graphic style library opens in a read-only panel of its own (#2603), as in Illustrator, and
-several can be open at once. `window.swatchLibrary {library}` and `window.graphicStyleLibrary {library}`
+Each swatch, graphic style or symbol library opens in a read-only panel of its own (#2603), as in Illustrator, and
+several can be open at once. `window.swatchLibrary {library}`, `window.graphicStyleLibrary {library}` and
+`window.symbolLibrary {library}`
 (remote mode, `invoke_menu`) open one floating, or bring its panel forward when it is already open, and answer
 `{open, panel, name, count}`; `library: null` closes every panel of that kind. The panel id is
 `library:<kind>:<library id>` (`library:swatches:pastels`, `library:graphicStyles:hand-drawn`,
@@ -1519,10 +1811,23 @@ of its kind in that panel (what Previous Library and Next Library do; a library 
 brought forward instead), `view` is `smallThumb`, `mediumThumb`, `largeThumb`, `smallList` or `largeList`,
 `showFind` shows or hides the find field, and `persistent: true` is the panel menu's Persistent: the panel
 reopens when the app starts, with its view and find field, where the saved layout had it (or floating). A
-library loaded from a file is read again from its path; one whose file is gone is left out, and the status bar
-says which. A closed persistent panel can still be set, so `persistent: false` stops it reopening. The reply
-is `{panel, kind, library, view, showFind, persistent, open}`, and `ui.inspect` lists every panel's settings
+library loaded from a file is read again from its path. When the file is gone, the panel still reopens and
+stays in the preferences: its tab shows the file's name, its body shows `Missing:` with the file's path and a
+Locate Library… button, and the status bar names the file. A persistent panel whose User Defined library's
+file is deleted while the app runs stays open with the same tab and `Missing:` body; any other panel closes.
+A closed persistent panel can still be set, so `persistent: false` stops it reopening. The reply is
+`{panel, kind, library, view, showFind, persistent, open}`, and `ui.inspect` lists every panel's settings
 under `ui.library_panels`.
+
+`ui.libraryPanel.locate {panel, path?}` is Locate Library…: it loads the library at `path` (without one, it
+asks for a file) as Other Library… does and shows it in the open panel `panel`, which keeps its view, find
+field and Persistent, and answers as `ui.libraryPanel` does. When the file's library already has a panel open,
+`panel` closes and is forgotten, and that panel is brought forward, made persistent when `panel` was. It
+runs on any open panel whose library is missing, with Persistent on or off. On a panel whose library isn't
+missing, it answers an error without asking for or loading a file, and the panel keeps its library.
+`window.swatchLibrary` and `window.graphicStyleLibrary` also take a missing library's id, so a closed missing
+panel opens again, and an open panel whose library is missing is brought forward with Persistent on or off;
+they answer its file's name without the extension and `count: 0`.
 
 ```json
 {"name":"invoke_menu","arguments":{"command":"window.swatchLibrary","params":{"library":"pastels"}}}
@@ -1556,9 +1861,13 @@ Items can be put in user-named groups, which the panel shows as collapsible sect
 search field filters every item by name; `library.get` lists them all to filter). `library.createGroup {library?,
 name?, items?: [{kind, item}]}` makes one (a name another group has, ignoring case, gets a number) with those items
 moved into it; `library.renameGroup {library?, group, name}` renames one; `library.deleteGroup {library?, group}`
-deletes one, its items staying in the library ungrouped; and `library.moveItem {library?, kind, item, group?}` moves
-an item into a group (without `group`, out of its group). An item is in one group at most; `library.get` lists the
-groups as `groups: [{name, items: [{kind: "color"|"charStyle"|"paraStyle"|"graphic", item}]}]` (a graphic by its id).
+deletes one, its items staying in the library ungrouped; and `library.moveItem {library?, kind, item, group?, before?
+| after?}` moves an item into a group (without `group`, out of its group) and, with `before` or `after` (another item
+of its kind), just before or after that item in the order its kind is listed and shown in. `library.moveGroup
+{library?, group, to}` moves a group to place `to` of the list (0: first; past the end: last). Dragging items and
+group headers in the panel runs these. An item is in one group at most; `library.get` lists the groups as `groups:
+[{name, items: [{kind: "color"|"charStyle"|"paraStyle"|"graphic", item}]}]` (a graphic by its id), and each kind's
+items in the order the panel shows them.
 
 `library.export {library?, path?}` writes a library (its colours, styles, graphics with their art and thumbnails, and
 its groups) as a `.vclibrary` file, the JSON the library folder keeps (without `path`: `{data}`, the file's text).
@@ -1701,10 +2010,12 @@ and `layerRows`, the rows highlighted in the panel.
   `layer.outlineOthers` / `layer.previewAll` (Ctrl/Cmd+Alt-clicking an eye runs Outline Others for the row's layer, or
   Preview All Layers when the others are in Outline already), `layer.lockOthers` / `layer.unlockAll` (Alt-clicking an eye or a lock
   runs Hide or Lock Others for the row's layer, or Show or Unlock All when the others already are), `layer.pasteRemembersLayers`,
-  `object.isolate {id}` (a group, a layer or a single object; not type) / `object.exitIsolation`.
+  `object.isolate {id?}` (a group, a layer or a single object, by default the first selected object; not type, not a
+  hidden or locked object or one in a hidden or locked group or layer, and not a guide path while Lock Guides is on) /
+  `object.exitIsolation`.
 - **Dialogs and panel state** (control channel and the app's MCP): `ui.layerOptions {ids?}` and `ui.newLayer
   {sublayer?}` open Layer Options (dialog `layerOptions`: name, color, template, locked, visible, printable, preview,
-  dimImages, dimPercent; OK is one undo step), `ui.layersPanelOptions` opens Panel Options (`layersPanelOptions`:
+  dimImages, dimPercent; OK is one undo step; Cmd/Ctrl+Alt+L runs `ui.newLayer` for a new layer), `ui.layersPanelOptions` opens Panel Options (`layersPanelOptions`:
   layersOnly, locateSelected, rowSize small|medium|large|other, otherSize, thumbLayers, thumbGroups, thumbObjects), and
   `ui.layersExpand {ids?, open?}` opens or closes rows as their triangles do (Alt-click: everything inside).
   With `locateSelected` on (Locate Selected Objects, off by default), when the last selected object changes on the canvas
@@ -2007,6 +2318,27 @@ the canvas (coordinates out of range)".
 is not a whole number of 0 or more, such as 1.5, -1 or "1" ("missing integer `subpath`"); `path.split` refuses such
 an `anchor` or `segment` in the same way. The document does not change and no undo step is recorded.
 
+These commands refuse a string or another value that is not a number with `` `dy` must be a number, not "10" ``,
+naming the key; the document does not change and no undo step is recorded: `t`, `dx` and `dy` in
+`path.reshapeSegment` and `object.blend.spine.reshapeSegment`; `x`, `y` and `t` in `path.curvatureEdit`; `x` and `y`
+in `path.convertAnchor`; `t` in `path.insertAnchor`; `fidelity` and the `within` of `redraw` in `path.freehand` (and in
+`brush.freehand`, which runs it); `size` in `path.eraseRegion` and `path.blob`; `width` in `path.eraseSegments`;
+`radius` and `fidelity` in `path.smoothRegion`; `tolerance` in `path.joinScrub`; `dx` and `dy` in `path.moveAnchors`;
+and `dx`, `dy`, `tol` and `radius` in `path.reshape`. A null is read as a key left out. `path.convertAnchor` refuses
+an `x` without a `y`, or a `y` without an `x`, with "x and y must be given together". `path.freehand`,
+`path.curvature`, `path.knife`, `path.eraseRegion`, `path.eraseSegments`, `path.smoothRegion`, `path.joinScrub` and
+`path.blob` refuse a point in `points` whose x or y is not a number, such as `["10", 10]` or a point written as a
+string, with "x and y must both be numbers". All of them except `path.curvature` refuse a pen pressure that is neither
+a number nor null with `` `pressure` must be a number, not "0.5" ``. `path.close` refuses an `in` that is not `[x, y]`
+with `` `in` must be [x, y] ``.
+
+These commands refuse a string, a number or another value that is not true or false with
+`` `closed` must be true or false ``, naming the key; the document does not change and no undo step is recorded:
+`independent` in `path.close` and `path.setHandle`; `patterns` in `path.moveAnchors`; `closed`, `keepSelected` and
+`fill` in `path.freehand` (and in `brush.freehand`); `closed` and the `corner` of a point in `path.curvature`; `corner`
+in `path.curvatureEdit`; `perpendicular` in `path.reshapeSegment`; and `keepSelected`, `mergeOnlySelection` and
+`merge` in `path.blob`. A null is read as a key left out.
+
 A `pointer_gesture` with `mods: {cmd: true}` held at the press, with any tool but the selection tools (Command on
 macOS, Ctrl elsewhere), drags with the selection tool chosen last (`select_tool`), or Direct Selection with the Pen,
 Curvature and anchor tools until one is chosen; the release gives the tool back as it was, so the Pen goes on drawing
@@ -2023,6 +2355,36 @@ the path it had begun while that stays selected. Its reply's `tool` is the tool 
 {"name":"run_command","arguments":{"command":"path.cutAtAnchors","params":{}}}
 {"name":"run_command","arguments":{"command":"path.moveAnchors","params":{"dx":0,"dy":40}}}
 ```
+
+## Simplify
+
+`object.path.simplify` takes the amount as `tolerance` (points, 1 by default) or as the Simplify slider's `level`, a whole
+number from 0 (the fewest anchor points) to 100 (the closest fit). Level 50 is a tolerance of 1 pt, and every 10 levels
+halve or double it, so level 0 is 32 pt and level 100 is 1/32 pt. `auto: true` (Auto-Simplify) uses the lowest level
+whose tolerance is at most 1/400 of the selection's longer side, or level 100 when that side is under 12.5 pt. With
+`level` or `auto`, the reply also has the `level` used:
+
+```json
+{"name":"run_command","arguments":{"command":"object.path.simplify","params":{"auto":true}}}
+```
+
+With segments of a path direct-selected (`select.segments`, or `select.anchors` with both anchors of a segment), Simplify
+refits only each run of consecutive selected segments, between the run's end anchors: they stay where they are, with
+their handles on the side away from the run, and every other anchor and segment of the path stays exactly as it was. A
+closed path's run may cross its start point; the path then starts at the run's end anchor. Separate runs on one path
+simplify independently, in one undo step, and the runs stay direct-selected (as segments when segments were picked).
+A path with only lone anchors selected, and every path with `wholePaths: true`, simplifies whole:
+
+```json
+{"name":"run_command","arguments":{"command":"select.anchors","params":{"id":12,"anchors":[[0,20],[0,21],[0,22],[0,23]]}}}
+{"name":"run_command","arguments":{"command":"object.path.simplify","params":{"auto":true}}}
+```
+
+In the desktop app, Object › Path › Simplify opens the slider (`ui.menuDialog {command: "object.path.simplify"}`,
+dialog `simplifySlider` with field `level`) at the Auto-Simplify level for the selection and previews the result until
+`ui.dialog.confirm`. `ui.simplifyAuto` moves the open slider back to the Auto-Simplify level, and `ui.simplifyMoreOptions`
+opens the Simplify dialog at the slider's tolerance. When OK confirms the dialog with `retain` ticked, the menu item opens
+the dialog on those settings next time.
 
 ## Editing a path with the Curvature tool
 
@@ -2182,16 +2544,42 @@ left or top edge of the first object, in the order of those edges, on the artboa
 right or bottom edge of the last object on the artboard's right or bottom edge, with equal gaps between the objects.
 With `to: "selection"` or `"key"`, or without `to`, `object.distribute` and `object.distributeSpacing` without `spacing`
 keep the first and last objects where they are, and `object.distribute` without `spacing` moves nothing with fewer than
-three objects. With `spacing`, `object.distributeSpacing` does not use `to`, and `object.distribute` does not use it
-while the selection has a key object. With anchor points selected (Direct Selection), both commands space the points
+three objects. With `spacing` and a key object, `object.distribute` and `object.distributeSpacing` do not use `to`;
+with a key guide, `to` decides whether the guide is the key. With anchor points selected (Direct Selection), both commands space the points
 among themselves and do not use `to` or `artboard`.
 
 `object.distribute {spacing}` (the Distribute Objects buttons while the selection has a key object, `select.key`) keeps
 the key object where it is, with the compound path or selected group that contains it. It places the objects' lines
 (left edges, centers or right edges; top edges, centers or bottom edges) `spacing` points apart, outward from the key
 object's line, in their order on that line. With `spacing: 0`, every object ends on the key object's line. Two objects
-are enough. Without a key object, or with anchor points selected, `object.distribute` does not use `spacing`. A
-`spacing` that is not a number is an error.
+are enough. Without a key object or key guide, or with anchor points selected, `object.distribute` does not use
+`spacing`. A `spacing` that is not a number is an error.
+
+`object.distribute` and `object.distributeSpacing` space the selected ruler guides across the axis (vertical guides
+for the horizontal options, horizontal guides for the vertical ones) with the selected objects, as items with no size
+(#1597). A guide's left edge, center and right edge are all its line, so the three options of an axis give the same
+result for it. Guides along the axis stay where they are. Two or more guides selected without objects are enough, and
+the Align panel's buttons are enabled for them; with `to: "artboard"`, the outermost items go to the artboard's edges.
+
+With a key guide (`select.key {guide}`, #2143), `object.distribute {spacing}` and `object.distributeSpacing {spacing}`
+(the Align panel's Distribute buttons send the Distribute Spacing value then too) keep the guide where it is and
+space the other items from it, as from a key object with no size: `object.distribute` places their lines `spacing`
+points apart, outward from the guide's line, and `object.distributeSpacing` leaves gaps of `spacing` points, the guide
+included. With `spacing: 0`, `object.distribute` puts every line on the guide. A key guide along the axis leaves
+everything where it is, as `object.align` does. `to: "selection"` or `"artboard"` distributes without the key guide
+as the key, as with `object.align`, and without `spacing` a key guide is spaced as any selected guide.
+
+Each button of the Align panel's Align Objects, Distribute Objects and Distribute Spacing rows is also a UI command
+that takes no params and runs what a click on the button runs: `align.horizontalLeft`, `align.horizontalCenter`,
+`align.horizontalRight`, `align.horizontalVerticalCenter`, `align.verticalTop`, `align.verticalCenter`,
+`align.verticalBottom`, `align.distributeVerticalTop`, `align.distributeVerticalCenter`,
+`align.distributeVerticalBottom`, `align.distributeHorizontalLeft`, `align.distributeHorizontalCenter`,
+`align.distributeHorizontalRight`, `align.distributeVerticalSpace` and `align.distributeHorizontalSpace`. The Align
+commands send `to: "key"` while the selection has a key, else `"artboard"` for one selected object without selected
+anchor points, else the Align To choice. The Distribute commands send `to: "key"` while the selection has a key, else
+the Align To choice, and while there is a key object or a key guide they send the panel's Distribute Spacing value as
+`spacing`. Edit › Keyboard Shortcuts lists them under Align, with no default shortcut, and
+`shortcuts.set {id, shortcut}` gives one a shortcut.
 
 The desktop app adds its active artboard, the one the Artboards panel highlights, to the `object.align`,
 `object.distribute`, `object.distributeSpacing` and `select.allOnArtboard` calls it runs without `artboard`, as it does
@@ -2211,12 +2599,17 @@ and its steps of these commands get the artboard that is active when the action 
 Direct Selection or Group Selection tool inside an artboard makes that artboard the active one; with the Selection
 tool, a Shift-click on an empty spot inside an artboard makes it active and keeps the selection. Choosing the Artboard
 tool (`tool.select {tool: "artboard"}`) starts it on the active artboard: its `active` option is that artboard's index.
+A command that starts the Artboard tool afresh in the same document (`file.revert`, or a `command.batch` or
+`action.batch` that reverts the document or switches to another document and back) keeps the active artboard and
+starts the tool on it. When a later step of the batch chooses the tool's artboards (a Paste or Cut), the artboard the
+tool then has active becomes the active one.
 
 `artboard.fitToArt {index? | indices?}` (Object › Artboards › Fit to Artwork Bounds) fits each artboard it names to
 the art on that artboard, in one undo step. The art is what an export draws, measured with its strokes and with the
 effects on paths, compound paths and symbol instances. An object counts for every artboard its bounds overlap, also
-when it reaches past the artboard's edge, and a group or a clipping layer counts whole. An artboard with no art on it
-keeps its size and place, and the call fails with `no artwork` when none of its artboards has art.
+when it reaches past the artboard's edge, and a group or a clipping layer counts whole. An artboard with no art on it,
+or a locked one, keeps its size and place. The call fails with `the artboard is locked` when every artboard it names is
+locked, and with `no artwork` when none of the others has art.
 `artboard.fitToSelection {index?}` (Object › Artboards › Fit to Selected Art) fits artboard `index` to the selected
 art. Both commands take 0-based indexes and resize the first artboard when the call names none. The desktop app adds
 the selected artboards (those the Artboard tool has selected, else the active one) as `indices` to the
@@ -2241,6 +2634,18 @@ flyout's Use Preview Bounds), the Transform panel's and Control bar's X, Y, W an
 stroke (see Stroke bounds and clicks); off, they measure the paths. The three Align commands also take
 `bounds: "preview"|"geometric"` for one call. `object.setBounds` then sets the visual box: with Scale Strokes &
 Effects off a 100 pt wide rectangle with a 10 pt stroke set to `width: 220` gets a 210 pt path.
+
+With Use Preview Bounds on, these measures take in each object as it is drawn after its geometry effects. A path is
+measured by its effected shape, and a fill or stroke with geometry effects of its own is measured by the shape it
+paints. Type, images, live objects and symbol instances are measured by their reshaped art, and a symbol instance is
+also measured by its reshaped art when its symbol's art has geometry effects. A group or layer with geometry or
+Pathfinder effects, or with a fill or stroke of its own that has geometry effects or paints members with geometry
+effects, is measured by its evaluated art. A blend, envelope or repeat whose objects have geometry effects is
+measured by its evaluated art, with those objects measured after their effects. A 100 pt square without a stroke,
+with Offset Path 10, measures 120 pt, and type with Outline Object is measured by its glyph outlines. Raster effects such as shadows and glows are not
+measured. In one object, the art of at most 4,096 symbol instances is measured with its geometry effects, and the
+other instances are measured without them. `object.setBounds` with `width: 100` gives that type a glyph box 100 pt
+wide.
 
 ```json
 {"name":"run_command","arguments":{"command":"object.align","params":{"horizontal":"left","bounds":"preview"}}}
@@ -2269,8 +2674,8 @@ The Selection & Anchor Display and General preferences apply to `pointer_gesture
   point a selection is dragged by, a drawn point and a transform tool's reference point land on an anchor or a ruler
   guide that near.
 - `moveLockedWithArtboard`: `artboard.move {moveArt: true}`, the Artboard tool and `artboard.rearrange` move locked and
-  hidden art with the artboard too, and `artboard.setProps {scaleArt: true}` scales it too; off (the default) it stays
-  where it is.
+  hidden art, and art that is also on a locked artboard, with the artboard too, and `artboard.setProps {scaleArt: true}`
+  scales it too; off (the default) it stays where it is.
 - `penRubberBand`, `curvatureRubberBand` (on by default): off, the Pen and Curvature tools draw no preview segment to
   the pointer.
 - `showHandlesMultipleAnchors` (on by default): off, Direct Selection (and the Anchor Point tool, and the Pen with Alt)
@@ -2360,6 +2765,11 @@ Guides change where a snapped point lands:
 - `spacingGuides` (on by default): a moved selection (Selection tool / `pointer_gesture` with `selection`) snaps so
   the gap to a neighbour matches the equal spacing among other objects nearby; off, only alignment and construction
   guides pull.
+- `distanceGuides` (Invoke Distance Guides, on by default): with Smart Guides on, something selected and the Selection
+  tool hovering with `mods.alt` (a `pointer` event of kind `move`), the canvas measures the selection's bounds to the
+  object under the pointer (the gap between their facing edges on an axis on which they lie apart, else the offsets
+  of their two edges on it) or, over no object, to the left, right, top and bottom edges of the artboard under the
+  pointer: measured lines labelled in the General unit. Off, Alt-hovering shows none.
 
 With Smart Guides on, a bounding-box handle dragged with the Selection or Free Transform tool (`mods.shift`
 proportional, `mods.alt` from the centre) lands on another object's anchor or centre (labelled "anchor" or
@@ -2562,6 +2972,9 @@ passed straight back to `file.new`. Print presets and sizes without `units` star
 (mobile, web, video, social) in Pixels. A saved or Recent preset whose size (up to 163,830 pt), `artboards` (1 to
 1,000), spacing (0 to 100,000 pt) or bleed (0 to 72 pt a side) lies outside those ranges is read with the nearer end of
 each range, and a size of 0 or less is read as 1 pt.
+The desktop app's `file.newDialog` (Cmd/Ctrl+N) opens the New Document dialog on the first Recent entry, or on the
+Print category's Letter while Recent is empty. `file.newWithoutDialog` (Cmd/Ctrl+Alt+N) runs `file.new` with those
+settings and the next untitled name, without opening the dialog, and returns what `file.new` returns.
 
 ```json
 {"name":"run_command","arguments":{"command":"file.new","params":{"preset":"A4","orientation":"landscape","artboards":4,"artboardLayout":{"columns":2},"bleed":9}}}
@@ -2575,7 +2988,9 @@ unless `link: false`; a Photoshop document as its merged image), an SVG as one g
 and swatches it uses. A VectorCraft document read from `path` is a placed document: one locked object showing its
 artboard `page` (or, with `crop: "bounding"`, its art's bounds), linked to the file and read again when it changes
 (see Linked images), and vectors in every output; with `link: false` (or from `dataBase64`) it is an editable copy
-of its art, as one clipped group. `at` centres it, `rect` fits it, `replace`
+of its art, as one clipped group. A PDF, `.ai` or `.ait` page read from `path` (with neither `password` nor
+`textAs: "outlines"`) is a placed document the same way, showing page `page` clipped to its `crop` box (or its
+art's bounds); with `link: false` it is placed as one clipped group. EPS and PostScript `.ai` files are embedded. `at` centres it, `rect` fits it, `replace`
 swaps the selected object (keeping its place and transform), `template` puts it on a new template layer.
 The art's bounds are the bounds of the art that shows, with its strokes and effects, as an export measures them:
 hidden objects, guides and template layers do not count, and symbol instances are measured by their art. A page or artboard holds the objects
@@ -2614,7 +3029,14 @@ Placement: `edit.paste {center}` centres the objects on a point (the app passes 
 by `dx`/`dy` (the Paste Offset preference). With nothing selected, `edit.pasteInFront` / `edit.pasteInBack` put them
 on top / at the bottom of the current layer. `edit.pasteOnAllArtboards` keeps their offset to the artboard they were
 copied from. `layer.pasteRemembersLayers {on?}` (a document option, `document.inspect` → `pasteRemembersLayers`)
-pastes objects back into the layers they came from, by name, making missing ones.
+pastes objects back into the layers they came from, by name, making missing ones. Drawing modes (`view.drawMode`) apply
+too: in Draw Inside, `edit.paste`, `edit.pasteInPlace` and `edit.pasteOnAllArtboards` put the objects inside the
+object drawn into (its clip group, made on the first paste), whatever Paste Remembers Layers says; in Draw Behind,
+`edit.pasteInPlace` and `edit.pasteOnAllArtboards` put them just below the selection. `edit.pasteInFront` and
+`edit.pasteInBack` ignore the drawing mode. When the object drawn into is the one isolation mode isolates (`object.isolate`,
+or a double-click on it with the Selection tool), art drawn or pasted inside it takes isolation mode into its clip group,
+so the new art can be picked and isn't dimmed; `edit.undo` or `edit.redo` that removes the isolated object ends
+isolation mode.
 
 Artboards copy with their art. `artboard.copy {index? | indices?, art?}` puts artboards on the clipboard together
 with the art fully inside each (`index` and `indices` default to the artboards the Artboard tool has selected; `art`
@@ -2634,6 +3056,13 @@ also move the pattern tiles of the copies when `patterns` is true (default: pref
 Every artboard command that takes an `index` fails with `no such artboard` when the `index` is not the
 0-based index of an artboard (past the last one, negative, fractional, a string or null), and the document and the
 clipboard stay as they were.
+These artboard commands refuse a string, a number or another value that is not true or false with
+`` `art` must be true or false ``, naming the key, and leave the document, its undo history and the clipboard as they
+were: `moveArt`, `scaleArt`, `strokes`, `corners`, `patterns`, `lockedAndHidden` and an artboard's `locked` in
+`artboard.setProps`; `moveArt`, `copy` and `patterns` in `artboard.move`; `art` and `patterns` in `artboard.duplicate`;
+and `art` in `artboard.copy` and `artboard.cut`. `artboard.setProps` refuses an artboard's `x`, `y`, `width` or
+`height` that is not a number, and `artboard.move` refuses such a `dx` or `dy`, with
+`` `dx` must be a number, not "10" ``. A null is read as a key left out.
 
 Scale Artwork with Artboard (#602): `artboard.setProps {index, x?, y?, width?, height?, scaleArt: true}` resizes an
 artboard and scales the art fully inside it, and its artboard guides, from the old rectangle onto the new one, each side
@@ -2646,10 +3075,80 @@ value: true}`; the Control bar's and Properties' Scale Artwork with Artboard che
 Artboard) makes its handle drags proportional and passes `scaleArt`, as do Properties' and the Transform panel's
 artboard size fields while the tool is in use.
 
+`artboard.setProps {artboards: [{index, name?, color?, locked?, showCenterMark?, showCrossHairs?, showVideoSafeAreas?, videoRulerPixelAspectRatio?, x?, y?, width?, height?}…], scaleArt?, moveArt?, …}` sets several
+artboards in one undo step, each with its own fields; the other params apply to all of them. The art that moves or
+scales with each artboard is the art inside it before any of them changes, and an object inside several of them goes
+with the first one listed that moves or scales its art. An empty list and a list that names an artboard twice are
+refused.
+
+With several artboards selected with the Artboard tool, the desktop app gives a new size to each of them in one such
+call. Properties' W and H and the Transform panel's W and H do this, and so do Properties' Preset and orientation
+buttons, the Control bar's preset, orientation, W and H, and a new Width or Height in Artboard Options. The W and H of
+the Transform panel and the Control bar resize each artboard about its own reference point, and with the proportions
+linked they keep each artboard's own proportions. Artboard Options resizes each artboard about the reference point its
+form used for the new Width or Height. Properties' W and H and the preset and orientation buttons keep each artboard's
+top-left corner. A preset sizes each artboard in its own orientation, and an orientation
+swaps the width and height of each artboard that is not square and not already in it. A new X or Y moves the active
+artboard only, and Artboard Options' Name renames only the artboard it shows. A locked artboard among the other
+selected artboards keeps its size.
+
+```json
+{"name":"run_command","arguments":{"command":"artboard.setProps","params":{"artboards":[{"index":0,"width":300},{"index":2,"width":300}],"scaleArt":true}}}
+```
+
+Locked artboards: `artboard.setProps {index, locked: true}` locks an artboard and `{index, locked: false}` unlocks it,
+each in one undo step. The Artboards panel's lock column, left of a row's options icon, shows a lock on a locked
+artboard, and a click there runs this command. A locked artboard keeps its place and size. `artboard.setProps` with a
+new `x`, `y`, `width` or `height` fails with `the artboard is locked` unless the same call unlocks it, and
+`artboard.move` without `copy`, `artboard.delete`, `artboard.cut` and `artboard.fitToSelection` fail the same way.
+`artboard.fitToArt` and `artboard.rearrange` leave a locked artboard where it is, and a copy of one
+(`artboard.duplicate`, `artboard.move {copy}`, Paste) starts unlocked. The art on a locked artboard is each object of
+a layer or sublayer whose bounds, with its strokes, overlap the artboard; a group counts as one object, and a hidden
+object, a guide or the art of pattern editing mode is on no artboard. That art acts as locked art: clicks, marquees, `select.set`, `select.all` and the
+tools pass over it, and commands that act on the selection leave it. Locking the artboard deselects it, and so does an
+edit that moves art onto a locked artboard. Art that an edit draws or pastes onto a locked artboard stays selected and
+editable until a selection leaves it out or an edit moves it off the locked artboards, and is then protected like the
+other art on it. `edit.undo`, `edit.redo` and a failed `command.batch` bring back the selection a step had, with that
+art selected and editable when it was. When another artboard moves, scales or is cut (`artboard.move`,
+`artboard.setProps`, `artboard.cut`, `artboard.rearrange`), art that is also on a locked artboard stays where it is
+unless prefs `moveLockedWithArtboard` is on (`lockedAndHidden` for `artboard.setProps`); a copy of an artboard copies
+it. With the Artboard tool, a click
+selects a locked artboard, but a drag doesn't move or copy it, it shows no handles, Delete leaves it, and a
+double-click on its name above the canvas doesn't edit the name (`artboard.setProps {name}` and the Artboards panel
+still rename it). A Shift-click or Shift-drag on a locked artboard selects or draws as on any other artboard. The
+document summary (`document.inspect`) adds `locked: true` to a locked artboard.
+
+An artboard's background color (Properties › Artboards › Fill, Artboard Options' Background Color): `artboard.setProps
+{index, color}` sets it, with a color as the paint commands take it (`"#rrggbb"`, `{c, m, y, k}`, …), and
+`artboard.setProps {index, color: null}` removes it, each in one undo step; `artboard.new {color}` makes an artboard
+with one. The canvas draws that artboard's paper in
+the color. With Simulate Colored Paper on, it multiplies the color with the paper color, each sRGB channel as
+artboard × paper / 255; artboards without a color show the paper color. The transparency grid still covers it while
+it shows. Copies, duplicates and the native format keep the color; exports and print do not draw it. `inspect_document`
+lists it as the artboard's `color` (`#rrggbb`), and `ui.colorPicker {artboard: index}` opens the Color Picker for it.
+
+Artboard Options' Show Center Mark and Show Cross Hairs: `artboard.setProps {index, showCenterMark?: bool,
+showCrossHairs?: bool}` (or each entry of `artboards`) turns them on or off for that artboard in one undo step, and
+`artboard.new` takes them too. The canvas draws the center mark as a small cross at the artboard's center and the cross
+hairs as lines from the middle of each side through the center, 1 point wide on screen at any zoom; exports and print
+leave them out. Duplicates, copies and the native format keep them, and `inspect_document` adds `showCenterMark: true`
+and `showCrossHairs: true` to an artboard that shows them.
+
+Artboard Options' video display options: `artboard.setProps {index, showVideoSafeAreas?: bool,
+videoRulerPixelAspectRatio?: number}` (or each entry of `artboards`) sets them for that artboard in one undo step, and
+`artboard.new` takes them too. Show Video Safe Areas outlines the artboard's action-safe area 3.5% and its title-safe
+area 5% in from each edge, as EBU R 95 sets them (https://tech.ebu.ch/docs/r/r095.pdf), 1 point wide on screen and only
+on the canvas. The Video Ruler Pixel Aspect Ratio, from 0.1 to 10 (default 1, square pixels; the commands refuse anything
+else, and a file's outside the range opens brought into it),
+is the width of one video pixel over its height, which `view.videoRulers` counts the artboard in. Duplicates, copies and
+the native format keep both (written only when on or not 1), and `inspect_document` adds `showVideoSafeAreas: true` and
+`videoRulerPixelAspectRatio` to an artboard that has them.
+
 ```json
 {"name":"run_command","arguments":{"command":"artboard.copy","params":{"index":0}}}
 {"name":"run_command","arguments":{"command":"edit.paste","params":{}}}
 {"name":"run_command","arguments":{"command":"artboard.duplicate","params":{"index":0,"art":true}}}
+{"name":"run_command","arguments":{"command":"artboard.setProps","params":{"index":1,"locked":true}}}
 {"name":"run_command","arguments":{"command":"clipboard.conflicts","params":{}}}
 {"name":"run_command","arguments":{"command":"edit.paste","params":{"center":[300,200],"swatchConflict":{"Brand":"add"}}}}
 {"name":"run_command","arguments":{"command":"layer.pasteRemembersLayers","params":{"on":true}}}
@@ -2666,6 +3165,9 @@ author, description and keywords to the document info and XMP, PNG export writes
 creation date) as text chunks, and SVG export writes the description as `<desc>` and, with the `metadata` option,
 all of it as Dublin Core. PDF export and PDF-compatible `.ai` and `.ait` saves write the `created` date (the time of
 writing when the document has none) as the file's creation date and the time of writing as its modification date.
+They also write the `copyrightNotice` as `dc:rights`, the `copyrightUrl` as `xmpRights:WebStatement` and the
+`copyrightStatus` as `xmpRights:Marked` (`True` for copyrighted, `False` for public domain, none for unknown) to the
+XMP packet.
 A PDF, `.ai` or `.ait` opened from its pages or its editing copy (`document.open`,
 `file.newFromTemplate`, `file.revert`; not one restored from the document it carries) opens with the `author`,
 `description`, `keywords`, `copyrightStatus`, `copyrightNotice`, `copyrightUrl`, `created` and `modified` that its XMP
@@ -2753,7 +3255,8 @@ the linked files again, looking for each at its path, then at its relative path 
 (so a folder moved with its links still opens). Only files on this computer, or on the network share the document is
 on, are looked at: a path to another computer, a device or a URL counts as missing. On Windows, a document opened from
 a mapped drive (`Z:\…`) is on the share the drive is mapped to, and links on that share (`\\server\share\…`) are
-looked at. The result lists `missingLinks`
+looked at. A link on a drive mapped to another share (`Y:\…`) counts as missing, from a document on this computer too.
+The result lists `missingLinks`
 (their images show the preview), `modifiedLinks` (left as they were; read again only with the preference
 `updateLinks: "automatically"`, then they are in `updatedLinks`), each as `{name, path, ids}`, with `refused` (why the
 path isn't followed) when it isn't. The desktop app also checks the active document's links when its window
@@ -2780,10 +3283,15 @@ that includes a placed document fails and relinks nothing; placed documents are 
 files are. Find in Folder… in the Linked File Not Found dialog and in the Links panel menu (`ui.findLinksInFolder`) runs
 both. The web build has no folder search.
 
-Placed documents (a `.vectorcraft` file placed linked) work the same way: the document keeps the file's bytes and a
-preview (JPEG or PNG, 1 px per point, at most 1024 px a side), and a save writes the preview (Include Linked Files:
-the file); output reads the file again, or uses the preview with a warning when it is gone or changed.
-`links.list` and `links.info` give them `document: true` and the artboard's `pageWidth` and `pageHeight` (pt).
+Placed documents (a `.vectorcraft` file, or a PDF or `.ai` page, placed linked)
+work the same way: the document keeps the file's bytes and a preview (JPEG or PNG, 1 px per point, at most 1024 px
+a side), and a save writes the preview (Include Linked Files: the file); output reads the file again, or uses the
+preview with a warning when it is gone or changed.
+`links.list` and `links.info` give them `document: true`, the file's `format` (`VectorCraft`, `PDF`,
+`PDF-compatible .ai`) and the artboard's or page's `pageWidth` and `pageHeight` (pt). A relinked PDF shows the same
+page and box of the new file. File › Package copies a placed PDF or `.ai` file as it is. For a `.ai` file read from
+its editing data, Package also copies the files its art places into the same folder. That file finds them by name,
+and Package warns when one is copied under another name: the copy then shows the file of that name, or its preview.
 Saving the file in the app updates the open documents that place it. `links.embed` (the Links panel's Break Link)
 turns one into the editable copy placing without link gives, its symbols, patterns, swatches and images joining
 the document; so does `object.expand`.
@@ -2816,7 +3324,10 @@ left out. `file.place` answers `format: "rtf"`.
 
 A Word document (a ZIP package named `.docx`, or one that holds `word/document.xml`, except a `.txt` file) is placed
 the same way and keeps the same formatting, taken from the document defaults, the paragraph style and the character
-style (and the styles each is based on) and direct formatting; theme fonts are read from the theme part. Table cells
+style (and the styles each is based on) and direct formatting; theme fonts are read from the theme part. A paragraph
+justified with a low, medium or high kashida length (`w:jc` `lowKashida`, `mediumKashida` or `highKashida`) is
+justified with `kashida` `"short"`, `"medium"` or `"long"` (see [Insert Kashidas](#insert-kashidas)), and one
+justified with `both` has none. Table cells
 are separated by tabs and each row is a paragraph. Hidden and deleted text, field instructions, pictures, text boxes,
 headers, footers, notes and list numbers are left out. A package with more than 10,000 files, a part that unpacks to
 more than 16 MiB or nests elements more than 256 deep, and a document with more than 4 MiB of text or 100,000
@@ -2846,7 +3357,8 @@ They are kept across restarts, in the desktop app and in `vectorcraft-cli` alike
 
 Besides SVG, Copy offers other apps PNG and PDF of the copied objects, and their text when they are all type.
 `clipboard.flavours` lists what Copy offers for the current clipboard, best first, by the Clipboard Handling
-preferences: `text/plain` (the text of a type-only copy, else the SVG markup with `copyAsSvg`), `image/svg+xml`
+preferences: `text/plain` (the text of a type-only copy, else the SVG markup with `copyAsSvg` when the images it
+embeds total at most 1 MiB, so a paste never reads a photo back as text, #2213), `image/svg+xml`
 (`copyAsSvg`), `application/pdf` (`copyAsPdf`) and `image/png` (always; PDF and PNG need objects with an
 area). Each one has a query command:
 `clipboard.exportSvg`, `clipboard.exportText` (null unless every copied object is type), `clipboard.exportPdf`
@@ -2856,9 +3368,13 @@ transparent around them). As in `document.export`, the PDF's and the PNG's repli
 shows the first note of the PDF and PNG it offers in the status bar.
 
 What other apps copied goes into the clipboard with `clipboard.importSvg`, `clipboard.importPdf {dataBase64, page?,
-password?}` (the page's objects), `clipboard.importEps {dataBase64}` (an EPS or other PostScript picture's objects,
-as `document.open` reads one), `clipboard.importImage {dataBase64, mime?}` (an embedded image at 100% of its
-physical size) or `clipboard.importText {text}` (point text in the default type style), each centred on `center`
+password?, editingData?}` (the page's objects; with `editingData: true` the data is a `.ai` or `.ait` file, and every
+object of its editing data comes in as `document.open` reads it, each layer's objects in stacking order and a hidden
+layer's objects hidden, or the page's objects when `document.open` would not use that copy; a `.ai` saved without PDF
+compatibility comes in from its editing data the same way with or without `editingData`), `clipboard.importEps
+{dataBase64}` (an EPS or other PostScript picture's objects, as `document.open` reads one, a hidden layer's objects
+hidden), `clipboard.importImage {dataBase64, mime?}` (an embedded image at 100% of its physical size) or
+`clipboard.importText {text}` (point text in the default type style), each centred on `center`
 (default: the first artboard); then any `edit.paste*` command pastes it. The desktop app does this itself: Copy and
 Cut publish the formats to the system clipboard, and a Paste outside text editing first reads what another app
 copied (SVG, then PDF, then text, then a bitmap; SVG markup in text counts as SVG). A background thread makes the
@@ -2870,7 +3386,9 @@ them. Windows carries every format both ways and pastes a bitmap from PNG, else
 from the device-independent bitmap screenshots copy (`CF_DIBV5`, then `CF_DIB`; alpha kept, opaque when it is zero
 throughout, at most 32768 px a side); macOS and Linux carry one format (the text, else the PNG) and paste text and
 bitmaps (macOS the pasteboard's PNG, else TIFF, as screenshots copy them). On the web Copy publishes SVG text, and
-Paste takes SVG text and the pictures and files a paste carries (a screenshot pastes as an embedded image).
+Paste takes SVG text and the pictures and files a paste carries (a screenshot pastes as an embedded image). A `.ai`
+or `.ait` file that holds a PDF, copied in a file manager or carried by a paste, is loaded with `clipboard.importPdf
+{editingData: true}`, and its objects go into the active layer.
 
 The `pasteTextFormatting` preference (`keep` or `plain`): with `plain`, text the Type tool copied pastes into type
 without its formatting, taking the style at the caret.
@@ -2899,7 +3417,9 @@ width profiles, arrowheads) as filled outlines; `"editability"` keeps type as te
 `alterPaths` writes every stroke as its filled outline, `outlineText` outlines type, `selectedOnly` writes only the
 selected objects in their layers (every export takes it), and `useArtboards: true` writes one drawing per chosen
 artboard holding the art over it. What DXF can't hold (gradients and patterns as one colour, blending, opacity masks,
-raster effects, clipping) comes back in `warnings`.
+raster effects, clipping) comes back in `warnings`. In R13 and later, an image that can't be decoded is left out with
+no linked file, and `warnings` carries "an image couldn't be decoded and is missing from the picture" once for all such
+images.
 
 DWG can't be written (no openly licensed writer exists): `document.formats` lists it under `unsupported` with that
 hint, and exporting to it answers with the hint to export DXF. PICT files are not supported either and say so when
@@ -2971,8 +3491,12 @@ written. Every option defaults to true. Without `folder` (the web, or an agent t
 result carries the same files as a zip (`{name: "<name>.zip", dataBase64}`, entries under `<name>/`).
 
 `document.info {selectionOnly?, category?, format?: "text"}` adds `sections` (`[{id, title, rows: [[label, value]]}]`:
-document, objects, graphicStyles, spotColors, patterns, gradients, symbols, fonts, fontDetails, linkedImages,
-embeddedImages) and `pathLength` (pt: the total length of the paths, compound paths' pieces included and guides left
+document, objects, graphicStyles, brushes, spotColors, patterns, gradients, symbols, fonts, fontDetails, linkedImages,
+embeddedImages, repeats), `brushNames` (the Brushes panel's brushes; with `selectionOnly`, the brushes the selected
+objects' strokes use), `repeatObjects` (`[{id, name, type, instances, rows?, cols?}]`: every Repeat object, those in
+groups and in other repeats included, with its type `radial`, `grid` or `mirror` and the number of instances it makes,
+and a grid's `rows` and `cols`; with `selectionOnly`, the Repeat objects in the selection)
+and `pathLength` (pt: the total length of the paths, compound paths' pieces included and guides left
 out, which objects lists as Path Length in the document's units, say for a cut line or an LED strip along the letters);
 `format: "text"` returns the plain-text report Document Info › Save… (`docInfo.save {path?}`) and the package report
 write.
@@ -3068,7 +3592,9 @@ per artboard, `{stem}_{artboard}.eps`, each bounded by its artboard. `level: 3` 
 shadings and masks transparent image pixels out; `level: 2` writes gradients as bands of colour (as does
 `compatibleGradients`) and transparent pixels white. Type is always glyph outlines, so no fonts are needed (`embedFonts`
 is accepted); spot colours are Separation colour spaces, and overprinting fills and strokes overprint unless
-`overprints: "discard"`. RGB documents are written in CMYK unless `cmykPostScript: false`.
+`overprints: "discard"`. RGB documents are written in CMYK unless `cmykPostScript: false`. When the file would hold an
+image that can't be decoded, the image is left out, and `warnings` carries "an image couldn't be decoded and is missing
+from the picture" once for all such images.
 
 PostScript has no transparency: it is flattened first with `flattenerPreset` (`high`, `medium` (default), `low` or a
 saved preset, see `flattener.presets.list`) and `flattener: {…}` options over it (those of
@@ -3098,7 +3624,7 @@ a value). `list_commands` with filter `print.setup`
 documents every field:
 
 - General: `copies` (1–999), `collate`, `reverse`; `artboards: all|range|ignore` with `range: "1-3, 5"` (ignore: all
-  the art as one page), `skipBlank`; `media: letter|legal|tabloid|a3|a4|a5|b4|b5|custom` (`width`, `height` in pt),
+  the art as one page), `skipBlank`; `media: letter|legal|tabloid|a3|a4|a5|a6|b4|b5|b4 (jis)|b5 (jis)|b6 (jis)|japanese postcard|japanese double postcard|japanese envelope #3|japanese envelope #4|kaku #2|kaku #3|yonroku-ban|custom` (`width`, `height` in pt; a paper is named by its id or its dialog label, any case and spacing, so `B5 (JIS)` works; `b4` and `b5` stay ISO 216 and the JIS sizes are `b4 (jis)`, `b5 (jis)` and `b6 (jis)`),
   `orientation`, `autoRotate` (on by default: the paper turns to each artboard), `transverse`; `printLayers:
   visiblePrintable|visible|all` (template layers never print); `placement: {origin, x, y}` places the printed area
   (artboard, bleed and marks) on the imageable area (the paper inside `margin`); `scaling: none|fit|custom|tileFull|
@@ -3183,8 +3709,8 @@ or in `options` (`file.formatOptions {format}` lists them with their values):
   (default true) with false write blank pages around the native document (smaller; other apps show empty pages).
 - `.ai` only: `compress` (default true) is the PDF option `compression.compressText`.
 
-File → Save As asks for these in the save options dialog (VectorCraft Options) after the save panel; Save, Save a Copy
-and Save as Template reuse the options as last saved (or Use Compression).
+File → Save As asks for these in the save options dialog (VectorCraft Options) after the save panel, and Save a Copy
+does too for a `.ai` file; Save, Save a Copy to a native file and Save as Template reuse the options as last saved (or Use Compression).
 
 ```json
 {"name":"run_command","arguments":{"command":"file.saveAs","params":{"path":"/tmp/set.vectorcraft","separateArtboards":true,"range":"2-3","includeLinked":true}}}
@@ -3201,7 +3727,9 @@ outlines; gradients become images clipped to their shape, pattern fills their ti
 effects images rendered at the document's raster effects resolution. The header's frame is the artboard in 0.01 mm.
 WMF flattens curves into polygons in 16-bit units behind a placeable header (1440 units an inch, fewer for pictures
 over about 22 inches); it has no clipping, transparency or gradients, so clipped art is written whole, images over
-white and gradients and patterns as one colour. What a format leaves out comes back in `warnings`.
+white and gradients and patterns as one colour. What a format leaves out comes back in `warnings`. When the picture
+would hold an image that can't be decoded, the image is left out, and `warnings` carries "an image couldn't be decoded
+and is missing from the picture" once for all such images.
 
 `document.open` and `file.place` read `.emf` and `.wmf` (placeable or not) into one artboard, the picture's frame, and
 one layer: paths with their fills and strokes (pens become strokes with caps, joins and dashes), clipping groups,
@@ -3401,7 +3929,9 @@ point type in the font the file names (embedded font programs are skipped). In a
 (else `%%BoundingBox`; a letter page without one). A program the interpreter can't run (an operator it doesn't know,
 an error, a runaway loop) or that draws nothing comes in as its TIFF preview (palette previews with an alpha channel
 too) with a warning; without a preview, the art drawn up to the error is kept with a warning, and a file with none is
-refused with a message saying why.
+refused with a message saying why. A PostScript error is named as PostScript spells it, followed by what it means:
+``a PostScript error (typecheck in `add`; a value has the wrong type for the operator)``. The status bar shows
+the meaning in the interface language, and the name stays as it is.
 
 ```json
 {"name":"run_command","arguments":{"command":"document.open","params":{"path":"/tmp/logo.eps"}}}
@@ -3586,23 +4116,30 @@ chosen artboards draw all of them. A PDF leaves out the layers that don't print 
 {"name":"run_command","arguments":{"command":"text.areaOptions","params":{"fit":"shrinkText","fitMinPercent":60}}}
 ```
 
-## Threading text from the out port
+## Threading text from the in and out ports
 
-As in the reference app, a click with the Selection tool on the red "+" out port of selected area type whose text
-overflows loads the pointer with that text (the port sits on the frame's right side, just above the bottom-right
-corner, so the corner handle stays free). The next click threads the text into the closed path or area type under the
-pointer, which becomes the next frame; a click on empty canvas makes a new frame of the first one's shape and size
-with its top-left corner at the click, and a drag draws a rectangle for the new frame. Escape or another tool drops
-the loaded text. Each placement is one undo step (`text.thread.add`), which agents can run directly:
+As in the reference app, selected area type and type on a path show an in port and an out port: area type's on the
+frame's left side just below the top-left corner and on its right side just above the bottom-right corner (so the
+corner handles stay free), type on a path's just before its start bracket and just past its end bracket. A port is
+empty while the frame isn't threaded on that side, shows an arrow when it is, and the out port shows a red "+" when
+the text doesn't fit (with more than 1,000 such objects selected no ports are drawn). A click with the Selection tool
+on the out port loads the pointer with the text. The next click
+threads it into the closed path, area type or type on a path under the pointer, which becomes the next frame; a click
+on empty canvas makes a new frame of the first one's kind, shape and size with its top-left corner at the click, and a
+drag draws a rectangle for the new frame. A click on the in port works the same way, but the frame placed comes
+before the clicked one: the story starts there and flows on into it. Escape or another tool drops the loaded text.
+Each placement is one undo step (`text.thread.add`), which agents can run directly:
 
-`text.thread.add {from, to? | rect?: [x, y, width, height] | at?: [x, y]}` threads area type `from` into one more
-frame, put right after it in its thread (a new thread of the two when `from` has none): `to`, a closed path (converted
-to an empty frame) or area type that is not threaded yet; `rect`, a new rectangular frame (positive width and height);
-or `at`, a new frame of `from`'s shape and size whose top-left is at `at`. Give exactly one of the three. New frames
-take `from`'s type options, paint and first character and paragraph attributes, and go just above it. The story
-reflows through the thread, the two frames are selected, and it returns `{id}`, the frame threaded into. It refuses
-an `id` that doesn't exist, a `from` that isn't area type (type on a path doesn't thread), an open path, `from`
-itself, an object inside a compound path, a frame already in a thread, and coordinates that aren't finite numbers.
+`text.thread.add {from, to? | rect?: [x, y, width, height] | at?: [x, y], before?}` threads area type or type on a
+path `from` into one more frame, put right after it in its thread (a new thread of the two when `from` has none), or
+right before it with `before: true` (the in port): `to`, a closed path (converted to an empty frame), area type or
+type on a path that is not threaded yet; `rect`, a new rectangular frame (positive width and height); or `at`, a new
+frame of `from`'s kind, shape and size whose top-left is at `at`. Give exactly one of the three. New frames take
+`from`'s type options, paint and first character and paragraph attributes, and go just above it. The story reflows
+through the thread, the two frames are selected, and it returns `{id}`, the frame threaded into. It refuses an `id`
+that doesn't exist, a `from` that is point type, a `to` that is an open path, `from` itself, inside a compound path
+or already in a thread (`from` may be threaded already: the frame goes in beside it), coordinates that aren't finite
+numbers and a `before` that isn't true or false.
 
 ```json
 {"name":"run_command","arguments":{"command":"text.thread.add","params":{"from":42,"at":[300,120]}}}
@@ -3615,7 +4152,9 @@ the middle of its bounding box's right side, hollow on point type and filled on 
 `type.convertToAreaType` (point type gets a frame around its text, which keeps its place and doesn't rewrap) or
 `type.convertToPointType` (soft line wraps become line breaks), the same commands as the Type menu's Convert To Area
 Type and Convert To Point Type. Either keeps the text and its styles and is one undo step; `ids` picks the objects
-(default: the selection).
+(default: the selection). A frame of threaded text that `type.convertToPointType` converts leaves its thread with the
+text it holds, and the story flows through the other frames without that text; a thread left with one frame is no
+longer a thread.
 
 ```json
 {"name":"run_command","arguments":{"command":"type.convertToAreaType","params":{"ids":[42]}}}
@@ -3672,6 +4211,27 @@ values the Paragraph panel shows, with Preview; OK sends the values that changed
 ```json
 {"name":"run_command","arguments":{"command":"text.setFormat","params":{"wordSpacing":[80,100,150],"letterSpacing":{"max":5},"singleWordJustification":"alignLeft"}}}
 ```
+
+## Insert Kashidas
+
+`text.setFormat {kashida}` (Paragraph panel › Insert Kashidas, shown with the Indic options) sets how the justified
+lines of the paragraphs of the selected type (or `ids`, or the paragraphs a `start` / `end` range touches) lengthen
+their Arabic words: `"none"` (the default), `"short"`, `"medium"`, `"long"` or `"stylistic"`. On a justified line of
+horizontal area type that is shorter than its measure, each Arabic word with joined letters gets one kashida between its
+last pair of them: a tatweel (U+0640) in the font of the letter after it. Words end at spaces, inline graphics and
+characters other than letters and marks, such as punctuation, digits and symbols. The kashidas share the line's room
+equally, each at most a quarter of an em (short), half an em (medium) or an em (long) of that letter's size at its
+horizontal scale; a stylistic kashida is a row of the font's own tatweels, as many whole ones as fit in its share and in
+an em. The word spaces and the rest of justification take the room the kashidas leave, so the line keeps its width.
+Line breaks are the same as with none. Lines that are not justified, words without joined letters and fonts without a
+tatweel get no kashidas. Each tatweel is a glyph of the layout that stands for no character and does not advance; the
+letter after the kashida advances over it, so the caret before that letter, a selection of it and a click on it take
+the kashida in. The setting is saved with the paragraph (`kashida` in `para`) only when it is not none, paragraph
+styles carry it, and Reset Panel sets it back to none. The change is one undo step.
+
+```json
+{"name":"run_command","arguments":{"command":"text.setFormat","params":{"kashida":"medium"}}}
+```
 ## Kinsoku Set
 
 `text.setFormat {kinsoku: "hard"|"soft"|"none"}` sets the Paragraph panel's Kinsoku Set of the selected type (or `ids`):
@@ -3707,15 +4267,24 @@ for the selected type objects (or `ids`); without `on` it sets the opposite of t
 on. Optical Margin Alignment is a setting of the whole thread: the command sets every frame of a selected frame's
 thread, and `ids` lists them all. Threading frames gives the thread its first frame's setting, frames taken out of
 a thread keep it, and a file whose frames of one thread differ opens with the first frame's setting in all of them.
-In every left-to-right paragraph of point and area type, these characters hang outside the margin when they
+In every paragraph of point and area type, these characters hang outside the margin when they
 start or end a line: quotation marks, hyphens (a hyphenated line's hyphen too), full stops and commas hang wholly;
 asterisks, tildes, ellipses, en and em dashes, colons and semicolons hang by half their width; and A, V, W, Y, v, w
 and y hang by a tenth of theirs. A punctuation mark followed by a quotation mark hangs with it.
 Left-aligned lines hang at their left margin, right-aligned lines hang at their right margin, and centered and
-justified lines hang at both. In vertical type the margins are the top and bottom of a column. The space that
-justification adds between glyphs leaves out the gaps next to a hanging punctuation mark. Lines break where they did
+justified lines hang at both. Auto aligns a right-to-left line at its right. A right-to-left line is read from right
+to left: where it hangs at its left margin, `."` ending it hangs both glyphs. In vertical type the margins are the
+top and bottom of a column. The space that justification adds between glyphs leaves out the gaps next to a
+hanging punctuation mark. Lines break where they did
 without it, and a line of one glyph does not hang. East Asian commas and full stops hang only through burasagari, and
-a line that ends in one hangs only at its start. Type on a path and right-to-left paragraphs are laid out as before.
+a line that ends in one hangs only at its start. Type on a path hangs at its brackets, measured along the path:
+left-aligned, Justify All and Justify with Last Line Aligned Left type hangs at the start bracket, right-aligned and
+Justify with Last Line Aligned Right type hangs at the end bracket, and centered and Justify with Last Line Aligned
+Center type hangs at both. Auto type hangs at the bracket it is placed at: the end bracket for horizontal type whose
+first paragraph runs right to left, and the start bracket otherwise. Glyphs that hang past the end bracket do not make
+the type overflow. On an open path a hang stops at the path's end, and on a closed path the two hangs together take
+at most the stretch between the end and start brackets. SVG export writes type on a path whose glyphs hang as
+outlines, with a warning.
 New type and documents from before it have it off, and it is saved only when on. One undo step.
 
 ```json
@@ -3730,12 +4299,55 @@ paragraphs the punctuation Optical Margin Alignment hangs hangs outside the marg
 hyphens, full stops and commas wholly; asterisks, tildes, ellipses, en and em dashes, colons and semicolons by half),
 on the same sides (left-aligned lines at their left, right-aligned at their right, centered and justified at both), and
 letters don't hang. With Optical Margin Alignment on as well, the letters hang too. East Asian punctuation hangs only
-through burasagari; type on a path and right-to-left paragraphs are laid out as before. Off by default, saved with the
-paragraph (`roman_hanging` in `para`) only when on, carried by paragraph styles, and turned off by Reset Panel. One undo
-step. The menu item is checked while the paragraph the Paragraph panel shows has it on.
+through burasagari. When the first paragraph of type on a path has Roman Hanging Punctuation on, the type hangs its
+punctuation at its brackets as Optical Margin Alignment does, and no letters. Off by default, saved with the paragraph
+(`roman_hanging` in `para`) only when on, carried by paragraph styles, and turned off by Reset Panel. One undo step.
+The menu item is checked while the paragraph the Paragraph panel shows has it on.
 
 ```json
 {"name":"run_command","arguments":{"command":"text.setFormat","params":{"romanHangingPunctuation":true}}}
+```
+
+## Bulleted lists
+
+`text.setFormat {list: "none"|"bullet", bullet: "none"|"dot"|"dash"|"circle"|"square"}` (Paragraph panel › Bullets)
+makes the paragraphs of the selected type (or `ids`, or the paragraphs a `start` / `end` range touches) a bulleted list
+or takes them out of one. `bullet` sets the bullet: a filled dot (•), a dash (–), a hollow circle (◦) or a filled
+square (▪). `list: "bullet"` keeps the bullet of a paragraph that is already in a list and gives the others the dot.
+`"none"` in either key turns the list off and leaves the indents as they are. An unknown value is an error and changes
+nothing. A paragraph that joins a list while its left and first-line indents are both 0 gets a left indent of 18 pt and a
+first-line indent of -18 pt, unless the same call sets `leftIndent` or `firstLineIndent`; other indents stay as they are.
+In a horizontal right-to-left list paragraph the indents are mirrored: the left and first-line indents are measured
+from the right edge, and the right indent from the left edge. Its bullet starts the first line at the right, and the
+lines it wraps to start at the right where the first line's text starts after the bullet. A right-to-left paragraph
+without a list keeps its left and first-line indents at the left, and vertical type keeps its indents as they are. In
+threaded type, a list paragraph that continues into the next frame starts that frame with its bullet again, as it
+starts it with its first-line indent.
+
+The layout draws the bullet before the first line of each list paragraph that has text, in the font, size, scales and
+color of the paragraph's first character, without that character's baseline shift, rotation, superscript or subscript,
+tracking, manual kerning and tate-chu-yoko. The bullet is not a character of the text: copied text leaves it out, the
+caret before the paragraph's first character stands at the text, a selection does not highlight the bullet, and Touch
+Type moves that character without the bullet. The text after it starts at the next tab stop, the left indent counting
+as a stop when no explicit stop comes before it, measured from the right in a right-to-left list paragraph. The lines
+the paragraph wraps to start at the left indent. Type on a path draws the bullet and the same gap before the
+paragraph's text; a right-to-left item on a path has its bullet at the right of its text. Justification and Optical
+Margin Alignment leave the bullet and the gap after it as they are, and an underline or strikethrough starts at the
+text. Return at the end of a list item starts another item in the same list. The list is saved with the paragraph
+(`list` in `para`, for example `{"bullet": "square"}`) only when it is set, and paragraph styles carry it: a style
+captured from a paragraph without a list turns the list off. Reset Panel turns it off. The change is one undo step.
+
+The canvas, EPS, PDF and Type › Create Outlines draw the bullet; in PDF it is a path, not text. Live SVG text writes the
+bullet's character before the paragraph's text, except type on a path with bullets, which it writes as outlines with a
+warning. DXF writes the bullet as a TEXT entity of its own. Legacy `.ai` writes the
+paragraph's text without the bullet and warns that bulleted lists are left out.
+
+Type › Bullets and Numbering › Apply Bullets and the canvas context menu's Bullets and Numbering › Apply Bullets run
+`type.applyBullets {bullet?}` on the selected type's paragraphs, or on those the Type tool's selection touches: without
+`bullet` as `text.setFormat {list: "bullet"}`, with it as `text.setFormat {bullet}`.
+
+```json
+{"name":"run_command","arguments":{"command":"text.setFormat","params":{"bullet":"square"}}}
 ```
 
 ## Small Caps, Superscript and Subscript
@@ -3799,6 +4411,25 @@ explicitly, `{}` for none. Each command is one undo step.
 ```json
 {"name":"run_command","arguments":{"command":"text.fontList","params":{"family":"Bahnschrift","style":"Regular"}}}
 {"name":"run_command","arguments":{"command":"text.setFormat","params":{"fontAxes":{"wght":650,"wdth":87.5}}}}
+```
+
+## Character Direction
+
+`text.setFormat {charDirection: "default"|"leftToRight"|"rightToLeft"}` (the selected type, or `ids`) and
+`text.setRangeStyle {id, start, end, charDirection}` (a range) set the direction of the characters inside their
+paragraph, as the Character panel menu's Character Direction does with the Middle Eastern (Indic) options shown. The bidi
+algorithm (UAX #9) resolves each stretch of characters with a direction as an embedding in that direction, as if an LRE
+or RLE stood before it and a PDF after it: `leftToRight` keeps a date written with spaces, such as `21 10 2026`, in its
+order inside a right-to-left paragraph, and `rightToLeft` sets a Hebrew or Arabic word and the punctuation after it right
+to left inside a left-to-right paragraph. Characters keep their own strong direction inside an embedding: Latin letters
+set Right to Left still read left to right. `default` leaves the characters to the bidi algorithm. The paragraph's own
+direction is unchanged. SVG export writes type with a character drawn right to left, or with a run set Right to Left,
+as outlines; live SVG text writes `direction="ltr"` and `unicode-bidi="embed"` on each run set Left to Right. Character
+Direction is Default until set and is saved only when set, and character styles captured from type carry it. Each
+command is one undo step.
+
+```json
+{"name":"run_command","arguments":{"command":"text.setRangeStyle","params":{"id":12,"start":9,"end":19,"charDirection":"leftToRight"}}}
 ```
 
 ## Digits
@@ -3923,7 +4554,12 @@ them again at startup (`plugin.remove` deletes them there):
 schema, defaults). An object filter runs on the selected paths and compound paths with `plugin.run {id, params}` (one
 undo step; it may change, delete or add objects, and the result is selected). A live-effect plug-in is an effect with
 id `plugin.<id>`: `effect.apply`, `effect.setParams` and `effect.expandAppearance` work as for built-in effects, and
-`effect.list` lists it. A failing plug-in returns an error and leaves the document as it was.
+`effect.list` lists it. An exporter adds a write-only file format `plugin.<id>` (listed by `document.formats`):
+`document.export {format: "plugin.<id>", params?, path?}` writes it, as does a `path` ending in one of its extensions
+that no built-in format has. A failing plug-in returns an error and leaves the document as it was (an export writes
+no file). A filter whose manifest asks for a heavy budget (minutes rather than a minute, `budget: "heavy"` in its
+`plugin.inspect {path | dataBase64}` entry) installs only with `allowHeavy: true`: ask the user first. `plugin.run`
+runs it where it is called, so the call may take minutes; `notifications/cancelled` stops it.
 
 ```json
 {"name":"run_command","arguments":{"command":"plugin.install","params":{"path":"/plugins/desaturate.wasm"}}}
@@ -4042,8 +4678,10 @@ active tool, `tool` names another one, and `{}` just reads them; the result is t
 tool keeps last across tool switches (and documents) and are saved with the preferences (`toolSettings` in
 `prefs.get`'s full object), as the reference app keeps them: the Liquify tools' brush and tool options, Mirror & Cut's
 axis and side, Puppet Warp's mesh, the Symbolism brush, the line, grid, pencil, brush and eraser tools' options,
-polygon sides and star points, and the Flare Tool Options. The Liquify tools share one set of Global Brush Dimensions (width, height, angle,
-intensity), and the Symbolism tools one brush. Interaction state (pins, a reference point) starts afresh.
+polygon sides and star points, the Flare Tool Options and the Shape Builder Tool Options. The Liquify tools share one set of Global Brush Dimensions (width, height, angle,
+intensity), and the Symbolism tools one brush. Interaction state (pins, a reference point) starts afresh. In the
+desktop app, while the Artboard tool is in use, a change to its `selected` or `active` makes the artboard it then has
+active the active artboard (the navigator's and the Artboards panel's).
 
 ```json
 {"name":"run_command","arguments":{"command":"tool.setOption","params":{"tool":"twirl","values":{"width":60,"rate":90}}}}
@@ -4068,6 +4706,52 @@ default name, "Artboard N" for the Nth artboard.
 
 ```json
 {"name":"run_command","arguments":{"command":"tool.setOption","params":{"tool":"flare","values":{"rays":24,"ringsOn":false}}}}
+```
+
+The Shape Builder tool's options are its Shape Builder Tool Options (dialog `shapeBuilderOptions`):
+`openFilledAsClosed` (on: a filled open path bounds a region as if an invisible edge closed it; off: it cuts regions
+as an unfilled path does), `pickColorFrom` (`artwork`, the default: a merged shape takes the appearance, opacity and
+blending mode of the front-most selected object under the drag's first point, else of the one under its last point,
+else of the front-most selected object; `swatches`: the current fill, and the Left and Right arrow keys step the
+current fill through the document's color swatches), `cursorSwatchPreview` (off; with `swatches`, chips above the
+pointer show the current fill and the swatches before and after it), `selection` (`freeform`, the default, or
+`straightLine`: a drag touches what the line from its first point to the pointer crosses), `highlightFill` (on by
+default; when it is off, merge mode shades no regions), `gapDetection` (off) with `gapLength` (pt, 0 to 72; 3), `clickStrokeSplitsPath` (In Merge Mode,
+Clicking Stroke Splits the Path; off), `highlightStroke` (Highlight Stroke When Editable; on) and `highlightColor`
+(`#rrggbb` or a layer color's name; `#ff4f4f`, the layer color Red). With `clickStrokeSplitsPath` on, in merge mode,
+the pointer shows scissors within 4 screen pixels of a stroke, `highlightStroke` draws the run of stroke under it in
+`highlightColor`, and a click splits that run off its path: the run goes from the anchor or crossing point before the
+pointer to the one after it, the path keeps the rest of it, and a copy of the path with the run, in the path's
+direction, goes directly above it. Both keep the path's gradients where they were on it.
+A lone rectangle's side is such a run. A lone line is a run that is all of its path, and a run that would leave 0.05 pt
+or less of its path (a ten-thousandth of the larger side of a path over 500 pt) counts as all of it, so the pointer
+shows no scissors over it and a click on it does not split it. A release up to 3 screen pixels from the press is a
+click when the pointer went no farther during the drag.
+With `pickColorFrom` `swatches`, the run takes the current fill as its stroke. The tool sends `openFilledAsClosed`,
+`pickColorFrom`, the gap length (`gap`, 0 with Gap Detection off) and, for such a click, `splitStroke: true` with
+`shapeBuilder.merge`, which takes them all as params, and `shapeBuilder.regions` takes `openFilledAsClosed` and `gap`.
+`shapeBuilder.merge` with `splitStroke` returns the run's id as `split`.
+
+```json
+{"name":"run_command","arguments":{"command":"tool.setOption","params":{"tool":"shapeBuilder","values":{"selection":"straightLine","pickColorFrom":"swatches"}}}}
+{"name":"run_command","arguments":{"command":"shapeBuilder.merge","params":{"points":[[50,-1]],"splitStroke":true}}}
+```
+
+With Shift held at the press, a Shape Builder drag draws a rectangular marquee from where the drag started to the
+pointer, and the Selection option does not apply to it. The regions the marquee reaches are shaded while it is drawn
+and merge into one shape on release; with Alt also held at the press, they are deleted. The marquee reaches a region
+when the region's outline crosses the rectangle or has an anchor inside it, or when the region holds the whole
+rectangle. The tool sends the marquee to `shapeBuilder.merge` as `rect: [x, y, width, height]` in place of `points`:
+`x` and `y` are where the drag started, and the width and height are negative for a drag up or to the left. For Pick
+Color From Artwork, the corner where the drag started counts as the drag's first point, and the opposite corner counts
+as its last: the merged shape takes the look of the front-most selected object under the first corner, else of the one
+under the opposite corner, else of the front-most selected object. A Shift-click that does not move sends `points`
+as a click does, so with `clickStrokeSplitsPath` on, a Shift-click on a stroke splits it. A marquee splits no stroke,
+however little the pointer moves: the tool sends no `splitStroke` with `rect`, and `shapeBuilder.merge` does not split
+a stroke when it has `rect`. With both `rect` and `points`, the command also touches what the points touch.
+
+```json
+{"name":"run_command","arguments":{"command":"shapeBuilder.merge","params":{"rect":[50,50,200,200]}}}
 ```
 
 ## Perspective grid
@@ -4191,6 +4875,17 @@ stroke at once, so the journal entry replays it exactly.
 {"name":"pointer_gesture","arguments":{"tool":"twirl","events":[{"kind":"down","x":300,"y":200,"holdMs":800},{"kind":"up","x":300,"y":200}]}}
 ```
 
+The Liquify, Puppet Warp and perspective commands refuse a string or another value that is not a number with
+`` `diameter` must be a number, not "40" ``, naming the key, and leave the document and its undo history as they
+were: `diameter`, `width`, `height`, `angle`, `intensity`, `detail`, `simplify`, `rate`, `complexity`, `horizontal`
+and `vertical` in `object.liquify`, with any `tool`; `expand` in `object.puppetWarp` and `object.puppetWarp.pins`;
+`depth` in `perspective.transform`; `dx` and `dy` in `perspective.nudge`; and `offset` and `by` in
+`perspective.plane.move`. A null is read as a key left out. `object.puppetWarp` refuses an `angles` entry that is not
+a number or null with "angles must be a list as long as pins (degrees or null)", `perspective.draw` refuses an `at`
+that is not two numbers, such as `["450", 380]`, with "`at` must be [x, y]", and `stroke.widthProfile.set` refuses a
+point that is not three numbers, such as `[0.5, "1", 2, 2]`, with "points must be [t, left, right] with non-negative
+widths".
+
 ## Perspective Selection
 
 Objects in perspective keep their attachment themselves (`perspective` on the object: `plane` and `depth`, the
@@ -4208,6 +4903,14 @@ copies). Object › Transform › Transform Again repeats the last perspective m
 {"name":"run_command","arguments":{"command":"perspective.transform","params":{"matrix":[1.5,0,0,1.5,0,0],"copy":true}}}
 {"name":"run_command","arguments":{"command":"object.transformAgain","params":{}}}
 ```
+
+The perspective, width point, Liquify and Puppet Warp commands refuse a string, a number or another value that is not
+true or false with `` `copy` must be true or false ``, naming the key, and leave the document and its undo history as
+they were: `copy`, `perpendicular` and `snap` in `perspective.move`; `copy` in `perspective.transform`; `big` and
+`copy` in `perspective.nudge`; `snap` in `perspective.draw`; `reproject` in `perspective.grid.set`; `visible` in
+`perspective.grid.show`; `adjustAdjoining` in `stroke.widthPoint.set`; `usePressure`, `simplifyOn`, `affectAnchors`,
+`affectIn` and `affectOut` in `object.liquify`, with any `tool`; and `rest` in `object.puppetWarp`. A null is read as
+a key left out.
 
 Planes move along their normals: `perspective.plane.move {plane, offset | by, objects}` (`leftOffset`,
 `rightOffset`, `groundOffset` in the grid). The plane widgets (a diamond on each plane, drawn while the grid shows)
@@ -4288,8 +4991,12 @@ between them by length; on a closed path the gaps run all the way round. The att
 object is turned to the path's direction there. An object rotated by other than a multiple of 90° is first turned to
 the nearest multiple. `rotate` tilts every object by that many degrees counter-clockwise. Without `path`, the command
 chooses the Objects on Path tool (`objectsOnPath`), whose click on a path sends `{path}`. As the path, the command
-refuses a guide, a compound path, type, a path without length and a path already in an Objects on Path group. As
-objects, it refuses graphs, layers and objects already in an Objects on Path group.
+refuses a guide, a compound path, type, a path without length, a path already in an Objects on Path group, a
+clipping path, and a path inside a compound path, blend, envelope, repeat or Intertwine group. As objects, it skips
+layers and refuses graphs, objects already in an Objects on Path group, clipping paths, and objects inside a blend,
+envelope, repeat or Intertwine group; a member of a compound path attaches as its whole compound path. The tool
+does not highlight a clipping path or a path inside a blend, envelope, repeat or Intertwine group, and a click on one
+attaches nothing.
 
 The group stays live: after every edit its objects go back on its path. Editing the path moves them, an object moved
 on its own goes back to its place, an object moved into the group (`layer.move` with `place: "inside"`) joins the end
@@ -4314,7 +5021,9 @@ when it is Single-line). Every-line, the default, picks the breaks of the whole 
 justified text gets even word spacing, ragged text (left, centre or right aligned) an even rag, so it may move a word
 that fits to the next line to avoid a lone short word on the last line or a full line next to a short one.
 Single-line fills each line as far as it goes. Point type and type on a path have no line width, so both composers
-give the same result there; paragraphs that mix type sizes fall back to Single-line.
+give the same result there. A paragraph whose characters differ in line metrics (type size, font, leading or vertical
+scale, or an inline graphic taller than the text) is composed with Every-line in rectangular area type, rows and
+columns included; in area type of another shape, or with text wrap, it falls back to Single-line.
 
 ```json
 {"name":"run_command","arguments":{"command":"text.setFormat","params":{"ids":[7],"composer":"singleLine"}}}

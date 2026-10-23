@@ -40,6 +40,7 @@ mod unpack;
 use std::borrow::Cow;
 use std::collections::{BTreeMap, HashSet};
 use std::io::{Read as _, Write};
+use std::sync::Arc;
 
 use serde::{Deserialize, Serialize};
 use vectorcraft_doc::{Document, ImageBlob};
@@ -161,6 +162,13 @@ fn is_packed(mime: &str) -> bool {
 /// The MIME type of a preview's bytes (JPEG or PNG).
 fn preview_mime(bytes: &[u8]) -> &'static str {
     if bytes.starts_with(&[0xff, 0xd8]) { "image/jpeg" } else { vectorcraft_doc::links::PROXY_MIME }
+}
+
+/// The JSON of a native file without the data after it (version 4 keeps images there): a
+/// complete JSON value whose `images` give each image's MIME type and where its data was, without
+/// the data.
+pub fn json_part(file: &[u8]) -> &[u8] {
+    split_tail(file).0
 }
 
 /// The JSON of a file and the data after it (v4), split at [`BLOB_MAGIC`] after the first JSON
@@ -527,15 +535,20 @@ pub fn load_file(bytes: &[u8]) -> Result<NativeFile, FormatError> {
     }
     // The bytes after the JSON, read in one pass: the images' first, then the profiles'.
     let entries: Vec<[u64; 2]> = f.images.values().chain(f.profiles.values()).filter_map(|i| i.blob).collect();
-    let mut tail = file.entries(&entries)?.into_iter();
+    let tail = file.entries(&entries)?;
+    // Entries naming the same bytes share them; a profile's own copy of shared bytes counts
+    // against the data's size, so copies never add up to more than the file has (#3574).
+    let mut distinct = HashSet::new();
+    let mut spare: u64 = tail.iter().flatten().filter(|b| distinct.insert(Arc::as_ptr(b))).map(|b| b.len() as u64).sum();
+    let mut tail = tail.into_iter();
     let mut bytes_of = |img: &Image| match img.blob {
         Some(_) => tail.next().flatten(),
-        None => img.inline(),
+        None => img.inline().map(Arc::new),
     };
     let mut doc = f.document;
     for (k, img) in f.images {
         let bytes = bytes_of(&img).ok_or_else(|| FormatError::BadImage(k.clone()))?;
-        let mut blob = ImageBlob::new(img.mime, bytes);
+        let mut blob = ImageBlob { mime: img.mime, bytes, proxy: None };
         // Until the linked file is read, the preview stands in for it.
         if img.proxy {
             blob.proxy = Some(blob.bytes.clone());
@@ -560,13 +573,26 @@ pub fn load_file(bytes: &[u8]) -> Result<NativeFile, FormatError> {
     // Untrusted: the type's sizes, leading, baseline shifts and scales, its indents and paragraph
     // spacing, and its tab stops, each within its range (after the depth limit: the walk recurses).
     doc.keep_type_values_in_range();
+    // Untrusted: ruby ranges over the type's text, clamped to it (after the depth limit too).
+    doc.fix_ruby();
     // Untrusted: the raster effects resolution, within 1 to 2400 ppi (72 when it isn't finite).
     doc.raster_effects_ppi = Some(doc.raster_effects_ppi).filter(|v| v.is_finite()).unwrap_or(72.0).clamp(1.0, 2400.0);
     // Untrusted: the superscript, subscript and small caps proportions of the type, the graph
     // labels and the character styles, within the ranges `document.setup` takes (after the depth
     // limit: the walk recurses).
     doc.keep_scripts_in_range();
-    let profiles = f.profiles.into_iter().filter_map(|(name, icc)| Some((name, bytes_of(&icc)?))).collect();
+    let profiles = f
+        .profiles
+        .into_iter()
+        .filter_map(|(name, icc)| Some((name, bytes_of(&icc)?)))
+        .map(|(name, icc)| match Arc::try_unwrap(icc) {
+            Ok(icc) => Ok((name, icc)),
+            Err(icc) => {
+                spare = spare.checked_sub(icc.len() as u64).ok_or(FormatError::TooBig)?;
+                Ok((name, icc.to_vec()))
+            }
+        })
+        .collect::<Result<_, FormatError>>()?;
     Ok(NativeFile { doc, depth_notes, info: FileInfo { version: f.version, legacy: f.format == LEGACY_EXTENSION }, profiles })
 }
 
@@ -584,7 +610,7 @@ fn head_member(bytes: &[u8], pick: impl FnOnce(Head) -> Option<Image>) -> Option
     let head: Head = serde_json::from_slice(file.json()).ok()?;
     let img = pick(head)?;
     match img.blob {
-        Some(at) => file.entries(&[at]).ok()?.pop().flatten(),
+        Some(at) => file.entries(&[at]).ok()?.pop().flatten().map(Arc::unwrap_or_clone),
         None => img.inline(),
     }
 }

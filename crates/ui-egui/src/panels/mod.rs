@@ -382,6 +382,12 @@ pub(crate) fn proxy(app: &mut VectorcraftApp, ui: &mut Ui, size: f32) {
     if let Some(stroke) = c.pick {
         app.run("ui.colorPicker", json!({ "stroke": stroke })).ok();
     }
+    if let Some(p) = c.dropped_fill {
+        app.run("paint.setFill", p).ok();
+    }
+    if let Some(p) = c.dropped_stroke {
+        app.run("paint.setStroke", p).ok();
+    }
 }
 
 /// The Fill (or `stroke`) chip of the Control bar and the Properties panel, `size` square (with a
@@ -505,6 +511,16 @@ pub(crate) fn paint_params(p: &Paint) -> Value {
     }
 }
 
+/// [`paint_params`] for a swatch made from paint the app shows: a color and a gradient's stops
+/// and points keep their color models (`keepModel`), in a CMYK document too.
+pub(crate) fn swatch_paint_params(p: &Paint) -> Value {
+    let mut v = paint_params(p);
+    if matches!(p, Paint::Solid { swatch: None, .. } | Paint::Gradient(_)) {
+        v["keepModel"] = json!(true);
+    }
+    v
+}
+
 /// Egui colour of a document colour.
 pub(crate) fn c32(c: &Color) -> egui::Color32 {
     let [r, g, b, _] = c.to_rgba8(1.0);
@@ -527,6 +543,43 @@ pub(crate) fn empty_state(ui: &mut Ui, icon: &str, title: &str, body: &str) {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn dropping_a_proxy_paint_on_the_other_proxy_applies_it() {
+        use egui::{Event, Modifiers, PointerButton};
+        use vectorcraft_color::{Color, Paint};
+
+        use crate::widgets::PanelDrag;
+
+        let mut app = crate::VectorcraftApp::new(vectorcraft_engine::Session::new(), Default::default());
+        app.run("file.new", json!({"width": 200, "height": 200})).unwrap();
+        app.run("shape.rectangle", json!({"x": 10, "y": 10, "width": 40, "height": 40})).unwrap();
+        app.run("paint.setFill", json!({"color": "#ff0000"})).unwrap();
+        app.run("paint.setStroke", json!({"color": "#0000ff"})).unwrap();
+        let ctx = egui::Context::default();
+        let stroke_at = std::cell::Cell::new(egui::Pos2::ZERO);
+        let frame = |app: &mut crate::VectorcraftApp, events: Vec<Event>| {
+            let mut out = ctx.run_ui(egui::RawInput { events, ..Default::default() }, |ui| {
+                proxy(app, ui, 36.0);
+                if let Some(c) = ctx.read_response(ui.id().with("stroke-proxy")).map(|r| r.rect.center()) {
+                    stroke_at.set(c);
+                }
+            });
+            out.textures_delta.clear();
+        };
+        frame(&mut app, vec![]);
+        let at = stroke_at.get();
+        let red = PanelDrag::paint(Paint::solid(Color::from_hex("#ff0000").unwrap()));
+        egui::DragAndDrop::set_payload(&ctx, red);
+        let release = Event::PointerButton { pos: at, button: PointerButton::Primary, pressed: false, modifiers: Modifiers::NONE };
+        frame(&mut app, vec![Event::PointerMoved(at), release]);
+        let stroke = app.session.shown_stroke().unwrap();
+        assert_eq!(stroke.paint.color().map(|c| c.to_hex()), Some("#ff0000".into()), "{}", app.ui.status);
+        let st = app.session.active().unwrap();
+        let id = st.selection.objects[0];
+        assert_eq!(st.doc.node(id).unwrap().appearance.fill_paint().color().map(|c| c.to_hex()), Some("#ff0000".into()));
+        assert!(egui::DragAndDrop::payload::<PanelDrag>(&ctx).is_none());
+    }
 
     #[test]
     fn paint_params_roundtrip_shapes() {
@@ -571,5 +624,7 @@ mod tests_strokedepth;
 mod tests_strokeux;
 #[cfg(test)]
 mod tests_style_libraries;
+#[cfg(test)]
+mod tests_symbol_libraries;
 #[cfg(test)]
 mod tests_units;

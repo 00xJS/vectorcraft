@@ -13,6 +13,10 @@ use skrifa::raw::FileRef;
 use skrifa::string::StringId;
 use skrifa::{GlyphId, MetadataProvider, Tag};
 
+use crate::GlyphImage;
+use crate::colr::ColourContent;
+use vectorcraft_doc::color::Color;
+
 /// The family used when a requested family is unknown (Illustrator's Myriad Pro analogue).
 pub const FALLBACK_FAMILY: &str = "Source Sans 3";
 
@@ -132,6 +136,12 @@ pub struct FontFace {
     ideographic_centre: std::sync::OnceLock<f64>,
     /// [`Self::icf_margins`], read once.
     icf_margins: std::sync::OnceLock<IcfMargins>,
+    /// Has `sbix` or `CBDT` strikes: colour bitmap glyphs ([`FontDb::glyph_image`]).
+    colour_bitmaps: bool,
+    /// Has `COLR` colour glyphs ([`FontDb::glyph_colour`]).
+    colour_layers: bool,
+    /// Has an `SVG ` table: OpenType SVG glyphs ([`FontDb::glyph_colour`]).
+    svg_glyphs: bool,
 }
 
 /// Where the ideographic character face (ICF) lies inside the ideographic em box: its distance
@@ -215,6 +225,11 @@ impl FontFace {
     /// (ascent, descent) in font units, both positive.
     pub fn vertical_metrics(&self) -> (f64, f64) {
         (self.ascent, self.descent)
+    }
+    /// The line gap the font asks for between lines, in font units (from the same table as
+    /// [`vertical_metrics`](Self::vertical_metrics); 0 when it has none).
+    pub fn line_gap(&self) -> f64 {
+        self.skrifa().map_or(0.0, |f| f64::from(f.metrics(Size::unscaled(), self.location()).leading)).max(0.0)
     }
     /// Every mapped character and its glyph id, sorted by code point (the Glyphs panel).
     pub fn chars(&self) -> Vec<(char, u32)> {
@@ -379,7 +394,7 @@ struct CatalogFamily {
     /// Non-English family name from the name table, when the scan found one.
     native: Option<String>,
     faces: Vec<CatalogFace>,
-    /// The family's kind (from its first face found).
+    /// The family's kind (from its first face found); variable when any face found is.
     traits: Option<FontTraits>,
 }
 
@@ -405,10 +420,77 @@ type PostScriptNames = HashMap<String, (String, String)>;
 /// are neither a loaded nor an installed family.
 type CanonicalNames = HashMap<(String, String), (String, String)>;
 
+/// [`FontDb::glyph_image`]'s answers by face and glyph.
+type GlyphImages = GlyphCache<(u32, u32), Arc<GlyphImage>>;
+/// [`FontDb::glyph_colour`]'s answers by face and glyph, and the text's fill and stroke colours for
+/// glyphs that paint with them.
+type GlyphColours = GlyphCache<(u32, u32, Option<TextColours>), ColourContent>;
+/// The text's fill and stroke colours, as a cache key.
+type TextColours = ([u8; 4], Option<[u8; 4]>);
+
+/// What a glyph's colour content (an image, layers) takes of memory, in bytes.
+trait Weight {
+    fn bytes(&self) -> usize;
+}
+
+impl Weight for Arc<GlyphImage> {
+    fn bytes(&self) -> usize {
+        self.blob.bytes.len()
+    }
+}
+
+impl Weight for ColourContent {
+    fn bytes(&self) -> usize {
+        match self {
+            ColourContent::Image(i) => i.bytes(),
+            // Roughly what a path node with its outline and fill takes.
+            ColourContent::Art(art) => {
+                let mut nodes = 0;
+                art.walk(&mut |_| nodes += 1);
+                nodes * 512
+            }
+        }
+    }
+}
+
+/// The colour content of glyphs ([`FontDb::glyph_image`], [`FontDb::glyph_colour`]) kept by
+/// face, glyph and what else it depends on, and its bytes in all.
+struct GlyphCache<K, V> {
+    kept: HashMap<K, Option<V>>,
+    bytes: usize,
+}
+
+impl<K, V> Default for GlyphCache<K, V> {
+    fn default() -> Self {
+        Self { kept: HashMap::new(), bytes: 0 }
+    }
+}
+
+impl<K: std::hash::Hash + Eq, V: Weight> GlyphCache<K, V> {
+    /// Keeps `value` (or that there is none), first letting go of all it keeps when that would
+    /// take more than [`IMAGE_CACHE_MAX`] glyphs or [`IMAGE_CACHE_BYTES`]. A glyph it keeps
+    /// already, which another thread looked up meanwhile, stays as it is.
+    fn keep(&mut self, key: K, value: Option<V>) {
+        if self.kept.contains_key(&key) {
+            return;
+        }
+        let bytes = value.as_ref().map_or(0, Weight::bytes);
+        if self.kept.len() >= IMAGE_CACHE_MAX || self.bytes.saturating_add(bytes) > IMAGE_CACHE_BYTES {
+            self.kept.clear();
+            self.bytes = 0;
+        }
+        self.bytes += bytes;
+        self.kept.insert(key, value);
+    }
+}
+
 /// Process-wide font database.
 pub struct FontDb {
     faces: RwLock<Vec<Arc<FontFace>>>,
     outlines: Mutex<HashMap<(u32, u32), Arc<BezPath>>>,
+    /// [`FontDb::glyph_image`]'s answers per (face, glyph), misses too.
+    images: Mutex<GlyphImages>,
+    colours: Mutex<GlyphColours>,
     catalog: RwLock<Catalog>,
     /// The installed faces by PostScript name (documents name fonts so: PDF, EPS, .ai).
     postscript: RwLock<PostScriptNames>,
@@ -545,6 +627,10 @@ const SYSTEM_FALLBACKS: &[&str] = &[
 
 static NEXT_ID: AtomicU32 = AtomicU32::new(1);
 const OUTLINE_CACHE_MAX: usize = 50_000;
+/// The most glyph images [`FontDb::glyph_image`] keeps (each a PNG of some 10–60 KB).
+const IMAGE_CACHE_MAX: usize = 4_096;
+/// The most PNG bytes it keeps: a font can make each one up to [`crate::bitmap::MAX_PNG_BYTES`].
+const IMAGE_CACHE_BYTES: usize = 64 << 20;
 /// How many answers [`FontDb::canonical`] keeps at most. When it has kept that many, it clears
 /// them before it keeps the next one.
 const CANONICAL_CACHE_MAX: usize = 4_096;
@@ -668,17 +754,21 @@ impl FontClass {
         [FontClass::Serif, FontClass::Sans, FontClass::Rounded, FontClass::Script, FontClass::Monospaced, FontClass::Decorative];
 }
 
-/// What a font menu filters on: whether a family sets Japanese or Thai, and its kind.
+/// What a font menu filters on: whether a family sets Japanese or Thai, its kind, and whether it
+/// is a variable font.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub struct FontTraits {
     pub japanese: bool,
     /// Its character map has Thai (ก and า).
     pub thai: bool,
     pub class: FontClass,
+    /// The face has variation axes (an `fvar` table of at most 64 axes); for a family, one of
+    /// its faces has.
+    pub variable: bool,
 }
 
 impl FontTraits {
-    /// From a face's OS/2 table (when it has one) and names.
+    /// From a face's OS/2 and `fvar` tables (when it has them) and names.
     fn of(font: &skrifa::FontRef<'_>, keys: &FaceKeys) -> Self {
         use skrifa::raw::TableProvider;
         let os2 = font.os2().ok();
@@ -789,7 +879,8 @@ impl FontTraits {
         } else {
             FontClass::Other
         };
-        FontTraits { japanese, thai, class }
+        let variable = (1..=MAX_AXES).contains(&font.axes().len());
+        FontTraits { japanese, thai, class, variable }
     }
 }
 
@@ -997,12 +1088,15 @@ fn named_instances(
     (out, renamed)
 }
 
+/// The most faces read from a (possibly damaged) collection.
+const MAX_FACES: u32 = 256;
+
 /// Parse every face in `data` (a font file or collection) and the named instances of its variable
 /// ones. Returns each style with the index of its face.
 fn enumerate_faces(data: &[u8]) -> Vec<(u32, FaceStyle)> {
     let count = match FileRef::new(data) {
         Ok(FileRef::Font(_)) => 1,
-        Ok(FileRef::Collection(c)) => c.len(),
+        Ok(FileRef::Collection(c)) => c.len().min(MAX_FACES),
         Err(_) => 0,
     };
     (0..count)
@@ -1021,10 +1115,11 @@ fn font_files(path: &Path) -> Vec<Vec<u8>> {
     std::fs::read(path).into_iter().collect()
 }
 
-/// The tables holding outlines the font engine draws: TrueType, CFF, CFF2 and VARC. A face with
-/// none of them (outlines in Apple's `hvgl` table, bitmaps only) draws nothing.
+/// The tables holding glyphs the font engine draws: TrueType, CFF, CFF2 and VARC outlines, and
+/// `sbix` and `CBDT` colour bitmaps. A face with none of them (outlines in Apple's `hvgl` table,
+/// monochrome bitmaps only) draws nothing.
 #[cfg(not(target_arch = "wasm32"))]
-const OUTLINE_TABLES: [&[u8; 4]; 4] = [b"glyf", b"CFF ", b"CFF2", b"VARC"];
+const OUTLINE_TABLES: [&[u8; 4]; 6] = [b"glyf", b"CFF ", b"CFF2", b"VARC", b"sbix", b"CBDT"];
 
 /// The styles of every face in the font file at `path` ([`face_styles`]), reading only its table
 /// directories and `name`, `fvar` and `OS/2` tables: a scan opens hundreds of font files, many of
@@ -1032,8 +1127,6 @@ const OUTLINE_TABLES: [&[u8; 4]; 4] = [b"glyf", b"CFF ", b"CFF2", b"VARC"];
 /// are left out.
 #[cfg(not(target_arch = "wasm32"))]
 fn file_face_names(path: &Path) -> Vec<FaceStyle> {
-    /// The most faces read from a (possibly damaged) collection.
-    const MAX_FACES: u32 = 256;
     file_face_names_within(path, MAX_FACES, u64::MAX)
 }
 
@@ -1512,6 +1605,9 @@ fn make_face(bytes: FontBytes, index: u32, spec: FaceStyle, path: Option<std::pa
     };
     let underline = decoration(m.underline, (-0.075 * upem, 0.05 * upem));
     let strikeout = decoration(m.strikeout, (x_height * 0.5 + 0.025 * upem, 0.05 * upem));
+    let colour_bitmaps = crate::bitmap::has_colour_bitmaps(&f);
+    let colour_layers = crate::colr::has_colour_layers(&f);
+    let svg_glyphs = crate::svg_glyph::has_svg_glyphs(&f);
     Some(FontFace {
         keys,
         traits,
@@ -1538,6 +1634,9 @@ fn make_face(bytes: FontBytes, index: u32, spec: FaceStyle, path: Option<std::pa
         path,
         ideographic_centre: std::sync::OnceLock::new(),
         icf_margins: std::sync::OnceLock::new(),
+        colour_bitmaps,
+        colour_layers,
+        svg_glyphs,
     })
 }
 
@@ -1641,6 +1740,8 @@ impl FontDb {
         Self {
             faces: RwLock::new(faces),
             outlines: Mutex::new(HashMap::new()),
+            images: Mutex::new(GlyphCache::default()),
+            colours: Mutex::new(GlyphCache::default()),
             catalog: RwLock::new(Catalog::new()),
             postscript: RwLock::new(PostScriptNames::new()),
             font_paths,
@@ -1911,7 +2012,8 @@ impl FontDb {
                     postscript.insert(ps.clone(), (family.clone(), style.clone()));
                 }
                 let entry = catalog.entry(family.to_ascii_lowercase()).or_default();
-                entry.traits.get_or_insert(traits);
+                let kind = entry.traits.get_or_insert(traits);
+                kind.variable |= traits.variable;
                 if entry.name.is_empty() {
                     entry.name = family;
                 }
@@ -1989,6 +2091,20 @@ impl FontDb {
             found.extend(v.iter().cloned());
         }
         let ns = norm(style);
+        // A family and style split from a PostScript name by an importer that didn't have the font
+        // (`Honoka-Mincho` → Honoka, Mincho): once it is installed, the face of that PostScript
+        // name, which is its own family and style (ほのか明朝, Regular).
+        if found.is_empty() && !ns.is_empty() {
+            let joined = format!("{key}{ns}");
+            let face = |a: &Alias| a.paired.is_none() && a.style.is_some();
+            let ps =
+                self.read_faces().iter().flat_map(|f| Alias::of(&f.family, &f.style, &f.keys)).find(|(k, a)| *k == joined && face(a)).map(|(_, a)| a);
+            let ps =
+                ps.or_else(|| self.aliases.read().unwrap_or_else(|e| e.into_inner()).get(&joined).and_then(|v| v.iter().find(|a| face(a)).cloned()));
+            if let Some(a) = ps {
+                return (a.family, a.style.unwrap_or_else(|| style.to_string()));
+            }
+        }
         // A family name keeps the style asked for; a legacy pair names its face; a full or
         // PostScript name its face whatever style is asked for.
         if let Some(a) = found.iter().find(|a| a.style.is_none()) {
@@ -2004,12 +2120,24 @@ impl FontDb {
     }
 
     /// The kind of `family` (whether it sets Japanese, its class), for font menu filters: from a
-    /// loaded face, else from the system font scan. Cheap: no font file is read.
+    /// loaded face, else from the system font scan. Variable when any of its faces, loaded or
+    /// scanned, is: a family may install static files beside a variable one. Cheap: no font file
+    /// is read, and a loaded family doesn't start the scan.
     pub fn family_traits(&self, family: &str) -> FontTraits {
-        if let Some(f) = self.read_faces().iter().find(|f| f.family.eq_ignore_ascii_case(family)) {
-            return f.traits;
+        let loaded = {
+            let faces = self.read_faces();
+            let mut of_family = faces.iter().filter(|f| f.family.eq_ignore_ascii_case(family));
+            of_family.next().map(|first| FontTraits { variable: first.traits.variable || of_family.any(|f| f.traits.variable), ..first.traits })
+        };
+        let scanned = |catalog: &Catalog| catalog.get(&family.to_ascii_lowercase()).and_then(|c| c.traits);
+        match loaded {
+            None => scanned(&self.read_catalog()).unwrap_or_default(),
+            Some(traits) if traits.variable => traits,
+            Some(traits) => {
+                let variable = scanned(&self.catalog.read().unwrap_or_else(|e| e.into_inner())).is_some_and(|t| t.variable);
+                FontTraits { variable, ..traits }
+            }
         }
-        self.read_catalog().get(&family.to_ascii_lowercase()).and_then(|c| c.traits).unwrap_or_default()
     }
 
     /// [`face`](Self::face) by any of the family's names ([`canonical`](Self::canonical)), and how
@@ -2409,9 +2537,69 @@ impl FontDb {
         cache.insert(key, p.clone());
         p
     }
+
+    /// Glyph `gid`'s colour bitmap (`sbix`, `CBDT`) in `face`, cached per (face, glyph).
+    pub fn glyph_image(&self, face: &FontFace, gid: u32) -> Option<Arc<GlyphImage>> {
+        if !face.colour_bitmaps {
+            return None;
+        }
+        let key = (face.id, gid);
+        if let Some(i) = self.images.lock().unwrap_or_else(|e| e.into_inner()).kept.get(&key) {
+            return i.clone();
+        }
+        let image = face.skrifa().and_then(|f| crate::bitmap::glyph_image(&f, face.upem, gid)).map(Arc::new);
+        self.images.lock().unwrap_or_else(|e| e.into_inner()).keep(key, image.clone());
+        image
+    }
+
+    /// Is glyph `gid` of face `face_id` drawn from its SVG document (it has one, and no COLR
+    /// layers, which come first)? Writers that draw a font's own glyphs can draw COLR and bitmap
+    /// glyphs, not always SVG ones.
+    pub fn is_svg_glyph(&self, face_id: u32, gid: u32) -> bool {
+        let Some(face) = self.face_by_id(face_id) else { return false };
+        face.skrifa().is_some_and(|f| svg_drawn(&face, &f, gid) && crate::svg_glyph::has_document(&f, gid))
+    }
+
+    /// Glyph `gid`'s colour content in `face`, from its COLR layers or else its SVG document, in
+    /// the text's `foreground` (fill) and `stroke` colours where it uses them; cached per (face,
+    /// glyph), and per text colours for the glyphs that paint with them.
+    pub(crate) fn glyph_colour(&self, face: &FontFace, gid: u32, foreground: Color, stroke: Option<Color>) -> Option<ColourContent> {
+        if !face.colour_layers && !face.svg_glyphs {
+            return None;
+        }
+        let f = face.skrifa()?;
+        // COLR first; SVG for glyphs without COLR layers (those whose layers don't read keep their
+        // outlines, as in fonts without SVG).
+        let svg = svg_drawn(face, &f, gid);
+        // Kept without colours, or by the text's colours it uses: the fill, and for SVG art the
+        // stroke too.
+        let coloured = Some((foreground.to_rgba8(1.0), stroke.filter(|_| svg).map(|c| c.to_rgba8(1.0))));
+        {
+            let cache = self.colours.lock().unwrap_or_else(|e| e.into_inner());
+            if let Some(c) = [None, coloured].iter().find_map(|k| cache.kept.get(&(face.id, gid, *k))) {
+                return c.clone();
+            }
+        }
+        let (content, used) = if svg {
+            let (art, used) = crate::svg_glyph::svg_glyph(&f, gid, face.upem, foreground, stroke);
+            (art.map(ColourContent::Art), used)
+        } else {
+            crate::colr::colour_glyph(&f, face.location(), face.upem, gid, foreground)
+        };
+        let key = (face.id, gid, if used { coloured } else { None });
+        self.colours.lock().unwrap_or_else(|e| e.into_inner()).keep(key, content.clone());
+        content
+    }
 }
 
-struct FlipPen(BezPath);
+/// Is glyph `gid` of `face` (as `font`) drawn from an SVG document, if it has one: the face has
+/// SVG glyphs, and the glyph no COLR layers, which come first.
+fn svg_drawn(face: &FontFace, font: &skrifa::FontRef<'_>, gid: u32) -> bool {
+    face.svg_glyphs && !crate::colr::has_colour_glyph(font, gid)
+}
+
+/// A pen drawing outlines y down, as text space has them.
+pub(crate) struct FlipPen(pub(crate) BezPath);
 
 impl OutlinePen for FlipPen {
     fn move_to(&mut self, x: f32, y: f32) {
@@ -2459,6 +2647,26 @@ mod alias_tests {
         }
         font.extend(head);
         font
+    }
+
+    #[test]
+    fn a_collection_lists_at_most_max_faces() {
+        let mut font = name_font(&[(3, 0x0409, 1, "Fam"), (3, 0x0409, 2, "Regular")]);
+        let n = 1000u32;
+        let base = 12 + 4 * n;
+        let table = u32::from_be_bytes(font[20..24].try_into().unwrap()) + base;
+        font[20..24].copy_from_slice(&table.to_be_bytes());
+        let mut ttc = b"ttcf".to_vec();
+        for v in [0x0001_0000, n] {
+            ttc.extend_from_slice(&u32::to_be_bytes(v));
+        }
+        for _ in 0..n {
+            ttc.extend_from_slice(&base.to_be_bytes());
+        }
+        ttc.extend(font);
+        let faces = enumerate_faces(&ttc);
+        assert!(!faces.is_empty());
+        assert!(faces.len() <= MAX_FACES as usize, "{} faces", faces.len());
     }
 
     fn keys(records: &[(u16, u16, u16, &str)]) -> (String, String, FaceKeys) {
@@ -2538,6 +2746,23 @@ mod alias_tests {
         assert!(db.has_family("SourceSans3-Regular"));
     }
 
+    /// A PDF names a font by PostScript name; when it isn't installed the importer splits the name
+    /// (`Honoka-Mincho` → Honoka, Mincho). Once a font of that PostScript name is installed, under
+    /// a family name of its own (ほのか明朝), the split pair finds it.
+    #[test]
+    fn a_family_and_style_split_from_a_postscript_name_find_its_face() {
+        let db = FontDb::with_font_dirs(vec![]);
+        db.ensure_catalog();
+        // An installed face whose family name shares nothing with its PostScript name.
+        let alias = Alias { family: "Source Sans 3".into(), style: Some("Semibold".into()), paired: None };
+        db.aliases.write().unwrap().insert(norm("Honoka-Mincho"), vec![alias]);
+        db.changed();
+        let m = db.resolve("Honoka", "Mincho").map(|(face, m)| (face.family.clone(), face.style.clone(), m)).unwrap();
+        assert_eq!(m, ("Source Sans 3".into(), "Semibold".into(), FontMatch::Exact));
+        // Unknown names still fall back.
+        assert_eq!(db.resolve("Honoka", "Gothic").unwrap().1, FontMatch::Missing);
+    }
+
     /// The database keeps at most [`CANONICAL_CACHE_MAX`] answers, and names asked for past that
     /// many still get the same answers.
     #[test]
@@ -2568,5 +2793,31 @@ mod race_tests {
         for t in threads {
             assert_eq!(t.join().unwrap().as_deref(), Some("Inter"));
         }
+    }
+}
+
+#[cfg(test)]
+mod image_cache_tests {
+    use super::*;
+
+    #[test]
+    fn the_glyph_image_cache_keeps_its_bytes_within_its_budget() {
+        // Images as large as a font may make them: no test font has enough of those to fill the
+        // budget, so they're made here.
+        let image = || {
+            let blob = vectorcraft_doc::ImageBlob::png(vec![0; crate::bitmap::MAX_PNG_BYTES]);
+            Some(Arc::new(GlyphImage { blob, width: 1, height: 1, xf: kurbo::Affine::IDENTITY }))
+        };
+        let mut cache = GlyphCache::default();
+        for gid in 0..20 {
+            cache.keep((1, gid), image());
+            assert!(cache.bytes <= IMAGE_CACHE_BYTES, "{} bytes after {} images", cache.bytes, gid + 1);
+        }
+        // The same glyph again, as when two threads look it up at once, counts once.
+        cache.keep((1, 19), image());
+        assert_eq!(cache.bytes, cache.kept.values().flatten().map(|i: &Arc<GlyphImage>| i.blob.bytes.len()).sum::<usize>());
+        // A glyph without an image costs nothing, and is still kept.
+        cache.keep((1, 99), None);
+        assert!(cache.kept.contains_key(&(1, 99)));
     }
 }

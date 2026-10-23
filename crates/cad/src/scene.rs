@@ -33,6 +33,9 @@ const WIDE_LINES: &str =
 const STROKE_EXTRAS: &str = "stroke alignment, width profiles, arrowheads and brushes are left out (Maximize Editability writes strokes as lines)";
 const CLIPPING: &str = "clipping masks are not applied: the art they clip is written whole";
 const TYPE_ITEMS: &str = "fills and strokes added to whole type objects are left out of text entities (outline the text to keep them)";
+/// The warning for an image left out because it can't be decoded: the note raster exports give
+/// (`vectorcraft-engine`'s `rasterfx::undecoded_warning`).
+const UNDECODED: &str = "an image couldn't be decoded and is missing from the picture";
 
 /// One segment of a subpath, cubics for every curve.
 #[derive(Clone, Copy)]
@@ -852,17 +855,25 @@ impl<'a> Scene<'a> {
         let angle = b.atan2(a).to_degrees();
         for line in &layout.lines {
             let Some(glyphs) = layout.glyphs.get(line.glyph_start..line.glyph_end) else { continue };
-            for run in glyphs.chunk_by(|x, y| x.run == y.run) {
-                let Some(first) = run.first() else { continue };
+            // A list marker is a TEXT entity of its own, holding the marker's characters where its
+            // characters' glyphs are drawn (not its tab's).
+            let marked: Vec<(usize, &vectorcraft_text::PositionedGlyph, Option<&vectorcraft_text::ListMarker>)> =
+                glyphs.iter().enumerate().map(|(k, g)| (line.glyph_start + k, g, layout.marker_of(line.glyph_start + k))).collect();
+            for chunk in marked.chunk_by(|x, y| x.1.run == y.1.run && x.2.is_some() == y.2.is_some()) {
+                let run: Vec<&vectorcraft_text::PositionedGlyph> =
+                    chunk.iter().filter(|(k, _, m)| m.is_none_or(|m| m.tab != *k)).map(|(_, g, _)| *g).collect();
+                let Some(&first) = run.first() else { continue };
                 let lo = run.iter().map(|g| g.byte).min().unwrap_or(first.byte);
                 let hi = run.iter().map(|g| g.byte + g.len).max().unwrap_or(lo);
-                let Some(s) = plain.get(lo..hi).map(str::trim_end).filter(|s| !s.trim().is_empty()) else { continue };
+                let marker = chunk.first().and_then(|(_, _, m)| *m).map(|m| m.text.as_str());
+                let Some(s) = marker.or_else(|| plain.get(lo..hi).map(str::trim_end)).filter(|s| !s.trim().is_empty()) else { continue };
                 let Some(cs) = t.runs.get(first.run).map(|r| &r.style) else { continue };
                 let paint = if cs.fill.is_none() { &cs.stroke } else { &cs.fill };
                 let Some(rgb) = self.paint_rgb(paint) else { continue };
                 let style = self.style(rgb, 1.0, None, None);
                 let text_style = self.text_style(&cs.font_family);
-                let height = cs.size * cs.v_scale / 100.0 * CAP_HEIGHT * across;
+                // The height is that of the size the layout draws: Shrink Text to Fit scales the size by `layout.fit_scale`.
+                let height = cs.size * layout.fit_scale * cs.v_scale / 100.0 * CAP_HEIGHT * across;
                 let width = if cs.v_scale > 0.0 { cs.h_scale / cs.v_scale } else { 1.0 };
                 let origin = run.iter().map(|g| g.origin).min_by(|p, q| p.x.total_cmp(&q.x)).unwrap_or(first.origin);
                 let p = self.pt(t.xf * origin);
@@ -972,8 +983,8 @@ impl<'a> Scene<'a> {
 
     /// Image `key` as a file in the chosen format, and its size in pixels.
     fn encode_image(&self, key: &str) -> Result<(DxfImage, (u32, u32)), String> {
-        let blob = self.doc.images.get(key).filter(|b| !b.bytes.is_empty()).ok_or_else(|| format!("image '{key}' has no pixels and was left out"))?;
-        let img = image::load_from_memory(&blob.bytes).map_err(|_| format!("image '{key}' could not be decoded and was left out"))?;
+        let blob = self.doc.images.get(key).filter(|b| !b.bytes.is_empty()).ok_or_else(|| "an image has no pixels and was left out".to_string())?;
+        let img = image::load_from_memory(&blob.bytes).map_err(|_| UNDECODED.to_string())?;
         let size = (img.width(), img.height());
         let mut bytes = vec![];
         let written = match self.o.raster {
@@ -991,7 +1002,7 @@ impl<'a> Scene<'a> {
                 rgb.write_with_encoder(image::codecs::jpeg::JpegEncoder::new_with_quality(&mut bytes, 90))
             }
         };
-        written.map_err(|e| format!("image '{key}' could not be written: {e}"))?;
+        written.map_err(|e| format!("an image could not be written: {e}"))?;
         Ok((DxfImage { name: format!("{}.{}", blob.content_key(), self.o.raster.extension()), bytes }, size))
     }
 }

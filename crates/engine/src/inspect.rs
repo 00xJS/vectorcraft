@@ -128,6 +128,30 @@ pub fn document(s: &Session) -> Value {
     document_opts(s, SummaryOpts::default())
 }
 
+/// An artboard's name and rectangle, its background color (`#rrggbb`) when it has one,
+/// `locked: true` when it is locked, `showCenterMark: true`, `showCrossHairs: true` and
+/// `showVideoSafeAreas: true` when it shows them, and `videoRulerPixelAspectRatio` when it isn't 1.
+fn artboard_summary(a: &vectorcraft_doc::Artboard) -> Value {
+    let mut v = json!({"name": a.name, "x": a.rect.x0, "y": a.rect.y0, "width": a.rect.width(), "height": a.rect.height()});
+    if let Some(c) = a.color {
+        v["color"] = json!(c.to_hex());
+    }
+    for (key, on) in [
+        ("locked", a.locked),
+        ("showCenterMark", a.show_center_mark),
+        ("showCrossHairs", a.show_cross_hairs),
+        ("showVideoSafeAreas", a.show_video_safe_areas),
+    ] {
+        if on {
+            v[key] = json!(true);
+        }
+    }
+    if a.video_ruler_pixel_aspect_ratio != 1.0 {
+        v["videoRulerPixelAspectRatio"] = json!(a.video_ruler_pixel_aspect_ratio);
+    }
+    v
+}
+
 /// The same summary with [`SummaryOpts`] applied to the layer tree (artboards and
 /// the rest always come whole): `depth: 0` is the skeleton — top layers with counts.
 pub fn document_opts(s: &Session, opts: SummaryOpts) -> Value {
@@ -239,13 +263,14 @@ fn document_base(s: &Session) -> Value {
     let Some(st) = s.active() else { return Value::Null };
     let d = &st.doc;
     json!({
+        "uid": st.uid,
         "title": st.title(),
         "path": st.path,
         "dirty": st.is_dirty(),
         "revision": st.revision,
         "units": d.units.label(),
         "colorMode": format!("{:?}", d.color_mode),
-        "artboards": d.artboards.iter().map(|a| json!({"name": a.name, "x": a.rect.x0, "y": a.rect.y0, "width": a.rect.width(), "height": a.rect.height()})).collect::<Vec<_>>(),
+        "artboards": d.artboards.iter().map(artboard_summary).collect::<Vec<_>>(),
         "currentLayer": st.active_layer.map(|l| l.0),
         // The rows highlighted in the Layers panel (`layer.setCurrent`, `layer.highlight`).
         "layerRows": st.highlighted_rows().iter().map(|i| i.0).collect::<Vec<_>>(),
@@ -258,6 +283,8 @@ fn document_base(s: &Session) -> Value {
         "target": st.selection.target.map(|t| t.0),
         // The key object Align aligns to and Distribute Spacing spaces from (`select.key`).
         "key": st.selection.key.map(|k| k.0),
+        // The ruler guide that is the key instead (`select.key {guide}`): an index into `guide.list`.
+        "keyGuide": st.selection.key_guide,
         "history": st.history.undo.iter().map(|h| h.label.clone()).collect::<Vec<_>>(),
         "redo": st.history.redo.iter().rev().map(|h| h.label.clone()).collect::<Vec<_>>(),
         "objects": d.node_count(),
@@ -345,8 +372,23 @@ fn name_of<T: PartialEq>(table: &[(T, &'static str)], v: T) -> &'static str {
 /// else the topmost stroke of its own (groups and layers too). None without a stroke.
 pub fn node_stroke(n: &Node) -> Option<StrokeLayer> {
     match &n.kind {
-        NodeKind::Text(t) => Some(t.runs.first().map_or_else(|| vectorcraft_doc::CharStyle::default().stroke_layer(), |r| r.style.stroke_layer())),
+        NodeKind::Text(t) => {
+            let mut st = t.runs.first().map_or_else(|| vectorcraft_doc::CharStyle::default().stroke_layer(), |r| r.style.stroke_layer());
+            // Character strokes are drawn in text space: report the document-space weight.
+            if let Some(k) = vectorcraft_doc::Scaling::factor(t.xf).filter(|k| k.is_finite()) {
+                scale_layer(&mut st, k);
+            }
+            Some(st)
+        }
         _ => n.appearance.stroke().cloned(),
+    }
+}
+
+/// Scale a stroke's weight and dash lengths by `s`.
+pub(crate) fn scale_layer(st: &mut StrokeLayer, s: f64) {
+    st.width *= s;
+    if let Some(d) = &mut st.dash {
+        d.scale(s);
     }
 }
 

@@ -456,6 +456,63 @@ fn type_is_text_or_outlines() {
     }
 }
 
+/// A list paragraph's bullet is a TEXT entity of its own where it is drawn, and the paragraph's
+/// text starts after it, at the left indent.
+#[test]
+fn a_bullet_is_text_of_its_own_before_its_paragraph() {
+    let mut d = text_doc("Item", 20.0);
+    let id = d.layers[0].children().unwrap()[0].id;
+    if let Some(NodeKind::Text(t)) = d.node_mut(id).map(|n| &mut n.kind) {
+        t.para.list = Some(vectorcraft_doc::text::ParaList::bulleted(vectorcraft_doc::text::Bullet::Dot));
+        t.para.left_indent = 18.0;
+        t.para.first_line_indent = -18.0;
+    }
+    let out = export(&d, &DxfOptions { version: DxfVersion::R2018, preserve: Preserve::Editability, ..opts(&d) }).unwrap();
+    let e = entities(&out);
+    assert_eq!(kinds(&out), ["TEXT", "TEXT"]);
+    assert_eq!((get(&e[0], 1), get(&e[1], 1)), (Some("\u{2022}"), Some("Item")));
+    assert_eq!((all(&e[0], 10)[0], all(&e[1], 10)[0]), (10.0, 28.0), "the bullet at the anchor, the text 18 pt on");
+    // In a right-to-left paragraph the bullet is drawn after the text, at the right, and its tab
+    // lies between the two.
+    let mut d = text_doc("שלום", 20.0);
+    let id = d.layers[0].children().unwrap()[0].id;
+    let mut bullet_x = f64::NAN;
+    if let Some(NodeKind::Text(t)) = d.node_mut(id).map(|n| &mut n.kind) {
+        t.para.list = Some(vectorcraft_doc::text::ParaList::bulleted(vectorcraft_doc::text::Bullet::Dot));
+        let lay = vectorcraft_text::layout(vectorcraft_text::FontDb::global(), t);
+        let m = &lay.markers[0];
+        let bullet = m.glyphs.clone().find(|&i| i != m.tab).unwrap();
+        assert!(lay.glyphs[m.tab].origin.x < lay.glyphs[bullet].origin.x, "the tab before the bullet");
+        bullet_x = 10.0 + lay.glyphs[bullet].origin.x;
+    }
+    let out = export(&d, &DxfOptions { version: DxfVersion::R2018, preserve: Preserve::Editability, ..opts(&d) }).unwrap();
+    let e = entities(&out);
+    assert_eq!(kinds(&out), ["TEXT", "TEXT"]);
+    assert_eq!((get(&e[0], 1), get(&e[1], 1)), (Some("שלום"), Some("\u{2022}")));
+    assert!((all(&e[1], 10)[0] - bullet_x).abs() < 1e-6, "the bullet where it is drawn: {} and {bullet_x}", all(&e[1], 10)[0]);
+}
+
+/// Area type that Shrink Text to Fit scales down is written at the height it draws at.
+#[test]
+fn shrunk_area_type_is_text_at_the_size_it_draws_at() {
+    let mut d = text_doc("Plan A, plan B and plan C", 20.0);
+    let id = d.layers[0].children().unwrap()[0].id;
+    let mut fit = 1.0;
+    if let Some(NodeKind::Text(t)) = d.node_mut(id).map(|n| &mut n.kind) {
+        t.kind = vectorcraft_doc::TextKind::Area { frame: shapes::rectangle(Rect::new(0.0, 0.0, 120.0, 30.0)) };
+        t.area.fit = vectorcraft_doc::AreaFit::ShrinkText { min_percent: 10.0 };
+        let lay = vectorcraft_text::layout(vectorcraft_text::FontDb::global(), t);
+        assert!(!lay.overflow && lay.fit_scale < 0.9, "the text is shrunk to fit: {}", lay.fit_scale);
+        fit = lay.fit_scale;
+    }
+    let out = export(&d, &DxfOptions { preserve: Preserve::Editability, ..opts(&d) }).unwrap();
+    let e = entities(&out);
+    assert!(!e.is_empty() && e.iter().all(|e| kind(e) == "TEXT"), "{:?}", kinds(&out));
+    for e in &e {
+        assert!((all(e, 40)[0] - 14.0 * fit).abs() < 1e-6, "the cap height of {} pt type: {:?}", 20.0 * fit, all(e, 40));
+    }
+}
+
 #[test]
 fn text_outside_ascii_is_escaped_before_2007() {
     let d = text_doc("Größe", 12.0);
@@ -503,6 +560,24 @@ fn images_link_png_or_jpeg_files() {
     let r12 = export(&d, &DxfOptions { version: DxfVersion::R12, ..opts(&d) }).unwrap();
     assert!(entities(&r12).is_empty() && r12.images.is_empty());
     assert!(r12.warnings.iter().any(|w| w.contains("no images")));
+}
+
+#[test]
+fn images_without_pixels_are_left_out_with_one_note() {
+    // One image has no data in the document, and the other image's data is empty.
+    let mut d = doc_with(|d| {
+        ["raster-1", "raster-2"]
+            .into_iter()
+            .map(|key| {
+                let im = ImageObject { key: key.into(), width: 4, height: 2, xf: Affine::IDENTITY, link: None, placement: Default::default() };
+                Node::new(d.alloc_id(), NodeKind::Image(Box::new(im)))
+            })
+            .collect()
+    });
+    d.images.insert("raster-2".into(), ImageBlob { mime: "image/png".into(), bytes: Arc::new(vec![]), proxy: None });
+    let out = export(&d, &opts(&d)).unwrap();
+    assert!(entities(&out).is_empty() && out.images.is_empty());
+    assert_eq!(out.warnings, ["an image has no pixels and was left out"]);
 }
 
 #[test]

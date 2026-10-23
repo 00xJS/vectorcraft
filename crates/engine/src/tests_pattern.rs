@@ -504,7 +504,7 @@ fn radial_repeat_wraps_selection() {
     let RepeatKind::Radial { instances, radius, center, .. } = spec.kind else { panic!() };
     assert_eq!((instances, radius), (8, 50.0));
     assert!(close(center, Point::new(200.0, 150.0)));
-    assert_eq!(spec.transforms().len(), 8);
+    assert_eq!(spec.transforms(None).len(), 8);
     assert_eq!(n.kind_label(), "Radial Repeat");
 }
 
@@ -544,7 +544,7 @@ fn radial_instance_transforms_rotate_around_center() {
     sel(&mut s, &[r]);
     let v = s.execute("object.repeat.radial", &json!({"instances": 4, "radius": 50})).unwrap();
     let NodeKind::Repeat(spec) = node(&s, id_of(&v)).kind else { panic!() };
-    let t = spec.transforms();
+    let t = spec.transforms(None);
     let c = Point::new(200.0, 100.0);
     assert!(close(t[0] * c, Point::new(200.0, 100.0)));
     assert!(close(t[1] * c, Point::new(250.0, 150.0)));
@@ -583,7 +583,7 @@ fn object_expand_expands_repeats() {
         sel(&mut s, &[r]);
         let id = id_of(&s.execute(cmd, &opts).unwrap());
         let NodeKind::Repeat(spec) = node(&s, id).kind else { panic!("{cmd}") };
-        let n = spec.expand().len();
+        let n = spec.expand(None).len();
         assert_eq!(s.execute("object.expand.info", &json!({})).unwrap()["object"], json!(true), "{cmd}");
         let undo = s.doc().unwrap().history.undo.len();
         s.execute("object.expand", &json!({"fill": false, "stroke": false})).unwrap();
@@ -632,7 +632,7 @@ fn grid_repeat_and_options() {
     let RepeatKind::Grid { rows, cols, flip_cols, grid_type, .. } = spec.kind else { panic!() };
     assert_eq!((rows, cols, flip_cols), (2, 4, true));
     assert_eq!(grid_type, TileType::BrickByRow { offset: 0.5 });
-    assert_eq!(spec.expand().len(), 8);
+    assert_eq!(spec.expand(None).len(), 8);
 }
 
 #[test]
@@ -788,7 +788,7 @@ fn mirror_axis_drag_previews_once_and_undo_redo_preserve_source() {
     let after = node(&s, id);
     let (NodeKind::Repeat(a), NodeKind::Repeat(b)) = (&before.kind, &after.kind) else { panic!() };
     assert_eq!(a.source, b.source, "moving the mirror axis leaves the source artwork in place");
-    assert_ne!(a.transforms(), b.transforms(), "the reflected copy updates live");
+    assert_ne!(a.transforms(None), b.transforms(None), "the reflected copy updates live");
     s.execute("edit.undo", &json!({})).unwrap();
     assert_eq!(node(&s, id), before);
     s.execute("edit.redo", &json!({})).unwrap();

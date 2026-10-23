@@ -34,6 +34,13 @@
 	Channel 4	Kanal 4
 	Cell Size	Cellstorlek
 	Fine Dots	Fina punkter
+
+	Simple	Enkel
+	Light Rough	Lätt grov
+	Dark Rough	Mörk grov
+	Wide Sharp	Bred skarp
+	Wide Blurry	Bred suddig
+	Sparkle	Glittra
 	Medium Dots	Medelstora punkter
 	Grainy Dots	Korniga punkter
 	Coarse Dots	Grova punkter
@@ -175,6 +182,8 @@
 	Anti-aliased Artwork	Kantutjämnad grafik
 	Anti-aliasing:	Kantutjämning:
 	Any Kind	Alla typer
+	Font Technology	Teckensnittsteknik
+font-technology	Variable	Variabla
 	Appearance	Utseende
 	Appearance Attribute	Utseendeattribut
 	Appearance Item	Utseendeobjekt
@@ -259,6 +268,11 @@
 	Average…	Medelvärde…
 	Axis:	Axel:
 	Background Color:	Bakgrundsfärg:
+	Show Center Mark	Visa mittmarkering
+	Show Cross Hairs	Visa hårkors
+	Show Video Safe Areas	Visa videosäkra områden
+	Video Ruler Pixel Aspect Ratio:	Pixelproportion för videolinjaler:
+	Hide Video Rulers	Dölj videolinjaler
 	Background Contents	Bakgrundsinnehåll
 	Background Contents:	Bakgrundsinnehåll:
 	Background:	Bakgrund:
@@ -296,6 +310,7 @@
 	Blur	Oskärpa
 	Bottom	Nederkant
 	Bottom in Front	Nederkant framför
+	Bottom-Justified Tab	Bottenjusterad tabb
 	Bottom:	Nederkant:
 	Bounds	Gränser
 	Bounds (Fill Proportionally)	Gränser (fyll proportionellt)
@@ -326,6 +341,13 @@
 	Built-in presets don't change: New… starts an editable copy.	Inbyggda förinställningar ändras inte: Ny… skapar en redigerbar kopia.
 	Bulge…	Utbuktning…
 	Bullet	Punkt
+	Bullets	Punkter
+	Bullets and Numbering	Punkter och numrering
+	Apply Bullets	Använd punkter
+	Filled Dot	Fylld punkt
+	Dash	Tankstreck
+	Hollow Circle	Tom cirkel
+	Filled Square	Fylld kvadrat
 	Butt Cap	Rak ände
 	Byte Order:	Byteordning:
 	Calligraphic	Kalligrafisk
@@ -1034,6 +1056,7 @@
 	Eyedropper Picks Up:	Pipetten hämtar:
 	Eyedropper Tool	Pipettverktyg
 	Eyedropper: click the art to sample the stop's colour	Pipett: klicka på grafiken för att hämta stoppets färg
+	Eyedropper: click the art to sample the key color	Pipett: klicka på grafiken för att hämta nyckelfärgen
 	Favorites	Favoriter
 	Feather…	Fjädring…
 	Feet	Fot
@@ -1042,6 +1065,11 @@
 	Fidelity:	Återgivning:
 	Figure Space	Siffermellanrum
 	Figure:	Figur:
+# Artwork drag between document tabs.
+	Drop Artwork	Släpp grafik
+@msg	{key} must be [x, y] with finite coordinates	{key} måste vara [x, y] med ändliga koordinater
+@msg	ids must contain 1–10000 object ids	ids måste innehålla 1–10000 objekt-id:n
+
 	File	Fil
 	File Dimensions	Fildimensioner
 	File Format:	Filformat:
@@ -1177,6 +1205,8 @@
 	Large Gaps	Stora mellanrum
 	Gap Preview Color:	Förhandsgranskningsfärg för mellanrum:
 	Close Gaps With Paths	Stäng mellanrum med banor
+	Show Live Paint Gaps	Visa mellanrum i direktmålning
+	Hide Live Paint Gaps	Dölj mellanrum i direktmålning
 	Select Fills	Markera fyllningar
 	Select Strokes	Markera konturer
 	Gaussian Blur…	Gaussisk oskärpa…
@@ -1283,6 +1313,7 @@
 	Hand-Drawn	Handritad
 	Handles	Handtag
 	Hard Light	Hårt ljus
+	Hard Mix	Hård blandning
 	Harmony Rules:	Harmoniregler:
 	Harmony Sets	Harmoniuppsättningar
 	Height	Höjd
@@ -1331,7 +1362,7 @@
 	Clear History	Rensa historik
 	Set History Limit…	Ange historikgräns…
 	History States	Historiktillstånd
-# History panel: the names of undo steps (`every_undo_label_is_translated`).
+# History panel: the names of undo steps (`untranslated_report` lists any that are missing).
 	Apply Data Set	Använd datauppsättning
 	Cancel Pattern Editing	Avbryt mönsterredigering
 	Copy Appearance	Kopiera utseende
@@ -1496,6 +1527,7 @@
 	Inspect Object	Inspektera objekt
 	Install Plug-in	Installera plugin
 	Install Plug-in…	Installera plugin…
+	Open this setting's help page	Öppna hjälpsidan för den här inställningen
 	Installed plug-in {}	Installerade plugin {}
 	Intensity:	Intensitet:
 	Intent:	Återgivningsmetod:
@@ -1785,6 +1817,9 @@
 	Modified:	Ändrad:
 	Modify	Ändra
 	Mojikumi	Mojikumi
+	Insert Kashidas	Infoga kashidor
+	Long	Lång
+	Stylistic	Stilistisk
 	Mojikumi Set	Mojikumi-uppsättning
 	Kinsoku Set	Kinsoku-uppsättning
 	Hard	Hård
@@ -1819,6 +1854,7 @@
 	Move Slices	Flytta skivor
 	Move Spine Point	Flytta ryggradspunkt
 	Reshape Spine Segment	Omforma ryggradssegment
+	Move Brush	Flytta pensel
 	Move Swatch	Flytta färgruta
 	Move Up	Flytta upp
 	Move…	Flytta…
@@ -1874,6 +1910,13 @@
 	Tints and Shades	Ljusare och mörkare toner
 	Hue Shift	Nyansförskjutning
 	Key Color:	Nyckelfärg:
+	Tips	Tips
+	Colorization Tips	Tips om färgläggning
+	The samples show this brush on a blue stroke.	Exemplen visar den här penseln på en blå kontur.
+	The art keeps its own colors.	Grafiken behåller sina egna färger.
+	Black becomes the stroke color and white stays white. Other colors become tints of the stroke color by their lightness.	Svart blir konturfärgen och vitt förblir vitt. Andra färger blir ljusare toner av konturfärgen, och ju ljusare en färg är, desto ljusare är dess ton.
+	Black and white stay as they are. Dark colors become shades of the stroke color and light colors become tints of it.	Svart förblir svart och vitt förblir vitt. Andra färger blir mörkare toner av konturfärgen när de är mörka och ljusare toner av den när de är ljusa.
+	The key color becomes the stroke color. The other colors shift their hue by the same amount and keep their saturation and brightness.	Nyckelfärgen blir konturfärgen. De andra färgerna flyttas lika långt runt färghjulet som nyckelfärgen och behåller sin mättnad och ljusstyrka.
 	Roundness:	Rundhet:
 	Fixed	Fast
 	Pressure	Tryck
@@ -1894,6 +1937,14 @@
 	Round Fan	Rund solfjäder
 	Flat Fan	Platt solfjäder
 	New Brush…	Ny pensel…
+	New Brush	Ny pensel
+	Calligraphic Brush	Kalligrafisk pensel
+	Scatter Brush	Spridningspensel
+	Art Brush	Konstpensel
+	Bristle Brush	Borstpensel
+	Pattern Brush	Mönsterpensel
+	Select art to make a scatter, art or pattern brush.	Markera grafik för att skapa en spridnings-, konst- eller mönsterpensel.
+	Brush Art	Penselgrafik
 	New Calligraphic Brush	Ny kalligrafisk pensel
 	New Character Style	Ny teckenstil
 	New Color Group	Ny färggrupp
@@ -1924,6 +1975,7 @@
 	New View	Ny vy
 	New View…	Ny vy…
 	New Window	Nytt fönster
+	New Without Dialog	Ny utan dialogruta
 	New Workspace	Ny arbetsyta
 	New Workspace…	Ny arbetsyta…
 	New {kind} Style…	Ny {kind}stil…
@@ -2112,6 +2164,7 @@
 	Output White	Vitt i utgång
 	Output › Mode	Utgång › Läge
 	Output:	Utgång:
+	Overlap	Överlappning
 	Overlap:	Överlappning:
 	Overlapping	Överlappande
 	Overlay	Överlägg
@@ -2129,7 +2182,7 @@
 	Package	Paketera
 	Package collects a saved document with its linked files and fonts.	Paketera samlar ett sparat dokument med dess länkade filer och typsnitt.
 	Package created	Paketet har skapats
-	Packaged {n} file(s) in {folder}{note}	Paketerade {n} fil(er) i {folder}{note}
+	Packaged {n} file(s) in {folder} {note}	Paketerade {n} fil(er) i {folder}{note}
 	Packaged {n} file(s){note}	Paketerade {n} fil(er){note}
 	Package…	Paketera…
 	Page	Sida
@@ -2188,7 +2241,7 @@
 	Percent:	Procent:
 	Perceptual Scales	Perceptuella skalor
 	Performance	Prestanda
-	Performance & Storage	Prestanda och lagring
+	Plug-ins & Scratch Disks	Insticksprogram & Arbetsdiskar
 	Permissions	Behörigheter
 	Permissions password:	Lösenord för behörigheter:
 	Perspective	Perspektiv
@@ -2308,6 +2361,7 @@
 	Proof Setup	Provtrycksinställningar
 	Properties	Egenskaper
 	Proportional Metrics	Proportionella mått
+	Character Direction	Teckenriktning
 	Digits	Siffror
 	Arabic	Arabiska
 	Hindi	Hindi
@@ -2501,6 +2555,7 @@
 	Reorder	Ändra ordning
 	Reorder Appearance Item	Ändra ordning på utseendeobjekt
 	Repeat	Upprepa
+	Repeat Objects	Upprepningsobjekt
 	Repeat Options	Upprepningsalternativ
 	Repeat Pathfinder	Upprepa banöverlappning
 	Repeat Tab	Upprepa tabb
@@ -2709,6 +2764,7 @@
 	Scale Cursor Proportional to UI	Skala pekaren proportionellt mot gränssnittet
 	Scale Lineweights	Skala linjebredder
 	Scale Strokes & Effects	Skala konturer och effekter
+	Scale Text Attributes	Skala textattribut
 	Scale to Fit Artboard	Skala för att passa ritytan
 	Scale Tool	Skalningsverktyg
 	Scale:	Skala:
@@ -2868,6 +2924,8 @@
 	Show Note	Visa anteckning
 	Show Options	Visa alternativ
 	Show Original Path	Visa ursprunglig bana
+	Open this dialog with these settings next time	Öppna den här dialogrutan med de här inställningarna nästa gång
+	Auto-Simplify	Förenkla automatiskt
 	Show Package	Visa paket
 	Show Panel	Visa panel
 	Show Pattern Swatches	Visa mönsterprover
@@ -2966,6 +3024,7 @@
 	Snapping Tolerance	Fästtolerans
 	Social Square Post 1080×1080	Kvadratiskt inlägg för sociala medier 1080×1080
 	Soft Light	Mjukt ljus
+	Soft Mix	Mjuk blandning
 	Solid	Enfärgad
 	Sort by Kind	Sortera efter typ
 	Sort by Name	Sortera efter namn
@@ -2976,6 +3035,7 @@
 	Space Before Paragraph	Avstånd före stycke
 	Spaces	Blanksteg
 	Spacing Guides	Avståndsstödlinjer
+	Invoke Distance Guides	Anropa mätstödlinjer för avstånd
 	Spacing:	Avstånd:
 	Spanish	Spanska
 	Specified Distance	Angivet avstånd
@@ -3090,7 +3150,7 @@
 	Delete Library Item	Radera biblioteksobjekt
 	No results	Inga resultat
 	No items in this library match “{query}”.	Inga objekt i det här biblioteket matchar ”{query}”.
-	Right-click an item to move it into this group.	Högerklicka på ett objekt för att flytta det till den här gruppen.
+	Drag an item here, or right-click one, to put it in this group.	Dra hit ett objekt, eller högerklicka på ett, för att lägga det i den här gruppen.
 	New Group	Ny grupp
 	New Group…	Ny grupp…
 	Move to Group	Flytta till grupp
@@ -3113,7 +3173,6 @@
 	Show all open documents	Visa alla öppna dokument
 	Symbol Instance	Symbolinstans
 	Symbol Libraries	Symbolbibliotek
-	Symbol Libraries (on the roadmap)	Symbolbibliotek (planeras)
 	Symbol Screener Tool	Verktyg för symbolopacitet
 	Symbol Scruncher Tool	Verktyg för att dra ihop symboler
 	Symbol Shifter Tool	Verktyg för att flytta symboler
@@ -3150,6 +3209,7 @@
 	Text Wrap Options	Alternativ för textombrytning
 	Text Wrap Options…	Alternativ för textombrytning…
 	The bounds of the visible art.	Gränserna för den synliga grafiken.
+	The plug-in writes the whole document.	Insticksprogrammet exporterar hela dokumentet.
 	The cell shows the type object's text as HTML.	Cellen visar textobjektets text som HTML.
 	The document has no colour swatches.	Dokumentet har inga färgrutor.
 	The edge of the paper the printer can't reach: the art goes inside it, and the preview shows it dashed.	Den kant av papperet som skrivaren inte når: grafiken placeras innanför den, och förhandsgranskningen visar den streckad.
@@ -3205,6 +3265,7 @@
 	Tools	Verktyg
 	Top	Överkant
 	Top in Front	Ovansidan framför
+	Top-Justified Tab	Toppjusterad tabb
 	Top:	Överkant:
 	Total Width:	Total bredd:
 	Touch Type Tool	Beröringstextverktyg
@@ -3239,6 +3300,13 @@
 	Transparent Background	Transparent bakgrund
 	Transverse (the page a quarter turn on the paper)	Tvärställd (sidan vriden ett kvarts varv på pappret)
 	Trap…	Överfyllning…
+	Trap	Överfyllning
+	Height/Width	Höjd/bredd
+	Tint Reduction	Tonreducering
+	Traps with Process Color	Överfyllningar med processfärger
+	Reverse Traps	Omvända överfyllningar
+	Precision	Precision
+	Remove Redundant Points	Ta bort överflödiga punkter
 	Trim	Trimma
 	Trim mark weight:	Tjocklek på skärmärken:
 	Trim marks	Skärmärken
@@ -3470,7 +3538,7 @@
 	Zoom Tool	Zoomverktyg
 	Zoom with Mouse Wheel	Zooma med mushjulet
 	Scrub Numeric Fields by Dragging	Ändra numeriska fält genom att dra
-	{count} file(s) in {folder}{note}. Show the package folder?	{count} fil(er) i {folder}{note}. Visa paketmappen?
+	{count} file(s) in {folder} {note}. Show the package folder?	{count} fil(er) i {folder}{note}. Visa paketmappen?
 	{count} linked file(s) not found	{count} länkad(e) fil(er) hittades inte
 	fonts not copied: {fonts}	typsnitt som inte kopierats: {fonts}
 	{count} linked image(s) changed since this document was saved. Show the new versions?	{count} länkad(e) bild(er) har ändrats sedan dokumentet sparades. Visa de nya versionerna?
@@ -3542,7 +3610,8 @@ imageTrace	Outline	Disposition
 	 to sample a color	 för att hämta en färg
 	 across a selected object to set the gradient direction	 över ett markerat objekt för att ange gradientens riktning
 	 to select an artboard  |  	 för att markera en rityta  |  
-	 on the canvas to create one	 på arbetsytan för att skapa en
+	 on the canvas to create one (	 på arbetsytan för att skapa en (
+	 selects several, or draws one inside an artboard)	 markerar flera eller skapar en ny i en rityta)
 	 a stroke to add a width point  |  	 en kontur för att lägga till en breddpunkt  |  
 	 to change one side  |  	 för att ändra en sida  |  
 	 to select more points  |  	 för att markera fler punkter  |  
@@ -3660,6 +3729,7 @@ axis	Both	Båda
 @msg	Couldn't copy to the system clipboard: {e}	Kunde inte kopiera till systemets urklipp: {e}
 @msg	Couldn't open {name}: {e}	Kunde inte öppna {name}: {e}
 @msg	Couldn't place {name}: the document it was dropped on was closed	Kunde inte placera {name}: dokumentet det släpptes på har stängts
+@msg	Couldn't place {name}: the document it was placed in was closed	Kunde inte placera {name}: dokumentet det placerades i har stängts
 @msg	Couldn't read {name}: {e}	Kunde inte läsa {name}: {e}
 @msg	Couldn't save recovery data: {e}	Kunde inte spara återställningsdata: {e}
 @msg	Create Outlines: select text objects	Skapa konturer: markera textobjekt
@@ -3696,8 +3766,9 @@ axis	Both	Båda
 @msg	Opened {url}	Öppnade {url}
 @msg	Outline Stroke: no stroked paths selected	Kontur till bana: inga banor med kontur markerade
 @msg	PDF settings are not an object	PDF-inställningarna är inte ett objekt
+@msg	PDF security settings are not an object	PDF-säkerhetsinställningarna är inte ett objekt
 @msg	PDF writer error: {0}	fel i PDF-skrivaren: {0}
-@msg	Packaged {n} file(s) in {folder}{note}	Paketerade {n} fil(er) i {folder}{note}
+@msg	Packaged {n} file(s) in {folder} {note}	Paketerade {n} fil(er) i {folder}{note}
 @msg	Packaged {n} file(s){note}	Paketerade {n} fil(er){note}
 @msg	Preview in Browser needs the desktop app (the web downloads files instead)	Förhandsgranska i webbläsare kräver skrivbordsappen (webbversionen hämtar filer i stället)
 @msg	Release Guides: no guides	Släpp stödlinjer: inga stödlinjer
@@ -3766,6 +3837,25 @@ axis	Both	Båda
 @msg	a PostScript error ({name} in `{op}`: {at})	ett PostScript-fel ({name} i `{op}`: {at})
 @msg	a PostScript error ({name} in `{op}`: {at}), in {procs}	ett PostScript-fel ({name} i `{op}`: {at}), i {procs}
 @msg	a PostScript error ({name})	ett PostScript-fel ({name})
+@msg	a PostScript error ({name} in `{op}`; {meaning})	ett PostScript-fel ({name} i `{op}`; {meaning})
+@msg	a PostScript error ({name} in `{op}`; {meaning}), in {procs}	ett PostScript-fel ({name} i `{op}`; {meaning}), i {procs}
+@msg	a PostScript error ({name} in `{op}`: {at}; {meaning})	ett PostScript-fel ({name} i `{op}`: {at}; {meaning})
+@msg	a PostScript error ({name} in `{op}`: {at}; {meaning}), in {procs}	ett PostScript-fel ({name} i `{op}`: {at}; {meaning}), i {procs}
+@msg	a PostScript error ({name}; {meaning})	ett PostScript-fel ({name}; {meaning})
+@msg	the program ends a dictionary it didn't begin	programmet avslutar en ordlista som det inte har påbörjat
+@msg	the program opens a file, which the reader can't do	programmet öppnar en fil, vilket PostScript-läsaren inte kan
+@msg	the program restores a saved state that was already restored	programmet återställer ett sparat läge som redan har återställts
+@msg	data the program reads is damaged or cut short, or the program asks for a position in a file that has none	data som programmet läser är skadade eller avkortade, eller så frågar programmet efter en position i en fil som inte har någon
+@msg	the program goes past one of the reader's limits	programmet överskrider en av PostScript-läsarens gränser
+@msg	the path has no point to continue from	banan har ingen punkt att fortsätta från
+@msg	a value is outside the range the operator takes	ett värde ligger utanför intervallet som operatorn tar emot
+@msg	the operator needs more values than the stack holds	operatorn behöver fler värden än stacken innehåller
+@msg	part of the program isn't valid PostScript text	en del av programmet är inte giltig PostScript-text
+@msg	a value has the wrong type for the operator	ett värde har fel typ för operatorn
+@msg	the program runs, deletes or renames a file, which the reader can't do	programmet kör, tar bort eller byter namn på en fil, vilket PostScript-läsaren inte kan
+@msg	the program asks for a resource that isn't defined	programmet begär en resurs som inte är definierad
+@msg	a calculation has no result, as in a division by zero	en beräkning har inget resultat, som vid division med noll
+@msg	the operator looks for a mark on the stack and finds none	operatorn letar efter en markering på stacken och hittar ingen
 @msg	a bitmap is empty	en bitmapp är tom
 @msg	a bitmap is too large to read	en bitmapp är för stor för att läsas
 @msg	a colour index is 0 to {_1}, not {n}	ett färgindex är 0 till {_1}, inte {n}
@@ -3798,6 +3888,7 @@ axis	Both	Båda
 @msg	axis must be "vertical", "horizontal" or an angle in degrees, not `{v}`	axis måste vara "vertical", "horizontal" eller en vinkel i grader, inte `{v}`
 @msg	background {other}: transparent, white, black or a colour such as "#ff8800"	background {other}: transparent, white, black eller en färg som "#ff8800"
 @msg	bad color {v}	ogiltig färg {v}
+@msg	videoRulerPixelAspectRatio must be a number from 0.1 to 10	videoRulerPixelAspectRatio måste vara ett tal från 0,1 till 10
 @msg	bad colour `{hex}` (#rrggbb)	ogiltig färg `{hex}` (#rrggbb)
 @msg	bad page tree	ogiltigt sidträd
 @msg	bad shortcut	ogiltigt kortkommando
@@ -3844,7 +3935,7 @@ axis	Both	Båda
 @msg	give the path `id` and the width point `index`	ange banans `id` och breddpunktens `index`
 @msg	guides are locked	stödlinjerna är låsta
 @msg	handle must be in or out	handle måste vara in eller out
-@msg	image '{key}' has no pixels and was left out	bilden '{key}' har inga pixlar och utelämnades
+@msg	an image has no pixels and was left out	en bild utan pixlar utelämnades
 @msg	image data `{_1}` is missing	bilddata `{_1}` saknas
 @msg	image would be too large; lower the resolution	bilden skulle bli för stor; sänk upplösningen
 @msg	index must be a number or first, previous, next or last	index måste vara ett tal eller first, previous, next eller last
@@ -3889,7 +3980,9 @@ axis	Both	Båda
 @msg	no blend options	inga blandningsalternativ
 @msg	no bounds	inga gränser
 @msg	no brush named `{name}`	ingen pensel med namnet `{name}`
+@msg	a bristle brush name can have at most {max} characters: `{name}` has {count}	namnet på en borstpensel får ha högst {max} tecken: `{name}` har {count}
 @msg	no brush selected	ingen pensel är markerad
+@msg	brushes move only within their type	penslar kan bara flyttas inom sin egen typ
 @msg	no catalog	ingen katalog
 @msg	no changes since the last save	inga ändringar sedan senaste sparningen
 @msg	no clock to keep a heartbeat by	ingen klocka att styra hjärtslagen efter
@@ -3908,6 +4001,7 @@ axis	Both	Båda
 @msg	no file system here	inget filsystem här
 @msg	no file writer	ingen filskrivare
 @msg	no files to place	inga filer att placera
+@msg	`{file}` isn't a VectorCraft document, a PDF or a PDF-compatible .ai file	`{file}` är inte ett VectorCraft-dokument, en PDF eller en PDF-kompatibel .ai-fil
 @msg	no format to export to	inget format att exportera till
 @msg	no free recovery area	inget ledigt återställningsområde
 @msg	no gradient stop or freeform point is selected	inget övertoningsstopp eller fri punkt är markerad
@@ -3943,6 +4037,7 @@ axis	Both	Båda
 @msg	no such action	åtgärden finns inte
 @msg	no such anchor	ankaret finns inte
 @msg	no such artboard	ritytan finns inte
+@msg	the artboard is locked	ritytan är låst
 @msg	no such document	dokumentet finns inte
 @msg	no such layer or object	lagret eller objektet finns inte
 @msg	no such object {0}	objektet {0} finns inte
@@ -3999,6 +4094,7 @@ axis	Both	Båda
 @msg	path is already closed	banan är redan sluten
 @msg	paths contain invalid coordinates	banorna innehåller ogiltiga koordinater
 @msg	paths: give at least one file	paths: ange minst en fil
+@msg	replace: the object to replace was changed or deleted	replace: objektet som skulle ersättas har ändrats eller tagits bort
 @msg	pattern missing	mönster saknas
 @msg	patterns nested too deeply are filled with mid-grey	mönster som är kapslade för djupt fylls med mellangrått
 @msg	percent must be above 0 and at most 6400, not {p}	procent måste vara över 0 och högst 6400, inte {p}
@@ -4151,6 +4247,7 @@ axis	Both	Båda
 @msg	unknown workspace (one of {_1})	okänd arbetsyta (en av {_1})
 @msg	unsupported: {0}	stöds inte: {0}
 @msg	variables are locked	variablerna är låsta
+@msg	variables that aren't text were left out: {kinds}	variabler som inte är text utelämnades: {kinds}
 @msg	version {0} files can't be compressed: only version {COMPRESSED_SINCE} and later open compressed files	filer i version {0} kan inte komprimeras: endast version {COMPRESSED_SINCE} och senare kan öppna komprimerade filer
 @msg	width and height are at least 1 pixel	bredd och höjd är minst 1 pixel
 @msg	workspace name can't be empty	arbetsytans namn får inte vara tomt
@@ -4161,6 +4258,8 @@ axis	Both	Båda
 @msg	{_1} files are written by file.saveAsTemplate	{_1}-filer skrivs av file.saveAsTemplate
 @msg	{_1} font families available	{_1} teckensnittsfamiljer tillgängliga
 @msg	{_1} is a live effect (Effect › Plug-ins)	{_1} är en live-effekt (Effekt › Insticksprogram)
+@msg	{_1} is an exporter (File › Export › Export As…)	{_1} är ett exportinsticksprogram (Fil › Exportera › Exportera som…)
+@msg	`documentData` is {size} bytes (limit {MAX_DOCUMENT_DATA})	`documentData` är {size} byte (gräns {MAX_DOCUMENT_DATA})
 @msg	{_1} is already used by {_2}	{_1} används redan av {_2}
 @msg	{_1} linked file(s) can't be read here: their previews show	{_1} länkade fil(er) kan inte läsas här: deras förhandsgranskningar visas
 @msg	{_1} linked image(s) changed on disk: Update Links shows the new versions	{_1} länkade bild(er) har ändrats på disken: Uppdatera länkar visar de nya versionerna
@@ -4190,6 +4289,8 @@ axis	Both	Båda
 @msg	Saving	Sparar
 @msg	Saving {_1}	Sparar {_1}
 @msg	Exporting {_1}	Exporterar {_1}
+@msg	Packaging {_1}	Paketerar {_1}
+@msg	Placing {_1}	Placerar {_1}
 @msg	Saving recovery data for {_1}	Sparar återställningsdata för {_1}
 @msg	Discarded {_1} recovered document(s)	Kastade {_1} återställda dokument
 @msg	Restored {_1} recovered document(s): save them to keep them	Återställde {_1} återskapade dokument: spara dem för att behålla dem
@@ -4308,7 +4409,9 @@ axis	Both	Båda
 @msg	automation filesystem access is not granted: read authority is absent: {path}	automatiseringen har inte fått åtkomst till filsystemet: läsbehörighet saknas: {path}
 @msg	automation filesystem access is not granted: write authority is absent: {path}	automatiseringen har inte fått åtkomst till filsystemet: skrivbehörighet saknas: {path}
 @msg	automation path rejected: outside the read root {root}: {path}	automatiseringssökvägen avvisades: utanför läsroten {root}: {path}
+@msg	automation path rejected: outside the read roots {roots}: {path}	automatiseringssökvägen avvisades: utanför läsrötterna {roots}: {path}
 @msg	automation path rejected: outside the write root {root}: {path}	automatiseringssökvägen avvisades: utanför skrivroten {root}: {path}
+@msg	automation path rejected: outside the write roots {roots}: {path}	automatiseringssökvägen avvisades: utanför skrivrötterna {roots}: {path}
 @msg	automation path rejected: path is empty	automatiseringssökvägen avvisades: sökvägen är tom
 @msg	automation path rejected: a link that leads nowhere: {path}	automatiseringssökvägen avvisades: en länk som inte leder någonstans: {path}
 @msg	automation path rejected: cannot resolve {path}: {e}	automatiseringssökvägen avvisades: kan inte lösa upp {path}: {e}
@@ -4414,6 +4517,7 @@ effect	Soft	Mjuk
 	Activate Panel	Aktivera panel
 	Change Panel Layout	Ändra panellayout
 	Close Panel	Stäng panel
+	Collapse Panel Group	Komprimera panelgrupp
 	Move Panel	Flytta panel
 	Group with	Gruppera med
 	Resize panels	Ändra storlek på paneler
@@ -4424,6 +4528,12 @@ effect	Soft	Mjuk
 @msg	before must name a panel	before måste ange en panel
 @msg	docking action contains an unknown panel or an excessive split path	dockningsåtgärden innehåller en okänd panel eller en alltför djup delningssökväg
 @msg	group must be true or false	group måste vara true eller false
+@msg	panel floats; collapse its group with window.panel.float {panel, collapsed}	panelen flyter; komprimera dess grupp med window.panel.float {panel, collapsed}
+@msg	panel is not in a dock group	panelen ligger inte i en dockningsgrupp
+@msg	only a dock group above or below others collapses, not one beside another	bara en dockningsgrupp ovanför eller under andra komprimeras, inte en bredvid en annan
+@msg	icon must be true or false	icon måste vara true eller false
+@msg	icon only docks a panel in the icon column, with no anchor	icon dockar bara en panel i ikonkolumnen, utan anchor
+@msg	column docks a set as a dock column, with no anchor or icon	column dockar en uppsättning som en dockningskolumn, utan anchor eller icon
 @msg	move requires a destination panel	flyttning kräver en målpanel
 @msg	move requires an existing destination panel	flyttning kräver en befintlig målpanel
 @msg	onto must name a floating panel	onto måste ange en flytande panel
@@ -4498,12 +4608,24 @@ lighting	Light	Ljus
 	Reset Ruler Origin	Återställ linjalens origo
 	Artistic	Konstnärligt
 	Film Grain…	Filmkorn…
+	Colored Pencil…	Färgpenna…
+	Colored Pencil	Färgpenna
 	Cutout…	Urklipp…
 	Cutout	Urklipp
+	Dry Brush…	Torr pensel…
+	Dry Brush	Torr pensel
 	Neon Glow…	Neonsken…
+	Palette Knife…	Palettkniv…
 	Neon Glow	Neonsken
+	Paint Daubs…	Färgklickar…
+	Paint Daubs	Färgklickar
+	Palette Knife	Palettkniv
 	Poster Edges…	Affischkanter…
+	Rough Pastels…	Grova pasteller…
 	Poster Edges	Affischkanter
+	Rough Pastels	Grova pasteller
+	Underpainting…	Undermålning…
+	Underpainting	Undermålning
 	Levels	Nivåer
 	Edge Simplicity	Kantförenkling
 	Edge Fidelity	Kanttrohet
@@ -5011,6 +5133,9 @@ theme	Appearance	Utseende
 	Softness	Mjukhet
 	Ambient Light	Omgivande ljus
 	Light behind the object	Ljus bakom objektet
+	3D Lighting Preset	Förinställning för 3D-belysning
+	Standard	Standard
+	Diffuse	Diffust
 # 3D light management.
 	Lights	Ljuskällor
 	Add Light	Lägg till ljus
@@ -5037,6 +5162,7 @@ theme	Appearance	Utseende
 	Drawing : real size — 1:10 labels 1 unit on the page as 10.	Ritning : verklig storlek — 1:10 visar 1 enhet på sidan som 10.
 	Editable	Redigerbar
 	Export Data Sets…	Exportera datauppsättningar…
+	Load Variable Library…	Läs in variabelbibliotek…
 	Filter	Filter
 	Filter Layers Panel Rows	Filtrera rader i panelen Lager
 	Flatten	Platta till
@@ -5053,6 +5179,15 @@ theme	Appearance	Utseende
 	Isolate Selected Object	Isolera markerat objekt
 	Keep selected	Behåll markerad
 	Merge only with selection	Sammanfoga endast med markeringen
+	Consider Open Filled Paths as Closed	Behandla öppna fyllda banor som slutna
+	In Merge Mode, Clicking Stroke Splits the Path	I sammanfogningsläge delar ett klick på konturen banan
+	Pick Color From:	Hämta färg från:
+	Artwork	Bildmaterial
+	Cursor Swatch Preview	Förhandsvisning av färgprover vid pekaren
+	Selection:	Markering:
+	Straight Line	Rak linje
+	Highlight:	Framhävning:
+	Stroke When Editable	Kontur när den kan redigeras
 	Legacy (version 7)	Äldre (version 7)
 	Legacy .ai Options	Alternativ för äldre .ai
 	Linked Files	Länkade filer
@@ -5098,6 +5233,7 @@ theme	Appearance	Utseende
 @msg	Measured anchor no longer exists	Den mätta ankarpunkten finns inte längre
 @msg	Measured segment no longer exists	Det mätta segmentet finns inte längre
 @msg	Non-finite dimension	Måttet är inte ett ändligt tal
+@msg	Scale Text Attributes: selected type has no scale to bake	Skala textattribut: det valda texten har ingen skalning att tillämpa
 @msg	Scale must be drawing:real, for example 1:10	Skalan måste anges som ritning:verklighet, till exempel 1:10
 @msg	Scale ratio must be between 1:1000000 and 1000000:1	Skalförhållandet måste ligga mellan 1:1000000 och 1000000:1
 @msg	Second measured segment no longer exists	Det andra mätta segmentet finns inte längre
@@ -5111,12 +5247,17 @@ theme	Appearance	Utseende
 @msg	nothing in data set {name} was applied: no object is bound to a variable it has a value for	inget i datauppsättningen {name} användes: inget objekt är bundet till en variabel som den har ett värde för
 @msg	select an Intertwine group	markera en sammanflätningsgrupp
 @msg	select an Objects on Path group	markera en grupp med objekt på bana
+@msg	a path inside a compound path, blend, envelope, repeat or Intertwine group can't take objects	en bana inuti en sammansatt bana, en blandning, ett kuvert, en upprepning eller en sammanflätningsgrupp kan inte ta emot objekt
+@msg	a clipping path can't take objects	en klippbana kan inte ta emot objekt
+@msg	objects inside a blend, envelope, repeat or Intertwine group can't be attached to a path	objekt inuti en blandning, ett kuvert, en upprepning eller en sammanflätningsgrupp kan inte fästas på en bana
+@msg	a clipping path can't be attached to a path	en klippbana kan inte fästas på en bana
 @msg	span must be "object" or "selection", got {v}	span måste vara "object" eller "selection", fick {v}
 @msg	span: "selection" places a `gradient`, not a swatch	span: "selection" placerar en `gradient`, inte en färgruta
 @msg	span: "selection" places a gradient: give `gradient`	span: "selection" placerar en övertoning: ange `gradient`
 @msg	span: "selection" places a linear or radial gradient, not a freeform one	span: "selection" placerar en linjär eller radiell övertoning, inte en fri
 @msg	span: "selection" places the gradient itself: leave out `start` and `end` (they already place it in document coordinates)	span: "selection" placerar själva övertoningen: utelämna `start` och `end` (de placerar den redan i dokumentkoordinater)
 @msg	the Color Picker is not open	färgväljaren är inte öppen
+@msg	the Simplify slider is not open	Förenkla-reglaget är inte öppet
 @msg	the action has no steps	åtgärden har inga steg
 @msg	the file's layers weren't read ({_1}): it comes in as its page, in one layer	filens lager lästes inte ({_1}): den hämtas in som en sida, i ett enda lager
 @msg	the file's layers weren't read from its editing data ({_1}): they come from its PDF part	filens lager lästes inte från dess redigeringsdata ({_1}): de kommer från dess PDF-del
@@ -5133,6 +5274,12 @@ theme	Appearance	Utseende
 	Sketch	Skiss
 	Halftone Pattern…	Rastermönster…
 	Halftone Pattern	Rastermönster
+	Torn Edges…	Riviga kanter…
+	Torn Edges	Riviga kanter
+	Conté Crayon…	Contékrita…
+	Conté Crayon	Contékrita
+	Foreground Level	Förgrundsnivå
+	Background Level	Bakgrundsnivå
 	Pattern Type	Mönstertyp
 	Dot	Punkt
 # User Interface › Color Scheme
@@ -5144,6 +5291,28 @@ theme	Appearance	Utseende
 	Movie Clip	Filmklipp
 @msg	name is empty	namnet är tomt
 @msg	no symbol named `{n}`	ingen symbol med namnet `{n}`
+	Smudge Stick…	Utsmetning…
+	Smudge Stick	Utsmetning
+	Sponge…	Svamp…
+	Sponge	Svamp
+	Watercolor…	Akvarell…
+	Watercolor	Akvarell
+	Brush Size	Penselstorlek
+	Texture Coverage	Texturtäckning
+	Definition	Skärpa
+	Brush Detail	Penseldetalj
+	Shadow Intensity	Skuggintensitet
+	Bas Relief…	Basrelief…
+	Bas Relief	Basrelief
+	Charcoal…	Kol…
+	Charcoal	Kol
+	Photocopy…	Fotokopia…
+	Photocopy	Fotokopia
+	Stamp…	Stämpel…
+	Stamp	Stämpel
+	Thickness	Tjocklek
+	Detail	Detalj
+	Light/Dark Balance	Balans ljust/mörkt
 # Links and Attributes: files and URLs handed to other apps.
 @msg	Edit Original opens image and document files only; “{name}” is not one	Redigera original öppnar bara bild- och dokumentfiler; ”{name}” är ingen sådan
 @msg	only http, https and mailto URLs open in the browser, not “{url}”	bara http-, https- och mailto-URL:er öppnas i webbläsaren, inte ”{url}”
@@ -5158,13 +5327,21 @@ theme	Appearance	Utseende
 @msg	the image's pixels can't be read	bildens pixlar kan inte läsas
 	Persistent	Beständig
 	Library Panel Options	Alternativ för bibliotekspanelen
+	Locate Library…	Hitta bibliotek…
 @msg	Persistent libraries not found: {files}	Beständiga bibliotek hittades inte: {files}
 @msg	`{given}` isn't a library panel (see window.swatchLibrary)	`{given}` är inte en bibliotekspanel (se window.swatchLibrary)
 @msg	library panel `{given}` isn't open	bibliotekspanelen `{given}` är inte öppen
+@msg	library panel `{given}` isn't missing its library	bibliotekspanelen `{given}` saknar inte sitt bibliotek
 @msg	too many library panels were opened in this session	för många bibliotekspaneler har öppnats i den här sessionen
 @msg	The image is {_1} × {_2} pixels, more than {LARGE_TRACE_SIDE} on a side: it is traced, but more slowly. A lower-fidelity preset or a smaller copy of the image traces faster.	Bilden är {_1} × {_2} pixlar, mer än {LARGE_TRACE_SIDE} på en sida: den vektoriseras, men långsammare. En förinställning med lägre återgivning eller en mindre kopia av bilden går snabbare.
 @msg	The image was traced at {_1} × {_2} pixels, scaled down from {_3} × {_4} ({_5} megapixels at most).	Bilden vektoriserades vid {_1} × {_2} pixlar, nedskalad från {_3} × {_4} (högst {_5} megapixlar).
+	Snapping	Fästning
+	Snap to Tangent	Fäst mot tangent
+	Snap to Perpendicular	Fäst mot vinkelrät
+@msg	unknown snap option `{key}` (use {options})	okänt fästalternativ `{key}` (använd {options})
+	Gap Length:	Lucklängd:
 	Artboard {n} of {total}	Rityta {n} av {total}
+	File {n} of {total}	Fil {n} av {total}
 	Encoding and writing the file…	Kodar och skriver filen…
 @plural	{n} more export waiting|{n} more exports waiting	{n} export till väntar|{n} exporter till väntar
 	Continue in Background	Fortsätt i bakgrunden
@@ -5180,7 +5357,128 @@ theme	Appearance	Utseende
 	Full Justify	Fullständig marginaljustering
 	Minimum must not exceed Desired, nor Desired Maximum.	Minimum får inte överstiga Önskat, och Önskat inte Maximum.
 	Justification	Justering
+	Add filters from the list above	Lägg till filter från listan ovan
+	Add to Stack	Lägg till i stacken
+	Applied Filters	Tillämpade filter
+	Categories	Kategorier
+	Choose a filter	Välj ett filter
+	Effect Gallery	Effektgalleri
+	Filters	Filter
+	Select artwork to apply effects	Välj grafik för att tillämpa effekter
 @msg	the file's variables and data sets weren't read (variables: {variables}, data sets: {data_sets}): the Variables panel doesn't list them	filens variabler och datauppsättningar lästes inte (variabler: {variables}, datauppsättningar: {data_sets}): panelen Variabler visar dem inte
 # Select by Color (select.color)
 	Select by Color	Markera efter färg
 	Move Anchor Point	Flytta ankarpunkt
+@msg	{label} keeps 1 of the document's {n} artboards: the file reopens with one. Turn on Preserve Editing Capabilities to keep them all.	{label} behåller 1 av dokumentets {n} ritytor: filen öppnas igen med en. Slå på Bevara redigeringsmöjligheter för att behålla alla.
+	Chalk & Charcoal…	Krita och kol…
+	Chalk & Charcoal	Krita och kol
+	Graphic Pen…	Grafisk penna…
+	Graphic Pen	Grafisk penna
+	Reticulation…	Retikulering…
+	Reticulation	Retikulering
+	Plastic Wrap…	Plastfolie…
+	Plastic Wrap	Plastfolie
+	Chrome…	Krom…
+	Chrome	Krom
+	Drop here to take it out of its group	Släpp här för att ta ut det ur gruppen
+	Move Library Group	Flytta biblioteksgrupp
+	Plaster…	Gips…
+	Plaster	Gips
+	Note Paper…	Anteckningspapper…
+	Note Paper	Anteckningspapper
+	Water Paper…	Vått papper…
+	Water Paper	Vått papper
+	Ruby…	Ruby…
+	Ruby	Ruby
+	Geometric Guides	Geometriska stödlinjer
+	Ease In	Långsam start
+	Ease Out	Långsamt slut
+	Ease In Out	Långsam start och slut
+	Ease Out In	Långsamt slut och start
+	Ramp:	Styrka:
+	Shift:	Förskjutning:
+	Fresco…	Fresk…
+	Fresco	Fresk
+	Effect Gallery…	Effektgalleri…
+	Effect Gallery Dialog	Dialogrutan Effektgalleri
+	Arc Segment Tool Options	Alternativ för bågsegmentsverktyget
+	Base Along:	Bas längs:
+	Closed	Stängd
+	Convex	Konvex
+	Fill Arc	Fyll båge
+	Length X-Axis:	Längd X-axel:
+	Length Y-Axis:	Längd Y-axel:
+	Slope:	Lutning:
+axis	X Axis	X-axel
+axis	Y Axis	Y-axel
+@msg	Packaged {n} file(s) in {folder}	Paketerade {n} fil(er) i {folder}
+@msg	Packaged {n} file(s) {note}	Paketerade {n} fil(er) {note}
+@msg	Packaged {n} file(s)	Paketerade {n} fil(er)
+	Packaged {n} file(s)	Paketerade {n} fil(er)
+	Packaged {n} file(s) in {folder}	Paketerade {n} fil(er) i {folder}
+	Packaged {n} file(s) {note}	Paketerade {n} fil(er) {note}
+	{count} file(s) in {folder}. Show the package folder?	{count} fil(er) i {folder}. Visa paketmappen?
+	Clockwise	Medurs
+	Dither	Dithering
+	Fine noise hides banding in the gradient fill	Fint brus döljer bandningen i övertoningsfyllningen
+@msg	`dither` applies to gradient fills (stroke: false)	`dither` gäller övertoningsfyllningar (stroke: false)
+@msg	`dither` applies to gradient fills (paint.setFill)	`dither` gäller övertoningsfyllningar (paint.setFill)
+@msg	`dither` must be true or false	`dither` måste vara true eller false
+@msg	`method` must be classic or perceptual	`method` måste vara classic eller perceptual
+# Heavy plug-in filters (plugin.inspect, plug-in runs)
+	Install “{name}”, which asks for a heavy budget?	Installera ”{name}”, som begär en stor beräkningsbudget?
+	Each run may take up to {minutes} minutes and do {times} times the work other plug-ins may. It runs in the background, and you can cancel it.	Varje körning kan ta upp till {minutes} minuter och göra {times} gånger så mycket arbete som andra insticksprogram får. Den körs i bakgrunden och du kan avbryta den.
+	It may take minutes, so it runs in the background, where you can cancel it.	Det kan ta flera minuter, så det körs i bakgrunden, där du kan avbryta det.
+	The plug-in is computing…	Insticksprogrammet räknar…
+	Inspect Plug-in	Granska insticksprogram
+	Cancel Plug-in Run	Avbryt körning av insticksprogram
+@msg	{_1} finished, but the document or the plug-in changed meanwhile: run it again	{_1} är klar, men dokumentet eller insticksprogrammet ändrades under tiden: kör det igen
+@msg	Running “{name}”…	Kör ”{name}”…
+@msg	a live effect runs while the document is drawn, so it can't be `heavy`	en live-effekt körs medan dokumentet ritas, så den kan inte vara `heavy`
+@msg	an exporter always gets an export's budget: leave `budget` out	ett exportinsticksprogram får alltid en exports budget: utelämna `budget`
+@msg	“{_1}” asks for a heavy budget (each run up to {minutes} minutes and {times} times the usual instructions): install it with `allowHeavy: true` once the user agrees	”{_1}” begär en stor beräkningsbudget (varje körning upp till {minutes} minuter och {times} gånger de vanliga instruktionerna): installera det med `allowHeavy: true` när användaren har godkänt
+	Stop Global Edit	Avsluta global redigering
+	Global Edit Options	Alternativ för global redigering
+	Match	Matcha
+	On Artboards	På ritytor
+	All Artboards	Alla ritytor
+	Include Objects On Canvas	Ta med objekt på arbetsytan
+	Result(s): {count}	Resultat: {count}
+@msg	select one object	markera ett objekt
+@msg	Global Edit works on paths, compound paths and symbol instances	Global redigering fungerar på banor, sammansatta banor och symbolinstanser
+@msg	no similar objects found (rotated or reflected copies are not matched); change the Global Edit Options and try again	inga liknande objekt hittades (roterade eller speglade kopior matchas inte); ändra alternativen för global redigering och försök igen
+@msg	`artboards`: all or a range such as 1, 3-5, not {v}	`artboards`: all eller ett intervall som 1, 3-5, inte {v}
+	Add to Symbols	Lägg till i symboler
+	Basic Shapes	Grundformer
+	Open Symbol Library	Öppna symbolbibliotek
+	Save Symbol Library	Spara symbolbibliotek
+	Save Symbol Library…	Spara symbolbibliotek…
+	Save Symbols…	Spara symboler…
+	Selected Symbols Only	Endast markerade symboler
+	Symbol Libraries Menu	Meny för symbolbibliotek
+	Symbol Library	Symbolbibliotek
+	User Symbol Library 1	Användarbibliotek för symboler 1
+	User Symbol Library 2	Användarbibliotek för symboler 2
+	User Symbol Library 3	Användarbibliotek för symboler 3
+	User Symbol Library 4	Användarbibliotek för symboler 4
+	User Symbol Library 5	Användarbibliotek för symboler 5
+	User Symbol Library 6	Användarbibliotek för symboler 6
+	User Symbol Library 7	Användarbibliotek för symboler 7
+	User Symbol Library 8	Användarbibliotek för symboler 8
+	User Symbol Library 9	Användarbibliotek för symboler 9
+	User Symbol Library 10	Användarbibliotek för symboler 10
+	{w} × {h} pt	{w} × {h} pt
+@msg	`{_1}` has no symbols to place	`{_1}` har inga symboler att placera
+@msg	missing `library` (see symbol.libraries)	`library` saknas (se symbol.libraries)
+@msg	no symbol `{n}`	ingen symbol `{n}`
+@msg	no symbol `{n}` in `{_1}`	ingen symbol `{n}` i `{_1}`
+@msg	no symbol library `{key}` (see symbol.libraries)	inget symbolbibliotek `{key}` (se symbol.libraries)
+@msg	the document has no symbols to save	dokumentet har inga symboler att spara
+@msg	Trap: select two or more objects filled with solid colours	Överfyllning: markera två eller fler objekt fyllda med enfärgade färger
+@msg	Trap: no edges of different colours meet among the selected objects	Överfyllning: inga kanter i olika färger möts bland de markerade objekten
+@msg	thickness must be from 0.01 to 5000 pt	thickness måste vara från 0,01 till 5000 pt
+@msg	heightWidth must be from 1 to 1000 %	heightWidth måste vara från 1 till 1000 %
+@msg	tintReduction must be from 0 to 100 %	tintReduction måste vara från 0 till 100 %
+	Rectangular Grid Tool Options	Alternativ för verktyget för rektangulärt rutnät
+	Polar Grid Tool Options	Alternativ för verktyget för polärt rutnät
+	Fill Line	Fyll linje

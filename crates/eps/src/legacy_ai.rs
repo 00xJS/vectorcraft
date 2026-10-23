@@ -14,8 +14,8 @@
 //!   `%AI5_ArtSize` and an empty `%AI3_TemplateBox` at its centre, which puts the ruler origin at
 //!   its bottom-left corner (§2.2), `%AI5_NumLayers`.
 //! - Setup (§3): `n Bn`, then each gradient: `%AI5_BeginGradient: (name)`, `(name) type n Bd`,
-//!   `[`, its stops last first (`colorSpec colorStyle midPoint rampPoint %_Bs`), `BD`,
-//!   `%AI5_EndGradient`.
+//!   `[`, its stops (`colorSpec colorStyle midPoint rampPoint %_Bs`), listed from the last for a
+//!   linear gradient and listed from the first for a radial one, `BD`, `%AI5_EndGradient`.
 //! - Layers (§9): `%AI5_BeginLayer`, `visible preview enabled printing dimmed 0 colorIndex r g b
 //!   Lb`, `(name) Ln`, the art, `LB`, `%AI5_EndLayer--`.
 //! - Groups `u` … `U`, clipping groups `q` … `Q` with the clipping path painted `h W n` (§5.6),
@@ -64,8 +64,8 @@ use std::sync::Arc;
 use vectorcraft_color::cms::Cms;
 use vectorcraft_color::{BlendMode, Color, Gradient, GradientKind, GradientPaint, Paint};
 use vectorcraft_doc::{
-    AppearanceItem, AreaOptions, CharPosition, CharStyle, Document, FillLayer, ImageObject, Justify, LAYER_COLORS, LayerColor, LineCap, LineJoin,
-    Node, NodeKind, ParaDirection, ParaStyle, PathEffect, StrokeLayer, TextKind, TextObject,
+    AppearanceItem, AreaOptions, CharPosition, CharStyle, Document, FillLayer, ImageBlob, Justify, LAYER_COLORS, LayerColor, LineCap, LineJoin, Node,
+    NodeKind, ParaDirection, ParaStyle, PathEffect, StrokeLayer, TextKind, TextObject,
 };
 use vectorcraft_effects::stroke;
 use vectorcraft_geom::{Affine, AnchorKind, BezPath, FillRule, PathData, Point, Rect, Shape, SubPath, Vec2};
@@ -83,7 +83,7 @@ const HEX_LINE: usize = 60;
 
 pub const SUBLAYERS: &str = "sublayers are written as groups in their top-level layer (legacy .ai files have no sublayers)";
 pub const TYPE: &str = "type a legacy .ai can't hold as text (characters outside Windows Latin-1, vertical type, inline graphics, gradient or pattern fills) is written as outlines";
-pub const TYPE_ATTRIBUTES: &str = "type attributes legacy .ai files don't have (underline, strikethrough, small caps, superscript and subscript, character rotation, OpenType features, Variable Font settings, area type options, type on a path effects, space after paragraphs, tabs) are left out";
+pub const TYPE_ATTRIBUTES: &str = "type attributes legacy .ai files don't have (underline, strikethrough, small caps, superscript and subscript, character rotation, OpenType features, Variable Font settings, area type options, type on a path effects, space after paragraphs, tabs, bulleted lists) are left out";
 pub const HIDDEN: &str = "hidden objects are left out (hidden layers are kept, hidden)";
 pub const HIDDEN_LAYER: &str = "hidden objects are moved to a hidden layer above their own (legacy .ai files can hide only layers)";
 pub const HIDDEN_SHOWN: &str = "hidden objects are written visible (legacy .ai files can hide only layers)";
@@ -98,7 +98,10 @@ const STROKES: &str =
     "strokes a plain line can't draw (inside or outside the path, variable width, gradients, brushes, arrowheads) are written as filled outlines";
 const IMAGE_ALPHA: &str = "transparent image pixels are written over white";
 const LIVE: &str = "symbols, blends, envelopes, meshes, repeats, placed documents and intertwines are written as their art";
-const UNREADABLE_IMAGE: &str = "an image that can't be decoded or is too large was left out";
+/// The warning for an image left out because it can't be decoded: the note raster exports give
+/// (`vectorcraft-engine`'s `rasterfx::undecoded_warning`).
+const UNDECODED: &str = "an image couldn't be decoded and is missing from the picture";
+const LARGE_IMAGE: &str = "an image that is empty or too large for legacy .ai was left out";
 const ELLIPTICAL: &str = "elliptical radial gradients are written circular";
 
 /// What to write in the header, and how to write what the format can't hold.
@@ -338,12 +341,20 @@ end
 const PS_HEADER: &str = "%!PS-Adobe-3.0"; // brand-ok: the PostScript header comment
 
 /// A gradient definition: `%AI5_BeginGradient: (name)`, `(name) type stops Bd`, `[`, the stops
-/// last first (`colorSpec colorStyle midPoint rampPoint %_Bs`), `BD`, `%AI5_EndGradient`.
+/// (`colorSpec colorStyle midPoint rampPoint %_Bs`, each with its midpoint to the next stop), `BD`,
+/// `%AI5_EndGradient`. A linear gradient's stops are listed from the last to the first (§1.4.3). A
+/// radial gradient's stops are listed from the first to the last, as in §3.5.2's radial
+/// definition (10, then 100).
 fn gradient_def(s: &mut String, w: &Writer, name: &str, g: &Gradient) {
     let name = latin_string(name);
-    let kind = if g.kind == GradientKind::Radial { 1 } else { 0 };
+    let radial = g.kind == GradientKind::Radial;
+    let kind = if radial { 1 } else { 0 };
     let _ = writeln!(s, "%AI5_BeginGradient: {name}\n{name} {kind} {} Bd\n[", g.stops.len());
-    for stop in g.stops.iter().rev() {
+    let mut stops: Vec<_> = g.stops.iter().collect();
+    if !radial {
+        stops.reverse();
+    }
+    for stop in stops {
         let paint = Paint::Solid { color: stop.color, swatch: stop.swatch.clone(), tint: stop.tint };
         match w.ink(&paint) {
             Ink::Gray(v) => {
@@ -667,7 +678,7 @@ impl<'a> Writer<'a> {
             }
             NodeKind::Image(im) => {
                 self.lock(locked);
-                self.image(im);
+                self.image(self.doc.images.get(&im.key), im.width, im.height, im.xf);
             }
             NodeKind::SymbolInstance { symbol, xf } => {
                 self.warn(LIVE);
@@ -1137,6 +1148,12 @@ impl<'a> Writer<'a> {
         if lost_attributes(t) {
             self.warn(TYPE_ATTRIBUTES);
         }
+        // Area type that Shrink Text to Fit scales down is written in the styles it draws in.
+        let fitted = matches!((&t.kind, t.area.fit), (TextKind::Area { .. }, vectorcraft_doc::AreaFit::ShrinkText { .. }))
+            .then(|| vectorcraft_text::layout(vectorcraft_text::FontDb::global(), t).fit_scale)
+            .filter(|f| *f != 1.0)
+            .map(|f| vectorcraft_text::scaled(t, f));
+        let t = fitted.as_ref().unwrap_or(t);
         let m = self.to_art * t.xf * Affine::new([1.0, 0.0, 0.0, -1.0, 0.0, 0.0]);
         let (kind, path, start) = match &t.kind {
             TextKind::Point => (0, None, 0.0),
@@ -1271,6 +1288,16 @@ impl<'a> Writer<'a> {
             n.appearance = vectorcraft_doc::Appearance { items, ..vectorcraft_doc::Appearance::default() }.into();
             self.shape(&n, &path, FillRule::NonZero);
         }
+        // Colour bitmap glyphs (emoji): their images, which the runs' paint doesn't paint.
+        for g in &layout.glyphs {
+            if let Some((image, to_text)) = g.placed_image() {
+                self.image(Some(&image.blob), image.width, image.height, t.xf * to_text);
+            }
+            // COLR glyphs: their layers, as art.
+            if let Some(art) = g.placed_colour(t.xf) {
+                self.node(&art, false);
+            }
+        }
         self.line("U");
     }
 
@@ -1281,25 +1308,30 @@ impl<'a> Writer<'a> {
     /// operands with `XI`, its RGB samples in hex on comment lines of [`HEX_LINE`] digits,
     /// `%AI5_EndRaster`, then `F`. §8.4's examples have no `F`; without it, an app reading the file
     /// can leave out an image in a clipping group and the art after it. No path is open there, so
-    /// the `F` paints nothing.
-    fn image(&mut self, im: &ImageObject) {
+    /// the `F` paints nothing. `blob` holds the pixels, placed as a grid of `width` × `height`
+    /// by `xf`.
+    fn image(&mut self, blob: Option<&ImageBlob>, width: u32, height: u32, xf: Affine) {
         let flip = Affine::new([1.0, 0.0, 0.0, -1.0, 0.0, 0.0]);
-        let m = self.to_art * im.xf * flip;
+        let m = self.to_art * xf * flip;
         if !invertible(m) {
             return;
         }
-        let Some(img) = self.doc.images.get(&im.key).and_then(|b| image::load_from_memory(&b.bytes).ok()) else {
-            self.warn(UNREADABLE_IMAGE);
+        if blob.is_some_and(|b| b.bytes.is_empty()) {
+            self.warn(LARGE_IMAGE);
+            return;
+        }
+        let Some(img) = blob.and_then(|b| image::load_from_memory(&b.bytes).ok()) else {
+            self.warn(UNDECODED);
             return;
         };
         let (w, h) = (img.width(), img.height());
         if w == 0 || h == 0 || u64::from(w) * u64::from(h) > MAX_IMAGE_PIXELS {
-            self.warn(UNREADABLE_IMAGE);
+            self.warn(LARGE_IMAGE);
             return;
         }
         // The object places the image's own pixel grid (its width × height) wherever the file's is.
-        let fit = Affine::scale_non_uniform(f64::from(im.width.max(1)) / f64::from(w), f64::from(im.height.max(1)) / f64::from(h));
-        let m = self.to_art * im.xf * fit * flip;
+        let fit = Affine::scale_non_uniform(f64::from(width.max(1)) / f64::from(w), f64::from(height.max(1)) / f64::from(h));
+        let m = self.to_art * xf * fit * flip;
         let rgba = img.to_rgba8();
         let mut hex = String::with_capacity(rgba.len() / 4 * 7);
         hex.push('%');
@@ -1364,7 +1396,7 @@ fn lost_attributes(t: &TextObject) -> bool {
             || !s.features.is_empty()
             || !s.font_axes.is_empty()
     };
-    let para_lost = |p: &ParaStyle| p.space_after != 0.0 || !p.tabs.is_empty();
+    let para_lost = |p: &ParaStyle| p.space_after != 0.0 || !p.tabs.is_empty() || p.list.is_some();
     t.runs.iter().any(|r| run_lost(&r.style))
         || t.paragraph_styles().iter().any(para_lost)
         || (matches!(t.kind, TextKind::Area { .. }) && t.area != AreaOptions::default())

@@ -149,10 +149,10 @@ pub const PAST_PAGE_NOTE: &str = "art reaching past the page was clipped to it, 
 
 /// Warning: glyphs were kept as outlines rather than read as type.
 pub const OUTLINED_TEXT_NOTE: &str = "text was converted to outlines";
-/// Warning: text drawn invisibly (text rendering mode 3, as a scanned page's OCR layer is) was left
-/// out: VectorCraft has no type that is kept but not drawn, so a PDF saved from it loses that
-/// searchable text (#2675).
-pub const INVISIBLE_TEXT_NOTE: &str = "invisible text (such as a scanned page's searchable OCR layer) was left out";
+/// Warning: text drawn invisibly (text rendering mode 3, as a scanned page's OCR layer is) that
+/// can't come in as type (text read as outlines, or a Type 3 font) was left out: as outlines it
+/// would draw nothing (#2675).
+pub const INVISIBLE_TEXT_NOTE: &str = "invisible text (such as a scanned page's searchable OCR layer) that couldn't be read as type was left out";
 /// Warning: glyphs that differ from the installed font of their name were kept as outlines.
 pub const UNMATCHED_GLYPHS_NOTE: &str = "text whose glyphs differ from the installed font of the same name was kept as outlines";
 /// The end of the warning that glyphs whose characters the file doesn't name were kept as
@@ -389,8 +389,12 @@ fn read_with_reader_options(bytes: &[u8], opts: &ImportOptions, reader: &craft_p
             id: i as u32 + 1,
             name: format!("Artboard {}", i + 1),
             rect: ab,
+            locked: false,
             show_center_mark: false,
             show_cross_hairs: false,
+            show_video_safe_areas: false,
+            video_ruler_pixel_aspect_ratio: 1.0,
+            color: None,
         });
         let page_layer = |b: &mut Builder<'_>, art: Vec<Arc<Node>>, shown: bool| {
             let name = if shown { format!("Page {}", number + 1) } else { format!("Page {} (unsorted)", number + 1) };
@@ -1626,7 +1630,7 @@ impl<'p> Builder<'p> {
             return n.clone();
         }
         let data = o.font_data();
-        let name = self.fonts.get(&key).map(|(n, _)| n.clone()).or_else(|| data.as_ref().and_then(|d| d.postscript_name.clone()));
+        let name = self.fonts.get(&key).map(|f| f.name.clone()).or_else(|| data.as_ref().and_then(|d| d.postscript_name.clone()));
         let (weight, italic) = data.as_ref().map_or((None, false), |d| (d.weight, d.is_italic));
         // A subset's six-letter tag.
         let ps = name.as_deref().map(|n| match n.split_once('+') {
@@ -1654,13 +1658,14 @@ impl<'p> Builder<'p> {
     }
 
     /// Glyph `o` as type: added to the line being gathered (or starting one). `false`: it keeps
-    /// its outline (no Unicode text, mirrored, or not type mode).
+    /// its outline (no Unicode text, mirrored, or not type mode). No `paint`: invisible text,
+    /// type with neither fill nor stroke.
     fn type_glyph(
         &mut self,
         o: &craft_pdf::interpret::font::OutlineGlyph,
         m: Affine,
         scale: f64,
-        paint: &craft_pdf::interpret::Paint<'_>,
+        paint: Option<&craft_pdf::interpret::Paint<'_>>,
         stroke: Option<&StrokeProps>,
         overprint: bool,
     ) -> bool {
@@ -1692,7 +1697,8 @@ impl<'p> Builder<'p> {
             Some(BfString::Char(c)) => c.to_string(),
             Some(BfString::String(s)) => s,
             None => {
-                if o.as_unicode().is_some_and(|u| replacement(&u)) {
+                // Invisible text isn't kept as outlines: the caller says it was left out.
+                if paint.is_some() && o.as_unicode().is_some_and(|u| replacement(&u)) {
                     let name = self.font_name(key, o).family;
                     self.warn(&format!("text in {name} {UNNAMED_CHARACTERS_NOTE}"));
                 }
@@ -1706,28 +1712,29 @@ impl<'p> Builder<'p> {
             return false;
         }
         let width = o.advance_width().filter(|w| w.is_finite());
-        // Set vertically (WMode 1): no horizontal advance; its em box is a full em wide.
+        // Set vertically (WMode 1): no horizontal advance.
         let upright = width.is_some_and(|w| w.abs() <= 1.0);
-        let top = m * kurbo::Point::new(f64::from(width.filter(|w| *w > 1.0).unwrap_or(1000.0)) * 0.5, 880.0);
         let mut info = self.font_name(key, o);
         // A font the file doesn't carry is drawn with a stand-in: its glyphs can't tell which
         // style of the installed family it is, so the name decides.
-        let embedded = self.fonts.get(&key).is_none_or(|(_, e)| *e);
+        let embedded = self.fonts.get(&key).is_none_or(|f| f.embedded);
         if let Some(face) = &info.face
             && embedded
         {
             let decided = match self.matched.get(&key) {
                 Some(m) => m.clone(),
-                // A glyph that can't be compared (several characters, a vertical form) decides
-                // nothing: it takes the face of its name until one that can be compared does.
-                None if comparable(&text, upright).is_none() => Some(face.clone()),
+                // A glyph that can't be compared (several characters, a vertical form) or that
+                // shows nothing (invisible text) decides nothing: it takes the face of its name
+                // until one that can be compared does.
+                None if paint.is_none() || comparable(&text, upright).is_none() => Some(face.clone()),
                 None => {
                     let m = matching_face(face, &text, o, upright);
                     self.matched.insert(key, m.clone());
                     m
                 }
             };
-            let Some(f) = decided else {
+            // Invisible text shows no glyphs that could differ: it keeps the face of its name.
+            let Some(f) = decided.or_else(|| paint.is_none().then(|| face.clone())) else {
                 self.warn(UNMATCHED_GLYPHS_NOTE);
                 return false;
             };
@@ -1745,8 +1752,14 @@ impl<'p> Builder<'p> {
             None if self.matched.contains_key(&key) => self.versions.entry(key).or_insert_with(|| named(&info.face)).clone(),
             None => named(&info.face),
         };
-        let (paint, opacity) = self.paint(paint, stroke.is_some(), self.walked(true));
-        let stroke = stroke.map(|p| (paint.clone(), line_width(p, scale)));
+        let (paint, opacity) = match paint {
+            Some(p) => {
+                let (paint, opacity) = self.paint(p, stroke.is_some(), self.walked(true));
+                (Some(paint), opacity)
+            }
+            None => (None, 1.0),
+        };
+        let stroke = stroke.zip(paint.clone()).map(|(p, paint)| (paint, line_width(p, scale)));
         let look = Look {
             font: key,
             family: info.family,
@@ -1756,12 +1769,21 @@ impl<'p> Builder<'p> {
             h_scale: at.h_scale,
             overprint_fill: stroke.is_none() && overprint,
             overprint_stroke: stroke.is_some() && overprint,
-            fill: stroke.is_none().then_some(paint),
+            fill: if stroke.is_none() { paint } else { None },
             stroke,
         };
         let advance = width.map_or(at.size * 0.5, |w| w as f64 / 1000.0 * at.size * at.h_scale / 100.0);
-        let place = |line: &mut TextLine| {
-            if upright { line.push_upright(&look, at, opacity, Upright { top }, &text) } else { line.push(&look, at, opacity, advance, &text) }
+        // A glyph set vertically is drawn from its origin, which the file puts the position
+        // vector's vx (from the font's `W2`, else half its width from `W` or `DW`) to the left of
+        // the column's centre (ISO 32000-1 §9.7.4.3); vertical type centres each glyph on the
+        // column. Half an em only for a full-width glyph (#722).
+        let top = upright.then(|| {
+            let vx = self.fonts.get(&key).and_then(|f| f.vertical.as_ref()).map_or(500.0, |v| v.centre(glyph));
+            m * kurbo::Point::new(vx, 880.0)
+        });
+        let place = |line: &mut TextLine| match top {
+            Some(top) => line.push_upright(&look, at, opacity, Upright { top }, &text),
+            None => line.push(&look, at, opacity, advance, &text),
         };
         self.flush_glyphs();
         // A stroke over the glyph just filled (fill and stroke rendering).
@@ -1967,8 +1989,16 @@ impl<'a> Device<'a> for Builder<'_> {
     ) {
         self.pending = false;
         let stroke = match draw_mode {
+            // Invisible text (a scanned page's recognized text, over the scan) draws nothing but
+            // is still text: type with neither fill nor stroke, so it stays searchable.
             GlyphDrawMode::Invisible => {
-                self.warn(INVISIBLE_TEXT_NOTE);
+                let typed = match glyph {
+                    Glyph::Outline(o) => self.type_glyph(o, transform * glyph_transform, mean_scale(transform), None, None, false),
+                    Glyph::Type3(_) => false,
+                };
+                if !typed {
+                    self.warn(INVISIBLE_TEXT_NOTE);
+                }
                 return;
             }
             GlyphDrawMode::Fill => None,
@@ -1978,7 +2008,7 @@ impl<'a> Device<'a> for Builder<'_> {
             Glyph::Outline(o) => {
                 let scale = mean_scale(transform);
                 let overprint = self.glyph_overprint(stroke.is_some());
-                if self.type_glyph(o, transform * glyph_transform, scale, paint, stroke.as_ref(), overprint) {
+                if self.type_glyph(o, transform * glyph_transform, scale, Some(paint), stroke.as_ref(), overprint) {
                     return;
                 }
                 self.flush_text();

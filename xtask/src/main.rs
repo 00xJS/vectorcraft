@@ -27,6 +27,8 @@ commands:
   assets          check that every icon/image/font/asset is attributed in ASSETS.md
   brands          check that user-visible text (labels, params docs, MCP, docs, packaging) names no other vendor's products
   cursors         warn about Cursor values with no entry in crates/tools/src/cursors.toml (never fails)
+  i18n-report     list the strings each language's catalog lacks, shown in English (fails only on a
+                  broken scan; ci runs it too)
   pdf-deps        verify immutable shared PDF writer and patched Krilla sources
   layers          enforce the crate dependency layering (plan/architecture.md §3)
   wasm            cargo check --target wasm32-unknown-unknown for the wasm-safe crates and the web app
@@ -49,6 +51,7 @@ fn main() -> ExitCode {
         Some("assets") => assets::run(&root()),
         Some("brands") => brands::run(&root()),
         Some("cursors") => cursors::run(&root()),
+        Some("i18n-report") => cmd_i18n_report(),
         Some("layers") => cmd_layers(),
         Some("pdf-deps") => pdf_deps::run(&root()),
         Some("wasm") => cmd_wasm(),
@@ -93,18 +96,57 @@ pub fn repo_files(root: &Path) -> Result<Vec<String>, String> {
     Ok(String::from_utf8_lossy(&out.stdout).lines().filter(|l| root.join(l).exists()).map(str::to_owned).collect())
 }
 
+/// A `cargo` command (the one running xtask, else `cargo` on the PATH) run in the workspace root.
 pub fn cargo() -> Command {
     let mut c = Command::new(std::env::var("CARGO").unwrap_or_else(|_| "cargo".into()));
     c.current_dir(root());
     c
 }
 
+/// Prints `what` and runs `cmd`, which must exit successfully.
 fn run(mut cmd: Command, what: &str) -> Result<(), String> {
     eprintln!("$ {what}");
     let status = cmd.status().map_err(|e| format!("{what}: failed to spawn: {e}"))?;
     if status.success() { Ok(()) } else { Err(format!("{what}: exited with {status}")) }
 }
 
+/// `vectorcraft-ui-egui` and `vectorcraft-mcp` without their default features leave
+/// vectorcraft-text's bundled fonts out: no crate they depend on turns them on (docs/development.md
+/// › Leaving out the bundled fonts). The same tree with the default features must show them, so a
+/// change in cargo tree's output can't make the check pass by finding nothing.
+fn libraries_without_bundled_fonts() -> Result<(), String> {
+    ["vectorcraft-ui-egui", "vectorcraft-mcp"].into_iter().try_for_each(without_bundled_fonts)
+}
+
+/// `package` shows vectorcraft-text's `bundled-fonts` in its feature tree with its default features
+/// and nowhere without them, for any target.
+fn without_bundled_fonts(package: &str) -> Result<(), String> {
+    const FEATURE: &str = "vectorcraft-text feature \"bundled-fonts\"";
+    let tree = |defaults: bool| -> Result<String, String> {
+        let mut args = vec!["tree", "-p", package, "--target", "all", "-e", "features,normal", "-i", "vectorcraft-text"];
+        if !defaults {
+            args.insert(3, "--no-default-features");
+        }
+        let what = format!("cargo {}", args.join(" "));
+        eprintln!("$ {what}");
+        let out = cargo().args(&args).output().map_err(|e| format!("{what}: failed to spawn: {e}"))?;
+        if !out.status.success() {
+            return Err(format!("{what}: exited with {}:\n{}", out.status, String::from_utf8_lossy(&out.stderr)));
+        }
+        Ok(String::from_utf8_lossy(&out.stdout).into_owned())
+    };
+    let with = tree(true)?;
+    if !with.contains(FEATURE) {
+        return Err(format!("{package} with its default features shows no {FEATURE} (has cargo tree's output changed?):\n{with}"));
+    }
+    let without = tree(false)?;
+    if without.contains(FEATURE) {
+        return Err(format!("{package} without default features still bundles the fonts:\n{without}"));
+    }
+    Ok(())
+}
+
+/// `cargo metadata --no-deps` for the workspace, as JSON.
 pub fn metadata() -> Result<serde_json::Value, String> {
     let out = cargo().args(["metadata", "--format-version", "1", "--no-deps"]).output().map_err(|e| format!("cargo metadata: {e}"))?;
     if !out.status.success() {
@@ -179,6 +221,8 @@ fn cmd_wasm() -> Result<(), String> {
     if failed == 0 { Ok(()) } else { Err(format!("{failed} crate(s) failed the wasm check")) }
 }
 
+/// `cargo xtask ci`: each step in turn, stopping at the first that fails; the summary names the
+/// steps that passed and, after a failure, the one that failed and those skipped.
 fn cmd_ci() -> Result<(), String> {
     type Step = (&'static str, Box<dyn Fn() -> Result<(), String>>);
     let steps: Vec<Step> = vec![
@@ -212,13 +256,25 @@ fn cmd_ci() -> Result<(), String> {
                 // vectorcraft-text as embedders that bring their own fonts build it.
                 let mut c = cargo();
                 c.args(["test", "-p", "vectorcraft-text", "--no-default-features", "--test", "without_bundled_fonts"]);
-                run(c, "cargo test -p vectorcraft-text --no-default-features --test without_bundled_fonts")
+                run(c, "cargo test -p vectorcraft-text --no-default-features --test without_bundled_fonts")?;
+                // The egui panels and the MCP server as such an embedder builds them: nothing turns
+                // the fonts back on.
+                libraries_without_bundled_fonts()?;
+                // The panels without their interface faces lint clean and still bind every family
+                // they draw in.
+                let mut c = cargo();
+                c.args(["clippy", "-p", "vectorcraft-ui-egui", "--no-default-features", "--all-targets", "--", "-D", "warnings"]);
+                run(c, "cargo clippy -p vectorcraft-ui-egui --no-default-features --all-targets -- -D warnings")?;
+                let mut c = cargo();
+                c.args(["test", "-p", "vectorcraft-ui-egui", "--no-default-features", "--test", "install_fonts"]);
+                run(c, "cargo test -p vectorcraft-ui-egui --no-default-features --test install_fonts")
             }),
         ),
         ("pdf-deps", Box::new(|| pdf_deps::run(&root()))),
         ("assets", Box::new(|| assets::run(&root()))),
         ("brands", Box::new(|| brands::run(&root()))),
         ("cursors", Box::new(|| cursors::run(&root()))),
+        ("i18n-report", Box::new(cmd_i18n_report)),
         ("layers", Box::new(cmd_layers)),
         ("wasm", Box::new(cmd_wasm)),
     ];
@@ -264,4 +320,12 @@ Tests that use a corpus skip cleanly when it is absent.
         return Ok(());
     }
     pngsuite::fetch()
+}
+
+/// Prints the strings each language's catalog has no row for (`i18n::tests::untranslated_report`).
+/// The interface shows them in English, so a gap never fails it; only a scan that finds nothing does.
+fn cmd_i18n_report() -> Result<(), String> {
+    let mut c = cargo();
+    c.args(["test", "-p", "vectorcraft-ui-egui", "--lib", "--", "i18n::tests::untranslated_report", "--exact", "--nocapture"]);
+    run(c, "cargo test -p vectorcraft-ui-egui --lib -- i18n::tests::untranslated_report --exact --nocapture")
 }

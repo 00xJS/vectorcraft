@@ -27,7 +27,7 @@
 
 use serde_json::json;
 use vectorcraft_doc::{NodeId, NodeKind};
-use vectorcraft_geom::{BezPath, Point};
+use vectorcraft_geom::{BezPath, Point, Vec2};
 
 use crate::direct::hit_handle;
 use crate::draw2::{AnchorTool, editable_paths};
@@ -190,7 +190,10 @@ impl Tool for PenTool {
         }
         // The path being drawn moves its bounds as it grows: only its anchors and segments pull.
         let drawn = active.map(|a| a.0);
-        let from = active.map(|(_, _, last, _)| Leave::segment(cx, last, ev.mods.shift));
+        let from = active.map(|(_, _, last, handle)| {
+            let leave = Leave::segment(cx, last, ev.mods.shift);
+            if handle == last { leave } else { leave.without_contact() }
+        });
         let p = match ev.kind {
             PointerKind::Move => self.snap.hover(cx, ev.pos, drawn.as_slice(), from.as_ref()),
             PointerKind::Down => self.snap.press(cx, ev.pos, drawn.as_slice(), from.as_ref()),
@@ -302,7 +305,7 @@ impl Tool for PenTool {
                 if let Some((id, si, ai, a)) = self.handle {
                     let mut h = ev.pos;
                     if ev.mods.shift {
-                        h = a + vectorcraft_geom::constrain_angle(ev.pos - a, 45.0);
+                        h = a + vectorcraft_geom::constrain_angle_from(ev.pos - a, 45.0, cx.constrain_angle);
                     }
                     return vec![set_out_handle(id, si, ai, h)];
                 }
@@ -317,7 +320,7 @@ impl Tool for PenTool {
                 self.last = ev.pos;
                 let mut out_h = ev.pos;
                 if ev.mods.shift {
-                    out_h = a + vectorcraft_geom::constrain_angle(ev.pos - a, 45.0);
+                    out_h = a + vectorcraft_geom::constrain_angle_from(ev.pos - a, 45.0, cx.constrain_angle);
                 }
                 let alt = ev.mods.alt;
                 let Some(id) = path else {
@@ -396,6 +399,9 @@ impl Tool for PenTool {
                 bp.line_to(h);
             }
             o.push(Overlay::Path { path: bp, color: cx.doc.layer_color(id), width: 1.0, dashed: false });
+            if cx.measurement_labels && last.distance(h) > 1e-9 {
+                o.push(Overlay::Measure { p: h + Vec2::new(cx.tol(12.0), cx.tol(12.0)), text: cx.segment_measure_label(last, h) });
+            }
         }
         o.extend_from_slice(self.snap.guides());
         o
@@ -1206,6 +1212,9 @@ mod tests {
         assert!(o.iter().any(
             |o| matches!(o, Overlay::Path { path, .. } if path.elements().last().and_then(|e| e.end_point()) == Some(Point::new(150.0, 318.0)))
         ));
+        let from = Point::new(60.0, 300.0);
+        let to = Point::new(150.0, 318.0);
+        assert!(o.iter().any(|o| matches!(o, Overlay::Measure { text, .. } if text == &cx.segment_measure_label(from, to))));
         let a = click(&mut t, &cx, 152.0, 318.0, Mods::default());
         assert_eq!(a[1], Action::Preview("path.appendAnchor".into(), json!({"id": id.0, "x": 150.0, "y": 318.0})));
         let shift = Mods { shift: true, ..Mods::default() };

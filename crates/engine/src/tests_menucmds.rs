@@ -41,8 +41,14 @@ fn sel(s: &mut Session, ids: &[NodeId]) {
 /// A placed 64 × 32 px PNG whose header reads (so it places at its size) but whose pixel data is
 /// cut short: the renderer can't decode it and draws nothing.
 pub(crate) fn place_undecodable_png(s: &mut Session) -> NodeId {
+    place_undecodable_png_sized(s, 64, 32)
+}
+
+/// Places a PNG like [`place_undecodable_png`] does, at `w` × `h` px. PNGs of different sizes are
+/// different images, each stored under its own key.
+pub(crate) fn place_undecodable_png_sized(s: &mut Session, w: u32, h: u32) -> NodeId {
     let mut png = Vec::new();
-    image::RgbaImage::from_pixel(64, 32, image::Rgba([200, 30, 30, 255]))
+    image::RgbaImage::from_pixel(w, h, image::Rgba([200, 30, 30, 255]))
         .write_to(&mut std::io::Cursor::new(&mut png), image::ImageFormat::Png)
         .unwrap();
     let idat = png.windows(4).position(|w| w == b"IDAT").unwrap();
@@ -87,6 +93,13 @@ fn close(a: f64, b: f64) -> bool {
 fn refuses_non_number(s: &mut Session, cmd: &str, p: &Value, key: &str) {
     let r = s.execute(cmd, p);
     let want = format!("`{key}` must be a number, not {}", p[key]);
+    assert!(matches!(&r, Err(EngineError::BadParams { msg, .. }) if *msg == want), "{cmd} {p}: {r:?}");
+}
+
+/// `cmd` with `p` fails with the error for `key`, which `p` gives as something other than true or false.
+fn refuses_non_boolean(s: &mut Session, cmd: &str, p: &Value, key: &str) {
+    let r = s.execute(cmd, p);
+    let want = format!("`{key}` must be true or false");
     assert!(matches!(&r, Err(EngineError::BadParams { msg, .. }) if *msg == want), "{cmd} {p}: {r:?}");
 }
 
@@ -429,6 +442,67 @@ fn transform_each_refuses_a_number_given_as_text() {
     assert_eq!(bounds(&s, a), Rect::new(35.0, 25.0, 85.0, 75.0));
 }
 
+/// Transform Each refuses Reflect X, Reflect Y, Random, Copy, Scale Strokes & Effects, Scale
+/// Corners, Transform Objects or Transform Patterns given as text or as another value that is not
+/// true or false, and the object stays as it was and is not copied; true, false and null still work.
+#[test]
+fn transform_each_refuses_a_boolean_given_as_text() {
+    let mut s = session();
+    let a = rect(&mut s, 0.0, 0.0, 100.0, 100.0);
+    sel(&mut s, &[a]);
+    let count = |s: &Session| s.doc().unwrap().doc.layers[0].children().unwrap().len();
+    let before = (undo_len(&s), bounds(&s, a), count(&s));
+    for (key, p) in [
+        ("reflectX", json!({"reflectX": "true"})),
+        ("reflectY", json!({"moveH": 10, "reflectY": 1})),
+        ("random", json!({"moveH": 10, "random": "false"})),
+        ("copy", json!({"copy": "true"})),
+        ("copy", json!({"moveH": 10, "copy": [true]})),
+        ("strokes", json!({"scaleH": 50, "scaleV": 50, "strokes": "false"})),
+        ("corners", json!({"scaleH": 50, "corners": 1})),
+        ("objects", json!({"moveH": 10, "objects": "false"})),
+        ("patterns", json!({"moveH": 10, "patterns": [true]})),
+    ] {
+        refuses_non_boolean(&mut s, "object.transformEach", &p, key);
+        assert_eq!((undo_len(&s), bounds(&s, a), count(&s)), before, "{p}");
+    }
+    let p = json!({"moveH": 10, "reflectX": true, "random": false, "copy": null, "objects": null, "patterns": false});
+    s.execute("object.transformEach", &p).unwrap();
+    assert_eq!((bounds(&s, a), count(&s)), (Rect::new(10.0, 0.0, 110.0, 100.0), before.2));
+}
+
+/// With Scale Strokes & Effects on, Transform Each asked to scale a stroked rectangle with
+/// `strokes` given as text, such as "false", fails: the saved document, the undo history and what
+/// Transform Again repeats stay as they were, and Transform Again still repeats the Transform Each
+/// before it. `strokes: false` scales the rectangle and keeps its stroke weight; `strokes: true`
+/// and a null (the preference) scale both.
+#[test]
+fn transform_each_refuses_strokes_given_as_text_and_keeps_transform_again() {
+    let mut s = session();
+    s.prefs.scale_strokes = true;
+    let a = rect(&mut s, 0.0, 0.0, 100.0, 100.0);
+    sel(&mut s, &[a]);
+    s.execute("stroke.set", &json!({"weight": 4})).unwrap();
+    s.execute("object.transformEach", &json!({"moveH": 10})).unwrap();
+    let saved = |s: &Session| vectorcraft_format::save(&s.doc().unwrap().doc, false);
+    let repeat = |s: &Session| s.doc().unwrap().last_transform.clone();
+    let before = (saved(&s), history(&s), repeat(&s));
+    for strokes in [json!("false"), json!("true"), json!(0)] {
+        let p = json!({"scaleH": 200, "scaleV": 200, "strokes": strokes});
+        refuses_non_boolean(&mut s, "object.transformEach", &p, "strokes");
+        assert!((saved(&s), history(&s), repeat(&s)) == before, "{p}");
+    }
+    let weight = |s: &Session| node(s, a).appearance.stroke_width();
+    s.execute("object.transformAgain", &json!({})).unwrap();
+    assert_eq!((bounds(&s, a), weight(&s)), (Rect::new(20.0, 0.0, 120.0, 100.0), 4.0), "the move before it repeats");
+    for (strokes, w) in [(json!(false), 4.0), (json!(true), 8.0), (Value::Null, 8.0)] {
+        let p = json!({"scaleH": 200, "scaleV": 200, "strokes": strokes});
+        s.execute("object.transformEach", &p).unwrap();
+        assert_eq!((bounds(&s, a), weight(&s)), (Rect::new(-30.0, -50.0, 170.0, 150.0), w), "{p}");
+        s.execute("edit.undo", &json!({})).unwrap();
+    }
+}
+
 /// #1910: Transform Each's Reflect X flips left-right; Reflect Y flips top-bottom (same as
 /// Effect › Distort › Transform and Illustrator's Transform Each checkboxes).
 #[test]
@@ -673,6 +747,24 @@ fn crop_image_refuses_a_rect_given_as_text() {
     assert!(close(b.x0, 0.0) && close(b.y0, 0.0), "{b:?}");
 }
 
+/// Crop Image refuses a `trim` given as text or as another value that is not true or false, and the
+/// image stays as it was; a null `trim` crops to `rect` as a missing one does.
+#[test]
+fn crop_image_refuses_a_trim_given_as_text() {
+    let mut s = session();
+    let a = rect(&mut s, -20.0, -20.0, 100.0, 100.0);
+    sel(&mut s, &[a]);
+    let img = id_of(&s.execute("object.rasterize", &json!({"ppi": 72})).unwrap());
+    let before = (undo_len(&s), node(&s, img));
+    for p in [json!({"trim": "true"}), json!({"trim": "false", "rect": [10, 10, 50, 40]}), json!({"trim": 1})] {
+        refuses_non_boolean(&mut s, "object.cropImage", &p, "trim");
+        assert_eq!((undo_len(&s), node(&s, img)), before, "{p}");
+    }
+    s.execute("object.cropImage", &json!({"trim": null, "rect": [10, 10, 50, 40]})).unwrap();
+    let b = bounds(&s, img);
+    assert!(close(b.x0, 10.0) && close(b.y0, 10.0) && close(b.width(), 50.0) && close(b.height(), 40.0), "{b:?}");
+}
+
 #[test]
 fn crop_image_disabled_without_image() {
     let mut s = session();
@@ -743,6 +835,32 @@ fn trim_marks_refuse_a_number_given_as_text() {
         }
     }
     s.execute("object.createTrimMarks", &json!({"offset": 10, "length": 20, "bleed": null})).unwrap();
+}
+
+/// Create Trim Marks refuses an `allArtboards` that is not true or false and a `style` that is not
+/// text, around the selection and around the artboards, and makes no marks; null takes the default.
+#[test]
+fn trim_marks_refuse_a_boolean_or_style_of_the_wrong_kind() {
+    let mut s = session();
+    let a = rect(&mut s, 100.0, 100.0, 200.0, 100.0);
+    let style = "`style` must be roman or japanese";
+    let calls = [
+        (json!({"allArtboards": "true"}), "`allArtboards` must be true or false"),
+        (json!({"allArtboards": 0}), "`allArtboards` must be true or false"),
+        (json!({"style": 5}), style),
+        (json!({"allArtboards": true, "style": true}), style),
+        (json!({"style": ["roman"]}), style),
+    ];
+    for ids in [vec![a], vec![]] {
+        sel(&mut s, &ids);
+        let before = (undo_len(&s), s.doc().unwrap().doc.layers[0].children().unwrap().len());
+        for (p, msg) in &calls {
+            let r = s.execute("object.createTrimMarks", p);
+            assert!(matches!(&r, Err(EngineError::BadParams { msg: m, .. }) if m == msg), "{p}: {r:?}");
+            assert_eq!((undo_len(&s), s.doc().unwrap().doc.layers[0].children().unwrap().len()), before, "{p}");
+        }
+    }
+    s.execute("object.createTrimMarks", &json!({"allArtboards": null, "style": null})).unwrap();
 }
 
 // ---------- Convert to Shape ----------
@@ -896,6 +1014,30 @@ fn rearrange_refuses_a_spacing_given_as_text() {
     assert_eq!(boards(&s)[1], Rect::new(0.0, 650.0, 400.0, 950.0));
 }
 
+/// Rearrange All Artboards refuses `byColumn`, `moveArtwork` or `patterns` given as text or as
+/// another value that is not true or false, and the artboards and the art stay where they were;
+/// `moveArtwork: false` leaves the art in place.
+#[test]
+fn rearrange_refuses_a_boolean_given_as_text() {
+    let mut s = session();
+    s.execute("artboard.new", &json!({"x": 1000, "y": 0, "width": 400, "height": 300})).unwrap();
+    let b = rect(&mut s, 1050.0, 25.0, 10.0, 10.0);
+    let boards = |s: &Session| s.doc().unwrap().doc.artboards.iter().map(|a| a.rect).collect::<Vec<_>>();
+    let before = (boards(&s), undo_len(&s), bounds(&s, b));
+    for (key, p) in [
+        ("byColumn", json!({"byColumn": "true"})),
+        ("byColumn", json!({"layout": "row", "byColumn": 1})),
+        ("moveArtwork", json!({"moveArtwork": "false"})),
+        ("moveArtwork", json!({"columns": 1, "moveArtwork": 0})),
+        ("patterns", json!({"patterns": "true"})),
+    ] {
+        refuses_non_boolean(&mut s, "artboard.rearrange", &p, key);
+        assert_eq!((boards(&s), undo_len(&s), bounds(&s, b)), before, "{p}");
+    }
+    s.execute("artboard.rearrange", &json!({"columns": 1, "spacing": 50, "byColumn": null, "moveArtwork": false})).unwrap();
+    assert_eq!((boards(&s)[1], bounds(&s, b)), (Rect::new(0.0, 650.0, 400.0, 950.0), before.2));
+}
+
 /// Fit to Artwork Bounds fits each artboard it is given to the art on it, in one undo step: an
 /// object partly on an artboard counts for each artboard it overlaps, art flush with an edge from
 /// outside or on no artboard doesn't count, and an artboard with no art stays as it is.
@@ -1042,6 +1184,18 @@ fn find_and_replace_options() {
     let r = s.execute("edit.findReplace", &json!({"find": "Dog", "replace": "x", "matchCase": true})).unwrap();
     assert_eq!(r["count"], 0);
     assert!(s.execute("edit.findReplace", &json!({"find": ""})).is_err());
+}
+
+/// Find and Replace with no ids leaves the type on a locked artboard as it is.
+#[test]
+fn find_and_replace_leaves_type_on_a_locked_artboard() {
+    let mut s = session();
+    let a = text(&mut s, "cat");
+    let b = id_of(&s.execute("text.create", &json!({"x": 2050, "y": 50, "text": "cat"})).unwrap());
+    s.execute("artboard.new", &json!({"x": 2000, "y": 0, "width": 400, "height": 400})).unwrap();
+    s.execute("artboard.setProps", &json!({"index": 1, "locked": true})).unwrap();
+    let r = s.execute("edit.findReplace", &json!({"find": "cat", "replace": "dog"})).unwrap();
+    assert_eq!((r["count"].as_u64(), plain(&s, a), plain(&s, b)), (Some(1), "dog".to_string(), "cat".to_string()));
 }
 
 /// Find and Replace that replaces each match with the text it is (`CAT` found in `cat`, ignoring
@@ -1217,6 +1371,27 @@ fn select_point_and_area_text() {
     assert_eq!(s.execute("select.object.brushStrokes", &json!({})).unwrap()["count"], 0);
 }
 
+/// Select › Object › Bristle Brush Strokes goes by the brush's type: a bristle brush counts
+/// whatever it is named, and a brush of another type with "Bristle" in its name does not.
+#[test]
+fn bristle_brush_strokes_select_by_brush_type() {
+    let mut s = session();
+    let round = rect(&mut s, 0.0, 0.0, 10.0, 10.0);
+    let soft = rect(&mut s, 20.0, 0.0, 10.0, 10.0);
+    let nib = rect(&mut s, 40.0, 0.0, 10.0, 10.0);
+    let _plain = rect(&mut s, 60.0, 0.0, 10.0, 10.0);
+    s.execute("brush.apply", &json!({"name": "Bristle Round", "ids": [round.0]})).unwrap();
+    s.execute("brush.apply", &json!({"name": "Bristle Flat Fan", "ids": [soft.0]})).unwrap();
+    s.execute("brush.options", &json!({"name": "Bristle Flat Fan", "newName": "Soft"})).unwrap();
+    s.execute("brush.new", &json!({"type": "calligraphic", "name": "Bristle-like"})).unwrap();
+    s.execute("brush.apply", &json!({"name": "Bristle-like", "ids": [nib.0]})).unwrap();
+    let brush = |s: &Session, id: NodeId| s.doc().unwrap().doc.node(id).and_then(|n| n.appearance.stroke()).and_then(|st| st.brush.clone());
+    assert_eq!(brush(&s, soft).as_deref(), Some("Soft"));
+    assert_eq!(brush(&s, nib).as_deref(), Some("Bristle-like"));
+    assert_eq!(s.execute("select.object.bristleBrushStrokes", &json!({})).unwrap()["count"], 2);
+    assert_eq!(selected(&s), vec![round, soft]);
+}
+
 /// Select › Object and Select › Same leave out hidden and locked objects, and the objects in hidden
 /// or locked groups and sublayers, as Select All does.
 #[test]
@@ -1278,6 +1453,17 @@ fn next_object_above_and_below_pass_over_what_cant_be_selected() {
     // Nothing that can be selected below it: the selection stays.
     s.execute("select.nextBelow", &json!({})).unwrap();
     assert_eq!(selected(&s), vec![a]);
+}
+
+/// A keyboard shortcut runs `object.isolate` with no params; the first selected object is isolated (#2991).
+#[test]
+fn object_isolate_without_id_uses_the_selection() {
+    let mut s = session();
+    let a = rect(&mut s, 0.0, 0.0, 50.0, 50.0);
+    let _b = rect(&mut s, 100.0, 0.0, 50.0, 50.0);
+    sel(&mut s, &[a]);
+    s.execute("object.isolate", &json!({})).unwrap();
+    assert_eq!(s.doc().unwrap().isolation, Some(a));
 }
 
 /// In isolation mode Select › Same and Select › Object select only objects in the isolated group.
@@ -1469,6 +1655,17 @@ fn select_all_on_artboard_takes_lines_on_its_right_and_bottom_edges() {
     };
     assert_eq!(on(0), vec![bottom, shared]);
     assert_eq!(on(1), vec![right, shared]);
+}
+
+/// All on Active Artboard refuses artboard 2^32 and selects nothing. A 32-bit build read it as
+/// artboard 0.
+#[test]
+fn select_all_on_artboard_refuses_an_artboard_past_u32() {
+    let mut s = session();
+    rect(&mut s, 10.0, 10.0, 20.0, 20.0);
+    s.execute("select.none", &json!({})).unwrap();
+    assert!(s.execute("select.allOnArtboard", &json!({"artboard": 1u64 << 32})).is_err());
+    assert!(selected(&s).is_empty());
 }
 
 #[test]
@@ -2045,8 +2242,12 @@ fn guide_path(s: &mut Session, x: f64) -> NodeId {
 fn exit_isolation_leaves_a_locked_guide_path_deselected() {
     let mut s = session();
     let g = guide_path(&mut s, 0.0);
+    // A locked guide path can't be isolated; one isolated before Lock Guides went on stays isolated.
     s.execute("view.guides.lock", &json!({"locked": true})).unwrap();
+    assert!(s.execute("object.isolate", &json!({"id": g.0})).is_err());
+    s.execute("view.guides.lock", &json!({"locked": false})).unwrap();
     s.execute("object.isolate", &json!({"id": g.0})).unwrap();
+    s.execute("view.guides.lock", &json!({"locked": true})).unwrap();
     s.execute("object.exitIsolation", &json!({})).unwrap();
     assert!(selected(&s).is_empty());
     let _ = s.execute("object.move", &json!({"dx": 10, "dy": 0}));
@@ -2649,6 +2850,18 @@ fn close_all_documents() {
     assert_eq!(s.execute("file.closeAll", &json!({})).unwrap()["closed"], 2);
     assert!(s.active().is_none());
     assert!(s.execute("file.closeAll", &json!({})).is_err());
+}
+
+/// Close and Activate refuse a document index of 2^32, and both documents stay open with the second
+/// one active. A 32-bit build read the index as 0.
+#[test]
+fn close_and_activate_refuse_a_document_index_past_u32() {
+    let mut s = session();
+    s.execute("file.new", &json!({})).unwrap();
+    for cmd in ["document.activate", "file.close"] {
+        assert!(s.execute(cmd, &json!({"index": 1u64 << 32})).is_err(), "{cmd}");
+        assert_eq!((s.documents().len(), s.active_index()), (2, Some(1)), "{cmd}");
+    }
 }
 
 #[test]

@@ -30,7 +30,14 @@ fn rect(d: &mut Document, (x, y, w, h): (f64, f64, f64, f64), radius: f64) -> No
         Appearance::basic(fill, Paint::solid(Color::rgb8(0, 0, 255)), 2.0),
     );
     if let NodeKind::Path { live, .. } = &mut n.kind {
-        *live = Some(Box::new(LiveShape::Rectangle { w, h, radii: [radius; 4], kinds: Default::default(), xf: Affine::translate((x, y)) }));
+        *live = Some(Box::new(LiveShape::Rectangle {
+            w,
+            h,
+            radii: [radius; 4],
+            kinds: Default::default(),
+            radii_relative: false,
+            xf: Affine::translate((x, y)),
+        }));
     }
     n
 }
@@ -163,7 +170,7 @@ fn type_gives_font_properties() {
     let id = add(&mut d, n);
     let r = one(&d, id, &CssOptions::default());
     assert_eq!(r.selector, ".type");
-    assert_eq!(prop(&r, "font-family"), Some("'Source Sans 3'"));
+    assert_eq!(prop(&r, "font-family"), Some("'Source Sans 3', sans-serif"));
     assert_eq!(prop(&r, "font-size"), Some("18px"));
     assert_eq!(prop(&r, "font-weight"), Some("bold"));
     assert_eq!(prop(&r, "font-style"), Some("italic"));
@@ -173,6 +180,28 @@ fn type_gives_font_properties() {
     assert_eq!(prop(&r, "text-decoration"), Some("underline"));
     assert_eq!(prop(&r, "text-align"), Some("center"));
     assert!(prop(&r, "background-color").is_none() && r.unsupported.is_none());
+}
+
+/// Area type that Shrink Text to Fit scales down gives the size, spacing and leading it draws at.
+#[test]
+fn shrunk_area_type_gives_the_size_it_draws_at() {
+    let mut d = doc();
+    let st = CharStyle { size: 18.0, tracking: 50.0, leading: Some(24.0), fill: Paint::solid(Color::BLACK), ..CharStyle::default() };
+    let mut n = text(&mut d, "Area type that is too long for its frame", st);
+    let mut fit = 1.0;
+    if let NodeKind::Text(t) = &mut n.kind {
+        t.kind = vectorcraft_doc::TextKind::Area { frame: shapes::rectangle(Rect::new(0.0, 0.0, 100.0, 40.0)) };
+        t.area.fit = vectorcraft_doc::AreaFit::ShrinkText { min_percent: 10.0 };
+        let lay = vectorcraft_text::layout(vectorcraft_text::FontDb::global(), t);
+        assert!(!lay.overflow && lay.fit_scale < 0.9, "the text is shrunk to fit: {}", lay.fit_scale);
+        fit = lay.fit_scale;
+    }
+    let id = add(&mut d, n);
+    let r = one(&d, id, &CssOptions::default());
+    let px = |v: f64| format!("{}px", vectorcraft_svg::fmt_num(v, 3));
+    assert_eq!(prop(&r, "font-size"), Some(px(18.0 * fit).as_str()), "{r:?}");
+    assert_eq!(prop(&r, "letter-spacing"), Some(px(0.9 * fit).as_str()), "{r:?}");
+    assert_eq!(prop(&r, "line-height"), Some(px(24.0 * fit).as_str()), "{r:?}");
 }
 
 #[test]
@@ -282,8 +311,25 @@ fn groups_stand_for_their_objects_and_hidden_ones_are_left_out() {
 }
 
 #[test]
+fn font_family_ends_with_a_generic_family_for_viewers_without_the_font() {
+    let family = |name: &str| {
+        let mut d = doc();
+        let st = CharStyle { font_family: name.into(), size: 18.0, ..CharStyle::default() };
+        let n = text(&mut d, "Hello", st);
+        let id = add(&mut d, n);
+        prop(&one(&d, id, &CssOptions::default()), "font-family").map(str::to_string)
+    };
+    // Source Sans 3 is a sans face; an unknown family gets the same default; a generic family stands alone.
+    assert_eq!(family("Source Sans 3").as_deref(), Some("'Source Sans 3', sans-serif"));
+    assert_eq!(family("No Such Font").as_deref(), Some("'No Such Font', sans-serif"));
+    assert_eq!(family("serif").as_deref(), Some("serif"));
+}
+
+#[test]
 fn font_family_with_quote_or_backslash_is_escaped() {
-    for (family, want) in [("Bob's Font", r"'Bob\'s Font'"), (r"Back\slash Font", r"'Back\\slash Font'"), ("Bob's", r"'Bob\'s'")] {
+    for (family, want) in
+        [("Bob's Font", r"'Bob\'s Font', sans-serif"), (r"Back\slash Font", r"'Back\\slash Font', sans-serif"), ("Bob's", r"'Bob\'s', sans-serif")]
+    {
         let mut d = doc();
         let st = CharStyle { font_family: family.into(), size: 18.0, ..CharStyle::default() };
         let n = text(&mut d, "Hello", st);

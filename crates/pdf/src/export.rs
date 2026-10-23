@@ -73,6 +73,7 @@ fn export_with_report_inner(doc: &Document, opts: &PdfOptions, left_out: &mut Ha
     let now = vectorcraft_doc::metadata::output_time();
     let created_at = opts.created.or(now);
     crate::pdfx::require_date(set.standard, created_at)?;
+    let display_doc_title = opts.display_doc_title || opts.title.as_deref().is_some_and(|title| !title.trim().is_empty());
     let mut w = Writer::new(doc, set, &title, created_at, doc.color_mode == vectorcraft_doc::ColorMode::Cmyk)?;
     // Preserve Editing: the native document as an embedded file (`check` refused PDF/A with it).
     let mut warnings = set.warnings();
@@ -130,15 +131,17 @@ fn export_with_report_inner(doc: &Document, opts: &PdfOptions, left_out: &mut Ha
         w.page(&mut ex, &sheet).map_err(|_| PdfError::BadArtboard(i))?;
     }
     vectorcraft_doc::cancel::check().map_err(|_| PdfError::Cancelled)?;
-    let (layers, overprinted) = (ex.layers, ex.overprinted);
+    let (layers, overprinted, invisible) = (ex.layers, ex.overprinted, ex.invisible);
     w.absorb(ex);
-    let (bytes, more) = w.finish(left_out)?;
-    let bytes = crate::forms::finish(bytes, doc, set, layers, overprinted)?;
+    let (bytes, more) = w.finish(left_out, display_doc_title)?;
+    let bytes = crate::forms::finish(bytes, doc, set, layers, overprinted, invisible)?;
     // The writer gives the file its creation date as its modification date too.
     let bytes = match opts.modified.filter(|m| Some(*m) != created_at) {
         Some(modified) => crate::post::modification_date(bytes, modified)?,
         None => bytes,
     };
+    // The writer's metadata has no copyright: it is added to the XMP packet.
+    let bytes = crate::post::rights(bytes, &doc.metadata)?;
     warnings.extend(more);
     let bytes = crate::post::user_units(bytes, &units)?;
     let bytes = crate::post::finish(bytes, opts, native.is_some(), &mut warnings)?;
@@ -291,6 +294,9 @@ impl Writer {
             no_device_cs: out.tagged,
             cmyk_profile,
             configuration,
+            // SVG glyphs, which krilla can't draw, are drawn as art where they sit (`glyph_text`):
+            // as text they draw nothing, rather than their fonts' plain outlines over the art.
+            render_svg_glyph_fn: |_, _, _, _, _| Some(()),
             ..Default::default()
         };
 
@@ -423,7 +429,7 @@ impl Writer {
     /// standard) and the warnings of its drawing. PDF/X-1a spot colours keep their CMYK
     /// alternates. When the writer couldn't decode one of the images, its key is added to
     /// `left_out` ([`leaving_out_undecodable`]) and the writer's error is returned.
-    pub(crate) fn finish(mut self, left_out: &mut HashSet<String>) -> Result<(Vec<u8>, Vec<String>), PdfError> {
+    pub(crate) fn finish(mut self, left_out: &mut HashSet<String>, display_doc_title: bool) -> Result<(Vec<u8>, Vec<String>), PdfError> {
         let images = std::mem::take(&mut self.images);
         let mut bytes = self.pdf.finish().map_err(|e| {
             if let write::WriteError::Serialization(k) = &e
@@ -438,7 +444,7 @@ impl Writer {
         }
         let lab = !self.lab_spots.is_empty() && !self.out.standard.cmyk_only();
         let bytes = if lab { crate::lab_spot::lab_alternates(bytes, &self.lab_spots) } else { bytes };
-        let (bytes, more) = self.out.write_catalog(bytes)?;
+        let (bytes, more) = self.out.write_catalog(bytes, display_doc_title)?;
         self.warnings.extend(more);
         self.warnings.extend(self.rgb_in_cmyk.warning());
         Ok((crate::pdfx::finish(bytes, self.out.standard, self.pdf13)?, self.warnings))
@@ -567,6 +573,9 @@ pub(crate) struct Exporter<'a> {
     lab_spots: Vec<(String, vectorcraft_color::cms::Lab)>,
     /// Images may ask viewers to smooth them (not in PDF/A).
     interpolate: bool,
+    /// Images may have 16 bits a sample (PDF 1.5 and later); in earlier files they are written at
+    /// 8 bits ([`embed`]).
+    sixteen_bit: bool,
     /// How images are resampled and compressed.
     compression: &'a crate::CompressionSettings,
     /// Layers whose Print option is off are written too.
@@ -597,6 +606,9 @@ pub(crate) struct Exporter<'a> {
     pub overprint: bool,
     /// An overprinting fill or stroke was drawn so.
     pub overprinted: bool,
+    /// Characters with neither fill nor stroke, or whose fill is drawn as art (outlines filled
+    /// with an image or pattern), were written as text in forms marked invisible.
+    pub invisible: bool,
     /// Inline graphics being drawn inside inline graphics (text in a symbol shown inline in
     /// text…): deeper ones are left out.
     inline_depth: u32,
@@ -625,6 +637,8 @@ impl<'a> Exporter<'a> {
             knockout: doc.page_knockout,
             lab_spots: vec![],
             interpolate: set.standard != Standard::PdfA2b,
+            // PDF 1.3 and 1.4 files are written with the PDF 1.4 settings ([`Writer::new`]).
+            sixteen_bit: !matches!(set.compatibility, Compatibility::Pdf13 | Compatibility::Pdf14),
             compression: &set.compression,
             non_printing: false,
             intent: vectorcraft_color::cms::active().settings().intent,
@@ -639,6 +653,7 @@ impl<'a> Exporter<'a> {
             in_layer: 0,
             overprint: false,
             overprinted: false,
+            invisible: false,
             inline_depth: 0,
             left_out: HashSet::new(),
         }
@@ -665,6 +680,8 @@ struct GlyphLine {
 
 /// Most pixels along a side of a freeform gradient's image (its colour field is smooth).
 const MAX_FIELD_PX: f64 = 512.0;
+/// Most pixels along a side of a linear or radial gradient's image.
+const MAX_GRADIENT_PX: f64 = 4096.0;
 
 /// The largest magnitude a coordinate, length or transform entry may have in the content stream it
 /// is drawn into (for glyph spacing, in thousandths of an em). Art that would go beyond it is left
@@ -1223,7 +1240,7 @@ impl Exporter<'_> {
                     }
                     self.warn_raster(&fl.effects, || "fills".into());
                     self.overprinting(s, fl.overprint, &fl.paint, |ex, s| {
-                        if ex.area(s, &path, rule(r), &fl.paint, (fl.opacity, fl.blend), bounds, bounds) {
+                        if ex.area(s, &path, rule(r), &fl.paint, (fl.opacity, fl.blend), bounds, bounds, true) {
                             return;
                         }
                         let Some(paint) = ex.paint(s, &fl.paint, bounds) else { return };
@@ -1265,20 +1282,22 @@ impl Exporter<'_> {
         }
     }
 
-    /// Is `p` a paint PDF has no paint for, which [`Self::area`] draws as art: a pattern swatch or
-    /// a freeform gradient?
-    fn area_paint(&self, p: &Paint) -> bool {
+    /// Is `p` a paint PDF has no paint for when it paints a fill (`fill`) or a stroke, which
+    /// [`Self::area`] draws as art: a pattern swatch or a gradient drawn as pixels
+    /// ([`vectorcraft_color::GradientPaint::draws_as_pixels`])?
+    fn area_paint(&self, p: &Paint, fill: bool) -> bool {
         match p {
             Paint::Pattern { pattern, .. } => self.doc.pattern(pattern).is_some(),
-            Paint::Gradient(g) => g.gradient.kind == GradientKind::Freeform,
+            Paint::Gradient(g) => g.draws_as_pixels(fill),
             _ => false,
         }
     }
 
     /// Paint the area `clip` (filled by `rule`; bounds `area`) with `p` at `transparency` (opacity,
-    /// blend mode) when it is an [area paint](Self::area_paint): a pattern's tile instances
-    /// covering it, or an image of a freeform gradient placed on `bounds` (the painted object's
-    /// box, as on the canvas), clipped to it. False (nothing drawn) for other paints.
+    /// blend mode) when it is an [area paint](Self::area_paint) of a fill (`fill`) or a stroke: a
+    /// pattern's tile instances covering it, or an image of a gradient drawn as pixels placed on
+    /// `bounds` (the painted object's box, as on the canvas), clipped to it. False (nothing drawn)
+    /// for other paints.
     #[allow(clippy::too_many_arguments)]
     fn area(
         &mut self,
@@ -1289,8 +1308,9 @@ impl Exporter<'_> {
         transparency: (f32, BlendMode),
         bounds: Rect,
         area: Rect,
+        fill: bool,
     ) -> bool {
-        if !self.area_paint(p) {
+        if !self.area_paint(p, fill) {
             return false;
         }
         let (opacity, mode) = transparency;
@@ -1312,7 +1332,7 @@ impl Exporter<'_> {
                     self.node(s, &inst, area, true);
                 }
             }
-            Paint::Gradient(g) => self.field_image(s, g, bounds, area),
+            Paint::Gradient(g) => self.field_image(s, g, bounds, area, fill),
             _ => {}
         }
         for _ in 0..pushes {
@@ -1321,21 +1341,34 @@ impl Exporter<'_> {
         true
     }
 
-    /// Draw freeform gradient `g`, placed on `bounds`, as an image of its colour field over `area`,
-    /// sampled at the document's raster effects resolution (at most [`MAX_FIELD_PX`] a side).
-    fn field_image(&mut self, s: &mut Surface, g: &vectorcraft_color::GradientPaint, bounds: Rect, area: Rect) {
+    /// Draw gradient `g`, placed on `bounds`, as an image over `area`, sampled at the document's
+    /// raster effects resolution where it is drawn (`area` as the current transform sizes it, so
+    /// scaled type gets its pixels too): a freeform gradient's colour field (at most
+    /// [`MAX_FIELD_PX`] a side), or a linear or radial gradient (at most [`MAX_GRADIENT_PX`] a side),
+    /// with dither's noise when it paints a fill (`fill`).
+    fn field_image(&mut self, s: &mut Surface, g: &vectorcraft_color::GradientPaint, bounds: Rect, area: Rect, fill: bool) {
         use vectorcraft_color::freeform::{painted_box, spread_scale};
         let Some(b) = painted_box(bounds) else { return };
         let area = area.abs();
-        let long = area.width().max(area.height());
+        // The area's sides in points on the page.
+        let [m0, m1, m2, m3, _, _] = ctm(s).as_coeffs();
+        let (w, h) = (area.width() * m0.hypot(m1), area.height() * m2.hypot(m3));
+        let long = w.max(h);
         if !(long > 1e-9 && long.is_finite()) {
             return;
         }
-        let k = (self.doc.raster_effects_ppi / 72.0).min(MAX_FIELD_PX / long);
-        let along = |len: f64| (len * k).ceil().clamp(1.0, MAX_FIELD_PX) as u16;
-        let (cols, rows) = (along(area.width()), along(area.height()));
-        let field = g.freeform_on(b).field_with(spread_scale(b), &|c| c.to_rgb());
-        let rgba: Vec<u8> = field.grid(area, cols, rows).flat_map(|(c, a)| [q(c[0]), q(c[1]), q(c[2]), q(a)]).collect();
+        let freeform = g.gradient.kind == GradientKind::Freeform;
+        let max = if freeform { MAX_FIELD_PX } else { MAX_GRADIENT_PX };
+        let k = (self.doc.raster_effects_ppi / 72.0).min(max / long);
+        let along = |len: f64| (len * k).ceil().clamp(1.0, max) as u16;
+        let (cols, rows) = (along(w), along(h));
+        let rgba: Vec<u8> = if freeform {
+            let field = g.freeform_on(b).field_with(spread_scale(b), &|c| c.to_rgb());
+            field.grid(area, cols, rows).flat_map(|(c, a)| [q(c[0]), q(c[1]), q(c[2]), q(a)]).collect()
+        } else {
+            self.warn("linear and radial gradients drawn as pixels are exported as images");
+            g.pixels(b, area, cols, rows, fill, &|c| c.to_rgb()).flatten().collect()
+        };
         let pixels = if self.convert { self.out.pixels() } else { None };
         let (Some(img), Some(size)) = (
             crate::images::from_rgba_in(rgba, cols.into(), rows.into(), self.interpolate, pixels),
@@ -1355,13 +1388,14 @@ impl Exporter<'_> {
         if !stroke::is_plain(st) && self.brush_art(s, bp, st, page) {
             return;
         }
-        if self.area_paint(&st.paint) {
+        if self.area_paint(&st.paint, false) && st.path_gradient().is_none() {
             // The area the stroke paints (dashes, caps, joins, profile, arrowheads, alignment), as
-            // Outline Stroke makes it, painted with the pattern's tiles or the freeform's image.
+            // Outline Stroke makes it, painted with the pattern's tiles or the gradient's image (a
+            // gradient along or across the stroke is written as slices below).
             let region = stroke::outline_region(&vectorcraft_geom::PathData::from_bezpath(bp), r, st).to_bezpath();
             if let Some(clip) = to_path(s, &region) {
                 let area = region.bounding_box();
-                self.area(s, &clip, krilla::paint::FillRule::NonZero, &st.paint, (st.opacity, st.blend), st.paint_bounds(bounds), area);
+                self.area(s, &clip, krilla::paint::FillRule::NonZero, &st.paint, (st.opacity, st.blend), st.paint_bounds(bounds), area, false);
             }
             return;
         }
@@ -1528,11 +1562,13 @@ impl Exporter<'_> {
         // pushed for each fill and stroke of the characters, inside its form when the fill or
         // stroke overprints.
         let text_space = xf(t.xf);
-        let plain = (!self.outline_text).then(|| t.plain_text());
+        // Ruby can't be real text in one run (it isn't characters of the base text): the type's
+        // characters go out as outlines where ruby is present, ruby included.
+        let plain = (!self.outline_text && t.ruby.is_empty()).then(|| t.plain_text());
         let bars = vectorcraft_text::decorations(&layout, vectorcraft_text::FontDb::global(), t);
         for (i, run) in t.runs.iter().enumerate() {
             let mut bp = BezPath::new();
-            for g in layout.glyphs.iter().filter(|g| g.run == i) {
+            for g in layout.glyphs.iter().filter(|g| g.run == i).chain(layout.ruby.iter().filter(|g| g.run == i)) {
                 bp.extend(g.outline.iter());
             }
             // Underline and strikethrough bars are paths, with real text too (#847).
@@ -1542,12 +1578,15 @@ impl Exporter<'_> {
             }
             bp.extend(run_bars.iter());
             let fill = &run.style.fill;
+            // Colour bitmap glyphs (emoji) real text doesn't write: all of them, or those it leaves.
+            let mut images: Option<Vec<usize>> = None;
             self.overprinting(s, run.style.overprint_fill, fill, |ex, s| {
                 s.push_transform(&text_space);
                 // The outlines left to fill as paths: all of them, or those real text leaves.
-                let outlines = match plain.as_deref().filter(|_| !fill.is_none() && !ex.area_paint(fill)) {
+                let outlines = match plain.as_deref().filter(|_| !fill.is_none() && !ex.area_paint(fill, true)) {
                     Some(text) => {
-                        let mut left = ex.glyph_text(s, &layout, i, text, fill);
+                        let (mut left, unwritten) = ex.glyph_text(s, &layout, i, text, fill, true);
+                        images = Some(unwritten);
                         left.extend(run_bars.iter());
                         Cow::Owned(left)
                     }
@@ -1555,7 +1594,7 @@ impl Exporter<'_> {
                 };
                 let opaque = (1.0, BlendMode::Normal);
                 if let Some(path) = to_path(s, &outlines)
-                    && !ex.area(s, &path, krilla::paint::FillRule::NonZero, fill, opaque, layout.bounds, outlines.bounding_box())
+                    && !ex.area(s, &path, krilla::paint::FillRule::NonZero, fill, opaque, layout.bounds, outlines.bounding_box(), true)
                     && let Some(paint) = ex.paint(s, fill, layout.bounds)
                 {
                     s.set_stroke(None);
@@ -1564,6 +1603,32 @@ impl Exporter<'_> {
                 }
                 s.pop();
             });
+            // They paint themselves, whatever the fill.
+            let images = images.unwrap_or_else(|| layout.glyphs.iter().enumerate().filter(|(_, g)| g.run == i).map(|(gi, _)| gi).collect());
+            s.push_transform(&text_space);
+            for g in images.iter().filter_map(|&gi| layout.glyphs.get(gi)) {
+                self.glyph_image(s, g);
+                // COLR glyphs: their layers, as art.
+                if let Some(art) = g.placed_colour(Affine::IDENTITY) {
+                    self.node(s, &art, page, true);
+                }
+            }
+            s.pop();
+            // Characters with neither fill nor stroke (a scanned page's recognized text), or whose
+            // fill is drawn as art (a dithered gradient's image, a pattern: outlines, not text),
+            // are still text: written invisible (rendering mode 3), so they can still be selected
+            // and searched.
+            let unpainted = fill.is_none() && !run.style.has_stroke();
+            if let Some(text) = plain.as_deref().filter(|_| unpainted || self.area_paint(fill, true)) {
+                self.invisible = true;
+                crate::forms::form(s, Mark::Invisible, |s| {
+                    s.push_transform(&text_space);
+                    // The paint only lets the writer write the text; the glyphs it can't write
+                    // as text draw nothing, and colour bitmap glyphs are drawn already.
+                    self.glyph_text(s, &layout, i, text, &Paint::solid(Color::gray(0.0)), false);
+                    s.pop();
+                });
+            }
             s.push_transform(&text_space);
             let path = run.style.has_stroke().then(|| to_path(s, &bp)).flatten();
             s.pop();
@@ -1603,7 +1668,7 @@ impl Exporter<'_> {
         for item in items {
             match item {
                 AppearanceItem::Fill(fl) if fl.visible => self.overprinting(s, fl.overprint, &fl.paint, |ex, s| {
-                    if !ex.area(s, path, krilla::paint::FillRule::NonZero, &fl.paint, (fl.opacity, fl.blend), tb, bp.bounding_box())
+                    if !ex.area(s, path, krilla::paint::FillRule::NonZero, &fl.paint, (fl.opacity, fl.blend), tb, bp.bounding_box(), true)
                         && let Some(paint) = ex.paint(s, &fl.paint, tb)
                     {
                         s.set_stroke(None);
@@ -1625,16 +1690,22 @@ impl Exporter<'_> {
     /// text space; `text` is the plain text, whose characters the glyphs stand for, which makes
     /// the text selectable and searchable) → the outlines of the glyphs left to draw as paths:
     /// those of fonts that can't be embedded, and missing glyphs. Glyphs sharing a font, a frame
-    /// (size, scale, rotation) and a baseline are written together.
-    fn glyph_text(&mut self, s: &mut Surface, layout: &TextLayout, run: usize, text: &str, fill: &Paint) -> BezPath {
-        let mut rest = BezPath::new();
+    /// (size, scale, rotation) and a baseline are written together. Colour glyphs (bitmap emoji,
+    /// COLR, SVG), with `images`, are written as text too, which draws their images or layers; the
+    /// indices of those it can't write or draw (SVG glyphs) are returned with the outlines.
+    fn glyph_text(&mut self, s: &mut Surface, layout: &TextLayout, run: usize, text: &str, fill: &Paint, images: bool) -> (BezPath, Vec<usize>) {
+        let (mut rest, mut unwritten) = (BezPath::new(), vec![]);
         let mut line: Option<GlyphLine> = None;
-        for g in layout.glyphs.iter().filter(|g| g.run == run) {
+        for (gi, g) in layout.glyphs.iter().enumerate().filter(|(_, g)| g.run == run) {
+            let coloured = g.image.is_some() || g.colour.is_some();
+            if coloured && !images {
+                continue;
+            }
             let range = g.byte..g.byte + g.len;
             let ch = text.get(range.clone()).and_then(|t| t.chars().next());
             // Spaces are written too (text extraction needs them); control characters and soft
             // hyphens draw nothing.
-            let blank = g.outline.elements().is_empty();
+            let blank = g.outline.elements().is_empty() && !coloured;
             if blank && !ch.is_some_and(|c| c.is_whitespace() && !c.is_control()) {
                 continue;
             }
@@ -1646,8 +1717,20 @@ impl Exporter<'_> {
             let det = g.xf.determinant();
             let Some((font, upem)) = font.filter(|(_, upem)| det.is_finite() && det.abs() > 1e-9 && (1e-3..=1e5).contains(&(upem * sy))) else {
                 rest.extend(g.outline.iter());
+                if coloured {
+                    unwritten.push(gi);
+                }
                 continue;
             };
+            // SVG glyphs are written as text that draws nothing (see the serialize settings): their
+            // art is drawn, or else their outline.
+            if is_svg_glyph(g) {
+                if coloured {
+                    unwritten.push(gi);
+                } else {
+                    rest.extend(g.outline.iter());
+                }
+            }
             let size = upem * sy;
             let frame = g.xf * Affine::scale(1.0 / sy);
             // Its pen position along the frame's baseline, when it continues the line.
@@ -1675,7 +1758,28 @@ impl Exporter<'_> {
         if let Some(l) = line {
             self.draw_glyph_line(s, l, text, fill, layout.bounds);
         }
-        rest
+        (rest, unwritten)
+    }
+
+    /// Draw colour bitmap glyph `g`'s image (on `s` in text space), its PNG written once.
+    fn glyph_image(&mut self, s: &mut Surface, g: &vectorcraft_text::PositionedGlyph) {
+        let Some((image, to_text)) = g.placed_image() else { return };
+        if !writable(s, to_text, image.rect()) {
+            return;
+        }
+        let cache = format!("\u{0}glyph\u{0}{}", image.blob.content_key());
+        let img = match self.images.get(&cache) {
+            Some(img) => img.clone(),
+            None => {
+                let img = embed(&image.blob, self.interpolate, self.sixteen_bit);
+                self.images.insert(cache, img.clone());
+                img
+            }
+        };
+        let (Some(img), Some(size)) = (img, Size::from_wh(image.width as f32, image.height as f32)) else { return };
+        s.push_transform(&xf(to_text));
+        s.draw_image(img, size);
+        s.pop();
     }
 
     /// Draw glyphs `line` (of `text`), filled with `fill` (whose space is text space, where
@@ -1772,7 +1876,7 @@ impl Exporter<'_> {
             if let Some(w) = r.warning {
                 self.warn(w);
             }
-            r.image.or_else(|| embed(blob, interpolate))
+            r.image.or_else(|| embed(blob, interpolate, self.sixteen_bit))
         });
         if img.is_none() {
             self.warn(UNDECODED);
@@ -1832,11 +1936,41 @@ fn placed_size(im: &vectorcraft_doc::ImageObject) -> (f64, f64) {
     (im.width as f64 * a.hypot(b), im.height as f64 * c.hypot(d))
 }
 
+/// Does PNG `bytes` have 16 bits a sample: the bit depth of its IHDR chunk, which follows the
+/// signature?
+fn png_16_bit(bytes: &[u8]) -> bool {
+    bytes.get(12..16) == Some(b"IHDR".as_slice()) && bytes.get(24) == Some(&16)
+}
+
+/// PNG `bytes` at 8 bits a sample: decoded, and encoded again as gray or RGB, with alpha when the
+/// source has it, and with the source's ICC profile. `None` when it can't be decoded.
+fn png_8_bit(bytes: &[u8]) -> Option<Vec<u8>> {
+    use image::{ColorType, DynamicImage, ImageDecoder, ImageEncoder};
+    let mut decoder = image::codecs::png::PngDecoder::new(std::io::Cursor::new(bytes)).ok()?;
+    let icc = decoder.icc_profile().ok().flatten();
+    let img = DynamicImage::from_decoder(decoder).ok()?;
+    let img = match img.color() {
+        ColorType::L8 | ColorType::L16 => DynamicImage::ImageLuma8(img.into_luma8()),
+        ColorType::La8 | ColorType::La16 => DynamicImage::ImageLumaA8(img.into_luma_alpha8()),
+        ColorType::Rgb8 | ColorType::Rgb16 => DynamicImage::ImageRgb8(img.into_rgb8()),
+        _ => DynamicImage::ImageRgba8(img.into_rgba8()),
+    };
+    let mut png = vec![];
+    let mut encoder = image::codecs::png::PngEncoder::new(&mut png);
+    if let Some(icc) = icc {
+        encoder.set_icc_profile(icc).ok()?;
+    }
+    img.write_with_encoder(encoder).ok()?;
+    Some(png)
+}
+
 /// Image `blob` as it is: PNG, JPEG, GIF and WebP through the PDF writer (JPEG data unchanged),
-/// other formats decoded.
-fn embed(blob: &vectorcraft_doc::ImageBlob, interpolate: bool) -> Option<Image> {
+/// other formats decoded. Without `sixteen_bit` (a file before PDF 1.5), a PNG of 16 bits a
+/// sample is written at 8 bits ([`png_8_bit`]).
+fn embed(blob: &vectorcraft_doc::ImageBlob, interpolate: bool, sixteen_bit: bool) -> Option<Image> {
     let bytes = blob.bytes.as_ref().clone();
     let direct = match blob.mime.as_str() {
+        "image/png" if !sixteen_bit && png_16_bit(&bytes) => png_8_bit(&bytes).and_then(|png| Image::from_png(png.into(), interpolate).ok()),
         "image/png" => Image::from_png(bytes.clone().into(), interpolate).ok(),
         "image/jpeg" | "image/jpg" => Image::from_jpeg(bytes.clone().into(), interpolate).ok(),
         "image/gif" => Image::from_gif(bytes.clone().into(), interpolate).ok(),
@@ -1848,6 +1982,11 @@ fn embed(blob: &vectorcraft_doc::ImageBlob, interpolate: bool) -> Option<Image> 
         let (w, h) = rgba.dimensions();
         Some(Image::from_rgba8(rgba.into_raw(), w, h))
     })
+}
+
+/// Is `g` drawn from its font's SVG document, which the PDF writer can't draw as a font's glyph?
+fn is_svg_glyph(g: &vectorcraft_text::PositionedGlyph) -> bool {
+    vectorcraft_text::FontDb::global().is_svg_glyph(g.font_id, g.gid)
 }
 
 #[cfg(test)]
@@ -1873,5 +2012,23 @@ mod tests {
         s.pop();
         s.finish();
         page.finish();
+    }
+
+    #[test]
+    fn a_16_bit_png_at_8_bits_keeps_its_color_type_and_icc_profile() {
+        use image::{ImageDecoder, ImageEncoder};
+        let icc = vectorcraft_color::cms::icc_bytes(vectorcraft_color::cms::GRAY).unwrap().to_vec();
+        let gray = image::DynamicImage::ImageLuma16(image::ImageBuffer::from_fn(4, 2, |x, y| image::Luma([x as u16 * 20000 + y as u16])));
+        let mut png = vec![];
+        let mut encoder = image::codecs::png::PngEncoder::new(&mut png);
+        encoder.set_icc_profile(icc.clone()).unwrap();
+        gray.write_with_encoder(encoder).unwrap();
+        assert!(png_16_bit(&png));
+        let out = png_8_bit(&png).unwrap();
+        assert!(!png_16_bit(&out));
+        let mut decoder = image::codecs::png::PngDecoder::new(std::io::Cursor::new(out.as_slice())).unwrap();
+        assert_eq!(decoder.icc_profile().unwrap(), Some(icc));
+        assert_eq!(decoder.color_type(), image::ColorType::L8);
+        assert_eq!(image::DynamicImage::from_decoder(decoder).unwrap().to_luma8(), gray.to_luma8());
     }
 }

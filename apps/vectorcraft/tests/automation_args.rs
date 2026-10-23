@@ -25,7 +25,9 @@ fn rejects_with_env(args: &[&str], env: &[(&str, &str)], message: &str) {
         .stderr(Stdio::piped())
         .spawn()
         .unwrap();
-    let deadline = Instant::now() + Duration::from_secs(5);
+    // Long enough for the binary to start on a loaded machine (the workspace's other tests run
+    // meanwhile), short enough to catch a desktop that started instead of exiting.
+    let deadline = Instant::now() + Duration::from_secs(30);
     let timed_out = loop {
         if child.try_wait().unwrap().is_some() {
             break false;
@@ -58,11 +60,17 @@ fn missing_empty_or_option_operands_fail_before_startup() {
     }
 }
 
+/// #3546: a root flag may be given more than once, in either spelling; a bad later operand still
+/// stops the app before it starts.
 #[test]
-fn duplicate_roots_fail_for_both_spellings() {
+fn repeated_roots_are_accepted_for_both_spellings() {
     for flag in ["--automation-read-root", "--automation-write-root"] {
-        rejects(&[flag, ".", &format!("{flag}=.")], &format!("{flag} given twice"));
-        rejects(&[&format!("{flag}=."), flag, "."], &format!("{flag} given twice"));
+        let out = Command::new(BIN).args([flag, ".", format!("{flag}=.").as_str(), flag, "./", "--version"]).output().unwrap();
+        assert!(out.status.success(), "{flag}: {}", String::from_utf8_lossy(&out.stderr));
+        assert_eq!(String::from_utf8(out.stdout).unwrap(), format!("vectorcraft {}\n", env!("CARGO_PKG_VERSION")));
+        assert!(out.stderr.is_empty());
+        rejects(&[flag, ".", flag, ""], &format!("{flag} needs a non-empty folder"));
+        rejects(&[&format!("{flag}=."), flag], &format!("{flag} needs a folder"));
     }
 }
 

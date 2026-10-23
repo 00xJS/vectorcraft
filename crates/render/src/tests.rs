@@ -664,6 +664,34 @@ fn opacity_mask_without_clip_and_inverted() {
     assert_eq!(img.pixel(80, 50), [255, 0, 0, 255], "inverted clip background → visible");
 }
 
+/// #3580: each opacity mask is rendered over its object's pixels, not over the whole frame. 300
+/// masked 4 × 4 pt squares on a 1000 × 1000 page draw offscreen in proportion to their bounds, and
+/// still draw where their masks show them.
+#[test]
+fn small_masks_render_over_their_objects_only() {
+    let mut d = Document::new(1000.0, 1000.0);
+    let l = d.layers[0].id;
+    for i in 0..300 {
+        let (x, y) = (10.0 + (i % 30) as f64 * 30.0, 10.0 + (i / 30) as f64 * 30.0);
+        let square = Rect::new(x, y, x + 4.0, y + 4.0);
+        let mut n = rect_node(&mut d, square, Paint::solid(Color::rgb(1.0, 0.0, 0.0)), Paint::None, 0.0);
+        let white = rect_node(&mut d, square, Paint::solid(Color::WHITE), Paint::None, 0.0);
+        n.extras_mut().mask = Some(Box::new(vectorcraft_doc::OpacityMask::new(white, true)));
+        d.insert(Some(l), usize::MAX, n).unwrap();
+    }
+    let mut r = Renderer::new();
+    r.threads = 0;
+    let opts = RenderOptions { background: Some([255, 255, 255, 255]), ..Default::default() };
+    OFFSCREEN_PIXELS.with(|n| n.set(0));
+    let img = r.render(&d, 1000, 1000, Affine::IDENTITY, &opts);
+    let px = OFFSCREEN_PIXELS.with(|n| n.get());
+    // Each square's region is at most 4 + 2 × 2 margin + 1 rounding pixels a side, mask and content.
+    assert!(px <= 300 * 2 * 9 * 9, "{px} offscreen pixels for 300 masked 4 × 4 squares");
+    assert_eq!(img.pixel(12, 12), [255, 0, 0, 255]);
+    assert_eq!(img.pixel(12 + 29 * 30, 12 + 9 * 30), [255, 0, 0, 255]);
+    assert_eq!(img.pixel(20, 20), [255, 255, 255, 255]);
+}
+
 #[test]
 fn disabled_or_outline_mask_draws_unmasked() {
     let mut d = masked_doc(true, false);
@@ -955,4 +983,38 @@ fn zero_length_subpaths_draw_dots_with_their_cap() {
     }
     let butt = dots(vectorcraft_doc::LineCap::Butt);
     assert_eq!(butt.pixels.iter().filter(|&&p| p != 255).count(), 0, "a butt cap draws no dot");
+}
+
+/// #2788: a dashed solid stroke is one paint, so its object opacity folds into its colour instead
+/// of compositing a viewport-wide layer; the result matches the layered one, overlapping dashes
+/// included.
+#[test]
+fn dashed_stroke_opacity_folds_into_its_colour() {
+    let dashed = |d: &mut Document, object: f32, stroke: f32| {
+        let mut n = rect_node(d, Rect::new(20.0, 20.0, 80.0, 60.0), Paint::None, Paint::solid(Color::rgb(0.2, 0.4, 0.9)), 6.0);
+        let st = n.appearance.stroke_mut().unwrap();
+        st.dash = Some(vectorcraft_doc::Dash { pattern: vec![4.0, 1.0], ..Default::default() });
+        st.cap = vectorcraft_doc::LineCap::Round;
+        st.opacity = stroke;
+        n.opacity = object;
+        n
+    };
+    let doc = |object: f32, stroke: f32| {
+        let mut d = Document::new(100.0, 100.0);
+        let n = dashed(&mut d, object, stroke);
+        let l = d.layers[0].id;
+        d.insert(Some(l), 0, n).unwrap();
+        d
+    };
+    let mut d = Document::new(100.0, 100.0);
+    assert_eq!(painted_items(&dashed(&mut d, 0.6, 1.0)), 1, "a dashed stroke takes the folded fast path");
+    let mut brushed = dashed(&mut d, 0.6, 1.0);
+    brushed.appearance.stroke_mut().unwrap().brush = Some("Calligraphic".into());
+    assert_ne!(painted_items(&brushed), 1, "a dashed brush stroke draws its pieces one by one: no folding");
+    let folded = render(&doc(0.6, 1.0));
+    let layered = render(&doc(1.0, 0.6));
+    assert_ne!(folded.pixel(20, 40), [255, 255, 255, 255], "the stroke is drawn");
+    for (a, b) in folded.pixels.chunks(4).zip(layered.pixels.chunks(4)) {
+        assert!(a.iter().zip(b).all(|(x, y)| (*x as i32 - *y as i32).abs() <= 1), "folded {a:?} vs layered {b:?}");
+    }
 }
