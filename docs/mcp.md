@@ -1288,6 +1288,27 @@ everything in it, and `select.all`, `select.allOnArtboard` and `select.inverse` 
 among the objects beside it in its group or layer, passing over hidden and locked objects and sublayers. When there
 is no such object, the selection stays as it is.
 
+## Global Edit
+
+Select › Start Global Edit is `select.globalEdit {appearance?, size?, artboards?, includeCanvas?}`. With one path,
+compound path or symbol instance selected, it finds the objects of the same shape (moved or scaled copies; not rotated
+ones), among those `select.all` would take and the objects in their groups, and returns
+`{active: true, count, ids}`, the selected object first. `appearance` also asks for the same fill and stroke, `size`
+for the same width and height; `artboards` is `"all"` or a range such as `"1, 3-5"`, and `includeCanvas: false`
+leaves out the objects on no artboard. Missing params come from `select.globalEditOptions` (the Global Edit Options,
+kept for the session; it returns them with `count`, the objects a start would take now). The selection stays the
+one object. Until the next `select.globalEdit` (Stop Global Edit, `{active: false}`), what an edit of a selected match
+changed is given to the other matches, in the same undo step, and nothing else. A changed outline or anchors go to
+each match in proportion to its size. A changed opacity or blending, and each changed setting of a fill or stroke
+(paint, weight, opacity, blending, effects…), are copied as they are to the match's fill or stroke of the same kind
+and rank; its other fills and strokes, and their unchanged settings, stay its own (a stroke weight change leaves the
+fills). A stroke weight set on the selected match is given as it is, and resizing the outline in proportion never
+scales a match's stroke weight. Hidden or locked matches are left as they are. A fill or stroke added or removed is
+added or removed on the matches whose fills and strokes lay in the same order; the others, and any other change to the
+list, take the whole list. Whenever the document is put back (Undo, Redo, a cancelled drag or scrub), the matches it no
+longer has leave the Global Edit, which ends when fewer than two are left. An edit that would take any match past the
+canvas fails with the coordinates-out-of-range error and changes nothing. Nothing of it is saved.
+
 ## Saved selections
 
 Select → Save Selection… keeps the selected objects under a name, in the document: `select.save {name?}` (default

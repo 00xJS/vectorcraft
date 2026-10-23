@@ -390,6 +390,8 @@ pub fn handle(app: &mut VectorcraftApp, ctx: &egui::Context) {
                     let _ = app.run("object.pattern.done", json!({}));
                 } else if app.session.active().is_some_and(|d| d.isolation.is_some()) {
                     let _ = app.run("object.exitIsolation", json!({}));
+                } else if app.session.active().is_some_and(|d| d.global_edit.is_some()) {
+                    let _ = app.run("select.globalEdit", json!({}));
                 } else if app.ui.flyout.is_some() {
                     app.ui.flyout = None;
                 } else if escape_pair.is_some_and(|second| escape_resets_rotation(app, ctx, second)) {

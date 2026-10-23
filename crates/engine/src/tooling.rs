@@ -489,6 +489,10 @@ impl Session {
             let place = w.show.then_some(WidgetPlace { screen: view.screen.as_ref(), corner: w.position });
             v.splice(0..0, vectorcraft_tools::distort::perspective::grid_overlays_in(&d.doc, 1.0 / view.zoom.max(1e-9), place));
         }
+        // Global Edit: the objects edited with the selected one are highlighted.
+        for (path, color) in crate::cmd::globaledit::highlights(self) {
+            v.push(Overlay::Path { path, color, width: 1.0, dashed: false });
+        }
         if let Some((cmd, p)) = deferred_preview {
             v.extend(self.deferred_preview_overlays_from_command(&cmd, &p));
         }

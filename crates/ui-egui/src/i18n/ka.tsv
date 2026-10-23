@@ -5397,6 +5397,17 @@ axis	Y Axis	Y ღერძი
 @msg	a live effect runs while the document is drawn, so it can't be `heavy`	ცოცხალი ეფექტი დოკუმენტის დახატვისას ეშვება, ამიტომ ის ვერ იქნება `heavy`
 @msg	an exporter always gets an export's budget: leave `budget` out	ექსპორტის პლაგინი ყოველთვის ექსპორტის ბიუჯეტს იღებს: გამოტოვეთ `budget`
 @msg	“{_1}” asks for a heavy budget (each run up to {minutes} minutes and {times} times the usual instructions): install it with `allowHeavy: true` once the user agrees	„{_1}“ დიდ გამოთვლით ბიუჯეტს ითხოვს (თითო გაშვება {minutes} წუთამდე და ჩვეულებრივზე {times}-ჯერ მეტი ინსტრუქცია): მომხმარებლის თანხმობის შემდეგ დააყენეთ ის `allowHeavy: true` პარამეტრით
+	Stop Global Edit	გლობალური რედაქტირების დასრულება
+	Global Edit Options	გლობალური რედაქტირების პარამეტრები
+	Match	დამთხვევა
+	On Artboards	სამუშაო დაფებზე
+	All Artboards	ყველა სამუშაო დაფა
+	Include Objects On Canvas	ტილოზე არსებული ობიექტების ჩართვა
+	Result(s): {count}	შედეგ(ებ)ი: {count}
+@msg	select one object	აირჩიეთ ერთი ობიექტი
+@msg	Global Edit works on paths, compound paths and symbol instances	გლობალური რედაქტირება მუშაობს კონტურებზე, შედგენილ კონტურებსა და სიმბოლოს ეგზემპლარებზე
+@msg	no similar objects found (rotated or reflected copies are not matched); change the Global Edit Options and try again	მსგავსი ობიექტები ვერ მოიძებნა (შემობრუნებული ან არეკლილი ასლები არ ემთხვევა); შეცვალეთ გლობალური რედაქტირების პარამეტრები და სცადეთ ხელახლა
+@msg	`artboards`: all or a range such as 1, 3-5, not {v}	`artboards`: all ან დიაპაზონი, მაგალითად 1, 3-5, და არა {v}
 	Add to Symbols	სიმბოლოებში დამატება
 	Basic Shapes	ძირითადი ფიგურები
 	Open Symbol Library	სიმბოლოების ბიბლიოთეკის გახსნა

@@ -1217,6 +1217,7 @@ fn discard_empty(s: &mut Session, p: &Value) -> Result<Value> {
             st.doc = created.doc.clone();
             st.history.undo.truncate(k);
             st.selection.prune(&st.doc);
+            super::globaledit::follow_history(st);
             st.revision += 1;
             return Ok(json!({"removed": true}));
         }

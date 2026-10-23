@@ -5064,6 +5064,17 @@ axis	Y Axis	Y-Achse
 @msg	a live effect runs while the document is drawn, so it can't be `heavy`	ein Live-Effekt läuft, während das Dokument gezeichnet wird, daher kann er nicht `heavy` sein
 @msg	an exporter always gets an export's budget: leave `budget` out	ein Export-Plug-in erhält immer das Budget eines Exports: Lassen Sie `budget` weg
 @msg	“{_1}” asks for a heavy budget (each run up to {minutes} minutes and {times} times the usual instructions): install it with `allowHeavy: true` once the user agrees	„{_1}“ verlangt ein großes Rechenbudget (jede Ausführung bis zu {minutes} Minuten und {times}-mal so viele Anweisungen wie üblich): Installieren Sie es mit `allowHeavy: true`, sobald der Benutzer zustimmt
+	Stop Global Edit	Globale Bearbeitung beenden
+	Global Edit Options	Optionen für globale Bearbeitung
+	Match	Übereinstimmung
+	On Artboards	Auf Zeichenflächen
+	All Artboards	Alle Zeichenflächen
+	Include Objects On Canvas	Objekte auf der Leinwand einschließen
+	Result(s): {count}	Ergebnis(se): {count}
+@msg	select one object	wählen Sie ein Objekt aus
+@msg	Global Edit works on paths, compound paths and symbol instances	Globale Bearbeitung funktioniert mit Pfaden, zusammengesetzten Pfaden und Symbolinstanzen
+@msg	no similar objects found (rotated or reflected copies are not matched); change the Global Edit Options and try again	keine ähnlichen Objekte gefunden (gedrehte oder gespiegelte Kopien werden nicht erkannt); ändern Sie die Optionen für globale Bearbeitung und versuchen Sie es erneut
+@msg	`artboards`: all or a range such as 1, 3-5, not {v}	`artboards`: all oder ein Bereich wie 1, 3-5, nicht {v}
 	Add to Symbols	Zu Symbolen hinzufügen
 	Basic Shapes	Grundformen
 	Open Symbol Library	Symbol-Bibliothek öffnen

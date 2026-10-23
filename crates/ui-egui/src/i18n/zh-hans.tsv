@@ -5321,6 +5321,17 @@ axis	Y Axis	Y 轴
 @msg	a live effect runs while the document is drawn, so it can't be `heavy`	实时效果在绘制文档时运行，因此不能为 `heavy`
 @msg	an exporter always gets an export's budget: leave `budget` out	导出增效工具始终使用导出的预算：请省略 `budget`
 @msg	“{_1}” asks for a heavy budget (each run up to {minutes} minutes and {times} times the usual instructions): install it with `allowHeavy: true` once the user agrees	“{_1}”需要大量计算预算（每次运行最多 {minutes} 分钟，指令数为通常的 {times} 倍）：请在用户同意后使用 `allowHeavy: true` 安装
+	Stop Global Edit	停止全局编辑
+	Global Edit Options	全局编辑选项
+	Match	匹配
+	On Artboards	在画板上
+	All Artboards	所有画板
+	Include Objects On Canvas	包括画布上的对象
+	Result(s): {count}	结果：{count}
+@msg	select one object	请选择一个对象
+@msg	Global Edit works on paths, compound paths and symbol instances	全局编辑适用于路径、复合路径和符号实例
+@msg	no similar objects found (rotated or reflected copies are not matched); change the Global Edit Options and try again	未找到相似对象（旋转或镜像的副本不会匹配）；请更改全局编辑选项后重试
+@msg	`artboards`: all or a range such as 1, 3-5, not {v}	`artboards`：应为 all 或 1, 3-5 这样的范围，而不是 {v}
 	Add to Symbols	添加到符号
 	Basic Shapes	基本形状
 	Open Symbol Library	打开符号库
