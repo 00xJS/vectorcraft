@@ -813,8 +813,9 @@ pub trait Tool: Send {
         None
     }
     fn notify(&mut self, _cx: &ToolContext, _what: &str) {}
-    /// The pointer left the canvas with no button held (for a panel or out of the window): drop
-    /// what shows only for the hover (the Selection tool's Distance Guides).
+    /// The pointer left the canvas (for a panel or out of the window) while the tool holds no press:
+    /// hovering, or panning, zooming or turning the view. Drop what shows only for the hover (the
+    /// Selection tool's Distance Guides).
     fn pointer_left(&mut self, _cx: &ToolContext) {}
     /// Called when the user switches away (finish pending work).
     fn deactivate(&mut self, _cx: &ToolContext) -> Vec<Action> {

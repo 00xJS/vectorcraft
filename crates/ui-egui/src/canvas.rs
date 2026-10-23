@@ -1203,9 +1203,10 @@ fn handle_input(app: &mut VectorcraftApp, ui: &Ui, resp: &egui::Response, rect: 
         let ev = PointerEvent { kind: PointerKind::Move, pos: xf.to_doc(p), mods: mods(m, space), pressure: 1.0 };
         dispatch(app, &ev, view);
     }
-    // The pointer left the canvas with no drag (for a panel, or out of the window): the tool drops
-    // what it showed for the hover, which no hover event would clear (Alt's Distance Guides).
-    if was_over && hover.is_none() && drag.is_none() {
+    // The pointer left the canvas (for a panel, or out of the window) with no press the tool holds:
+    // the tool drops what it showed for the hover, which no hover event would clear (Alt's
+    // Distance Guides). A pan, zoom or view-rotation drag never reaches the tool, so it counts too.
+    if was_over && hover.is_none() && !matches!(drag, Some(Drag::Tool | Drag::Art)) {
         app.session.tool_pointer_left(view);
         ui.ctx().request_repaint();
     }
@@ -9586,7 +9587,7 @@ mod tests {
     }
 
     /// The Distance Guides go when the pointer leaves the canvas with Alt still held, for a panel
-    /// or out of the window, and come back with it.
+    /// or out of the window, and come back with it; also when it leaves panning (Alt+Space drag).
     #[test]
     fn distance_guides_go_when_the_pointer_leaves_the_canvas() {
         use egui::{Event, Modifiers};
@@ -9602,6 +9603,17 @@ mod tests {
         assert!(gap_label(&run(vec![])).is_some(), "back over the other square");
         run(vec![Event::PointerGone]);
         assert_eq!(gap_label(&run(vec![])), None, "gone out of the window");
+        // Back over the square, Space held with Alt pans: dragged out over a panel, they go.
+        let space = |pressed| Event::Key { key: egui::Key::Space, physical_key: None, pressed, repeat: false, modifiers: Modifiers::ALT };
+        let button = |pos, pressed| Event::PointerButton { pos, button: egui::PointerButton::Primary, pressed, modifiers: Modifiers::ALT };
+        run(vec![Event::PointerMoved(over)]);
+        run(vec![space(true)]);
+        assert!(gap_label(&run(vec![])).is_some(), "Space held: still shown");
+        run(vec![button(over, true)]);
+        run(vec![Event::PointerMoved(over + vec2(20.0, 0.0))]);
+        run(vec![Event::PointerMoved(outside)]);
+        assert_eq!(gap_label(&run(vec![])), None, "gone after panning out over a panel");
+        run(vec![button(outside, false), space(false)]);
     }
 
     /// The 800 × 600 window [`frame`] draws the canvas in.

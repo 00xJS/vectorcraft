@@ -439,7 +439,7 @@ impl Session {
         self.with_tool_cx(view, |t, cx| t.ime_caret(cx))
     }
 
-    /// The pointer left the canvas with no button held ([`vectorcraft_tools::Tool::pointer_left`]).
+    /// The pointer left the canvas while the tool holds no press ([`vectorcraft_tools::Tool::pointer_left`]).
     pub fn tool_pointer_left(&mut self, view: ViewInfo) {
         self.with_tool_cx(view, |t, cx| t.pointer_left(cx));
     }
