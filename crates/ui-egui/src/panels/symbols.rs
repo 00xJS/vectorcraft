@@ -19,31 +19,20 @@ use crate::menus::Item;
 use crate::theme::Tokens;
 use crate::widgets::{self, PanelDrag, menu_item};
 
-/// A thumbnail of symbol `name` (an instance at its natural size), cached by the art's identity.
+/// A thumbnail of symbol `name` (an instance at its natural size), cached by the identity of the
+/// art it shows: its own and that of the symbols and patterns it may use.
 fn thumb(ui: &Ui, doc: &Document, name: &str, size: f32) -> Option<egui::TextureHandle> {
     thread_local! {
         static RENDERER: RefCell<vectorcraft_render::Renderer> = RefCell::new(vectorcraft_render::Renderer::new());
-        static CACHE: crate::graphics::TexCache<HashMap<(usize, String, u32), egui::TextureHandle>> = crate::graphics::TexCache::default();
+        static CACHE: crate::graphics::TexCache<HashMap<(usize, u64, String, u32), egui::TextureHandle>> = crate::graphics::TexCache::default();
     }
     let sym = doc.symbols.iter().find(|s| s.name == name)?;
     let px = (size * ui.ctx().pixels_per_point()).round().max(8.0) as u32;
-    let key = (std::sync::Arc::as_ptr(&sym.art) as usize, name.to_string(), px);
+    let key = (Arc::as_ptr(&sym.art) as usize, resources_key(doc), name.to_string(), px);
     if let Some(t) = CACHE.with(|c| c.borrow().get(&key).cloned()) {
         return Some(t);
     }
-    let (w, h) = doc
-        .unknown
-        .get("symbolSizes")
-        .and_then(|m| m.get(name))
-        .and_then(|v| Some((v.get(0)?.as_f64()?, v.get(1)?.as_f64()?)))
-        .unwrap_or((20.0, 20.0));
-    let mut d = Document::new(w.max(1.0), h.max(1.0));
-    d.symbols.push(sym.clone());
-    let id = d.alloc_id();
-    let xf = vectorcraft_geom::Affine::scale_non_uniform(w / 20.0, h / 20.0);
-    let l = d.layers[0].id;
-    d.insert(Some(l), 0, Node::new(id, NodeKind::SymbolInstance { symbol: name.into(), xf })).ok()?;
-    let img = RENDERER.with(|r| r.borrow_mut().render_thumbnail(&d, id, px))?;
+    let img = RENDERER.with(|r| render_thumb(&mut r.borrow_mut(), doc, name, px))?;
     let color = crate::canvas::color_image(&img);
     let tex = ui.ctx().load_texture(format!("sym-{name}-{px}"), color, egui::TextureOptions::LINEAR);
     CACHE.with(|c| {
@@ -54,6 +43,33 @@ fn thumb(ui: &Ui, doc: &Document, name: &str, size: f32) -> Option<egui::Texture
         c.insert(key, tex.clone());
     });
     Some(tex)
+}
+
+/// The identity of `doc`'s symbol and pattern art, which a symbol's thumbnail may show.
+fn resources_key(doc: &Document) -> u64 {
+    use std::hash::{Hash, Hasher};
+    let mut h = std::collections::hash_map::DefaultHasher::new();
+    for s in &doc.symbols {
+        (Arc::as_ptr(&s.art) as usize).hash(&mut h);
+    }
+    for p in &doc.patterns {
+        p.art.iter().for_each(|a| (Arc::as_ptr(a) as usize).hash(&mut h));
+    }
+    h.finish()
+}
+
+/// Symbol `name` of `doc` rendered `px` pixels wide: an instance at its natural size, alone on a
+/// copy of `doc` that keeps its resources (the symbols it nests, patterns, images, swatches,
+/// brushes, graphic styles) but none of its art.
+fn render_thumb(r: &mut vectorcraft_render::Renderer, doc: &Document, name: &str, px: u32) -> Option<vectorcraft_render::Rendered> {
+    let (w, h) = symbol_size(doc, name);
+    let mut d = doc.clone();
+    let layer = d.alloc_id();
+    d.layers = vec![Arc::new(Node::layer(layer, "Preview", vectorcraft_doc::LayerColor::Preset(0)))];
+    let id = d.alloc_id();
+    let xf = vectorcraft_geom::Affine::scale_non_uniform(w / 20.0, h / 20.0);
+    d.insert(Some(layer), 0, Node::new(id, NodeKind::SymbolInstance { symbol: name.into(), xf })).ok()?;
+    r.render_thumbnail(&d, id, px)
 }
 
 /// Symbol `name`'s thumbnail on white in `r` (the panel's tiles and the chip a dragged symbol
@@ -402,6 +418,38 @@ mod tests {
     fn symbols(app: &mut VectorcraftApp) -> Vec<String> {
         let list = app.run("symbol.list", json!({})).unwrap();
         list["symbols"].as_array().unwrap().iter().map(|s| s["name"].as_str().unwrap_or_default().to_string()).collect()
+    }
+
+    /// Pixels of `img` that something paints opaquely, and those of them that are red.
+    fn painted(img: &vectorcraft_render::Rendered) -> (usize, usize) {
+        let px = img.pixels.chunks_exact(4);
+        let painted: Vec<&[u8]> = px.filter(|p| p[3] > 200).collect();
+        let red = painted.iter().filter(|p| p[0] > 150 && p[1] < 80 && p[2] < 80).count();
+        (painted.len(), red)
+    }
+
+    /// A symbol that nests another (a library's included) shows the nested art in its
+    /// thumbnail: the preview keeps the document's symbols and patterns, not its art.
+    #[test]
+    fn thumbnails_show_the_symbols_a_symbol_nests() {
+        let mut s = Session::new();
+        s.execute("file.new", &json!({"width": 200, "height": 200})).unwrap();
+        s.execute("shape.rectangle", &json!({"x": 10, "y": 10, "width": 40, "height": 40})).unwrap();
+        s.execute("paint.setFill", &json!({"color": "#ff0000"})).unwrap();
+        s.execute("paint.setStroke", &json!({"none": true})).unwrap();
+        // The instance "Dot" leaves behind becomes all of "Badge".
+        s.execute("symbol.new", &json!({"name": "Dot"})).unwrap();
+        s.execute("symbol.new", &json!({"name": "Badge"})).unwrap();
+        // Other art of the document stays out of the preview.
+        s.execute("shape.ellipse", &json!({"x": 0, "y": 0, "width": 200, "height": 200})).unwrap();
+        s.execute("paint.setFill", &json!({"color": "#0000ff"})).unwrap();
+        let lib = vectorcraft_engine::cmd::symbollib::SymbolLibrary::from_document(&s.doc().unwrap().doc, &["Badge".into()], "Kit".into()).unwrap();
+        let mut r = vectorcraft_render::Renderer::new();
+        for doc in [&*s.doc().unwrap().doc, &lib.doc] {
+            let img = render_thumb(&mut r, doc, "Badge", 32).expect("a thumbnail");
+            let (painted, red) = painted(&img);
+            assert!(painted > 0 && red * 10 >= painted * 9, "the nested Dot paints it: {painted} painted, {red} red");
+        }
     }
 
     #[test]
