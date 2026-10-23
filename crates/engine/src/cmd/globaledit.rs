@@ -130,12 +130,17 @@ impl Options {
     }
 }
 
+/// Outlines with their layer colours ([`highlights`]).
+pub type Outlines = Vec<(BezPath, [u8; 3])>;
+
 /// A Global Edit in progress (per document; not saved, not an undo step).
 #[derive(Clone, Debug, PartialEq)]
 pub struct GlobalEdit {
     /// The objects edited together, the one selected at the start first, each with the transform
     /// (a move and a uniform scale) that maps that first object's outline onto its own.
     pub members: Vec<(NodeId, Affine)>,
+    /// [`highlights`] as of a document revision: the canvas asks every frame.
+    outlines: std::cell::RefCell<Option<(u64, Outlines)>>,
 }
 
 /// An outline reduced to its form: the anchors and handles placed in a unit box, with what tells
@@ -302,7 +307,7 @@ fn toggle(s: &mut Session, p: &Value) -> Result<Value> {
     }
     let ids: Vec<u64> = members.iter().map(|(id, _)| id.0).collect();
     let st = s.doc_mut()?;
-    st.global_edit = Some(GlobalEdit { members });
+    st.global_edit = Some(GlobalEdit { members, outlines: Default::default() });
     st.revision += 1;
     Ok(json!({ "active": true, "count": ids.len(), "ids": ids }))
 }
@@ -568,11 +573,17 @@ pub(crate) fn propagate(before: &Document, d: &mut Document, ge: &GlobalEdit, se
 
 /// The outlines of the members of the active document's Global Edit that are not selected, in
 /// their layer's colour: the canvas highlights them while Global Edit is on.
-pub fn highlights(s: &Session) -> Vec<(BezPath, [u8; 3])> {
+pub fn highlights(s: &Session) -> Outlines {
     let Some(st) = s.active() else { return vec![] };
     let Some(ge) = &st.global_edit else { return vec![] };
+    if let Some((rev, out)) = &*ge.outlines.borrow()
+        && *rev == st.revision
+    {
+        return out.clone();
+    }
     let symbols = st.doc.symbol_boxes();
-    ge.members
+    let out: Vec<_> = ge
+        .members
         .iter()
         .filter(|(id, _)| !st.selection.contains(*id))
         .filter_map(|(id, _)| {
@@ -583,5 +594,7 @@ pub fn highlights(s: &Session) -> Vec<(BezPath, [u8; 3])> {
             };
             Some((path, st.doc.layer_color(*id)))
         })
-        .collect()
+        .collect();
+    *ge.outlines.borrow_mut() = Some((st.revision, out.clone()));
+    out
 }
