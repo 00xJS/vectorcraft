@@ -90,7 +90,7 @@ pub mod save_style_library;
 pub mod save_swatch_library;
 pub mod script_check;
 pub mod shape_builder_options;
-mod shapes;
+pub(crate) mod shapes;
 pub mod shortcut_import;
 pub(crate) mod simplify_slider;
 pub mod slices;

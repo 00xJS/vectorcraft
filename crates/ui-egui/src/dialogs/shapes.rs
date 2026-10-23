@@ -1,5 +1,8 @@
 //! Shape size dialogs (a click with a shape tool): Rectangle, Rounded Rectangle, Ellipse, Polygon,
 //! Star, Line Segment, Arc and Spiral tool options, and the two grids (size, divider counts and skews, switches).
+//! The Line Segment, Arc and grid dialogs are also their tools' Tool Options (a double-click on the
+//! tool, [`open_options`]): OK then sets the options the tool's next drag and click use, and draws
+//! nothing.
 
 use serde_json::{Value, json};
 use vectorcraft_doc::Unit;
@@ -11,21 +14,84 @@ use crate::panels::transform::artboard_rect;
 use crate::state::Dialog;
 use crate::widgets;
 
-pub(super) const SPEC: DialogSpec = DialogSpec { heading: |d| title(&d.kind).into(), body, confirm, ..DialogSpec::FORM };
+pub(super) const SPEC: DialogSpec = DialogSpec { heading: |d| title(d).into(), body, confirm, ..DialogSpec::FORM };
 
-fn title(kind: &str) -> &'static str {
-    match kind {
+/// The field that marks a dialog opened as its tool's Tool Options rather than by a click.
+const TOOL_OPTIONS: &str = "__toolOptions";
+
+/// The tools whose Tool Options are this dialog.
+pub(crate) const OPTION_TOOLS: [&str; 4] = ["rectangularGrid", "polarGrid", "arc", "lineSegment"];
+
+fn title(d: &Dialog) -> &'static str {
+    let options = d.bool(TOOL_OPTIONS);
+    match d.kind.as_str() {
         "rectangle" => tl!("Rectangle"),
         "roundedRectangle" => tl!("Rounded Rectangle"),
         "ellipse" => tl!("Ellipse"),
         "polygon" => tl!("Polygon"),
         "star" => tl!("Star"),
         "spiral" => tl!("Spiral"),
+        "rectangularGrid" if options => tl!("Rectangular Grid Tool Options"),
         "rectangularGrid" => tl!("Rectangular Grid"),
+        "polarGrid" if options => tl!("Polar Grid Tool Options"),
         "polarGrid" => tl!("Polar Grid"),
         "arc" => tl!("Arc Segment Tool Options"),
         _ => tl!("Line Segment Tool Options"),
     }
+}
+
+/// Open `tool`'s Tool Options (one of [`OPTION_TOOLS`]), as a double-click on the tool does
+/// (<https://helpx.adobe.com/illustrator/using/tool-techniques/rectangular-grid-tool.html>,
+/// <https://helpx.adobe.com/illustrator/using/tool-techniques/arc-tool.html>): the click dialog's
+/// fields at the tool's options, with no click to draw at.
+pub(crate) fn open_options(app: &mut VectorcraftApp, tool: &str) -> Result<Value, String> {
+    if !OPTION_TOOLS.contains(&tool) {
+        return Err(format!("the {tool} tool has no options"));
+    }
+    super::open_tool_dialog(app, tool, json!({}));
+    let d = app.ui.dialog.as_mut().filter(|d| d.kind == tool).ok_or_else(|| format!("the {tool} tool has no options"))?;
+    for key in ["x", "y", "__anchorX", "__anchorY"] {
+        d.fields.remove(key);
+    }
+    d.fields.insert(TOOL_OPTIONS.into(), json!(true));
+    Ok(json!({ "dialog": tool }))
+}
+
+/// What OK sets as the options of `d`'s tool ([`OPTION_TOOLS`]), from its fields: a grid's are its
+/// switches as they are, its typed fields as numbers, its Default Size and Reference Point.
+fn tool_options(d: &Dialog) -> Value {
+    match d.kind.as_str() {
+        "lineSegment" => json!({"length": d.f64("length", 100.0).abs(), "angle": d.f64("angle", 0.0), "fillLine": d.bool("fillLine")}),
+        "arc" => arc_options(d),
+        kind => {
+            let (mut o, (counts, skews)) = (form::params(d), grid_keys(kind));
+            if let Some(m) = o.as_object_mut() {
+                m.remove("x");
+                m.remove("y");
+            }
+            for (count, skew) in counts.into_iter().zip(skews) {
+                o[count] = json!((d.f64(count, 5.0) as u64).min(999));
+                o[skew] = json!(d.f64(skew, 0.0));
+            }
+            o["width"] = json!(d.f64("width", 100.0));
+            o["height"] = json!(d.f64("height", 100.0));
+            o["reference"] = json!(grid_reference(d));
+            o
+        }
+    }
+}
+
+/// The Arc tool's options from its dialog's fields.
+fn arc_options(d: &Dialog) -> Value {
+    json!({
+        "closed": d.str("arcType").eq_ignore_ascii_case("closed"),
+        "lengthX": d.f64("lengthX", 100.0),
+        "lengthY": d.f64("lengthY", 100.0),
+        "reference": arc_reference(d),
+        "baseAlong": d.str("baseAlong"),
+        "slope": d.f64("slope", 50.0),
+        "fillArc": d.bool("fillArc"),
+    })
 }
 
 /// The grids' divider counts and skews: (rows / concentric, columns / radial).
@@ -109,6 +175,11 @@ fn body(app: &mut VectorcraftApp, ui: &mut egui::Ui, d: &mut Dialog) -> bool {
     let own = match d.kind.as_str() {
         "rectangularGrid" => ("frame", tl!("Use Outside Rectangle As Frame")),
         "polarGrid" => ("compound", tl!("Create Compound Path From Ellipses")),
+        "lineSegment" => {
+            ui.add_space(8.0);
+            form::check(ui, d, "fillLine", tl!("Fill Line"));
+            return false;
+        }
         _ => return false,
     };
     ui.add_space(8.0);
@@ -173,6 +244,12 @@ fn box_origin(d: &Dialog) -> (f64, f64) {
 }
 
 fn confirm(app: &mut VectorcraftApp, d: &Dialog) -> Result<Value, String> {
+    // Tool Options: the options the tool's next drag and click use; nothing is drawn.
+    if d.bool(TOOL_OPTIONS) {
+        let r = app.run("tool.setOption", json!({"tool": d.kind, "values": tool_options(d)}));
+        app.ui.dialog = None;
+        return r;
+    }
     let count = match d.kind.as_str() {
         "polygon" => Some(("sides", 6.0, 3.0)),
         "star" => Some(("points", 5.0, 2.0)),
@@ -184,19 +261,7 @@ fn confirm(app: &mut VectorcraftApp, d: &Dialog) -> Result<Value, String> {
             values[key] = json!(d.f64(key, default).clamp(min, 1000.0) as u64);
             values
         })
-        .or_else(|| {
-            (d.kind == "arc").then(|| {
-                json!({
-                    "closed": d.str("arcType").eq_ignore_ascii_case("closed"),
-                    "lengthX": d.f64("lengthX", 100.0),
-                    "lengthY": d.f64("lengthY", 100.0),
-                    "reference": arc_reference(d),
-                    "baseAlong": d.str("baseAlong"),
-                    "slope": d.f64("slope", 50.0),
-                    "fillArc": d.bool("fillArc"),
-                })
-            })
-        });
+        .or_else(|| OPTION_TOOLS.contains(&d.kind.as_str()).then(|| tool_options(d)));
     let (x, y) = (d.f64("x", 0.0), d.f64("y", 0.0));
     let (bx, by) = box_origin(d);
     let (id, params) = match d.kind.as_str() {
@@ -232,7 +297,11 @@ fn confirm(app: &mut VectorcraftApp, d: &Dialog) -> Result<Value, String> {
         }
         "lineSegment" => {
             let (l, a) = (d.f64("length", 100.0), d.f64("angle", 0.0).to_radians());
-            ("shape.line", json!({"x1": x, "y1": y, "x2": x + l * a.cos(), "y2": y - l * a.sin()}))
+            let mut p = json!({"x1": x, "y1": y, "x2": x + l * a.cos(), "y2": y - l * a.sin()});
+            if d.bool("fillLine") {
+                p["fill"] = json!(true);
+            }
+            ("shape.line", p)
         }
         "arc" => {
             let anchor = Point::new(d.f64("__anchorX", x), d.f64("__anchorY", y));
@@ -259,7 +328,7 @@ fn confirm(app: &mut VectorcraftApp, d: &Dialog) -> Result<Value, String> {
     // On the active plane while the perspective grid shows, sized in plane units from the click;
     // else along General › Constrain Angle, turned about the point the dialog places at the click
     // (a grid's reference point, the other shapes' top-left corner or centre).
-    let options = options.or_else(|| matches!(d.kind.as_str(), "spiral" | "rectangularGrid" | "polarGrid").then(|| params.clone()));
+    let options = options.or_else(|| (d.kind == "spiral").then(|| params.clone()));
     let result = match vectorcraft_engine::perspective_click(&app.session, id, &params, vectorcraft_geom::Point::new(x, y)) {
         Some((id, params)) => run_and_close(app, &id, params),
         None => {

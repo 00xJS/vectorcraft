@@ -1842,7 +1842,10 @@ fn polar_grid_dialog_edits_skews_compound_and_fill() {
     assert!((widths[0] - 100.0).abs() < 1e-6 && (widths[1] - 93.75).abs() < 1e-6, "outward: {widths:?}");
     let tips: Vec<f64> = children[3..].iter().map(|n| n.path_data().unwrap().subpaths[0].anchors[1].p.x).collect();
     assert!(tips.iter().all(|x| *x > 60.0), "right of the top divider: {tips:?}");
-    let saved = json!({"concentric": 3, "radial": 4, "concentricSkew": 100.0, "radialSkew": 500.0, "compound": true, "fill": true});
+    let saved = json!({
+        "concentric": 3, "radial": 4, "concentricSkew": 100.0, "radialSkew": 500.0, "compound": true, "fill": true,
+        "width": 100.0, "height": 100.0, "reference": 0,
+    });
     assert_eq!(app.session.tool_options_of("polarGrid"), saved);
 }
 

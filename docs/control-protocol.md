@@ -182,8 +182,11 @@ Transform (dialog kind = the tool id), or fails with `nothing selected`. For `se
 drag or Move (`dx`, `dy`) and with the `copy`, `objects` and `preview` it was last confirmed with (its `patterns` is
 the `transformPatternTiles` preference, which its OK sets). `ui.key` Enter with one of those seven
 tools opens its dialog too (nothing happens without a selection), with the transform tools' `origin` at their reference
-point. Gradient tool handles snap to anchors, edges and smart guides; Shift constrains them to 45° steps from the
-`constrainAngle` preference.
+point. For `lineSegment`, `arc`, `rectangularGrid` and `polarGrid` it opens the tool's Tool Options: the dialog its
+click opens (kind = the tool id), without `x` and `y` and with `__toolOptions: true`, whose `ui.dialog.confirm` runs
+`tool.setOption {tool, values}` and draws nothing; the next drag with the tool and its click dialog use the values
+(the line's `fillLine`, the grids' Default Size `width`, `height` and `reference` too). Gradient tool handles snap to
+anchors, edges and smart guides; Shift constrains them to 45° steps from the `constrainAngle` preference.
 
 Effect dialogs: `engine.execute {command: "effect.dialog", params: {effect, index?, item?}}` opens the `effect` dialog
 (fields: the effect's parameters, `preview`). With `index` it edits that applied effect of `item` (null: the object's

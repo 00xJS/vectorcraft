@@ -84,6 +84,8 @@ fn suffix(kind: &str, key: &str) -> Option<&'static str> {
 fn own_rows(kind: &str) -> &'static [&'static str] {
     match kind {
         "artboardOptions" => &["color"],
+        // The grids' Reference Point is their 9-point locator.
+        "rectangularGrid" | "polarGrid" => &["reference"],
         _ => &[],
     }
 }
