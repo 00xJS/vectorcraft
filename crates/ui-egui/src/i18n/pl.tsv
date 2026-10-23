@@ -725,7 +725,7 @@
 	Units	Jednostki
 	Guides & Grid	Linie pomocnicze i siatka
 	Hyphenation	Dzielenie wyrazów
-	Plug-ins & Scratch Disks	Wtyczki & Dyski robocze
+	Plug-ins & Scratch Disks	Wtyczki i dyski robocze
 	User Interface	Interfejs użytkownika
 	Performance	Wydajność
 	File Handling	Obsługa plików
@@ -5268,7 +5268,7 @@ mark-style	Japanese	Japońskie
 	Water Paper	Mokry papier
 	Ruby…	Ruby…
 	Ruby	Ruby
-	Geometric Guides	Prowadnice geometryczne
+	Geometric Guides	Geometryczne linie pomocnicze
 	Ease In	Łagodny początek
 	Ease Out	Łagodny koniec
 	Ease In Out	Łagodny początek i koniec
