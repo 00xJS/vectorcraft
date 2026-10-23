@@ -767,7 +767,7 @@
 	Units	Yksiköt
 	Guides & Grid	Apuviivat ja ruudukko
 	Hyphenation	Tavutus
-	Plug-ins & Scratch Disks	Laajennukset & Työlevyt
+	Plug-ins & Scratch Disks	Laajennukset ja työlevyt
 	User Interface	Käyttöliittymä
 	Performance	Suorituskyky
 	File Handling	Tiedostojen käsittely
@@ -2331,11 +2331,11 @@ lighting	Light	Valo
 	Fonts whose licence doesn't allow embedding are not copied.	Fontteja, joiden lisenssi ei salli upottamista, ei kopioida.
 	Package collects a saved document with its linked files and fonts.	Paketointi kokoaa tallennetun asiakirjan sekä sen linkitetyt tiedostot ja fontit.
 	Package created	Paketti luotu
-	Packaged {n} file(s) in {folder} {note}	Paketoitu {n} tiedosto(a) kansioon {folder}{note}
+	Packaged {n} file(s) in {folder} {note}	Paketoitiin {n} tiedosto(a) kansioon {folder} {note}
 	Packaged {n} file(s){note}	Paketoitu {n} tiedosto(a){note}
 	Relink Linked Files to the Document	Linkitä linkitetyt tiedostot uudelleen asiakirjaan
 	Save the document first?	Tallennetaanko asiakirja ensin?
-	{count} file(s) in {folder} {note}. Show the package folder?	{count} tiedosto(a) kansiossa {folder}{note}. Näytetäänkö pakettikansio?
+	{count} file(s) in {folder} {note}. Show the package folder?	{count} tiedosto(a) kansiossa {folder} {note}. Näytetäänkö pakettikansio?
 	{count} linked file(s) not found	{count} linkitettyä tiedostoa ei löytynyt
 	fonts not copied: {fonts}	fontteja ei kopioitu: {fonts}
 	Built-in presets are read-only: New… starts an editable copy.	Sisäiset esiasetukset ovat vain luku -tilassa: Uusi… luo muokattavan kopion.
@@ -4053,7 +4053,7 @@ imageTrace	Outline	Ääriviiva
 @msg	PDF settings are not an object	PDF-asetukset eivät ole objekti
 @msg	PDF security settings are not an object	PDF-suojausasetukset eivät ole objekti
 @msg	PDF writer error: {0}	PDF-kirjoittimen virhe: {0}
-@msg	Packaged {n} file(s) in {folder} {note}	Paketoitiin {n} tiedosto(a) kansioon {folder}{note}
+@msg	Packaged {n} file(s) in {folder} {note}	Paketoitiin {n} tiedosto(a) kansioon {folder} {note}
 @msg	Packaged {n} file(s){note}	Paketoitiin {n} tiedosto(a){note}
 @msg	Preview in Browser needs the desktop app (the web downloads files instead)	Esikatselu selaimessa vaatii työpöytäsovelluksen (verkkoversio lataa tiedostot sen sijaan)
 @msg	Release Guides: no guides	Vapauta apuviivat: ei apuviivoja
@@ -4978,8 +4978,8 @@ imageTrace	Outline	Ääriviiva
 	DWG (use DXF)	DWG (käytä DXF:ää)
 	Artistic	Taiteelliset
 	Film Grain…	Filmin rakeisuus…
-	Colored Pencil…	Väriliitu…
-	Colored Pencil	Väriliitu
+	Colored Pencil…	Värikynä…
+	Colored Pencil	Värikynä
 	Cutout…	Leikkaus…
 	Cutout	Leikkaus
 	Dry Brush…	Kuiva sivellin…
@@ -4994,8 +4994,8 @@ imageTrace	Outline	Ääriviiva
 	Rough Pastels…	Karkeat pastellit…
 	Poster Edges	Julisteen reunat
 	Rough Pastels	Karkeat pastellit
-	Underpainting…	Alapinta…
-	Underpainting	Alapinta
+	Underpainting…	Pohjamaalaus…
+	Underpainting	Pohjamaalaus
 	Levels	Tasot
 	Edge Simplicity	Reunojen yksinkertaisuus
 	Edge Fidelity	Reunojen tarkkuus
@@ -5354,7 +5354,7 @@ mark-style	Japanese	Japanilainen
 	Choose a filter	Valitse suodatin
 	Effect Gallery	Tehostegalleria
 	Filters	Suodattimet
-	Select artwork to apply effects	Valitse grafiikka, johon tehosteet otetaan
+	Select artwork to apply effects	Valitse kuvitus, johon tehosteet lisätään
 @msg	the file's variables and data sets weren't read (variables: {variables}, data sets: {data_sets}): the Variables panel doesn't list them	tiedoston muuttujia ja tietojoukkoja ei luettu (muuttujia: {variables}, tietojoukkoja: {data_sets}): Muuttujat-paneeli ei näytä niitä
 # Select by Color (select.color)
 	Select by Color	Valitse värin mukaan
@@ -5459,12 +5459,12 @@ swatch	Bright Violet	Kirkas violetti
 	Effect Gallery…	Tehostegalleria…
 	Effect Gallery Dialog	Tehostegalleria-valintaikkuna
 	Arc Segment Tool Options	Kaarisegmenttityökalun asetukset
-	Base Along:	Pohja pitkin:
+	Base Along:	Kanta akselilla:
 	Closed	Suljettu
 	Convex	Kupera
 	Fill Arc	Täytä kaari
-	Length X-Axis:	Pituus X-akseli:
-	Length Y-Axis:	Pituus Y-akseli:
+	Length X-Axis:	X-akselin pituus:
+	Length Y-Axis:	Y-akselin pituus:
 	Slope:	Kaltevuus:
 axis	X Axis	X-akseli
 axis	Y Axis	Y-akseli
