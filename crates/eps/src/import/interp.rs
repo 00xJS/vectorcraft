@@ -951,6 +951,7 @@ impl<'a> Interp<'a> {
                 let seek = self.pop_str()?.to_vec();
                 let s = self.pop_str()?;
                 let text = s.to_vec();
+                self.spend((text.len() / 64) as u64)?;
                 let at = if op == Search { super::lex::find(&text, &seek) } else { text.starts_with(&seek).then_some(0) };
                 match at {
                     Some(i) => {

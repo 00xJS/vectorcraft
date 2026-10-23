@@ -4767,6 +4767,7 @@ dependencies = [
  "hayro-ccitt",
  "image",
  "kurbo 0.13.1",
+ "memchr",
  "ruzstd",
  "serde_json",
  "vectorcraft-brush",

@@ -1122,3 +1122,12 @@ fn a_damaged_palette_preview_is_refused_without_panicking() {
         assert!(e.contains("can't be read"), "{e}");
     }
 }
+
+/// #3582: `search` in a loop on multi-megabyte strings, with a needle half as
+/// long as the string that differs in its last byte, finish quickly and run out of the operation
+/// budget.
+#[test]
+fn search_in_a_loop_runs_out_of_the_budget() {
+    let make = "/h 4194304 string def /n 2097152 string def n 2097152 1 sub 1 put";
+    runs_out_of_budget(&format!("{make} {{ h n search {{ pop pop pop }} {{ pop }} ifelse }} loop"));
+}
