@@ -74,11 +74,17 @@ impl Renderer {
             return;
         }
         if c.blends && (c.isolated || self.nested == 0) {
-            return self.group_offscreen(ctx, f, c, draw);
+            let Some(r) = region(ctx, f, c.bounds) else { return };
+            // Past the budget for offscreen pixels, the group is drawn as a layer (isolated).
+            // A masked group is drawn offscreen whatever the budget: its mask scales its pixels.
+            if c.mask.is_some() || self.offscreen_fits(ctx, r, c.isolated) {
+                return self.group_offscreen(ctx, f, c, r, draw);
+            }
         }
         if c.mask.is_some() {
             // Its backdrop out of reach (or not needed), a masked group starts from transparency.
-            return self.group_offscreen(ctx, f, Composite { isolated: true, ..c }, draw);
+            let Some(r) = region(ctx, f, c.bounds) else { return };
+            return self.group_offscreen(ctx, f, Composite { isolated: true, ..c }, r, draw);
         }
         ctx.set_transform(f.view);
         if let Some((_, rule)) = c.clip {
@@ -94,9 +100,22 @@ impl Renderer {
         ctx.pop_layer();
     }
 
-    fn group_offscreen(&mut self, ctx: &mut RenderContext, f: &Frame, c: Composite, draw: &mut Content) {
-        let Composite { clip, blend, opacity, mask, isolated, bounds, .. } = c;
-        let Some((r, sub)) = area(ctx, f, bounds) else { return };
+    /// Whether a group drawn offscreen over region `r` keeps the offscreen pixels alive within
+    /// [`OFFSCREEN_FRAMES`] times the frame `ctx` (the frame's own context when none is alive).
+    fn offscreen_fits(&self, ctx: &RenderContext, r: Region, isolated: bool) -> bool {
+        let budget =
+            if self.offscreen_live == 0 { OFFSCREEN_FRAMES * u64::from(ctx.width()) * u64::from(ctx.height()) } else { self.offscreen_budget };
+        self.offscreen_live.saturating_add(offscreen_cost(r, isolated)) <= budget
+    }
+
+    fn group_offscreen(&mut self, ctx: &mut RenderContext, f: &Frame, c: Composite, r: Region, draw: &mut Content) {
+        let Composite { clip, blend, opacity, mask, isolated, .. } = c;
+        if self.offscreen_live == 0 {
+            self.offscreen_budget = OFFSCREEN_FRAMES * u64::from(ctx.width()) * u64::from(ctx.height());
+        }
+        let cost = offscreen_cost(r, isolated);
+        self.offscreen_live = self.offscreen_live.saturating_add(cost);
+        let sub = frame_over(f, r);
         let backdrop = (!isolated).then(|| self.flatten(ctx, r));
         let content = self.offscreen(r, &sub, backdrop.clone(), draw);
         let at = (r.x as f64, r.y as f64);
@@ -143,6 +162,7 @@ impl Renderer {
             }
         }
         ctx.pop_layer();
+        self.offscreen_live = self.offscreen_live.saturating_sub(cost);
     }
 
     /// Render what `ctx` holds so far, and start it again from that picture (so later drawing sees
@@ -301,6 +321,16 @@ thread_local! {
     pub(crate) static PIXELS_DRAWN: std::cell::Cell<u64> = const { std::cell::Cell::new(0) };
 }
 
+/// The offscreen pixels that groups drawn offscreen may keep alive at once, in frames: deeper
+/// nested blending groups are drawn as layers instead (#3581).
+const OFFSCREEN_FRAMES: u64 = 4;
+
+/// The pixels a group drawn offscreen over `r` keeps alive: its content, and when it isn't
+/// isolated the backdrop copy and the content drawn alone.
+fn offscreen_cost(r: Region, isolated: bool) -> u64 {
+    u64::from(r.w) * u64::from(r.h) * if isolated { 1 } else { 3 }
+}
+
 /// The pixel region of `ctx` that `bounds` (document space) covers, with a margin for
 /// antialiasing; `None` when it is off the context.
 fn region(ctx: &RenderContext, f: &Frame, bounds: Option<Rect>) -> Option<Region> {
@@ -317,9 +347,14 @@ fn region(ctx: &RenderContext, f: &Frame, bounds: Option<Rect>) -> Option<Region
 /// context of that region's size.
 pub(crate) fn area<'a>(ctx: &RenderContext, f: &Frame<'a>, bounds: Option<Rect>) -> Option<(Region, Frame<'a>)> {
     let r = region(ctx, f, bounds)?;
+    Some((r, frame_over(f, r)))
+}
+
+/// Frame `f` drawing into a context of region `r`'s size (on the calling thread).
+fn frame_over<'a>(f: &Frame<'a>, r: Region) -> Frame<'a> {
     let view = Affine::translate((-(r.x as f64), -(r.y as f64))) * f.view;
     let visible = view.inverse().transform_rect_bbox(Rect::new(0.0, 0.0, r.w as f64, r.h as f64));
-    Some((r, Frame { mt: false, view, visible, ..*f }))
+    Frame { mt: false, view, visible, ..*f }
 }
 
 /// `pm` (premultiplied) with each pixel scaled by its coverage in `mask` (row-major, `pm`'s size).
