@@ -800,6 +800,24 @@ fn array_inserts_attributes_and_dimensions() {
 }
 
 #[test]
+fn nested_array_inserts_of_nothing_stop_at_the_work_budget() {
+    let block = |name: &'static str, inner: Option<&'static str>| {
+        let mut b = vec![(0, "BLOCK"), (2, name), (70, "1"), (10, "0"), (20, "0")];
+        if let Some(i) = inner {
+            b.extend([(0, "INSERT"), (2, i), (10, "0"), (20, "0"), (70, "300"), (44, "1")]);
+        }
+        b.push((0, "ENDBLK"));
+        b
+    };
+    let mut blocks = block("*A", Some("*B"));
+    blocks.extend(block("*B", Some("*C")));
+    blocks.extend(block("*C", None));
+    let top = [(0, "INSERT"), (2, "*A"), (10, "0"), (20, "0"), (70, "300"), (44, "1")];
+    let r = open(&drawing(&[], &[], &blocks, &top), &points());
+    assert!(r.warnings.iter().any(|w| w.contains("more than")), "{:?}", r.warnings);
+}
+
+#[test]
 fn blocks_inside_themselves_are_left_out_without_hanging() {
     let blocks = [
         (0, "BLOCK"),

@@ -23,6 +23,8 @@ const PT_PER_MM: f64 = 72.0 / 25.4;
 const THINNEST: f64 = 0.25;
 /// The most objects an import makes.
 const MAX_NODES: usize = 2_000_000;
+/// The most block visits (one per insert copy) an import makes, whatever they produce.
+const MAX_VISITS: usize = 10_000_000;
 /// How far from the origin art may lie (points): the canvas.
 pub(crate) const MAX_EXTENT: f64 = 4.0e6;
 
@@ -63,6 +65,7 @@ pub(crate) struct Build<'d, 'a> {
     /// Lineweights are multiplied by this.
     lw_scale: f64,
     nodes: usize,
+    visits: usize,
     warnings: Vec<String>,
 }
 
@@ -118,6 +121,7 @@ impl<'d, 'a> Build<'d, 'a> {
             symbol_map: Affine::IDENTITY,
             lw_scale: 1.0,
             nodes: 0,
+            visits: 0,
             warnings: vec![],
         }
     }
@@ -557,6 +561,13 @@ impl<'d, 'a> Build<'d, 'a> {
 
     /// The art of block `name` drawn by `map`, as one object.
     fn art(&mut self, name: &str, map: Affine, inh: &Inherit, depth: u32) -> Option<Node> {
+        self.visits += 1;
+        if self.visits > MAX_VISITS {
+            if self.visits == MAX_VISITS + 1 {
+                self.warn(TOO_MANY);
+            }
+            return None;
+        }
         let items = self.block(name)?;
         if !self.enter(name, depth) {
             return None;
