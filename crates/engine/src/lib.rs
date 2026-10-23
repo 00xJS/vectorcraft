@@ -28,6 +28,7 @@ use vectorcraft_tools::{PaintDefaults, Tool};
 
 pub use cmd::EyedropperOptions;
 pub use cmd::clipboard::Clipboard;
+pub use cmd::create::constrain_click;
 pub use cmd::distortcmds::perspective_click;
 pub use cmd::params::{check_keys, check_params};
 pub use cmd::rasterfx::{export_pdf, flatten_raster_effects};
@@ -2331,6 +2332,10 @@ mod tests_colormgmt;
 mod tests_colorthemes;
 #[cfg(test)]
 mod tests_compoundpaint;
+#[cfg(test)]
+mod tests_constrain_new;
+#[cfg(test)]
+mod tests_constrain_tools;
 #[cfg(test)]
 mod tests_containers;
 #[cfg(test)]
