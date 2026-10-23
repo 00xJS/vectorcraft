@@ -1012,6 +1012,27 @@ fn a_double_click_on_a_dock_tab_collapses_its_group_to_its_tabs_and_another_expa
     assert!(valid(h.state().ui.docking.as_ref().unwrap()));
 }
 
+/// A double-click on a tab of a group beside another does nothing, and leaves no error in the
+/// status bar: that group doesn't collapse (`a_group_beside_another_does_not_collapse`).
+#[test]
+fn a_double_click_on_a_tab_of_a_group_beside_another_does_nothing() {
+    let mut app = app();
+    app.run("file.new", json!({"width": 400, "height": 300})).unwrap();
+    app.run("window.panel.move", json!({"panel":"swatches", "anchor":"layers", "zone":"left"})).unwrap();
+    let saved = app.ui.docking.clone();
+    let mut h = harness(app, vec2(1280.0, 800.0));
+    let status = h.state().ui.status.clone();
+    let shown: Vec<&str> = root_groups(&h).iter().map(|g| g.shown).collect();
+    assert_eq!(shown.len(), 2, "{shown:?}");
+    for panel in shown {
+        let at = tab_center(&h, panel);
+        double_click(&mut h, at);
+        assert_eq!(h.state().ui.status, status, "no error: {panel}");
+        assert!(h.state().ui.docking_collapsed.is_empty(), "{panel}");
+        assert_eq!(h.state().ui.docking, saved, "{panel}");
+    }
+}
+
 /// A double-click on a tab of the legacy dock collapses the tabbed group to its tabs.
 #[test]
 fn a_double_click_on_a_legacy_dock_tab_collapses_the_tabbed_group() {
