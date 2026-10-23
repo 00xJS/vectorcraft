@@ -152,6 +152,40 @@ fn double_clicking_outside_the_draw_inside_object_returns_to_draw_normal() {
 /// the object drawn into, as drawn art goes, each paste one undo step; the first one makes the
 /// clip group and the next ones add to it, with Paste Remembers Layers on and with the object
 /// isolated by a double-click too. Paste in Front and Paste in Back keep their places.
+/// Draw Inside a compound path: the clip group's mask is a copy whose subpaths have ids of their
+/// own, so no two objects share an id. An artboard copied without art, pasted on all artboards in
+/// Draw Inside, makes no clip group.
+#[test]
+fn draw_inside_a_compound_path_gives_its_mask_ids_of_its_own() {
+    let mut s = Session::new();
+    s.execute("file.new", &json!({"width": 400, "height": 300, "artboards": 2})).unwrap();
+    let a = s.execute("shape.rectangle", &json!({"x": 100, "y": 100, "width": 100, "height": 100})).unwrap()["id"].as_u64().unwrap();
+    let b = s.execute("shape.rectangle", &json!({"x": 130, "y": 130, "width": 40, "height": 40})).unwrap()["id"].as_u64().unwrap();
+    s.execute("select.set", &json!({"ids": [a, b]})).unwrap();
+    let c = s.execute("object.compoundPath.make", &json!({})).unwrap()["id"].as_u64().unwrap();
+    s.execute("select.set", &json!({"ids": [c]})).unwrap();
+    s.execute("view.drawMode", &json!({"mode": "inside"})).unwrap();
+    s.execute("shape.ellipse", &json!({"x": 120, "y": 120, "width": 30, "height": 30})).unwrap();
+    let d = &s.doc().unwrap().doc;
+    let mut ids = Vec::new();
+    d.walk(|n| ids.push(n.id.0));
+    let all = ids.len();
+    ids.sort_unstable();
+    ids.dedup();
+    assert_eq!(ids.len(), all, "an id is used twice");
+    assert_eq!(d.node(d.parent_of(NodeId(c)).unwrap()).unwrap().kind_label(), "Clip Group");
+    // An artboard alone on the clipboard: Paste on All Artboards adds nothing inside the object.
+    let mut s = Session::new();
+    s.execute("file.new", &json!({"width": 400, "height": 300, "artboards": 2})).unwrap();
+    let a = s.execute("shape.rectangle", &json!({"x": 100, "y": 100, "width": 100, "height": 100})).unwrap()["id"].as_u64().unwrap();
+    s.execute("artboard.copy", &json!({"index": 1, "art": false})).unwrap();
+    s.execute("select.set", &json!({"ids": [a]})).unwrap();
+    s.execute("view.drawMode", &json!({"mode": "inside"})).unwrap();
+    let _ = s.execute("edit.pasteOnAllArtboards", &json!({}));
+    let d = &s.doc().unwrap().doc;
+    assert!(d.parent_of(NodeId(a)).and_then(|p| d.node(p)).is_some_and(|p| p.is_layer()), "no clip group around the object");
+}
+
 #[test]
 fn pasting_in_draw_inside_puts_the_copies_inside_the_object() {
     let mut s = Session::new();

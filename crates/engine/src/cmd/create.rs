@@ -191,8 +191,9 @@ pub(crate) fn draw_inside_group(d: &mut vectorcraft_doc::Document, target: NodeI
         return Ok(p);
     }
     let (par, idx, _) = d.position(target).ok_or(crate::EngineError::NoNode(target))?;
-    let mut mask = d.node(target).cloned().ok_or(crate::EngineError::NoNode(target))?;
-    mask.id = d.alloc_id();
+    // The mask is a copy with ids of its own, its subpaths' too (a compound path's).
+    let original = d.node(target).cloned().ok_or(crate::EngineError::NoNode(target))?;
+    let mut mask = d.reid(&original);
     mask.appearance = Appearance::basic(vectorcraft_color::Paint::None, vectorcraft_color::Paint::None, 0.0).into();
     if let NodeKind::Path { clipping, .. } = &mut mask.kind {
         *clipping = true;

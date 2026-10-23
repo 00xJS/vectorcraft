@@ -691,7 +691,8 @@ fn paste_clip(s: &mut Session, p: &Value, mode: PasteMode, clip: &Clipboard, cho
     // Paste on All Artboards bring behind the selection, as Paste in Back does. Paste in Front and
     // Paste in Back keep their own places, and copied artboards' art goes back into its layers.
     let modal = boards.is_none() && matches!(mode, PasteMode::Offset | PasteMode::InPlace | PasteMode::AllArtboards);
-    let inside = s.draw_inside.filter(|t| modal && s.draw_mode == crate::DrawMode::Inside && st.doc.node(*t).is_some());
+    // (Only with objects to paste: an artboard copied without art makes no clip group.)
+    let inside = s.draw_inside.filter(|t| modal && !clip.nodes.is_empty() && s.draw_mode == crate::DrawMode::Inside && st.doc.node(*t).is_some());
     let behind = modal && mode != PasteMode::Offset && s.draw_mode == crate::DrawMode::Behind;
     let (front, back) = (mode == PasteMode::Front, mode == PasteMode::Back || behind);
     // Paste Remembers Layers (not while isolating a group: pastes stay in it, nor in Draw
