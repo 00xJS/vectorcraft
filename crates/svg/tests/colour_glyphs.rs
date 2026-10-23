@@ -43,14 +43,14 @@ fn embedded_fonts_leave_bitmap_glyphs_to_the_viewer() {
     assert!(out.svg.contains(&format!("{COLOUR_CHAR}F")), "the character stays text");
 }
 
-/// `ch` in the COLR test font (v1 or v0), 24 pt, filled blue.
-fn colr_doc(v1: bool, ch: char) -> Document {
+/// `text` in the COLR test font (v1 or v0), 24 pt, filled blue.
+fn colr_doc(v1: bool, text: impl std::fmt::Display) -> Document {
     use vectorcraft_text::test_fonts::{colr_family, colr_font};
     vectorcraft_text::FontDb::global().add_font(colr_font(v1).unwrap());
     let mut d = Document::new(200.0, 100.0);
     let fill = vectorcraft_doc::color::Paint::solid(vectorcraft_doc::color::Color::rgb8(0, 0, 255));
     let st = CharStyle { font_family: colr_family(v1).into(), size: 24.0, fill, ..CharStyle::default() };
-    let n = Node::new(d.alloc_id(), NodeKind::Text(Box::new(TextObject::point(Point::new(10.0, 50.0), &ch.to_string(), st))));
+    let n = Node::new(d.alloc_id(), NodeKind::Text(Box::new(TextObject::point(Point::new(10.0, 50.0), &text.to_string(), st))));
     let l = d.layers[0].id;
     d.insert(Some(l), 0, n).unwrap();
     d
@@ -81,4 +81,16 @@ fn embedded_fonts_leave_colr_glyphs_to_the_viewer() {
     assert!(!out.svg.contains("base64,"), "no subset without its colour layers: {}", out.svg);
     assert!(out.warnings.iter().any(|w| w.contains("emoji")), "{:?}", out.warnings);
     assert!(out.svg.contains(COLOUR_CHAR), "the character stays text");
+}
+
+/// Outlined text stacks as the canvas paints type: a run's colour glyphs under its paint, so a
+/// plain character set over a colour one stays on top.
+#[test]
+fn outlined_colour_glyphs_stay_under_their_runs_paint() {
+    let outlined = ExportOptions { outline_text: true, ..Default::default() };
+    let svg = export_full(&doc(), &outlined, None).svg;
+    assert!(svg.find("<image ").unwrap() < svg.find("<path").unwrap(), "the emoji, then the run: {svg}");
+    let svg = export_full(&colr_doc(false, format!("{COLOUR_CHAR}F")), &outlined, None).svg;
+    let first = &svg[svg.find("<path").unwrap()..];
+    assert!(first[..first.find('>').unwrap()].contains("f00"), "the red layer first: {svg}");
 }

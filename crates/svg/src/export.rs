@@ -1920,11 +1920,11 @@ impl Writer<'_> {
     }
 
     /// Text as glyph outlines: one compound path per run, painted like the run (gradients span
-    /// the whole text, as on the canvas).
+    /// the whole text), over its colour glyphs, as on the canvas.
     fn text_outlines(&mut self, n: &Node, t: &TextObject) {
         let db = vectorcraft_text::FontDb::global();
         let lay = vectorcraft_text::layout(db, t);
-        let mut runs: Vec<(usize, kurbo::BezPath)> = vec![];
+        let mut runs = vec![kurbo::BezPath::new(); t.runs.len()];
         // Underline and strikethrough bars join their run's outlines; ruby glyphs are painted
         // with the run of the text they annotate.
         let bars = vectorcraft_text::decorations(&lay, db, t);
@@ -1935,9 +1935,8 @@ impl Writer<'_> {
             .chain(lay.ruby.iter().map(|g| (g.run, &g.outline)))
             .chain(bars.iter().map(|(r, b)| (*r, b)))
         {
-            match runs.iter_mut().find(|(r, _)| *r == run) {
-                Some((_, bp)) => bp.extend(outline.iter()),
-                None => runs.push((run, outline.clone())),
+            if let Some(bp) = runs.get_mut(run) {
+                bp.extend(outline.iter());
             }
         }
         let id = self.id_attr(n);
@@ -1947,28 +1946,32 @@ impl Writer<'_> {
         // The glyphs stay in text space; the text's transform joins the document's meanwhile.
         let saved = self.xf;
         self.xf = saved * t.xf;
-        for (r, bp) in runs {
-            let Some(run) = t.runs.get(r) else { continue };
-            let pd = PathData::from_bezpath(&bp);
+        for (i, (bp, run)) in runs.iter().zip(&t.runs).enumerate() {
+            // Colour glyphs paint themselves, under their run's paint: bitmap glyphs (emoji) as
+            // their images, COLR and SVG glyphs as their art.
+            for g in lay.glyphs.iter().filter(|g| g.run == i) {
+                if let Some((image, to_text)) = g.placed_image() {
+                    let m = self.matrix(self.xf * to_text);
+                    let href = self.blob_href(&image.blob);
+                    self.line(&format!(
+                        "<image width=\"{}\" height=\"{}\" transform=\"{m}\" preserveAspectRatio=\"none\" xlink:href=\"{}\"/>",
+                        image.width,
+                        image.height,
+                        xml_escape(&href)
+                    ));
+                }
+                if let Some(art) = g.placed_colour(Affine::IDENTITY) {
+                    self.node(&art);
+                }
+            }
+            if bp.elements().is_empty() {
+                continue;
+            }
+            let pd = PathData::from_bezpath(bp);
             // An unnamed id: the pieces carry no id attribute (the group has it).
             let glyphs = Node::path(NodeId(u64::MAX), pd.clone(), run.style.appearance());
             let d = self.path_d(&pd, self.xf);
             self.shape(&glyphs, &d, &[&pd], FillRule::NonZero, Some(lay.bounds));
-        }
-        // Colour bitmap glyphs (emoji): their images, which the runs' paint doesn't paint.
-        for (image, to_text) in lay.glyphs.iter().filter_map(|g| g.placed_image()) {
-            let m = self.matrix(self.xf * to_text);
-            let href = self.blob_href(&image.blob);
-            self.line(&format!(
-                "<image width=\"{}\" height=\"{}\" transform=\"{m}\" preserveAspectRatio=\"none\" xlink:href=\"{}\"/>",
-                image.width,
-                image.height,
-                xml_escape(&href)
-            ));
-        }
-        // COLR glyphs: their layers, as art.
-        for art in lay.glyphs.iter().filter_map(|g| g.placed_colour(Affine::IDENTITY)) {
-            self.node(&art);
         }
         self.xf = saved;
         self.depth -= 1;
