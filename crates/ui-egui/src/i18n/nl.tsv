@@ -2251,6 +2251,9 @@ lighting	Light	Licht
 	Background Color:	Achtergrondkleur:
 	Show Center Mark	Middenmarkering tonen
 	Show Cross Hairs	Dradenkruis tonen
+	Show Video Safe Areas	Veilige videogebieden tonen
+	Video Ruler Pixel Aspect Ratio:	Pixelverhouding van videolinialen:
+	Hide Video Rulers	Videolinialen verbergen
 	Client-side (.html)	Client-side (.html)
 	Color Reduction:	Kleurreductie:
 	Lossless (lossy WebP isn't available yet)	Verliesvrij (WebP met verlies is nog niet beschikbaar)
@@ -3996,6 +3999,7 @@ imageTrace	Outline	Contour
 @msg	axis must be "vertical", "horizontal" or an angle in degrees, not `{v}`	as moet "vertical", "horizontal" of een hoek in graden zijn, niet `{v}`
 @msg	background {other}: transparent, white, black or a colour such as "#ff8800"	achtergrond {other}: transparant, wit, zwart of een kleur zoals "#ff8800"
 @msg	bad color {v}	onjuiste kleur {v}
+@msg	videoRulerPixelAspectRatio must be a number from 0.1 to 10	videoRulerPixelAspectRatio moet een getal van 0,1 tot 10 zijn
 @msg	bad colour `{hex}` (#rrggbb)	onjuiste kleur `{hex}` (#rrggbb)
 @msg	bad page tree	onjuiste paginaboom
 @msg	bad shortcut	onjuiste sneltoets

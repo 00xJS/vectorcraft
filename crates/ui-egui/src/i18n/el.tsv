@@ -259,6 +259,9 @@ font-technology	Variable	Μεταβλητές
 	Background Color:	Χρώμα φόντου:
 	Show Center Mark	Εμφάνιση σημαδιού κέντρου
 	Show Cross Hairs	Εμφάνιση σταυρονήματος
+	Show Video Safe Areas	Εμφάνιση ασφαλών περιοχών βίντεο
+	Video Ruler Pixel Aspect Ratio:	Αναλογία διαστάσεων pixel χαράκων βίντεο:
+	Hide Video Rulers	Απόκρυψη χαράκων βίντεο
 	Background Contents	Περιεχόμενα φόντου
 	Background Contents:	Περιεχόμενο φόντου:
 	Background:	Φόντο:
@@ -3935,6 +3938,7 @@ theme	Appearance	Εμφάνιση
 @msg	axis must be "vertical", "horizontal" or an angle in degrees, not `{v}`	ο άξονας πρέπει να είναι "vertical", "horizontal" ή γωνία σε μοίρες, όχι `{v}`
 @msg	background {other}: transparent, white, black or a colour such as "#ff8800"	φόντο {other}: transparent, white, black ή χρώμα όπως "#ff8800"
 @msg	bad color {v}	μη έγκυρο χρώμα {v}
+@msg	videoRulerPixelAspectRatio must be a number from 0.1 to 10	Το videoRulerPixelAspectRatio πρέπει να είναι αριθμός από 0,1 έως 10
 @msg	bad colour `{hex}` (#rrggbb)	μη έγκυρο χρώμα `{hex}` (#rrggbb)
 @msg	bad page tree	μη έγκυρο δέντρο σελίδων
 @msg	bad shortcut	μη έγκυρη συντόμευση

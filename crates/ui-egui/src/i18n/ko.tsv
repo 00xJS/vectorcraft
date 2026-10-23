@@ -935,6 +935,9 @@ font-technology	Variable	가변
 	Background Color:	배경색:
 	Show Center Mark	중심 표시 보기
 	Show Cross Hairs	십자선 보기
+	Show Video Safe Areas	비디오 안전 영역 보기
+	Video Ruler Pixel Aspect Ratio:	비디오 눈금자 픽셀 종횡비:
+	Hide Video Rulers	비디오 눈금자 숨기기
 	Background Contents	배경 내용
 	Background Contents:	배경 내용:
 	Background:	배경:
@@ -4247,6 +4250,7 @@ theme	Appearance	외관
 @msg	{label}…	{label}…
 @msg	no blend options	혼합 옵션이 없습니다
 @msg	bad color {v}	잘못된 색상 {v}
+@msg	videoRulerPixelAspectRatio must be a number from 0.1 to 10	videoRulerPixelAspectRatio은(는) 0.1에서 10 사이의 숫자여야 합니다
 @msg	the Color Picker is not open	색상 피커가 열려 있지 않습니다
 @msg	the Simplify slider is not open	단순화 슬라이더가 열려 있지 않습니다
 @msg	the screen color sampler is already open	화면 색상 추출기가 이미 열려 있습니다

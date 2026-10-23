@@ -266,6 +266,9 @@ font-technology	Variable	Değişken
 	Background Color:	Arka Plan Rengi:
 	Show Center Mark	Merkez İşaretini Göster
 	Show Cross Hairs	Artı Çizgilerini Göster
+	Show Video Safe Areas	Video Güvenli Alanlarını Göster
+	Video Ruler Pixel Aspect Ratio:	Video Cetveli Piksel En Boy Oranı:
+	Hide Video Rulers	Video Cetvellerini Gizle
 	Background Contents	Arka Plan İçeriği
 	Background Contents:	Arkaplan İçeriği:
 	Background:	Arka plan:
@@ -3734,6 +3737,7 @@ axis	Both	Her İkisi
 @msg	axis must be "vertical", "horizontal" or an angle in degrees, not `{v}`	eksen "{v}" değil, "dikey", "yatay" veya derece cinsinden bir açı olmalıdır
 @msg	background {other}: transparent, white, black or a colour such as "#ff8800"	arka plan {other}: şeffaf, beyaz, siyah veya "#ff8800" gibi bir renk
 @msg	bad color {v}	kötü renk {v}
+@msg	videoRulerPixelAspectRatio must be a number from 0.1 to 10	videoRulerPixelAspectRatio 0,1 ile 10 arasında bir sayı olmalıdır
 @msg	the Color Picker is not open	Renk Seçici açık değil
 @msg	the screen color sampler is already open	ekran rengi örnekleyici zaten açık
 @msg	this system has no screen color sampler	bu sistemin ekran rengi örnekleyicisi yok

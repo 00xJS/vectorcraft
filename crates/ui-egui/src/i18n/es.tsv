@@ -281,6 +281,9 @@ font-technology	Variable	Variables
 	Background Color:	Color de fondo:
 	Show Center Mark	Mostrar marca central
 	Show Cross Hairs	Mostrar líneas en cruz
+	Show Video Safe Areas	Mostrar áreas seguras de video
+	Video Ruler Pixel Aspect Ratio:	Proporción de píxel de las reglas de video:
+	Hide Video Rulers	Ocultar reglas de video
 	Background Contents	Contenido de fondo
 	Background Contents:	Contenido de fondo:
 	Background:	Fondo:
@@ -3952,6 +3955,7 @@ axis	Both	Ambos
 @msg	axis must be "vertical", "horizontal" or an angle in degrees, not `{v}`	axis debe ser "vertical", "horizontal" o un ángulo en grados, no `{v}`
 @msg	background {other}: transparent, white, black or a colour such as "#ff8800"	fondo {other}: transparent, white, black o un color como "#ff8800"
 @msg	bad color {v}	color no válido {v}
+@msg	videoRulerPixelAspectRatio must be a number from 0.1 to 10	videoRulerPixelAspectRatio debe ser un número de 0,1 a 10
 @msg	the Color Picker is not open	el Selector de color no está abierto
 @msg	the Simplify slider is not open	el regulador de Simplificar no está abierto
 @msg	the screen color sampler is already open	el muestreador de color de la pantalla ya está abierto

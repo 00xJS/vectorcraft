@@ -944,6 +944,7 @@ fn toggled_labels() -> Vec<String> {
         "view.artboards",
         "view.template",
         "view.rulers",
+        "view.videoRulers",
         "view.boundingBox",
         "view.transparencyGrid",
         "view.guides",

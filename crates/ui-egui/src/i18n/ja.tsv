@@ -940,6 +940,9 @@ font-technology	Variable	バリアブル
 	Background Color:	背景色:
 	Show Center Mark	中心マークを表示
 	Show Cross Hairs	十字線を表示
+	Show Video Safe Areas	ビデオセーフエリアを表示
+	Video Ruler Pixel Aspect Ratio:	ビデオ定規のピクセル縦横比:
+	Hide Video Rulers	ビデオ定規を隠す
 	Background Contents	背景のカラー
 	Background Contents:	背景のカラー:
 	Background:	背景:
@@ -4315,6 +4318,7 @@ swatch	Bright Violet	ビビッドバイオレット
 @msg	{label}…	{label}…
 @msg	no blend options	ブレンドオプションがありません
 @msg	bad color {v}	カラー {v} が正しくありません
+@msg	videoRulerPixelAspectRatio must be a number from 0.1 to 10	videoRulerPixelAspectRatio には 0.1 〜 10 の数値を指定してください
 @msg	the Color Picker is not open	カラーピッカーが開いていません
 @msg	the Simplify slider is not open	単純化スライダーが開いていません
 @msg	the screen color sampler is already open	画面のカラーサンプラーはすでに開いています

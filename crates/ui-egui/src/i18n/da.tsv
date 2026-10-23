@@ -2237,6 +2237,9 @@ lighting	Light	Lys
 	Background Color:	Baggrundsfarve:
 	Show Center Mark	Vis midtermærke
 	Show Cross Hairs	Vis trådkors
+	Show Video Safe Areas	Vis sikre videoområder
+	Video Ruler Pixel Aspect Ratio:	Pixelformat for videolinealer:
+	Hide Video Rulers	Skjul videolinealer
 	Client-side (.html)	Klientbaseret (.html)
 	Color Reduction:	Farvereduktion:
 	Lossless (lossy WebP isn't available yet)	Tabsfri (WebP med tab er ikke tilgængelig endnu)
@@ -3982,6 +3985,7 @@ imageTrace	Outline	Kontur
 @msg	axis must be "vertical", "horizontal" or an angle in degrees, not `{v}`	aksen skal være "vertical", "horizontal" eller en vinkel i grader, ikke `{v}`
 @msg	background {other}: transparent, white, black or a colour such as "#ff8800"	baggrund {other}: gennemsigtig, hvid, sort eller en farve som "#ff8800"
 @msg	bad color {v}	ugyldig farve {v}
+@msg	videoRulerPixelAspectRatio must be a number from 0.1 to 10	videoRulerPixelAspectRatio skal være et tal fra 0,1 til 10
 @msg	bad colour `{hex}` (#rrggbb)	ugyldig farve `{hex}` (#rrggbb)
 @msg	bad page tree	ugyldigt sidetræ
 @msg	bad shortcut	ugyldig genvej

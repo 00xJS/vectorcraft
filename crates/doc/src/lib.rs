@@ -456,12 +456,60 @@ pub struct Artboard {
     /// be set.
     #[serde(default)]
     pub show_cross_hairs: bool,
+    /// Show Video Safe Areas (Artboard Options): the canvas draws the artboard's action-safe and
+    /// title-safe areas ([`Artboard::video_safe_areas`]). Exports and print leave them out. Written
+    /// only when on, so a document that never shows them saves as before.
+    #[serde(default, skip_serializing_if = "skip::is_default")]
+    pub show_video_safe_areas: bool,
+    /// Video Ruler Pixel Aspect Ratio (Artboard Options): the width of one video pixel over its
+    /// height, which View › Rulers › Show Video Rulers counts the artboard in: a pixel is this many
+    /// points wide and one point tall. 1 (square pixels) unless set, and written only when it isn't
+    /// 1; always within [`VIDEO_PIXEL_ASPECT_RANGE`]: the commands refuse others, and a file's is
+    /// brought into it as it opens.
+    #[serde(default = "square_pixels", deserialize_with = "pixel_aspect_within_range", skip_serializing_if = "is_square_pixels")]
+    pub video_ruler_pixel_aspect_ratio: f64,
     /// Background color (Properties › Artboards › Fill, Artboard Options). The canvas draws the
     /// artboard's paper in it, multiplied with the Simulate Colored Paper color while that is on;
     /// without one the paper is white, or the Simulate Colored Paper color. Exports and print leave
     /// it out.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub color: Option<vectorcraft_color::Color>,
+}
+
+/// The Video Ruler Pixel Aspect Ratios an artboard takes (Artboard Options): from a pixel ten times
+/// as tall as it is wide to one ten times as wide as it is tall, which holds the anamorphic and
+/// standard-definition ratios video uses (0.9, 1.2, 1.33, 2) with room to spare.
+pub const VIDEO_PIXEL_ASPECT_RANGE: std::ops::RangeInclusive<f64> = 0.1..=10.0;
+
+/// How far in from each edge of an artboard the video safe areas lie, as a share of its width
+/// (left and right) and of its height (top and bottom): the action-safe area 3.5% and the
+/// title-safe (graphics-safe) area 5%, as EBU R 95 sets them for 16:9 television
+/// (https://tech.ebu.ch/docs/r/r095.pdf, note 5).
+pub const VIDEO_SAFE_INSETS: [f64; 2] = [0.035, 0.05];
+
+fn square_pixels() -> f64 {
+    1.0
+}
+
+fn is_square_pixels(v: &f64) -> bool {
+    *v == 1.0
+}
+
+/// A file's Video Ruler Pixel Aspect Ratio, brought into [`VIDEO_PIXEL_ASPECT_RANGE`]: one that
+/// isn't a number (NaN, infinite) reads as square pixels.
+fn pixel_aspect_within_range<'de, D: serde::Deserializer<'de>>(d: D) -> Result<f64, D::Error> {
+    let v = f64::deserialize(d)?;
+    let (lo, hi) = (*VIDEO_PIXEL_ASPECT_RANGE.start(), *VIDEO_PIXEL_ASPECT_RANGE.end());
+    Ok(if v.is_finite() { v.clamp(lo, hi) } else { 1.0 })
+}
+
+impl Artboard {
+    /// The action-safe and the title-safe area of the artboard, in that order, each inset from its
+    /// edges by the share of [`VIDEO_SAFE_INSETS`] (Show Video Safe Areas).
+    pub fn video_safe_areas(&self) -> [Rect; 2] {
+        let r = self.rect;
+        VIDEO_SAFE_INSETS.map(|k| r.inflate(-k * r.width(), -k * r.height()))
+    }
 }
 
 /// A document's locked artboards ([`Document::locked_artboards`]).
@@ -1131,6 +1179,8 @@ impl Document {
                 locked: false,
                 show_center_mark: false,
                 show_cross_hairs: false,
+                show_video_safe_areas: false,
+                video_ruler_pixel_aspect_ratio: 1.0,
                 color: None,
             }],
             layers: vec![],
@@ -2276,6 +2326,8 @@ mod tests {
             locked: false,
             show_center_mark: false,
             show_cross_hairs: false,
+            show_video_safe_areas: false,
+            video_ruler_pixel_aspect_ratio: 1.0,
             color: None,
         });
         let rect = |d: &mut Document, r: Rect, appearance: Appearance| {
