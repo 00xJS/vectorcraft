@@ -563,6 +563,32 @@ fn text_boxes_word_spaced_throughout_open_as_one() {
     lands(&content, "", &[PARAGRAPH_TEXT]);
 }
 
+/// A font the file names but doesn't carry, drawn with the installed one of that name, whose
+/// advances (2048 units an em) its widths give only to the thousandth of an em: the spacing the
+/// file set is measured from its widths, so letters a hair off the font's widths still take one
+/// tracking value, not each character its own (a run each). Inter is built in, so this doesn't
+/// depend on the fonts installed.
+#[test]
+fn widths_rounded_off_the_installed_fonts_advances_keep_one_tracking() {
+    let inter = FontDb::global().find_postscript("Inter-Regular").expect("Inter is built in");
+    let upm = inter.units_per_em();
+    assert!(upm != 1000.0, "advances finer than the file's widths: {upm}");
+    let widths: Vec<String> = (32u8..=126).map(|c| (inter.advance(inter.glyph_for(c as char)) * 1000.0 / upm).round().to_string()).collect();
+    let font = format!(
+        "<< /Type /Font /Subtype /TrueType /BaseFont /Inter-Regular /FirstChar 32 /LastChar 126 /Widths [{}] /Encoding /WinAnsiEncoding >>",
+        widths.join(" ")
+    );
+    let resources = format!("/Font << /IN {} 0 R >>", first_extra(1));
+    let content = "BT /IN 12 Tf 20 50 Td [(Next) -1000 (line here)] TJ ET";
+    let bytes = pdf_with(&[PdfPage { resources, ..PdfPage::new(300.0, 200.0, content) }], &[&font], None);
+    let t = texts(&open_as(&bytes, TextAs::Text));
+    assert_eq!(t.len(), 1);
+    let runs: Vec<&str> = t[0].runs.iter().map(|r| r.text.as_str()).collect();
+    assert_eq!(runs, ["Next", " ", "line here"], "{:?}", t[0].runs);
+    assert!(t[0].runs[0].style.tracking.abs() < 0.5 && t[0].runs[2].style.tracking.abs() < 0.5, "{:?}", t[0].runs);
+    assert!(t[0].runs[1].style.tracking > 500.0, "the em's gap on the space: {:?}", t[0].runs);
+}
+
 /// A text-heavy page: `columns` columns of `rows` lines of 10 pt type, alternately plain lines and
 /// paragraphs wrapped in a frame (left aligned, and justified with word spacing).
 fn text_heavy(columns: usize, rows: usize) -> Vec<u8> {
