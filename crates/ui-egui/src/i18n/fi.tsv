@@ -1888,7 +1888,6 @@ lighting	Light	Valo
 	{kind}, {model}	{kind}, {model}
 	No symbols in this document	Tässä asiakirjassa ei ole symboleja
 	Select art and click New Symbol to make one.	Luo symboli valitsemalla kuvitus ja napsauttamalla Uusi symboli.
-	Symbol Libraries (on the roadmap)	Symbolikirjastot (suunnitteilla)
 	Align On:	Tasaa kohteeseen:
 	Bottom-Justified Tab	Alas tasattu sarkain
 	Center-Justified Tab	Keskitetty sarkain
@@ -5506,6 +5505,32 @@ axis	Y Axis	Y-akseli
 @msg	a live effect runs while the document is drawn, so it can't be `heavy`	live-tehoste suoritetaan asiakirjaa piirrettäessä, joten se ei voi olla `heavy`
 @msg	an exporter always gets an export's budget: leave `budget` out	vientilaajennus saa aina viennin budjetin: jätä `budget` pois
 @msg	“{_1}” asks for a heavy budget (each run up to {minutes} minutes and {times} times the usual instructions): install it with `allowHeavy: true` once the user agrees	”{_1}” pyytää suurta laskentabudjettia (jokainen ajo enintään {minutes} minuuttia ja {times} kertaa tavallinen määrä käskyjä): asenna se asetuksella `allowHeavy: true`, kun käyttäjä hyväksyy
+	Add to Symbols	Lisää symboleihin
+	Basic Shapes	Perusmuodot
+	Open Symbol Library	Avaa symbolikirjasto
+	Save Symbol Library	Tallenna symbolikirjasto
+	Save Symbol Library…	Tallenna symbolikirjasto…
+	Save Symbols…	Tallenna symbolit…
+	Selected Symbols Only	Vain valitut symbolit
+	Symbol Libraries Menu	Symbolikirjastojen valikko
+	Symbol Library	Symbolikirjasto
+	User Symbol Library 1	Käyttäjän symbolikirjasto 1
+	User Symbol Library 2	Käyttäjän symbolikirjasto 2
+	User Symbol Library 3	Käyttäjän symbolikirjasto 3
+	User Symbol Library 4	Käyttäjän symbolikirjasto 4
+	User Symbol Library 5	Käyttäjän symbolikirjasto 5
+	User Symbol Library 6	Käyttäjän symbolikirjasto 6
+	User Symbol Library 7	Käyttäjän symbolikirjasto 7
+	User Symbol Library 8	Käyttäjän symbolikirjasto 8
+	User Symbol Library 9	Käyttäjän symbolikirjasto 9
+	User Symbol Library 10	Käyttäjän symbolikirjasto 10
+	{w} × {h} pt	{w} × {h} pt
+@msg	`{_1}` has no symbols to place	Kohteessa `{_1}` ei ole sijoitettavia symboleja
+@msg	missing `library` (see symbol.libraries)	`library` puuttuu (katso symbol.libraries)
+@msg	no symbol `{n}`	ei symbolia `{n}`
+@msg	no symbol `{n}` in `{_1}`	ei symbolia `{n}` kohteessa `{_1}`
+@msg	no symbol library `{key}` (see symbol.libraries)	ei symbolikirjastoa `{key}` (katso symbol.libraries)
+@msg	the document has no symbols to save	dokumentissa ei ole tallennettavia symboleja
 @msg	Trap: select two or more objects filled with solid colours	Ylitäyttö: valitse vähintään kaksi tasaisella värillä täytettyä objektia
 @msg	Trap: no edges of different colours meet among the selected objects	Ylitäyttö: valituissa objekteissa eriväriset reunat eivät kohtaa
 @msg	thickness must be from 0.01 to 5000 pt	thickness-arvon on oltava 0,01–5000 pt

@@ -3268,7 +3268,6 @@ mark-style	Japanese	Giapponese
 	Show all open documents	Mostra tutti i documenti aperti
 	Symbol Instance	Istanza di simbolo
 	Symbol Libraries	Librerie simboli
-	Symbol Libraries (on the roadmap)	Librerie simboli (in programma)
 	Symbol Screener Tool	Strumento Trasparenza simboli
 	Symbol Scruncher Tool	Strumento Addensamento simboli
 	Symbol Shifter Tool	Strumento Spostamento simboli
@@ -5092,6 +5091,32 @@ axis	Y Axis	Asse Y
 @msg	a live effect runs while the document is drawn, so it can't be `heavy`	un effetto dinamico viene eseguito mentre il documento viene disegnato, quindi non può essere `heavy`
 @msg	an exporter always gets an export's budget: leave `budget` out	un plug-in di esportazione riceve sempre il budget di un’esportazione: ometti `budget`
 @msg	“{_1}” asks for a heavy budget (each run up to {minutes} minutes and {times} times the usual instructions): install it with `allowHeavy: true` once the user agrees	“{_1}” chiede un budget di calcolo elevato (ogni esecuzione fino a {minutes} minuti e {times} volte le istruzioni consuete): installalo con `allowHeavy: true` quando l’utente acconsente
+	Add to Symbols	Aggiungi ai simboli
+	Basic Shapes	Forme di base
+	Open Symbol Library	Apri libreria simboli
+	Save Symbol Library	Salva libreria simboli
+	Save Symbol Library…	Salva libreria simboli…
+	Save Symbols…	Salva simboli…
+	Selected Symbols Only	Solo simboli selezionati
+	Symbol Libraries Menu	Menu Librerie simboli
+	Symbol Library	Libreria simboli
+	User Symbol Library 1	Libreria simboli utente 1
+	User Symbol Library 2	Libreria simboli utente 2
+	User Symbol Library 3	Libreria simboli utente 3
+	User Symbol Library 4	Libreria simboli utente 4
+	User Symbol Library 5	Libreria simboli utente 5
+	User Symbol Library 6	Libreria simboli utente 6
+	User Symbol Library 7	Libreria simboli utente 7
+	User Symbol Library 8	Libreria simboli utente 8
+	User Symbol Library 9	Libreria simboli utente 9
+	User Symbol Library 10	Libreria simboli utente 10
+	{w} × {h} pt	{w} × {h} pt
+@msg	`{_1}` has no symbols to place	`{_1}` non ha simboli da inserire
+@msg	missing `library` (see symbol.libraries)	manca `library` (vedi symbol.libraries)
+@msg	no symbol `{n}`	nessun simbolo `{n}`
+@msg	no symbol `{n}` in `{_1}`	nessun simbolo `{n}` in `{_1}`
+@msg	no symbol library `{key}` (see symbol.libraries)	nessuna libreria simboli `{key}` (vedi symbol.libraries)
+@msg	the document has no symbols to save	il documento non ha simboli da salvare
 @msg	Trap: select two or more objects filled with solid colours	Trapping: selezionate due o più oggetti con riempimento in tinta unita
 @msg	Trap: no edges of different colours meet among the selected objects	Trapping: tra gli oggetti selezionati non si incontrano bordi di colori diversi
 @msg	thickness must be from 0.01 to 5000 pt	thickness deve essere compreso tra 0,01 e 5000 pt

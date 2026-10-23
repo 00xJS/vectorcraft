@@ -1,15 +1,21 @@
 //! Symbols panel: the document's symbols as rendered thumbnails or a list. Click selects a symbol
-//! (it becomes the Symbol Sprayer's current symbol); double-click places an instance.
+//! (it becomes the Symbol Sprayer's current symbol); double-click places an instance. Symbol
+//! libraries open in library panels ([`SymbolLibraries`]).
 
 use std::cell::RefCell;
 use std::collections::HashMap;
+use std::sync::Arc;
 
 use egui::{Sense, Stroke, StrokeKind, Ui, vec2};
 use serde_json::{Value, json};
 use vectorcraft_doc::{Document, Node, NodeKind};
+use vectorcraft_engine::cmd::swatchlib::LibraryInfo;
+use vectorcraft_engine::cmd::symbollib::{self, SymbolLibrary};
 
+use super::library_panel::{self, LibraryKind, LibraryRef, Row};
 use super::{pstate, set_pstate};
 use crate::VectorcraftApp;
+use crate::menus::Item;
 use crate::theme::Tokens;
 use crate::widgets::{self, PanelDrag, menu_item};
 
@@ -146,7 +152,12 @@ pub fn show(app: &mut VectorcraftApp, ui: &mut Ui) {
     let has_sel = app.session.active().is_some_and(|d| !d.selection.is_empty());
     let inst = has_instances_selected(app);
     widgets::bottom_bar(ui, |ui| {
-        widgets::icon_button_enabled(ui, "library", tl!("Symbol Libraries (on the roadmap)"), false, false, 24.0);
+        let open = library_panel::any_open::<SymbolLibraries>(&app.ui);
+        let lr = widgets::icon_button(ui, "library", SymbolLibraries::MENU, open, 24.0);
+        egui::Popup::menu(&lr).show(|ui| {
+            ui.set_min_width(200.0);
+            library_panel::library_menu::<SymbolLibraries>(app, ui);
+        });
         if widgets::icon_button_enabled(ui, "dc-place-symbol", tl!("Place Symbol Instance"), false, sel.is_some(), 24.0).clicked() {
             app.run("symbol.place", json!({})).ok();
         }
@@ -197,6 +208,176 @@ pub fn menu(app: &mut VectorcraftApp, ui: &mut Ui) {
     if menu_item(ui, tl!("List View"), true, list) {
         set_pstate(ui.ctx(), "sym-list", true);
     }
+    ui.separator();
+    ui.menu_button(tl!("Open Symbol Library"), |ui| library_panel::library_menu::<SymbolLibraries>(app, ui));
+    let has_symbols = app.session.active().is_some_and(|d| !d.doc.symbols.is_empty());
+    if menu_item(ui, tl!("Save Symbol Library…"), has_symbols, false) {
+        save_library(app, sel.into_iter().collect());
+    }
+}
+
+/// Save Symbol Library… for the document's symbols (`names`: the one selected in the panel).
+fn save_library(app: &mut VectorcraftApp, names: Vec<String>) {
+    if let Err(e) = app.run("ui.saveSymbolLibrary", json!({ "names": names })) {
+        app.status(e);
+    }
+}
+
+// ---------- libraries ----------
+
+/// A symbol of a library as the library panel shows it.
+pub(crate) struct LibSymbol {
+    lib: Arc<SymbolLibrary>,
+    index: usize,
+}
+
+impl LibSymbol {
+    fn name(&self) -> &str {
+        self.lib.doc.symbols.get(self.index).map_or("", |s| s.name.as_str())
+    }
+}
+
+/// Symbol libraries in library panels (engine: `symbol.libraries`, `symbol.addFromLibrary`…).
+pub(crate) struct SymbolLibraries;
+
+impl LibraryKind for SymbolLibraries {
+    const KIND: &'static str = "symbols";
+    const OPEN: &'static str = "window.symbolLibrary";
+    const LIST: &'static str = "symbol.libraries";
+    const LOAD: &'static str = "symbol.loadLibrary";
+    const MENU: &'static str = "Symbol Libraries Menu";
+    const ADD: &'static str = "Add to Symbols";
+    /// Symbols need room to show their art.
+    const VIEW: super::swatches::View = super::swatches::View::LargeThumb;
+    type Lib = Arc<Vec<LibSymbol>>;
+    type Item = LibSymbol;
+
+    fn list(app: &VectorcraftApp) -> Vec<LibraryRef> {
+        let libs = symbollib::libraries(&app.session).into_iter();
+        libs.map(|l| LibraryRef { submenu: library_panel::submenu(l.category), id: l.id, name: l.name }).collect()
+    }
+    fn get(app: &VectorcraftApp, id: &str) -> Option<(String, Self::Lib)> {
+        let (info, lib) = symbollib::library(&app.session, id)?;
+        let shown = (0..lib.len()).map(|index| LibSymbol { lib: lib.clone(), index }).collect();
+        Some((info.name, Arc::new(shown)))
+    }
+    fn find(app: &VectorcraftApp, key: &str) -> library_panel::Found {
+        symbollib::library(&app.session, key).map(|(info, lib)| (info.id, info.name, lib.len()))
+    }
+    fn path(app: &VectorcraftApp, id: &str) -> Option<String> {
+        app.session.symbol_libraries.path(id).map(str::to_string)
+    }
+    fn rows<'a>(lib: &'a Self::Lib, query: &str) -> Vec<Row<'a, LibSymbol>> {
+        let found = |n: &str| query.is_empty() || n.to_lowercase().contains(query);
+        lib.iter().filter(|s| found(s.name())).map(|s| Row { name: s.name(), item: Some(s) }).collect()
+    }
+    /// The symbol's art on white, as the Symbols panel shows it.
+    fn draw(_: &VectorcraftApp, ui: &Ui, r: egui::Rect, s: &LibSymbol, selected: bool, hovered: bool) {
+        chip(ui, &s.lib.doc, r, s.name());
+        super::graphic_styles::outline(ui, r, selected, hovered);
+    }
+    fn row_icons(_: &Ui, _: egui::Rect, _: &LibSymbol) {}
+    /// Its natural size.
+    fn describe(s: &LibSymbol) -> String {
+        let (w, h) = symbol_size(&s.lib.doc, s.name());
+        let num = |v: f64| format!("{}", (v * 100.0).round() / 100.0);
+        crate::i18n::fmt(tl!("{w} × {h} pt"), &[("w", &num(w)), ("h", &num(h))])
+    }
+    /// Adds the symbol to the document's Symbols, as the current symbol.
+    fn click(app: &mut VectorcraftApp, _: &Ui, id: &str, name: &str) {
+        add(app, json!({"library": id, "name": name}));
+    }
+    fn add(app: &mut VectorcraftApp, id: &str, names: Vec<String>) {
+        add(app, json!({"library": id, "names": names}));
+    }
+    /// Dragged onto the canvas, the symbol is added and an instance placed where it is dropped.
+    fn drag(id: &str, name: &str) -> Option<PanelDrag> {
+        Some(PanelDrag::LibrarySymbol { library: id.to_string(), name: name.to_string() })
+    }
+    fn menu_tail(app: &mut VectorcraftApp, ui: &mut Ui) {
+        ui.separator();
+        // As a command, so its file dialog, shown off the UI thread, loads the library when it
+        // answers.
+        if menu_item(ui, tl!("Other Library…"), true, false)
+            && let Err(e) = app.run("window.symbolLibrary.other", json!({}))
+        {
+            app.status(e);
+        }
+        let has_symbols = app.session.active().is_some_and(|d| !d.doc.symbols.is_empty());
+        if menu_item(ui, tl!("Save Symbols…"), has_symbols, false) {
+            let sel = current(app);
+            save_library(app, sel.into_iter().collect());
+        }
+    }
+}
+
+/// Run `symbol.addFromLibrary` with `p`; a failure goes to the status bar.
+fn add(app: &mut VectorcraftApp, p: Value) {
+    if let Err(e) = app.run("symbol.addFromLibrary", p) {
+        app.status(e);
+    }
+}
+
+/// Symbol `name`'s natural size in `doc`.
+fn symbol_size(doc: &Document, name: &str) -> (f64, f64) {
+    let size = doc.unknown.get(vectorcraft_doc::SYMBOL_SIZES).and_then(|m| m.get(name));
+    size.and_then(|v| Some((v.get(0)?.as_f64()?, v.get(1)?.as_f64()?)))
+        .unwrap_or((2.0 * vectorcraft_doc::SYMBOL_HALF, 2.0 * vectorcraft_doc::SYMBOL_HALF))
+}
+
+/// `window.symbolLibrary {library}`: open a symbol library in its own panel (`library` null closes
+/// every symbol library panel).
+pub(crate) fn open_library(app: &mut VectorcraftApp, p: &Value) -> Result<Value, String> {
+    library_panel::open_command::<SymbolLibraries>(app, p)
+}
+
+/// `symbol.loadLibrary` params, then open the library in its panel.
+pub(crate) fn load_library(app: &mut VectorcraftApp, params: Value) -> Result<Value, String> {
+    let r = app.run("symbol.loadLibrary", params)?;
+    open_library(app, &json!({ "library": r["library"] }))
+}
+
+/// Other Library…: load the symbols of the document at `path`, else of one picked in an open
+/// dialog.
+pub(crate) fn other_library(app: &mut VectorcraftApp, path: Option<String>) -> Result<Value, String> {
+    match library_panel::pick_library_file(app, path, library_panel::library_pick_filters(SymbolLibraries::KIND))? {
+        Some(path) => load_library(app, json!({ "path": path })),
+        None => Ok(Value::Null),
+    }
+}
+
+/// The id prefix of the Window → Symbol Libraries → User Defined slots.
+pub(crate) const USER_SLOT: &str = "window.userSymbolLibrary";
+
+/// The User Defined library slot `id` (`window.userSymbolLibrary3`) stands for.
+pub(crate) fn user_library(app: &VectorcraftApp, id: &str) -> Option<LibraryInfo> {
+    library_panel::user_slot(id, USER_SLOT, symbollib::libraries(&app.session))
+}
+
+/// Window → Symbol Libraries.
+pub(crate) fn window_menu() -> Vec<Item> {
+    const SLOTS: [&str; 10] = [
+        "window.userSymbolLibrary1",
+        "window.userSymbolLibrary2",
+        "window.userSymbolLibrary3",
+        "window.userSymbolLibrary4",
+        "window.userSymbolLibrary5",
+        "window.userSymbolLibrary6",
+        "window.userSymbolLibrary7",
+        "window.userSymbolLibrary8",
+        "window.userSymbolLibrary9",
+        "window.userSymbolLibrary10",
+    ];
+    let open = |b: &'static symbollib::BuiltinSymbolLibrary| Item::Cmd(b.name, SymbolLibraries::OPEN, json!({ "library": b.id }));
+    let mut items: Vec<Item> = symbollib::BUILTIN.iter().map(open).collect();
+    items.extend([
+        Item::Sep,
+        Item::Sub("User Defined", SLOTS.iter().map(|id| Item::Cmd("User Library", id, Value::Null)).collect()),
+        Item::Sep,
+        Item::Cmd("Other Library…", "window.symbolLibrary.other", Value::Null),
+        Item::Cmd("Save Symbols…", "ui.saveSymbolLibrary", Value::Null),
+    ]);
+    items
 }
 
 #[cfg(test)]

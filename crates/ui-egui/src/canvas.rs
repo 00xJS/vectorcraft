@@ -2374,6 +2374,14 @@ fn panel_drop(app: &mut VectorcraftApp, ui: &Ui, resp: &egui::Response, xf: &Xf)
         }
         return;
     }
+    // A symbol from a symbol library panel: added to the document's Symbols and placed there.
+    if let widgets::PanelDrag::LibrarySymbol { library, name } = &*d {
+        let at = xf.to_doc(pos);
+        if let Err(e) = app.run("symbol.addFromLibrary", json!({"library": library, "name": name, "place": true, "x": at.x, "y": at.y})) {
+            app.status(e);
+        }
+        return;
+    }
     let Some(hit) = hit_at(app, xf.to_doc(pos), xf.zoom) else { return };
     let Some(st) = app.session.active() else { return };
     let (cmd, params) = match &*d {
@@ -2404,7 +2412,10 @@ fn panel_drop(app: &mut VectorcraftApp, ui: &Ui, resp: &egui::Response, xf: &Xf)
         }
         // Art dragged back onto the canvas: its move was already dropped. (A symbol was placed
         // above.)
-        widgets::PanelDrag::Art(_) | widgets::PanelDrag::Symbol(_) | widgets::PanelDrag::LibraryGraphic { .. } => return,
+        widgets::PanelDrag::Art(_)
+        | widgets::PanelDrag::Symbol(_)
+        | widgets::PanelDrag::LibrarySymbol { .. }
+        | widgets::PanelDrag::LibraryGraphic { .. } => return,
         // A Libraries panel style or group only moves within that panel.
         widgets::PanelDrag::LibraryItem { .. } | widgets::PanelDrag::LibraryGroup { .. } => return,
     };

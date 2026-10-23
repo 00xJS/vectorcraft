@@ -612,6 +612,10 @@ pub(crate) fn drag_preview(app: &VectorcraftApp, ctx: &egui::Context) {
             Some(st) => return pointer_chip(ctx, |ui, r| super::symbols::chip(ui, &st.doc, r, name)),
             None => return,
         },
+        PanelDrag::LibrarySymbol { library, name } => match vectorcraft_engine::cmd::symbollib::library(&app.session, library) {
+            Some((_, lib)) => return pointer_chip(ctx, |ui, r| super::symbols::chip(ui, &lib.doc, r, name)),
+            None => return,
+        },
         PanelDrag::Brush { def, .. } => return pointer_chip(ctx, |ui, r| super::brushes::chip(ui, r, def)),
         PanelDrag::LibraryGraphic { library, item } => return pointer_chip(ctx, |ui, r| super::libraries::chip(app, ui, r, library, item)),
         PanelDrag::LibraryItem { .. } | PanelDrag::LibraryGroup { .. } => return,

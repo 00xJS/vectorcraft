@@ -1,6 +1,6 @@
 # Control protocol
 
-> **Last updated:** 2026-10-13 · **Change:** synthetic input budgets (#1709); bounded transport waits (#1726).
+> **Last updated:** 2026-10-23 · **Change:** symbol library panels (`window.symbolLibrary`, `window.symbolLibrary.other`, `ui.saveSymbolLibrary`); previously: synthetic input budgets (#1709); bounded transport waits (#1726).
 
 `vectorcraft --control <port>` listens on `127.0.0.1:<port>` (loopback only). The port must be a number
 from 1 to 65535 (`--control=<port>` works too), given once; otherwise the app prints an error and exits
@@ -273,6 +273,16 @@ Defined libraries are `window.userGraphicStyleLibrary1`…`10` in Window → Gra
 `ui.saveGraphicStyleLibrary {names?}` opens the `saveGraphicStyleLibrary` dialog (fields `name`, `user`: save to the
 user library folder, `selectedOnly` with `names`); `ui.dialog.confirm` runs `graphicStyle.saveLibrary` (to a file it
 asks for a path and suggests `name` with `.vcstyles` as the file name; the web downloads the file under that name).
+
+Symbol libraries open in the same panels: `window.symbolLibrary {library}` (`library_panels` kind `symbols`; `library:
+null` closes them). Clicking a symbol there runs `symbol.addFromLibrary {library, name}`, adding it to the document's
+Symbols in one undo step; Shift/Cmd-clicks select symbols for Add to Symbols, and a symbol dragged onto the canvas runs
+it with `place: true` and the drop point as `x`, `y`. `window.symbolLibrary.other {path?}` loads the symbols of any
+document VectorCraft opens (a saved symbol library is a `.vectorcraft` document) and opens them there. The User
+Defined libraries are `window.userSymbolLibrary1`…`10` in Window → Symbol Libraries. `ui.saveSymbolLibrary {names?}`
+(Save Symbols…, the Symbols panel's Save Symbol Library…) opens the `saveSymbolLibrary` dialog (fields `name`, `user`:
+save to the user library folder, `selectedOnly` with `names`); `ui.dialog.confirm` runs `symbol.saveLibrary` (to a
+file it asks for a path and suggests `name` with `.vectorcraft`).
 
 Tile Edge Color: Object → Pattern → Tile Edge Color… (`ui.tileEdgeColor`) opens the `tileEdgeColor` dialog (field
 `color`: `#rrggbb` or a preset name such as "Light Blue"); `ui.dialog.confirm` sets the preference
@@ -915,6 +925,7 @@ hidden tab (whose frames the browser pauses) answers when it is shown again.
 
 | Date | Change | Summary |
 |---|---|---|
+| 2026-10-23 | minor | Documented the symbol library panel commands (`window.symbolLibrary`, `.other`, `ui.saveSymbolLibrary`, `window.userSymbolLibrary1`…`10`). |
 | 2026-10-13 | minor | Documented count, pending-event and per-frame request budgets (#1709). |
 | 2026-10-13 | minor | Documented transport deadlines and connection-slot recovery (#1726). |
 | 2026-10-18 | minor | Documented `window.vectorcraft`, the web build's control channel. |

@@ -1742,7 +1742,6 @@ lighting	Light	Cahaya
 	{kind}, {model}	{kind}, {model}
 	No symbols in this document	Tidak ada simbol dalam dokumen ini
 	Select art and click New Symbol to make one.	Pilih karya seni dan klik Simbol Baru untuk membuatnya.
-	Symbol Libraries (on the roadmap)	Pustaka simbol (ada di peta jalan)
 	Align On:	Ratakan pada:
 	Bottom-Justified Tab	Tab rata bawah
 	Center-Justified Tab	Tab rata tengah
@@ -5440,6 +5439,26 @@ axis	Y Axis	Sumbu Y
 	The plug-in is computing…	Plug-in sedang menghitung…
 	Inspect Plug-in	Periksa plug-in
 	Cancel Plug-in Run	Batalkan jalannya plug-in
+	Add to Symbols	Tambahkan ke simbol
+	Basic Shapes	Bentuk dasar
+	Open Symbol Library	Buka pustaka simbol
+	Save Symbol Library	Simpan pustaka simbol
+	Save Symbol Library…	Simpan pustaka simbol…
+	Save Symbols…	Simpan simbol…
+	Selected Symbols Only	Hanya simbol terpilih
+	Symbol Libraries Menu	Menu pustaka simbol
+	Symbol Library	Pustaka simbol
+	User Symbol Library 1	Pustaka simbol pengguna 1
+	User Symbol Library 2	Pustaka simbol pengguna 2
+	User Symbol Library 3	Pustaka simbol pengguna 3
+	User Symbol Library 4	Pustaka simbol pengguna 4
+	User Symbol Library 5	Pustaka simbol pengguna 5
+	User Symbol Library 6	Pustaka simbol pengguna 6
+	User Symbol Library 7	Pustaka simbol pengguna 7
+	User Symbol Library 8	Pustaka simbol pengguna 8
+	User Symbol Library 9	Pustaka simbol pengguna 9
+	User Symbol Library 10	Pustaka simbol pengguna 10
+	{w} × {h} pt	{w} × {h} pt
 @msg	Trap: select two or more objects filled with solid colours	Trap: pilih dua objek atau lebih yang diisi warna solid
 @msg	Trap: no edges of different colours meet among the selected objects	Trap: tidak ada tepi berwarna berbeda yang bertemu di antara objek yang dipilih
 @msg	thickness must be from 0.01 to 5000 pt	thickness harus dari 0,01 sampai 5000 pt

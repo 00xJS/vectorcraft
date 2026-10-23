@@ -86,7 +86,7 @@ The two flags (PhotoCraft and the other Craft apps take the same ones, so one cl
 the suite) keep the agent to the folders you give it:
 
 - Every file a command reads must lie inside a **read root**: `open_file`, `file.place`, relinking and
-  updating links, the images an SVG links to, swatch library, graphic style library and colour-profile loads, plug-ins,
+  updating links, the images an SVG links to, swatch library, graphic style library, symbol library and colour-profile loads, plug-ins,
   `file.newFromTemplate`, preset imports, shortcut sets (`shortcutSet.read`), the folders `text.findFontFiles` and `links.findFiles` search, the
   scripts `script.check` reads and the files they include.
 - Every file a command writes must lie inside a **write root**: `save_file`, `export`, the save and
@@ -1750,10 +1750,33 @@ with); without `path` it returns `{data}`, and `user: true` saves into the user 
 file, or another document's graphic styles, as a library to add from; a file in the user library folder, or a file
 with the same extension and bytes as one there, loads as that User Defined library.
 
+## Symbol libraries
+
+Symbol libraries are read-only sets of symbols: one generated in code (Basic Shapes), the `.vectorcraft` files in
+the user library folder of the desktop app (User Defined) and the symbols of any document loaded with
+`symbol.loadLibrary`. `symbol.libraries` lists them (`id`, `name`, `category`: `builtIn`, `user` or `loaded`, `count`)
+and `symbol.library {library}` returns one's symbols (`name`, `size`, `registration`, `exportType`; `library` is an
+id or a name). `symbol.addFromLibrary {library, name? | names?}` copies symbols into the document's Symbols as one
+undo step (no names: the whole library), with their Symbol Options and the resources they use: the symbols they nest,
+patterns, swatches (`swatchConflict` as for `edit.paste`), brushes, graphic styles and images. Symbols the document
+already has (same name and art) are reported under `existing`; a name another symbol has gets a number, and `names`
+gives each one's name in the document. The first one becomes the current symbol. `place: true` also places an
+instance of it with its registration point at `x`, `y` (default: the first artboard's centre) in the same step:
+what dragging a symbol out of the library panel onto the canvas does.
+
+```json
+{"name":"run_command","arguments":{"command":"symbol.addFromLibrary","params":{"library":"basic-shapes","name":"Star","place":true,"x":120,"y":80}}}
+```
+`symbol.saveLibrary {path?, names?, name?, user?}` writes the document's symbols as a symbol library: a `.vectorcraft`
+document holding only them and what they use; without `path` it returns `{dataBase64}`, and `user: true` saves into
+the user library folder (category `user`, User Defined). `symbol.loadLibrary {path? | data? | dataBase64?, name?}`
+loads the symbols of any document VectorCraft opens as a library to add from; a file it can't read is an error.
+
 ## Library panels
 
-Each swatch or graphic style library opens in a read-only panel of its own (#2603), as in Illustrator, and
-several can be open at once. `window.swatchLibrary {library}` and `window.graphicStyleLibrary {library}`
+Each swatch, graphic style or symbol library opens in a read-only panel of its own (#2603), as in Illustrator, and
+several can be open at once. `window.swatchLibrary {library}`, `window.graphicStyleLibrary {library}` and
+`window.symbolLibrary {library}`
 (remote mode, `invoke_menu`) open one floating, or bring its panel forward when it is already open, and answer
 `{open, panel, name, count}`; `library: null` closes every panel of that kind. The panel id is
 `library:<kind>:<library id>` (`library:swatches:pastels`, `library:graphicStyles:hand-drawn`,

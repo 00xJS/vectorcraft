@@ -3261,7 +3261,6 @@ effect	Points	Точки
 	Show all open documents	Показати всі відкриті документи
 	Symbol Instance	Екземпляр символу
 	Symbol Libraries	Бібліотеки символів
-	Symbol Libraries (on the roadmap)	Бібліотеки символів (у плані розвитку)
 	Symbol Screener Tool	Інструмент «Прозорість символів»
 	Symbol Scruncher Tool	Інструмент «Стиск символів»
 	Symbol Shifter Tool	Інструмент «Зсув символів»
@@ -5072,6 +5071,32 @@ axis	Y Axis	Вісь Y
 @msg	a live effect runs while the document is drawn, so it can't be `heavy`	динамічний ефект виконується під час відмальовування документа, тому він не може бути `heavy`
 @msg	an exporter always gets an export's budget: leave `budget` out	модуль експорту завжди отримує бюджет експорту: не вказуйте `budget`
 @msg	“{_1}” asks for a heavy budget (each run up to {minutes} minutes and {times} times the usual instructions): install it with `allowHeavy: true` once the user agrees	«{_1}» запитує великий обчислювальний бюджет (кожен запуск до {minutes} хвилин і в {times} разів більше інструкцій, ніж зазвичай): встановіть його з `allowHeavy: true`, коли користувач погодиться
+	Add to Symbols	Додати до символів
+	Basic Shapes	Базові фігури
+	Open Symbol Library	Відкрити бібліотеку символів
+	Save Symbol Library	Зберегти бібліотеку символів
+	Save Symbol Library…	Зберегти бібліотеку символів…
+	Save Symbols…	Зберегти символи…
+	Selected Symbols Only	Тільки вибрані символи
+	Symbol Libraries Menu	Меню "Бібліотеки символів"
+	Symbol Library	Бібліотека символів
+	User Symbol Library 1	Користувацька бібліотека символів 1
+	User Symbol Library 2	Користувацька бібліотека символів 2
+	User Symbol Library 3	Користувацька бібліотека символів 3
+	User Symbol Library 4	Користувацька бібліотека символів 4
+	User Symbol Library 5	Користувацька бібліотека символів 5
+	User Symbol Library 6	Користувацька бібліотека символів 6
+	User Symbol Library 7	Користувацька бібліотека символів 7
+	User Symbol Library 8	Користувацька бібліотека символів 8
+	User Symbol Library 9	Користувацька бібліотека символів 9
+	User Symbol Library 10	Користувацька бібліотека символів 10
+	{w} × {h} pt	{w} × {h} pt
+@msg	`{_1}` has no symbols to place	У `{_1}` немає символів для розміщення
+@msg	missing `library` (see symbol.libraries)	не вказано `library` (див. symbol.libraries)
+@msg	no symbol `{n}`	немає символу `{n}`
+@msg	no symbol `{n}` in `{_1}`	немає символу `{n}` у `{_1}`
+@msg	no symbol library `{key}` (see symbol.libraries)	немає бібліотеки символів `{key}` (див. symbol.libraries)
+@msg	the document has no symbols to save	у документі немає символів для збереження
 @msg	Trap: select two or more objects filled with solid colours	Трепінг: виберіть два або більше об’єктів із суцільною заливкою
 @msg	Trap: no edges of different colours meet among the selected objects	Трепінг: серед вибраних об’єктів немає дотичних країв різних кольорів
 @msg	thickness must be from 0.01 to 5000 pt	thickness має бути від 0,01 до 5000 pt

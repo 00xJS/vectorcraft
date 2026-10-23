@@ -3264,7 +3264,6 @@ mark-style	Japanese	Японский
 	Show all open documents	Показать все открытые документы
 	Symbol Instance	Экземпляр символа
 	Symbol Libraries	Библиотеки символов
-	Symbol Libraries (on the roadmap)	Библиотеки символов (в плане развития)
 	Symbol Screener Tool	Инструмент «Прозрачность символов»
 	Symbol Scruncher Tool	Инструмент «Сжатие символов»
 	Symbol Shifter Tool	Инструмент «Сдвиг символов»
@@ -5088,6 +5087,32 @@ axis	Y Axis	Ось Y
 @msg	a live effect runs while the document is drawn, so it can't be `heavy`	динамический эффект выполняется во время отрисовки документа, поэтому он не может быть `heavy`
 @msg	an exporter always gets an export's budget: leave `budget` out	модуль экспорта всегда получает бюджет экспорта: не указывайте `budget`
 @msg	“{_1}” asks for a heavy budget (each run up to {minutes} minutes and {times} times the usual instructions): install it with `allowHeavy: true` once the user agrees	«{_1}» запрашивает большой вычислительный бюджет (каждый запуск до {minutes} минут и в {times} раз больше инструкций, чем обычно): установите его с `allowHeavy: true`, когда пользователь согласится
+	Add to Symbols	Добавить в символы
+	Basic Shapes	Базовые фигуры
+	Open Symbol Library	Открыть библиотеку символов
+	Save Symbol Library	Сохранить библиотеку символов
+	Save Symbol Library…	Сохранить библиотеку символов…
+	Save Symbols…	Сохранить символы…
+	Selected Symbols Only	Только выбранные символы
+	Symbol Libraries Menu	Меню «Библиотеки символов»
+	Symbol Library	Библиотека символов
+	User Symbol Library 1	Пользовательская библиотека символов 1
+	User Symbol Library 2	Пользовательская библиотека символов 2
+	User Symbol Library 3	Пользовательская библиотека символов 3
+	User Symbol Library 4	Пользовательская библиотека символов 4
+	User Symbol Library 5	Пользовательская библиотека символов 5
+	User Symbol Library 6	Пользовательская библиотека символов 6
+	User Symbol Library 7	Пользовательская библиотека символов 7
+	User Symbol Library 8	Пользовательская библиотека символов 8
+	User Symbol Library 9	Пользовательская библиотека символов 9
+	User Symbol Library 10	Пользовательская библиотека символов 10
+	{w} × {h} pt	{w} × {h} pt
+@msg	`{_1}` has no symbols to place	В `{_1}` нет символов для размещения
+@msg	missing `library` (see symbol.libraries)	не указан `library` (см. symbol.libraries)
+@msg	no symbol `{n}`	нет символа `{n}`
+@msg	no symbol `{n}` in `{_1}`	нет символа `{n}` в `{_1}`
+@msg	no symbol library `{key}` (see symbol.libraries)	нет библиотеки символов `{key}` (см. symbol.libraries)
+@msg	the document has no symbols to save	в документе нет символов для сохранения
 @msg	Trap: select two or more objects filled with solid colours	Треппинг: выберите два или более объекта со сплошной заливкой
 @msg	Trap: no edges of different colours meet among the selected objects	Треппинг: среди выбранных объектов нет соприкасающихся краёв разных цветов
 @msg	thickness must be from 0.01 to 5000 pt	thickness должно быть от 0,01 до 5000 pt

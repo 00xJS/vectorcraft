@@ -3187,7 +3187,6 @@ effect	Points	Punkte
 	Show all open documents	Alle geöffneten Dokumente anzeigen
 	Symbol Instance	Symbolinstanz
 	Symbol Libraries	Symbol-Bibliotheken
-	Symbol Libraries (on the roadmap)	Symbol-Bibliotheken (geplant)
 	Symbol Screener Tool	Symbol-transparent-gestalten-Werkzeug
 	Symbol Scruncher Tool	Symbol-stauchen-Werkzeug
 	Symbol Shifter Tool	Symbol-verschieben-Werkzeug
@@ -5058,6 +5057,32 @@ axis	Y Axis	Y-Achse
 @msg	a live effect runs while the document is drawn, so it can't be `heavy`	ein Live-Effekt läuft, während das Dokument gezeichnet wird, daher kann er nicht `heavy` sein
 @msg	an exporter always gets an export's budget: leave `budget` out	ein Export-Plug-in erhält immer das Budget eines Exports: Lassen Sie `budget` weg
 @msg	“{_1}” asks for a heavy budget (each run up to {minutes} minutes and {times} times the usual instructions): install it with `allowHeavy: true` once the user agrees	„{_1}“ verlangt ein großes Rechenbudget (jede Ausführung bis zu {minutes} Minuten und {times}-mal so viele Anweisungen wie üblich): Installieren Sie es mit `allowHeavy: true`, sobald der Benutzer zustimmt
+	Add to Symbols	Zu Symbolen hinzufügen
+	Basic Shapes	Grundformen
+	Open Symbol Library	Symbol-Bibliothek öffnen
+	Save Symbol Library	Symbol-Bibliothek speichern
+	Save Symbol Library…	Symbol-Bibliothek speichern…
+	Save Symbols…	Symbole speichern…
+	Selected Symbols Only	Nur ausgewählte Symbole
+	Symbol Libraries Menu	Menü „Symbol-Bibliotheken“
+	Symbol Library	Symbol-Bibliothek
+	User Symbol Library 1	Benutzer-Symbol-Bibliothek 1
+	User Symbol Library 2	Benutzer-Symbol-Bibliothek 2
+	User Symbol Library 3	Benutzer-Symbol-Bibliothek 3
+	User Symbol Library 4	Benutzer-Symbol-Bibliothek 4
+	User Symbol Library 5	Benutzer-Symbol-Bibliothek 5
+	User Symbol Library 6	Benutzer-Symbol-Bibliothek 6
+	User Symbol Library 7	Benutzer-Symbol-Bibliothek 7
+	User Symbol Library 8	Benutzer-Symbol-Bibliothek 8
+	User Symbol Library 9	Benutzer-Symbol-Bibliothek 9
+	User Symbol Library 10	Benutzer-Symbol-Bibliothek 10
+	{w} × {h} pt	{w} × {h} pt
+@msg	`{_1}` has no symbols to place	`{_1}` hat keine Symbole zum Platzieren
+@msg	missing `library` (see symbol.libraries)	`library` fehlt (siehe symbol.libraries)
+@msg	no symbol `{n}`	kein Symbol `{n}`
+@msg	no symbol `{n}` in `{_1}`	kein Symbol `{n}` in `{_1}`
+@msg	no symbol library `{key}` (see symbol.libraries)	keine Symbol-Bibliothek `{key}` (siehe symbol.libraries)
+@msg	the document has no symbols to save	das Dokument hat keine Symbole zum Speichern
 @msg	Trap: select two or more objects filled with solid colours	Überfüllen: Wählen Sie zwei oder mehr Objekte mit Volltonflächen aus
 @msg	Trap: no edges of different colours meet among the selected objects	Überfüllen: Unter den ausgewählten Objekten treffen keine Kanten verschiedener Farben aufeinander
 @msg	thickness must be from 0.01 to 5000 pt	thickness muss zwischen 0,01 und 5000 pt liegen

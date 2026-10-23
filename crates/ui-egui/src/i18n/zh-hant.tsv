@@ -4025,7 +4025,6 @@ font-script	Japanese	漢字
 	Show all open documents	顯示所有開啟的文件
 	Symbol Instance	符號範例
 	Symbol Libraries	符號資料庫
-	Symbol Libraries (on the roadmap)	符號資料庫 (已列入路線圖)
 	Symbol Screener Tool	符號濾色器工具
 	Symbol Scruncher Tool	符號緊縮器工具
 	Symbol Shifter Tool	符號移位器工具
@@ -5111,6 +5110,32 @@ axis	Y Axis	Y 軸
 @msg	a live effect runs while the document is drawn, so it can't be `heavy`	即時效果會在繪製文件時執行，因此不能是 `heavy`
 @msg	an exporter always gets an export's budget: leave `budget` out	匯出增效模組一律使用匯出的預算：請移除 `budget`
 @msg	“{_1}” asks for a heavy budget (each run up to {minutes} minutes and {times} times the usual instructions): install it with `allowHeavy: true` once the user agrees	「{_1}」需要大量運算預算（每次執行最多 {minutes} 分鐘，指令數為一般的 {times} 倍）：請在使用者同意後以 `allowHeavy: true` 安裝
+	Add to Symbols	新增至符號
+	Basic Shapes	基本形狀
+	Open Symbol Library	開啟符號資料庫
+	Save Symbol Library	儲存符號資料庫
+	Save Symbol Library…	儲存符號資料庫…
+	Save Symbols…	儲存符號…
+	Selected Symbols Only	僅限選取的符號
+	Symbol Libraries Menu	符號資料庫選單
+	Symbol Library	符號資料庫
+	User Symbol Library 1	使用者符號資料庫 1
+	User Symbol Library 2	使用者符號資料庫 2
+	User Symbol Library 3	使用者符號資料庫 3
+	User Symbol Library 4	使用者符號資料庫 4
+	User Symbol Library 5	使用者符號資料庫 5
+	User Symbol Library 6	使用者符號資料庫 6
+	User Symbol Library 7	使用者符號資料庫 7
+	User Symbol Library 8	使用者符號資料庫 8
+	User Symbol Library 9	使用者符號資料庫 9
+	User Symbol Library 10	使用者符號資料庫 10
+	{w} × {h} pt	{w} × {h} pt
+@msg	`{_1}` has no symbols to place	`{_1}` 中沒有可置入的符號
+@msg	missing `library` (see symbol.libraries)	未提供 `library`（請參閱 symbol.libraries）
+@msg	no symbol `{n}`	沒有符號 `{n}`
+@msg	no symbol `{n}` in `{_1}`	`{_1}` 中沒有符號 `{n}`
+@msg	no symbol library `{key}` (see symbol.libraries)	沒有符號資料庫 `{key}`（請參閱 symbol.libraries）
+@msg	the document has no symbols to save	文件中沒有可儲存的符號
 @msg	Trap: select two or more objects filled with solid colours	補漏白：請選取兩個或更多以實色填色的物件
 @msg	Trap: no edges of different colours meet among the selected objects	補漏白：所選物件中沒有不同顏色相接的邊緣
 @msg	thickness must be from 0.01 to 5000 pt	thickness 必須介於 0.01 到 5000 pt 之間

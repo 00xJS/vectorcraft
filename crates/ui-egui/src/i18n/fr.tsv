@@ -3231,7 +3231,6 @@ font-technology	Variable	Variables
 	Show all open documents	Afficher tous les documents ouverts
 	Symbol Instance	Instance de symbole
 	Symbol Libraries	Bibliothèques de symboles
-	Symbol Libraries (on the roadmap)	Bibliothèques de symboles (prévu dans la feuille de route)
 	Symbol Screener Tool	Outil Transparence de symboles
 	Symbol Scruncher Tool	Outil Espacement de symboles
 	Symbol Shifter Tool	Outil Glissement de symboles
@@ -5474,6 +5473,32 @@ axis	Y Axis	Axe Y
 @msg	a live effect runs while the document is drawn, so it can't be `heavy`	un effet dynamique s’exécute pendant le tracé du document, il ne peut donc pas être `heavy`
 @msg	an exporter always gets an export's budget: leave `budget` out	un module externe d’exportation reçoit toujours le budget d’une exportation : omettez `budget`
 @msg	“{_1}” asks for a heavy budget (each run up to {minutes} minutes and {times} times the usual instructions): install it with `allowHeavy: true` once the user agrees	« {_1} » demande un budget de calcul important (chaque exécution jusqu’à {minutes} minutes et {times} fois les instructions habituelles) : installez-le avec `allowHeavy: true` une fois que l’utilisateur l’accepte
+	Add to Symbols	Ajouter aux symboles
+	Basic Shapes	Formes de base
+	Open Symbol Library	Ouvrir une bibliothèque de symboles
+	Save Symbol Library	Enregistrer la bibliothèque de symboles
+	Save Symbol Library…	Enregistrer la bibliothèque de symboles…
+	Save Symbols…	Enregistrer les symboles…
+	Selected Symbols Only	Symboles sélectionnés uniquement
+	Symbol Libraries Menu	Menu Bibliothèques de symboles
+	Symbol Library	Bibliothèque de symboles
+	User Symbol Library 1	Bibliothèque de symboles utilisateur 1
+	User Symbol Library 2	Bibliothèque de symboles utilisateur 2
+	User Symbol Library 3	Bibliothèque de symboles utilisateur 3
+	User Symbol Library 4	Bibliothèque de symboles utilisateur 4
+	User Symbol Library 5	Bibliothèque de symboles utilisateur 5
+	User Symbol Library 6	Bibliothèque de symboles utilisateur 6
+	User Symbol Library 7	Bibliothèque de symboles utilisateur 7
+	User Symbol Library 8	Bibliothèque de symboles utilisateur 8
+	User Symbol Library 9	Bibliothèque de symboles utilisateur 9
+	User Symbol Library 10	Bibliothèque de symboles utilisateur 10
+	{w} × {h} pt	{w} × {h} pt
+@msg	`{_1}` has no symbols to place	`{_1}` n'a aucun symbole à placer
+@msg	missing `library` (see symbol.libraries)	`library` manquant (voir symbol.libraries)
+@msg	no symbol `{n}`	aucun symbole `{n}`
+@msg	no symbol `{n}` in `{_1}`	aucun symbole `{n}` dans `{_1}`
+@msg	no symbol library `{key}` (see symbol.libraries)	aucune bibliothèque de symboles `{key}` (voir symbol.libraries)
+@msg	the document has no symbols to save	le document n'a aucun symbole à enregistrer
 @msg	Trap: select two or more objects filled with solid colours	Recouvrement : sélectionnez au moins deux objets remplis de couleurs unies
 @msg	Trap: no edges of different colours meet among the selected objects	Recouvrement : aucun bord de couleurs différentes ne se touche parmi les objets sélectionnés
 @msg	thickness must be from 0.01 to 5000 pt	thickness doit être compris entre 0,01 et 5000 pt

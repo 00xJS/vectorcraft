@@ -2990,7 +2990,6 @@ mark-style	Japanese	日本式
 	Use Library Item	ライブラリ項目を使用
 	Graphic	グラフィック
 	Show all open documents	開いているすべてのドキュメントを表示
-	Symbol Libraries (on the roadmap)	シンボルライブラリ (今後対応予定)
 	Symbol Screener Tool	シンボルスクリーナーツール
 	Symbol Scruncher Tool	シンボルスクランチャーツール
 	Symbol Shifter Tool	シンボルシフターツール
@@ -5154,6 +5153,32 @@ axis	Y Axis	Y 軸
 @msg	a live effect runs while the document is drawn, so it can't be `heavy`	ライブ効果はドキュメントの描画中に実行されるため、`heavy` にはできません
 @msg	an exporter always gets an export's budget: leave `budget` out	書き出しプラグインには常に書き出しの予算が割り当てられます。`budget` は省略してください
 @msg	“{_1}” asks for a heavy budget (each run up to {minutes} minutes and {times} times the usual instructions): install it with `allowHeavy: true` once the user agrees	「{_1}」は大きな計算予算を求めています (1 回の実行につき最大 {minutes} 分、通常の {times} 倍の命令)。ユーザーが同意したら `allowHeavy: true` を指定してインストールしてください
+	Add to Symbols	シンボルに追加
+	Basic Shapes	基本シェイプ
+	Open Symbol Library	シンボルライブラリを開く
+	Save Symbol Library	シンボルライブラリを保存
+	Save Symbol Library…	シンボルライブラリを保存…
+	Save Symbols…	シンボルを保存…
+	Selected Symbols Only	選択したシンボルのみ
+	Symbol Libraries Menu	シンボルライブラリメニュー
+	Symbol Library	シンボルライブラリ
+	User Symbol Library 1	ユーザーシンボルライブラリ 1
+	User Symbol Library 2	ユーザーシンボルライブラリ 2
+	User Symbol Library 3	ユーザーシンボルライブラリ 3
+	User Symbol Library 4	ユーザーシンボルライブラリ 4
+	User Symbol Library 5	ユーザーシンボルライブラリ 5
+	User Symbol Library 6	ユーザーシンボルライブラリ 6
+	User Symbol Library 7	ユーザーシンボルライブラリ 7
+	User Symbol Library 8	ユーザーシンボルライブラリ 8
+	User Symbol Library 9	ユーザーシンボルライブラリ 9
+	User Symbol Library 10	ユーザーシンボルライブラリ 10
+	{w} × {h} pt	{w} × {h} pt
+@msg	`{_1}` has no symbols to place	`{_1}` に配置できるシンボルがありません
+@msg	missing `library` (see symbol.libraries)	`library` がありません (symbol.libraries を参照)
+@msg	no symbol `{n}`	シンボル `{n}` がありません
+@msg	no symbol `{n}` in `{_1}`	`{_1}` にシンボル `{n}` がありません
+@msg	no symbol library `{key}` (see symbol.libraries)	シンボルライブラリ `{key}` がありません (symbol.libraries を参照)
+@msg	the document has no symbols to save	ドキュメントに保存するシンボルがありません
 @msg	Trap: select two or more objects filled with solid colours	トラップ: 単色で塗りつぶした 2 つ以上のオブジェクトを選択してください
 @msg	Trap: no edges of different colours meet among the selected objects	トラップ: 選択したオブジェクトに異なる色が接する辺がありません
 @msg	thickness must be from 0.01 to 5000 pt	thickness は 0.01～5000 pt にしてください

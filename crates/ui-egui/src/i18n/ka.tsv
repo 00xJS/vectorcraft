@@ -1642,7 +1642,6 @@ lighting	Light	სინათლე
 	{kind}, {model}	{kind}, {model}
 	No symbols in this document	ამ დოკუმენტში სიმბოლოები არ არის
 	Select art and click New Symbol to make one.	მონიშნეთ ნახატი და შესაქმნელად დაწკაპეთ „ახალ სიმბოლოზე“.
-	Symbol Libraries (on the roadmap)	სიმბოლოების ბიბლიოთეკები (სამომავლო გეგმაშია)
 	Align On:	სწორება მიმართ:
 	Bottom-Justified Tab	ქვემოთ სწორებული ტაბულაცია
 	Center-Justified Tab	ცენტრით სწორებული ტაბულაცია
@@ -5391,6 +5390,32 @@ axis	Y Axis	Y ღერძი
 @msg	a live effect runs while the document is drawn, so it can't be `heavy`	ცოცხალი ეფექტი დოკუმენტის დახატვისას ეშვება, ამიტომ ის ვერ იქნება `heavy`
 @msg	an exporter always gets an export's budget: leave `budget` out	ექსპორტის პლაგინი ყოველთვის ექსპორტის ბიუჯეტს იღებს: გამოტოვეთ `budget`
 @msg	“{_1}” asks for a heavy budget (each run up to {minutes} minutes and {times} times the usual instructions): install it with `allowHeavy: true` once the user agrees	„{_1}“ დიდ გამოთვლით ბიუჯეტს ითხოვს (თითო გაშვება {minutes} წუთამდე და ჩვეულებრივზე {times}-ჯერ მეტი ინსტრუქცია): მომხმარებლის თანხმობის შემდეგ დააყენეთ ის `allowHeavy: true` პარამეტრით
+	Add to Symbols	სიმბოლოებში დამატება
+	Basic Shapes	ძირითადი ფიგურები
+	Open Symbol Library	სიმბოლოების ბიბლიოთეკის გახსნა
+	Save Symbol Library	სიმბოლოების ბიბლიოთეკის შენახვა
+	Save Symbol Library…	სიმბოლოების ბიბლიოთეკის შენახვა…
+	Save Symbols…	სიმბოლოების შენახვა…
+	Selected Symbols Only	მხოლოდ მონიშნული სიმბოლოები
+	Symbol Libraries Menu	სიმბოლოების ბიბლიოთეკების მენიუ
+	Symbol Library	სიმბოლოების ბიბლიოთეკა
+	User Symbol Library 1	მომხმარებლის სიმბოლოების ბიბლიოთეკა 1
+	User Symbol Library 2	მომხმარებლის სიმბოლოების ბიბლიოთეკა 2
+	User Symbol Library 3	მომხმარებლის სიმბოლოების ბიბლიოთეკა 3
+	User Symbol Library 4	მომხმარებლის სიმბოლოების ბიბლიოთეკა 4
+	User Symbol Library 5	მომხმარებლის სიმბოლოების ბიბლიოთეკა 5
+	User Symbol Library 6	მომხმარებლის სიმბოლოების ბიბლიოთეკა 6
+	User Symbol Library 7	მომხმარებლის სიმბოლოების ბიბლიოთეკა 7
+	User Symbol Library 8	მომხმარებლის სიმბოლოების ბიბლიოთეკა 8
+	User Symbol Library 9	მომხმარებლის სიმბოლოების ბიბლიოთეკა 9
+	User Symbol Library 10	მომხმარებლის სიმბოლოების ბიბლიოთეკა 10
+	{w} × {h} pt	{w} × {h} pt
+@msg	`{_1}` has no symbols to place	`{_1}`-ში განსათავსებელი სიმბოლოები არ არის
+@msg	missing `library` (see symbol.libraries)	`library` აკლია (იხ. symbol.libraries)
+@msg	no symbol `{n}`	სიმბოლო `{n}` არ არის
+@msg	no symbol `{n}` in `{_1}`	`{_1}`-ში სიმბოლო `{n}` არ არის
+@msg	no symbol library `{key}` (see symbol.libraries)	სიმბოლოების ბიბლიოთეკა `{key}` არ არის (იხ. symbol.libraries)
+@msg	the document has no symbols to save	დოკუმენტში შესანახი სიმბოლოები არ არის
 @msg	Trap: select two or more objects filled with solid colours	ტრეპინგი: აირჩიეთ ორი ან მეტი ობიექტი, შევსებული ერთგვაროვანი ფერით
 @msg	Trap: no edges of different colours meet among the selected objects	ტრეპინგი: არჩეულ ობიექტებს შორის განსხვავებული ფერის კიდეები არ ეხება ერთმანეთს
 @msg	thickness must be from 0.01 to 5000 pt	thickness უნდა იყოს 0,01-დან 5000 pt-მდე

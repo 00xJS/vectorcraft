@@ -3062,7 +3062,6 @@ font-technology	Variable	Değişken
 	Show all open documents	Tüm açık belgeleri göster
 	Symbol Instance	Sembol Örneği
 	Symbol Libraries	Sembol Kitaplıkları
-	Symbol Libraries (on the roadmap)	Sembol Kitaplıkları (yol haritasında)
 	Symbol Screener Tool	Sembol Perdeleyici Aracı
 	Symbol Scruncher Tool	Sembol Ezici Aracı
 	Symbol Shifter Tool	Sembol Yer Değiştirme Aracı
@@ -5438,6 +5437,32 @@ axis	Y Axis	Y ekseni
 @msg	a live effect runs while the document is drawn, so it can't be `heavy`	canlı efekt belge çizilirken çalışır, bu yüzden `heavy` olamaz
 @msg	an exporter always gets an export's budget: leave `budget` out	dışa aktarma eklentisi her zaman bir dışa aktarmanın bütçesini alır: `budget` anahtarını çıkarın
 @msg	“{_1}” asks for a heavy budget (each run up to {minutes} minutes and {times} times the usual instructions): install it with `allowHeavy: true` once the user agrees	“{_1}” büyük bir hesaplama bütçesi istiyor (her çalıştırma en fazla {minutes} dakika ve olağan komutların {times} katı): kullanıcı onayladıktan sonra `allowHeavy: true` ile yükleyin
+	Add to Symbols	Sembollere Ekle
+	Basic Shapes	Temel Şekiller
+	Open Symbol Library	Sembol Kitaplığını Aç
+	Save Symbol Library	Sembol Kitaplığını Kaydet
+	Save Symbol Library…	Sembol Kitaplığını Kaydet…
+	Save Symbols…	Sembolleri Kaydet…
+	Selected Symbols Only	Yalnızca Seçilen Semboller
+	Symbol Libraries Menu	Sembol Kitaplıkları Menüsü
+	Symbol Library	Sembol Kitaplığı
+	User Symbol Library 1	Kullanıcı Sembol Kitaplığı 1
+	User Symbol Library 2	Kullanıcı Sembol Kitaplığı 2
+	User Symbol Library 3	Kullanıcı Sembol Kitaplığı 3
+	User Symbol Library 4	Kullanıcı Sembol Kitaplığı 4
+	User Symbol Library 5	Kullanıcı Sembol Kitaplığı 5
+	User Symbol Library 6	Kullanıcı Sembol Kitaplığı 6
+	User Symbol Library 7	Kullanıcı Sembol Kitaplığı 7
+	User Symbol Library 8	Kullanıcı Sembol Kitaplığı 8
+	User Symbol Library 9	Kullanıcı Sembol Kitaplığı 9
+	User Symbol Library 10	Kullanıcı Sembol Kitaplığı 10
+	{w} × {h} pt	{w} × {h} pt
+@msg	`{_1}` has no symbols to place	`{_1}` içinde yerleştirilecek sembol yok
+@msg	missing `library` (see symbol.libraries)	`library` eksik (bkz. symbol.libraries)
+@msg	no symbol `{n}`	`{n}` sembolü yok
+@msg	no symbol `{n}` in `{_1}`	`{_1}` içinde `{n}` sembolü yok
+@msg	no symbol library `{key}` (see symbol.libraries)	`{key}` sembol kitaplığı yok (bkz. symbol.libraries)
+@msg	the document has no symbols to save	belgede kaydedilecek sembol yok
 @msg	Trap: select two or more objects filled with solid colours	Tuzak: düz renkle doldurulmuş iki veya daha fazla nesne seçin
 @msg	Trap: no edges of different colours meet among the selected objects	Tuzak: seçili nesneler arasında farklı renkli kenarlar birleşmiyor
 @msg	thickness must be from 0.01 to 5000 pt	thickness 0,01 ile 5000 pt arasında olmalıdır
