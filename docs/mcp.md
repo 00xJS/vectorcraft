@@ -4287,6 +4287,48 @@ The menu item is checked while the paragraph the Paragraph panel shows has it on
 {"name":"run_command","arguments":{"command":"text.setFormat","params":{"romanHangingPunctuation":true}}}
 ```
 
+## Bulleted lists
+
+`text.setFormat {list: "none"|"bullet", bullet: "none"|"dot"|"dash"|"circle"|"square"}` (Paragraph panel › Bullets)
+makes the paragraphs of the selected type (or `ids`, or the paragraphs a `start` / `end` range touches) a bulleted list
+or takes them out of one. `bullet` sets the bullet: a filled dot (•), a dash (–), a hollow circle (◦) or a filled
+square (▪). `list: "bullet"` keeps the bullet of a paragraph that is already in a list and gives the others the dot.
+`"none"` in either key turns the list off and leaves the indents as they are. An unknown value is an error and changes
+nothing. A paragraph that joins a list while its left and first-line indents are both 0 gets a left indent of 18 pt and a
+first-line indent of -18 pt, unless the same call sets `leftIndent` or `firstLineIndent`; other indents stay as they are.
+In a horizontal right-to-left list paragraph the indents are mirrored: the left and first-line indents are measured
+from the right edge, and the right indent from the left edge. Its bullet starts the first line at the right, and the
+lines it wraps to start at the right where the first line's text starts after the bullet. A right-to-left paragraph
+without a list keeps its left and first-line indents at the left, and vertical type keeps its indents as they are. In
+threaded type, a list paragraph that continues into the next frame starts that frame with its bullet again, as it
+starts it with its first-line indent.
+
+The layout draws the bullet before the first line of each list paragraph that has text, in the font, size, scales and
+color of the paragraph's first character, without that character's baseline shift, rotation, superscript or subscript,
+tracking, manual kerning and tate-chu-yoko. The bullet is not a character of the text: copied text leaves it out, the
+caret before the paragraph's first character stands at the text, a selection does not highlight the bullet, and Touch
+Type moves that character without the bullet. The text after it starts at the next tab stop, the left indent counting
+as a stop when no explicit stop comes before it, measured from the right in a right-to-left list paragraph. The lines
+the paragraph wraps to start at the left indent. Type on a path draws the bullet and the same gap before the
+paragraph's text; a right-to-left item on a path has its bullet at the right of its text. Justification and Optical
+Margin Alignment leave the bullet and the gap after it as they are, and an underline or strikethrough starts at the
+text. Return at the end of a list item starts another item in the same list. The list is saved with the paragraph
+(`list` in `para`, for example `{"bullet": "square"}`) only when it is set, and paragraph styles carry it: a style
+captured from a paragraph without a list turns the list off. Reset Panel turns it off. The change is one undo step.
+
+The canvas, EPS, PDF and Type › Create Outlines draw the bullet; in PDF it is a path, not text. Live SVG text writes the
+bullet's character before the paragraph's text, except type on a path with bullets, which it writes as outlines with a
+warning. DXF writes the bullet as a TEXT entity of its own. Legacy `.ai` writes the
+paragraph's text without the bullet and warns that bulleted lists are left out.
+
+Type › Bullets and Numbering › Apply Bullets and the canvas context menu's Bullets and Numbering › Apply Bullets run
+`type.applyBullets {bullet?}` on the selected type's paragraphs, or on those the Type tool's selection touches: without
+`bullet` as `text.setFormat {list: "bullet"}`, with it as `text.setFormat {bullet}`.
+
+```json
+{"name":"run_command","arguments":{"command":"text.setFormat","params":{"bullet":"square"}}}
+```
+
 ## Small Caps, Superscript and Subscript
 `text.setFormat {smallCaps, position}` (the selected type, or `ids`) and `text.setRangeStyle {id, start, end, smallCaps,
 position}` (a range) set what the Character panel's Small Caps, Superscript and Subscript buttons and menu items set.

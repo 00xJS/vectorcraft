@@ -353,6 +353,13 @@ font-technology	Variable	Variables
 	Built-in presets don't change: New… starts an editable copy.	Les paramètres prédéfinis intégrés ne changent pas : Nouveau… crée une copie modifiable.
 	Bulge…	Renflement…
 	Bullet	Puce
+	Bullets	Puces
+	Bullets and Numbering	Puces et numérotation
+	Apply Bullets	Appliquer les puces
+	Filled Dot	Point plein
+	Dash	Tiret
+	Hollow Circle	Cercle vide
+	Filled Square	Carré plein
 	Butt Cap	Extrémité plate
 	Byte Order:	Ordre des octets :
 	Calligraphic	Calligraphique

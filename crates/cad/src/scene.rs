@@ -855,11 +855,18 @@ impl<'a> Scene<'a> {
         let angle = b.atan2(a).to_degrees();
         for line in &layout.lines {
             let Some(glyphs) = layout.glyphs.get(line.glyph_start..line.glyph_end) else { continue };
-            for run in glyphs.chunk_by(|x, y| x.run == y.run) {
-                let Some(first) = run.first() else { continue };
+            // A list marker is a TEXT entity of its own, holding the marker's characters where its
+            // characters' glyphs are drawn (not its tab's).
+            let marked: Vec<(usize, &vectorcraft_text::PositionedGlyph, Option<&vectorcraft_text::ListMarker>)> =
+                glyphs.iter().enumerate().map(|(k, g)| (line.glyph_start + k, g, layout.marker_of(line.glyph_start + k))).collect();
+            for chunk in marked.chunk_by(|x, y| x.1.run == y.1.run && x.2.is_some() == y.2.is_some()) {
+                let run: Vec<&vectorcraft_text::PositionedGlyph> =
+                    chunk.iter().filter(|(k, _, m)| m.is_none_or(|m| m.tab != *k)).map(|(_, g, _)| *g).collect();
+                let Some(&first) = run.first() else { continue };
                 let lo = run.iter().map(|g| g.byte).min().unwrap_or(first.byte);
                 let hi = run.iter().map(|g| g.byte + g.len).max().unwrap_or(lo);
-                let Some(s) = plain.get(lo..hi).map(str::trim_end).filter(|s| !s.trim().is_empty()) else { continue };
+                let marker = chunk.first().and_then(|(_, _, m)| *m).map(|m| m.text.as_str());
+                let Some(s) = marker.or_else(|| plain.get(lo..hi).map(str::trim_end)).filter(|s| !s.trim().is_empty()) else { continue };
                 let Some(cs) = t.runs.get(first.run).map(|r| &r.style) else { continue };
                 let paint = if cs.fill.is_none() { &cs.stroke } else { &cs.fill };
                 let Some(rgb) = self.paint_rgb(paint) else { continue };

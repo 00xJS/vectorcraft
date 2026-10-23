@@ -350,6 +350,13 @@ font-technology	Variable	Вариативные
 	Built-in presets don't change: New… starts an editable copy.	Встроенные наборы не изменяются: «Создать…» создаёт редактируемую копию.
 	Bulge…	Выпуклость…
 	Bullet	Маркер
+	Bullets	Маркеры
+	Bullets and Numbering	Маркеры и нумерация
+	Apply Bullets	Применить маркеры
+	Filled Dot	Закрашенная точка
+	Dash	Тире
+	Hollow Circle	Пустой круг
+	Filled Square	Закрашенный квадрат
 	Butt Cap	Стыковое окончание
 	Byte Order:	Порядок байтов:
 	Calligraphic	Каллиграфическая

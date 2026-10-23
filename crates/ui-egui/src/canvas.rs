@@ -2568,7 +2568,8 @@ impl HiddenMarks {
         }
         let text = tx.plain_text();
         let to = |q: Point| tx.xf * q;
-        for g in &lay.glyphs {
+        // A list marker's glyphs (length 0) stand for no character.
+        for g in lay.glyphs.iter().filter(|g| g.len > 0) {
             if text.get(g.byte..).is_some_and(|s| s.starts_with(' ')) {
                 marks.spaces.push(to(Point::new(g.origin.x + g.advance / 2.0, g.origin.y - 3.0)));
             }
@@ -6990,6 +6991,16 @@ mod tests {
             .into_iter()
             .filter(|s| matches!(s, Shape::Circle(c) if c.fill == blue) || matches!(s, Shape::Text(t) if t.fallback_color == blue))
             .collect()
+    }
+
+    /// Show Hidden Characters puts a dot over each space of a list paragraph and none over its
+    /// bullet, which stands for no character.
+    #[test]
+    fn hidden_characters_mark_no_space_at_a_bullet() {
+        let mut t = vectorcraft_doc::TextObject::point(vectorcraft_geom::Point::ZERO, " Item two", vectorcraft_doc::CharStyle::default());
+        let plain = HiddenMarks::of(&t).spaces.len();
+        t.para.list = Some(vectorcraft_doc::text::ParaList::bulleted(vectorcraft_doc::text::Bullet::Dot));
+        assert_eq!((plain, HiddenMarks::of(&t).spaces.len()), (2, 2));
     }
 
     /// While Show Hidden Characters is on, a canvas frame keeps the marks of the frame before.

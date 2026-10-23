@@ -238,6 +238,29 @@ fn touch_type_moves_one_character_and_leaves_the_others_where_they_are() {
     assert!(s.execute("text.touchType", &json!({"id": id.0, "start": (1u64 << 32) + 1, "dy": 1})).is_err(), "no character there");
 }
 
+/// Touch Type on the first character of a list item moves that character and leaves the bullet
+/// where it is. The bullet stands for no character, so the first character still moves only up
+/// and down.
+#[test]
+fn touch_type_moves_the_first_character_of_a_list_item_and_not_its_bullet() {
+    let mut s = session();
+    let id = NodeId(s.execute("text.create", &json!({"x": 100, "y": 100, "text": "Type", "size": 40})).unwrap()["id"].as_u64().unwrap());
+    s.execute("text.setFormat", &json!({"ids": [id.0], "list": "bullet"})).unwrap();
+    let pens = |s: &Session| {
+        let t = obj(s, id);
+        let lay = vectorcraft_text::layout(vectorcraft_text::FontDb::global(), &t);
+        let bullet = lay.glyphs.iter().find(|g| g.len == 0).map(|g| t.xf * (g.xf * Point::ZERO)).unwrap();
+        (bullet, lay.glyphs.iter().filter(|g| g.len > 0).map(|g| (g.byte, t.xf * (g.xf * Point::ZERO))).collect::<Vec<_>>())
+    };
+    let (bullet, before) = pens(&s);
+    assert!(s.execute("text.touchType", &json!({"id": id.0, "start": 0, "dx": 5})).is_err(), "no character before it to kern");
+    s.execute("text.touchType", &json!({"id": id.0, "start": 0, "dy": 3})).unwrap();
+    let (bullet_after, after) = pens(&s);
+    assert!(near(moved_by(&before, &after, 0), (0.0, -3.0)), "the T moves 3 pt up: {:?}", moved_by(&before, &after, 0));
+    assert!(near(moved_by(&before, &after, 1), (0.0, 0.0)));
+    assert!((bullet_after - bullet).hypot() < 1e-6, "the bullet stays: {bullet:?} {bullet_after:?}");
+}
+
 /// Raising, scaling or rotating a character leaves it and the characters after it where they
 /// were along the line, also where the font kerns it with its neighbors (the T and the y).
 #[test]

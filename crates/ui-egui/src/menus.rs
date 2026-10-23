@@ -225,6 +225,12 @@ pub const UI_COMMANDS: &[(&str, &str, &str, &str)] = &[
     ("type.justifyLeft", "Justify with last line aligned left", "Cmd+Shift+J", "{} justify the selected type's paragraphs, last line aligned left"),
     ("type.justifyAll", "Justify all lines", "Cmd+Shift+F", "{} justify every line of the selected type's paragraphs"),
     (
+        "type.applyBullets",
+        "Apply Bullets",
+        "",
+        "{bullet?: \"dot\"|\"dash\"|\"circle\"|\"square\"|\"none\"} Type › Bullets and Numbering › Apply Bullets: the selected type's paragraphs (or those the Type tool's selection touches) become a bulleted list with that bullet (text.setFormat {bullet}); without it, a list keeps its bullet and other paragraphs take the dot (text.setFormat {list: \"bullet\"}); \"none\" turns the list off",
+    ),
+    (
         "align.horizontalLeft",
         "Horizontal Align Left",
         "",
@@ -1409,6 +1415,7 @@ pub fn run_ui_command(app: &mut VectorcraftApp, id: &str, p: &Value) -> Option<R
         id if let Some((_, justify)) = crate::panels::paragraph::ALIGN_COMMANDS.iter().find(|c| c.0 == id) => {
             crate::panels::paragraph::align(app, justify)
         }
+        "type.applyBullets" => crate::panels::paragraph::apply_bullets(app, p),
         id if let Some(b) = crate::panels::align::button(id) => crate::panels::align::run_button(app, b),
         "view.gradientAnnotator" => flag(&mut app.ui.view.gradient_annotator),
         "view.livePaintGaps" => flag(&mut app.ui.view.live_paint_gaps),
@@ -2494,6 +2501,7 @@ pub fn enabled(app: &VectorcraftApp, id: &str) -> bool {
         "file.save" => app.session.active().is_some_and(|d| d.path.is_none() || d.converted || d.is_dirty()),
         "type.bold" | "type.italic" => crate::panels::character::text_style(app).is_some(),
         id if crate::panels::paragraph::ALIGN_COMMANDS.iter().any(|c| c.0 == id) => crate::panels::character::text_style(app).is_some(),
+        "type.applyBullets" => crate::panels::character::text_style(app).is_some(),
         id if let Some(b) = crate::panels::align::button(id) => enabled(app, b.command()),
         "file.reveal" => app.services.reveal.is_some() && app.session.active().is_some_and(|d| d.path.is_some()),
         "file.cancelExport" | "file.exportInBackground" => app.background.jobs.iter().any(|j| j.progress.is_some() && !j.cancelled()),
@@ -2988,6 +2996,7 @@ pub fn menu_tree_named(english_names: bool) -> Vec<(&'static str, Vec<Item>)> {
                     ],
                 ),
                 cp("Smart Punctuation…", "type.smartPunctuation", json!({"quotes": true, "dashes": true, "ellipsis": true, "scope": "selection"})),
+                sub("Bullets and Numbering", vec![c("Apply Bullets", "type.applyBullets")]),
                 Sep,
                 c("Create Outlines", "type.createOutlines"),
                 c("Scale Text Attributes", "type.scaleTextAttributes"),
@@ -3365,6 +3374,10 @@ pub fn context_items(app: &VectorcraftApp) -> Vec<Item> {
         }
         if any(|k| matches!(k, NodeKind::Compound { .. })) {
             v.push(c("Release Compound Path", "object.compoundPath.release"));
+        }
+        // The paragraphs of the selected type, or those the Type tool's selection touches.
+        if crate::panels::character::text_style(app).is_some() {
+            v.push(sub("Bullets and Numbering", vec![c("Apply Bullets", "type.applyBullets")]));
         }
         v.extend([
             c("Make Guides", "view.guides.make"),
