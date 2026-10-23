@@ -1079,12 +1079,15 @@ fn named_instances(
     (out, renamed)
 }
 
+/// The most faces read from a (possibly damaged) collection.
+const MAX_FACES: u32 = 256;
+
 /// Parse every face in `data` (a font file or collection) and the named instances of its variable
 /// ones. Returns each style with the index of its face.
 fn enumerate_faces(data: &[u8]) -> Vec<(u32, FaceStyle)> {
     let count = match FileRef::new(data) {
         Ok(FileRef::Font(_)) => 1,
-        Ok(FileRef::Collection(c)) => c.len(),
+        Ok(FileRef::Collection(c)) => c.len().min(MAX_FACES),
         Err(_) => 0,
     };
     (0..count)
@@ -1115,8 +1118,6 @@ const OUTLINE_TABLES: [&[u8; 4]; 6] = [b"glyf", b"CFF ", b"CFF2", b"VARC", b"sbi
 /// are left out.
 #[cfg(not(target_arch = "wasm32"))]
 fn file_face_names(path: &Path) -> Vec<FaceStyle> {
-    /// The most faces read from a (possibly damaged) collection.
-    const MAX_FACES: u32 = 256;
     file_face_names_within(path, MAX_FACES, u64::MAX)
 }
 
@@ -2582,6 +2583,26 @@ mod alias_tests {
         }
         font.extend(head);
         font
+    }
+
+    #[test]
+    fn a_collection_lists_at_most_max_faces() {
+        let mut font = name_font(&[(3, 0x0409, 1, "Fam"), (3, 0x0409, 2, "Regular")]);
+        let n = 1000u32;
+        let base = 12 + 4 * n;
+        let table = u32::from_be_bytes(font[20..24].try_into().unwrap()) + base;
+        font[20..24].copy_from_slice(&table.to_be_bytes());
+        let mut ttc = b"ttcf".to_vec();
+        for v in [0x0001_0000, n] {
+            ttc.extend_from_slice(&u32::to_be_bytes(v));
+        }
+        for _ in 0..n {
+            ttc.extend_from_slice(&base.to_be_bytes());
+        }
+        ttc.extend(font);
+        let faces = enumerate_faces(&ttc);
+        assert!(!faces.is_empty());
+        assert!(faces.len() <= MAX_FACES as usize, "{} faces", faces.len());
     }
 
     fn keys(records: &[(u16, u16, u16, &str)]) -> (String, String, FaceKeys) {
