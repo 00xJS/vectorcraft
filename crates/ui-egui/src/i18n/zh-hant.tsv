@@ -2089,6 +2089,7 @@ file-filter	Templates	範本
 @msg	name the file	請為檔案命名
 @msg	unknown format	未知的格式
 @msg	PDF settings are not an object	PDF 設定不是物件
+@msg	PDF security settings are not an object	PDF 安全性設定不是物件
 @msg	no saved PDF preset named `{name}` (built-in presets are read-only: start a new one from them)	沒有名為 `{name}` 的已儲存 PDF 預設集 (內建預設集為唯讀：請以它們為基礎新增一個)
 @msg	Saved to User Defined: {_1}	已儲存至「使用者定義」：{_1}
 @msg	choose a direction to divide in	請選擇分割方向

@@ -4848,6 +4848,7 @@ imageTrace	Outline	Körvonal
 @msg	pattern missing	hiányzik a mintázat
 @msg	patterns nested too deeply are filled with mid-grey	a túl mélyen egymásba ágyazott mintázatok helyén középszürke kitöltés áll
 @msg	PDF settings are not an object	a PDF-beállítások nem objektumot alkotnak
+@msg	PDF security settings are not an object	a PDF biztonsági beállításai nem objektumot alkotnak
 @msg	PDF writer error: {0}	PDF-író hiba: {0}
 @msg	percent must be above 0 and at most 6400, not {p}	a percent értéke 0-nál nagyobb és legfeljebb 6400 lehet, ez nem az: {p}
 @msg	pick a colour, gradient or pattern to save as a swatch	válassz színt, színátmenetet vagy mintázatot a színmintaként mentéshez

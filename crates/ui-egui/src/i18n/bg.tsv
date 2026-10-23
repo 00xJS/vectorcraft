@@ -3743,6 +3743,7 @@ axis	Both	И двете
 @msg	Opened {url}	Отворено: {url}
 @msg	Outline Stroke: no stroked paths selected	Преобразуване на щрих в контур: няма избрани пътища с щрих
 @msg	PDF settings are not an object	Настройките за PDF не са обект
+@msg	PDF security settings are not an object	Настройките за сигурност на PDF не са обект
 @msg	PDF writer error: {0}	Грешка на PDF записа: {0}
 @msg	Packaged {n} file(s) in {folder} {note}	Пакетирани са {n} файла в {folder}{note}
 @msg	Packaged {n} file(s){note}	Пакетирани са {n} файла{note}

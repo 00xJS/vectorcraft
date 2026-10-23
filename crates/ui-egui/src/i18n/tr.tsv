@@ -3636,6 +3636,7 @@ axis	Both	Her İkisi
 @msg	Opened {url}	{url} açıldı
 @msg	Outline Stroke: no stroked paths selected	Anahat Konturu: konturlu yol seçilmedi
 @msg	PDF settings are not an object	PDF ayarları bir nesne değildir
+@msg	PDF security settings are not an object	PDF güvenlik ayarları bir nesne değildir
 @msg	PDF writer error: {0}	PDF yazıcı hatası: {0}
 @msg	Packaged {n} file(s) in {folder} {note}	{folder}{note} biçiminde paketlenmiş {n} dosyası/dosyaları
 @msg	Packaged {n} file(s){note}	Paketlenmiş {n} dosyası/dosyaları{note}

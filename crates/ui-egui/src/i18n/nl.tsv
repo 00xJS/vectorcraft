@@ -3878,6 +3878,7 @@ imageTrace	Outline	Contour
 @msg	Opened {url}	{url} geopend
 @msg	Outline Stroke: no stroked paths selected	Lijn omzetten in contouren: geen paden met een lijn geselecteerd
 @msg	PDF settings are not an object	PDF-instellingen zijn geen object
+@msg	PDF security settings are not an object	PDF-beveiligingsinstellingen zijn geen object
 @msg	PDF writer error: {0}	PDF-schrijffout: {0}
 @msg	Packaged {n} file(s) in {folder} {note}	{n} bestand(en) verpakt in {folder} {note}
 @msg	Packaged {n} file(s){note}	{n} bestand(en) verpakt{note}

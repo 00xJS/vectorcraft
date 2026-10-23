@@ -3953,6 +3953,7 @@ imageTrace	Outline	Kontur
 @msg	Opened {url}	Otwarto {url}
 @msg	Outline Stroke: no stroked paths selected	Obrys konturu: nie zaznaczono ścieżek z obrysem
 @msg	PDF settings are not an object	Ustawienia PDF nie są obiektem
+@msg	PDF security settings are not an object	Ustawienia zabezpieczeń PDF nie są obiektem
 @msg	PDF writer error: {0}	Błąd zapisu PDF: {0}
 @msg	Packaged {n} file(s) in {folder} {note}	Spakowane pliki: {n} w {folder}{note}
 @msg	Packaged {n} file(s){note}	Spakowane pliki: {n}{note}

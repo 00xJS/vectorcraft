@@ -2093,6 +2093,7 @@ axis	Both	Και τα δύο
 @msg	Opened {url}	Άνοιξε το {url}
 @msg	Outline Stroke: no stroked paths selected	Μετατροπή περιγράμματος σε διαδρομή: δεν επιλέχθηκαν διαδρομές με περίγραμμα
 @msg	PDF settings are not an object	Οι ρυθμίσεις PDF δεν είναι αντικείμενο
+@msg	PDF security settings are not an object	Οι ρυθμίσεις ασφαλείας PDF δεν είναι αντικείμενο
 @msg	PDF writer error: {0}	Σφάλμα εγγραφής PDF: {0}
 @msg	Packaged {n} file(s) in {folder} {note}	Συσκευάστηκαν {n} αρχεία στον φάκελο {folder}{note}
 @msg	Packaged {n} file(s){note}	Συσκευάστηκαν {n} αρχεία{note}

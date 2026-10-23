@@ -3851,6 +3851,7 @@ axis	Both	Обидві
 @msg	Opened {url}	Відкрито {url}
 @msg	Outline Stroke: no stroked paths selected	Обведення контуру: не виділено контури з обведенням
 @msg	PDF settings are not an object	Параметри PDF не є об’єктом
+@msg	PDF security settings are not an object	Параметри безпеки PDF не є об’єктом
 @msg	PDF writer error: {0}	Помилка запису PDF: {0}
 @msg	Packaged {n} file(s) in {folder} {note}	Упаковано файли: {n} {folder}{note}
 @msg	Packaged {n} file(s){note}	Упаковано файли: {n}{note}

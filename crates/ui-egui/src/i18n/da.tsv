@@ -3864,6 +3864,7 @@ imageTrace	Outline	Kontur
 @msg	Opened {url}	Åbnede {url}
 @msg	Outline Stroke: no stroked paths selected	Konturér kurve: ingen kurver med kontur er markeret
 @msg	PDF settings are not an object	PDF-indstillinger er ikke et objekt
+@msg	PDF security settings are not an object	PDF-sikkerhedsindstillinger er ikke et objekt
 @msg	PDF writer error: {0}	PDF-skriverfejl: {0}
 @msg	Packaged {n} file(s) in {folder} {note}	Pakkede {n} fil(er) i {folder}{note}
 @msg	Packaged {n} file(s){note}	Pakkede {n} fil(er){note}
