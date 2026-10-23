@@ -132,3 +132,22 @@ fn pdf_draws_an_svg_glyphs_art_once_when_its_font_cant_be_embedded() {
     let red = vectorcraft_color::Paint::solid(vectorcraft_color::Color::rgb8(255, 0, 0));
     assert_eq!(fills_of(&pdf).iter().filter(|(p, _)| *p == red).count(), 1);
 }
+
+/// Expand Appearance of type with an effect of its own (drawn reshaped as its outlines) keeps its
+/// colour glyphs, as their art.
+#[test]
+fn expand_appearance_keeps_the_colour_glyphs_of_type_with_effects() {
+    use vectorcraft_text::test_fonts::{COLOUR_CHAR, colr_family, colr_font};
+    vectorcraft_text::FontDb::global().add_font(colr_font(true).unwrap());
+    let mut s = session();
+    let r = s.execute("text.create", &json!({"x": 10, "y": 50, "text": format!("{COLOUR_CHAR}F"), "size": 32, "font": colr_family(true)})).unwrap();
+    let t = NodeId(r["id"].as_u64().unwrap());
+    s.execute("effect.apply", &json!({"ids": [t.0], "effect": "distort.transform", "params": {"moveH": 5}})).unwrap();
+    let r = ids(&s.execute("effect.expandAppearance", &json!({})).unwrap());
+    let mut gradients = 0;
+    for id in r {
+        node(&s, id).walk(&mut |n| gradients += usize::from(matches!(n.appearance.fill_paint(), vectorcraft_color::Paint::Gradient(_))));
+    }
+    assert!(gradients > 0, "the colour glyph's gradient layers");
+    vectorcraft_testkit::invariants::check_document(&s.doc().unwrap().doc).unwrap();
+}
