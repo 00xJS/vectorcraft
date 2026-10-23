@@ -3,7 +3,8 @@
 //!
 //! Pencil and Paintbrush preview the fitted path live (`path.freehand` re-applied on the snapshot)
 //! and commit on release; Alt on release (or ending near the start) closes the path, and starting
-//! near an end of a selected open path continues it. The Pencil's new path starts and ends on
+//! near an end of a selected open path continues it. Shift held at the press draws a straight
+//! Pencil line at 45° steps from the Constrain Angle instead. The Pencil's new path starts and ends on
 //! Smart Guides ([`DrawSnap`]: an anchor, a path, in line with the art), hovering too; the points
 //! between follow the hand. The Paintbrush records the pen pressure of each point (a stroke a pen
 //! pressed less than fully on sends `[x, y, pressure]` points) for pressure-sensitive brushes. The
@@ -45,6 +46,9 @@ pub struct GestureTool {
     pub alt_smooth: bool,
     /// Active drag is smoothing with the Pencil tool.
     smoothing: bool,
+    /// Active Pencil drag draws a straight line (Shift held at the press): the stroke is the
+    /// press point and the pointer constrained to 45° steps from it.
+    straight: bool,
     /// Where the pointer was for each Blob Brush point dragged since Shift went down: the last
     /// `shift_raw.len()` of `points`.
     shift_raw: Vec<Point>,
@@ -88,6 +92,7 @@ impl GestureTool {
             // Off, as Pencil Tool Options ships it: Alt keeps drawing a closed path until it is on.
             alt_smooth: false,
             smoothing: false,
+            straight: false,
             shift_raw: vec![],
             shift_next: None,
             merge_only_selection: false,
@@ -128,6 +133,11 @@ impl GestureTool {
     /// line. Without Shift the stroke takes `p`.
     fn constrained(&mut self, cx: &ToolContext, p: Point, m: Mods) -> Point {
         self.shift_next = None;
+        if self.straight
+            && let Some(&start) = self.points.first()
+        {
+            return start + vectorcraft_geom::constrain_angle_from(p - start, 45.0, cx.constrain_angle);
+        }
         let Some(&start) = self.points.first().filter(|_| self.id == "blobBrush" && m.shift) else {
             self.shift_raw.clear();
             return p;
@@ -176,8 +186,9 @@ impl GestureTool {
         }
     }
 
-    /// The selected open path whose end is near `p` (Edit Selected Paths, off at 0 pixels).
-    fn find_extend(&self, cx: &ToolContext, p: Point) -> Option<(NodeId, bool)> {
+    /// The selected open path whose end is near `p` (Edit Selected Paths, off at 0 pixels), and
+    /// that end.
+    fn find_extend(&self, cx: &ToolContext, p: Point) -> Option<(NodeId, bool, Point)> {
         if self.edit_within <= 0.0 {
             return None;
         }
@@ -191,10 +202,10 @@ impl GestureTool {
             let Some(sp) = pd.subpaths.iter().rev().find(|s| !s.closed && !s.anchors.is_empty()) else { continue };
             let (first, last) = (sp.anchors[0].p, sp.anchors[sp.anchors.len() - 1].p);
             if p.distance(last) <= tol {
-                return Some((*id, false));
+                return Some((*id, false, last));
             }
             if p.distance(first) <= tol {
-                return Some((*id, true));
+                return Some((*id, true, first));
             }
         }
         None
@@ -289,10 +300,15 @@ impl Tool for GestureTool {
                 self.active = true;
                 self.began = false;
                 self.smoothing = self.id == "pencil" && self.alt_smooth && ev.mods.alt;
-                self.extend = if self.draws_path() && !self.smoothing { self.find_extend(cx, p) } else { None };
+                self.straight = self.id == "pencil" && !self.smoothing && ev.mods.shift;
+                let extend = if self.draws_path() && !self.smoothing { self.find_extend(cx, p) } else { None };
+                self.extend = extend.map(|(id, at_start, _)| (id, at_start));
                 self.redraw = if self.draws_path() && !self.smoothing && self.extend.is_none() { self.find_redraw(cx, p) } else { None };
                 // A path continued starts at its end, one redrawn on it; a new one where it snaps.
-                let start = if self.snaps() && !self.smoothing && self.extend.is_none() && self.redraw.is_none() {
+                // A straight line is constrained from the end it continues, so it starts there.
+                let start = if let Some((_, _, end)) = extend.filter(|_| self.straight) {
+                    end
+                } else if self.snaps() && !self.smoothing && self.extend.is_none() && self.redraw.is_none() {
                     self.snap.press(cx, p, &[], None)
                 } else {
                     p
@@ -309,11 +325,17 @@ impl Tool for GestureTool {
                 if !self.began && self.id == "pencil" && self.alt_smooth && ev.mods.alt {
                     self.smoothing = true;
                 }
-                if self.snaps() && !self.smoothing {
+                if self.snaps() && !self.smoothing && !self.straight {
                     // Where the stroke would end: shown, taken on release.
                     self.snap.drag(cx, p, None);
                 }
-                if self.points.last().is_some_and(|l| l.distance(p) < cx.tol(1.0)) {
+                if self.straight {
+                    // The line runs from the press point to the pointer, wherever the drag went.
+                    if self.points.first().is_some_and(|s| s.distance(p) < cx.tol(1.0)) {
+                        return vec![];
+                    }
+                    self.points.truncate(1);
+                } else if self.points.last().is_some_and(|l| l.distance(p) < cx.tol(1.0)) {
                     return vec![];
                 }
                 self.push(p, ev.pressure);
@@ -333,9 +355,14 @@ impl Tool for GestureTool {
                     return vec![];
                 }
                 let p = self.constrained(cx, p, ev.mods);
-                let end = if self.snaps() && !self.smoothing { self.snap.drag(cx, p, None) } else { p };
+                let end = if self.snaps() && !self.smoothing && !self.straight { self.snap.drag(cx, p, None) } else { p };
                 self.snap.clear();
-                if self.points.last().is_some_and(|l| l.distance(p) >= cx.tol(1.0)) {
+                if self.straight {
+                    if self.points.first().is_some_and(|s| s.distance(p) >= cx.tol(1.0)) {
+                        self.points.truncate(1);
+                        self.push(end, ev.pressure);
+                    }
+                } else if self.points.last().is_some_and(|l| l.distance(p) >= cx.tol(1.0)) {
                     self.push(end, ev.pressure);
                 } else if self.snaps()
                     && !self.smoothing
@@ -349,6 +376,7 @@ impl Tool for GestureTool {
                 self.active = false;
                 self.began = false;
                 self.smoothing = false;
+                self.straight = false;
                 self.clear();
                 self.extend = None;
                 self.redraw = None;
@@ -369,6 +397,7 @@ impl Tool for GestureTool {
                 self.active = false;
                 self.began = false;
                 self.smoothing = false;
+                self.straight = false;
                 self.clear();
                 if began { vec![Action::Cancel] } else { vec![] }
             }
@@ -388,6 +417,7 @@ impl Tool for GestureTool {
         self.snap.clear();
         self.active = false;
         self.began = false;
+        self.straight = false;
         self.clear();
         if began { vec![Action::Commit] } else { vec![] }
     }
@@ -692,6 +722,74 @@ mod tests {
         let pts = blob(&drag_held(&mut t, &cx, &[(0.0, 0.0), (40.0, -20.0), (0.0, 0.0)], shift));
         let a = (-pts[1].1).atan2(pts[1].0).to_degrees();
         assert!(pts.len() == 3 && pts[2] == (0.0, 0.0) && (a - 30.0).abs() < 1e-9, "{pts:?}");
+    }
+
+    /// #3799: Shift held at the press draws a straight Pencil line from the press point, at 45°
+    /// steps from the Constrain Angle, previewed as it is dragged; the Paintbrush keeps following
+    /// the hand.
+    #[test]
+    fn pencil_shift_draws_a_straight_line_at_45_degree_steps() {
+        let (d, _) = doc_with_rect();
+        let s = Selection::default();
+        let p = paint();
+        let mut cx = cx(&d, &s, &p);
+        cx.smart_guides = false;
+        let shift = Mods { shift: true, ..Default::default() };
+        let pts = |acts: &[Vec<Action>]| -> Vec<Vec<(f64, f64)>> {
+            acts.iter()
+                .filter_map(|a| a.iter().find_map(|a| if let Action::Preview(_, v) = a { Some(v["points"].clone()) } else { None }))
+                .map(|v| v.as_array().unwrap().iter().map(|q| (q[0].as_f64().unwrap(), q[1].as_f64().unwrap())).collect())
+                .collect()
+        };
+        let angle = |q: (f64, f64), from: (f64, f64)| (-(q.1 - from.1)).atan2(q.0 - from.0).to_degrees();
+        let mut t = GestureTool::new("pencil");
+        // A wavy drag heading up and right at about 40°: a line at 45°, as long as the drag.
+        let acts = drag_held(&mut t, &cx, &[(0.0, 0.0), (30.0, -10.0), (50.0, -60.0), (100.0, -84.0)], shift);
+        let all = pts(&acts);
+        assert!(all.iter().all(|v| v.len() == 2 && v[0] == (0.0, 0.0)), "{all:?}");
+        let end = *all.last().unwrap().last().unwrap();
+        assert!((angle(end, (0.0, 0.0)) - 45.0).abs() < 1e-9, "{end:?}");
+        assert!((end.0.hypot(end.1) - 100f64.hypot(84.0)).abs() < 1e-9, "{end:?}");
+        let last = acts.last().unwrap();
+        assert!(matches!(&last[0], Action::Preview(_, v) if v["closed"] == false) && last[1] == Action::Commit, "{last:?}");
+        // The steps turn with the Constrain Angle: at 30°, a drag at 40° gives 30°, one at 60° gives 75°.
+        cx.constrain_angle = 30.0;
+        for (to, want) in [((100.0, -84.0), 30.0), ((50.0, -86.6), 75.0)] {
+            let all = pts(&drag_held(&mut t, &cx, &[(10.0, 10.0), (to.0 + 10.0, to.1 + 10.0)], shift));
+            let end = *all.last().unwrap().last().unwrap();
+            assert!((angle(end, (10.0, 10.0)) - want).abs() < 1e-9, "{to:?}: {all:?}");
+        }
+        // Without Shift, and with the Paintbrush, the stroke follows the hand.
+        for (id, m) in [("pencil", Mods::default()), ("paintbrush", shift)] {
+            let mut t = GestureTool::new(id);
+            let all = pts(&drag_held(&mut t, &cx, &[(0.0, 0.0), (30.0, -10.0), (50.0, -60.0)], m));
+            assert_eq!(all.last().unwrap().len(), 3, "{id}: {all:?}");
+        }
+    }
+
+    /// #3799: a Shift line started on an end of a selected open path continues the path from that
+    /// end, constrained from the end itself.
+    #[test]
+    fn pencil_shift_line_continues_a_selected_path_from_its_end() {
+        let (mut d, _) = doc_with_rect();
+        let l = d.layers[0].id;
+        let id = d.alloc_id();
+        let line = vectorcraft_geom::PathData::from_bezpath(&vectorcraft_geom::BezPath::from_vec(vec![
+            vectorcraft_geom::PathEl::MoveTo(Point::new(300.0, 300.0)),
+            vectorcraft_geom::PathEl::LineTo(Point::new(400.0, 300.0)),
+        ]));
+        d.insert(Some(l), 1, vectorcraft_doc::Node::path(id, line, vectorcraft_doc::Appearance::default_art())).unwrap();
+        let mut s = Selection::default();
+        s.set([id]);
+        let p = paint();
+        let mut cx = cx(&d, &s, &p);
+        cx.smart_guides = false;
+        let mut t = GestureTool::new("pencil");
+        // Pressed 5 pt off the end, released 100 pt right and 4 pt above it.
+        let acts = drag_held(&mut t, &cx, &[(405.0, 303.0), (450.0, 290.0), (500.0, 296.0)], Mods { shift: true, ..Default::default() });
+        let Some(Action::Preview(_, v)) = acts.last().and_then(|a| a.first()) else { panic!("{acts:?}") };
+        assert_eq!(v["extend"], json!({"id": id.0, "end": "end"}));
+        assert_eq!(v["points"], json!([[400.0, 300.0], [400.0 + 100f64.hypot(4.0), 300.0]]));
     }
 
     #[test]
