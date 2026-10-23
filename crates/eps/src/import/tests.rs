@@ -1131,3 +1131,34 @@ fn search_in_a_loop_runs_out_of_the_budget() {
     let make = "/h 4194304 string def /n 2097152 string def n 2097152 1 sub 1 put";
     runs_out_of_budget(&format!("{make} {{ h n search {{ pop pop pop }} {{ pop }} ifelse }} loop"));
 }
+
+/// #3568: an image dictionary with more data sources than colour components is a `rangecheck`.
+#[test]
+fn an_image_with_more_data_sources_than_components_is_refused() {
+    let sources = "<80> ".repeat(64);
+    let e = import(&eps(&format!(
+        "/DeviceGray setcolorspace << /ImageType 1 /Width 64 /Height 64 /BitsPerComponent 8 /MultipleDataSources true \
+         /ImageMatrix [64 0 0 64 0 0] /DataSource [{sources}] >> image"
+    )))
+    .unwrap_err();
+    assert!(e.contains("rangecheck") && e.contains("DataSource"), "{e}");
+}
+
+/// #3568: every data source's plane is charged against the memory budget, not only the RGBA
+/// output: two large four-source images together go over it.
+#[test]
+fn the_planes_of_multi_source_images_are_charged() {
+    let image = "/DeviceCMYK setcolorspace << /ImageType 1 /Width 8192 /Height 8192 /BitsPerComponent 8 \
+                 /MultipleDataSources true /ImageMatrix [8192 0 0 8192 0 0] /DataSource [<80> <80> <80> <80>] >> image\n";
+    let r = import(&eps(&image.repeat(2))).unwrap();
+    assert!(r.warnings.iter().any(|w| w.contains("too much memory")), "{:?}", r.warnings);
+}
+
+/// #3568: a single sample plane over the data limit is refused.
+#[test]
+fn an_oversized_image_plane_is_refused() {
+    let e = import(&eps("/DeviceCMYK setcolorspace << /ImageType 1 /Width 8192 /Height 8192 /BitsPerComponent 16 \
+         /ImageMatrix [8192 0 0 8192 0 0] /DataSource <80> >> image"))
+    .unwrap_err();
+    assert!(e.contains("too large"), "{e}");
+}
