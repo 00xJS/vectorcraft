@@ -421,6 +421,10 @@ fn expand_pattern_fills(s: &mut Session) -> Result<()> {
 /// mode. Returns how many shapes changed.
 pub(crate) fn expand_transparent_image_patterns(d: &mut Document, root: NodeId, see_through: &BTreeSet<String>) -> Result<usize> {
     let (_, n) = replace_leaves(d, root, |d, l| {
+        // Most leaves have no pattern fill: skip the ancestry walk for them.
+        if !l.appearance.items.iter().any(|i| pattern_fill(d, i).is_some()) {
+            return None;
+        }
         let shape = d.ancestry(l.id).unwrap_or_default().iter().filter_map(|a| d.node(*a)).any(blended);
         let transparent = |d: &Document, i: &AppearanceItem| {
             pattern_fill(d, i).is_some_and(|(f, def, _)| {
