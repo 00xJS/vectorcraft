@@ -422,8 +422,7 @@ mod tests {
 
     /// Pixels of `img` that something paints opaquely, and those of them that are red.
     fn painted(img: &vectorcraft_render::Rendered) -> (usize, usize) {
-        let px = img.pixels.chunks_exact(4);
-        let painted: Vec<&[u8]> = px.filter(|p| p[3] > 200).collect();
+        let painted: Vec<&[u8; 4]> = img.pixels.as_chunks::<4>().0.iter().filter(|p| p[3] > 200).collect();
         let red = painted.iter().filter(|p| p[0] > 150 && p[1] < 80 && p[2] < 80).count();
         (painted.len(), red)
     }
