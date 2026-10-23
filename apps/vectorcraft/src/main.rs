@@ -157,7 +157,11 @@ impl App {
         // again on its document when it answers.
         #[cfg(target_os = "macos")]
         if !self.app.file_dialog_open() {
-            open_files(&mut self.app, open_documents::take());
+            let files = open_documents::take();
+            if !files.is_empty() {
+                bring_window_forward(ctx);
+            }
+            open_files(&mut self.app, files);
         }
         self.app.logic(ctx);
         if self.pending_maximize {
@@ -189,6 +193,14 @@ fn end_before_teardown(frames: u64) {
         log::logger().flush();
         std::process::exit(0);
     }
+}
+
+/// Show the window when files are opened from the Finder or the Dock: a minimized window comes back
+/// out of the Dock and the app takes focus, as a document-based Mac app does (#3769).
+#[cfg_attr(not(target_os = "macos"), allow(dead_code))]
+fn bring_window_forward(ctx: &egui::Context) {
+    ctx.send_viewport_cmd(egui::ViewportCommand::Minimized(false));
+    ctx.send_viewport_cmd(egui::ViewportCommand::Focus);
 }
 
 /// Open files handed to the app (command line, macOS Finder and Dock) as documents. A file that
@@ -1124,6 +1136,17 @@ mod tests {
 
     fn ui_state_with_prefs(engine_prefs: serde_json::Value) -> vectorcraft_ui_egui::UiState {
         vectorcraft_ui_egui::UiState { engine_prefs, ..Default::default() }
+    }
+
+    #[test]
+    fn opening_files_unminimizes_and_focuses_the_window() {
+        let ctx = egui::Context::default();
+        let mut out = ctx.run_ui(egui::RawInput::default(), |ui| bring_window_forward(ui.ctx()));
+        // Nothing paints in the test: drop the font atlas upload egui expects to be applied.
+        out.textures_delta.clear();
+        let cmds = &out.viewport_output[&egui::ViewportId::ROOT].commands;
+        assert!(cmds.contains(&egui::ViewportCommand::Minimized(false)));
+        assert!(cmds.contains(&egui::ViewportCommand::Focus));
     }
 
     #[test]
