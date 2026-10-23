@@ -2349,6 +2349,8 @@ lighting	Light	Światło
 	File Dimensions	Wymiary pliku
 	Transforms	Przekształcenia
 	Background Color:	Kolor tła:
+	Show Center Mark	Pokaż znacznik środka
+	Show Cross Hairs	Pokaż krzyż nitkowy
 	Client-side (.html)	Po stronie klienta (.html)
 	Color Reduction:	Redukcja kolorów:
 	Lossless (lossy WebP isn't available yet)	Bezstratny (stratny WebP nie jest jeszcze dostępny)

@@ -1,8 +1,11 @@
 //! Artboard Options (double-click with the Artboard tool, double-click the tool, or the Artboards
 //! panel's options icon or menu): the artboard's fields, sizes parsed with units, its position
-//! from a reference point, and its background color (`color`: a color as the paint commands take
-//! it, or null for none). Sizing choices also go to the other selected artboards; fitting
-//! changes only the active artboard around stationary artwork.
+//! from a reference point, its background color (`color`: a color as the paint commands take
+//! it, or null for none), and Show Center Mark and Show Cross Hairs (`showCenterMark`,
+//! `showCrossHairs`), the display marks the canvas draws on the artboard
+//! (https://helpx.adobe.com/illustrator/desktop/create-manage-artboards/organize-manage-artboards/modify-display-settings-of-artboards.html).
+//! Sizing choices also go to the other selected artboards; fitting changes only the active
+//! artboard around stationary artwork.
 
 use serde_json::{Value, json};
 use vectorcraft_color::Color;
@@ -32,7 +35,7 @@ fn placed(d: &Dialog) -> Rect {
 /// as the Transform panel and the Control bar show an artboard's. A new Width or Height keeps the
 /// reference point where it was, as their sizes do.
 /// Then Background Color: the Fill list (None, White, Black; Custom for another color) and a swatch
-/// that picks a color of its own.
+/// that picks a color of its own, and the Show Center Mark and Show Cross Hairs checkboxes.
 fn body(app: &mut VectorcraftApp, ui: &mut egui::Ui, d: &mut Dialog) -> bool {
     let (unit, origin, refi) = (app.session.general_unit(), app.ruler_origin(), reference_index(ui));
     let (was, w0, h0) = (placed(d), d.f64("width", 0.0), d.f64("height", 0.0));
@@ -92,6 +95,9 @@ fn body(app: &mut VectorcraftApp, ui: &mut egui::Ui, d: &mut Dialog) -> bool {
     if let Some(c) = set {
         d.fields.insert("color".into(), c.as_ref().map_or(Value::Null, crate::panels::color_json));
     }
+    ui.add_space(8.0);
+    form::check(ui, d, "showCenterMark", tl!("Show Center Mark"));
+    form::check(ui, d, "showCrossHairs", tl!("Show Cross Hairs"));
     false
 }
 
@@ -194,7 +200,10 @@ pub fn open(app: &mut VectorcraftApp) -> Result<Value, String> {
     let a = st.doc.artboards.get(index).ok_or("no artboard")?;
     let r = a.rect;
     let color = a.color.as_ref().map(crate::panels::color_json);
-    let fields = json!({"index": index, "name": a.name, "x": r.x0, "y": r.y0, "width": r.width(), "height": r.height(), "color": color});
+    let fields = json!({
+        "index": index, "name": a.name, "x": r.x0, "y": r.y0, "width": r.width(), "height": r.height(), "color": color,
+        "showCenterMark": a.show_center_mark, "showCrossHairs": a.show_cross_hairs,
+    });
     app.ui.dialog = Some(Dialog::new(KIND, fields));
     Ok(json!({ "dialog": KIND }))
 }
@@ -265,8 +274,9 @@ pub fn open_new(app: &mut VectorcraftApp) -> Result<Value, String> {
     Ok(json!({ "dialog": KIND }))
 }
 
-/// OK for a new artboard: `artboard.new` with the fields (an empty name gives the default one) and
-/// the background color picked, and the new artboard becomes the active one.
+/// OK for a new artboard: `artboard.new` with the fields (an empty name gives the default one),
+/// the background color picked and the display marks ticked, and the new artboard becomes the
+/// active one.
 fn confirm_new(app: &mut VectorcraftApp, d: &Dialog) -> Result<Value, String> {
     let mut p = json!({});
     for k in ["x", "y", "width", "height"] {
@@ -278,6 +288,11 @@ fn confirm_new(app: &mut VectorcraftApp, d: &Dialog) -> Result<Value, String> {
     }
     if let Some(c) = d.fields.get("color") {
         p["color"] = c.clone();
+    }
+    for k in ["showCenterMark", "showCrossHairs"] {
+        if d.bool(k) {
+            p[k] = json!(true);
+        }
     }
     let r = run_and_close(app, "artboard.new", p)?;
     if let Some(i) = r["index"].as_u64().and_then(|i| usize::try_from(i).ok()) {

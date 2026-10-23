@@ -459,6 +459,8 @@ impl Tool for ArtboardTool {
                     Some(a) => {
                         let mut v = rect_json(self.active, a.rect);
                         v["name"] = json!(a.name);
+                        v["showCenterMark"] = json!(a.show_center_mark);
+                        v["showCrossHairs"] = json!(a.show_cross_hairs);
                         vec![Action::Dialog("artboardOptions".into(), v)]
                     }
                     None => vec![],

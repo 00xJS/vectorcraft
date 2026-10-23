@@ -2235,6 +2235,8 @@ lighting	Light	Cahaya
 	File Dimensions	Dimensi file
 	Transforms	Transformasi
 	Background Color:	Warna latar belakang:
+	Show Center Mark	Tampilkan tanda tengah
+	Show Cross Hairs	Tampilkan garis silang
 	Client-side (.html)	Sisi klien (.html)
 	Color Reduction:	Reduksi warna:
 	Lossless (lossy WebP isn't available yet)	Tanpa kehilangan (WebP lossy belum tersedia)

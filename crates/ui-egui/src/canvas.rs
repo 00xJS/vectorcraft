@@ -562,6 +562,9 @@ pub fn show(app: &mut VectorcraftApp, ui: &mut Ui) {
         if doc.setup.has_bleed() {
             painter.add(Shape::closed_line(xf.quad(doc.setup.bleed_rect(ab.rect)), Stroke::new(1.0, t.bleed)));
         }
+        // Show Center Mark and Show Cross Hairs (Artboard Options). Only the canvas draws them,
+        // as it does the edges: exports and print leave them out.
+        artboard_marks(&painter, &xf, ab, t.artboard_mark);
         if editing_name != Some(i) && (artboard_tool || doc.artboards.len() > 1) && tool_labelled != u64::try_from(i).ok() {
             // At the artboard's own top-left corner, which a rotated view turns away from its
             // bounding box's (#1095).
@@ -2889,6 +2892,31 @@ fn canvas_name_galley(painter: &egui::Painter, corner: Pos2, width: f32, name: &
     let galley = painter.layout_job(job);
     let at = corner - vec2(0.0, 4.0 + galley.size().y);
     Some((galley, at))
+}
+
+/// The length on screen, in points, of each arm of an artboard's center mark (a cross), at any zoom.
+const CENTER_MARK_ARM: f32 = 6.0;
+
+/// Artboard `ab`'s display marks in `color`, each line 1 point wide on screen at any zoom and
+/// turned with the view: with Show Cross Hairs, a line from the middle of each side through the
+/// center to the middle of the opposite side; with Show Center Mark, a cross at the center whose
+/// arms run along the artboard's sides, [`CENTER_MARK_ARM`] long on screen
+/// (https://helpx.adobe.com/illustrator/desktop/create-manage-artboards/organize-manage-artboards/modify-display-settings-of-artboards.html).
+fn artboard_marks(painter: &egui::Painter, xf: &Xf, ab: &vectorcraft_doc::Artboard, color: Color32) {
+    let (r, stroke) = (ab.rect, Stroke::new(1.0, color));
+    let c = r.center();
+    let at = |x: f64, y: f64| xf.to_screen(Point::new(x, y));
+    if ab.show_cross_hairs {
+        painter.line_segment([at(r.x0, c.y), at(r.x1, c.y)], stroke);
+        painter.line_segment([at(c.x, r.y0), at(c.x, r.y1)], stroke);
+    }
+    if ab.show_center_mark {
+        let mid = at(c.x, c.y);
+        for side in [at(c.x + 1.0, c.y), at(c.x, c.y + 1.0)] {
+            let arm = (side - mid).normalized() * CENTER_MARK_ARM;
+            painter.line_segment([mid - arm, mid + arm], stroke);
+        }
+    }
 }
 
 /// Artboard `name` above its top-left `corner` on screen, no wider than the artboard (`width` on

@@ -2130,6 +2130,8 @@ lighting	Light	სინათლე
 	File Dimensions	ფაილის ზომები
 	Transforms	გარდაქმნები
 	Background Color:	ფონის ფერი:
+	Show Center Mark	ცენტრის ნიშნის ჩვენება
+	Show Cross Hairs	ჯვარედინი ხაზების ჩვენება
 	Client-side (.html)	კლიენტის მხარე (.html)
 	Color Reduction:	ფერების შემცირება:
 	Lossless (lossy WebP isn't available yet)	უდანაკარგო (დანაკარგიანი WebP ჯერ მიუწვდომელია)

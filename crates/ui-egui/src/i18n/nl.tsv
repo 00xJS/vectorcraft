@@ -2249,6 +2249,8 @@ lighting	Light	Licht
 	File Dimensions	Bestandsafmetingen
 	Transforms	Transformaties
 	Background Color:	Achtergrondkleur:
+	Show Center Mark	Middenmarkering tonen
+	Show Cross Hairs	Dradenkruis tonen
 	Client-side (.html)	Client-side (.html)
 	Color Reduction:	Kleurreductie:
 	Lossless (lossy WebP isn't available yet)	Verliesvrij (WebP met verlies is nog niet beschikbaar)

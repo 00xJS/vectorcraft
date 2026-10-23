@@ -2436,6 +2436,8 @@ lighting	Light	Světlo
 	File Dimensions	Rozměry souboru
 	Transforms	Transformace
 	Background Color:	Barva pozadí:
+	Show Center Mark	Zobrazit středovou značku
+	Show Cross Hairs	Zobrazit nitkový kříž
 	Client-side (.html)	Na straně klienta (.html)
 	Color Reduction:	Redukce barev:
 	Lossless (lossy WebP isn't available yet)	Bezeztrátový (ztrátový WebP zatím není k dispozici)
