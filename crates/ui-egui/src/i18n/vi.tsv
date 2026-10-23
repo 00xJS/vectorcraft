@@ -3591,7 +3591,6 @@ mark-style	Japanese	Kiểu Nhật
 	Switch x/y	Đổi x/y
 	Symbol Instance	Thực thể ký hiệu
 	Symbol Libraries	Thư viện ký hiệu
-	Symbol Libraries (on the roadmap)	Thư viện ký hiệu (trong lộ trình)
 	Symbol Screener Tool	Công cụ Lọc ký hiệu
 	Symbol Scruncher Tool	Công cụ Thu gọn ký hiệu
 	Symbol Set Density:	Mật độ bộ ký hiệu:
@@ -5072,6 +5071,32 @@ axis	Y Axis	Trục Y
 @msg	a live effect runs while the document is drawn, so it can't be `heavy`	hiệu ứng trực tiếp chạy trong lúc tài liệu được vẽ nên không thể là `heavy`
 @msg	an exporter always gets an export's budget: leave `budget` out	plug-in xuất luôn nhận ngân sách của một lần xuất: hãy bỏ `budget`
 @msg	“{_1}” asks for a heavy budget (each run up to {minutes} minutes and {times} times the usual instructions): install it with `allowHeavy: true` once the user agrees	“{_1}” yêu cầu ngân sách tính toán lớn (mỗi lần chạy tới {minutes} phút và gấp {times} lần số lệnh thông thường): hãy cài đặt với `allowHeavy: true` khi người dùng đồng ý
+	Add to Symbols	Thêm vào ký hiệu
+	Basic Shapes	Hình cơ bản
+	Open Symbol Library	Mở thư viện ký hiệu
+	Save Symbol Library	Lưu thư viện ký hiệu
+	Save Symbol Library…	Lưu thư viện ký hiệu…
+	Save Symbols…	Lưu ký hiệu…
+	Selected Symbols Only	Chỉ ký hiệu đã chọn
+	Symbol Libraries Menu	Menu thư viện ký hiệu
+	Symbol Library	Thư viện ký hiệu
+	User Symbol Library 1	Thư viện ký hiệu người dùng 1
+	User Symbol Library 2	Thư viện ký hiệu người dùng 2
+	User Symbol Library 3	Thư viện ký hiệu người dùng 3
+	User Symbol Library 4	Thư viện ký hiệu người dùng 4
+	User Symbol Library 5	Thư viện ký hiệu người dùng 5
+	User Symbol Library 6	Thư viện ký hiệu người dùng 6
+	User Symbol Library 7	Thư viện ký hiệu người dùng 7
+	User Symbol Library 8	Thư viện ký hiệu người dùng 8
+	User Symbol Library 9	Thư viện ký hiệu người dùng 9
+	User Symbol Library 10	Thư viện ký hiệu người dùng 10
+	{w} × {h} pt	{w} × {h} pt
+@msg	`{_1}` has no symbols to place	`{_1}` không có ký hiệu nào để đặt
+@msg	missing `library` (see symbol.libraries)	thiếu `library` (xem symbol.libraries)
+@msg	no symbol `{n}`	không có ký hiệu `{n}`
+@msg	no symbol `{n}` in `{_1}`	không có ký hiệu `{n}` trong `{_1}`
+@msg	no symbol library `{key}` (see symbol.libraries)	không có thư viện ký hiệu `{key}` (xem symbol.libraries)
+@msg	the document has no symbols to save	tài liệu không có ký hiệu nào để lưu
 @msg	Trap: select two or more objects filled with solid colours	Chồng màu: hãy chọn hai đối tượng trở lên được tô màu đặc
 @msg	Trap: no edges of different colours meet among the selected objects	Chồng màu: không có cạnh khác màu nào tiếp giáp giữa các đối tượng đã chọn
 @msg	thickness must be from 0.01 to 5000 pt	thickness phải từ 0,01 đến 5000 pt

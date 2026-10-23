@@ -2374,6 +2374,14 @@ fn panel_drop(app: &mut VectorcraftApp, ui: &Ui, resp: &egui::Response, xf: &Xf)
         }
         return;
     }
+    // A symbol from a symbol library panel: added to the document's Symbols and placed there.
+    if let widgets::PanelDrag::LibrarySymbol { library, name } = &*d {
+        let at = xf.to_doc(pos);
+        if let Err(e) = app.run("symbol.addFromLibrary", json!({"library": library, "name": name, "place": true, "x": at.x, "y": at.y})) {
+            app.status(e);
+        }
+        return;
+    }
     let Some(hit) = hit_at(app, xf.to_doc(pos), xf.zoom) else { return };
     let Some(st) = app.session.active() else { return };
     let (cmd, params) = match &*d {
@@ -2404,7 +2412,10 @@ fn panel_drop(app: &mut VectorcraftApp, ui: &Ui, resp: &egui::Response, xf: &Xf)
         }
         // Art dragged back onto the canvas: its move was already dropped. (A symbol was placed
         // above.)
-        widgets::PanelDrag::Art(_) | widgets::PanelDrag::Symbol(_) | widgets::PanelDrag::LibraryGraphic { .. } => return,
+        widgets::PanelDrag::Art(_)
+        | widgets::PanelDrag::Symbol(_)
+        | widgets::PanelDrag::LibrarySymbol { .. }
+        | widgets::PanelDrag::LibraryGraphic { .. } => return,
         // A Libraries panel style or group only moves within that panel.
         widgets::PanelDrag::LibraryItem { .. } | widgets::PanelDrag::LibraryGroup { .. } => return,
     };
@@ -7989,6 +8000,39 @@ mod tests {
         assert!(matches!(&n.kind, NodeKind::SymbolInstance { symbol, .. } if *symbol == name));
         let c = n.geometric_bounds().unwrap().center();
         assert!((c - xf.to_doc(at)).hypot() < 1e-6, "{c:?}");
+    }
+
+    #[test]
+    fn a_library_symbol_dropped_on_the_canvas_is_added_and_placed_there_in_one_step() {
+        let mut app = VectorcraftApp::new(Session::new(), Default::default());
+        app.session.execute("file.new", &json!({"width": 400, "height": 300})).unwrap();
+        // Dropped on art too, it is placed, not applied to the art.
+        app.session.execute("shape.rectangle", &json!({"x": 200, "y": 150, "width": 100, "height": 60})).unwrap();
+        app.session.execute("select.none", &json!({})).unwrap();
+        let ctx = egui::Context::default();
+        frame(&mut app, &ctx, vec![]);
+        let xf = Xf::new(app.canvas_rect.unwrap(), app.view().unwrap());
+        let undo = app.session.active().unwrap().history.undo.len();
+        let at = xf.to_screen(Point::new(250.0, 180.0));
+        egui::DragAndDrop::set_payload(&ctx, widgets::PanelDrag::LibrarySymbol { library: "basic-shapes".into(), name: "Star".into() });
+        let up = egui::Event::PointerButton { pos: at, button: egui::PointerButton::Primary, pressed: false, modifiers: Default::default() };
+        frame(&mut app, &ctx, vec![egui::Event::PointerMoved(at), up]);
+        let st = app.session.active().unwrap();
+        assert_eq!(st.doc.symbols.iter().map(|s| s.name.as_str()).collect::<Vec<_>>(), ["Star"]);
+        assert_eq!(st.history.undo.len(), undo + 1, "added and placed as one undo step");
+        assert_eq!(st.history.undo.last().unwrap().label, "Add to Symbols");
+        let placed = st.selection.objects.first().copied().unwrap();
+        let n = st.doc.node(placed).unwrap();
+        assert!(matches!(&n.kind, NodeKind::SymbolInstance { symbol, .. } if symbol == "Star"));
+        // The registration point (the centre) is where it was dropped, in document coordinates
+        // (the pointer's screen position, which rounds 250, 180 a little).
+        let size = st.doc.unknown.get(vectorcraft_doc::SYMBOL_SIZES).and_then(|m| m.get("Star")).cloned().unwrap();
+        let b = n.geometric_bounds().unwrap();
+        assert!((b.width() - size[0].as_f64().unwrap()).abs() < 1e-6, "{b:?} {size}");
+        assert!((b.center() - xf.to_doc(at)).hypot() < 1e-6 && (b.center() - Point::new(250.0, 180.0)).hypot() < 0.1, "{b:?}");
+        app.run("edit.undo", json!({})).unwrap();
+        let st = app.session.active().unwrap();
+        assert!(st.doc.symbols.is_empty() && st.doc.node(placed).is_none());
     }
 
     #[test]

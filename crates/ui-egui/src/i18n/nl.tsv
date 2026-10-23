@@ -1756,7 +1756,6 @@ lighting	Light	Licht
 	{kind}, {model}	{kind}, {model}
 	No symbols in this document	Geen symbolen in dit document
 	Select art and click New Symbol to make one.	Selecteer artwork en klik op Nieuw symbool om er een te maken.
-	Symbol Libraries (on the roadmap)	Symboolbibliotheken (op de roadmap)
 	Align On:	Uitlijnen op:
 	Bottom-Justified Tab	Onder uitgelijnde tabstop
 	Center-Justified Tab	Midden uitgelijnde tabstop
@@ -5483,6 +5482,26 @@ axis	Y Axis	Y-as
 	The plug-in is computing…	De plug-in is aan het rekenen…
 	Inspect Plug-in	Plug-in inspecteren
 	Cancel Plug-in Run	Plug-in-run annuleren
+	Add to Symbols	Aan symbolen toevoegen
+	Basic Shapes	Basisvormen
+	Open Symbol Library	Symboolbibliotheek openen
+	Save Symbol Library	Symboolbibliotheek opslaan
+	Save Symbol Library…	Symboolbibliotheek opslaan…
+	Save Symbols…	Symbolen opslaan…
+	Selected Symbols Only	Alleen geselecteerde symbolen
+	Symbol Libraries Menu	Menu symboolbibliotheken
+	Symbol Library	Symboolbibliotheek
+	User Symbol Library 1	Symboolbibliotheek van gebruiker 1
+	User Symbol Library 2	Symboolbibliotheek van gebruiker 2
+	User Symbol Library 3	Symboolbibliotheek van gebruiker 3
+	User Symbol Library 4	Symboolbibliotheek van gebruiker 4
+	User Symbol Library 5	Symboolbibliotheek van gebruiker 5
+	User Symbol Library 6	Symboolbibliotheek van gebruiker 6
+	User Symbol Library 7	Symboolbibliotheek van gebruiker 7
+	User Symbol Library 8	Symboolbibliotheek van gebruiker 8
+	User Symbol Library 9	Symboolbibliotheek van gebruiker 9
+	User Symbol Library 10	Symboolbibliotheek van gebruiker 10
+	{w} × {h} pt	{w} × {h} pt
 @msg	Trap: select two or more objects filled with solid colours	Overbrugging: selecteer twee of meer objecten met een egale vulkleur
 @msg	Trap: no edges of different colours meet among the selected objects	Overbrugging: tussen de geselecteerde objecten raken geen randen van verschillende kleuren elkaar
 @msg	thickness must be from 0.01 to 5000 pt	thickness moet tussen 0,01 en 5000 pt liggen

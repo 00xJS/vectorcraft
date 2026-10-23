@@ -3874,7 +3874,6 @@ mark-style	Japanese	Japán
 	Symbol	Szimbólum
 	Symbol Instance	Szimbólumpéldány
 	Symbol Libraries	Szimbólumkönyvtárak
-	Symbol Libraries (on the roadmap)	Szimbólumkönyvtárak (tervezett funkció)
 	Symbol Screener Tool	Szimbólumhalványító
 	Symbol Scruncher Tool	Szimbólumtömörítő
 	Symbol Set Density:	Szimbólumkészlet sűrűsége:
@@ -5461,6 +5460,32 @@ axis	Y Axis	Y tengely
 @msg	a live effect runs while the document is drawn, so it can't be `heavy`	az élő effektus a dokumentum rajzolása közben fut, ezért nem lehet `heavy`
 @msg	an exporter always gets an export's budget: leave `budget` out	az exportáló bővítmény mindig az exportálás keretét kapja: hagyd ki a `budget` kulcsot
 @msg	“{_1}” asks for a heavy budget (each run up to {minutes} minutes and {times} times the usual instructions): install it with `allowHeavy: true` once the user agrees	a(z) „{_1}” nagy számítási keretet kér (futásonként legfeljebb {minutes} perc és a szokásos utasításszám {times}-szorosa): telepítsd az `allowHeavy: true` megadásával, miután a felhasználó beleegyezett
+	Add to Symbols	Hozzáadás a szimbólumokhoz
+	Basic Shapes	Alapalakzatok
+	Open Symbol Library	Szimbólumkönyvtár megnyitása
+	Save Symbol Library	Szimbólumkönyvtár mentése
+	Save Symbol Library…	Szimbólumkönyvtár mentése…
+	Save Symbols…	Szimbólumok mentése…
+	Selected Symbols Only	Csak a kijelölt szimbólumok
+	Symbol Libraries Menu	Szimbólumkönyvtárak menü
+	Symbol Library	Szimbólumkönyvtár
+	User Symbol Library 1	Felhasználói szimbólumkönyvtár 1
+	User Symbol Library 2	Felhasználói szimbólumkönyvtár 2
+	User Symbol Library 3	Felhasználói szimbólumkönyvtár 3
+	User Symbol Library 4	Felhasználói szimbólumkönyvtár 4
+	User Symbol Library 5	Felhasználói szimbólumkönyvtár 5
+	User Symbol Library 6	Felhasználói szimbólumkönyvtár 6
+	User Symbol Library 7	Felhasználói szimbólumkönyvtár 7
+	User Symbol Library 8	Felhasználói szimbólumkönyvtár 8
+	User Symbol Library 9	Felhasználói szimbólumkönyvtár 9
+	User Symbol Library 10	Felhasználói szimbólumkönyvtár 10
+	{w} × {h} pt	{w} × {h} pt
+@msg	`{_1}` has no symbols to place	A(z) `{_1}` nem tartalmaz elhelyezhető szimbólumot
+@msg	missing `library` (see symbol.libraries)	hiányzik a `library` (lásd: symbol.libraries)
+@msg	no symbol `{n}`	nincs `{n}` szimbólum
+@msg	no symbol `{n}` in `{_1}`	nincs `{n}` szimbólum itt: `{_1}`
+@msg	no symbol library `{key}` (see symbol.libraries)	nincs `{key}` szimbólumkönyvtár (lásd: symbol.libraries)
+@msg	the document has no symbols to save	a dokumentumban nincs menthető szimbólum
 @msg	Trap: select two or more objects filled with solid colours	Csapdázás: jelöljön ki legalább két, egyszínű kitöltésű objektumot
 @msg	Trap: no edges of different colours meet among the selected objects	Csapdázás: a kijelölt objektumok között nem érintkeznek különböző színű élek
 @msg	thickness must be from 0.01 to 5000 pt	a thickness értéke 0,01 és 5000 pt között lehet

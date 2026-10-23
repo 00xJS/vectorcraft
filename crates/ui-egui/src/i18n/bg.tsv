@@ -3166,7 +3166,6 @@ font-technology	Variable	Променливи
 	Show all open documents	Показване на всички отворени документи
 	Symbol Instance	Екземпляр на символ
 	Symbol Libraries	Библиотеки със символи
-	Symbol Libraries (on the roadmap)	Библиотеки със символи (в план-графика)
 	Symbol Screener Tool	Инструмент „Филтър на символи“
 	Symbol Scruncher Tool	Инструмент „Свиване на символи“
 	Symbol Shifter Tool	Инструмент „Преместване на символи“
@@ -5424,6 +5423,26 @@ axis	Y Axis	Y ос
 	The plug-in is computing…	Приставката изчислява…
 	Inspect Plug-in	Проверка на приставка
 	Cancel Plug-in Run	Отказ от изпълнението на приставката
+	Add to Symbols	Добавяне към символи
+	Basic Shapes	Основни фигури
+	Open Symbol Library	Отваряне на библиотека със символи
+	Save Symbol Library	Запазване на библиотека със символи
+	Save Symbol Library…	Запази библиотека със символи…
+	Save Symbols…	Запази символи…
+	Selected Symbols Only	Само избрани символи
+	Symbol Libraries Menu	Меню с библиотеки със символи
+	Symbol Library	Библиотека със символи
+	User Symbol Library 1	Потребителска библиотека със символи 1
+	User Symbol Library 2	Потребителска библиотека със символи 2
+	User Symbol Library 3	Потребителска библиотека със символи 3
+	User Symbol Library 4	Потребителска библиотека със символи 4
+	User Symbol Library 5	Потребителска библиотека със символи 5
+	User Symbol Library 6	Потребителска библиотека със символи 6
+	User Symbol Library 7	Потребителска библиотека със символи 7
+	User Symbol Library 8	Потребителска библиотека със символи 8
+	User Symbol Library 9	Потребителска библиотека със символи 9
+	User Symbol Library 10	Потребителска библиотека със символи 10
+	{w} × {h} pt	{w} × {h} pt
 @msg	Trap: select two or more objects filled with solid colours	Застъпване: изберете два или повече обекта, запълнени с плътни цветове
 @msg	Trap: no edges of different colours meet among the selected objects	Застъпване: сред избраните обекти няма допиращи се ръбове с различни цветове
 @msg	thickness must be from 0.01 to 5000 pt	thickness трябва да е от 0,01 до 5000 pt

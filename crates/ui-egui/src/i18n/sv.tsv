@@ -3166,7 +3166,6 @@ font-technology	Variable	Variabla
 	Show all open documents	Visa alla öppna dokument
 	Symbol Instance	Symbolinstans
 	Symbol Libraries	Symbolbibliotek
-	Symbol Libraries (on the roadmap)	Symbolbibliotek (planeras)
 	Symbol Screener Tool	Verktyg för symbolopacitet
 	Symbol Scruncher Tool	Verktyg för att dra ihop symboler
 	Symbol Shifter Tool	Verktyg för att flytta symboler
@@ -5431,6 +5430,32 @@ axis	Y Axis	Y-axel
 @msg	a live effect runs while the document is drawn, so it can't be `heavy`	en live-effekt körs medan dokumentet ritas, så den kan inte vara `heavy`
 @msg	an exporter always gets an export's budget: leave `budget` out	ett exportinsticksprogram får alltid en exports budget: utelämna `budget`
 @msg	“{_1}” asks for a heavy budget (each run up to {minutes} minutes and {times} times the usual instructions): install it with `allowHeavy: true` once the user agrees	”{_1}” begär en stor beräkningsbudget (varje körning upp till {minutes} minuter och {times} gånger de vanliga instruktionerna): installera det med `allowHeavy: true` när användaren har godkänt
+	Add to Symbols	Lägg till i symboler
+	Basic Shapes	Grundformer
+	Open Symbol Library	Öppna symbolbibliotek
+	Save Symbol Library	Spara symbolbibliotek
+	Save Symbol Library…	Spara symbolbibliotek…
+	Save Symbols…	Spara symboler…
+	Selected Symbols Only	Endast markerade symboler
+	Symbol Libraries Menu	Meny för symbolbibliotek
+	Symbol Library	Symbolbibliotek
+	User Symbol Library 1	Användarbibliotek för symboler 1
+	User Symbol Library 2	Användarbibliotek för symboler 2
+	User Symbol Library 3	Användarbibliotek för symboler 3
+	User Symbol Library 4	Användarbibliotek för symboler 4
+	User Symbol Library 5	Användarbibliotek för symboler 5
+	User Symbol Library 6	Användarbibliotek för symboler 6
+	User Symbol Library 7	Användarbibliotek för symboler 7
+	User Symbol Library 8	Användarbibliotek för symboler 8
+	User Symbol Library 9	Användarbibliotek för symboler 9
+	User Symbol Library 10	Användarbibliotek för symboler 10
+	{w} × {h} pt	{w} × {h} pt
+@msg	`{_1}` has no symbols to place	`{_1}` har inga symboler att placera
+@msg	missing `library` (see symbol.libraries)	`library` saknas (se symbol.libraries)
+@msg	no symbol `{n}`	ingen symbol `{n}`
+@msg	no symbol `{n}` in `{_1}`	ingen symbol `{n}` i `{_1}`
+@msg	no symbol library `{key}` (see symbol.libraries)	inget symbolbibliotek `{key}` (se symbol.libraries)
+@msg	the document has no symbols to save	dokumentet har inga symboler att spara
 @msg	Trap: select two or more objects filled with solid colours	Överfyllning: markera två eller fler objekt fyllda med enfärgade färger
 @msg	Trap: no edges of different colours meet among the selected objects	Överfyllning: inga kanter i olika färger möts bland de markerade objekten
 @msg	thickness must be from 0.01 to 5000 pt	thickness måste vara från 0,01 till 5000 pt

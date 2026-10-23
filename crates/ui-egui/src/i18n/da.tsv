@@ -1742,7 +1742,6 @@ lighting	Light	Lys
 	{kind}, {model}	{kind}, {model}
 	No symbols in this document	Ingen symboler i dette dokument
 	Select art and click New Symbol to make one.	Markér grafik, og klik på Nyt symbol for at oprette et.
-	Symbol Libraries (on the roadmap)	Symbolbiblioteker (på roadmappen)
 	Align On:	Justér på:
 	Bottom-Justified Tab	Bundjusteret tabulator
 	Center-Justified Tab	Midterjusteret tabulator
@@ -5440,6 +5439,26 @@ axis	Y Axis	Y-akse
 	The plug-in is computing…	Plug-in'en regner…
 	Inspect Plug-in	Undersøg plug-in
 	Cancel Plug-in Run	Annullér plug-in-kørsel
+	Add to Symbols	Føj til symboler
+	Basic Shapes	Grundlæggende former
+	Open Symbol Library	Åbn symbolbibliotek
+	Save Symbol Library	Gem symbolbibliotek
+	Save Symbol Library…	Gem symbolbibliotek…
+	Save Symbols…	Gem symboler…
+	Selected Symbols Only	Kun valgte symboler
+	Symbol Libraries Menu	Menu med symbolbiblioteker
+	Symbol Library	Symbolbibliotek
+	User Symbol Library 1	Brugersymbolbibliotek 1
+	User Symbol Library 2	Brugersymbolbibliotek 2
+	User Symbol Library 3	Brugersymbolbibliotek 3
+	User Symbol Library 4	Brugersymbolbibliotek 4
+	User Symbol Library 5	Brugersymbolbibliotek 5
+	User Symbol Library 6	Brugersymbolbibliotek 6
+	User Symbol Library 7	Brugersymbolbibliotek 7
+	User Symbol Library 8	Brugersymbolbibliotek 8
+	User Symbol Library 9	Brugersymbolbibliotek 9
+	User Symbol Library 10	Brugersymbolbibliotek 10
+	{w} × {h} pt	{w} × {h} pt
 @msg	Trap: select two or more objects filled with solid colours	Trap: Vælg to eller flere objekter udfyldt med ensfarvede farver
 @msg	Trap: no edges of different colours meet among the selected objects	Trap: Ingen kanter i forskellige farver mødes blandt de valgte objekter
 @msg	thickness must be from 0.01 to 5000 pt	thickness skal være fra 0,01 til 5000 pt

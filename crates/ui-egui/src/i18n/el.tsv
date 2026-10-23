@@ -3582,7 +3582,6 @@ theme	Appearance	Εμφάνιση
 	Show all open documents	Εμφάνιση όλων των ανοιχτών εγγράφων
 	Symbol Instance	Στιγμιότυπο συμβόλου
 	Symbol Libraries	Βιβλιοθήκες συμβόλων
-	Symbol Libraries (on the roadmap)	Βιβλιοθήκες συμβόλων (προγραμματισμένη λειτουργία)
 	Symbol Screener Tool	Αραίωση συμβόλων (Symbol Screener Tool)
 	Symbol Scruncher Tool	Σύμπτυξη συμβόλων (Symbol Scruncher Tool)
 	Symbol Shifter Tool	Μετατόπιση συμβόλων (Symbol Shifter Tool)
@@ -5427,6 +5426,32 @@ axis	Y Axis	Άξονας Y
 @msg	a live effect runs while the document is drawn, so it can't be `heavy`	ένα δυναμικό εφέ εκτελείται κατά τη σχεδίαση του εγγράφου, οπότε δεν μπορεί να είναι `heavy`
 @msg	an exporter always gets an export's budget: leave `budget` out	ένα πρόσθετο εξαγωγής παίρνει πάντα τον προϋπολογισμό μιας εξαγωγής: παραλείψτε το `budget`
 @msg	“{_1}” asks for a heavy budget (each run up to {minutes} minutes and {times} times the usual instructions): install it with `allowHeavy: true` once the user agrees	το «{_1}» ζητά μεγάλο υπολογιστικό προϋπολογισμό (κάθε εκτέλεση έως {minutes} λεπτά και {times} φορές τις συνήθεις εντολές): εγκαταστήστε το με `allowHeavy: true` μόλις συμφωνήσει ο χρήστης
+	Add to Symbols	Προσθήκη στα σύμβολα
+	Basic Shapes	Βασικά σχήματα
+	Open Symbol Library	Άνοιγμα βιβλιοθήκης συμβόλων
+	Save Symbol Library	Αποθήκευση βιβλιοθήκης συμβόλων
+	Save Symbol Library…	Αποθήκευση βιβλιοθήκης συμβόλων…
+	Save Symbols…	Αποθήκευση συμβόλων…
+	Selected Symbols Only	Μόνο επιλεγμένα σύμβολα
+	Symbol Libraries Menu	Μενού βιβλιοθηκών συμβόλων
+	Symbol Library	Βιβλιοθήκη συμβόλων
+	User Symbol Library 1	Βιβλιοθήκη συμβόλων χρήστη 1
+	User Symbol Library 2	Βιβλιοθήκη συμβόλων χρήστη 2
+	User Symbol Library 3	Βιβλιοθήκη συμβόλων χρήστη 3
+	User Symbol Library 4	Βιβλιοθήκη συμβόλων χρήστη 4
+	User Symbol Library 5	Βιβλιοθήκη συμβόλων χρήστη 5
+	User Symbol Library 6	Βιβλιοθήκη συμβόλων χρήστη 6
+	User Symbol Library 7	Βιβλιοθήκη συμβόλων χρήστη 7
+	User Symbol Library 8	Βιβλιοθήκη συμβόλων χρήστη 8
+	User Symbol Library 9	Βιβλιοθήκη συμβόλων χρήστη 9
+	User Symbol Library 10	Βιβλιοθήκη συμβόλων χρήστη 10
+	{w} × {h} pt	{w} × {h} pt
+@msg	`{_1}` has no symbols to place	Η `{_1}` δεν έχει σύμβολα για τοποθέτηση
+@msg	missing `library` (see symbol.libraries)	λείπει το `library` (δείτε symbol.libraries)
+@msg	no symbol `{n}`	δεν υπάρχει σύμβολο `{n}`
+@msg	no symbol `{n}` in `{_1}`	δεν υπάρχει σύμβολο `{n}` στη `{_1}`
+@msg	no symbol library `{key}` (see symbol.libraries)	δεν υπάρχει βιβλιοθήκη συμβόλων `{key}` (δείτε symbol.libraries)
+@msg	the document has no symbols to save	το έγγραφο δεν έχει σύμβολα για αποθήκευση
 @msg	Trap: select two or more objects filled with solid colours	Παγίδευση χρωμάτων: επιλέξτε δύο ή περισσότερα αντικείμενα με συμπαγές χρώμα γεμίσματος
 @msg	Trap: no edges of different colours meet among the selected objects	Παγίδευση χρωμάτων: δεν συναντώνται άκρες διαφορετικών χρωμάτων στα επιλεγμένα αντικείμενα
 @msg	thickness must be from 0.01 to 5000 pt	το thickness πρέπει να είναι από 0,01 έως 5000 pt

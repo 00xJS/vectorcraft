@@ -2984,7 +2984,6 @@ mark-style	Japanese	일본식
 	Use Library Item	라이브러리 항목 사용
 	Graphic	그래픽
 	Show all open documents	열린 문서 모두 표시
-	Symbol Libraries (on the roadmap)	심볼 라이브러리(예정)
 	Symbol Screener Tool	심볼 스크리너 도구
 	Symbol Scruncher Tool	심볼 스크런처 도구
 	Symbol Shifter Tool	심볼 시프터 도구
@@ -5055,6 +5054,32 @@ axis	Y Axis	Y축
 @msg	a live effect runs while the document is drawn, so it can't be `heavy`	라이브 효과는 문서를 그리는 동안 실행되므로 `heavy`일 수 없습니다
 @msg	an exporter always gets an export's budget: leave `budget` out	내보내기 플러그인은 항상 내보내기 예산을 받습니다. `budget`은 생략하세요
 @msg	“{_1}” asks for a heavy budget (each run up to {minutes} minutes and {times} times the usual instructions): install it with `allowHeavy: true` once the user agrees	“{_1}”은(는) 큰 계산 예산을 요청합니다(실행당 최대 {minutes}분, 평소의 {times}배 명령어). 사용자가 동의하면 `allowHeavy: true`로 설치하세요
+	Add to Symbols	심볼에 추가
+	Basic Shapes	기본 모양
+	Open Symbol Library	심볼 라이브러리 열기
+	Save Symbol Library	심볼 라이브러리 저장
+	Save Symbol Library…	심볼 라이브러리 저장…
+	Save Symbols…	심볼 저장…
+	Selected Symbols Only	선택한 심볼만
+	Symbol Libraries Menu	심볼 라이브러리 메뉴
+	Symbol Library	심볼 라이브러리
+	User Symbol Library 1	사용자 심볼 라이브러리 1
+	User Symbol Library 2	사용자 심볼 라이브러리 2
+	User Symbol Library 3	사용자 심볼 라이브러리 3
+	User Symbol Library 4	사용자 심볼 라이브러리 4
+	User Symbol Library 5	사용자 심볼 라이브러리 5
+	User Symbol Library 6	사용자 심볼 라이브러리 6
+	User Symbol Library 7	사용자 심볼 라이브러리 7
+	User Symbol Library 8	사용자 심볼 라이브러리 8
+	User Symbol Library 9	사용자 심볼 라이브러리 9
+	User Symbol Library 10	사용자 심볼 라이브러리 10
+	{w} × {h} pt	{w} × {h} pt
+@msg	`{_1}` has no symbols to place	`{_1}`에 배치할 심볼이 없습니다
+@msg	missing `library` (see symbol.libraries)	`library`가 없습니다(symbol.libraries 참조)
+@msg	no symbol `{n}`	심볼 `{n}`이(가) 없습니다
+@msg	no symbol `{n}` in `{_1}`	`{_1}`에 심볼 `{n}`이(가) 없습니다
+@msg	no symbol library `{key}` (see symbol.libraries)	심볼 라이브러리 `{key}`이(가) 없습니다(symbol.libraries 참조)
+@msg	the document has no symbols to save	문서에 저장할 심볼이 없습니다
 @msg	Trap: select two or more objects filled with solid colours	트랩: 단색으로 칠한 개체를 두 개 이상 선택하십시오
 @msg	Trap: no edges of different colours meet among the selected objects	트랩: 선택한 개체 사이에 서로 다른 색상이 맞닿는 가장자리가 없습니다
 @msg	thickness must be from 0.01 to 5000 pt	thickness는 0.01~5000pt여야 합니다
