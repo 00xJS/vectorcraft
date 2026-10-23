@@ -30,7 +30,7 @@ pub fn specs() -> Vec<CommandSpec> {
             has_doc,
             flare
         ),
-        cmd!("shape.line", "Line Segment", [], None, "{x1, y1, x2, y2} → {id}", has_doc, line),
+        cmd!("shape.line", "Line Segment", [], None, "{x1, y1, x2, y2, fill?: bool (Fill Line: the current fill, else none)} → {id}", has_doc, line),
         cmd!("shape.spiral", "Spiral", [], None, "{cx, cy, radius, decay=80 (%), segments=10, clockwise?} → {id}", has_doc, spiral),
         cmd!(
             "shape.arc",
@@ -486,9 +486,10 @@ fn line(s: &mut Session, p: &Value) -> Result<Value> {
     let a = Point::new(f64_req(p, "x1", "shape.line")?, f64_req(p, "y1", "shape.line")?);
     let b = Point::new(f64_req(p, "x2", "shape.line")?, f64_req(p, "y2", "shape.line")?);
     let live = LiveShape::Line { a, b };
-    // Lines are stroked, never filled (Illustrator ignores the fill for new open lines).
+    // Lines are stroked and, unless Fill Line asks for the current fill, not filled.
+    let fill = if switch_or(p, "fill", false, "shape.line")? { s.paint.fill.clone() } else { vectorcraft_color::Paint::None };
     let look = s.new_art_look(
-        vectorcraft_color::Paint::None,
+        fill,
         if s.paint.stroke.is_none() { vectorcraft_color::Paint::solid(vectorcraft_color::Color::BLACK) } else { s.paint.stroke.clone() },
         s.paint.stroke_width.max(0.1),
     );
